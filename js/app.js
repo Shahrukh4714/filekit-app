@@ -4032,8 +4032,129 @@
       showApp(cat);
     }));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
-    const topbar = document.querySelector('.topbar'); const syncTopbar = () => topbar.classList.toggle('scrolled', window.scrollY > 8); window.addEventListener('scroll', syncTopbar, { passive: true }); syncTopbar();
-    document.querySelectorAll('[data-footer-link]').forEach(button => button.addEventListener('click', () => { const label = button.textContent.trim(); FF.util.toast(`${label} page is coming soon. All tools are 100% free and functional offline!`, 'info'); }));
+    // --- In-App Information Modals (Privacy, Terms, About, Help, Shortcuts) ---
+    const MODAL_CONTENT = {
+      privacy: {
+        title: 'Privacy & Security Guarantee',
+        badge: '100% Client-Side',
+        html: `<p><strong>Your files never leave your device.</strong> FileKit operates entirely inside your web browser using WebAssembly and Web Workers.</p>
+        <ul style="margin:12px 0 16px 20px;line-height:1.7;">
+          <li><strong>Zero Uploads:</strong> Files are read, parsed, and converted in your browser's local RAM. No servers or third-party APIs ever receive your data.</li>
+          <li><strong>No Tracking:</strong> We do not track, log, or store your file contents, filenames, metadata, or personal identifiers.</li>
+          <li><strong>Air-Gapped Ready:</strong> Once loaded, FileKit works completely offline without an active internet connection.</li>
+        </ul>`
+      },
+      terms: {
+        title: 'Terms of Service',
+        badge: 'Free & Open',
+        html: `<p>FileKit is provided completely free for personal and commercial file operations.</p>
+        <ul style="margin:12px 0 16px 20px;line-height:1.7;">
+          <li><strong>Commercial & Personal Use:</strong> You may use all 38+ tools without licensing fees, subscriptions, or attribution requirements.</li>
+          <li><strong>Open Standards:</strong> FileKit is built on open-source WebAssembly libraries including PDF-Lib, PDF.js, FFmpeg, ONNX Runtime, and fflate.</li>
+          <li><strong>As-Is Warranty:</strong> Software is provided "as is" without warranty of any kind. Always maintain backups of your original documents.</li>
+        </ul>`
+      },
+      about: {
+        title: 'About FileKit',
+        badge: 'Next-Gen File Suite',
+        html: `<p>FileKit is an in-browser productivity suite engineered to replace bulky cloud converters with ultra-fast, local WebAssembly engines.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
+          <div style="background:#F8FAFC;padding:12px;border-radius:8px;border:1px solid #E2E8F0;">
+            <strong style="display:block;margin-bottom:4px;color:#0F172A;">⚡ Zero Latency</strong>
+            <span style="font-size:13px;color:#64748B;">No upload or download queues. Conversions run directly on your hardware.</span>
+          </div>
+          <div style="background:#F8FAFC;padding:12px;border-radius:8px;border:1px solid #E2E8F0;">
+            <strong style="display:block;margin-bottom:4px;color:#0F172A;">🔒 Total Privacy</strong>
+            <span style="font-size:13px;color:#64748B;">Confidential financial, medical, and legal documents remain strictly on your machine.</span>
+          </div>
+        </div>`
+      },
+      help: {
+        title: 'Help Centre & FAQ',
+        badge: 'Knowledge Base',
+        html: `<p><strong>Frequently Asked Questions:</strong></p>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
+          <div>
+            <strong>Q: What is the maximum file size?</strong>
+            <p style="margin:4px 0 0;font-size:13.5px;color:#475569;">Because files process in browser memory, optimal file sizes are up to 200MB for PDFs/images and up to 500MB for video/audio.</p>
+          </div>
+          <div>
+            <strong>Q: Does FileKit work offline?</strong>
+            <p style="margin:4px 0 0;font-size:13.5px;color:#475569;">Yes! Once loaded, all tool scripts and fonts are cached locally in your browser.</p>
+          </div>
+        </div>`
+      },
+      shortcuts: {
+        title: 'Keyboard Shortcuts',
+        badge: 'Power User',
+        html: `<div style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0;">
+            <span>Search all tools</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #CBD5E1;border-radius:4px;font-family:monospace;font-size:12px;">Ctrl + K / /</kbd>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0;">
+            <span>Close modal / Go Home</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #CBD5E1;border-radius:4px;font-family:monospace;font-size:12px;">Esc</kbd>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0;">
+            <span>Open file dialog</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #CBD5E1;border-radius:4px;font-family:monospace;font-size:12px;">Space / Enter</kbd>
+          </div>
+        </div>`
+      }
+    };
+
+    function showInfoModal(key) {
+      const data = MODAL_CONTENT[key] || MODAL_CONTENT.privacy;
+      const existing = document.getElementById('fk-info-modal-backdrop');
+      if (existing) existing.remove();
+
+      const backdrop = document.createElement('div');
+      backdrop.id = 'fk-info-modal-backdrop';
+      backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity 0.2s ease;';
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'background:#FFFFFF;border-radius:14px;max-width:540px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;transform:scale(0.96);transition:transform 0.2s cubic-bezier(0.16,1,0.3,1);font-family:Inter,system-ui,sans-serif;color:#0F172A;';
+      modal.innerHTML = `
+        <div style="padding:18px 24px;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;background:#FAFAFC;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <h3 style="margin:0;font-size:17px;font-weight:700;">${data.title}</h3>
+            <span style="font-size:11px;font-weight:700;text-transform:uppercase;background:#EFF6FF;color:#2563EB;padding:3px 8px;border-radius:100px;border:1px solid #DBEAFE;">${data.badge}</span>
+          </div>
+          <button type="button" id="fk-info-modal-close" style="border:none;background:transparent;cursor:pointer;font-size:20px;line-height:1;color:#64748B;padding:4px 8px;border-radius:6px;">×</button>
+        </div>
+        <div style="padding:22px 24px;font-size:14px;line-height:1.6;color:#334155;">
+          ${data.html}
+        </div>
+        <div style="padding:14px 24px;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;background:#FAFAFC;">
+          <button type="button" id="fk-info-modal-done" style="background:#0F172A;color:#FFFFFF;border:none;padding:8px 18px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;">Close</button>
+        </div>
+      `;
+
+      backdrop.appendChild(modal);
+      document.body.appendChild(backdrop);
+
+      const close = () => {
+        backdrop.style.opacity = '0';
+        modal.style.transform = 'scale(0.96)';
+        setTimeout(() => backdrop.remove(), 200);
+      };
+
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+      modal.querySelector('#fk-info-modal-close').addEventListener('click', close);
+      modal.querySelector('#fk-info-modal-done').addEventListener('click', close);
+      const onEsc = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); } };
+      document.addEventListener('keydown', onEsc);
+
+      requestAnimationFrame(() => {
+        backdrop.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+      });
+    }
+
+    document.querySelectorAll('[data-footer-link]').forEach(button => {
+      button.addEventListener('click', () => {
+        const linkKey = (button.dataset.footerLink || '').toLowerCase();
+        showInfoModal(linkKey);
+      });
+    });
     function handleRoute() {
       const hash = location.hash.slice(1);
       if (!hash) {
