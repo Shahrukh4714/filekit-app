@@ -98,7 +98,37 @@
     return { blob: new Blob([await doc.save()], { type: 'application/pdf' }), filename: name, mime: 'application/pdf', preview: 'download' };
   }
 
-  FF.util = { escapeHtml, bytes, downloadBlob, objectURL, revokeAll, throwIfAborted, yieldToMain, baseName, extOf, el, loadScript, loadScripts, textToPdf };
+  // --- Toast notification system (accessible, theme-consistent, no blocking native alerts) ---
+  let _toastContainer = null;
+  function toast(message, type = 'info', duration = 3600) {
+    if (!_toastContainer) {
+      _toastContainer = document.createElement('div');
+      _toastContainer.id = 'fk-toast-container';
+      _toastContainer.setAttribute('aria-live', 'polite');
+      _toastContainer.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:380px;width:calc(100vw - 32px);';
+      document.body.appendChild(_toastContainer);
+    }
+    const t = document.createElement('div');
+    t.className = `fk-toast fk-toast-${type}`;
+    const bg = type === 'error' ? '#FEF2F2' : type === 'success' ? '#F0FDF4' : type === 'warn' ? '#FFFBEB' : '#FFFFFF';
+    const border = type === 'error' ? '#FCA5A5' : type === 'success' ? '#86EFAC' : type === 'warn' ? '#FDE68A' : '#E2E8F0';
+    const color = type === 'error' ? '#991B1B' : type === 'success' ? '#166534' : type === 'warn' ? '#92400E' : '#0F172A';
+    const icon = type === 'error' ? '⚠️' : type === 'success' ? '✓' : type === 'warn' ? 'ℹ️' : '💡';
+    t.style.cssText = `background:${bg};border:1px solid ${border};color:${color};padding:12px 16px;border-radius:10px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.12),0 8px 10px -6px rgba(0,0,0,0.06);font-size:13.5px;line-height:1.45;font-weight:500;display:flex;align-items:flex-start;gap:10px;pointer-events:auto;opacity:0;transform:translateY(12px);transition:all 0.22s cubic-bezier(0.16,1,0.3,1);font-family:Inter,system-ui,sans-serif;`;
+    t.innerHTML = `<span style="font-size:15px;line-height:1;flex-shrink:0;">${icon}</span><span style="flex:1;">${escapeHtml(message)}</span>`;
+    _toastContainer.appendChild(t);
+    requestAnimationFrame(() => {
+      t.style.opacity = '1';
+      t.style.transform = 'translateY(0)';
+    });
+    setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateY(10px)';
+      setTimeout(() => t.remove(), 250);
+    }, duration);
+  }
+
+  FF.util = { escapeHtml, bytes, downloadBlob, objectURL, revokeAll, throwIfAborted, yieldToMain, baseName, extOf, el, loadScript, loadScripts, textToPdf, toast };
 })();
 
 /* FileKit ffmpeg engine — window.FF.media
@@ -2273,10 +2303,10 @@
     document.getElementById('app-exit-home')?.addEventListener('click', () => showHome());
 
     document.getElementById('app-getpro-btn')?.addEventListener('click', () => {
-      alert('FileKit is 100% free and local. All tools are already unlocked—no Pro needed!');
+      FF.util.toast('FileKit is 100% free and local. All tools are already unlocked — no Pro needed!', 'success');
     });
     document.getElementById('app-login-btn')?.addEventListener('click', () => {
-      alert('FileKit runs 100% locally in your browser. No account or login required—your files never leave your device.');
+      FF.util.toast('FileKit runs 100% locally in your browser. No account or login required — your files never leave your device.', 'info');
     });
 
     document.querySelectorAll('.rail-item[data-rail-cat], .app-nav-links button[data-rail-cat]').forEach(btn => {
@@ -2514,7 +2544,7 @@
     bindAllToolsFlyout();
 
     document.getElementById('rail-account-btn')?.addEventListener('click', () => {
-      alert('FileKit runs 100% locally in your browser. No account required, all data stays private on your device.');
+      FF.util.toast('FileKit runs 100% locally in your browser. No account required, all data stays private on your device.', 'info');
     });
 
     // --- FileKit App Dashboard Tool Cards ---
@@ -4001,7 +4031,7 @@
     }));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
     const topbar = document.querySelector('.topbar'); const syncTopbar = () => topbar.classList.toggle('scrolled', window.scrollY > 8); window.addEventListener('scroll', syncTopbar, { passive: true }); syncTopbar();
-    document.querySelectorAll('[data-footer-link]').forEach(button => button.addEventListener('click', () => { const label = button.textContent.trim(); alert(`${label} information will be available here.`); }));
+    document.querySelectorAll('[data-footer-link]').forEach(button => button.addEventListener('click', () => { const label = button.textContent.trim(); FF.util.toast(`${label} page is coming soon. All tools are 100% free and functional offline!`, 'info'); }));
     function handleRoute() {
       const hash = location.hash.slice(1);
       if (!hash) {
@@ -4855,7 +4885,7 @@
             }
             render();
           } catch (err) {
-            alert('Processing failed: ' + err.message);
+            FF.util.toast('Processing failed: ' + (err.message || 'Unknown error'), 'error');
             const span = actionBtn.querySelector('span');
             if (span) span.textContent = tool.name;
             actionBtn.disabled = false;

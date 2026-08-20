@@ -1776,7 +1776,7 @@
 
     function addFiles(fileList) {
       const arr = [...(fileList || [])].filter(f => familyOf(f) && f.size <= MAX_BYTES);
-      if (!arr.length) { alert('Please select a PDF, image, video, audio, archive, or document file (up to 200 MB).'); return; }
+      if (!arr.length) { window.FF.util.toast('Please select a PDF, image, video, audio, archive, or document file (up to 200 MB).', 'warn'); return; }
       files = files.concat(arr);
       renderConfigure();
     }
@@ -3833,7 +3833,7 @@
         window.FF.app.openTool('pdf-sign');
       };
       container.querySelector('#etxt-share').onclick = () => {
-        alert('Share is a UI placeholder — wire later.');
+        window.FF.util.toast('Direct sharing link will be enabled in cloud export. All files process locally!', 'info');
       };
 
       // re-attach cached canvases (thumbs + current page) and render anything missing
@@ -4584,11 +4584,11 @@
       try {
         let mod = window.__ffTfJs;
         if (!mod) {
-          mod = await import('/vendor/transformers.min.js');
+          mod = await import(new URL('vendor/transformers.min.js', window.location.href).href);
           window.__ffTfJs = mod;
         }
         const { pipeline, env } = mod;
-        env.backends.onnx.wasm.wasmPaths = '/vendor/';
+        env.backends.onnx.wasm.wasmPaths = new URL('vendor/', window.location.href).href;
         const seg = await pipeline('image-segmentation', 'briaai/RMBG-1.4', { device: 'wasm',
           progress_callback: (p) => {
             if (p && p.status === 'progress' && Number.isFinite(p.progress)) { aiStatus = `Downloading AI model ${Math.round(p.progress)}%`; renderOptbar(); }
@@ -14259,7 +14259,7 @@ trailer<</Root 1 0 R>>`;
 
     function acceptFiles(arr) {
       const ok = arr.filter(f => familyOf(f) && f.size <= MAX_BYTES);
-      if (!ok.length) { alert('Please choose a PDF, image, audio, or video file (up to 200 MB each).'); return; }
+      if (!ok.length) { window.FF.util.toast('Please choose a PDF, image, audio, or video file (up to 200 MB each).', 'warn'); return; }
       files = files.concat(ok);
       resetState();
       renderConfigure();
@@ -14825,9 +14825,9 @@ trailer<</Root 1 0 R>>`;
     async function quickRotate(dir) {
       const targets = selected.size ? files.filter((_, i) => selected.has(i)) : files;
       if (!targets.length) return;
-      if (new Set(targets.map(familyOf)).size > 1) { alert('Select files of one type to rotate.'); return; }
-      if (familyOf(targets[0]) === 'audio') { alert('Audio has no rotation — use the Split tab to break it into parts.'); return; }
-      if (familyOf(targets[0]) === 'video') { alert('Rotate video from the Rotate tab instead.'); return; }
+      if (new Set(targets.map(familyOf)).size > 1) { window.FF.util.toast('Select files of one type to rotate.', 'warn'); return; }
+      if (familyOf(targets[0]) === 'audio') { window.FF.util.toast('Audio has no rotation — use the Split tab to break it into parts.', 'info'); return; }
+      if (familyOf(targets[0]) === 'video') { window.FF.util.toast('Rotate video from the Rotate tab instead.', 'info'); return; }
       renderPageLoading('Rotating…');
       try {
         for (const f of targets) {
@@ -14845,7 +14845,7 @@ trailer<</Root 1 0 R>>`;
         }
       } catch (err) {
         console.error('[Organize] quick rotate', err);
-        alert('Could not rotate those files.');
+        window.FF.util.toast('Could not rotate those files: ' + (err.message || 'Unknown error'), 'error');
       }
       const keepMode = mode;
       resetState();

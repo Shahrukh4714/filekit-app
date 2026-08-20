@@ -18,7 +18,7 @@
     pdfjs: () => U.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; }),
     pdflib: () => U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib),
     fflate: () => U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate),
-    opentype: () => U.loadScript('vendor/opentype.min.js', 'sha384-eGx3HP9p5kF4C2k1EkJd6W2BmT7dFZQJ4YW1dNZLWRptZ1HOF4x4NtVRkT6cQn8h').then(() => window.opentype),
+    opentype: () => U.loadScript('vendor/opentype.min.js', 'sha384-3TaxGqyHrMuRIWY5Z5WHNIzgNRqGIUJE+mk6tm+g1wkm9Ux2kUyOLfy9AsNWXA6u').then(() => window.opentype),
     xlsx: () => U.loadScript('vendor/xlsx.full.min.js').then(() => window.XLSX),
   };
 
@@ -1434,7 +1434,7 @@
 
   /* ─── AI Background Remover (ISNet small via vendored onnxruntime) ─── */
   const BGR_ACC = ['png', 'jpg', 'jpeg', 'webp', 'bmp'];
-  const BGR_MODEL = '/vendor/imgly/isnet_small.onnx';
+  const BGR_MODEL = new URL('vendor/imgly/isnet_small.onnx', window.location.href).href;
   let bgrEngineP = null;
   let bgrOnProg = null;
 
@@ -1471,8 +1471,8 @@
     if (!bgrEngineP) {
       bgrEngineP = (async () => {
         if (bgrOnProg) bgrOnProg(0.01, 'Loading AI engine');
-        const ort = await import('/vendor/ort.min.mjs');
-        ort.env.wasm.wasmPaths = '/vendor/';
+        const ort = await import(new URL('vendor/ort.min.mjs', window.location.href).href);
+        ort.env.wasm.wasmPaths = new URL('vendor/', window.location.href).href;
         const buf = await fetchBgrModel();
         if (bgrOnProg) bgrOnProg(0.96, 'Warming up the model');
         const session = await ort.InferenceSession.create(buf, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
