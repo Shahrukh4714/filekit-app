@@ -4425,9 +4425,10 @@
         throw new Error('Not a valid SQLite 3 database file header.');
       }
 
-      // Extract table names by scanning schema strings
+      // Extract table names by scanning schema strings safely without exhausting memory
       const textDecoder = new TextDecoder('utf-8');
-      const rawText = textDecoder.decode(u8Arr);
+      const scanLimit = Math.min(u8Arr.length, 4 * 1024 * 1024);
+      const rawText = textDecoder.decode(u8Arr.subarray(0, scanLimit));
       const tables = [];
       const createMatches = rawText.matchAll(/CREATE\s+TABLE\s+["`']?([a-zA-Z0-9_]+)["`']?/gi);
       for (const m of createMatches) {

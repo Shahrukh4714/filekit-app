@@ -1681,6 +1681,7 @@
     }
 
     function showHome(scrollTarget = null) {
+      FF.util.revokeAll();
       home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; document.title = 'FileKit — Every File Tool You Need';
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = false;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = true;
@@ -1693,6 +1694,7 @@
     }
 
     function showApp(category = 'Home') {
+      FF.util.revokeAll();
       home.hidden = true; toolView.hidden = true; if (appView) appView.hidden = false;
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = false;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = true;
