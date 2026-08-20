@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileKit — Handcrafted Vector Brand Icon Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-page: #0B0E14;
+    --bg-surface: #141923;
+    --bg-card: #1A202C;
+    --border: #2D3748;
+    --border-subtle: #232B3A;
+    --text-primary: #F7FAFC;
+    --text-secondary: #A0AEC0;
+    --text-muted: #718096;
+    
+    /* FileKit Brand Palette */
+    --brand-purple: #7C3AED;
+    --brand-red: #FF4D4D;
+    --brand-yellow: #FFC700;
+    --brand-green: #00E676;
+    --brand-sky: #00B0FF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    color: #C4B5FD;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00E676;
+    box-shadow: 0 0 10px #00E676;
+  }
+
+  h1 {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+
+  header p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    max-width: 720px;
+    margin: 12px auto 0;
+  }
+
+  /* Hero Feature Showcase */
+  .hero-showcase {
+    background: linear-gradient(180deg, #151A26 0%, #0F131C 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 44px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    margin-bottom: 48px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .hero-icon-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, rgba(124, 58, 237, 0.12) 0%, rgba(0,0,0,0) 70%), #0A0D14;
+    border-radius: 20px;
+    padding: 50px 30px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-icon-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 16px 16px;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .hero-icon-stage svg {
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .hero-icon-stage:hover svg {
+    transform: scale(1.03) translateY(-4px);
+  }
+
+  .hero-details h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  .hero-details p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .pill-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .legend-text strong {
+    display: block;
+    font-size: 12px;
+    color: #fff;
+  }
+
+  .legend-text span {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--brand-purple);
+    color: #fff;
+    border: 0;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn:hover {
+    background: #6D28D9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+
+  .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #4A5568;
+    box-shadow: none;
+  }
+
+  /* Grid of Variations */
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title span {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .variations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 24px;
+    margin-bottom: 56px;
+  }
+
+  .var-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.2s ease;
+  }
+
+  .var-card:hover {
+    border-color: rgba(124, 58, 237, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  }
+
+  .var-stage {
+    width: 100%;
+    height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0D111A;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .var-stage.light-stage {
+    background: #F1F5F9;
+  }
+
+  .var-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .var-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    min-height: 36px;
+  }
+
+  .var-btn {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .var-btn:hover {
+    background: var(--brand-purple);
+    color: #fff;
+    border-color: var(--brand-purple);
+  }
+
+  /* Scale & Favicon Verification */
+  .scale-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+
+  .scale-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 32px;
+    padding: 24px 0;
+  }
+
+  .scale-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .scale-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #10B981;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 860px) {
+    .hero-showcase { grid-template-columns: 1fr; }
+    .pill-legend { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="badge"><span class="badge-dot"></span> Handcrafted Pure Vector SVG</div>
+    <h1>FileKit 4-Color Brand Icon System</h1>
+    <p>Precision vector implementation matching the 4-pill glossy staggering rhythm from the reference, tuned to our exact FileKit brand colors.</p>
+  </header>
+
+  <!-- Hero Primary Direction -->
+  <section class="hero-showcase">
+    <div class="hero-icon-stage">
+      <!-- 4-Color Brand Vector SVG -->
+      <svg id="svg-primary" width="280" height="280" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Squircle Drop Shadows -->
+          <filter id="hero-squircle-shadow" x="-20%" y="-15%" width="140%" height="145%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#000000" flood-opacity="0.45"/>
+            <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
+          </filter>
+
+          <!-- Front Pill Drop Shadow -->
+          <filter id="pill-shadow" x="-20%" y="-30%" width="150%" height="180%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.22"/>
+          </filter>
+
+          <!-- Squircle Surface Fill Gradient -->
+          <linearGradient id="squircle-surface" x1="256" y1="46" x2="256" y2="466" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFFFFF"/>
+            <stop offset="100%" stop-color="#F3F5F9"/>
+          </linearGradient>
+
+          <!-- Specular Highlight Overlay -->
+          <linearGradient id="pill-specular" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75"/>
+            <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+          </linearGradient>
+
+          <!-- Row 1: Coral Red (PDF) -->
+          <linearGradient id="grad-red" x1="130" y1="130" x2="330" y2="180" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FF6B6B"/>
+            <stop offset="100%" stop-color="#EA2E2E"/>
+          </linearGradient>
+
+          <!-- Row 2: Golden Amber (Images) -->
+          <linearGradient id="grad-yellow" x1="170" y1="195" x2="370" y2="245" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFD633"/>
+            <stop offset="100%" stop-color="#F59E0B"/>
+          </linearGradient>
+
+          <!-- Row 3: Emerald Green (Local Tools) -->
+          <linearGradient id="grad-green" x1="130" y1="260" x2="330" y2="310" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4EFA9D"/>
+            <stop offset="100%" stop-color="#00C853"/>
+          </linearGradient>
+
+          <!-- Row 4: Electric Sky Blue (Doc & Video) -->
+          <linearGradient id="grad-sky" x1="170" y1="325" x2="370" y2="375" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4DC6FF"/>
+            <stop offset="100%" stop-color="#0091EA"/>
+          </linearGradient>
+        </defs>
+
+        <!-- White iOS Squircle Container -->
+        <rect x="46" y="46" width="420" height="420" rx="98" fill="url(#squircle-surface)" filter="url(#hero-squircle-shadow)"/>
+        <rect x="46" y="46" width="420" height="420" rx="98" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+
+        <!-- ================= ROW 1: Coral Red (Shifted Left) ================= -->
+        <!-- Translucent Ghost Layer trailing to the right -->
+        <rect x="140" y="132" width="232" height="46" rx="23" fill="#FF4D4D" fill-opacity="0.25"/>
+        <!-- Front 3D Glossy Pill -->
+        <g filter="url(#pill-shadow)">
+          <rect x="140" y="132" width="188" height="46" rx="23" fill="url(#grad-red)"/>
+          <!-- Top Specular Bevel Highlight -->
+          <rect x="142" y="134" width="184" height="22" rx="11" fill="url(#pill-specular)"/>
+          <rect x="140.5" y="132.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        </g>
+
+        <!-- ================= ROW 2: Golden Amber (Shifted Right) ================= -->
+        <!-- Translucent Ghost Layer trailing to the right -->
+        <rect x="184" y="198" width="232" height="46" rx="23" fill="#FFC700" fill-opacity="0.25"/>
+        <!-- Front 3D Glossy Pill -->
+        <g filter="url(#pill-shadow)">
+          <rect x="184" y="198" width="188" height="46" rx="23" fill="url(#grad-yellow)"/>
+          <!-- Top Specular Bevel Highlight -->
+          <rect x="186" y="200" width="184" height="22" rx="11" fill="url(#pill-specular)"/>
+          <rect x="184.5" y="198.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+        </g>
+
+        <!-- ================= ROW 3: Emerald Green (Shifted Left) ================= -->
+        <!-- Translucent Ghost Layer trailing to the right -->
+        <rect x="140" y="264" width="232" height="46" rx="23" fill="#00E676" fill-opacity="0.25"/>
+        <!-- Front 3D Glossy Pill -->
+        <g filter="url(#pill-shadow)">
+          <rect x="140" y="264" width="188" height="46" rx="23" fill="url(#grad-green)"/>
+          <!-- Top Specular Bevel Highlight -->
+          <rect x="142" y="266" width="184" height="22" rx="11" fill="url(#pill-specular)"/>
+          <rect x="140.5" y="264.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        </g>
+
+        <!-- ================= ROW 4: Electric Sky Blue (Shifted Right) ================= -->
+        <!-- Translucent Ghost Layer trailing to the right -->
+        <rect x="184" y="330" width="232" height="46" rx="23" fill="#00B0FF" fill-opacity="0.25"/>
+        <!-- Front 3D Glossy Pill -->
+        <g filter="url(#pill-shadow)">
+          <rect x="184" y="330" width="188" height="46" rx="23" fill="url(#grad-sky)"/>
+          <!-- Top Specular Bevel Highlight -->
+          <rect x="186" y="332" width="184" height="22" rx="11" fill="url(#pill-specular)"/>
+          <rect x="184.5" y="330.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="hero-details">
+      <h2>Brand 4-Color Staggered Pill Edition</h2>
+      <p>Faithful vector recreation of the reference layout with alternating stagger (Left, Right, Left, Right), translucent trailing ghost capsules, top specular light bevels, and the 4 FileKit product colors.</p>
+      
+      <div class="pill-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #FF4D4D;"></div>
+          <div class="legend-text">
+            <strong>Row 1: Coral Red</strong>
+            <span>PDF Suite (#FF4D4D)</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #FFC700;"></div>
+          <div class="legend-text">
+            <strong>Row 2: Golden Amber</strong>
+            <span>Images (#FFC700)</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #00E676;"></div>
+          <div class="legend-text">
+            <strong>Row 3: Emerald Green</strong>
+            <span>Local Processing (#00E676)</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background: #00B0FF;"></div>
+          <div class="legend-text">
+            <strong>Row 4: Electric Cyan</strong>
+            <span>Docs & Video (#00B0FF)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn" onclick="copySvgCode('svg-primary')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy SVG Code
+        </button>
+        <button class="btn btn-outline" onclick="downloadSvg('svg-primary', 'filekit-brand-icon-4colors.svg')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download SVG
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Variations Row -->
+  <div class="section-title">Design Variations <span>Explore colorways, dark mode, & monograms</span></div>
+
+  <div class="variations-grid">
+    <!-- Variation 1: Pure Reference Electric Blue -->
+    <div class="var-card">
+      <div class="var-stage">
+        <svg id="svg-var-blue" width="140" height="140" viewBox="0 0 512 512" fill="none">
+          <defs>
+            <filter id="s-blue" x="-20%" y="-15%" width="140%" height="145%"><feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000" flood-opacity="0.4"/></filter>
+            <filter id="ps-blue" x="-20%" y="-30%" width="150%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.2"/></filter>
+            <linearGradient id="grad-pure-blue" x1="130" y1="130" x2="370" y2="370" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#38BDF8"/>
+              <stop offset="100%" stop-color="#0284C7"/>
+            </linearGradient>
+            <linearGradient id="spec-blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity="0.7"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          </defs>
+          <rect x="46" y="46" width="420" height="420" rx="98" fill="#FFFFFF" filter="url(#s-blue)"/>
+          <rect x="140" y="132" width="232" height="46" rx="23" fill="#0284C7" fill-opacity="0.22"/>
+          <g filter="url(#ps-blue)"><rect x="140" y="132" width="188" height="46" rx="23" fill="url(#grad-pure-blue)"/><rect x="142" y="134" width="184" height="22" rx="11" fill="url(#spec-blue)"/><rect x="140.5" y="132.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+          <rect x="184" y="198" width="232" height="46" rx="23" fill="#0284C7" fill-opacity="0.22"/>
+          <g filter="url(#ps-blue)"><rect x="184" y="198" width="188" height="46" rx="23" fill="url(#grad-pure-blue)"/><rect x="186" y="200" width="184" height="22" rx="11" fill="url(#spec-blue)"/><rect x="184.5" y="198.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+          <rect x="140" y="264" width="232" height="46" rx="23" fill="#0284C7" fill-opacity="0.22"/>
+          <g filter="url(#ps-blue)"><rect x="140" y="264" width="188" height="46" rx="23" fill="url(#grad-pure-blue)"/><rect x="142" y="266" width="184" height="22" rx="11" fill="url(#spec-blue)"/><rect x="140.5" y="264.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+          <rect x="184" y="330" width="232" height="46" rx="23" fill="#0284C7" fill-opacity="0.22"/>
+          <g filter="url(#ps-blue)"><rect x="184" y="330" width="188" height="46" rx="23" fill="url(#grad-pure-blue)"/><rect x="186" y="332" width="184" height="22" rx="11" fill="url(#spec-blue)"/><rect x="184.5" y="330.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+        </svg>
+      </div>
+      <div class="var-title">Pure Blue (Reference Exact)</div>
+      <div class="var-desc">1:1 matching the uploaded reference image's cyan-to-azure palette.</div>
+      <button class="var-btn" onclick="copySvgCode('svg-var-blue')">Copy SVG</button>
+    </div>
+
+    <!-- Variation 2: Royal Purple (FileKit Signature) -->
+    <div class="var-card">
+      <div class="var-stage">
+        <svg id="svg-var-purple" width="140" height="140" viewBox="0 0 512 512" fill="none">
+          <defs>
+            <filter id="s-purp" x="-20%" y="-15%" width="140%" height="145%"><feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000" flood-opacity="0.4"/></filter>
+            <filter id="ps-purp" x="-20%" y="-30%" width="150%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.2"/></filter>
+            <linearGradient id="grad-pure-purp" x1="130" y1="130" x2="370" y2="370" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#9333EA"/>
+              <stop offset="100%" stop-color="#6D28D9"/>
+            </linearGradient>
+            <linearGradient id="spec-purp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity="0.7"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          </defs>
+          <rect x="46" y="46" width="420" height="420" rx="98" fill="#FFFFFF" filter="url(#s-purp)"/>
+          <rect x="140" y="132" width="232" height="46" rx="23" fill="#7C3AED" fill-opacity="0.22"/>
+          <g filter="url(#ps-purp)"><rect x="140" y="132" width="188" height="46" rx="23" fill="url(#grad-pure-purp)"/><rect x="142" y="134" width="184" height="22" rx="11" fill="url(#spec-purp)"/><rect x="140.5" y="132.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+          <rect x="184" y="198" width="232" height="46" rx="23" fill="#7C3AED" fill-opacity="0.22"/>
+          <g filter="url(#ps-purp)"><rect x="184" y="198" width="188" height="46" rx="23" fill="url(#grad-pure-purp)"/><rect x="186" y="200" width="184" height="22" rx="11" fill="url(#spec-purp)"/><rect x="184.5" y="198.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+          <rect x="140" y="264" width="232" height="46" rx="23" fill="#7C3AED" fill-opacity="0.22"/>
+          <g filter="url(#ps-purp)"><rect x="140" y="264" width="188" height="46" rx="23" fill="url(#grad-pure-purp)"/><rect x="142" y="266" width="184" height="22" rx="11" fill="url(#spec-purp)"/><rect x="140.5" y="264.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+          <rect x="184" y="330" width="232" height="46" rx="23" fill="#7C3AED" fill-opacity="0.22"/>
+          <g filter="url(#ps-purp)"><rect x="184" y="330" width="188" height="46" rx="23" fill="url(#grad-pure-purp)"/><rect x="186" y="332" width="184" height="22" rx="11" fill="url(#spec-purp)"/><rect x="184.5" y="330.5" width="187" height="45" rx="22.5" stroke="rgba(255,255,255,0.4)"/></g>
+        </svg>
+      </div>
+      <div class="var-title">Royal Purple Edition</div>
+      <div class="var-desc">Rich FileKit purple #7C3AED gradient across all 4 capsules.</div>
+      <button class="var-btn" onclick="copySvgCode('svg-var-purple')">Copy SVG</button>
+    </div>
+
+    <!-- Variation 3: Dark Mode App Tile -->
+    <div class="var-card">
+      <div class="var-stage light-stage">
+        <svg id="svg-var-dark" width="140" height="140" viewBox="0 0 512 512" fill="none">
+          <defs>
+            <filter id="s-dark" x="-20%" y="-15%" width="140%" height="145%"><feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000" flood-opacity="0.25"/></filter>
+            <filter id="ps-dark" x="-20%" y="-30%" width="150%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter>
+          </defs>
+          <rect x="46" y="46" width="420" height="420" rx="98" fill="#111622" filter="url(#s-dark)"/>
+          <rect x="46" y="46" width="420" height="420" rx="98" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+          <rect x="140" y="132" width="232" height="46" rx="23" fill="#FF4D4D" fill-opacity="0.2"/>
+          <g filter="url(#ps-dark)"><rect x="140" y="132" width="188" height="46" rx="23" fill="url(#grad-red)"/><rect x="142" y="134" width="184" height="22" rx="11" fill="url(#pill-specular)"/></g>
+          <rect x="184" y="198" width="232" height="46" rx="23" fill="#FFC700" fill-opacity="0.2"/>
+          <g filter="url(#ps-dark)"><rect x="184" y="198" width="188" height="46" rx="23" fill="url(#grad-yellow)"/><rect x="186" y="200" width="184" height="22" rx="11" fill="url(#pill-specular)"/></g>
+          <rect x="140" y="264" width="232" height="46" rx="23" fill="#00E676" fill-opacity="0.2"/>
+          <g filter="url(#ps-dark)"><rect x="140" y="264" width="188" height="46" rx="23" fill="url(#grad-green)"/><rect x="142" y="266" width="184" height="22" rx="11" fill="url(#pill-specular)"/></g>
+          <rect x="184" y="330" width="232" height="46" rx="23" fill="#00B0FF" fill-opacity="0.2"/>
+          <g filter="url(#ps-dark)"><rect x="184" y="330" width="188" height="46" rx="23" fill="url(#grad-sky)"/><rect x="186" y="332" width="184" height="22" rx="11" fill="url(#pill-specular)"/></g>
+        </svg>
+      </div>
+      <div class="var-title">Dark Mode Tile</div>
+      <div class="var-desc">Onyx dark squircle tile for dark mode themes and splash screens.</div>
+      <button class="var-btn" onclick="copySvgCode('svg-var-dark')">Copy SVG</button>
+    </div>
+
+    <!-- Variation 4: Monogram 'F' with 4 Staggered Colors -->
+    <div class="var-card">
+      <div class="var-stage">
+        <svg id="svg-var-monogram" width="140" height="140" viewBox="0 0 512 512" fill="none">
+          <defs>
+            <filter id="s-mono" x="-20%" y="-15%" width="140%" height="145%"><feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000" flood-opacity="0.4"/></filter>
+          </defs>
+          <rect x="46" y="46" width="420" height="420" rx="98" fill="#FFFFFF" filter="url(#s-mono)"/>
+          <!-- Vertical spine -->
+          <rect x="135" y="132" width="44" height="244" rx="22" fill="#7C3AED"/>
+          <rect x="137" y="134" width="40" height="120" rx="20" fill="url(#pill-specular)"/>
+          <!-- Top red bar -->
+          <rect x="135" y="132" width="240" height="44" rx="22" fill="url(#grad-red)"/>
+          <rect x="137" y="134" width="236" height="22" rx="11" fill="url(#pill-specular)"/>
+          <!-- Middle yellow bar -->
+          <rect x="135" y="232" width="180" height="44" rx="22" fill="url(#grad-yellow)"/>
+          <rect x="137" y="234" width="176" height="22" rx="11" fill="url(#pill-specular)"/>
+        </svg>
+      </div>
+      <div class="var-title">Monogram 'F' Hybrid</div>
+      <div class="var-desc">Combines the FileKit 'F' spine with the glossy brand pill crossbars.</div>
+      <button class="var-btn" onclick="copySvgCode('svg-var-monogram')">Copy SVG</button>
+    </div>
+  </div>
+
+  <!-- Scale & Favicon Verification -->
+  <section class="scale-section">
+    <div class="section-title">Optical Scale & Favicon Test <span>Ensuring clarity at 128px, 64px, 48px, 32px, and 16px</span></div>
+    <div class="scale-row">
+      <div class="scale-item">
+        <svg width="128" height="128" viewBox="0 0 512 512" fill="none">
+          <use href="#svg-primary"/>
+        </svg>
+        <span class="scale-label">128px · Dock</span>
+      </div>
+
+      <div class="scale-item">
+        <svg width="64" height="64" viewBox="0 0 512 512" fill="none">
+          <use href="#svg-primary"/>
+        </svg>
+        <span class="scale-label">64px · App Icon</span>
+      </div>
+
+      <div class="scale-item">
+        <svg width="48" height="48" viewBox="0 0 512 512" fill="none">
+          <use href="#svg-primary"/>
+        </svg>
+        <span class="scale-label">48px · Header Logo</span>
+      </div>
+
+      <div class="scale-item">
+        <svg width="32" height="32" viewBox="0 0 512 512" fill="none">
+          <use href="#svg-primary"/>
+        </svg>
+        <span class="scale-label">32px · Topbar</span>
+      </div>
+
+      <div class="scale-item">
+        <div style="background: #2D3748; padding: 10px; border-radius: 8px;">
+          <svg width="18" height="18" viewBox="0 0 512 512" fill="none">
+            <use href="#svg-primary"/>
+          </svg>
+        </div>
+        <span class="scale-label">16px · Favicon</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast">SVG copied to clipboard!</div>
+
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  function copySvgCode(svgId) {
+    const el = document.getElementById(svgId);
+    if (!el) return;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(el);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    navigator.clipboard.writeText(source).then(() => {
+      showToast('✓ SVG markup copied to clipboard!');
+    }).catch(err => {
+      showToast('Press Ctrl+C to copy');
+    });
+  }
+
+  function downloadSvg(svgId, filename) {
+    const el = document.getElementById(svgId);
+    if (!el) return;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(el);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    const blob = new Blob([source], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'filekit-brand-icon.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✓ SVG file downloaded!');
+  }
+</script>
+
+</body>
+</html>

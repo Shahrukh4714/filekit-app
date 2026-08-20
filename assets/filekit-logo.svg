@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <filter id="m5-badge-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.35"/></filter>
+    <linearGradient id="m5-tile-bg" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F1F5F9"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#m5-badge-shadow)">
+    <!-- Squircle Container -->
+    <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#m5-tile-bg)"/>
+    <rect x="4" y="4" width="40" height="40" rx="10" stroke="rgba(0,0,0,0.08)" stroke-width="0.8"/>
+    
+    <!-- Scaled & Perfectly Centered 5-Tile Mark -->
+    <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+    <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+    <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+    <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+    <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+  </g>
+</svg>

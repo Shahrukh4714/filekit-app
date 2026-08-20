@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileKit — Tier-1 Icon Design Explorer & Style Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    
+    /* Core palette */
+    --bg-page: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-subtle: #F1F5F9;
+    --border-subtle: #E2E8F0;
+    --border-strong: #CBD5E1;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    
+    /* Brand & category accents */
+    --brand-purple: #7C3AED;
+    --brand-purple-hover: #6D28D9;
+    --brand-purple-light: #EDE9FE;
+    
+    --pdf-red: #E5252A;
+    --pdf-red-light: #FEE2E2;
+    --img-orange: #EA580C;
+    --img-orange-light: #FFEDD5;
+    --doc-blue: #2563EB;
+    --doc-blue-light: #DBEAFE;
+    --sheet-green: #059669;
+    --sheet-green-light: #D1FAE5;
+    --vid-purple: #7C3AED;
+    --vid-purple-light: #EDE9FE;
+    --aud-pink: #E11D48;
+    --aud-pink-light: #FFE4E6;
+    --dev-teal: #0891B2;
+    --dev-teal-light: #CFFAFE;
+    --sec-emerald: #0F766E;
+    --sec-emerald-light: #CCFBF1;
+    --arc-amber: #D97706;
+    --arc-amber-light: #FEF3C7;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    
+    --radius-outer: 16px;
+    --radius-inner: 10px;
+  }
+
+  [data-theme="dark"] {
+    --bg-page: #0B0F19;
+    --bg-surface: #131B2E;
+    --bg-subtle: #1E293B;
+    --border-subtle: #243048;
+    --border-strong: #334155;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 20px -3px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding-bottom: 120px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Header Bar */
+  .top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(248, 250, 252, 0.85);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  [data-theme="dark"] .top-nav {
+    background: rgba(11, 15, 25, 0.88);
+  }
+
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+  }
+  .brand-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pill-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--brand-purple-light);
+    color: var(--brand-purple);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  [data-theme="dark"] .pill-tag {
+    background: rgba(124, 58, 237, 0.25);
+    color: #C4B5FD;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+  .btn:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn-primary {
+    background: var(--brand-purple);
+    color: #FFFFFF;
+    border-color: var(--brand-purple);
+  }
+  .btn-primary:hover {
+    background: var(--brand-purple-hover);
+    border-color: var(--brand-purple-hover);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  }
+
+  /* Main Container */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    max-width: 860px;
+    margin: 20px auto 44px;
+  }
+  .hero h1 {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--brand-purple) 0%, #EC4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  /* Filter & Controls Bar */
+  .control-bar {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 36px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .segmented-group {
+    display: inline-flex;
+    background: var(--bg-subtle);
+    padding: 4px;
+    border-radius: 10px;
+    gap: 2px;
+  }
+  .seg-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .seg-btn:hover {
+    color: var(--text-primary);
+  }
+  .seg-btn.active {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .filter-pill {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .filter-pill:hover, .filter-pill.active {
+    background: var(--text-primary);
+    color: var(--bg-surface);
+    border-color: var(--text-primary);
+  }
+
+  /* Style Overview Grid */
+  .styles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 28px;
+    margin-bottom: 60px;
+  }
+
+  .style-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-outer);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .style-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .style-card.selected-style {
+    border-color: var(--brand-purple);
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25), var(--shadow-lg);
+  }
+
+  .style-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .style-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .style-title-wrap {
+    flex: 1;
+  }
+  .style-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .style-sub {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .style-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .trait-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+  }
+
+  /* Matrix Showcase Box */
+  .icon-matrix-box {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-inner);
+    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  
+  .matrix-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+  }
+  .matrix-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  [data-theme="dark"] .matrix-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .matrix-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 58px;
+  }
+
+  /* Real UI Component Live Preview Inside Cards */
+  .component-strip {
+    border-top: 1px dashed var(--border-subtle);
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .component-strip-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  
+  /* Mock Card */
+  .mock-tool-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .mock-card-copy {
+    flex: 1;
+    min-width: 0;
+  }
+  .mock-card-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .mock-card-desc {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mock-pill {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brand-purple);
+    background: var(--brand-purple-light);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  [data-theme="dark"] .mock-pill {
+    background: rgba(124, 58, 237, 0.2);
+    color: #C4B5FD;
+  }
+
+  /* Section Dividers */
+  .section-head {
+    margin: 50px 0 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--border-subtle);
+    padding-bottom: 12px;
+  }
+  .section-head h2 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .section-head p {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+  }
+
+  /* Deep Dive Comparison Matrix */
+  .comparison-table-wrap {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-outer);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 50px;
+  }
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  .comp-table th {
+    background: var(--bg-subtle);
+    padding: 14px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .comp-table td {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+  }
+  .comp-table tr:last-child td {
+    border-bottom: none;
+  }
+  .comp-table tr:hover td {
+    background: rgba(0, 0, 0, 0.015);
+  }
+  [data-theme="dark"] .comp-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .tool-row-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .tool-row-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .tool-row-cat {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Selection Drawer / Footer Action */
+  .selection-dock {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #FFFFFF;
+    padding: 12px 24px;
+    border-radius: 999px;
+    box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 1000;
+    max-width: 92%;
+  }
+  .dock-text {
+    font-size: 13.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dock-text b {
+    color: #C4B5FD;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .styles-grid { grid-template-columns: 1fr; }
+    .icon-matrix-box { grid-template-columns: repeat(4, 1fr); }
+    .comp-table { display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<!-- Top Navigation -->
+<header class="top-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand-badge">
+      <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+        <rect x="16.5" y="7" width="15" height="15" rx="4" fill="#FF4D4D"/>
+        <rect x="26" y="16.5" width="15" height="15" rx="4" fill="#FFC700"/>
+        <rect x="16.5" y="26" width="15" height="15" rx="4" fill="#00E676"/>
+        <rect x="7" y="16.5" width="15" height="15" rx="4" fill="#00B0FF"/>
+        <rect x="20" y="20" width="8" height="8" rx="2.5" fill="#7C3AED"/>
+      </svg>
+      <div class="brand-title">FileKit <span class="pill-tag">Design Studio</span></div>
+    </a>
+    
+    <div class="nav-actions">
+      <button class="btn" id="theme-toggle" type="button" title="Toggle Light/Dark Theme">
+        <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
+      </button>
+      <a href="index.html" class="btn btn-primary">← Back to App</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Hero Header -->
+  <section class="hero">
+    <span class="pill-tag" style="margin-bottom: 12px; display: inline-block;">Visual Language Exploration</span>
+    <h1>Tier-1 Icon Systems for <span>FileKit</span></h1>
+    <p>Compare six distinct visual archetypes designed specifically for fast, client-side file tools. Inspect how each design language renders across tool cards, sidebar rails, search palettes, and tool execution stages.</p>
+  </section>
+
+  <!-- Interactive Controls Bar -->
+  <div class="control-bar">
+    <div class="control-group">
+      <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-right:8px;">Render Size:</span>
+      <div class="segmented-group" id="size-switcher">
+        <button class="seg-btn" data-size="16">16px <small>(Small)</small></button>
+        <button class="seg-btn" data-size="20">20px <small>(Menu)</small></button>
+        <button class="seg-btn active" data-size="24">24px <small>(Standard)</small></button>
+        <button class="seg-btn" data-size="32">32px <small>(Card)</small></button>
+        <button class="seg-btn" data-size="44">44px <small>(Hero)</small></button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-right:8px;">Category Filter:</span>
+      <div class="filter-pills" id="category-filter">
+        <button class="filter-pill active" data-cat="all">All Tools (24)</button>
+        <button class="filter-pill" data-cat="pdf">PDF (6)</button>
+        <button class="filter-pill" data-cat="images">Images (5)</button>
+        <button class="filter-pill" data-cat="media">Media & Audio (5)</button>
+        <button class="filter-pill" data-cat="docs">Docs & Data (4)</button>
+        <button class="filter-pill" data-cat="sec">Security & Dev (4)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 Major Design Archetypes Grid -->
+  <div class="styles-grid" id="styles-grid">
+    
+    <!-- Archetype 1 -->
+    <div class="style-card" id="card-arch-1">
+      <div class="style-header">
+        <div class="style-num">1</div>
+        <div class="style-title-wrap">
+          <div class="style-title">
+            Linear Micro-Vector
+            <span class="pill-tag" style="background:#F1F5F9; color:#0F172A;">Ultra Clean</span>
+          </div>
+          <div class="style-sub">Precise 1.75px geometric line geometry, optical joint alignment, and monochromatic discipline with category-hued active states.</div>
+          <div class="style-traits">
+            <span class="trait-badge">Raycast / Linear Vibe</span>
+            <span class="trait-badge">Zero Visual Clutter</span>
+            <span class="trait-badge">currentColor SVG</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-matrix-box" id="matrix-arch-1"></div>
+
+      <div class="component-strip">
+        <div class="component-strip-title">Live Tool Card Rendering</div>
+        <div class="mock-tool-card">
+          <div id="mock-icon-1"></div>
+          <div class="mock-card-copy">
+            <div class="mock-card-name">Merge PDF Documents</div>
+            <div class="mock-card-desc">Combine multiple PDFs in custom page order</div>
+          </div>
+          <div class="mock-pill">100% Local</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary select-archetype-btn" data-arch="1" style="width:100%; justify-content:center;">
+        Select Archetype 1 (Linear Vector)
+      </button>
+    </div>
+
+    <!-- Archetype 2 -->
+    <div class="style-card selected-style" id="card-arch-2">
+      <div class="style-header">
+        <div class="style-num" style="background:var(--brand-purple); color:#fff;">2</div>
+        <div class="style-title-wrap">
+          <div class="style-title">
+            Squircle Duotone Badges
+            <span class="pill-tag">Recommended · Tier 1</span>
+          </div>
+          <div class="style-sub">Continuous-curve iOS/macOS squircle background with soft 10% category tint, crisp colored silhouette, and secondary layered geometry.</div>
+          <div class="style-traits">
+            <span class="trait-badge">Apple HIG Aesthetic</span>
+            <span class="trait-badge">High Scannability</span>
+            <span class="trait-badge">Concentric Corners</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-matrix-box" id="matrix-arch-2"></div>
+
+      <div class="component-strip">
+        <div class="component-strip-title">Live Tool Card Rendering</div>
+        <div class="mock-tool-card">
+          <div id="mock-icon-2"></div>
+          <div class="mock-card-copy">
+            <div class="mock-card-name">Compress PDF</div>
+            <div class="mock-card-desc">Reduce file size up to 80% on-device</div>
+          </div>
+          <div class="mock-pill">100% Local</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary select-archetype-btn" data-arch="2" style="width:100%; justify-content:center;">
+        ✓ Selected Archetype 2 (Squircle Duotone)
+      </button>
+    </div>
+
+    <!-- Archetype 3 -->
+    <div class="style-card" id="card-arch-3">
+      <div class="style-header">
+        <div class="style-num">3</div>
+        <div class="style-title-wrap">
+          <div class="style-title">
+            Tactile Sheet-Action
+            <span class="pill-tag" style="background:#FEF3C7; color:#B45309;">High Affordance</span>
+          </div>
+          <div class="style-sub">Physical paper / document geometry with folded dog-ears, overlapping sheets, and integrated action markers (scissors, locks, lightning).</div>
+          <div class="style-traits">
+            <span class="trait-badge">Smallpdf / Figma Style</span>
+            <span class="trait-badge">Playful Craft</span>
+            <span class="trait-badge">Physical Metaphor</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-matrix-box" id="matrix-arch-3"></div>
+
+      <div class="component-strip">
+        <div class="component-strip-title">Live Tool Card Rendering</div>
+        <div class="mock-tool-card">
+          <div id="mock-icon-3"></div>
+          <div class="mock-card-copy">
+            <div class="mock-card-name">Sign & Fill PDF</div>
+            <div class="mock-card-desc">Draw signature, add initial seals & text</div>
+          </div>
+          <div class="mock-pill">100% Local</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary select-archetype-btn" data-arch="3" style="width:100%; justify-content:center;">
+        Select Archetype 3 (Sheet-Action)
+      </button>
+    </div>
+
+    <!-- Archetype 4 -->
+    <div class="style-card" id="card-arch-4">
+      <div class="style-header">
+        <div class="style-num">4</div>
+        <div class="style-title-wrap">
+          <div class="style-title">
+            Prismatic Micro-Gradient
+            <span class="pill-tag" style="background:#FCE7F3; color:#BE185D;">Vibrant SaaS</span>
+          </div>
+          <div class="style-sub">Multi-stop jewel gradients on squircle tiles, featuring pure white vector silhouettes with 1px frosted inner stroke borders.</div>
+          <div class="style-traits">
+            <span class="trait-badge">Stripe / Craft Style</span>
+            <span class="trait-badge">Rich Contrast</span>
+            <span class="trait-badge">Modern Glow</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-matrix-box" id="matrix-arch-4"></div>
+
+      <div class="component-strip">
+        <div class="component-strip-title">Live Tool Card Rendering</div>
+        <div class="mock-tool-card">
+          <div id="mock-icon-4"></div>
+          <div class="mock-card-copy">
+            <div class="mock-card-name">Convert Images</div>
+            <div class="mock-card-desc">Batch WebP, PNG, JPG, SVG conversion</div>
+          </div>
+          <div class="mock-pill">100% Local</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary select-archetype-btn" data-arch="4" style="width:100%; justify-content:center;">
+        Select Archetype 4 (Prismatic Gradient)
+      </button>
+    </div>
+
+    <!-- Archetype 5 -->
+    <div class="style-card" id="card-arch-5">
+      <div class="style-header">
+        <div class="style-num">5</div>
+        <div class="style-title-wrap">
+          <div class="style-title">
+            Monochrome Ink & Jewel Dot
+            <span class="pill-tag" style="background:#E0E7FF; color:#4338CA;">Editorial</span>
+          </div>
+          <div class="style-sub">Minimalist black/slate vector glyphs with razor line weights, accented by an optical 4px category jewel indicator dot.</div>
+          <div class="style-traits">
+            <span class="trait-badge">Notion / Vercel Vibe</span>
+            <span class="trait-badge">Timeless Editorial</span>
+            <span class="trait-badge">Lightweight</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-matrix-box" id="matrix-arch-5"></div>
+
+      <div class="component-strip">
+        <div class="component-strip-title">Live Tool Card Rendering</div>
+        <div class="mock-tool-card">
+          <div id="mock-icon-5"></div>
+          <div class="mock-card-copy">
+            <div class="mock-card-name">Trim & Cut Audio</div>
+            <div class="mock-card-desc">Lossless millisecond waveform trimming</div>
+          </div>
+          <div class="mock-pill">100% Local</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary select-archetype-btn" data-arch="5" style="width:100%; justify-content:center;">
+        Select Archetype 5 (Ink & Dot)
+      </button>
+    </div>
+
+    <!-- Archetype 6 -->
+    <div class="style-card" id="card-arch-6">
+      <div class="style-header">
+        <div class="style-num">6</div>
+        <div class="style-title-wrap">
+          <div class="style-title">
+            Glass Specular Depth
+            <span class="pill-tag" style="background:#CFFAFE; color:#0E7490;">Spatial / VisionOS</span>
+          </div>
+          <div class="style-sub">Translucent frosted glass backing with top-rim specular highlights, multi-layer depth shadows, and radiant category core glow.</div>
+          <div class="style-traits">
+            <span class="trait-badge">VisionOS / Fluent</span>
+            <span class="trait-badge">Tactile Depth</span>
+            <span class="trait-badge">Premium Glass</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="icon-matrix-box" id="matrix-arch-6"></div>
+
+      <div class="component-strip">
+        <div class="component-strip-title">Live Tool Card Rendering</div>
+        <div class="mock-tool-card">
+          <div id="mock-icon-6"></div>
+          <div class="mock-card-copy">
+            <div class="mock-card-name">Extract Video Audio</div>
+            <div class="mock-card-desc">Rip MP3/WAV soundtrack from MP4 files</div>
+          </div>
+          <div class="mock-pill">100% Local</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary select-archetype-btn" data-arch="6" style="width:100%; justify-content:center;">
+        Select Archetype 6 (Glass Depth)
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Detailed Side-by-Side Tool Action Matrix -->
+  <div class="section-head">
+    <div>
+      <h2>Head-to-Head Action Glyph Matrix</h2>
+      <p>Compare the same key file tools rendered across all 6 archetypes at native scale.</p>
+    </div>
+  </div>
+
+  <div class="comparison-table-wrap">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th style="width: 220px;">Tool Action</th>
+          <th>1. Linear Vector</th>
+          <th>2. Squircle Duotone</th>
+          <th>3. Sheet-Action</th>
+          <th>4. Prismatic</th>
+          <th>5. Ink & Jewel</th>
+          <th>6. Glass Depth</th>
+        </tr>
+      </thead>
+      <tbody id="comparison-tbody">
+        <!-- Injected via JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Bottom Floating Selection Dock -->
+<div class="selection-dock">
+  <div class="dock-text">
+    <span>Active Selection:</span>
+    <b id="dock-active-title">Archetype 2: Squircle Duotone Badges</b>
+  </div>
+  <button class="btn btn-primary" id="confirm-selection-btn" style="border-radius: 999px; padding: 8px 18px;">
+    Apply to FileKit UI →
+  </button>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // State
+  let currentSize = 24;
+  let currentCat = 'all';
+  let selectedArch = '2';
+
+  // Tool Definitions with specialized semantic action data
+  const TOOLS = [
+    // PDF Category
+    { id: 'pdf-merge', name: 'Merge PDF', cat: 'pdf', color: '#E5252A', bg: '#FEE2E2', glyph: 'merge', desc: 'Combine multiple PDF files' },
+    { id: 'pdf-split', name: 'Split PDF', cat: 'pdf', color: '#E5252A', bg: '#FEE2E2', glyph: 'split', desc: 'Separate pages or extract ranges' },
+    { id: 'pdf-compress', name: 'Compress PDF', cat: 'pdf', color: '#E5252A', bg: '#FEE2E2', glyph: 'compress', desc: 'Reduce file size locally' },
+    { id: 'pdf-sign', name: 'Sign PDF', cat: 'pdf', color: '#E5252A', bg: '#FEE2E2', glyph: 'sign', desc: 'Digital signature & seal' },
+    { id: 'pdf-ocr', name: 'PDF OCR', cat: 'pdf', color: '#E5252A', bg: '#FEE2E2', glyph: 'ocr', desc: 'Recognize text with Tesseract' },
+    { id: 'pdf-protect', name: 'Protect PDF', cat: 'pdf', color: '#E5252A', bg: '#FEE2E2', glyph: 'lock', desc: 'Password encrypt or remove' },
+    
+    // Images Category
+    { id: 'image-convert', name: 'Convert Image', cat: 'images', color: '#EA580C', bg: '#FFEDD5', glyph: 'convert', desc: 'WebP, PNG, JPG, AVIF' },
+    { id: 'image-crop', name: 'Crop Image', cat: 'images', color: '#EA580C', bg: '#FFEDD5', glyph: 'crop', desc: 'Aspect ratio & custom crop' },
+    { id: 'image-resize', name: 'Resize Image', cat: 'images', color: '#EA580C', bg: '#FFEDD5', glyph: 'resize', desc: 'Scale dimensions & DPI' },
+    { id: 'image-palette', name: 'Extract Palette', cat: 'images', color: '#EA580C', bg: '#FFEDD5', glyph: 'palette', desc: 'Dominant colors & HEX' },
+    { id: 'image-watermark', name: 'Watermark', cat: 'images', color: '#EA580C', bg: '#FFEDD5', glyph: 'stamp', desc: 'Add logo or text overlay' },
+
+    // Media & Audio Category
+    { id: 'video-trim', name: 'Trim Video', cat: 'media', color: '#7C3AED', bg: '#EDE9FE', glyph: 'scissors', desc: 'Cut start & end markers' },
+    { id: 'video-compress', name: 'Compress Video', cat: 'media', color: '#7C3AED', bg: '#EDE9FE', glyph: 'vidcompress', desc: 'H.264 / WebM optimization' },
+    { id: 'video-extract-audio', name: 'Extract Audio', cat: 'media', color: '#7C3AED', bg: '#EDE9FE', glyph: 'music', desc: 'Rip MP3 / WAV track' },
+    { id: 'audio-trim', name: 'Trim Audio', cat: 'media', color: '#E11D48', bg: '#FFE4E6', glyph: 'waveform', desc: 'Cut sound waveform' },
+    { id: 'audio-normalize', name: 'Normalize Audio', cat: 'media', color: '#E11D48', bg: '#FFE4E6', glyph: 'sliders', desc: 'EBU R128 loudness match' },
+
+    // Documents & Spreadsheets
+    { id: 'docx-to-pdf', name: 'DOCX to PDF', cat: 'docs', color: '#2563EB', bg: '#DBEAFE', glyph: 'docpdf', desc: 'Word document converter' },
+    { id: 'xlsx-to-csv', name: 'Excel to CSV', cat: 'docs', color: '#059669', bg: '#D1FAE5', glyph: 'table', desc: 'Spreadsheet extractor' },
+    { id: 'doc-word-count', name: 'Word Count', cat: 'docs', color: '#2563EB', bg: '#DBEAFE', glyph: 'type', desc: 'Reading time & metrics' },
+    { id: 'doc-find-replace', name: 'Find & Replace', cat: 'docs', color: '#2563EB', bg: '#DBEAFE', glyph: 'searchreplace', desc: 'Batch text substitution' },
+
+    // Security & Dev
+    { id: 'password-gen', name: 'Password Gen', cat: 'sec', color: '#0F766E', bg: '#CCFBF1', glyph: 'key', desc: 'Cryptographic generator' },
+    { id: 'qr-generate', name: 'QR Generator', cat: 'sec', color: '#0891B2', bg: '#CFFAFE', glyph: 'qrcode', desc: 'Custom vector QR codes' },
+    { id: 'json-format', name: 'JSON Formatter', cat: 'sec', color: '#0891B2', bg: '#CFFAFE', glyph: 'code', desc: 'Prettify, minify & validate' },
+    { id: 'zip-extract', name: 'Extract ZIP', cat: 'sec', color: '#D97706', bg: '#FEF3C7', glyph: 'archive', desc: 'Unpack files offline' }
+  ];
+
+  // Core Vector Glyphs mapped to 24x24 canvas
+  const GLYPH_PATHS = {
+    merge: '<path d="M4 14h6v6M20 10h-6V4"/><path d="M14 10l7-7M3 21l7-7" stroke-linecap="round" stroke-linejoin="round"/>',
+    split: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12" stroke-linecap="round"/>',
+    compress: '<path d="M4 14h6v6M20 10h-6V4"/><path d="m14 10 7-7M3 21l7-7" stroke-linecap="round"/>',
+    sign: '<path d="M3 17c3 0 4-3 6-7s2-6 4-6 2 2 1 4-3 4-7 5M3 21h18" stroke-linecap="round"/>',
+    ocr: '<path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M7 21H5a2 2 0 0 1-2-2v-2M17 21h2a2 2 0 0 0 2-2v-2" stroke-linecap="round"/><path d="M9 10h6M12 10v7" stroke-linecap="round"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    convert: '<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke-linecap="round" stroke-linejoin="round"/>',
+    crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" stroke-linecap="round"/>',
+    resize: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10" stroke-linecap="round"/><line x1="3" y1="21" x2="10" y2="14" stroke-linecap="round"/>',
+    palette: '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.5" fill="currentColor"/><circle cx="13" cy="7.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="11.5" r="1.5" fill="currentColor"/>',
+    stamp: '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" stroke-linecap="round"/>',
+    scissors: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88" stroke-linecap="round"/><line x1="14.47" y1="14.48" x2="20" y2="20" stroke-linecap="round"/>',
+    vidcompress: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="m10 9 5 3-5 3z" fill="currentColor"/>',
+    music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    waveform: '<path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 10v4M22 12h0" stroke-linecap="round"/>',
+    sliders: '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+    docpdf: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M12 12v6" stroke-linecap="round"/>',
+    table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+    type: '<path d="M4 7V4h16v3M9 20h6M12 4v16" stroke-linecap="round"/>',
+    searchreplace: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke-linecap="round"/><path d="M8 11h6" stroke-linecap="round"/>',
+    key: '<path d="M21 2l-2 2m-1.5 1.5L14 9l-3-3-9 9a4.24 4.24 0 0 0 6 6l9-9 3.5-3.5" stroke-linecap="round"/>',
+    qrcode: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="3" height="3" fill="currentColor"/><rect x="18" y="18" width="3" height="3" fill="currentColor"/>',
+    code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    archive: '<path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-linecap="round"/>'
+  };
+
+  // Render Functions for each Archetype
+  const ICON_RENDERERS = {
+    // 1. Linear Micro-Vector
+    1: (t, size) => {
+      const p = GLYPH_PATHS[t.glyph] || GLYPH_PATHS.merge;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${t.color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    },
+
+    // 2. Squircle Duotone (Recommended)
+    2: (t, size) => {
+      const p = GLYPH_PATHS[t.glyph] || GLYPH_PATHS.merge;
+      const rx = Math.round(size * 0.28);
+      return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none">
+        <rect x="1" y="1" width="30" height="30" rx="${rx}" fill="${t.color}" fill-opacity="0.12" stroke="${t.color}" stroke-opacity="0.25" stroke-width="1"/>
+        <g transform="translate(4, 4)" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${p}
+        </g>
+      </svg>`;
+    },
+
+    // 3. Tactile Sheet-Action
+    3: (t, size) => {
+      const p = GLYPH_PATHS[t.glyph] || GLYPH_PATHS.merge;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none">
+        <path d="M7 4h12l7 7v17H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#FFFFFF" stroke="${t.color}" stroke-width="1.8"/>
+        <path d="M19 4v7h7" fill="${t.color}" fill-opacity="0.2" stroke="${t.color}" stroke-width="1.8" stroke-linejoin="round"/>
+        <g transform="translate(5, 7) scale(0.85)" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${p}
+        </g>
+      </svg>`;
+    },
+
+    // 4. Prismatic Micro-Gradient
+    4: (t, size) => {
+      const p = GLYPH_PATHS[t.glyph] || GLYPH_PATHS.merge;
+      const gradId = `g4-${t.id}-${size}`;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none">
+        <defs>
+          <linearGradient id="${gradId}" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+            <stop stop-color="${t.color}"/>
+            <stop offset="1" stop-color="${adjustBrightness(t.color, -25)}"/>
+          </linearGradient>
+        </defs>
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8.5" fill="url(#${gradId})" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <g transform="translate(4, 4)" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${p}
+        </g>
+      </svg>`;
+    },
+
+    // 5. Monochrome Ink & Jewel Dot
+    5: (t, size) => {
+      const p = GLYPH_PATHS[t.glyph] || GLYPH_PATHS.merge;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none">
+        <g transform="translate(4, 4)" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          ${p}
+        </g>
+        <circle cx="26" cy="6" r="3" fill="${t.color}" stroke="#FFFFFF" stroke-width="1.2"/>
+      </svg>`;
+    },
+
+    // 6. Glass Specular Depth
+    6: (t, size) => {
+      const p = GLYPH_PATHS[t.glyph] || GLYPH_PATHS.merge;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none">
+        <defs>
+          <radialGradient id="rg6-${t.id}" cx="50%" cy="30%" r="70%">
+            <stop stop-color="${t.color}" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="${t.color}" stop-opacity="0.08"/>
+          </radialGradient>
+        </defs>
+        <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#rg6-${t.id})" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <path d="M3 9c2-3 7-5 13-5s11 2 13 5" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+        <g transform="translate(4, 4)" stroke="${t.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${p}
+        </g>
+      </svg>`;
+    }
+  };
+
+  function adjustBrightness(hex, percent) {
+    let num = parseInt(hex.replace('#',''), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        G = (num >> 8 & 0x00FF) + amt,
+        B = (num & 0x0000FF) + amt;
+    return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+  }
+
+  // Populate Matrix Boxes
+  function renderMatrices() {
+    const filteredTools = TOOLS.filter(t => currentCat === 'all' || t.cat === currentCat);
+    
+    for (let arch = 1; arch <= 6; arch++) {
+      const box = document.getElementById(`matrix-arch-${arch}`);
+      if (!box) continue;
+      box.innerHTML = '';
+      
+      filteredTools.slice(0, 12).forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'matrix-item';
+        item.title = `${t.name} (${t.desc})`;
+        item.innerHTML = `
+          ${ICON_RENDERERS[arch](t, currentSize)}
+          <span class="matrix-label">${t.name}</span>
+        `;
+        box.appendChild(item);
+      });
+
+      // Update mock card
+      const mockIcon = document.getElementById(`mock-icon-${arch}`);
+      if (mockIcon) {
+        const sampleTool = arch === 1 ? TOOLS[0] : arch === 2 ? TOOLS[2] : arch === 3 ? TOOLS[3] : arch === 4 ? TOOLS[6] : arch === 5 ? TOOLS[14] : TOOLS[13];
+        mockIcon.innerHTML = ICON_RENDERERS[arch](sampleTool, 36);
+      }
+    }
+  }
+
+  // Render Detailed Comparison Table
+  function renderComparisonTable() {
+    const tbody = document.getElementById('comparison-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const showcaseTools = [
+      TOOLS[0], // PDF Merge
+      TOOLS[2], // PDF Compress
+      TOOLS[3], // Sign PDF
+      TOOLS[6], // Convert Image
+      TOOLS[7], // Crop Image
+      TOOLS[11], // Trim Video
+      TOOLS[14], // Trim Audio
+      TOOLS[16], // DOCX to PDF
+      TOOLS[17], // Excel to CSV
+      TOOLS[20], // Password Gen
+      TOOLS[21], // QR Code
+      TOOLS[23], // ZIP Extract
+    ];
+
+    showcaseTools.forEach(t => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="tool-row-header">
+            <span class="tool-row-title">${t.name}</span>
+            <span class="tool-row-cat">${t.cat.toUpperCase()} · ${t.desc}</span>
+          </div>
+        </td>
+        <td>${ICON_RENDERERS[1](t, 26)}</td>
+        <td>${ICON_RENDERERS[2](t, 28)}</td>
+        <td>${ICON_RENDERERS[3](t, 28)}</td>
+        <td>${ICON_RENDERERS[4](t, 28)}</td>
+        <td>${ICON_RENDERERS[5](t, 26)}</td>
+        <td>${ICON_RENDERERS[6](t, 28)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Event Listeners
+  document.querySelectorAll('#size-switcher .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#size-switcher .seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSize = parseInt(btn.dataset.size, 10);
+      renderMatrices();
+    });
+  });
+
+  document.querySelectorAll('#category-filter .filter-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#category-filter .filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat = btn.dataset.cat;
+      renderMatrices();
+    });
+  });
+
+  // Archetype Selection
+  const ARCHETYPE_NAMES = {
+    '1': 'Archetype 1: Linear Micro-Vector',
+    '2': 'Archetype 2: Squircle Duotone Badges (Recommended)',
+    '3': 'Archetype 3: Tactile Sheet-Action',
+    '4': 'Archetype 4: Prismatic Micro-Gradient',
+    '5': 'Archetype 5: Monochrome Ink & Jewel Dot',
+    '6': 'Archetype 6: Glass Specular Depth'
+  };
+
+  function selectArchetype(archNum) {
+    selectedArch = String(archNum);
+    document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected-style'));
+    document.getElementById(`card-arch-${archNum}`)?.classList.add('selected-style');
+    
+    document.querySelectorAll('.select-archetype-btn').forEach(b => {
+      const bArch = b.dataset.arch;
+      if (bArch === selectedArch) {
+        b.textContent = `✓ Selected ${ARCHETYPE_NAMES[bArch].split(':')[1].trim()}`;
+        b.classList.add('btn-primary');
+      } else {
+        b.textContent = `Select Archetype ${bArch}`;
+        b.classList.remove('btn-primary');
+      }
+    });
+
+    const dockTitle = document.getElementById('dock-active-title');
+    if (dockTitle) dockTitle.textContent = ARCHETYPE_NAMES[selectedArch];
+  }
+
+  document.querySelectorAll('.select-archetype-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectArchetype(btn.dataset.arch));
+  });
+
+  document.getElementById('confirm-selection-btn')?.addEventListener('click', () => {
+    alert(`Great choice! Selected "${ARCHETYPE_NAMES[selectedArch]}".\n\nTell the assistant in the chat: "Apply Archetype ${selectedArch}" to update all tool cards, sidebar rail icons, and command palette in the FileKit app!`);
+  });
+
+  // Theme Toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  themeToggle?.addEventListener('click', () => {
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
+    const nextTheme = isDark ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', nextTheme);
+    document.getElementById('theme-icon').textContent = isDark ? '🌙' : '☀️';
+    document.getElementById('theme-text').textContent = isDark ? 'Dark Mode' : 'Light Mode';
+  });
+
+  // Init
+  renderMatrices();
+  renderComparisonTable();
+  selectArchetype(2);
+
+})();
+</script>
+</body>
+</html>

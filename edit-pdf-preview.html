@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Free Online PDF Editor — Page Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #FAFAFA;
+      color: #1E293B;
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    .page-width {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Top Hero Header */
+    .hero-header {
+      text-align: center;
+      padding: 40px 0 24px;
+    }
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 40px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 8px;
+    }
+
+    /* Themed Dropzone */
+    .dz-mockup {
+      background: #00A896;
+      border-radius: 16px;
+      padding: 48px 24px;
+      text-align: center;
+      color: #FFFFFF;
+      box-shadow: 0 12px 36px rgba(0,168,150,0.22);
+      margin-bottom: 24px;
+    }
+    .dz-icon-wrap {
+      margin-bottom: 16px;
+    }
+    .dz-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #FFFFFF;
+      color: #00A896;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+    }
+    .dz-sub {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Trust Strip */
+    .trust-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 20px 28px;
+      margin-bottom: 60px;
+      gap: 30px;
+    }
+    .trust-desc {
+      flex: 1;
+      font-size: 14px;
+      color: #475569;
+    }
+    .trust-bullets {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #1E293B;
+    }
+    .check-svg {
+      color: #00A896;
+      flex-shrink: 0;
+    }
+
+    /* Section Headings */
+    .section-head {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 48px;
+    }
+    .section-head h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 10px;
+    }
+    .section-head p {
+      color: #64748B;
+      font-size: 15px;
+    }
+
+    /* 3 Story Rows (Alternating Left/Right) */
+    .story-row {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      align-items: center;
+      gap: 50px;
+      margin-bottom: 70px;
+    }
+    .story-row.reverse {
+      grid-template-columns: 1.15fr 1fr;
+    }
+    .story-row.reverse .story-copy {
+      order: 2;
+    }
+    .story-row.reverse .story-visual {
+      order: 1;
+    }
+    .story-copy h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 14px;
+    }
+    .story-copy p {
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.7;
+    }
+    .story-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .story-visual svg {
+      width: 100%;
+      max-width: 480px;
+      height: auto;
+    }
+
+    /* How To Card */
+    .howto-card {
+      background: #EEF4FF;
+      border-radius: 20px;
+      padding: 48px 40px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin-bottom: 70px;
+      border: 1px solid #DBEAFE;
+    }
+    .howto-card h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 24px;
+    }
+    .step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .step-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 14px;
+      background: #2563EB;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-content {
+      font-size: 14.5px;
+      color: #334155;
+    }
+    .mascot-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mascot-visual svg {
+      width: 100%;
+      max-width: 380px;
+      height: auto;
+    }
+
+    /* 6-Item Benefit Grid */
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px 40px;
+      margin-bottom: 80px;
+    }
+    .benefit-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .b-icon-wrap {
+      flex-shrink: 0;
+    }
+    .b-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 6px;
+    }
+    .b-desc {
+      font-size: 14px;
+      color: #64748B;
+      line-height: 1.6;
+    }
+
+    /* FAQs */
+    .faq-list {
+      max-width: 860px;
+      margin: 0 auto 70px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .faq-item {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .faq-q {
+      width: 100%;
+      padding: 18px 24px;
+      text-align: left;
+      background: none;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .faq-a {
+      padding: 0 24px 20px;
+      font-size: 14.5px;
+      color: #475569;
+      line-height: 1.7;
+    }
+    .faq-item:not(.active) .faq-a {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-width">
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <h1 class="hero-title">Free Online PDF Editor</h1>
+    </div>
+
+    <!-- Dropzone Mockup -->
+    <div class="dz-mockup">
+      <div class="dz-icon-wrap">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <button class="dz-btn">
+        <span>Choose Files</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="dz-sub">or drop PDF here</p>
+    </div>
+
+    <!-- Trust Strip -->
+    <div class="trust-strip">
+      <p class="trust-desc">FileKit is the first and only in-browser PDF editor you'll love. Edit PDF documents online with powerful text, shape, annotation, and form tools.</p>
+      <div class="trust-bullets">
+        <div class="trust-item">
+          <svg class="check-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Edit PDF by adding text, shapes, comments and highlights</span>
+        </div>
+        <div class="trust-item">
+          <svg class="check-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>100% free to use</span>
+        </div>
+        <div class="trust-item">
+          <svg class="check-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>No registration or installation required</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Edit Your PDFs The Easy Way -->
+    <div class="section-head">
+      <h2>Edit Your PDFs The Easy Way</h2>
+      <p>A simplified PDF editing solution with all the tools you need to personalize your documents without leaving your browser.</p>
+    </div>
+
+    <!-- Story 1: Fast and Powerful PDF Editing -->
+    <div class="story-row">
+      <div class="story-copy">
+        <h3>Fast and Powerful PDF Editing</h3>
+        <p>Eliminate repetitive tasks with our PDF editor, allowing you to quickly format documents, add signatures, type or draw text, or organize PDF pages without interrupting your workflow.</p>
+      </div>
+      <div class="story-visual">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
+  <defs>
+    <linearGradient id="s1-screen-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <filter id="s1-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#00A896" flood-opacity="0.12"/>
+    </filter>
+    <filter id="bulb-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#F59E0B" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Tilted Pastel Backplate (Soft Mint / Ice Blue) -->
+  <rect x="95" y="45" width="340" height="280" rx="28" transform="rotate(-7 265 185)" fill="#ECFDF5" opacity="0.95"/>
+  <rect x="75" y="65" width="280" height="240" rx="24" transform="rotate(6 215 185)" fill="#F0FDF4" opacity="0.6"/>
+
+  <!-- Ambient Grounding Shadow -->
+  <ellipse cx="255" cy="348" rx="140" ry="16" fill="#0D9488" opacity="0.12"/>
+
+  <!-- Monitor Stand Base & Stem -->
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+
+  <!-- Desktop Monitor Body -->
+  <g filter="url(#s1-glow)">
+    <!-- Outer Bezel -->
+    <rect x="110" y="75" width="290" height="205" rx="14" fill="#00A896" stroke="#008F80" stroke-width="2"/>
+    <!-- Bottom Chin Bar -->
+    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#008F80"/>
+    <circle cx="255" cy="266" r="3.5" fill="#5EEAD4"/>
+
+    <!-- Main Screen Display -->
+    <rect x="122" y="87" width="266" height="165" rx="8" fill="url(#s1-screen-grad)"/>
+
+    <!-- Screen App Top Header -->
+    <rect x="122" y="87" width="266" height="26" rx="8 8 0 0" fill="#FFFFFF"/>
+    <line x1="122" y1="113" x2="388" y2="113" stroke="#E2E8F0" stroke-width="1.5"/>
+    <circle cx="138" cy="100" r="3.5" fill="#EF4444"/>
+    <circle cx="148" cy="100" r="3.5" fill="#F59E0B"/>
+    <circle cx="158" cy="100" r="3.5" fill="#10B981"/>
+    <!-- Search / Title Bar in Screen -->
+    <rect x="180" y="93" width="150" height="14" rx="4" fill="#F1F5F9"/>
+    <rect x="190" y="97" width="60" height="6" rx="2" fill="#94A3B8"/>
+
+    <!-- 6 App Feature Tool Cards on Screen -->
+    <!-- Tool 1: Text Tool (Coral) -->
+    <rect x="138" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="146" y="134" width="20" height="20" rx="4" fill="#FEF2F2"/>
+    <text x="156" y="149" fill="#EF4444" font-family="'Outfit', sans-serif" font-size="13" font-weight="900" text-anchor="middle">T</text>
+    <rect x="172" y="137" width="24" height="4" rx="2" fill="#64748B"/>
+    <rect x="172" y="145" width="16" height="4" rx="2" fill="#94A3B8"/>
+
+    <!-- Tool 2: Draw / Pencil (Teal) -->
+    <rect x="214" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="222" y="134" width="20" height="20" rx="4" fill="#ECFDF5"/>
+    <path d="M 230 148 L 238 138 L 240 140 L 232 150 Z" fill="#00A896"/>
+    <rect x="248" y="137" width="24" height="4" rx="2" fill="#64748B"/>
+    <rect x="248" y="145" width="16" height="4" rx="2" fill="#94A3B8"/>
+
+    <!-- Tool 3: Shapes (Gold) -->
+    <rect x="290" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="298" y="134" width="20" height="20" rx="4" fill="#FFFBEB"/>
+    <rect x="303" y="139" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="324" y="137" width="24" height="4" rx="2" fill="#64748B"/>
+    <rect x="324" y="145" width="16" height="4" rx="2" fill="#94A3B8"/>
+
+    <!-- Tool 4: Image Insert (Blue) -->
+    <rect x="138" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="146" y="186" width="20" height="20" rx="4" fill="#EFF6FF"/>
+    <circle cx="156" cy="196" r="4" fill="#3B82F6"/>
+    <rect x="172" y="189" width="24" height="4" rx="2" fill="#64748B"/>
+    <rect x="172" y="197" width="16" height="4" rx="2" fill="#94A3B8"/>
+
+    <!-- Tool 5: Sign PDF (Purple) -->
+    <rect x="214" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="222" y="186" width="20" height="20" rx="4" fill="#FAF5FF"/>
+    <path d="M 228 198 Q 232 190 236 198 T 241 195" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <rect x="248" y="189" width="24" height="4" rx="2" fill="#64748B"/>
+    <rect x="248" y="197" width="16" height="4" rx="2" fill="#94A3B8"/>
+
+    <!-- Tool 6: Form Fill (Emerald) -->
+    <rect x="290" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="298" y="186" width="20" height="20" rx="4" fill="#ECFDF5"/>
+    <path d="M 303 196 L 306 199 L 313 191" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <rect x="324" y="189" width="24" height="4" rx="2" fill="#64748B"/>
+    <rect x="324" y="197" width="16" height="4" rx="2" fill="#94A3B8"/>
+  </g>
+
+  <!-- Glowing 3D Lightbulb Hovering Top-Right -->
+  <g filter="url(#bulb-glow)" transform="translate(370, 45)">
+    <!-- Bulb Glass -->
+    <path d="M 32 8 C 18 8 8 18 8 32 C 8 42 14 50 20 58 L 22 68 H 42 L 44 58 C 50 50 56 42 56 32 C 56 18 46 8 32 8 Z" fill="#FBBF24"/>
+    <path d="M 32 12 C 22 12 14 20 14 30 C 14 34 16 38 18 42" stroke="#FFFBEB" stroke-width="3" stroke-linecap="round"/>
+    <!-- Filament Heart -->
+    <path d="M 26 34 Q 32 24 38 34" stroke="#D97706" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <line x1="28" y1="34" x2="28" y2="52" stroke="#D97706" stroke-width="2.5"/>
+    <line x1="36" y1="34" x2="36" y2="52" stroke="#D97706" stroke-width="2.5"/>
+    <!-- Screw Base -->
+    <rect x="22" y="68" width="20" height="6" rx="2" fill="#CBD5E1"/>
+    <rect x="24" y="74" width="16" height="5" rx="2" fill="#94A3B8"/>
+    <path d="M 28 79 H 36 L 34 84 H 30 Z" fill="#64748B"/>
+
+    <!-- Yellow Sparkle Rays around Bulb -->
+    <line x1="32" y1="-4" x2="32" y2="4" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="56" y1="8" x2="62" y2="2" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="66" y1="32" x2="74" y2="32" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="58" y1="54" x2="64" y2="60" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="8" y1="8" x2="2" y2="2" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-2" y1="32" x2="-10" y2="32" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Ambient Small Sparkles -->
+  <path d="M 80 130 v8 h8 v3 h-8 v8 h-3 v-8 h-8 v-3 h8 v-8 h3 Z" fill="#00A896" opacity="0.7"/>
+  <circle cx="430" cy="270" r="5" fill="#3B82F6" opacity="0.6"/>
+  <path d="M 120 310 l4 4 l-4 4 l-4 -4 Z" fill="#F59E0B" opacity="0.8"/>
+</svg>
+      </div>
+    </div>
+
+    <!-- Story 2: Document Organization at a Glance (Reversed) -->
+    <div class="story-row reverse">
+      <div class="story-copy">
+        <h3>Document Organization at a Glance</h3>
+        <p>Our integrated tool automatically organizes pages into interactive thumbnails, letting you crop, reorder, rotate, or delete pages easily from one intuitive view.</p>
+      </div>
+      <div class="story-visual">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
+  <defs>
+    <filter id="s2-doc-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#00A896" flood-opacity="0.15"/>
+    </filter>
+    <filter id="s2-bar-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Tilted Pastel Backplate (Soft Cyan / Seafoam) -->
+  <rect x="110" y="50" width="310" height="290" rx="26" transform="rotate(8 265 195)" fill="#E0F2FE" opacity="0.85"/>
+  <rect x="90" y="60" width="300" height="270" rx="24" transform="rotate(-6 240 195)" fill="#F0FDFA" opacity="0.95"/>
+
+  <!-- Ambient Grounding Shadow -->
+  <ellipse cx="255" cy="345" rx="135" ry="15" fill="#0284C7" opacity="0.14"/>
+
+  <!-- Document Sheet Body -->
+  <g filter="url(#s2-doc-shadow)">
+    <path d="M 160 80 H 310 L 350 120 V 320 H 160 Z" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.5"/>
+    <!-- Folded Top-Right Ear -->
+    <path d="M 310 80 V 120 H 350 Z" fill="#E0F2FE"/>
+    <path d="M 310 80 L 350 120" stroke="#7DD3FC" stroke-width="1.5"/>
+
+    <!-- Document Content Lines -->
+    <rect x="185" y="115" width="80" height="8" rx="4" fill="#00A896" opacity="0.8"/>
+    <rect x="185" y="140" width="140" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="185" y="155" width="140" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="185" y="170" width="125" height="5" rx="2.5" fill="#CBD5E1"/>
+
+    <!-- Active Text Edit Box (Dotted Outline with Blue Highlight) -->
+    <rect x="185" y="195" width="145" height="42" rx="4" fill="#F0FDFA" stroke="#00A896" stroke-width="1.8" stroke-dasharray="4 3"/>
+    <rect x="195" y="206" width="75" height="7" rx="3.5" fill="#0F766E"/>
+    <rect x="195" y="220" width="115" height="5" rx="2.5" fill="#5EEAD4"/>
+    <!-- Blinking Typing Cursor -->
+    <line x1="275" y1="204" x2="275" y2="215" stroke="#00A896" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Remaining Document Lines -->
+    <rect x="185" y="255" width="140" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="185" y="270" width="130" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="185" y="285" width="95" height="5" rx="2.5" fill="#CBD5E1"/>
+  </g>
+
+  <!-- Floating Rich Editor Toolbar Pill (Hovering Above Document) -->
+  <g filter="url(#s2-bar-shadow)" transform="translate(100, 115)">
+    <rect x="0" y="0" width="190" height="46" rx="23" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+    
+    <!-- Tool 1: Text T (Active Highlighted) -->
+    <rect x="6" y="5" width="36" height="36" rx="18" fill="#ECFDF5"/>
+    <text x="24" y="28" fill="#00A896" font-family="'Outfit', sans-serif" font-size="16" font-weight="900" text-anchor="middle">T</text>
+
+    <!-- Divider -->
+    <line x1="48" y1="12" x2="48" y2="34" stroke="#E2E8F0" stroke-width="1.5"/>
+
+    <!-- Tool 2: Pencil / Draw -->
+    <g transform="translate(56, 12)">
+      <path d="M 4 18 L 16 6 L 19 9 L 7 21 Z" fill="#F59E0B"/>
+      <polygon points="4,18 2,23 7,21" fill="#1E293B"/>
+    </g>
+
+    <!-- Tool 3: Shapes Rectangle -->
+    <rect x="98" y="14" width="18" height="18" rx="3" fill="#3B82F6" opacity="0.85"/>
+
+    <!-- Tool 4: Highlighting Marker -->
+    <g transform="translate(138, 12)">
+      <rect x="6" y="2" width="8" height="15" rx="2" fill="#A855F7"/>
+      <polygon points="6,17 14,17 10,22" fill="#EAB308"/>
+    </g>
+
+    <!-- Dropdown Chevron -->
+    <path d="M 172 20 L 176 25 L 180 20" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Wooden Pencil Actively Drawing on Page -->
+  <g transform="rotate(-35 340 230)">
+    <!-- Main Pencil Shaft -->
+    <rect x="320" y="140" width="22" height="95" rx="3" fill="#F59E0B"/>
+    <rect x="320" y="140" width="7" height="95" fill="#D97706"/>
+    <rect x="335" y="140" width="7" height="95" fill="#FCD34D"/>
+    <!-- Pencil Eraser & Ferrule -->
+    <rect x="320" y="125" width="22" height="15" rx="2" fill="#F43F5E"/>
+    <rect x="320" y="137" width="22" height="5" fill="#CBD5E1"/>
+    <!-- Wooden Sharpened Cone & Graphite Tip -->
+    <polygon points="320,235 342,235 331,258" fill="#FDE68A"/>
+    <polygon points="327,249 335,249 331,258" fill="#1E293B"/>
+  </g>
+
+  <!-- Sparkles around Pencil Tip -->
+  <path d="M 330 290 v6 h6 v2 h-6 v6 h-2 v-6 h-6 v-2 h6 v-6 h2 Z" fill="#00A896"/>
+  <circle cx="365" cy="275" r="4" fill="#F59E0B"/>
+  <path d="M 130 90 l3 3 l-3 3 l-3 -3 Z" fill="#3B82F6"/>
+</svg>
+      </div>
+    </div>
+
+    <!-- Story 3: Quick to Save, Easy to Share -->
+    <div class="story-row">
+      <div class="story-copy">
+        <h3>Quick to Save, Easy to Share</h3>
+        <p>Exporting and sharing documents with others is effortless. Generate links, export to cloud storage or download directly. Perfect for fast collaboration with clients or teammates.</p>
+      </div>
+      <div class="story-visual">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
+  <defs>
+    <filter id="s3-laptop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#4F46E5" flood-opacity="0.16"/>
+    </filter>
+    <filter id="s3-env-shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#EA580C" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Tilted Pastel Backplate (Soft Lavender / Violet) -->
+  <rect x="95" y="45" width="340" height="280" rx="28" transform="rotate(-6 265 185)" fill="#F5F3FF" opacity="0.95"/>
+  <rect x="80" y="65" width="290" height="240" rx="24" transform="rotate(7 225 185)" fill="#EEF2FF" opacity="0.7"/>
+
+  <!-- Ambient Grounding Shadow -->
+  <ellipse cx="260" cy="350" rx="150" ry="16" fill="#4338CA" opacity="0.12"/>
+
+  <!-- Modern Open Laptop -->
+  <g filter="url(#s3-laptop-shadow)">
+    <!-- Laptop Base / Keyboard Deck -->
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
+    <!-- Laptop Trackpad Notch -->
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+
+    <!-- Laptop Display Lid (Upright) -->
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#1E293B" stroke="#0F172A" stroke-width="2"/>
+    <!-- Screen Glass -->
+    <rect x="145" y="115" width="230" height="150" rx="6" fill="#00A896"/>
+    <!-- Screen Header Bar -->
+    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#008F80"/>
+    <circle cx="158" cy="126" r="3" fill="#5EEAD4"/>
+    <circle cx="168" cy="126" r="3" fill="#5EEAD4" opacity="0.6"/>
+
+    <!-- Document in Screen with Central Download / Export Shield -->
+    <rect x="175" y="148" width="170" height="105" rx="6" fill="#FFFFFF"/>
+    <rect x="190" y="160" width="70" height="6" rx="3" fill="#00A896"/>
+    <rect x="190" y="172" width="140" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="190" y="180" width="120" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="190" y="188" width="90" height="4" rx="2" fill="#E2E8F0"/>
+
+    <!-- Central Download / Cloud Circle Emblem -->
+    <circle cx="260" cy="216" r="18" fill="#00A896"/>
+    <path d="M 260 207 V 222 M 254 216 L 260 222 L 266 216" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Floating Coral Team Speech Bubble (Left Side) -->
+  <g filter="url(#s3-env-shadow)" transform="translate(80, 110)">
+    <rect x="0" y="0" width="76" height="52" rx="14" fill="#FF6B6B"/>
+    <!-- Speech Tail -->
+    <polygon points="24,52 34,52 28,62" fill="#FF6B6B"/>
+    <!-- Team Silhouette Icons -->
+    <circle cx="26" cy="22" r="6" fill="#FFFFFF"/>
+    <path d="M 16 38 C 16 32 20 30 26 30 C 32 30 36 32 36 38 Z" fill="#FFFFFF"/>
+    <circle cx="48" cy="20" r="5" fill="#FFE4E6"/>
+    <path d="M 40 35 C 40 30 43 28 48 28 C 53 28 56 30 56 35 Z" fill="#FFE4E6"/>
+  </g>
+
+  <!-- Floating Golden Mail Envelope with Outgoing Document (Right Side) -->
+  <g filter="url(#s3-env-shadow)" transform="translate(355, 100)">
+    <!-- Flying Document Paper -->
+    <g transform="rotate(12 30 10)">
+      <rect x="15" y="-18" width="46" height="58" rx="4" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <rect x="22" y="-10" width="22" height="4" rx="2" fill="#00A896"/>
+      <rect x="22" y="-2" width="32" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="22" y="4" width="28" height="3" rx="1.5" fill="#CBD5E1"/>
+    </g>
+
+    <!-- Envelope Body -->
+    <rect x="0" y="16" width="84" height="56" rx="8" fill="#FBBF24"/>
+    <!-- Envelope Flap & Folds -->
+    <path d="M 0 18 L 42 46 L 84 18" fill="#F59E0B" opacity="0.6"/>
+    <path d="M 0 72 L 34 42" stroke="#D97706" stroke-width="1.5"/>
+    <path d="M 84 72 L 50 42" stroke="#D97706" stroke-width="1.5"/>
+    <polygon points="0,16 42,48 84,16" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+  </g>
+
+  <!-- Ambient Golden & Blue Sparkles -->
+  <path d="M 460 70 v6 h6 v2 h-6 v6 h-2 v-6 h-6 v-2 h6 v-6 h2 Z" fill="#F59E0B"/>
+  <circle cx="85" cy="220" r="4.5" fill="#00A896"/>
+  <path d="M 440 260 l4 4 l-4 4 l-4 -4 Z" fill="#8B5CF6"/>
+</svg>
+      </div>
+    </div>
+
+    <!-- Section 2: How To Edit a PDF for Free -->
+    <div class="howto-card">
+      <div class="howto-copy">
+        <h2>How To Edit a PDF for Free</h2>
+        <ul class="step-list">
+          <li class="step-item">
+            <span class="step-badge">1</span>
+            <span class="step-content">Drag and drop your document into the PDF Editor.</span>
+          </li>
+          <li class="step-item">
+            <span class="step-badge">2</span>
+            <span class="step-content">Add text, images, shapes, or hand-drawn annotations as needed.</span>
+          </li>
+          <li class="step-item">
+            <span class="step-badge">3</span>
+            <span class="step-content">Edit size, font, and color of added content.</span>
+          </li>
+          <li class="step-item">
+            <span class="step-badge">4</span>
+            <span class="step-content">Download your finalized PDF file or share it with others.</span>
+          </li>
+          <li class="step-item">
+            <span class="step-badge">5</span>
+            <span class="step-content">(Optional) Convert or compress your PDF before saving.</span>
+          </li>
+        </ul>
+      </div>
+      <div class="mascot-visual">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" fill="none" class="fk-seo-mascot-scene">
+  <!-- Ground Contact Shadows -->
+  <ellipse cx="120" cy="255" rx="65" ry="12" fill="#BAE6FD" opacity="0.7"/>
+  <ellipse cx="295" cy="255" rx="45" ry="8" fill="#BAE6FD" opacity="0.7"/>
+
+  <!-- Character Mascot: Folded Sheet of Paper -->
+  <g>
+    <!-- Paper Sheet Body -->
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
+    
+    <!-- Top-Left Folded Ear -->
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+
+    <!-- Left Arm Resting on Ground -->
+    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+
+    <!-- Big Round Spectacles with Turquoise Tint -->
+    <circle cx="106" cy="182" r="19" fill="#CCFBF1" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
+    <circle cx="146" cy="178" r="19" fill="#CCFBF1" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+
+    <!-- Happy Smiling Mouth -->
+    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Right Arm Extending Up Holding Stylus Pen -->
+    <path d="M 160 180 Q 172 172 182 158" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Stylus Touch Pen in Hand -->
+  <g transform="rotate(-20 185 150)">
+    <rect x="180" y="110" width="11" height="46" rx="3" fill="#0F172A"/>
+    <rect x="180" y="132" width="11" height="16" fill="#00A896"/>
+    <polygon points="180,110 191,110 185.5,98" fill="#F59E0B"/>
+  </g>
+
+  <!-- Golden Magic Sparkle at Pen Tip -->
+  <path d="M 194 94 Q 204 94 204 86 Q 204 94 214 94 Q 204 94 204 102 Q 204 94 194 94 Z" fill="#F59E0B"/>
+
+  <!-- Floating PDF Document on Right -->
+  <g transform="translate(230, 85)">
+    <!-- Lavender Document Body -->
+    <path d="M 15 15 H 90 L 112 37 V 145 H 15 Z" fill="#E0E7FF" stroke="#C7D2FE" stroke-width="1.5"/>
+    <!-- Folded Ear -->
+    <path d="M 90 15 V 37 H 112 Z" fill="#C7D2FE"/>
+
+    <!-- Coral PDF Badge -->
+    <rect x="0" y="26" width="48" height="26" rx="4" fill="#EF4444"/>
+    <text x="24" y="44" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="12" font-weight="900" text-anchor="middle">PDF</text>
+
+    <!-- Document Line Bars -->
+    <rect x="30" y="68" width="65" height="5" rx="2.5" fill="#818CF8"/>
+    <rect x="30" y="80" width="65" height="5" rx="2.5" fill="#818CF8"/>
+    <rect x="30" y="92" width="65" height="5" rx="2.5" fill="#818CF8"/>
+    <rect x="30" y="104" width="65" height="5" rx="2.5" fill="#818CF8"/>
+    <rect x="30" y="116" width="45" height="5" rx="2.5" fill="#818CF8"/>
+
+    <!-- Golden Sunburst Radiating Lines -->
+    <line x1="116" y1="12" x2="124" y2="2" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="124" y1="28" x2="136" y2="22" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+    <line x1="122" y1="46" x2="136" y2="52" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Ambient Small Sparkles -->
+  <circle cx="185" cy="115" r="3.5" stroke="#F59E0B" stroke-width="2" fill="none"/>
+  <path d="M 215 195 v6 h6 v2 h-6 v6 h-2 v-6 h-6 v-2 h6 v-6 h2 Z" fill="#00A896"/>
+  <path d="M 190 75 l3 3 l-3 3 l-3 -3 Z" fill="#3B82F6"/>
+</svg>
+      </div>
+    </div>
+
+    <!-- Section 3: Free PDF editing — Quick & Easy -->
+    <div class="section-head">
+      <h2>Free PDF editing — Quick &amp; Easy</h2>
+    </div>
+
+    <div class="benefit-grid">
+      <div class="benefit-item">
+        <div class="b-icon-wrap"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="#EFF6FF"/>
+      <path d="M 23 10 C 27 12 28 17 26 21 L 19 14 C 23 12 23 10 23 10 Z" fill="#3B82F6"/>
+      <path d="M 19 14 L 14 24 C 13 26 15 28 17 27 L 26 21 Z" fill="#93C5FD"/>
+      <path d="M 13 22 L 10 24 L 12 27 L 15 25 Z" fill="#2563EB"/>
+      <path d="M 11 28 Q 8 32 6 34 Q 10 32 14 30 Z" fill="#F59E0B"/>
+    </svg></div>
+        <div>
+          <h4 class="b-title">Powerful Tools, Zero Training</h4>
+          <p class="b-desc">Add annotations, edit text, insert images, and fill forms with an intuitive interface designed for everyone.</p>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="b-icon-wrap"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="#ECFDF5"/>
+      <rect x="12" y="17" width="16" height="13" rx="3" fill="#10B981"/>
+      <path d="M 15 17 V 13 C 15 10.2 17.2 8 20 8 C 22.8 8 25 10.2 25 13 V 17" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
+    </svg></div>
+        <div>
+          <h4 class="b-title">Safe &amp; Reliable Online PDF Editor</h4>
+          <p class="b-desc">All editing happens client-side in your browser WebAssembly sandbox. Files never upload to remote servers.</p>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="b-icon-wrap"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="#FEF2F2"/>
+      <path d="M 13 9 H 23 L 28 14 V 31 H 13 Z" fill="#EF4444" rx="2"/>
+      <path d="M 23 9 V 14 H 28 Z" fill="#FCA5A5"/>
+      <line x1="17" y1="18" x2="24" y2="18" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+      <line x1="17" y1="22" x2="24" y2="22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+      <line x1="17" y1="26" x2="21" y2="26" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+    </svg></div>
+        <div>
+          <h4 class="b-title">Edit PDFs for Free</h4>
+          <p class="b-desc">Access complete PDF editing capabilities without paywalls, subscriptions, or hidden watermarks.</p>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="b-icon-wrap"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="#F0FDF4"/>
+      <rect x="12" y="12" width="16" height="12" rx="2" fill="#00A896"/>
+      <rect x="14" y="14" width="12" height="8" rx="1" fill="#CCFBF1"/>
+      <path d="M 9 26 H 31 L 29 28 H 11 Z" fill="#008F80"/>
+    </svg></div>
+        <div>
+          <h4 class="b-title">Works Anywhere</h4>
+          <p class="b-desc">Seamlessly edit PDF files on Mac, Windows, Linux, iOS, iPadOS, and Android browsers.</p>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="b-icon-wrap"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="#FFFBEB"/>
+      <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
+    </svg></div>
+        <div>
+          <h4 class="b-title">Effortless In-Memory Speed</h4>
+          <p class="b-desc">Instant rendering and sub-second tool responsiveness with no upload wait times.</p>
+        </div>
+      </div>
+      <div class="benefit-item">
+        <div class="b-icon-wrap"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" fill="#FAF5FF"/>
+      <path d="M 27 13 C 25 15 22 15 20 13 L 13 20 L 16 23 L 23 16 C 25 18 25 21 27 23 L 29 21 L 26 18 L 29 15 Z" fill="#8B5CF6"/>
+      <path d="M 12 27 L 17 22 L 14 19 L 9 24 C 8 25 8 27 10 28 C 11 29 11 28 12 27 Z" fill="#A855F7"/>
+    </svg></div>
+        <div>
+          <h4 class="b-title">More Than Just an Editor</h4>
+          <p class="b-desc">Rotate, crop, merge, organize, and sign your documents in one unified workstation.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: PDF Editing FAQs -->
+    <div class="section-head">
+      <h2>PDF Editing FAQs</h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item active">
+        <button class="faq-q">
+          <span>What is a PDF Editor?</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          A PDF editor is an application or online tool that allows you to modify the contents of a PDF document. This includes adding new text, editing existing typography, inserting geometric shapes, drawing freehand lines, highlighting key passages, inserting images, filling interactive forms, and organizing pages.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>How do you edit text in a PDF document?</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          Upload your PDF to FileKit PDF Editor, click the Text (T) tool on the top toolbar, place your cursor anywhere on the page, and start typing. You can customize font size, typeface, color, and text alignment.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Can I add images to a PDF?</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          Yes! Select the Image tool from the toolbar, choose a JPG, PNG, or SVG image from your device, and position or scale it directly on your document pages.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Can I fill in and sign interactive PDF forms?</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          Yes. Our editor automatically recognizes AcroForm fields, checkboxes, and text inputs, allowing you to fill in details and draw or insert your digital signature.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Are files in the PDF editor secure and private?</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          Yes, 100%. FileKit processes documents client-side in your local browser WebAssembly sandbox. Your files are never uploaded to cloud servers or stored anywhere.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.faq-q').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('active');
+        document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('active'));
+        if (!isOpen) item.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

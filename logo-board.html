@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileKit — Logo Board 3</title>
+<style>
+  :root{ --ink:#000; --purple:#7C3AED; --red:#FF4D4D; --yellow:#FFC700; --green:#00E676; --sky:#00B0FF; --line:#E2E8F0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:#F8FAFC; color:var(--ink); padding:48px 24px 72px; }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  header{ text-align:center; margin-bottom:44px; }
+  header h1{ font-size:26px; font-weight:800; letter-spacing:-.02em; }
+  header p{ color:#64748B; font-size:14px; margin-top:8px; max-width:640px; margin-left:auto; margin-right:auto; line-height:1.55; }
+  .stack{ display:flex; flex-direction:column; gap:22px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:28px 30px 26px; display:grid; grid-template-columns:1fr 1.3fr; gap:28px 36px; align-items:center; transition:box-shadow .15s ease, transform .15s ease; }
+  .card:hover{ box-shadow:0 14px 34px rgba(15,23,42,.07); transform:translateY(-2px); }
+  .num{ display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#F3EFFC; color:#7C3AED; font-size:13px; font-weight:800; margin-bottom:12px; }
+  .card h3{ font-size:19px; font-weight:800; letter-spacing:-.015em; }
+  .card .why{ font-size:13px; color:#64748B; line-height:1.6; margin-top:8px; max-width:400px; }
+  .card .tag{ display:inline-block; margin-top:12px; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#475569; background:#F1F5F9; border-radius:99px; padding:4px 10px; }
+  .lockup{ background:#fff; border:1px solid #EEF2F7; border-radius:12px; padding:30px 24px; display:flex; align-items:center; justify-content:center; }
+  .lockup svg{ max-width:100%; height:auto; }
+  .spec{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px; }
+  .spec .item{ background:#FAFBFC; border:1px solid #EEF2F7; border-radius:10px; padding:14px 8px 10px; text-align:center; }
+  .spec .item b{ display:block; font-size:9.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#94A3B8; margin-bottom:10px; }
+  .spec .item .stage{ height:52px; display:flex; align-items:center; justify-content:center; }
+  .spec .item.dark .stage{ background:#000; border-radius:7px; height:52px; }
+  .spec .item svg{ width:auto; height:auto; }
+  .divider{ border-top:1px solid #E2E8F0; grid-column:1/-1; }
+  .wordmark-card{ grid-template-columns:1fr; }
+  .wordmark-card .lockup{ padding:48px 24px; }
+  footer{ text-align:center; margin-top:44px; color:#94A3B8; font-size:12.5px; }
+  @media(max-width:760px){ .card{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>FileKit — Logo Board 3 · Professional Set</h1>
+    <p>Restraint is the brand. Every concept is shown as a real lockup with the wordmark, in monochrome + one accent, at favicon size, and on the dark surface it would live on in the app.</p>
+  </header>
+
+  <div class="stack">
+
+    <!-- 1 Tile Kit -->
+    <div class="card">
+      <div>
+        <div class="num">1</div>
+        <h3>Tile Kit</h3>
+        <p class="why">Four modules in a grid — one tile lifted and blue: a <b>kit</b> of tools, the active one in use. Modular, ownable, works at 16&thinsp;px.</p>
+        <span class="tag">Modular kit</span>
+      </div>
+      <div>
+        <div class="lockup">
+          <svg viewBox="0 0 250 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="20" height="20" rx="6" fill="#000"/>
+            <rect x="26" y="2" width="20" height="20" rx="6" fill="#000"/>
+            <rect x="2" y="26" width="20" height="20" rx="6" fill="#000"/>
+            <rect x="28" y="28" width="20" height="20" rx="6" fill="#7C3AED"/>
+            <text x="62" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text>
+          </svg>
+        </div>
+        <div class="spec">
+          <div class="item"><b>Mono</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="2" y="2" width="20" height="20" rx="6" fill="#000"/><rect x="26" y="2" width="20" height="20" rx="6" fill="#000"/><rect x="2" y="26" width="20" height="20" rx="6" fill="#000"/><rect x="28" y="28" width="20" height="20" rx="6" fill="#000"/></svg></div></div>
+          <div class="item"><b>Favicon</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="2" y="2" width="20" height="20" rx="6" fill="#000"/><rect x="26" y="2" width="20" height="20" rx="6" fill="#000"/><rect x="2" y="26" width="20" height="20" rx="6" fill="#000"/><rect x="28" y="28" width="20" height="20" rx="6" fill="#7C3AED"/></svg></div></div>
+          <div class="item dark"><b>On dark</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="2" y="2" width="20" height="20" rx="6" fill="#fff"/><rect x="26" y="2" width="20" height="20" rx="6" fill="#fff"/><rect x="2" y="26" width="20" height="20" rx="6" fill="#fff"/><rect x="28" y="28" width="20" height="20" rx="6" fill="#7C3AED"/></svg></div></div>
+          <div class="item"><b>Wordmark</b><div class="stage"><svg viewBox="0 0 250 48" fill="none"><rect x="2" y="2" width="20" height="20" rx="6" fill="#000"/><rect x="26" y="2" width="20" height="20" rx="6" fill="#000"/><rect x="2" y="26" width="20" height="20" rx="6" fill="#000"/><rect x="28" y="28" width="20" height="20" rx="6" fill="#7C3AED"/><text x="62" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text></svg></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 Fold -->
+    <div class="card">
+      <div>
+        <div class="num">2</div>
+        <h3>Fold</h3>
+        <p class="why">A file card whose corner folds at a precise 45&deg; to reveal blue. Files first, quiet, precise.</p>
+        <span class="tag">File</span>
+      </div>
+      <div>
+        <div class="lockup">
+          <svg viewBox="0 0 250 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/>
+            <rect x="8" y="8" width="28" height="28" rx="6" fill="#fff"/>
+            <path d="M28 8h8v8z" fill="#7C3AED"/>
+            <path d="M36 8l-8 8h8z" fill="#E2E8F0"/>
+            <text x="58" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text>
+          </svg>
+        </div>
+        <div class="spec">
+          <div class="item"><b>Mono</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/><rect x="8" y="8" width="28" height="28" rx="6" fill="#fff"/><path d="M28 8h8v8z" fill="#000"/><path d="M36 8l-8 8h8z" fill="#CBD5E1"/></svg></div></div>
+          <div class="item"><b>Favicon</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/><rect x="8" y="8" width="28" height="28" rx="6" fill="#fff"/><path d="M28 8h8v8z" fill="#7C3AED"/><path d="M36 8l-8 8h8z" fill="#E2E8F0"/></svg></div></div>
+          <div class="item dark"><b>On dark</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#fff"/><rect x="8" y="8" width="28" height="28" rx="6" fill="#000"/><path d="M28 8h8v8z" fill="#7C3AED"/><path d="M36 8l-8 8h8z" fill="#1E293B"/></svg></div></div>
+          <div class="item"><b>Wordmark</b><div class="stage"><svg viewBox="0 0 250 48" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/><rect x="8" y="8" width="28" height="28" rx="6" fill="#fff"/><path d="M28 8h8v8z" fill="#7C3AED"/><path d="M36 8l-8 8h8z" fill="#E2E8F0"/><text x="58" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text></svg></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 Merge -->
+    <div class="card">
+      <div>
+        <div class="num">3</div>
+        <h3>Merge</h3>
+        <p class="why">Two tiles converging — convert, merge, combine. The core gesture, drawn with restraint.</p>
+        <span class="tag">Convert</span>
+      </div>
+      <div>
+        <div class="lockup">
+          <svg viewBox="0 0 250 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="7" width="24" height="24" rx="6" fill="#000" transform="rotate(-9 16 19)"/>
+            <rect x="19" y="17" width="24" height="24" rx="6" fill="#7C3AED" transform="rotate(9 31 29)"/>
+            <text x="60" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text>
+          </svg>
+        </div>
+        <div class="spec">
+          <div class="item"><b>Mono</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="7" width="24" height="24" rx="6" fill="#000" transform="rotate(-9 16 19)"/><rect x="19" y="17" width="24" height="24" rx="6" fill="#000" transform="rotate(9 31 29)"/></svg></div></div>
+          <div class="item"><b>Favicon</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="7" width="24" height="24" rx="6" fill="#000" transform="rotate(-9 16 19)"/><rect x="19" y="17" width="24" height="24" rx="6" fill="#7C3AED" transform="rotate(9 31 29)"/></svg></div></div>
+          <div class="item dark"><b>On dark</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="4" y="7" width="24" height="24" rx="6" fill="#fff" transform="rotate(-9 16 19)"/><rect x="19" y="17" width="24" height="24" rx="6" fill="#7C3AED" transform="rotate(9 31 29)"/></svg></div></div>
+          <div class="item"><b>Wordmark</b><div class="stage"><svg viewBox="0 0 250 48" fill="none"><rect x="4" y="7" width="24" height="24" rx="6" fill="#000" transform="rotate(-9 16 19)"/><rect x="19" y="17" width="24" height="24" rx="6" fill="#7C3AED" transform="rotate(9 31 29)"/><text x="60" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text></svg></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Rail -->
+    <div class="card">
+      <div>
+        <div class="num">4</div>
+        <h3>Rail</h3>
+        <p class="why">The app's own sidebar rail distilled — a dark spine with four format dots. Native to the product, reads like no other file tool.</p>
+        <span class="tag">Product-native</span>
+      </div>
+      <div>
+        <div class="lockup">
+          <svg viewBox="0 0 250 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="1" width="30" height="44" rx="8" fill="#000"/>
+            <circle cx="23" cy="9" r="3.2" fill="#FF4D4D"/>
+            <circle cx="23" cy="17" r="3.2" fill="#FFC700"/>
+            <circle cx="23" cy="25" r="3.2" fill="#00E676"/>
+            <circle cx="23" cy="33" r="3.2" fill="#00B0FF"/>
+            <text x="54" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text>
+          </svg>
+        </div>
+        <div class="spec">
+          <div class="item"><b>Mono</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="8" y="1" width="28" height="42" rx="8" fill="#000"/><circle cx="22" cy="9" r="3" fill="#fff" opacity=".9"/><circle cx="22" cy="17" r="3" fill="#fff" opacity=".9"/><circle cx="22" cy="25" r="3" fill="#fff" opacity=".9"/><circle cx="22" cy="33" r="3" fill="#fff" opacity=".9"/></svg></div></div>
+          <div class="item"><b>Favicon</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="8" y="1" width="28" height="42" rx="8" fill="#000"/><circle cx="22" cy="9" r="3" fill="#FF4D4D"/><circle cx="22" cy="17" r="3" fill="#FFC700"/><circle cx="22" cy="25" r="3" fill="#00E676"/><circle cx="22" cy="33" r="3" fill="#00B0FF"/></svg></div></div>
+          <div class="item dark"><b>On dark</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="8" y="1" width="28" height="42" rx="8" fill="#fff"/><circle cx="22" cy="9" r="3" fill="#FF4D4D"/><circle cx="22" cy="17" r="3" fill="#FFC700"/><circle cx="22" cy="25" r="3" fill="#00E676"/><circle cx="22" cy="33" r="3" fill="#00B0FF"/></svg></div></div>
+          <div class="item"><b>Wordmark</b><div class="stage"><svg viewBox="0 0 250 48" fill="none"><rect x="8" y="1" width="30" height="44" rx="8" fill="#000"/><circle cx="23" cy="9" r="3.2" fill="#FF4D4D"/><circle cx="23" cy="17" r="3.2" fill="#FFC700"/><circle cx="23" cy="25" r="3.2" fill="#00E676"/><circle cx="23" cy="33" r="3.2" fill="#00B0FF"/><text x="54" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text></svg></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Stamp -->
+    <div class="card">
+      <div>
+        <div class="num">5</div>
+        <h3>Stamp</h3>
+        <p class="why">A dark tile with a precise green check — every task, handled, privately, on your device. Reassuring and calm.</p>
+        <span class="tag">Done · Private</span>
+      </div>
+      <div>
+        <div class="lockup">
+          <svg viewBox="0 0 250 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/>
+            <path d="M13 23l7 7 13-14" stroke="#00E676" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="58" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text>
+          </svg>
+        </div>
+        <div class="spec">
+          <div class="item"><b>Mono</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/><path d="M13 23l7 7 13-14" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="item"><b>Favicon</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/><path d="M13 23l7 7 13-14" stroke="#00E676" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="item dark"><b>On dark</b><div class="stage"><svg viewBox="0 0 44 44" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#fff"/><path d="M13 23l7 7 13-14" stroke="#00E676" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="item"><b>Wordmark</b><div class="stage"><svg viewBox="0 0 250 48" fill="none"><rect x="1" y="1" width="42" height="42" rx="11" fill="#000"/><path d="M13 23l7 7 13-14" stroke="#00E676" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><text x="58" y="35" font-family="'Segoe UI',Arial,sans-serif" font-size="34" font-weight="700" fill="#000" letter-spacing="-0.6">FileKit</text></svg></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 Wordmark -->
+    <div class="card wordmark-card">
+      <div>
+        <div class="num">6</div>
+        <h3>The Wordmark</h3>
+        <p class="why">The identity without a mark — just <b>FileKit</b>, set tight in a strong geometric sans. The safest professional move: most enduring brands are wordmark-led. Works alone or beside any of the marks above.</p>
+        <span class="tag">Wordmark</span>
+      </div>
+      <div class="lockup">
+        <svg viewBox="0 0 420 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="52" font-family="'Segoe UI',Arial,sans-serif" font-size="48" font-weight="700" fill="#000" letter-spacing="-1.2">File</text>
+          <rect x="152" y="16" width="15" height="15" rx="4" fill="#7C3AED"/>
+          <text x="178" y="52" font-family="'Segoe UI',Arial,sans-serif" font-size="48" font-weight="700" fill="#000" letter-spacing="-1.2">Kit</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>FileKit · board 3 — professional set. Pick a number, or tell me which one is closest and what to change.</footer>
+</div>
+</body>
+</html>

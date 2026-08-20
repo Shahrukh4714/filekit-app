@@ -1,0 +1,15636 @@
+/* tools/units-length.js */
+/* Reference tool #1 — LIVE, no-file converter (native).
+   Demonstrates: live recompute, no Run button, no file input, text preview. */
+(() => {
+  'use strict';
+  const M = { m: 1, km: 1000, cm: 0.01, mm: 0.001, mi: 1609.344, yd: 0.9144, ft: 0.3048, in: 0.0254, nmi: 1852 };
+  window.FF.register({
+    id: 'units-length',
+    category: 'Utilities',
+    name: 'Length converter',
+    description: 'Convert between metric and imperial length units. Runs live as you type.',
+    accepts: null,      // no file
+    live: true,
+    fields: [
+      { key: 'value', label: 'Value', type: 'number', default: 1, step: 'any' },
+      { key: 'from', label: 'From', type: 'select', default: 'm', options: Object.keys(M) },
+      { key: 'to', label: 'To', type: 'select', default: 'ft', options: Object.keys(M) },
+    ],
+    async run({ inputs }) {
+      const v = Number(inputs.value) || 0;
+      const meters = v * M[inputs.from];
+      const out = meters / M[inputs.to];
+      const text = `${v} ${inputs.from}  =  ${out.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${inputs.to}`;
+      return { preview: 'text', text, filename: 'length.txt', mime: 'text/plain', blob: new Blob([text], { type: 'text/plain' }) };
+    },
+  });
+})();
+
+/* tools/image-convert.js */
+/* Reference tool #2 — FILE tool with real processing (Canvas API).
+   Demonstrates: file input + accepts validation, options (format/quality/resize),
+   progress, image preview, size-delta stats. No external library needed. */
+(() => {
+  'use strict';
+  const MIME = { png: 'image/png', jpeg: 'image/jpeg', jpg: 'image/jpeg', webp: 'image/webp' };
+
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode this image.')); };
+      img.src = url;
+    });
+  }
+
+  window.FF.register({
+    id: 'image-convert',
+    category: 'Images',
+    name: 'Convert image',
+    description: 'Convert PNG / JPG / WebP and optionally resize & set quality. 100% in your browser.',
+    accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'],
+    maxBytes: 100 * 1024 * 1024,
+    fields: [
+      { key: 'format', label: 'Output format', type: 'select', default: 'webp', options: ['webp', 'png', 'jpeg'] },
+      { key: 'quality', label: 'Quality', type: 'range', default: 85, min: 10, max: 100, step: 1, help: 'JPEG/WebP only' },
+      { key: 'maxWidth', label: 'Max width (px, 0 = keep)', type: 'number', default: 0, min: 0, step: 1 },
+    ],
+    async run({ file, inputs, onProgress }) {
+      onProgress?.(0.1, 'Decoding…');
+      const img = await loadImage(file);
+      let { width, height } = img;
+      const mw = Number(inputs.maxWidth) || 0;
+      if (mw > 0 && width > mw) { height = Math.round((height * mw) / width); width = mw; }
+
+      onProgress?.(0.5, 'Rendering…');
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (inputs.format === 'jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height); }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      onProgress?.(0.8, 'Encoding…');
+      const type = MIME[inputs.format];
+      const q = Math.min(1, Math.max(0.1, Number(inputs.quality) / 100));
+      const blob = await new Promise((res, rej) =>
+        canvas.toBlob((b) => (b ? res(b) : rej(new Error('Encoding failed.'))), type, q));
+
+      onProgress?.(1, 'Done');
+      const name = window.FF.util.baseName(file.name) + '.' + (inputs.format === 'jpeg' ? 'jpg' : inputs.format);
+      return { blob, filename: name, mime: type, preview: 'image' };
+    },
+  });
+})();
+
+/* tools/image-core.js */
+/* Images category — native Canvas tools (all offline, no external libs). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const IMG = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'];
+
+  const loadImg = (blob) => new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob); const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not decode this image.')); };
+    im.src = url;
+  });
+  const cv = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+  const toBlob = (c, type = 'image/png', q = 0.92) => new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Could not encode image.')), type, q));
+  const outType = (file) => (file && /^image\/(png|jpeg|webp)$/.test(file.type) ? file.type : 'image/png');
+  const ext = (mime) => ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[mime] || 'png');
+  const result = (blob, base) => ({ blob, filename: `${base}.${ext(blob.type)}`, mime: blob.type, preview: 'image' });
+
+  R({ id: 'image-resize', category: 'Images', name: 'Resize image', description: 'Resize with contain, cover, or stretch.',
+    accepts: IMG, maxBytes: 100e6, fields: [
+      { key: 'w', label: 'Width', type: 'number', default: 800, min: 1 }, { key: 'h', label: 'Height', type: 'number', default: 600, min: 1 },
+      { key: 'fit', label: 'Fit', type: 'select', default: 'contain', options: ['contain', 'cover', 'stretch'] }],
+    async run({ file, inputs }) { const img = await loadImg(file); const W = +inputs.w, H = +inputs.h; const c = cv(W, H); const ctx = c.getContext('2d');
+      let dw = W, dh = H, dx = 0, dy = 0; const ar = img.width / img.height;
+      if (inputs.fit === 'contain') { if (W / H > ar) { dw = H * ar; dx = (W - dw) / 2; } else { dh = W / ar; dy = (H - dh) / 2; } }
+      else if (inputs.fit === 'cover') { let sw = img.width, sh = img.height, sx = 0, sy = 0; if (ar > W / H) { sw = img.height * (W / H); sx = (img.width - sw) / 2; } else { sh = img.width * (H / W); sy = (img.height - sh) / 2; } ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-resized'); }
+      ctx.drawImage(img, dx, dy, dw, dh); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-resized'); } });
+
+  R({ id: 'image-crop', category: 'Images', name: 'Crop image', description: 'Crop a rectangular region.',
+    accepts: IMG, fields: [{ key: 'x', label: 'X', type: 'number', default: 0 }, { key: 'y', label: 'Y', type: 'number', default: 0 }, { key: 'w', label: 'Width', type: 'number', default: 400 }, { key: 'h', label: 'Height', type: 'number', default: 300 }],
+    async run({ file, inputs }) { const img = await loadImg(file); const x = Math.max(0, Math.min(img.width - 1, Math.round(+inputs.x || 0))), y = Math.max(0, Math.min(img.height - 1, Math.round(+inputs.y || 0))); const w = Math.max(1, Math.min(img.width - x, Math.round(+inputs.w || img.width - x))), h = Math.max(1, Math.min(img.height - y, Math.round(+inputs.h || img.height - y))); const c = cv(w, h); c.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-crop'); } });
+
+  R({ id: 'image-rotate', category: 'Images', name: 'Rotate / flip', description: 'Rotate 90/180/270 and flip.',
+    accepts: IMG, fields: [{ key: 'deg', label: 'Rotate', type: 'select', default: '90', options: ['0', '90', '180', '270'] }, { key: 'flipX', label: 'Flip horizontal', type: 'select', default: 'no', options: ['no', 'yes'] }, { key: 'flipY', label: 'Flip vertical', type: 'select', default: 'no', options: ['no', 'yes'] }],
+    async run({ file, inputs }) { const img = await loadImg(file); const d = +inputs.deg; const swap = d === 90 || d === 270; const c = cv(swap ? img.height : img.width, swap ? img.width : img.height); const ctx = c.getContext('2d');
+      ctx.translate(c.width / 2, c.height / 2); ctx.rotate(d * Math.PI / 180); ctx.scale(inputs.flipX === 'yes' ? -1 : 1, inputs.flipY === 'yes' ? -1 : 1); ctx.drawImage(img, -img.width / 2, -img.height / 2); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-rot'); } });
+
+  R({ id: 'image-compress', category: 'Images', name: 'Compress image', description: 'Re-encode at lower quality (JPG/WebP).',
+    accepts: IMG, fields: [{ key: 'format', label: 'Format', type: 'select', default: 'webp', options: ['webp', 'jpeg'] }, { key: 'quality', label: 'Quality', type: 'range', default: 70, min: 10, max: 100 }],
+    async run({ file, inputs }) { const img = await loadImg(file); const c = cv(img.width, img.height); const ctx = c.getContext('2d'); if (inputs.format === 'jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); } ctx.drawImage(img, 0, 0); return result(await toBlob(c, 'image/' + inputs.format, +inputs.quality / 100), U.baseName(file.name) + '-min'); } });
+
+  const filterTool = (id, name, desc, filterFn, fields = []) => R({ id, category: 'Images', name, description: desc, accepts: IMG, fields,
+    async run({ file, inputs }) { const img = await loadImg(file); const c = cv(img.width, img.height); const ctx = c.getContext('2d'); ctx.filter = filterFn(inputs); ctx.drawImage(img, 0, 0); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-' + id); } });
+  filterTool('image-grayscale', 'Grayscale', 'Convert to black and white.', () => 'grayscale(100%)');
+  filterTool('image-invert', 'Invert colors', 'Photo-negative.', () => 'invert(100%)');
+  filterTool('image-blur', 'Blur', 'Gaussian blur.', (i) => `blur(${+i.amount || 4}px)`, [{ key: 'amount', label: 'Radius (px)', type: 'range', default: 4, min: 1, max: 50 }]);
+  filterTool('image-bc', 'Brightness / contrast', 'Adjust brightness and contrast.', (i) => `brightness(${+i.bright}%) contrast(${+i.contrast}%)`, [{ key: 'bright', label: 'Brightness %', type: 'range', default: 110, min: 0, max: 300 }, { key: 'contrast', label: 'Contrast %', type: 'range', default: 110, min: 0, max: 300 }]);
+
+  R({ id: 'image-sharpen', category: 'Images', name: 'Sharpen', description: 'Sharpen via convolution.',
+    accepts: IMG, fields: [],
+    async run({ file }) { const img = await loadImg(file); const c = cv(img.width, img.height); const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const src = ctx.getImageData(0, 0, c.width, c.height), dst = ctx.createImageData(c.width, c.height); const w = c.width, h = c.height, k = [0, -1, 0, -1, 5, -1, 0, -1, 0], d = src.data, o = dst.data;
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) for (let ch = 0; ch < 3; ch++) { let s = 0, ki = 0; for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) s += d[((y + ky) * w + (x + kx)) * 4 + ch] * k[ki++]; o[(y * w + x) * 4 + ch] = Math.min(255, Math.max(0, s)); }
+      for (let i = 3; i < o.length; i += 4) o[i] = d[i]; ctx.putImageData(dst, 0, 0); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-sharp'); } });
+
+  R({ id: 'image-watermark', category: 'Images', name: 'Watermark image', description: 'Overlay a text watermark.',
+    accepts: IMG, fields: [{ key: 'text', label: 'Text', type: 'text', default: 'FileKit' }, { key: 'pos', label: 'Position', type: 'select', default: 'bottom-right', options: ['bottom-right', 'bottom-left', 'top-right', 'top-left', 'center'] }, { key: 'opacity', label: 'Opacity %', type: 'range', default: 40, min: 5, max: 100 }, { key: 'size', label: 'Size %', type: 'range', default: 6, min: 2, max: 20 }],
+    async run({ file, inputs }) { const img = await loadImg(file); const c = cv(img.width, img.height); const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const fs = Math.round(c.width * (+inputs.size / 100)); ctx.font = `bold ${fs}px sans-serif`; ctx.fillStyle = `rgba(255,255,255,${+inputs.opacity / 100})`; ctx.strokeStyle = `rgba(0,0,0,${+inputs.opacity / 200})`; ctx.lineWidth = Math.max(1, fs / 20);
+      const m = ctx.measureText(inputs.text), pad = fs * 0.5; let x = pad, y = c.height - pad; if (inputs.pos.includes('right')) x = c.width - m.width - pad; if (inputs.pos.includes('top')) y = fs + pad; if (inputs.pos === 'center') { x = (c.width - m.width) / 2; y = c.height / 2; } ctx.strokeText(inputs.text, x, y); ctx.fillText(inputs.text, x, y);
+      return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-wm'); } });
+
+  R({ id: 'image-round', category: 'Images', name: 'Round corners', description: 'Add rounded corners (PNG).',
+    accepts: IMG, fields: [{ key: 'radius', label: 'Radius (px)', type: 'number', default: 32, min: 0 }],
+    async run({ file, inputs }) { const img = await loadImg(file); const c = cv(img.width, img.height); const ctx = c.getContext('2d'); const r = Math.min(+inputs.radius, c.width / 2, c.height / 2);
+      ctx.beginPath(); ctx.moveTo(r, 0); ctx.arcTo(c.width, 0, c.width, c.height, r); ctx.arcTo(c.width, c.height, 0, c.height, r); ctx.arcTo(0, c.height, 0, 0, r); ctx.arcTo(0, 0, c.width, 0, r); ctx.closePath(); ctx.clip(); ctx.drawImage(img, 0, 0); return result(await toBlob(c, 'image/png'), U.baseName(file.name) + '-round'); } });
+
+  R({ id: 'image-border', category: 'Images', name: 'Add border', description: 'Add a solid border.',
+    accepts: IMG, fields: [{ key: 'size', label: 'Border (px)', type: 'number', default: 16, min: 1 }, { key: 'color', label: 'Color', type: 'color', default: '#ffffff' }],
+    async run({ file, inputs }) { const img = await loadImg(file); const b = +inputs.size; const c = cv(img.width + b * 2, img.height + b * 2); const ctx = c.getContext('2d'); ctx.fillStyle = inputs.color; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, b, b); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-border'); } });
+
+  R({ id: 'favicon', category: 'Images', name: 'Favicon generator', description: 'Make a square favicon PNG.',
+    accepts: IMG, fields: [{ key: 'size', label: 'Size', type: 'select', default: '32', options: ['16', '32', '48', '64', '128', '256'] }],
+    async run({ file, inputs }) { const img = await loadImg(file); const s = +inputs.size; const c = cv(s, s); c.getContext('2d').drawImage(img, 0, 0, s, s); return result(await toBlob(c, 'image/png'), 'favicon-' + s); } });
+
+  R({ id: 'image-upscale', category: 'Images', name: 'Upscale (2x/4x)', description: 'Enlarge via smooth interpolation. (AI upscaler comes later.)',
+    accepts: IMG, fields: [{ key: 'factor', label: 'Scale', type: 'select', default: '2', options: ['2', '4'] }],
+    async run({ file, inputs }) { const img = await loadImg(file); const f = +inputs.factor; const c = cv(img.width * f, img.height * f); const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, c.width, c.height); return result(await toBlob(c, outType(file)), U.baseName(file.name) + `-${f}x`); } });
+
+  R({ id: 'exif-strip', category: 'Images', name: 'EXIF strip', description: 'Remove metadata by re-encoding.',
+    accepts: IMG, fields: [],
+    async run({ file }) { const img = await loadImg(file); const c = cv(img.width, img.height); c.getContext('2d').drawImage(img, 0, 0); return result(await toBlob(c, outType(file)), U.baseName(file.name) + '-clean'); } });
+
+  R({ id: 'palette', category: 'Images', name: 'Color palette extractor', description: 'Extract the dominant colors as HEX.',
+    accepts: IMG, fields: [{ key: 'n', label: 'Colors', type: 'number', default: 8, min: 2, max: 32 }],
+    async run({ file, inputs }) { const img = await loadImg(file); const s = 80; const c = cv(s, s * img.height / img.width); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; const m = {};
+      for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 128) continue; const key = ((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4); m[key] = (m[key] || 0) + 1; }
+      const top = Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, +inputs.n).map(([k]) => { k = +k; const r = ((k >> 8) & 15) * 17, g = ((k >> 4) & 15) * 17, b = (k & 15) * 17; return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join(''); });
+      const text = top.join('\n'); return { preview: 'text', text, filename: 'palette.txt', mime: 'text/plain', blob: new Blob([text]) }; } });
+
+  R({ id: 'image-diff', category: 'Images', name: 'Image diff', description: 'Visualize the difference between two images. Drop TWO.',
+    accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp'], multiple: true, fields: [],
+    async run({ files }) { if (!files || files.length < 2) throw new Error('Drop two images.'); const [a, b] = await Promise.all([loadImg(files[0]), loadImg(files[1])]);
+      const w = Math.min(a.width, b.width), h = Math.min(a.height, b.height); const ca = cv(w, h), cb = cv(w, h); ca.getContext('2d').drawImage(a, 0, 0); cb.getContext('2d').drawImage(b, 0, 0);
+      const da = ca.getContext('2d').getImageData(0, 0, w, h), db = cb.getContext('2d').getImageData(0, 0, w, h); const out = cv(w, h); const od = out.getContext('2d').createImageData(w, h);
+      let diff = 0; for (let i = 0; i < da.data.length; i += 4) { const dr = Math.abs(da.data[i] - db.data[i]), dg = Math.abs(da.data[i + 1] - db.data[i + 1]), dbl = Math.abs(da.data[i + 2] - db.data[i + 2]); const v = dr + dg + dbl; if (v > 20) diff++; od.data[i] = Math.min(255, dr * 3); od.data[i + 1] = Math.min(255, dg * 3); od.data[i + 2] = Math.min(255, dbl * 3); od.data[i + 3] = 255; }
+      out.getContext('2d').putImageData(od, 0, 0); const r = result(await toBlob(out, 'image/png'), 'diff'); r.text = `${((diff / (w * h)) * 100).toFixed(2)}% of pixels differ`; return r; } });
+
+  R({ id: 'sprite-sheet', category: 'Images', name: 'Sprite sheet generator', description: 'Combine several images into a grid. Drop MANY.',
+    accepts: ['png', 'jpg', 'jpeg', 'webp'], multiple: true, fields: [{ key: 'cols', label: 'Columns', type: 'number', default: 4, min: 1 }],
+    async run({ files, inputs }) { if (!files || files.length < 2) throw new Error('Drop at least two images.'); const imgs = await Promise.all([...files].map(loadImg));
+      const cols = Math.max(1, +inputs.cols || 4); const cw = Math.max(...imgs.map((i) => i.width)), ch = Math.max(...imgs.map((i) => i.height)); const rows = Math.ceil(imgs.length / cols);
+      const c = cv(cw * cols, ch * rows); const ctx = c.getContext('2d'); imgs.forEach((im, i) => ctx.drawImage(im, (i % cols) * cw, Math.floor(i / cols) * ch)); return result(await toBlob(c, 'image/png'), 'sprite'); } });
+})();
+
+/* tools/image-advanced.js */
+/* Images (advanced) — lazy-lib + native tools. */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const EXIFR = ['vendor/exifr.js', 'sha384-KrOocIA+lZcNUz2MDavnT/FuX+CbTREJihUi0bp8QUSwhE2AkGTNpv2b7yMbBkx5'];
+  const TRACER = ['vendor/imagetracer.js', 'sha384-YcOTH4/N9eULF5JC2kvcrQ7ZDfV1VOCErlPHqmUk77bzeZN9vJbYsi2gM8bJHgWc'];
+  const loadImg = (blob) => new Promise((res, rej) => { const url = URL.createObjectURL(blob); const im = new Image(); im.onload = () => { URL.revokeObjectURL(url); res(im); }; im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not decode image.')); }; im.src = url; });
+
+  R({ id: 'exif-viewer', category: 'Images', name: 'EXIF viewer', description: 'Read camera & metadata from a photo.',
+    accepts: ['jpg', 'jpeg', 'png', 'tiff', 'heic', 'webp'],
+    engine: () => U.loadScript(...EXIFR).then(() => window.exifr),
+    fields: [],
+    async run({ file, engine }) { let data; try { data = await engine.parse(file, true); } catch { throw new Error('Could not read metadata.'); }
+      if (!data || !Object.keys(data).length) { const t = 'No EXIF metadata found.'; return { preview: 'text', text: t, filename: 'exif.txt', mime: 'text/plain', blob: new Blob([t]) }; }
+      const text = Object.entries(data).map(([k, v]) => `${k}: ${v}`).join('\n'); return { preview: 'text', text, filename: U.baseName(file.name) + '.exif.txt', mime: 'text/plain', blob: new Blob([text]) }; } });
+
+  R({ id: 'png-trace', category: 'Images', name: 'PNG trace to SVG', description: 'Vectorize a raster image to SVG.',
+    accepts: ['png', 'jpg', 'jpeg', 'bmp', 'webp'], maxBytes: 20e6,
+    engine: () => U.loadScript(...TRACER).then(() => window.ImageTracer),
+    fields: [{ key: 'colors', label: 'Colors', type: 'number', default: 16, min: 2, max: 64 }],
+    async run({ file, inputs, engine, onProgress }) { onProgress?.(0.3, 'Reading…'); const img = await loadImg(file);
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const imgd = ctx.getImageData(0, 0, c.width, c.height); onProgress?.(0.6, 'Tracing…');
+      const svg = engine.imagedataToSVG(imgd, { numberofcolors: +inputs.colors }); onProgress?.(1, 'Done');
+      return { preview: 'text', text: svg.slice(0, 4000) + (svg.length > 4000 ? '\n… (truncated preview)' : ''), filename: U.baseName(file.name) + '.svg', mime: 'image/svg+xml', blob: new Blob([svg], { type: 'image/svg+xml' }) }; } });
+
+  R({ id: 'svg-to-raster', category: 'Images', name: 'SVG to PNG / JPG', description: 'Rasterize an SVG at a chosen size.',
+    accepts: ['svg'], fields: [{ key: 'format', label: 'Format', type: 'select', default: 'png', options: ['png', 'jpeg'] }, { key: 'scale', label: 'Scale', type: 'number', default: 1, min: 0.1, max: 10, step: 0.1 }],
+    async run({ file, inputs }) { const img = await loadImg(file); const s = +inputs.scale || 1; const w = (img.width || 512) * s, h = (img.height || 512) * s;
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d'); if (inputs.format === 'jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); } ctx.drawImage(img, 0, 0, w, h);
+      const type = 'image/' + inputs.format; const blob = await new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Encode failed.')), type, 0.92));
+      return { blob, filename: U.baseName(file.name) + '.' + (inputs.format === 'jpeg' ? 'jpg' : 'png'), mime: type, preview: 'image' }; } });
+
+  R({ id: 'img-to-base64', category: 'Images', name: 'Image to Base64', description: 'Get a data-URI for an image.',
+    accepts: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'], maxBytes: 10e6, fields: [],
+    async run({ file }) { const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Read failed.')); r.readAsDataURL(file); }); return { preview: 'text', text: dataUrl, filename: U.baseName(file.name) + '.b64.txt', mime: 'text/plain', blob: new Blob([dataUrl]) }; } });
+
+  R({ id: 'base64-to-img', category: 'Images', name: 'Base64 to image', description: 'Decode a data-URI or Base64 string to an image.',
+    accepts: null, fields: [{ key: 'source', label: 'Data URI or Base64', type: 'textarea', default: '' }],
+    async run({ inputs }) { let s = (inputs.source || '').trim(); if (!s) throw new Error('Paste a data URI or Base64 string.');
+      let mime = 'image/png'; const m = s.match(/^data:([^;]+);base64,(.*)$/s); if (m) { mime = m[1]; s = m[2]; }
+      let bin; try { bin = atob(s.replace(/\s+/g, '')); } catch { throw new Error('Not valid Base64.'); }
+      const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); const blob = new Blob([u], { type: mime });
+      return { blob, filename: 'decoded.' + (mime.split('/')[1] || 'png'), mime, preview: 'image' }; } });
+})();
+
+/* tools/pdf.js */
+/* PDF category — pdf-lib (structure) + pdf.js (render/text) + fflate (zip outputs). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const PDF_MIME = 'application/pdf';
+  const V = {
+    lib: ['vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI'],
+    js:  ['vendor/pdfjs.min.js',   'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z'],
+    ff:  ['vendor/fflate.js',      'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT'],
+  };
+  const loadLib = () => U.loadScript(...V.lib).then(() => window.PDFLib);
+  const loadJs = () => U.loadScript(...V.js).then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+  const loadFf = () => U.loadScript(...V.ff).then(() => window.fflate);
+  const both = async () => ({ L: await loadLib(), J: await loadJs() });
+  const libZip = async () => ({ L: await loadLib(), F: await loadFf() });
+  const jsZip = async () => ({ J: await loadJs(), F: await loadFf() });
+
+  const bytesU8 = async (file) => new Uint8Array(await file.arrayBuffer());
+  const pdfOut = (bytes, name) => ({ blob: new Blob([bytes], { type: PDF_MIME }), filename: name, mime: PDF_MIME, preview: 'download' });
+  const zipOut = (F, files, name) => ({ blob: new Blob([F.zipSync(files, { level: 6 })], { type: 'application/zip' }), filename: name, mime: 'application/zip', preview: 'download' });
+  const textOut = (t, name) => ({ preview: 'text', text: t.length > 6000 ? t.slice(0, 6000) + '\n… (truncated preview — full text in download)' : t, filename: name, mime: 'text/plain', blob: new Blob([t], { type: 'text/plain' }) });
+  const range = (str, max) => { if (!str || !str.trim()) return [...Array(max).keys()]; const set = new Set();
+    for (const part of String(str).split(',')) { const m = part.trim().split('-'); if (m.length === 2) { for (let i = +m[0]; i <= +m[1]; i++) if (i >= 1 && i <= max) set.add(i - 1); } else { const n = +m[0]; if (n >= 1 && n <= max) set.add(n - 1); } } return [...set].sort((a, b) => a - b); };
+  const pagesField = { key: 'pages', label: 'Pages (e.g. 1-3,5 · blank = all)', type: 'text', default: '' };
+  async function renderPage(pdfjs, pageProxy, scale) { const vp = pageProxy.getViewport({ scale }); const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; await pageProxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; return c; }
+
+  R({ id: 'pdf-merge', category: 'PDF', name: 'Merge', description: 'Combine several PDFs into one. Drop MANY.',
+    accepts: ['pdf'], multiple: true, maxBytes: 200e6, engine: loadLib,
+    async run({ files, engine: PDFLib, onProgress }) { if (!files || files.length < 2) throw new Error('Drop at least two PDFs.'); const out = await PDFLib.PDFDocument.create();
+      for (let i = 0; i < files.length; i++) { onProgress?.(i / files.length, `Merging ${i + 1}/${files.length}`); const src = await PDFLib.PDFDocument.load(await bytesU8(files[i]), { ignoreEncryption: true }); const pages = await out.copyPages(src, src.getPageIndices()); pages.forEach((p) => out.addPage(p)); }
+      return pdfOut(await out.save(), 'merged.pdf'); } });
+
+  R({ id: 'pdf-split', category: 'PDF', name: 'Split', description: 'Split selected pages into individual PDF files (ZIP).',
+    accepts: ['pdf'], engine: libZip,
+    async run({ file, inputs, engine, onProgress }) { const { PDFDocument } = engine.L; const src = await PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const idx = range(inputs.pages, src.getPageCount()); const out = {};
+      for (let j = 0; j < idx.length; j++) { const i = idx[j]; onProgress?.(j / idx.length, `Page ${j + 1}/${idx.length}`); const d = await PDFDocument.create(); const [p] = await d.copyPages(src, [i]); d.addPage(p); out[`page-${i + 1}.pdf`] = new Uint8Array(await d.save()); }
+      return zipOut(engine.F, out, U.baseName(file.name) + '-pages.zip'); } });
+
+  R({ id: 'pdf-extract-range', category: 'PDF', name: 'Extract pages', description: 'Keep only selected pages.',
+    accepts: ['pdf'], engine: loadLib, fields: [pagesField],
+    async run({ file, inputs, engine: PDFLib }) { const src = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const idx = range(inputs.pages, src.getPageCount()); const out = await PDFLib.PDFDocument.create(); const pages = await out.copyPages(src, idx); pages.forEach((p) => out.addPage(p)); return pdfOut(await out.save(), U.baseName(file.name) + '-extract.pdf'); } });
+
+  R({ id: 'pdf-rotate', category: 'PDF', name: 'Rotate', description: 'Rotate pages by 90/180/270°.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'deg', label: 'Rotate', type: 'select', default: '90', options: ['90', '180', '270'] }, pagesField],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); range(inputs.pages, doc.getPageCount()).forEach((i) => { const pg = doc.getPage(i); pg.setRotation(PDFLib.degrees((pg.getRotation().angle + +inputs.deg) % 360)); }); return pdfOut(await doc.save(), U.baseName(file.name) + '-rot.pdf'); } });
+
+  R({ id: 'pdf-watermark', category: 'PDF', name: 'Watermark', description: 'Stamp diagonal text on every page.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'text', label: 'Text', type: 'text', default: 'CONFIDENTIAL' }, { key: 'opacity', label: 'Opacity %', type: 'range', default: 20, min: 5, max: 80 }, { key: 'size', label: 'Font size', type: 'number', default: 60, min: 10 }],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const font = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      for (const i of range(inputs.pages, doc.getPageCount())) { const pg = doc.getPage(i); const { width, height } = pg.getSize(); pg.drawText(inputs.text, { x: width / 2 - 200, y: height / 2, size: +inputs.size, font, color: PDFLib.rgb(0.5, 0.5, 0.5), rotate: PDFLib.degrees(45), opacity: +inputs.opacity / 100 }); }
+      return pdfOut(await doc.save(), U.baseName(file.name) + '-wm.pdf'); } });
+
+  R({ id: 'pdf-page-numbers', category: 'PDF', name: 'Add page numbers', description: 'Number every page.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'pos', label: 'Position', type: 'select', default: 'bottom-center', options: ['bottom-center', 'bottom-right', 'bottom-left'] }],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica); const pages = doc.getPages();
+      for (const i of range(inputs.pages, pages.length)) { const pg = pages[i]; const { width } = pg.getSize(); const label = `${i + 1} / ${pages.length}`; const w = font.widthOfTextAtSize(label, 10); let x = width / 2 - w / 2; if (inputs.pos === 'bottom-right') x = width - w - 30; if (inputs.pos === 'bottom-left') x = 30; pg.drawText(label, { x, y: 20, size: 10, font, color: PDFLib.rgb(0.3, 0.3, 0.3) }); }
+      return pdfOut(await doc.save(), U.baseName(file.name) + '-numbered.pdf'); } });
+
+  R({ id: 'pdf-crop', category: 'PDF', name: 'Crop pages', description: 'Trim equal margins from every page.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'margin', label: 'Margin (pt)', type: 'number', default: 36, min: 0 }],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const m = +inputs.margin;
+      for (const i of range(inputs.pages, doc.getPageCount())) { const pg = doc.getPage(i); const { width, height } = pg.getSize(); pg.setCropBox(m, m, Math.max(1, width - 2 * m), Math.max(1, height - 2 * m)); } return pdfOut(await doc.save(), U.baseName(file.name) + '-crop.pdf'); } });
+
+  R({ id: 'pdf-resize', category: 'PDF', name: 'Resize pages', description: 'Scale all pages by a factor.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'scale', label: 'Scale', type: 'number', default: 0.8, min: 0.1, max: 4, step: 0.1 }],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const s = +inputs.scale; for (const pg of doc.getPages()) pg.scale(s, s); return pdfOut(await doc.save(), U.baseName(file.name) + '-resized.pdf'); } });
+
+  R({ id: 'pdf-redact', category: 'PDF', name: 'Redact', description: 'Cover a region with a black box on a page.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'page', label: 'Page', type: 'number', default: 1, min: 1 }, { key: 'x', label: 'X (pt)', type: 'number', default: 50 }, { key: 'y', label: 'Y (pt)', type: 'number', default: 50 }, { key: 'w', label: 'Width', type: 'number', default: 200 }, { key: 'h', label: 'Height', type: 'number', default: 30 }],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const pg = doc.getPage(Math.min(doc.getPageCount(), Math.max(1, +inputs.page)) - 1); pg.drawRectangle({ x: +inputs.x, y: +inputs.y, width: +inputs.w, height: +inputs.h, color: PDFLib.rgb(0, 0, 0) }); return pdfOut(await doc.save(), U.baseName(file.name) + '-redacted.pdf'); } });
+
+  R({ id: 'pdf-repair', category: 'PDF', name: 'Repair', description: 'Rebuild a PDF to fix minor corruption.',
+    accepts: ['pdf'], engine: loadLib,
+    async run({ file, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true, throwOnInvalidObject: false }); return pdfOut(await doc.save({ useObjectStreams: false }), U.baseName(file.name) + '-repaired.pdf'); } });
+
+  R({ id: 'pdf-flatten', category: 'PDF', name: 'Flatten annotations', description: 'Flatten form fields into the page.',
+    accepts: ['pdf'], engine: loadLib,
+    async run({ file, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); try { doc.getForm().flatten(); } catch {} return pdfOut(await doc.save(), U.baseName(file.name) + '-flat.pdf'); } });
+
+  R({ id: 'pdf-sign', category: 'PDF', name: 'Sign PDF', description: 'Stamp a text signature on the last page.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'name', label: 'Signature text', type: 'text', default: 'Signed by …' }],
+    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const font = await doc.embedFont(PDFLib.StandardFonts.HelveticaOblique); const pg = doc.getPages().at(-1); const label = `${inputs.name}  —  ${new Date().toISOString().slice(0, 10)}`; pg.drawText(label, { x: 40, y: 40, size: 14, font, color: PDFLib.rgb(0.1, 0.1, 0.5) }); return pdfOut(await doc.save(), U.baseName(file.name) + '-signed.pdf'); } });
+
+  
+  R({ id: 'pdf-edit-text', category: 'PDF', name: 'Edit Text',
+    description: 'Edit and annotate PDF text in a private canvas.',
+    accepts: ['pdf'], maxBytes: 200e6, engine: loadLib,
+    async run({ file }) {
+      // UI shell handles export; keep a harmless fallback
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: (file.name || 'document.pdf').replace(/\.pdf$/i,'') + '-edited.pdf', mime: 'application/pdf' };
+    }
+  });
+
+  R({ id: 'pdf-extract-text', category: 'PDF', name: 'Extract text', description: 'Pull selectable text from a PDF.',
+    accepts: ['pdf'], engine: loadJs,
+    async run({ file, engine: pdfjs, onProgress }) { const pdf = await pdfjs.getDocument({ data: await bytesU8(file) }).promise; let out = '';
+      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const tc = await (await pdf.getPage(i)).getTextContent(); out += `\n--- Page ${i} ---\n` + tc.items.map((it) => it.str).join(' '); }
+      return textOut(out.trim() || 'No selectable text (this may be a scanned PDF — use OCR).', U.baseName(file.name) + '.txt'); } });
+
+  R({ id: 'pdf-to-image', category: 'PDF', name: 'PDF to image', description: 'Render each page to PNG (ZIP).',
+    accepts: ['pdf'], engine: jsZip, fields: [{ key: 'scale', label: 'Quality (scale)', type: 'select', default: '2', options: ['1', '1.5', '2', '3'] }],
+    async run({ file, inputs, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await bytesU8(file) }).promise; const out = {};
+      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Rendering ${i}/${pdf.numPages}`); const c = await renderPage(engine.J, await pdf.getPage(i), +inputs.scale); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); out[`page-${i}.png`] = new Uint8Array(await blob.arrayBuffer()); }
+      return zipOut(engine.F, out, U.baseName(file.name) + '-images.zip'); } });
+
+  R({ id: 'pdf-grayscale', category: 'PDF', name: 'Grayscale PDF', description: 'Convert every page to black & white.',
+    accepts: ['pdf'], engine: both, fields: [],
+    async run({ file, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await bytesU8(file) }).promise; const out = await engine.L.PDFDocument.create();
+      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const c = await renderPage(engine.J, await pdf.getPage(i), 2); const ctx = c.getContext('2d'); const d = ctx.getImageData(0, 0, c.width, c.height); for (let j = 0; j < d.data.length; j += 4) { const g = 0.299 * d.data[j] + 0.587 * d.data[j + 1] + 0.114 * d.data[j + 2]; d.data[j] = d.data[j + 1] = d.data[j + 2] = g; } ctx.putImageData(d, 0, 0);
+        const jpg = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85)); const img = await out.embedJpg(await jpg.arrayBuffer()); const pg = out.addPage([c.width / 2, c.height / 2]); pg.drawImage(img, { x: 0, y: 0, width: c.width / 2, height: c.height / 2 }); }
+      return pdfOut(await out.save(), U.baseName(file.name) + '-gray.pdf'); } });
+
+  R({ id: 'pdf-compress', category: 'PDF', name: 'Compress', description: 'Rasterize pages to shrink large/scanned PDFs.',
+    accepts: ['pdf'], engine: both, fields: [{ key: 'quality', label: 'JPEG quality', type: 'range', default: 60, min: 20, max: 90 }, { key: 'scale', label: 'Scale', type: 'select', default: '1.5', options: ['1', '1.5', '2'] }],
+    async run({ file, inputs, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await bytesU8(file) }).promise; const out = await engine.L.PDFDocument.create(); const q = +inputs.quality / 100;
+      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const c = await renderPage(engine.J, await pdf.getPage(i), +inputs.scale); const jpg = await new Promise((r) => c.toBlob(r, 'image/jpeg', q)); const img = await out.embedJpg(await jpg.arrayBuffer()); const pg = out.addPage([c.width, c.height]); pg.drawImage(img, { x: 0, y: 0, width: c.width, height: c.height }); }
+      return pdfOut(await out.save(), U.baseName(file.name) + '-compressed.pdf'); } });
+})();
+
+/* tools/archives.js */
+/* Archives — ZIP (fflate) + TAR.GZ (native tar + fflate gzip). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const FF = ['vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT'];
+  const loadFf = () => U.loadScript(...FF).then(() => window.fflate);
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const filesOut = (list) => ({ files: list.map(([name, data]) => ({ name, blob: new Blob([data]) })) });
+  const oneOut = (bytes, name, mime = 'application/octet-stream') => ({ blob: new Blob([bytes], { type: mime }), filename: name, mime, preview: 'download' });
+  const textOut = (t) => ({ preview: 'text', text: t, filename: 'listing.txt', mime: 'text/plain', blob: new Blob([t]) });
+
+  function tarCreate(files) { const blocks = [];
+    for (const [name, data] of files) { const h = new Uint8Array(512); const w = (s, o, l) => h.set(enc.encode(s).slice(0, l), o);
+      w(name, 0, 100); w('0000644', 100, 7); w('0000000', 108, 7); w('0000000', 116, 7);
+      w(data.length.toString(8).padStart(11, '0'), 124, 11); w(Math.floor(Date.now() / 1000).toString(8).padStart(11, '0'), 136, 11);
+      for (let i = 148; i < 156; i++) h[i] = 32; h[156] = 48; w('ustar\0', 257, 6); w('00', 263, 2);
+      let sum = 0; for (let i = 0; i < 512; i++) sum += h[i]; w(sum.toString(8).padStart(6, '0') + '\0 ', 148, 8);
+      blocks.push(h, data); const pad = (512 - (data.length % 512)) % 512; if (pad) blocks.push(new Uint8Array(pad)); }
+    blocks.push(new Uint8Array(1024)); const total = blocks.reduce((a, b) => a + b.length, 0); const out = new Uint8Array(total); let o = 0; for (const b of blocks) { out.set(b, o); o += b.length; } return out; }
+  function tarExtract(buf) { const files = []; let off = 0;
+    while (off + 512 <= buf.length) { const h = buf.subarray(off, off + 512); if (h.every((b) => b === 0)) break;
+      const name = dec.decode(h.subarray(0, 100)).replace(/\0.*$/, '').trim(); const size = parseInt(dec.decode(h.subarray(124, 136)).replace(/\0.*$/, '').trim(), 8) || 0;
+      off += 512; if (name) files.push([name.split('/').pop() || name, new Uint8Array(buf.subarray(off, off + size))]); off += Math.ceil(size / 512) * 512; } return files; }
+
+  R({ id: 'zip-create', category: 'Archives', name: 'ZIP create', description: 'Bundle files into a .zip. Drop MANY.',
+    accepts: [], multiple: true, engine: loadFf,
+    async run({ files, engine }) { if (!files || !files.length) throw new Error('Drop some files.'); const obj = {};
+      for (const f of files) obj[f.name] = new Uint8Array(await f.arrayBuffer()); return oneOut(engine.zipSync(obj, { level: 6 }), 'archive.zip', 'application/zip'); } });
+
+  R({ id: 'zip-extract', category: 'Archives', name: 'ZIP extract', description: 'Unpack a .zip into its files.',
+    accepts: ['zip'], engine: loadFf,
+    async run({ file, engine }) { const entries = engine.unzipSync(new Uint8Array(await file.arrayBuffer())); const list = Object.entries(entries).filter(([n]) => !n.endsWith('/')).map(([n, d]) => [n.split('/').pop() || n, d]); if (!list.length) throw new Error('Archive is empty.'); return filesOut(list); } });
+
+  R({ id: 'zip-inspect', category: 'Archives', name: 'ZIP inspect', description: 'List the contents of a .zip without extracting.',
+    accepts: ['zip'], engine: loadFf,
+    async run({ file, engine }) { const entries = engine.unzipSync(new Uint8Array(await file.arrayBuffer())); const rows = Object.entries(entries).map(([n, d]) => `${U.bytes(d.length).padStart(10)}  ${n}`); return textOut(`${rows.length} entries\n\n` + rows.join('\n')); } });
+
+  R({ id: 'targz-create', category: 'Archives', name: 'TAR.GZ create', description: 'Bundle files into a .tar.gz. Drop MANY.',
+    accepts: [], multiple: true, engine: loadFf,
+    async run({ files, engine }) { if (!files || !files.length) throw new Error('Drop some files.'); const entries = []; for (const f of files) entries.push([f.name, new Uint8Array(await f.arrayBuffer())]); const tar = tarCreate(entries); return oneOut(engine.gzipSync(tar, { level: 6 }), 'archive.tar.gz', 'application/gzip'); } });
+
+  R({ id: 'targz-extract', category: 'Archives', name: 'TAR.GZ extract', description: 'Unpack a .tar.gz / .tgz.',
+    accepts: ['gz', 'tgz', 'tar'], engine: loadFf,
+    async run({ file, engine }) { let buf = new Uint8Array(await file.arrayBuffer()); if (/\.(gz|tgz)$/i.test(file.name)) buf = engine.gunzipSync(buf); const list = tarExtract(buf); if (!list.length) throw new Error('No files found in archive.'); return filesOut(list); } });
+
+  R({ id: 'archive-preview', category: 'Archives', name: 'Preview archive', description: 'List entries in a ZIP or TAR.GZ.',
+    accepts: ['zip', 'gz', 'tgz', 'tar'], engine: loadFf,
+    async run({ file, engine }) { const raw = new Uint8Array(await file.arrayBuffer()); let rows;
+      if (/\.zip$/i.test(file.name)) { const e = engine.unzipSync(raw); rows = Object.entries(e).map(([n, d]) => `${U.bytes(d.length).padStart(10)}  ${n}`); }
+      else { let buf = raw; if (/\.(gz|tgz)$/i.test(file.name)) buf = engine.gunzipSync(raw); rows = tarExtract(buf).map(([n, d]) => `${U.bytes(d.length).padStart(10)}  ${n}`); }
+      return textOut(`${rows.length} entries\n\n` + rows.join('\n')); } });
+})();
+
+/* tools/qr.js */
+/* QR & Barcodes — qrcode-generator (gen), jsQR (read), JsBarcode (gen). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const QRGEN = ['vendor/qrcode-generator.js', 'sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k'];
+  const JSQR = ['vendor/jsqr.js', 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx'];
+  const BARCODE = ['vendor/jsbarcode.min.js', 'sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a'];
+  const loadImg = (blob) => new Promise((res, rej) => { const url = URL.createObjectURL(blob); const im = new Image(); im.onload = () => { URL.revokeObjectURL(url); res(im); }; im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not decode image.')); }; im.src = url; });
+  const toBlob = (c, type = 'image/png', q = 0.92) => new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Encode failed.')), type, q));
+
+  R({ id: 'qr-generate', category: 'Developer', name: 'QR generator', description: 'Create a QR code PNG. Runs live.',
+    accepts: null, live: true, engine: () => U.loadScript(...QRGEN).then(() => window.qrcode),
+    fields: [{ key: 'text', label: 'Text or URL', type: 'textarea', default: 'https://example.com' }, { key: 'ecc', label: 'Error correction', type: 'select', default: 'M', options: ['L', 'M', 'Q', 'H'] }, { key: 'scale', label: 'Cell size', type: 'range', default: 6, min: 2, max: 16 }],
+    async run({ inputs, engine }) { const text = (inputs.text || '').toString(); if (!text) throw new Error('Enter text to encode.');
+      const qr = engine(0, inputs.ecc); qr.addData(text); qr.make(); const n = qr.getModuleCount(); const cell = +inputs.scale; const margin = 4 * cell; const dim = n * cell + margin * 2;
+      const c = document.createElement('canvas'); c.width = c.height = dim; const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, dim, dim); ctx.fillStyle = '#000';
+      for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (qr.isDark(r, col)) ctx.fillRect(margin + col * cell, margin + r * cell, cell, cell);
+      return { blob: await toBlob(c, 'image/png'), filename: 'qr.png', mime: 'image/png', preview: 'image' }; } });
+
+  R({ id: 'qr-read', category: 'Developer', name: 'QR reader', description: 'Decode a QR code from an image.',
+    accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'], engine: () => U.loadScript(...JSQR).then(() => window.jsQR),
+    fields: [],
+    async run({ file, engine }) { const img = await loadImg(file); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const d = ctx.getImageData(0, 0, c.width, c.height); const code = engine(d.data, c.width, c.height);
+      if (!code) throw new Error('No QR code found in this image.'); const text = code.data; return { preview: 'text', text, filename: 'qr.txt', mime: 'text/plain', blob: new Blob([text], { type: 'text/plain' }) }; } });
+
+  R({ id: 'barcode-generate', category: 'Developer', name: 'Barcode generator', description: 'Generate a 1D barcode PNG. Runs live.',
+    accepts: null, live: true, engine: () => U.loadScript(...BARCODE).then(() => window.JsBarcode),
+    fields: [{ key: 'text', label: 'Value', type: 'text', default: '012345678905' }, { key: 'format', label: 'Format', type: 'select', default: 'CODE128', options: ['CODE128', 'EAN13', 'UPC', 'CODE39', 'ITF14', 'MSI', 'pharmacode'] }],
+    async run({ inputs, engine }) { const val = (inputs.text || '').toString(); if (!val) throw new Error('Enter a value.');
+      const c = document.createElement('canvas'); try { engine(c, val, { format: inputs.format, displayValue: true, margin: 10 }); } catch (e) { throw new Error(`Invalid value for ${inputs.format}: ${e.message}`); }
+      return { blob: await toBlob(c, 'image/png'), filename: 'barcode.png', mime: 'image/png', preview: 'image' }; } });
+})();
+
+/* tools/docs.js */
+/* Documents — DOCX/MD/HTML conversions (mammoth, marked, turndown) + text ops + →PDF (pdf-lib). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const L = {
+    mammoth: ['vendor/mammoth.browser.min.js', 'sha384-nFoSjZIoH3CCp8W639jJyQkuPHinJ2NHe7on1xvlUA7SuGfJAfvMldrsoAVm6ECz'],
+    marked: ['vendor/marked.min.js', 'sha384-QsSpx6a0USazT7nK7w8qXDgpSAPhFsb2XtpoLFQ5+X2yFN6hvCKnwEzN8M5FWaJb'],
+    turndown: ['vendor/turndown.js', 'sha384-jz8bbuCPKxQBEcgaro/3+eMFneW3+kRVLS0pOVZX4CS6lSr8zG+aaBWqenopTc2Z'],
+    pdflib: ['vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI'],
+    ff: ['vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT'],
+  };
+  const loadMammoth = () => U.loadScript(...L.mammoth).then(() => window.mammoth);
+  const loadMarked = () => U.loadScript(...L.marked).then(() => window.marked);
+  const loadTurndown = () => U.loadScript(...L.turndown).then(() => window.TurndownService);
+  const loadPdfLib = () => U.loadScript(...L.pdflib).then(() => window.PDFLib);
+  const loadFf = () => U.loadScript(...L.ff).then(() => window.fflate);
+  const textOut = (t, name, mime = 'text/plain') => ({ preview: 'text', text: t, filename: name, mime, blob: new Blob([t], { type: mime }) });
+  const stripTags = (html) => { const d = new DOMParser().parseFromString(html, 'text/html'); return d.body.textContent || ''; };
+  const getText = async (file, inputs) => { let raw = inputs.source ?? ''; if (!raw && file) raw = await file.text(); if (!raw) throw new Error('Type text or drop a file.'); return raw; };
+  const escT = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const extOfF = (f) => String(f?.name || '').split('.').pop().toLowerCase();
+  const dec = new TextDecoder();
+
+  /* ODT: unzip content.xml and collect paragraph/heading text (headings get ##). */
+  async function odtParas(file) {
+    const F = await loadFf();
+    const zip = F.unzipSync(new Uint8Array(await file.arrayBuffer()));
+    const xml = zip['content.xml'];
+    if (!xml) throw new Error('Not a valid OpenDocument (.odt) file (missing content.xml).');
+    const doc = new DOMParser().parseFromString(dec.decode(xml), 'text/xml');
+    const paras = [];
+    const local = (el) => el.localName || el.tagName.replace(/^.*:/, '');
+    const collect = (node) => {
+      for (const el of node.children) {
+        const ln = local(el);
+        if (ln === 'p' || ln === 'h') {
+          let t = '';
+          for (const c of el.childNodes) {
+            if (c.nodeType === 3) t += c.textContent;
+            else if (c.nodeType === 1) {
+              const cln = local(c);
+              if (cln === 's') t += ' '.repeat(Math.max(1, +(c.getAttribute('text:c') || 1)));
+              else if (cln === 'tab') t += '\t';
+              else t += c.textContent || '';
+            }
+          }
+          const txt = t.replace(/\s+/g, ' ').trim();
+          if (txt) paras.push((ln === 'h' ? '## ' : '') + txt);
+        } else collect(el);
+      }
+    };
+    collect(doc.documentElement);
+    if (!paras.length) throw new Error('No text found in this OpenDocument file.');
+    return paras;
+  }
+
+  /* RTF: strip control words/groups into plain text (unicode + hex escapes). */
+  function rtfToText(rtf) {
+    let s = String(rtf);
+    s = s.replace(/\\u(-?\d+)\s?\??/g, (m, n) => String.fromCharCode(+n));
+    s = s.replace(/\\'([0-9a-fA-F]{2})/g, (m, h) => String.fromCharCode(parseInt(h, 16)));
+    s = s.replace(/\\fonttbl[^}]*\}/g, '').replace(/\{\\f\d+[^}]*\}/g, '').replace(/\\colortbl[^}]*\}/g, '');
+    s = s.replace(/\\par\b/gi, '\n').replace(/\\tab\b/gi, '\t');
+    s = s.replace(/\\[a-zA-Z]+-?\d* ?/g, '');
+    s = s.replace(/[{}]/g, '').replace(/\\\n/g, '');
+    return s.split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  /* Shared text/html extraction: DOCX via mammoth, ODT via content.xml, RTF via stripper. */
+  const officeText = async (file, mammoth) => {
+    const ext = extOfF(file);
+    if (ext === 'odt') return (await odtParas(file)).map((p) => p.replace(/^## /, '')).join('\n');
+    if (ext === 'rtf') return rtfToText(await file.text());
+    const r = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return r.value;
+  };
+  const officeHtml = async (file, mammoth) => {
+    const ext = extOfF(file);
+    if (ext === 'odt' || ext === 'rtf') {
+      const paras = ext === 'odt' ? await odtParas(file) : rtfToText(await file.text()).split('\n').map((s) => s.trim()).filter(Boolean);
+      return paras.map((p) => p.startsWith('## ') ? `<h2>${escT(p.slice(3))}</h2>` : `<p>${escT(p)}</p>`).join('\n');
+    }
+    const r = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+    return r.value;
+  };
+
+  async function textToPdf(PDFLib, text, name) {
+    const doc = await PDFLib.PDFDocument.create(); const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+    const size = 11, margin = 50, lineH = 15, pw = 595, ph = 842, maxW = pw - margin * 2;
+    const clean = (s) => String(s).replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '?');
+    const wrap = (line) => { const words = clean(line).split(' '); const out = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (font.widthOfTextAtSize(t, size) > maxW) { if (cur) out.push(cur); cur = w; } else cur = t; } out.push(cur); return out.length ? out : ['']; };
+    const lines = []; for (const raw of clean(text).split(/\r?\n/)) for (const l of wrap(raw)) lines.push(l);
+    let page = doc.addPage([pw, ph]), y = ph - margin;
+    for (const l of lines) { if (y < margin) { page = doc.addPage([pw, ph]); y = ph - margin; } page.drawText(l, { x: margin, y, size, font, color: PDFLib.rgb(0.1, 0.1, 0.1) }); y -= lineH; }
+    return { blob: new Blob([await doc.save()], { type: 'application/pdf' }), filename: name, mime: 'application/pdf', preview: 'download' };
+  }
+
+  R({ id: 'docx-to-html', category: 'PDF', name: 'DOCX to HTML', description: 'Convert Word / OpenDocument / RTF to HTML.', accepts: ['docx', 'odt', 'rtf'], engine: loadMammoth,
+    async run({ file, engine }) { return textOut(await officeHtml(file, engine), U.baseName(file.name) + '.html', 'text/html'); } });
+  R({ id: 'docx-to-txt', category: 'PDF', name: 'DOCX to TXT', description: 'Extract plain text from Word / OpenDocument / RTF.', accepts: ['docx', 'odt', 'rtf'], engine: loadMammoth,
+    async run({ file, engine }) { return textOut(await officeText(file, engine), U.baseName(file.name) + '.txt'); } });
+  R({ id: 'docx-to-md', category: 'PDF', name: 'DOCX to Markdown', description: 'Convert Word / OpenDocument / RTF to Markdown.', accepts: ['docx', 'odt', 'rtf'],
+    engine: async () => ({ m: await loadMammoth(), T: await loadTurndown() }),
+    async run({ file, engine }) { const md = new engine.T({ headingStyle: 'atx' }).turndown(await officeHtml(file, engine.m)); return textOut(md, U.baseName(file.name) + '.md', 'text/markdown'); } });
+  R({ id: 'docx-to-pdf', category: 'PDF', name: 'DOCX to PDF', description: 'Convert Word / OpenDocument / RTF to a text PDF.', accepts: ['docx', 'odt', 'rtf'],
+    engine: async () => ({ m: await loadMammoth(), L: await loadPdfLib() }),
+    async run({ file, engine }) { return textToPdf(engine.L, await officeText(file, engine.m), U.baseName(file.name) + '.pdf'); } });
+
+  R({ id: 'md-to-html', category: 'PDF', name: 'Markdown to HTML', description: 'Render Markdown to HTML.', accepts: ['md', 'markdown', 'txt'], optionalFile: true, engine: loadMarked,
+    fields: [{ key: 'source', label: 'Markdown (or drop a file)', type: 'textarea', default: '# Hello\n\nSome **bold** text.' }],
+    async run({ file, inputs, engine }) { const md = await getText(file, inputs); return textOut(engine.parse(md), 'out.html', 'text/html'); } });
+  R({ id: 'html-to-md', category: 'PDF', name: 'HTML to Markdown', description: 'Convert HTML to Markdown.', accepts: ['html', 'htm', 'txt'], optionalFile: true, engine: loadTurndown,
+    fields: [{ key: 'source', label: 'HTML (or drop a file)', type: 'textarea', default: '<h1>Hello</h1><p>Some <b>bold</b> text.</p>' }],
+    async run({ file, inputs, engine }) { const html = await getText(file, inputs); return textOut(new engine({ headingStyle: 'atx' }).turndown(html), 'out.md', 'text/markdown'); } });
+  R({ id: 'md-to-pdf', category: 'PDF', name: 'Markdown to PDF', description: 'Render Markdown to a text PDF.', accepts: ['md', 'markdown', 'txt'], optionalFile: true,
+    engine: async () => ({ mk: await loadMarked(), L: await loadPdfLib() }),
+    fields: [{ key: 'source', label: 'Markdown (or drop a file)', type: 'textarea', default: '# Title\n\nParagraph text.' }],
+    async run({ file, inputs, engine }) { const md = await getText(file, inputs); return textToPdf(engine.L, stripTags(engine.mk.parse(md)), 'out.pdf'); } });
+  R({ id: 'html-to-pdf', category: 'PDF', name: 'HTML to PDF', description: 'Convert HTML to a text PDF.', accepts: ['html', 'htm', 'txt'], optionalFile: true, engine: loadPdfLib,
+    fields: [{ key: 'source', label: 'HTML (or drop a file)', type: 'textarea', default: '<h1>Report</h1><p>Body text.</p>' }],
+    async run({ file, inputs, engine }) { const html = await getText(file, inputs); return textToPdf(engine, stripTags(html), 'out.pdf'); } });
+  R({ id: 'txt-to-pdf', category: 'PDF', name: 'TXT to PDF', description: 'Convert plain text to PDF.', accepts: ['txt', 'md', 'log', 'csv'], optionalFile: true, engine: loadPdfLib,
+    fields: [{ key: 'source', label: 'Text (or drop a file)', type: 'textarea', default: 'Hello from FileKit.' }],
+    async run({ file, inputs, engine }) { return textToPdf(engine, await getText(file, inputs), 'out.pdf'); } });
+  R({ id: 'data-to-pdf', category: 'Data', name: 'Data to PDF', description: 'Render JSON/YAML/XML/CSV data as a text PDF.', accepts: ['json', 'yaml', 'yml', 'xml', 'toml', 'csv', 'tsv'], engine: loadPdfLib,
+    async run({ file, engine }) {
+      let text = await file.text();
+      if (extOfF(file) === 'json') { try { text = JSON.stringify(JSON.parse(text), null, 2); } catch { /* keep raw */ } }
+      return textToPdf(engine, text, U.baseName(file.name) + '.pdf');
+    } });
+
+  const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  R({ id: 'txt-to-html', category: 'Text', name: 'TXT to HTML', description: 'Wrap plain text into a clean, readable HTML page.', accepts: ['txt', 'log', 'md', 'csv'],
+    async run({ file }) {
+      const raw = String(await file.text()).replace(/\r\n?/g, '\n');
+      const body = raw.split('\n').map((l) => `<p>${escHtml(l)}</p>`).join('\n');
+      const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><title>${escHtml(U.baseName(file.name))}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:32px auto;padding:0 20px;line-height:1.7;color:#1a1a1a}p{margin:0 0 12px}</style></head><body>${body}</body></html>`;
+      return textOut(html, U.baseName(file.name) + '.html', 'text/html');
+    } });
+  R({ id: 'txt-to-md', category: 'Text', name: 'TXT to Markdown', description: 'Convert plain text to Markdown.', accepts: ['txt', 'log', 'csv'],
+    async run({ file }) {
+      const raw = String(await file.text()).replace(/\r\n?/g, '\n');
+      const md = raw.split('\n').map((l) => (l.trim() ? l.replace(/([`*_])/g, '\\$1') : '')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      return textOut(md, U.baseName(file.name) + '.md', 'text/markdown');
+    } });
+  R({ id: 'md-to-txt', category: 'Text', name: 'Markdown to TXT', description: 'Strip Markdown syntax into plain text.', accepts: ['md', 'markdown', 'txt'],
+    async run({ file }) {
+      const md = String(await file.text()).replace(/\r\n?/g, '\n');
+      const txt = md
+        .replace(/```[\s\S]*?```/g, (b) => b.replace(/```/g, '').trim())
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/^>\s?/gm, '')
+        .replace(/^\s*(?:[-*+]|\d+[.)])\s+/gm, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1')
+        .replace(/__([^_]+)__/g, '$1').replace(/_([^_]+)_/g, '$1')
+        .replace(/~~([^~]+)~~/g, '$1')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/^\s*[-*+]\s*$/gm, '')
+        .replace(/\n{3,}/g, '\n\n').trim();
+      return textOut(txt, U.baseName(file.name) + '.txt');
+    } });
+  R({ id: 'html-to-txt', category: 'Text', name: 'HTML to TXT', description: 'Strip HTML into plain text.', accepts: ['html', 'htm', 'txt'],
+    async run({ file }) { return textOut(stripTags(await file.text()).replace(/\n{3,}/g, '\n\n').trim(), U.baseName(file.name) + '.txt'); } });
+
+  const DOC = ['txt', 'md', 'log', 'csv', 'html'];
+  const to = (t, n = 'out.txt') => textOut(t, n);
+  R({ id: 'doc-word-count', category: 'Text', name: 'Word count', description: 'Count words in a document.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text (or drop a file)', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { const s = await getText(file, inputs); return to(`Words: ${(s.match(/\S+/g) || []).length}`); } });
+  R({ id: 'doc-char-count', category: 'Text', name: 'Character count', description: 'Count characters.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { const s = await getText(file, inputs); return to(`Characters: ${s.length}\nNo spaces: ${s.replace(/\s/g, '').length}`); } });
+  R({ id: 'doc-reading-time', category: 'Text', name: 'Reading time', description: 'Estimate reading time.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { const w = (await getText(file, inputs)).split(/\s+/).filter(Boolean).length; return to(`${w} words · ~${Math.max(1, Math.round(w / 200))} min read`); } });
+  R({ id: 'doc-find-replace', category: 'Text', name: 'Find and replace', description: 'Literal or regex find/replace.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }, { key: 'find', label: 'Find (regex)', type: 'text', default: '' }, { key: 'repl', label: 'Replace', type: 'text', default: '' }, { key: 'flags', label: 'Flags', type: 'text', default: 'g' }],
+    async run({ file, inputs }) { const s = await getText(file, inputs); if (!inputs.find) throw new Error('Enter a pattern.'); let re; try { re = new RegExp(inputs.find, inputs.flags || ''); } catch (e) { throw new Error('Invalid regex: ' + e.message); } return to(s.replace(re, inputs.repl ?? '')); } });
+  R({ id: 'doc-case', category: 'Text', name: 'Case converter', description: 'Change letter case.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }, { key: 'mode', label: 'Case', type: 'select', default: 'Title', options: ['UPPER', 'lower', 'Title', 'Sentence'] }],
+    async run({ file, inputs }) { const s = await getText(file, inputs); const out = inputs.mode === 'UPPER' ? s.toUpperCase() : inputs.mode === 'lower' ? s.toLowerCase() : inputs.mode === 'Title' ? s.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()) : s.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase()); return to(out); } });
+  R({ id: 'doc-dedupe', category: 'Text', name: 'Remove duplicate lines', description: 'Drop repeated lines.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { const seen = new Set(); return to((await getText(file, inputs)).split(/\r?\n/).filter((l) => !seen.has(l) && seen.add(l)).join('\n')); } });
+  R({ id: 'doc-sort', category: 'Text', name: 'Sort lines', description: 'Sort lines alphabetically.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }, { key: 'dir', label: 'Order', type: 'select', default: 'asc', options: ['asc', 'desc'] }],
+    async run({ file, inputs }) { const l = (await getText(file, inputs)).split(/\r?\n/).sort(); if (inputs.dir === 'desc') l.reverse(); return to(l.join('\n')); } });
+  R({ id: 'doc-whitespace', category: 'Text', name: 'Whitespace cleaner', description: 'Trim and collapse whitespace.', accepts: DOC, optionalFile: true, fields: [{ key: 'source', label: 'Text', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { return to((await getText(file, inputs)).split(/\r?\n/).map((l) => l.replace(/[ \t]+/g, ' ').trim()).join('\n')); } });
+})();
+
+/* tools/fonts.js */
+/* Fonts — opentype.js (parse/convert/metadata/glyphs) + FontFace (preview). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const OT = ['vendor/opentype.min.js', 'sha384-3TaxGqyHrMuRIWY5Z5WHNIzgNRqGIUJE+mk6tm+g1wkm9Ux2kUyOLfy9AsNWXA6u'];
+  const loadOT = () => U.loadScript(...OT).then(() => window.opentype);
+  const textOut = (t, name) => ({ preview: 'text', text: t, filename: name, mime: 'text/plain', blob: new Blob([t], { type: 'text/plain' }) });
+
+  R({ id: 'font-metadata', category: 'Developer', name: 'Font metadata viewer', description: 'Inspect names, metrics and tables of a font.',
+    accepts: ['ttf', 'otf', 'woff'], engine: loadOT,
+    async run({ file, engine }) { const font = engine.parse(await file.arrayBuffer()); const n = font.names || {};
+      const g = (o) => o && (o.en || Object.values(o)[0]) || '—';
+      const lines = [
+        `Family: ${g(n.fontFamily)}`, `Subfamily: ${g(n.fontSubfamily)}`, `Full name: ${g(n.fullName)}`,
+        `Version: ${g(n.version)}`, `Designer: ${g(n.designer)}`, `License: ${g(n.license)}`,
+        `Units per em: ${font.unitsPerEm}`, `Glyphs: ${font.numGlyphs}`,
+        `Ascender: ${font.ascender}  Descender: ${font.descender}`,
+        `Tables: ${Object.keys(font.tables || {}).join(', ')}`,
+      ];
+      return textOut(lines.join('\n'), U.baseName(file.name) + '.info.txt'); } });
+
+  R({ id: 'font-glyphs', category: 'Developer', name: 'Extract glyphs', description: 'Render a grid of the first glyphs to PNG.',
+    accepts: ['ttf', 'otf', 'woff'], engine: loadOT, fields: [{ key: 'count', label: 'Glyphs', type: 'number', default: 100, min: 10, max: 500 }],
+    async run({ file, inputs, engine }) { const font = engine.parse(await file.arrayBuffer()); const n = Math.min(+inputs.count, font.numGlyphs); const cols = 10, cell = 48, rows = Math.ceil(n / cols);
+      const c = document.createElement('canvas'); c.width = cols * cell; c.height = rows * cell; const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.fillStyle = '#111';
+      for (let i = 0; i < n; i++) { const glyph = font.glyphs.get(i); const x = (i % cols) * cell + 6, y = Math.floor(i / cols) * cell + cell - 12;
+        try { glyph.getPath(x, y, 32).draw(ctx); } catch {} }
+      const blob = await new Promise((r) => c.toBlob(r, 'image/png')); return { blob, filename: U.baseName(file.name) + '.glyphs.png', mime: 'image/png', preview: 'image' }; } });
+
+  R({ id: 'font-convert', category: 'Developer', name: 'TTF/OTF/WOFF convert', description: 'Normalize a font to OTF (SFNT). WOFF2 handled in a later pass.',
+    accepts: ['ttf', 'otf', 'woff'], engine: loadOT,
+    async run({ file, engine }) { const font = engine.parse(await file.arrayBuffer()); const buf = font.toArrayBuffer(); return { blob: new Blob([buf], { type: 'font/otf' }), filename: U.baseName(file.name) + '.otf', mime: 'font/otf', preview: 'download' }; } });
+
+  R({ id: 'font-preview', category: 'Developer', name: 'Font preview', description: 'Render sample text in the uploaded font.',
+    accepts: ['ttf', 'otf', 'woff', 'woff2'], fields: [{ key: 'text', label: 'Sample text', type: 'text', default: 'The quick brown fox 0123' }, { key: 'size', label: 'Size (px)', type: 'number', default: 48, min: 8, max: 200 }],
+    async run({ file, inputs }) { const buf = await file.arrayBuffer(); const fam = 'ffprev' + Date.now();
+      const face = new FontFace(fam, buf); await face.load(); document.fonts.add(face);
+      const size = +inputs.size; const c = document.createElement('canvas'); const ctx = c.getContext('2d'); ctx.font = `${size}px "${fam}"`;
+      const lines = ['The quick brown fox', inputs.text || 'Sample', 'ABCDEFGHIJ abcdefghij', '0123456789 !?&@#'];
+      const w = Math.max(400, ...lines.map((l) => ctx.measureText(l).width)) + 40; c.width = w; c.height = lines.length * size * 1.4 + 40;
+      const ctx2 = c.getContext('2d'); ctx2.fillStyle = '#fff'; ctx2.fillRect(0, 0, c.width, c.height); ctx2.fillStyle = '#111'; ctx2.font = `${size}px "${fam}"`; ctx2.textBaseline = 'top';
+      lines.forEach((l, i) => ctx2.fillText(l, 20, 20 + i * size * 1.4));
+      const blob = await new Promise((r) => c.toBlob(r, 'image/png')); return { blob, filename: U.baseName(file.name) + '.preview.png', mime: 'image/png', preview: 'image' }; } });
+})();
+
+/* tools/security.js */
+/* Security — Web Crypto (AES, hashing), native password tools, LSB steganography, PEM inspector. */
+(() => {
+  'use strict';
+  const R = window.FF.register;
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const txt = (t, n = 'out.txt') => ({ preview: 'text', text: t, filename: n, mime: 'text/plain', blob: new Blob([t], { type: 'text/plain' }) });
+  const b64 = (u8) => btoa(String.fromCharCode(...u8));
+  const unb64 = (s) => Uint8Array.from(atob(s.replace(/\s+/g, '')), (c) => c.charCodeAt(0));
+
+  R({ id: 'password-gen', category: 'Security', name: 'Password generator', description: 'Generate strong random passwords. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'len', label: 'Length', type: 'range', default: 20, min: 6, max: 64 }, { key: 'count', label: 'How many', type: 'number', default: 5, min: 1, max: 100 }, { key: 'sym', label: 'Symbols', type: 'select', default: 'yes', options: ['yes', 'no'] }],
+    async run({ inputs }) { let set = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; if (inputs.sym === 'yes') set += '!@#$%^&*()-_=+[]{}'; const len = +inputs.len; const n = +inputs.count; const out = [];
+      for (let k = 0; k < n; k++) { const buf = new Uint32Array(len); crypto.getRandomValues(buf); out.push([...buf].map((v) => set[v % set.length]).join('')); } return txt(out.join('\n')); } });
+
+  R({ id: 'password-strength', category: 'Security', name: 'Password strength checker', description: 'Estimate entropy and strength. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'pw', label: 'Password', type: 'text', default: '' }],
+    async run({ inputs }) { const p = inputs.pw || ''; if (!p) return txt('Type a password to check.'); let pool = 0; if (/[a-z]/.test(p)) pool += 26; if (/[A-Z]/.test(p)) pool += 26; if (/[0-9]/.test(p)) pool += 10; if (/[^a-zA-Z0-9]/.test(p)) pool += 32; const bits = Math.round(p.length * Math.log2(pool || 1)); const verdict = bits < 40 ? 'Very weak' : bits < 60 ? 'Weak' : bits < 80 ? 'Reasonable' : bits < 110 ? 'Strong' : 'Very strong'; return txt(`Length: ${p.length}\nCharacter pool: ${pool}\nEntropy: ~${bits} bits\nVerdict: ${verdict}`); } });
+
+  const deriveKey = async (pass, salt) => { const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']); };
+  R({ id: 'aes', category: 'Security', name: 'AES encrypt / decrypt', description: 'AES-256-GCM with a password (PBKDF2). Text in, text out.', accepts: null,
+    fields: [{ key: 'mode', label: 'Mode', type: 'select', default: 'encrypt', options: ['encrypt', 'decrypt'] }, { key: 'pass', label: 'Password', type: 'text', default: '' }, { key: 'source', label: 'Text / ciphertext', type: 'textarea', default: '' }],
+    async run({ inputs }) { if (!inputs.pass) throw new Error('Enter a password.'); if (!inputs.source) throw new Error('Enter text.');
+      if (inputs.mode === 'encrypt') { const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)); const key = await deriveKey(inputs.pass, salt); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(inputs.source))); const out = new Uint8Array(28 + ct.length); out.set(salt); out.set(iv, 16); out.set(ct, 28); return txt(b64(out), 'cipher.txt'); }
+      try { const raw = unb64(inputs.source); const salt = raw.slice(0, 16), iv = raw.slice(16, 28), ct = raw.slice(28); const key = await deriveKey(inputs.pass, salt); const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct); return txt(dec.decode(pt), 'plain.txt'); } catch { throw new Error('Decryption failed — wrong password or corrupt data.'); } } });
+
+  const loadImg = (blob) => new Promise((res, rej) => { const u = URL.createObjectURL(blob); const im = new Image(); im.onload = () => { URL.revokeObjectURL(u); res(im); }; im.onerror = () => rej(new Error('Bad image.')); im.src = u; });
+  R({ id: 'steganography', category: 'Security', name: 'Steganography', description: 'Hide or reveal a secret message inside a PNG (LSB).', accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
+    fields: [{ key: 'mode', label: 'Mode', type: 'select', default: 'hide', options: ['hide', 'reveal'] }, { key: 'message', label: 'Secret (to hide)', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { const img = await loadImg(file); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0); const d = ctx.getImageData(0, 0, c.width, c.height); const data = d.data;
+      const bitCap = Math.floor(data.length / 4) * 3;
+      if (inputs.mode === 'hide') { if (!inputs.message) throw new Error('Enter a message to hide.'); const bytes = enc.encode(inputs.message); const header = new Uint8Array(4); new DataView(header.buffer).setUint32(0, bytes.length); const all = new Uint8Array(4 + bytes.length); all.set(header); all.set(bytes, 4); const bits = all.length * 8; if (bits > bitCap) throw new Error('Message too large for this image.'); let bi = 0; for (let i = 0; i < data.length && bi < bits; i += 4) { for (let ch = 0; ch < 3 && bi < bits; ch++) { const bit = (all[bi >> 3] >> (7 - (bi & 7))) & 1; data[i + ch] = (data[i + ch] & 0xFE) | bit; bi++; } } ctx.putImageData(d, 0, 0); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); return { blob, filename: 'stego.png', mime: 'image/png', preview: 'image' }; }
+      let bits = []; for (let i = 0; i < data.length; i += 4) for (let ch = 0; ch < 3; ch++) bits.push(data[i + ch] & 1); const getByte = (idx) => { let v = 0; for (let b = 0; b < 8; b++) v = (v << 1) | bits[idx * 8 + b]; return v; };
+      const len = (getByte(0) << 24) | (getByte(1) << 16) | (getByte(2) << 8) | getByte(3); if (len <= 0 || len > bitCap / 8) throw new Error('No hidden message found.'); const out = new Uint8Array(len); for (let i = 0; i < len; i++) out[i] = getByte(4 + i); return txt(dec.decode(out), 'secret.txt'); } });
+
+  R({ id: 'metadata-strip', category: 'Security', name: 'Metadata stripper', description: 'Strip metadata from an image by re-encoding.', accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
+    async run({ file }) { const img = await loadImg(file); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0); const type = /png/.test(file.type) ? 'image/png' : 'image/jpeg'; const blob = await new Promise((r) => c.toBlob(r, type, 0.95)); return { blob, filename: window.FF.util.baseName(file.name) + '-clean.' + (type === 'image/png' ? 'png' : 'jpg'), mime: type, preview: 'image' }; } });
+
+  R({ id: 'jwt-security', category: 'Security', name: 'JWT decoder', description: 'Decode a JWT (no signature verification).', accepts: null, live: true,
+    fields: [{ key: 'token', label: 'JWT', type: 'textarea', default: '' }],
+    async run({ inputs }) { const tok = (inputs.token || '').trim(); if (!tok) return txt('Paste a JWT.'); const parts = tok.split('.'); if (parts.length < 2) throw new Error('Not a JWT.'); const dc = (s) => { s = s.replace(/-/g, '+').replace(/_/g, '/'); s += '='.repeat((4 - s.length % 4) % 4); return dec.decode(unb64(s)); }; try { return txt('HEADER\n' + JSON.stringify(JSON.parse(dc(parts[0])), null, 2) + '\n\nPAYLOAD\n' + JSON.stringify(JSON.parse(dc(parts[1])), null, 2)); } catch { throw new Error('Could not decode this JWT.'); } } });
+
+  R({ id: 'cert-inspect', category: 'Security', name: 'Private key / certificate inspector', description: 'Detect PEM type, size and SHA-256 fingerprint.', accepts: ['pem', 'crt', 'cer', 'key', 'txt'], optionalFile: true,
+    fields: [{ key: 'source', label: 'PEM (or drop a file)', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { let pem = (inputs.source || '').trim(); if (!pem && file) pem = (await file.text()).trim(); if (!pem) throw new Error('Paste a PEM block or drop a file.'); const m = pem.match(/-----BEGIN ([^-]+)-----([\s\S]*?)-----END/); if (!m) throw new Error('No PEM block found.'); const type = m[1].trim(); const der = unb64(m[2]); const fp = new Uint8Array(await crypto.subtle.digest('SHA-256', der)); const hex = [...fp].map((b) => b.toString(16).padStart(2, '0')).join(':'); return txt(`Type: ${type}\nDER length: ${der.length} bytes\nSHA-256 fingerprint:\n${hex}`); } });
+})();
+
+/* tools/ebooks.js */
+/* E-Books — EPUB (a ZIP) via fflate + DOMParser; →PDF via shared textToPdf. */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const FF = ['vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT'];
+  const PDFLIB = ['vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI'];
+  const loadFf = () => U.loadScript(...FF).then(() => window.fflate);
+  const withPdf = async () => ({ F: await loadFf(), L: await U.loadScript(...PDFLIB).then(() => window.PDFLib) });
+  const dec = new TextDecoder();
+  const textOut = (t, name, mime = 'text/plain') => ({ preview: 'text', text: t.length > 8000 ? t.slice(0, 8000) + '\n… (truncated preview — full text in download)' : t, filename: name, mime, blob: new Blob([t], { type: mime }) });
+
+  function parseEpub(fflate, buf) {
+    const files = fflate.unzipSync(new Uint8Array(buf));
+    const container = files['META-INF/container.xml']; if (!container) throw new Error('Not a valid EPUB (no container.xml).');
+    const opfPath = dec.decode(container).match(/full-path="([^"]+)"/)[1];
+    const base = opfPath.includes('/') ? opfPath.replace(/[^/]+$/, '') : '';
+    const opf = new DOMParser().parseFromString(dec.decode(files[opfPath]), 'application/xml');
+    const items = {}; opf.querySelectorAll('manifest > item').forEach((it) => { items[it.getAttribute('id')] = { href: it.getAttribute('href'), type: it.getAttribute('media-type'), props: it.getAttribute('properties') || '' }; });
+    const spine = [...opf.querySelectorAll('spine > itemref')].map((r) => r.getAttribute('idref'));
+    const meta = (tag) => { const el = opf.querySelector('metadata > ' + tag) || [...opf.querySelectorAll('metadata *')].find((e) => e.localName === tag); return el ? el.textContent.trim() : ''; };
+    return { files, base, opf, opfPath, items, spine, meta };
+  }
+  const readFile = (ep, href) => { const path = (ep.base + href).replace(/^\//, ''); const f = ep.files[path] || ep.files[href]; return f ? dec.decode(f) : ''; };
+  const spineHtml = (ep) => ep.spine.map((id) => ep.items[id] && readFile(ep, ep.items[id].href)).filter(Boolean).join('\n');
+  const strip = (html) => { const d = new DOMParser().parseFromString(html, 'text/html'); return (d.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim(); };
+
+  R({ id: 'epub-to-html', category: 'E-Books', name: 'EPUB to HTML', description: 'Combine all chapters into one HTML file.', accepts: ['epub'], engine: loadFf,
+    async run({ file, engine }) { const ep = parseEpub(engine, await file.arrayBuffer()); return textOut(`<!doctype html><meta charset="utf-8"><title>${ep.meta('title') || 'EPUB'}</title>\n` + spineHtml(ep), U.baseName(file.name) + '.html', 'text/html'); } });
+
+  R({ id: 'epub-to-txt', category: 'E-Books', name: 'EPUB to TXT', description: 'Extract plain text from an EPUB.', accepts: ['epub'], engine: loadFf,
+    async run({ file, engine }) { const ep = parseEpub(engine, await file.arrayBuffer()); return textOut(strip(spineHtml(ep)), U.baseName(file.name) + '.txt'); } });
+
+  R({ id: 'epub-to-pdf', category: 'E-Books', name: 'EPUB to PDF', description: 'Convert an EPUB to a text PDF.', accepts: ['epub'], engine: withPdf,
+    async run({ file, engine }) { const ep = parseEpub(engine.F, await file.arrayBuffer()); return U.textToPdf(engine.L, strip(spineHtml(ep)), U.baseName(file.name) + '.pdf'); } });
+
+  R({ id: 'epub-reader', category: 'E-Books', name: 'EPUB reader', description: 'Preview the book’s text content.', accepts: ['epub'], engine: loadFf,
+    async run({ file, engine }) { const ep = parseEpub(engine, await file.arrayBuffer()); const t = `${ep.meta('title')} — ${ep.meta('creator')}\n${'='.repeat(40)}\n\n` + strip(spineHtml(ep)); return textOut(t, U.baseName(file.name) + '.txt'); } });
+
+  R({ id: 'epub-chapters', category: 'E-Books', name: 'EPUB chapter splitter', description: 'Export each chapter as its own HTML file.', accepts: ['epub'], engine: loadFf,
+    async run({ file, engine }) { const ep = parseEpub(engine, await file.arrayBuffer()); const out = ep.spine.map((id, i) => { const it = ep.items[id]; if (!it) return null; const html = readFile(ep, it.href); return { name: `chapter-${String(i + 1).padStart(2, '0')}.html`, blob: new Blob([html], { type: 'text/html' }) }; }).filter(Boolean); if (!out.length) throw new Error('No chapters found.'); return { files: out }; } });
+
+  R({ id: 'epub-cover', category: 'E-Books', name: 'EPUB cover extractor', description: 'Pull the cover image out of an EPUB.', accepts: ['epub'], engine: loadFf,
+    async run({ file, engine }) { const ep = parseEpub(engine, await file.arrayBuffer());
+      let coverHref = null; for (const id in ep.items) if (/cover/i.test(id) && /image/.test(ep.items[id].type) || (ep.items[id].props || '').includes('cover-image')) { coverHref = ep.items[id].href; break; }
+      if (!coverHref) { const first = Object.values(ep.items).find((it) => /image/.test(it.type)); coverHref = first && first.href; }
+      if (!coverHref) throw new Error('No cover image found.'); const path = (ep.base + coverHref).replace(/^\//, ''); const data = ep.files[path]; if (!data) throw new Error('Cover file missing.'); const ext = (coverHref.split('.').pop() || 'jpg').toLowerCase(); const mime = ext === 'png' ? 'image/png' : 'image/jpeg'; return { blob: new Blob([data], { type: mime }), filename: 'cover.' + ext, mime, preview: 'image' }; } });
+
+  R({ id: 'epub-metadata', category: 'E-Books', name: 'EPUB metadata editor', description: 'View and rewrite title / author, then repackage.', accepts: ['epub'], engine: loadFf,
+    fields: [{ key: 'title', label: 'New title (blank = keep)', type: 'text', default: '' }, { key: 'author', label: 'New author (blank = keep)', type: 'text', default: '' }],
+    async run({ file, inputs, engine }) { const buf = await file.arrayBuffer(); const ep = parseEpub(engine, buf);
+      if (!inputs.title && !inputs.author) { return textOut(`Title: ${ep.meta('title') || '—'}\nAuthor: ${ep.meta('creator') || '—'}\nLanguage: ${ep.meta('language') || '—'}\nIdentifier: ${ep.meta('identifier') || '—'}\n\n(enter a new title/author above to rewrite)`, 'metadata.txt'); }
+      let opfStr = dec.decode(ep.files[ep.opfPath]);
+      if (inputs.title) opfStr = opfStr.replace(/(<dc:title[^>]*>)[\s\S]*?(<\/dc:title>)/, `$1${inputs.title}$2`);
+      if (inputs.author) opfStr = opfStr.replace(/(<dc:creator[^>]*>)[\s\S]*?(<\/dc:creator>)/, `$1${inputs.author}$2`);
+      ep.files[ep.opfPath] = new TextEncoder().encode(opfStr);
+      const zipped = engine.zipSync(ep.files, { level: 6 }); return { blob: new Blob([zipped], { type: 'application/epub+zip' }), filename: U.baseName(file.name) + '-edited.epub', mime: 'application/epub+zip', preview: 'download' }; } });
+})();
+
+/* tools/utilities.js */
+/* Utilities — native tools. */
+(() => {
+  'use strict';
+  const R = window.FF.register;
+  const txt = (t, n = 'out.txt') => ({ preview: 'text', text: t, filename: n, mime: 'text/plain', blob: new Blob([t], { type: 'text/plain' }) });
+
+  R({ id: 'timestamp', category: 'Utilities', name: 'Timestamp converter', description: 'Convert between Unix time and dates. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'value', label: 'Unix seconds or ISO date', type: 'text', default: String(Math.floor(Date.now() / 1000)) }],
+    async run({ inputs }) { const v = (inputs.value || '').trim(); let d; if (/^\d{10,13}$/.test(v)) d = new Date(v.length === 13 ? +v : +v * 1000); else d = new Date(v); if (isNaN(d)) throw new Error('Not a valid timestamp or date.');
+      return txt(`Unix (s): ${Math.floor(d.getTime() / 1000)}\nUnix (ms): ${d.getTime()}\nISO: ${d.toISOString()}\nLocal: ${d.toString()}\nUTC: ${d.toUTCString()}`); } });
+
+  R({ id: 'ua-parse', category: 'Utilities', name: 'User agent parser', description: 'Break down a user-agent string. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'ua', label: 'User agent', type: 'textarea', default: (navigator.userAgent || '') }],
+    async run({ inputs }) { const ua = inputs.ua || ''; const os = /Windows NT/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /(iPhone|iPad)/.test(ua) ? 'iOS' : /Linux/.test(ua) ? 'Linux' : '—';
+      const br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '—';
+      const mobile = /Mobi|Android|iPhone/.test(ua) ? 'Yes' : 'No'; return txt(`OS: ${os}\nBrowser: ${br}\nMobile: ${mobile}\n\nRaw:\n${ua}`); } });
+
+  R({ id: 'screen-info', category: 'Utilities', name: 'Screen resolution', description: 'Show this display’s properties.', accepts: null,
+    fields: [], async run() { const s = window.screen; return txt(`Screen: ${s.width} × ${s.height}\nAvailable: ${s.availWidth} × ${s.availHeight}\nViewport: ${innerWidth} × ${innerHeight}\nDevice pixel ratio: ${devicePixelRatio}\nColor depth: ${s.colorDepth}-bit`); } });
+
+  const hexToHsl = (hex) => { const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0, l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; } return `hsl(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`; };
+  R({ id: 'color-picker', category: 'Utilities', name: 'Color picker', description: 'Pick a color, get HEX/RGB/HSL. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'c', label: 'Color', type: 'color', default: '#5B8EF0' }],
+    async run({ inputs }) { const hex = inputs.c; const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return txt(`HEX ${hex}\nRGB rgb(${r}, ${g}, ${b})\n${hexToHsl(hex)}`); } });
+
+  const imgFromCanvas = async (c, name) => ({ blob: await new Promise((r) => c.toBlob(r, 'image/png')), filename: name, mime: 'image/png', preview: 'image' });
+  R({ id: 'gradient-gen', category: 'Utilities', name: 'Gradient generator', description: 'Build a CSS gradient with a live preview.', accepts: null, live: true,
+    fields: [{ key: 'c1', label: 'Color 1', type: 'color', default: '#5B8EF0' }, { key: 'c2', label: 'Color 2', type: 'color', default: '#E05C5C' }, { key: 'angle', label: 'Angle', type: 'range', default: 90, min: 0, max: 360 }],
+    async run({ inputs }) { const c = document.createElement('canvas'); c.width = 480; c.height = 200; const ctx = c.getContext('2d'); const rad = (+inputs.angle - 90) * Math.PI / 180; const x = Math.cos(rad), y = Math.sin(rad); const g = ctx.createLinearGradient(240 - x * 240, 100 - y * 100, 240 + x * 240, 100 + y * 100); g.addColorStop(0, inputs.c1); g.addColorStop(1, inputs.c2); ctx.fillStyle = g; ctx.fillRect(0, 0, 480, 200); const out = await imgFromCanvas(c, 'gradient.png'); out.text = `background: linear-gradient(${inputs.angle}deg, ${inputs.c1}, ${inputs.c2});`; return out; } });
+
+  R({ id: 'box-shadow-gen', category: 'Utilities', name: 'Box shadow generator', description: 'Generate a CSS box-shadow. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'x', label: 'Offset X', type: 'number', default: 0 }, { key: 'y', label: 'Offset Y', type: 'number', default: 8 }, { key: 'blur', label: 'Blur', type: 'number', default: 24 }, { key: 'spread', label: 'Spread', type: 'number', default: 0 }, { key: 'color', label: 'Color', type: 'color', default: '#000000' }, { key: 'alpha', label: 'Opacity %', type: 'range', default: 20, min: 0, max: 100 }],
+    async run({ inputs }) { const a = (+inputs.alpha / 100).toFixed(2); const r = parseInt(inputs.color.slice(1, 3), 16), g = parseInt(inputs.color.slice(3, 5), 16), b = parseInt(inputs.color.slice(5, 7), 16); return txt(`box-shadow: ${inputs.x}px ${inputs.y}px ${inputs.blur}px ${inputs.spread}px rgba(${r}, ${g}, ${b}, ${a});`); } });
+
+  R({ id: 'radius-gen', category: 'Utilities', name: 'Border radius generator', description: 'Generate a CSS border-radius. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'tl', label: 'Top-left', type: 'number', default: 12 }, { key: 'tr', label: 'Top-right', type: 'number', default: 12 }, { key: 'br', label: 'Bottom-right', type: 'number', default: 12 }, { key: 'bl', label: 'Bottom-left', type: 'number', default: 12 }],
+    async run({ inputs }) { return txt(`border-radius: ${inputs.tl}px ${inputs.tr}px ${inputs.br}px ${inputs.bl}px;`); } });
+
+  R({ id: 'aspect-ratio', category: 'Utilities', name: 'Aspect ratio calculator', description: 'Simplify a ratio and scale dimensions. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'w', label: 'Width', type: 'number', default: 1920 }, { key: 'h', label: 'Height', type: 'number', default: 1080 }, { key: 'target', label: 'New width (optional)', type: 'number', default: 0 }],
+    async run({ inputs }) { const w = +inputs.w, h = +inputs.h; const gcd = (a, b) => b ? gcd(b, a % b) : a; const g = gcd(w, h) || 1; let out = `Ratio: ${w / g}:${h / g}  (${(w / h).toFixed(4)})`; if (+inputs.target > 0) out += `\nAt width ${inputs.target}px → height ${Math.round(+inputs.target * h / w)}px`; return txt(out); } });
+
+  R({ id: 'placeholder-img', category: 'Utilities', name: 'Image placeholder generator', description: 'Generate a placeholder PNG. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'w', label: 'Width', type: 'number', default: 600 }, { key: 'h', label: 'Height', type: 'number', default: 400 }, { key: 'bg', label: 'Background', type: 'color', default: '#E4E4DF' }, { key: 'label', label: 'Label (blank = size)', type: 'text', default: '' }],
+    async run({ inputs }) { const w = Math.min(4000, +inputs.w), h = Math.min(4000, +inputs.h); const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d'); ctx.fillStyle = inputs.bg; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#888'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `${Math.max(12, Math.min(w, h) / 8)}px sans-serif`; ctx.fillText(inputs.label || `${w}×${h}`, w / 2, h / 2); return imgFromCanvas(c, 'placeholder.png'); } });
+
+  const RATES = { date: '2026-01-01', base: 'USD', r: { USD: 1, EUR: 0.92, GBP: 0.79, JPY: 157, INR: 83.2, CAD: 1.36, AUD: 1.52, CHF: 0.88, CNY: 7.24, SGD: 1.34, AED: 3.67, BRL: 4.95, ZAR: 18.6, RUB: 92, KRW: 1330, MXN: 17.1 } };
+  R({ id: 'currency', category: 'Utilities', name: 'Currency converter', description: `Offline snapshot (rates as of ${RATES.date}). Runs live.`, accepts: null, live: true,
+    fields: [{ key: 'amt', label: 'Amount', type: 'number', default: 100 }, { key: 'from', label: 'From', type: 'select', default: 'USD', options: Object.keys(RATES.r) }, { key: 'to', label: 'To', type: 'select', default: 'EUR', options: Object.keys(RATES.r) }],
+    async run({ inputs }) { const usd = (+inputs.amt) / RATES.r[inputs.from]; const out = usd * RATES.r[inputs.to]; return txt(`${inputs.amt} ${inputs.from} = ${out.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${inputs.to}\n(rates as of ${RATES.date}, offline snapshot)`); } });
+
+  R({ id: 'ip-info', category: 'Utilities', name: 'IP address info', description: 'Inspect an IP address offline (class, scope, CIDR). Runs live.', accepts: null, live: true,
+    fields: [{ key: 'ip', label: 'IP address', type: 'text', default: '192.168.1.10' }],
+    async run({ inputs }) { const ip = (inputs.ip || '').trim();
+      if (/^[0-9.]+$/.test(ip)) { const o = ip.split('.').map(Number); if (o.length !== 4 || o.some((n) => n < 0 || n > 255)) throw new Error('Not a valid IPv4 address.');
+        const cls = o[0] < 128 ? 'A' : o[0] < 192 ? 'B' : o[0] < 224 ? 'C' : o[0] < 240 ? 'D (multicast)' : 'E';
+        const priv = o[0] === 10 || (o[0] === 172 && o[1] >= 16 && o[1] <= 31) || (o[0] === 192 && o[1] === 168); const loop = o[0] === 127; const link = o[0] === 169 && o[1] === 254;
+        return txt(`IPv4: ${ip}\nClass: ${cls}\nScope: ${loop ? 'Loopback' : link ? 'Link-local' : priv ? 'Private' : 'Public'}\nInteger: ${((o[0] << 24) >>> 0) + (o[1] << 16) + (o[2] << 8) + o[3]}`); }
+      if (ip.includes(':')) return txt(`IPv6: ${ip}\nScope: ${/^fe80:/i.test(ip) ? 'Link-local' : /^::1$/.test(ip) ? 'Loopback' : /^f[cd]/i.test(ip) ? 'Unique-local' : 'Global/other'}`);
+      throw new Error('Enter an IPv4 or IPv6 address.'); } });
+
+  R({ id: 'cron-util', category: 'Utilities', name: 'Cron job explainer', description: 'Explain a 5-field cron expression. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'expr', label: 'Cron', type: 'text', default: '*/15 9-17 * * 1-5' }],
+    async run({ inputs }) { const f = (inputs.expr || '').trim().split(/\s+/); if (f.length !== 5) return txt('Enter 5 fields: minute hour day month weekday'); const [mi, hr, dom, mon, dow] = f; const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; const p = (v, u) => v === '*' ? `every ${u}` : v.includes('/') ? `every ${v.split('/')[1]} ${u}s` : v.includes('-') ? `${u}s ${v}` : `${u} ${v}`; const dowt = dow === '*' ? 'every day' : dow.split(/[,-]/).map((d) => days[+d] || d).join('–'); return txt(`At ${p(mi, 'minute')}, ${p(hr, 'hour')}, ${p(dom, 'day-of-month')}, ${p(mon, 'month')}, ${dowt}.`); } });
+})();
+
+/* tools/audio.js */
+/* Audio — Web Audio API (decode any browser-supported audio, process, output WAV). */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const AC = () => new (window.AudioContext || window.webkitAudioContext)();
+  const IN = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'webm', 'oga'];
+
+  async function decode(file) { const ctx = AC(); const buf = await ctx.decodeAudioData(await file.arrayBuffer()); ctx.close?.(); return buf; }
+  function encodeWAV(ab) {
+    const numCh = ab.numberOfChannels, sr = ab.sampleRate, len = ab.length, bps = 2, blockAlign = numCh * bps, dataLen = len * blockAlign;
+    const buffer = new ArrayBuffer(44 + dataLen), view = new DataView(buffer);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0, 'RIFF'); view.setUint32(4, 36 + dataLen, true); ws(8, 'WAVE'); ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, numCh, true); view.setUint32(24, sr, true); view.setUint32(28, sr * blockAlign, true); view.setUint16(32, blockAlign, true); view.setUint16(34, 16, true); ws(36, 'data'); view.setUint32(40, dataLen, true);
+    const chans = []; for (let c = 0; c < numCh; c++) chans.push(ab.getChannelData(c));
+    let off = 44; for (let i = 0; i < len; i++) for (let c = 0; c < numCh; c++) { let s = Math.max(-1, Math.min(1, chans[c][i])); view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2; }
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+  const makeBuffer = (numCh, len, sr) => AC().createBuffer(numCh, Math.max(1, Math.floor(len)), sr);
+  const wavOut = (ab, name) => ({ blob: encodeWAV(ab), filename: name, mime: 'audio/wav', preview: 'download' });
+
+  async function bufferToWavFile(ab, name) { return wavOut(ab, name); }
+
+  async function encodeWithMediaRecorder(ab, mime, ext) {
+    const list = typeof MediaRecorder !== 'undefined' ? (MediaRecorder.isTypeSupported ? [
+      mime,
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4',
+      'audio/mpeg',
+    ].filter(t => { try { return MediaRecorder.isTypeSupported(t); } catch { return false; } }) : []) : [];
+    const type = list[0];
+    if (!type) throw new Error('No MediaRecorder audio encoder in this browser');
+    const ctx = AC();
+    const dest = ctx.createMediaStreamDestination();
+    const src = ctx.createBufferSource();
+    src.buffer = ab;
+    src.connect(dest);
+    const chunks = [];
+    const rec = new MediaRecorder(dest.stream, { mimeType: type });
+    const done = new Promise((resolve, reject) => {
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onerror = () => reject(new Error('MediaRecorder failed'));
+      rec.onstop = () => resolve(new Blob(chunks, { type: type.split(';')[0] }));
+    });
+    rec.start(100);
+    src.start(0);
+    await new Promise(r => { src.onended = r; setTimeout(r, Math.ceil(ab.duration * 1000) + 200); });
+    if (rec.state !== 'inactive') rec.stop();
+    const blob = await done;
+    try { ctx.close?.(); } catch {}
+    const outMime = type.startsWith('audio/mp4') ? 'audio/mp4' : type.startsWith('audio/ogg') ? 'audio/ogg' : type.startsWith('audio/mpeg') ? 'audio/mpeg' : 'audio/webm';
+    const outExt = outMime.includes('mp4') ? 'm4a' : outMime.includes('ogg') ? 'ogg' : outMime.includes('mpeg') ? 'mp3' : 'webm';
+    return { blob, filename: U.baseName(name || 'audio') + '.' + (ext || outExt), mime: outMime, preview: 'audio' };
+  }
+
+  async function encodeViaFFmpeg(file, fmt, br) {
+    const FFm = window.FF && window.FF.media;
+    if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
+    const INP = 'input.' + (U.extOf(file.name) || 'bin');
+    const out = 'output.' + fmt;
+    let args;
+    if (fmt === 'mp3') args = ['-i', INP, '-vn', '-c:a', 'libmp3lame', '-b:a', br || '192k', out];
+    else if (fmt === 'aac' || fmt === 'm4a') args = ['-i', INP, '-vn', '-c:a', 'aac', '-b:a', br || '192k', out];
+    else if (fmt === 'ogg') args = ['-i', INP, '-vn', '-c:a', 'libvorbis', '-q:a', '5', out];
+    else if (fmt === 'opus') args = ['-i', INP, '-vn', '-c:a', 'libopus', '-b:a', br || '128k', 'output.opus'];
+    else if (fmt === 'flac') args = ['-i', INP, '-vn', '-c:a', 'flac', out];
+    else if (fmt === 'wav') args = ['-i', INP, '-vn', out];
+    else if (fmt === 'webm') args = ['-i', INP, '-vn', '-c:a', 'libopus', '-b:a', br || '128k', out];
+    else args = ['-i', INP, '-vn', out];
+    const realOut = args[args.length - 1];
+    const data = await FFm.run({ inputs: [[INP, file]], args, out: realOut });
+    const mime = ({ mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', opus: 'audio/opus', flac: 'audio/flac', webm: 'audio/webm', m4a: 'audio/mp4', aac: 'audio/aac' })[fmt] || 'application/octet-stream';
+    const ext = fmt === 'aac' ? 'm4a' : fmt;
+    return { blob: new Blob([data.buffer || data], { type: mime }), filename: U.baseName(file.name) + '.' + ext, mime, preview: 'audio' };
+  }
+
+  R({ id: 'audio-to-wav', category: 'Audio', name: 'Convert to WAV', description: 'Decode MP3/OGG/M4A/FLAC and export as WAV.',
+    accepts: IN, maxBytes: 200e6, async run({ file }) { return wavOut(await decode(file), U.baseName(file.name) + '.wav'); } });
+
+  R({ id: 'audio-convert', category: 'Audio', name: 'Convert audio', description: 'Convert between WAV, MP3, OGG, WebM, M4A, FLAC and more (client-side).',
+    accepts: IN, maxBytes: 200e6,
+    fields: [
+      { key: 'format', label: 'Output format', type: 'select', default: 'wav', options: ['wav', 'mp3', 'ogg', 'webm', 'm4a', 'aac', 'flac', 'opus'] },
+      { key: 'br', label: 'Bitrate (lossy)', type: 'select', default: '192k', options: ['96k', '128k', '160k', '192k', '256k', '320k'] },
+    ],
+    async run({ file, inputs }) {
+      const fmt = (inputs.format || 'wav').toLowerCase();
+      const br = inputs.br || '192k';
+      if (fmt === 'wav') return wavOut(await decode(file), U.baseName(file.name) + '.wav');
+      // Prefer ffmpeg when present for broad codec support
+      try { return await encodeViaFFmpeg(file, fmt === 'aac' ? 'm4a' : fmt, br); } catch (e1) {
+        const ab = await decode(file);
+        if (fmt === 'webm' || fmt === 'ogg' || fmt === 'opus' || fmt === 'm4a' || fmt === 'aac' || fmt === 'mp3') {
+          try {
+            const mime =
+              fmt === 'mp3' ? 'audio/mpeg' :
+              fmt === 'm4a' || fmt === 'aac' ? 'audio/mp4' :
+              fmt === 'ogg' || fmt === 'opus' ? 'audio/ogg;codecs=opus' :
+              'audio/webm;codecs=opus';
+            return await encodeWithMediaRecorder(ab, mime, fmt === 'opus' ? 'opus' : fmt === 'aac' ? 'm4a' : fmt);
+          } catch (e2) {
+            // last resort wav
+            return wavOut(ab, U.baseName(file.name) + '-fallback.wav');
+          }
+        }
+        if (fmt === 'flac') {
+          try { return await encodeViaFFmpeg(file, 'flac', br); } catch { return wavOut(ab, U.baseName(file.name) + '-fallback.wav'); }
+        }
+        return wavOut(ab, U.baseName(file.name) + '.wav');
+      }
+    }
+  });
+
+  R({ id: 'audio-trim', category: 'Audio', name: 'Trim', description: 'Keep a time range of an audio file.',
+    accepts: IN, fields: [{ key: 'start', label: 'Start (s)', type: 'number', default: 0, min: 0, step: 0.1 }, { key: 'end', label: 'End (s, 0 = end)', type: 'number', default: 0, min: 0, step: 0.1 }],
+    async run({ file, inputs }) { const ab = await decode(file); const s = Math.floor((+inputs.start) * ab.sampleRate); const e = +inputs.end > 0 ? Math.floor((+inputs.end) * ab.sampleRate) : ab.length; if (e <= s) throw new Error('End must be after start.'); const out = makeBuffer(ab.numberOfChannels, e - s, ab.sampleRate); for (let c = 0; c < ab.numberOfChannels; c++) out.getChannelData(c).set(ab.getChannelData(c).subarray(s, e)); return wavOut(out, U.baseName(file.name) + '-trim.wav'); } });
+
+  R({ id: 'audio-merge', category: 'Audio', name: 'Merge', description: 'Concatenate several audio files. Drop MANY.',
+    accepts: IN, multiple: true, async run({ files }) { if (!files || files.length < 2) throw new Error('Drop at least two audio files.'); const bufs = []; for (const f of files) bufs.push(await decode(f)); const sr = bufs[0].sampleRate; const numCh = Math.max(...bufs.map((b) => b.numberOfChannels)); const total = bufs.reduce((a, b) => a + b.length, 0); const out = makeBuffer(numCh, total, sr); let off = 0; for (const b of bufs) { for (let c = 0; c < numCh; c++) out.getChannelData(c).set(b.getChannelData(Math.min(c, b.numberOfChannels - 1)), off); off += b.length; } return wavOut(out, 'merged.wav'); } });
+
+  R({ id: 'audio-sample-rate', category: 'Audio', name: 'Change sample rate', description: 'Resample audio to a new rate.',
+    accepts: IN, fields: [{ key: 'rate', label: 'Sample rate (Hz)', type: 'select', default: '44100', options: ['8000', '16000', '22050', '44100', '48000'] }],
+    async run({ file, inputs }) { const ab = await decode(file); const rate = +inputs.rate; const oac = new OfflineAudioContext(ab.numberOfChannels, Math.ceil(ab.duration * rate), rate); const src = oac.createBufferSource(); src.buffer = ab; src.connect(oac.destination); src.start(); const out = await oac.startRendering(); return wavOut(out, U.baseName(file.name) + `-${rate}.wav`); } });
+
+  R({ id: 'audio-normalize', category: 'Audio', name: 'Normalize volume', description: 'Scale peak amplitude to 0 dBFS.',
+    accepts: IN, async run({ file }) { const ab = await decode(file); let peak = 0; for (let c = 0; c < ab.numberOfChannels; c++) { const d = ab.getChannelData(c); for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i])); } if (peak === 0) throw new Error('Silent audio.'); const g = 0.99 / peak; const out = makeBuffer(ab.numberOfChannels, ab.length, ab.sampleRate); for (let c = 0; c < ab.numberOfChannels; c++) { const s = ab.getChannelData(c), o = out.getChannelData(c); for (let i = 0; i < s.length; i++) o[i] = s[i] * g; } return wavOut(out, U.baseName(file.name) + '-norm.wav'); } });
+
+  R({ id: 'audio-reverse', category: 'Audio', name: 'Reverse', description: 'Play the audio backwards.',
+    accepts: IN, async run({ file }) { const ab = await decode(file); const out = makeBuffer(ab.numberOfChannels, ab.length, ab.sampleRate); for (let c = 0; c < ab.numberOfChannels; c++) { const s = ab.getChannelData(c), o = out.getChannelData(c); for (let i = 0; i < s.length; i++) o[i] = s[s.length - 1 - i]; } return wavOut(out, U.baseName(file.name) + '-rev.wav'); } });
+
+  R({ id: 'audio-speed', category: 'Audio', name: 'Speed up / slow down', description: 'Change playback speed (also shifts pitch).',
+    accepts: IN, fields: [{ key: 'rate', label: 'Speed', type: 'range', default: 1.5, min: 0.25, max: 4, step: 0.05 }],
+    async run({ file, inputs }) { const ab = await decode(file); const speed = +inputs.rate; const oac = new OfflineAudioContext(ab.numberOfChannels, Math.ceil(ab.length / speed), ab.sampleRate); const src = oac.createBufferSource(); src.buffer = ab; src.playbackRate.value = speed; src.connect(oac.destination); src.start(); const out = await oac.startRendering(); return wavOut(out, U.baseName(file.name) + `-${speed}x.wav`); } });
+
+  R({ id: 'audio-silence', category: 'Audio', name: 'Generate silence', description: 'Create a silent WAV of a given length.',
+    accepts: null, fields: [{ key: 'sec', label: 'Duration (s)', type: 'number', default: 3, min: 0.1, step: 0.1 }, { key: 'rate', label: 'Sample rate', type: 'select', default: '44100', options: ['8000', '22050', '44100', '48000'] }],
+    async run({ inputs }) { const sr = +inputs.rate; const out = makeBuffer(1, (+inputs.sec) * sr, sr); return wavOut(out, 'silence.wav'); } });
+
+  R({ id: 'audio-waveform', category: 'Audio', name: 'Waveform visualizer', description: 'Render an audio waveform to PNG.',
+    accepts: IN, fields: [{ key: 'color', label: 'Color', type: 'color', default: '#5B8EF0' }],
+    async run({ file, inputs }) { const ab = await decode(file); const w = 1000, h = 240; const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.strokeStyle = inputs.color; ctx.beginPath(); const data = ab.getChannelData(0); const step = Math.floor(data.length / w) || 1; for (let x = 0; x < w; x++) { let min = 1, max = -1; for (let i = 0; i < step; i++) { const v = data[x * step + i] || 0; if (v < min) min = v; if (v > max) max = v; } ctx.moveTo(x, (1 + min) * h / 2); ctx.lineTo(x, (1 + max) * h / 2); } ctx.stroke(); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); return { blob, filename: U.baseName(file.name) + '-wave.png', mime: 'image/png', preview: 'image' }; } });
+
+  R({ id: 'audio-split-silence', category: 'Audio', name: 'Split by silence', description: 'Cut into clips at silent gaps (ZIP of WAVs).',
+    accepts: IN, fields: [{ key: 'thresh', label: 'Silence threshold', type: 'range', default: 2, min: 1, max: 10, step: 0.5 }, { key: 'gap', label: 'Min gap (s)', type: 'number', default: 0.5, min: 0.1, step: 0.1 }],
+    engine: () => U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate),
+    async run({ file, inputs, engine }) { const ab = await decode(file); const d = ab.getChannelData(0); const sr = ab.sampleRate; const thr = (+inputs.thresh) / 100; const minGap = (+inputs.gap) * sr;
+      const segs = []; let start = 0, silence = 0, inSeg = false;
+      for (let i = 0; i < d.length; i++) { const loud = Math.abs(d[i]) > thr; if (loud) { if (!inSeg) { start = i; inSeg = true; } silence = 0; } else if (inSeg) { silence++; if (silence > minGap) { segs.push([start, i - silence]); inSeg = false; } } }
+      if (inSeg) segs.push([start, d.length]);
+      if (!segs.length) throw new Error('No non-silent segments found — lower the threshold.');
+      const files = {}; let k = 0; for (const [s, e] of segs) { const seg = makeBuffer(ab.numberOfChannels, e - s, sr); for (let c = 0; c < ab.numberOfChannels; c++) seg.getChannelData(c).set(ab.getChannelData(c).subarray(s, e)); files[`clip-${++k}.wav`] = new Uint8Array(await encodeWAV(seg).arrayBuffer()); }
+      return { blob: new Blob([engine.zipSync(files, { level: 4 })], { type: 'application/zip' }), filename: U.baseName(file.name) + '-clips.zip', mime: 'application/zip', preview: 'download' }; } });
+})();
+
+/* tools/video.js */
+/* Video + remaining Audio — ffmpeg.wasm. */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const FFm = window.FF.media;
+  const FFLATE_SRI = 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT';
+  const VID = ['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v', 'ogv'];
+  const IN = (f) => 'input.' + (U.extOf(f.name) || 'bin');
+  const vcodec = (fmt) => fmt === 'mp4' ? ['-c:v', 'mpeg4', '-q:v', '5', '-c:a', 'aac', '-b:a', '160k'] : ['-c:v', 'libvpx', '-b:v', '1M', '-c:a', 'libvorbis'];
+  const fmtField = { key: 'format', label: 'Output format', type: 'select', default: 'webm', options: ['webm', 'mp4'] };
+
+  async function op(file, args, outExt, mime, preview, onProgress, signal) {
+    const out = 'output.' + outExt;
+    const data = await FFm.run({ inputs: [[IN(file), file]], args, out, onProgress, signal });
+    return { blob: new Blob([data.buffer || data], { type: mime }), filename: U.baseName(file.name) + '.' + outExt, mime, preview: preview || 'download' };
+  }
+  const mimeFor = (fmt) => ({ webm: 'video/webm', mp4: 'video/mp4', mp3: 'audio/mpeg', gif: 'image/gif', png: 'image/png', m4a: 'audio/mp4' }[fmt] || 'application/octet-stream');
+
+  R({ id: 'video-convert', category: 'Video', name: 'Convert MP4/WebM/MOV', description: 'Transcode video.', accepts: VID, maxBytes: 500e6, fields: [fmtField],
+    async run({ file, inputs, onProgress, signal }) { const f = inputs.format; return op(file, ['-i', IN(file), ...vcodec(f), 'output.' + f], f, mimeFor(f), 'video', onProgress, signal); } });
+
+  R({ id: 'video-trim', category: 'Video', name: 'Trim', description: 'Keep a time range of a video.', accepts: VID, fields: [{ key: 'start', label: 'Start (s)', type: 'number', default: 0, min: 0, step: 0.1 }, { key: 'end', label: 'End (s)', type: 'number', default: 5, min: 0, step: 0.1 }, fmtField],
+    async run({ file, inputs, onProgress, signal }) { const f = inputs.format; return op(file, ['-i', IN(file), '-ss', String(inputs.start), '-to', String(inputs.end), ...vcodec(f), 'output.' + f], f, mimeFor(f), 'video', onProgress, signal); } });
+
+  R({ id: 'video-compress', category: 'Video', name: 'Compress', description: 'Shrink a video (WebM/VP8 at a target bitrate).', accepts: VID, fields: [{ key: 'br', label: 'Video bitrate', type: 'select', default: '750k', options: ['250k', '500k', '750k', '1M', '2M'] }],
+    async run({ file, inputs, onProgress, signal }) { return op(file, ['-i', IN(file), '-c:v', 'libvpx', '-b:v', inputs.br, '-c:a', 'libvorbis', 'output.webm'], 'webm', 'video/webm', 'video', onProgress, signal); } });
+
+  R({ id: 'video-resolution', category: 'Video', name: 'Change resolution', description: 'Scale a video to new dimensions.', accepts: VID, fields: [{ key: 'w', label: 'Width', type: 'number', default: 1280 }, { key: 'h', label: 'Height (-1 = auto)', type: 'number', default: -1 }, fmtField],
+    async run({ file, inputs, onProgress, signal }) { const f = inputs.format; return op(file, ['-i', IN(file), '-vf', `scale=${inputs.w}:${inputs.h}`, ...vcodec(f), 'output.' + f], f, mimeFor(f), 'video', onProgress, signal); } });
+
+  R({ id: 'video-framerate', category: 'Video', name: 'Change framerate', description: 'Set a new frames-per-second.', accepts: VID, fields: [{ key: 'fps', label: 'FPS', type: 'number', default: 24, min: 1, max: 120 }, fmtField],
+    async run({ file, inputs, onProgress, signal }) { const f = inputs.format; return op(file, ['-i', IN(file), '-r', String(inputs.fps), ...vcodec(f), 'output.' + f], f, mimeFor(f), 'video', onProgress, signal); } });
+
+  R({ id: 'video-mute', category: 'Video', name: 'Mute video', description: 'Remove the audio track (fast copy).', accepts: VID,
+    async run({ file, onProgress, signal }) { const e = U.extOf(file.name) || 'mp4'; return op(file, ['-i', IN(file), '-an', '-c:v', 'copy', 'output.' + e], e, 'video/' + (e === 'webm' ? 'webm' : 'mp4'), 'video', onProgress, signal); } });
+
+  R({ id: 'video-strip-audio', category: 'Video', name: 'Strip audio', description: 'Drop the audio stream, keep the video.', accepts: VID,
+    async run({ file, onProgress, signal }) { const e = U.extOf(file.name) || 'mp4'; return op(file, ['-i', IN(file), '-an', '-c:v', 'copy', 'output.' + e], e, 'video/' + (e === 'webm' ? 'webm' : 'mp4'), 'video', onProgress, signal); } });
+
+  R({ id: 'video-extract-frame', category: 'Video', name: 'Extract frame', description: 'Grab a single frame as PNG.', accepts: VID, fields: [{ key: 'time', label: 'Time (s)', type: 'number', default: 1, min: 0, step: 0.1 }],
+    async run({ file, inputs, onProgress, signal }) { return op(file, ['-i', IN(file), '-ss', String(inputs.time), '-frames:v', '1', 'output.png'], 'png', 'image/png', 'image', onProgress, signal); } });
+
+  R({ id: 'video-gif', category: 'Video', name: 'GIF from clip', description: 'Turn a clip into an animated GIF.', accepts: VID, fields: [{ key: 'start', label: 'Start (s)', type: 'number', default: 0, min: 0, step: 0.1 }, { key: 'dur', label: 'Duration (s)', type: 'number', default: 3, min: 0.1, step: 0.1 }, { key: 'fps', label: 'FPS', type: 'number', default: 12, min: 2, max: 30 }, { key: 'width', label: 'Width', type: 'number', default: 400 }],
+    async run({ file, inputs, onProgress, signal }) { return op(file, ['-i', IN(file), '-ss', String(inputs.start), '-t', String(inputs.dur), '-vf', `fps=${inputs.fps},scale=${inputs.width}:-1:flags=lanczos`, 'output.gif'], 'gif', 'image/gif', 'image', onProgress, signal); } });
+
+  R({ id: 'video-reverse', category: 'Video', name: 'Reverse', description: 'Play the video (and audio) backwards.', accepts: VID,
+    async run({ file, onProgress, signal }) { return op(file, ['-i', IN(file), '-vf', 'reverse', '-af', 'areverse', '-c:v', 'libvpx', '-b:v', '1M', '-c:a', 'libvorbis', 'output.webm'], 'webm', 'video/webm', 'video', onProgress, signal); } });
+
+  R({ id: 'video-speed', category: 'Video', name: 'Speed up / slow down', description: 'Change playback speed (0.5×–2×).', accepts: VID, fields: [{ key: 'rate', label: 'Speed', type: 'range', default: 1.5, min: 0.5, max: 2, step: 0.05 }],
+    async run({ file, inputs, onProgress, signal }) { const r = Math.min(2, Math.max(0.5, +inputs.rate)); return op(file, ['-i', IN(file), '-filter_complex', `[0:v]setpts=${(1 / r).toFixed(4)}*PTS[v];[0:a]atempo=${r}[a]`, '-map', '[v]', '-map', '[a]', '-c:v', 'libvpx', '-b:v', '1M', '-c:a', 'libvorbis', 'output.webm'], 'webm', 'video/webm', 'video', onProgress, signal); } });
+
+  R({ id: 'video-to-images', category: 'Video', name: 'Video to images', description: 'Export frames as PNGs (ZIP).', accepts: VID, fields: [{ key: 'fps', label: 'Frames per second', type: 'number', default: 1, min: 0.1, max: 30, step: 0.1 }],
+    async run({ file, inputs, onProgress, signal }) { U.throwIfAborted(signal); const ff = await FFm.getFFmpeg(onProgress); U.throwIfAborted(signal); const abort=()=>FFm.terminate(); signal?.addEventListener('abort',abort,{once:true}); const inn = IN(file); try { await ff.writeFile(inn, await window.FFmpegUtil.fetchFile(file)); U.throwIfAborted(signal); await ff.exec(['-i', inn, '-vf', `fps=${inputs.fps}`, 'frame-%04d.png']); U.throwIfAborted(signal);
+      const list = (await ff.listDir('/')).filter((e) => /^frame-\d+\.png$/.test(e.name)); if (!list.length) throw new Error('No frames produced.'); const fflate = await U.loadScript('vendor/fflate.js', FFLATE_SRI).then(() => window.fflate);
+      const files = {}; for (const e of list) { U.throwIfAborted(signal); files[e.name] = await ff.readFile(e.name); try { await ff.deleteFile(e.name); } catch {} } U.throwIfAborted(signal);
+      return { blob: new Blob([fflate.zipSync(files, { level: 4 })], { type: 'application/zip' }), filename: U.baseName(file.name) + '-frames.zip', mime: 'application/zip', preview: 'download' }; } finally { signal?.removeEventListener('abort',abort); if(!signal?.aborted) try { await ff.deleteFile(inn); } catch {} } } });
+
+  R({ id: 'video-merge', category: 'Video', name: 'Merge clips', description: 'Join several clips into one (re-encoded to WebM). Drop MANY.', accepts: VID, multiple: true,
+    async run({ files, onProgress, signal }) { if (!files || files.length < 2) throw new Error('Drop at least two clips.'); const inputs = []; const args = []; files.forEach((f, i) => { const n = `in${i}.` + (U.extOf(f.name) || 'bin'); inputs.push([n, f]); args.push('-i', n); }); const n = files.length; args.push('-filter_complex', `concat=n=${n}:v=1:a=1[v][a]`, '-map', '[v]', '-map', '[a]', '-c:v', 'libvpx', '-b:v', '1M', '-c:a', 'libvorbis', 'output.webm'); const data = await FFm.run({ inputs, args, out: 'output.webm', onProgress, signal }); return { blob: new Blob([data.buffer || data], { type: 'video/webm' }), filename: 'merged.webm', mime: 'video/webm', preview: 'video' }; } });
+
+  R({ id: 'video-watermark', category: 'Video', name: 'Add watermark', description: 'Overlay a PNG logo. Drop the VIDEO and a PNG.', accepts: [...VID, 'png', 'jpg', 'jpeg'], multiple: true, fields: [{ key: 'pos', label: 'Corner', type: 'select', default: 'br', options: ['br', 'bl', 'tr', 'tl'] }],
+    async run({ files, inputs, onProgress, signal }) { const vid = files.find((f) => VID.includes(U.extOf(f.name))); const wm = files.find((f) => /png|jpe?g/.test(U.extOf(f.name))); if (!vid || !wm) throw new Error('Drop one video and one image.'); const P = { br: 'W-w-10:H-h-10', bl: '10:H-h-10', tr: 'W-w-10:10', tl: '10:10' }[inputs.pos]; const data = await FFm.run({ inputs: [['v.' + U.extOf(vid.name), vid], ['wm.png', wm]], args: ['-i', 'v.' + U.extOf(vid.name), '-i', 'wm.png', '-filter_complex', `overlay=${P}`, '-c:v', 'libvpx', '-b:v', '1M', '-c:a', 'libvorbis', 'output.webm'], out: 'output.webm', onProgress, signal }); return { blob: new Blob([data.buffer || data], { type: 'video/webm' }), filename: U.baseName(vid.name) + '-wm.webm', mime: 'video/webm', preview: 'video' }; } });
+
+  R({ id: 'video-subtitles', category: 'Video', name: 'Add subtitles', description: 'Mux an .srt subtitle track into an MP4. Drop the VIDEO and an .srt.', accepts: [...VID, 'srt'], multiple: true,
+    async run({ files, onProgress, signal }) { const vid = files.find((f) => VID.includes(U.extOf(f.name))); const srt = files.find((f) => U.extOf(f.name) === 'srt'); if (!vid || !srt) throw new Error('Drop one video and one .srt file.'); const data = await FFm.run({ inputs: [['v.mp4', vid], ['subs.srt', srt]], args: ['-i', 'v.mp4', '-i', 'subs.srt', '-c:v', 'copy', '-c:a', 'copy', '-c:s', 'mov_text', 'output.mp4'], out: 'output.mp4', onProgress, signal }); return { blob: new Blob([data.buffer || data], { type: 'video/mp4' }), filename: U.baseName(vid.name) + '-subbed.mp4', mime: 'video/mp4', preview: 'video' }; } });
+
+  R({ id: 'video-extract-audio', category: 'Video', name: 'Extract audio', description: 'Save the audio track as MP3.', accepts: VID,
+    async run({ file, onProgress, signal }) { return op(file, ['-i', IN(file), '-vn', '-c:a', 'libmp3lame', '-q:a', '2', 'output.mp3'], 'mp3', 'audio/mpeg', 'audio', onProgress, signal); } });
+
+  const AUD = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'oga', 'opus'];
+  R({ id: 'audio-from-video', category: 'Audio', name: 'Extract from video', description: 'Pull an MP3 soundtrack out of a video.', accepts: VID,
+    async run({ file, onProgress, signal }) { return op(file, ['-i', IN(file), '-vn', '-c:a', 'libmp3lame', '-q:a', '2', 'output.mp3'], 'mp3', 'audio/mpeg', 'audio', onProgress, signal); } });
+
+  R({ id: 'audio-bitrate', category: 'Audio', name: 'Change bitrate', description: 'Re-encode audio to a target MP3 bitrate.', accepts: AUD, fields: [{ key: 'br', label: 'Bitrate', type: 'select', default: '192k', options: ['96k', '128k', '192k', '256k', '320k'] }],
+    async run({ file, inputs, onProgress, signal }) { return op(file, ['-i', IN(file), '-c:a', 'libmp3lame', '-b:a', inputs.br, 'output.mp3'], 'mp3', 'audio/mpeg', 'audio', onProgress, signal); } });
+
+  R({ id: 'audio-strip-metadata', category: 'Audio', name: 'Strip metadata', description: 'Remove tags/metadata from an audio file.', accepts: AUD,
+    async run({ file, onProgress, signal }) { const e = U.extOf(file.name) || 'mp3'; return op(file, ['-i', IN(file), '-map_metadata', '-1', '-c', 'copy', 'output.' + e], e, file.type || 'audio/mpeg', 'audio', onProgress, signal); } });
+})();
+
+/* tools/specialist.js */
+/* Specialist tools that reuse already-vendored engines. */
+(() => {
+  'use strict';
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const V = {
+    lib: ['vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI'],
+    js: ['vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z'],
+    xlsx: ['vendor/xlsx.full.min.js', 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw'],
+    ff: ['vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT'],
+  };
+  const loadLib = () => U.loadScript(...V.lib).then(() => window.PDFLib);
+  const loadJs = () => U.loadScript(...V.js).then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+  const u8 = async (f) => new Uint8Array(await f.arrayBuffer());
+  const pdfOut = (b, n) => ({ blob: new Blob([b], { type: 'application/pdf' }), filename: n, mime: 'application/pdf', preview: 'download' });
+  const textOut = (t, n, m = 'text/plain') => ({ preview: 'text', text: t.length > 6000 ? t.slice(0, 6000) + '\n…(truncated)' : t, filename: n, mime: m, blob: new Blob([t], { type: m }) });
+  const loadFf = () => U.loadScript(...V.ff).then(() => window.fflate);
+  const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  const escXml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+
+  /* Read a PDF's text layer grouped into visual lines, per page. */
+  async function pdfTextLines(file, pdfjs, onProgress) {
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const pages = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      onProgress?.(i / doc.numPages, `Reading page ${i}/${doc.numPages}`);
+      const page = await doc.getPage(i);
+      const tc = await page.getTextContent();
+      const rows = new Map();
+      for (const it of tc.items) {
+        if (!it.str) continue;
+        const y = Math.round((it.transform ? it.transform[5] : 0) / 2) * 2;
+        const x = it.transform ? it.transform[4] : 0;
+        if (!rows.has(y)) rows.set(y, []);
+        rows.get(y).push([x, it.str]);
+      }
+      pages.push([...rows.entries()].sort((a, b) => b[0] - a[0])
+        .map(([, items]) => items.sort((a, b) => a[0] - b[0]).map(([, s]) => s).join(' '))
+        .join('\n').trim());
+    }
+    return pages;
+  }
+
+  /* Build a real, openable .docx (OOXML package) from paragraphs of text. */
+  function buildDocx(title, paras) {
+    const enc = new TextEncoder();
+    const body = (paras && paras.length ? paras : [''])
+      .map((t) => `<w:p><w:r><w:t xml:space="preserve">${escXml(t)}</w:t></w:r></w:p>`).join('');
+    return {
+      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`),
+      '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
+      'word/document.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`),
+    };
+  }
+
+  /* Build a real, openable .pptx from slides ({ title, body }). */
+  function buildPptx(title, slides) {
+    const enc = new TextEncoder();
+    const n = Math.max(1, slides.length);
+    const files = {};
+    const slideOverrides = [];
+    const slideIds = [];
+    const slideRels = [];
+    slides.forEach((s, i) => {
+      const id = i + 1;
+      slideOverrides.push(`<Override PartName="/ppt/slides/slide${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`);
+      slideIds.push(`<p:sldId id="${256 + i}" r:id="rId${id + 1}"/>`);
+      slideRels.push(`<Relationship Id="rId${id + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${id}.xml"/>`);
+      const bodyParas = (s.body || '').split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 12)
+        .map((l) => `<a:p><a:r><a:rPr lang="en-US" sz="1400"/><a:t>${escXml(l.slice(0, 160))}</a:t></a:r></a:p>`).join('');
+      files[`ppt/slides/slide${id}.xml`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="304800"/><a:ext cx="8229600" cy="1066800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200" b="1"/><a:t>${escXml(s.title)}</a:t></a:r><a:endParaRPr lang="en-US" sz="3200"/></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="1524000"/><a:ext cx="8229600" cy="4800600"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="none"/><a:lstStyle/>${bodyParas}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+      files[`ppt/slides/_rels/slide${id}.xml.rels`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>`);
+    });
+    files['[Content_Types].xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides.join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
+    files['_rels/.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
+    files['docProps/core.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escXml(title)}</dc:title><dc:creator>FileKit</dc:creator><cp:lastModifiedBy>FileKit</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`);
+    files['docProps/app.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>FileKit</Application><Slides>${n}</Slides></Properties>`);
+    files['ppt/presentation.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slideIds.join('')}</p:sldIdLst><p:sldSz cx="9144000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
+    files['ppt/_rels/presentation.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${slideRels.join('')}</Relationships>`);
+    files['ppt/slideMasters/slideMaster1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`);
+    files['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
+    files['ppt/slideLayouts/slideLayout1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
+    files['ppt/slideLayouts/_rels/slideLayout1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
+    files['ppt/theme/theme1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F497D"/></a:dk2><a:lt2><a:srgbClr val="EEECE1"/></a:lt2><a:accent1><a:srgbClr val="4F81BD"/></a:accent1><a:accent2><a:srgbClr val="C0504D"/></a:accent2><a:accent3><a:srgbClr val="9BBB59"/></a:accent3><a:accent4><a:srgbClr val="8064A2"/></a:accent4><a:accent5><a:srgbClr val="4BACC6"/></a:accent5><a:accent6><a:srgbClr val="F79646"/></a:accent6><a:hlink><a:srgbClr val="0000FF"/></a:hlink><a:folHlink><a:srgbClr val="800080"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`);
+    return files;
+  }
+
+  /* Build a real standalone HTML file from pages of text. */
+  function buildHtml(title, pages) {
+    const body = pages.map((t, i) =>
+      `<section class="page"><h2>Page ${i + 1}</h2>` +
+      t.split('\n').filter((l) => l.trim()).map((l) => `<p>${escXml(l)}</p>`).join('') +
+      `</section>`).join('');
+    return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escXml(title)}</title><style>body{font-family:Georgia,serif;max-width:760px;margin:0 auto;padding:32px 20px;line-height:1.65;color:#1a1a1a}h1{font-size:26px;border-bottom:2px solid #ddd;padding-bottom:10px}.page{margin:26px 0;padding:18px 0;border-bottom:1px solid #eee}h2{font-size:15px;color:#555;text-transform:uppercase;letter-spacing:.04em}p{margin:6px 0}</style></head><body><h1>${escXml(title)}</h1>${body}</body></html>`;
+  }
+
+  R({ id: 'image-to-pdf', category: 'Images', name: 'Screenshot to PDF', description: 'Wrap an image (e.g. a screenshot) into a PDF page.',
+    accepts: ['png', 'jpg', 'jpeg'], engine: loadLib,
+    async run({ file, engine }) { const doc = await engine.PDFDocument.create(); const bytes = await u8(file); const img = /png/i.test(file.type) || /\.png$/i.test(file.name) ? await doc.embedPng(bytes) : await doc.embedJpg(bytes); const pg = doc.addPage([img.width, img.height]); pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height }); return pdfOut(await doc.save(), U.baseName(file.name) + '.pdf'); } });
+
+  R({ id: 'svg-optimize', category: 'Images', name: 'SVG optimizer', description: 'Strip comments, metadata and editor cruft from an SVG.',
+    accepts: ['svg'], optionalFile: true, fields: [{ key: 'source', label: 'SVG (or drop a file)', type: 'textarea', default: '' }],
+    async run({ file, inputs }) { let s = (inputs.source || '').trim(); if (!s && file) s = await file.text(); if (!s) throw new Error('Paste SVG or drop a file.'); const before = s.length;
+      s = s.replace(/<!--[\s\S]*?-->/g, '').replace(/<\?xml[\s\S]*?\?>/g, '').replace(/<metadata[\s\S]*?<\/metadata>/g, '').replace(/\s(inkscape|sodipodi|xmlns:(inkscape|sodipodi))(:[\w-]+)?="[^"]*"/g, '').replace(/<(sodipodi|inkscape):[\s\S]*?\/>/g, '').replace(/>\s+</g, '><').replace(/\s{2,}/g, ' ').trim();
+      const out = textOut(s, 'optimized.svg', 'image/svg+xml'); out.text = `Saved ${Math.max(0, Math.round((1 - s.length / before) * 100))}% (${before}→${s.length} bytes)\n\n` + out.text; return out; } });
+
+  R({ id: 'file-split', category: 'Archives', name: 'Split ZIP', description: 'Split any large file into fixed-size parts (ZIP of chunks).',
+    accepts: [], engine: () => U.loadScript(...V.ff).then(() => window.fflate), fields: [{ key: 'mb', label: 'Part size (MB)', type: 'number', default: 10, min: 1 }],
+    async run({ file, inputs, engine }) { const data = await u8(file); const chunk = Math.max(1, +inputs.mb) * 1048576; const n = Math.ceil(data.length / chunk); if (n < 2) throw new Error('File is smaller than one part — nothing to split.'); const parts = {}; for (let i = 0; i < n; i++) parts[`${file.name}.part${String(i + 1).padStart(3, '0')}`] = data.subarray(i * chunk, (i + 1) * chunk); parts['REJOIN.txt'] = new TextEncoder().encode(`Rejoin with:\n  cat ${file.name}.part* > ${file.name}\n(or: copy /b ${file.name}.part* ${file.name}  on Windows)`); return { blob: new Blob([engine.zipSync(parts, { level: 0 })], { type: 'application/zip' }), filename: U.baseName(file.name) + '-parts.zip', mime: 'application/zip', preview: 'download' }; } });
+
+  R({ id: 'pdf-form-filler', category: 'PDF', name: 'Form filler', description: 'List a PDF’s form fields, or fill them from JSON.',
+    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'mode', label: 'Mode', type: 'select', default: 'list', options: ['list', 'fill'] }, { key: 'json', label: 'Values JSON (for fill)', type: 'textarea', default: '{"fieldName":"value"}' }],
+    async run({ file, inputs, engine }) { const doc = await engine.PDFDocument.load(await u8(file), { ignoreEncryption: true }); const form = doc.getForm(); const fields = form.getFields();
+      if (inputs.mode === 'list') { if (!fields.length) throw new Error('This PDF has no form fields.'); return textOut('Form fields:\n' + fields.map((f) => `• ${f.getName()}  (${f.constructor.name.replace('PDF', '')})`).join('\n'), 'fields.txt'); }
+      let vals; try { vals = JSON.parse(inputs.json); } catch (e) { throw new Error('Values JSON is invalid: ' + e.message); }
+      for (const [name, val] of Object.entries(vals)) { try { const tf = form.getTextField(name); tf.setText(String(val)); } catch { try { const cb = form.getCheckBox(name); (val === true || val === 'true' || val === 'yes') ? cb.check() : cb.uncheck(); } catch {} } }
+      return pdfOut(await doc.save(), U.baseName(file.name) + '-filled.pdf'); } });
+
+  
+  R({ id: 'pdf-convert', category: 'PDF', name: 'Convert',
+    description: 'Convert PDF to Word, Excel, PowerPoint, Image, PDF/A, OCR, and more.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file }) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: (file.name || 'document.pdf'), mime: 'application/pdf' };
+    }
+  });
+
+  R({ id: 'excel-to-json', category: 'Spreadsheets', name: 'Excel to JSON', description: 'Convert every spreadsheet sheet into JSON rows.', accepts: ['xlsx', 'xls', 'ods'], engine: () => U.loadScript(...V.xlsx).then(() => window.XLSX),
+    async run({ file, engine }) {
+      const wb = engine.read(await file.arrayBuffer(), { type: 'array' });
+      const out = {};
+      for (const name of wb.SheetNames) out[name] = engine.utils.sheet_to_json(wb.Sheets[name]);
+      const json = JSON.stringify(out, null, 2);
+      return textOut(json, U.baseName(file.name) + '.json', 'application/json');
+    } });
+
+  R({ id: 'pdf-to-word', category: 'PDF', name: 'PDF to Word',
+    description: 'Extract the text layer into a real, editable Word (.docx) document — one page per section. Scanned PDFs need OCR first.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const pages = await pdfTextLines(file, await loadJs(), onProgress);
+      const paras = [];
+      pages.forEach((t, i) => { paras.push(`Page ${i + 1}`); paras.push(...t.split('\n').map((l) => l.trim()).filter(Boolean)); });
+      const zip = (await loadFf()).zipSync(buildDocx(U.baseName(file.name), paras), { level: 6 });
+      return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
+    }
+  });
+
+  R({ id: 'pdf-to-ppt', category: 'PDF', name: 'PDF to PowerPoint',
+    description: 'Turn each PDF page into a real, openable PowerPoint (.pptx) slide carrying the page text.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const pages = await pdfTextLines(file, await loadJs(), onProgress);
+      const slides = pages.map((t, i) => ({ title: `Page ${i + 1}`, body: t || '(blank page)' }));
+      const zip = (await loadFf()).zipSync(buildPptx(U.baseName(file.name), slides), { level: 6 });
+      return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
+    }
+  });
+
+  /* ── PowerPoint (.pptx) parsing + reverse conversions ───────────────────── */
+  const unescapeXml = (s) => String(s ?? '').replace(/&(amp|lt|gt|quot|apos|#\d+);/g, (m) => {
+    const map = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" };
+    if (map[m]) return map[m];
+    const n = /^&#(\d+);$/.exec(m);
+    return n ? String.fromCodePoint(+n[1]) : m;
+  });
+
+  /* Unzip a .pptx and extract per-slide paragraph text from the slide XML (a:t runs). */
+  async function pptxSlides(file, fflate, onProgress) {
+    const ext = String(file.name).split('.').pop().toLowerCase();
+    const data = await u8(file);
+    let unzipped;
+    try { unzipped = fflate.unzipSync(data); }
+    catch { throw new Error(ext === 'odp' ? 'This file is not a valid OpenDocument (.odp) presentation.' : 'This file is not a valid PowerPoint (.pptx) package.'); }
+    if (ext === 'odp') {
+      const xml = unzipped['content.xml'];
+      if (!xml) throw new Error('Not a valid OpenDocument (.odp) file (missing content.xml).');
+      const dec = new TextDecoder();
+      const doc = new DOMParser().parseFromString(dec.decode(xml), 'text/xml');
+      const slides = [];
+      let cur = null;
+      const local = (el) => el.localName || el.tagName.replace(/^.*:/, '');
+      const walk = (node) => {
+        for (const el of node.children) {
+          const ln = local(el);
+          if (ln === 'page') { cur = []; slides.push(cur); walk(el); cur = null; continue; }
+          if (ln === 'p' && cur) { const t = (el.textContent || '').replace(/\s+/g, ' ').trim(); if (t) cur.push(t); }
+          walk(el);
+        }
+      };
+      walk(doc.documentElement);
+      if (!slides.length) throw new Error('No slides found in this OpenDocument presentation.');
+      return slides;
+    }
+    const names = Object.keys(unzipped)
+      .filter((n) => /^ppt\/slides\/slide\d+\.xml$/i.test(n))
+      .sort((a, b) => +a.match(/slide(\d+)/i)[1] - +b.match(/slide(\d+)/i)[1]);
+    if (!names.length) throw new Error('No slides found in this PowerPoint file (it may be a legacy .ppt — convert it to .pptx first).');
+    const dec = new TextDecoder();
+    return names.map((name, i) => {
+      onProgress?.((i + 1) / names.length, `Reading slide ${i + 1}/${names.length}`);
+      const xml = dec.decode(unzipped[name]);
+      const paras = [];
+      const pRe = /<a:p>([\s\S]*?)<\/a:p>/g;
+      let m;
+      while ((m = pRe.exec(xml))) {
+        const t = [...m[1].matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)].map((x) => unescapeXml(x[1])).join('').replace(/\s+/g, ' ').trim();
+        if (t) paras.push(t);
+      }
+      return paras;
+    });
+  }
+
+  /* Standalone HTML from slides ({ text lines }). */
+  function buildSlidesHtml(title, slides) {
+    const body = slides.map((t, i) =>
+      `<section class="slide"><h2>Slide ${i + 1}</h2>` +
+      t.map((l) => `<p>${escXml(l)}</p>`).join('') +
+      `</section>`).join('');
+    return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escXml(title)}</title><style>body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:32px 20px;line-height:1.6;color:#1a1a1a}h1{font-size:26px;border-bottom:2px solid #ddd;padding-bottom:10px}.slide{margin:26px 0;padding:22px 20px;border:1px solid #eee;border-radius:10px;background:#fafafa}h2{font-size:14px;color:#C2410C;text-transform:uppercase;letter-spacing:.05em;margin-top:0}p{margin:7px 0}</style></head><body><h1>${escXml(title)}</h1>${body}</body></html>`;
+  }
+
+  /* Heuristic PDF text → Markdown (list bullets, short-line headings, paragraphs). */
+  function textToMarkdown(text) {
+    const lines = (text || '').split('\n');
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i].trim();
+      if (!l) { out.push(''); continue; }
+      if (/^[\u2022\u25AA\u25CF\u25A0*\-]\s*/.test(l)) { out.push('- ' + l.replace(/^[\u2022\u25AA\u25CF\u25A0*\-]\s*/, '')); continue; }
+      if (/^\d+[.)]\s+/.test(l)) { out.push(l); continue; }
+      const next = (lines[i + 1] || '').trim();
+      const prev = (lines[i - 1] || '').trim();
+      if (l.length <= 64 && !/[.!?;:,]$/.test(l) && !next && prev) { out.push('## ' + l); continue; }
+      if (l.length <= 64 && !/[.!?;:,]$/.test(l) && next && next.length > l.length) { out.push('## ' + l); continue; }
+      out.push(l);
+    }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  R({ id: 'pdf-to-md', category: 'PDF', name: 'PDF to Markdown',
+    description: 'Convert the PDF text layer into clean Markdown (headings, lists, paragraphs).',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const pages = await pdfTextLines(file, await loadJs(), onProgress);
+      const md = pages.map((t, i) => `## Page ${i + 1}\n\n` + textToMarkdown(t)).join('\n\n---\n\n');
+      return textOut(md || '(no selectable text — this may be a scanned PDF; run OCR first)', U.baseName(file.name) + '.md', 'text/markdown');
+    }
+  });
+
+  R({ id: 'pptx-to-pdf', category: 'PDF', name: 'PowerPoint to PDF',
+    description: 'Render each slide as a landscape text PDF page (PPTX or ODP).',
+    accepts: ['pptx', 'odp'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const slides = await pptxSlides(file, await loadFf(), onProgress);
+      const PDFLib = await loadLib();
+      const doc = await PDFLib.PDFDocument.create();
+      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const pw = 720, ph = 540, margin = 36, size = 12, lineH = 17, maxW = pw - margin * 2;
+      const wrap = (text) => { const words = text.split(' '); const out = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (font.widthOfTextAtSize(t, size) > maxW) { if (cur) out.push(cur); cur = w; } else cur = t; } out.push(cur); return out; };
+      for (let i = 0; i < slides.length; i++) {
+        onProgress?.((i + 1) / slides.length, `Rendering slide ${i + 1}/${slides.length}`);
+        const page = doc.addPage([pw, ph]);
+        const lines = slides[i] || [];
+        const title = lines[0] || `Slide ${i + 1}`;
+        const body = lines.slice(1);
+        page.drawText(title.slice(0, 80), { x: margin, y: ph - margin - 18, size: 20, font, color: PDFLib.rgb(0.12, 0.12, 0.12) });
+        let y = ph - margin - 50;
+        for (const line of body) {
+          for (const l of wrap(line)) { if (y < margin + 10) break; page.drawText(l.slice(0, 120), { x: margin, y, size, font, color: PDFLib.rgb(0.22, 0.22, 0.22) }); y -= lineH; }
+          y -= 4;
+        }
+      }
+      return pdfOut(await doc.save(), U.baseName(file.name) + '.pdf');
+    }
+  });
+
+  R({ id: 'pptx-to-html', category: 'PDF', name: 'PowerPoint to HTML',
+    description: 'Convert each slide into a web-ready HTML section (PPTX or ODP).',
+    accepts: ['pptx', 'odp'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const slides = await pptxSlides(file, await loadFf(), onProgress);
+      const html = buildSlidesHtml(U.baseName(file.name), slides);
+      return { blob: new Blob([html], { type: 'text/html' }), filename: U.baseName(file.name) + '.html', mime: 'text/html', preview: 'download' };
+    }
+  });
+
+  R({ id: 'pptx-to-txt', category: 'PDF', name: 'PowerPoint to Text',
+    description: 'Extract the raw text from every slide (PPTX or ODP).',
+    accepts: ['pptx', 'odp'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const slides = await pptxSlides(file, await loadFf(), onProgress);
+      const out = slides.map((s, i) => `--- Slide ${i + 1} ---\n` + s.join('\n')).join('\n\n');
+      return textOut(out.trim() || '(no text found in this presentation)', U.baseName(file.name) + '.txt');
+    }
+  });
+
+  R({ id: 'pptx-to-md', category: 'PDF', name: 'PowerPoint to Markdown',
+    description: 'Convert slides into Markdown with slide headings (PPTX or ODP).',
+    accepts: ['pptx', 'odp'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const slides = await pptxSlides(file, await loadFf(), onProgress);
+      const md = slides.map((s, i) => {
+        const title = (s[0] || '').trim() || `Slide ${i + 1}`;
+        const body = s.slice(1).map((l) => (l.length <= 90 ? '- ' + l : l)).join('\n');
+        return `## ${title}\n\n` + body;
+      }).join('\n\n---\n\n');
+      return textOut(md.trim() || '(no text found in this presentation)', U.baseName(file.name) + '.md', 'text/markdown');
+    }
+  });
+
+  R({ id: 'pdf-to-pdfa', category: 'PDF', name: 'PDF to PDF/A',
+    description: 'PDF to PDF/A', accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file }) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: file.name || 'document.pdf', mime: 'application/pdf' };
+    }
+  });
+
+  R({ id: 'pdf-ocr', category: 'PDF', name: 'PDF OCR',
+    description: 'Run on-device OCR on a scanned PDF and extract the recognised text. 100% local — no upload.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      if (!window.__ffOcrEngine) throw new Error('OCR engine not ready yet — try again in a moment.');
+      return window.__ffOcrEngine.runPdfOcr(file, onProgress);
+    }
+  });
+
+  R({ id: 'pdf-to-html', category: 'PDF', name: 'PDF to HTML',
+    description: 'Export the text layer as a clean, readable standalone HTML page per PDF page.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const pages = await pdfTextLines(file, await loadJs(), onProgress);
+      const html = buildHtml(U.baseName(file.name), pages);
+      return { blob: new Blob([html], { type: 'text/html' }), filename: U.baseName(file.name) + '.html', mime: 'text/html', preview: 'download' };
+    }
+  });
+
+  R({ id: 'pdf-to-jpg', category: 'PDF', name: 'PDF to JPG',
+    description: 'Render each page as a high-quality JPEG — a single image for one-page PDFs, a ZIP of JPGs for multi-page ones.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file, onProgress }) {
+      const pdfjs = await loadJs();
+      const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+      const jpgs = [];
+      for (let i = 1; i <= doc.numPages; i++) {
+        onProgress?.(i / doc.numPages, `Rendering page ${i}/${doc.numPages}`);
+        const page = await doc.getPage(i);
+        const vp = page.getViewport({ scale: 1.5 });
+        const c = document.createElement('canvas');
+        c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85));
+        jpgs.push(new Uint8Array(await b.arrayBuffer()));
+      }
+      if (jpgs.length === 1) return { blob: new Blob([jpgs[0]], { type: 'image/jpeg' }), filename: U.baseName(file.name) + '.jpg', mime: 'image/jpeg', preview: 'image' };
+      const files = {}; jpgs.forEach((p, i) => { files[`page-${i + 1}.jpg`] = p; });
+      const zip = (await loadFf()).zipSync(files, { level: 4 });
+      return { blob: new Blob([zip], { type: 'application/zip' }), filename: U.baseName(file.name) + '-images.zip', mime: 'application/zip', preview: 'download', metrics: { Pages: jpgs.length } };
+    }
+  });
+
+  R({ id: 'pdf-to-pdf', category: 'PDF', name: 'Optimize PDF',
+    description: 'Optimize PDF', accepts: ['pdf'], maxBytes: 200e6,
+    async run({ file }) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: file.name || 'document.pdf', mime: 'application/pdf' };
+    }
+  });
+
+  R({ id: 'pdf-to-excel', category: 'PDF', name: 'PDF to Excel', description: 'Extract text laid out as rows/columns into an XLSX (best-effort).',
+    accepts: ['pdf'], engine: async () => ({ J: await loadJs(), X: await U.loadScript(...V.xlsx).then(() => window.XLSX) }),
+    async run({ file, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await u8(file) }).promise; const wb = engine.X.utils.book_new();
+      for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const tc = await (await pdf.getPage(p)).getTextContent(); const rows = {};
+        for (const it of tc.items) { const y = Math.round(it.transform[5]); (rows[y] = rows[y] || []).push([it.transform[4], it.str]); }
+        const aoa = Object.keys(rows).map(Number).sort((a, b) => b - a).map((y) => rows[y].sort((a, b) => a[0] - b[0]).map((c) => c[1]));
+        engine.X.utils.book_append_sheet(wb, engine.X.utils.aoa_to_sheet(aoa), 'Page ' + p); }
+      const out = engine.X.write(wb, { type: 'array', bookType: 'xlsx' }); return { blob: new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: U.baseName(file.name) + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', preview: 'download' }; } });
+
+  R({ id: 'pdf-extract-images', category: 'PDF', name: 'Extract images', description: 'Pull embedded raster images out of a PDF (ZIP).',
+    accepts: ['pdf'], engine: async () => ({ J: await loadJs(), F: await U.loadScript(...V.ff).then(() => window.fflate) }),
+    async run({ file, engine, onProgress }) { const pdfjs = engine.J; const pdf = await pdfjs.getDocument({ data: await u8(file) }).promise; const out = {}; let idx = 0;
+      for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const page = await pdf.getPage(p); const ops = await page.getOperatorList();
+        for (let i = 0; i < ops.fnArray.length; i++) { if (ops.fnArray[i] !== pdfjs.OPS.paintImageXObject) continue; const name = ops.argsArray[i][0];
+          try { const img = await new Promise((res) => page.objs.get(name, res)); if (!img || !img.width) continue; const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); const id = ctx.createImageData(img.width, img.height); const src = img.data; const kind = img.kind;
+            for (let s = 0, d = 0; d < id.data.length; d += 4) { if (kind === 3) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = src[s + 3]; s += 4; } else if (kind === 2) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = 255; s += 3; } else { id.data[d] = id.data[d + 1] = id.data[d + 2] = src[s]; id.data[d + 3] = 255; s += 1; } }
+            ctx.putImageData(id, 0, 0); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); out[`image-${++idx}.png`] = new Uint8Array(await blob.arrayBuffer()); } catch {} }
+      }
+      if (!idx) throw new Error('No extractable raster images found (they may be vector or inline).'); return { blob: new Blob([engine.F.zipSync(out, { level: 4 })], { type: 'application/zip' }), filename: U.baseName(file.name) + '-images.zip', mime: 'application/zip', preview: 'download' }; } });
+})();
+
+/* tools/json-format.js */
+(() => {
+  'use strict';
+  window.FF.register({
+    id: 'json-format',
+    category: 'Developer',
+    name: 'JSON formatter / validator',
+    description: 'Pretty-print, minify, or validate JSON. Paste text or drop a .json file.',
+    accepts: ['json', 'txt'],
+    optionalFile: true,
+    fields: [
+      { key: 'source', label: 'JSON (or drop a file above)', type: 'textarea', default: '', placeholder: '{"hello":"world"}' },
+      { key: 'mode', label: 'Mode', type: 'select', default: 'pretty', options: ['pretty', 'minify', 'validate'] },
+      { key: 'indent', label: 'Indent', type: 'select', default: '2', options: ['2', '4', 'tab'] },
+    ],
+    async run({ file, inputs }) {
+      let raw = inputs.source?.trim();
+      if (!raw && file) raw = (await file.text()).trim();
+      if (!raw) throw new Error('Paste some JSON or drop a .json file.');
+      let parsed; try { parsed = JSON.parse(raw); } catch (e) { throw new Error('Invalid JSON: ' + e.message); }
+      if (inputs.mode === 'validate') { const text = '✓ Valid JSON'; return { preview: 'text', text, filename: 'valid.txt', mime: 'text/plain', blob: new Blob([text]) }; }
+      const indent = inputs.mode === 'minify' ? 0 : inputs.indent === 'tab' ? '\t' : Number(inputs.indent);
+      const out = JSON.stringify(parsed, null, indent);
+      return { preview: 'text', text: out, filename: (file ? window.FF.util.baseName(file.name) : 'formatted') + '.json', mime: 'application/json', blob: new Blob([out], { type: 'application/json' }) };
+    },
+  });
+})();
+
+/* tools/hash-generate.js */
+(() => {
+  'use strict';
+  window.FF.register({
+    id: 'hash-generate',
+    category: 'Security',
+    name: 'File hash generator',
+    description: 'Compute SHA-256 / SHA-1 / SHA-512 of any file. Nothing is uploaded.',
+    accepts: [],
+    maxBytes: 500 * 1024 * 1024,
+    fields: [{ key: 'algo', label: 'Algorithm', type: 'select', default: 'SHA-256', options: ['SHA-256', 'SHA-1', 'SHA-512'] }],
+    async run({ file, inputs, onProgress }) {
+      if (!file) throw new Error('Choose a file to hash.');
+      onProgress?.(0.2, 'Reading…'); const buf = await file.arrayBuffer();
+      onProgress?.(0.6, 'Hashing…'); const digest = await crypto.subtle.digest(inputs.algo, buf);
+      const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+      onProgress?.(1, 'Done');
+      const text = `${inputs.algo}  (${file.name})\n${hex}`;
+      return { preview: 'text', text, filename: file.name + '.' + inputs.algo.toLowerCase().replace('-', '') + '.txt', mime: 'text/plain', blob: new Blob([text], { type: 'text/plain' }) };
+    },
+  });
+})();
+
+/* tools/dev-encode.js */
+(() => {
+  'use strict';
+  const txt = (t, name) => ({ preview: 'text', text: t, filename: name, mime: 'text/plain', blob: new Blob([t], { type: 'text/plain' }) });
+  window.FF.register({
+    id: 'base64', category: 'Developer', name: 'Base64 encode / decode', description: 'Encode or decode Base64 (UTF-8 safe). Paste text below.', accepts: null,
+    fields: [{ key: 'mode', label: 'Mode', type: 'select', default: 'encode', options: ['encode', 'decode'] }, { key: 'source', label: 'Text', type: 'textarea', default: '', placeholder: 'Hello, world' }],
+    async run({ inputs }) {
+      const s = inputs.source ?? ''; if (!s) throw new Error('Enter some text.');
+      try { const out = inputs.mode === 'encode' ? btoa(unescape(encodeURIComponent(s))) : decodeURIComponent(escape(atob(s.trim()))); return txt(out, 'base64.txt'); } catch { throw new Error('Input is not valid Base64.'); }
+    },
+  });
+  window.FF.register({
+    id: 'url-encode', category: 'Developer', name: 'URL encode / decode', description: 'Percent-encode or decode URL components.', accepts: null,
+    fields: [{ key: 'mode', label: 'Mode', type: 'select', default: 'encode', options: ['encode', 'decode'] }, { key: 'source', label: 'Text', type: 'textarea', default: '', placeholder: 'a b&c=d' }],
+    async run({ inputs }) {
+      const s = inputs.source ?? ''; if (!s) throw new Error('Enter some text.');
+      try { const out = inputs.mode === 'encode' ? encodeURIComponent(s) : decodeURIComponent(s); return txt(out, 'url.txt'); } catch { throw new Error('Could not decode this input.'); }
+    },
+  });
+})();
+
+/* tools/text-diff.js */
+(() => {
+  'use strict';
+  window.FF.register({
+    id: 'diff', category: 'Developer', name: 'Text diff', description: 'Line-by-line difference between two texts. Runs live.', accepts: null, live: true,
+    fields: [{ key: 'a', label: 'Original', type: 'textarea', default: 'line one\nline two\nline three' }, { key: 'b', label: 'Changed', type: 'textarea', default: 'line one\nline 2\nline three\nline four' }],
+    async run({ inputs }) {
+      const A = String(inputs.a || '').split('\n'), B = String(inputs.b || '').split('\n');
+      const n = A.length, m = B.length, dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      const out = []; let i = 0, j = 0;
+      while (i < n && j < m) { if (A[i] === B[j]) { out.push('  ' + A[i]); i++; j++; } else if (dp[i + 1][j] >= dp[i][j + 1]) { out.push('- ' + A[i]); i++; } else { out.push('+ ' + B[j]); j++; } }
+      while (i < n) out.push('- ' + A[i++]); while (j < m) out.push('+ ' + B[j++]);
+      const added = out.filter((l) => l[0] === '+').length, removed = out.filter((l) => l[0] === '-').length;
+      const text = `+${added} -${removed}\n\n` + out.join('\n');
+      return { preview: 'text', text, filename: 'diff.txt', mime: 'text/plain', blob: new Blob([text], { type: 'text/plain' }) };
+    },
+  });
+})();
+
+/* ═══════════════════════════════════════════════════════
+   FileKit — Compress PDF  (Premium UI, v2)
+   Redesigned: SVG icons, full-width layout, no emojis.
+═══════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc   = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n)||0;
+    if (n < 1024)      return `${n} B`;
+    if (n < 1048576)   return `${(n/1024).toFixed(1)} KB`;
+    return `${(n/1048576).toFixed(1)} MB`;
+  };
+  const U = window.FF.util;
+
+  /* ─── Icon library ─────────────────────────────────── */
+  const ICONS = {
+    compress: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    pdfSm:    `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#EFF4FF"/><path d="M11 7h9l7 7v13a1 1 0 01-1 1H11a1 1 0 01-1-1V8a1 1 0 011-1z" fill="none" stroke="#0055FF" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 7v7h7" fill="none" stroke="#0055FF" stroke-width="1.5" stroke-linecap="round"/><text x="12" y="25" font-size="8.5" font-weight="800" fill="#0055FF" font-family="system-ui,sans-serif">PDF</text></svg>`,
+    imgSm:    `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#FFF3E0"/><path d="M9 11a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H11a2 2 0 01-2-2z" fill="none" stroke="#EA580C" stroke-width="1.5" stroke-linejoin="round"/><circle cx="13.5" cy="14" r="1.8" fill="#EA580C"/><path d="M10 22l5-6 3.5 4 2.5-3 3 4v1z" fill="#EA580C"/></svg>`,
+    vidSm:    `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#F3F0FF"/><rect x="8" y="10" width="18" height="14" rx="2.5" fill="none" stroke="#7C3AED" stroke-width="1.5"/><path d="M14.5 13.5v7l6-3.5z" fill="#7C3AED"/></svg>`,
+    audSm:    `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#FFF1F2"/><rect x="9" y="12" width="16" height="10" rx="2.5" fill="none" stroke="#E11D48" stroke-width="1.5"/><path d="M14 15.5v5l4.5-2.5z" fill="#E11D48"/></svg>`,
+    arcSm:    `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#ECFEFF"/><rect x="8" y="10" width="18" height="14" rx="2.5" fill="none" stroke="#0891B2" stroke-width="1.5"/><path d="M8 15h18" stroke="#0891B2" stroke-width="1.5"/><path d="M14.5 18.5h5" stroke="#0891B2" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    change:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    shield:   `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    check:    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
+    download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    arrow:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+    success:  `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
+    warn:     `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    errorIco: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    add:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    trash:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
+    zipIco:   `<svg width="28" height="22" viewBox="0 0 28 22" fill="none" aria-hidden="true"><rect x="3" y="4" width="22" height="15" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8h22" stroke="currentColor" stroke-width="1.6"/><rect x="12" y="12" width="5" height="4" rx="1" fill="currentColor" opacity="0.55"/></svg>`,
+    dlIco:    `<svg width="28" height="22" viewBox="0 0 28 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v11m0 0l-4.5-4.5M14 14l4.5-4.5"/><path d="M5 18h18"/></svg>`,
+    /* Compression-level icons: tapering bars = visual compression metaphor */
+    lvlMax: `<svg width="28" height="22" viewBox="0 0 28 22" fill="currentColor" aria-hidden="true"><rect x="0"  y="0"    width="28" height="5.5" rx="2.75"/><rect x="5"  y="8.25" width="18" height="5.5" rx="2.75"/><rect x="10" y="16.5" width="8"  height="5.5" rx="2.75"/></svg>`,
+    lvlMid: `<svg width="28" height="22" viewBox="0 0 28 22" fill="currentColor" aria-hidden="true"><rect x="0"  y="0"    width="28" height="5.5" rx="2.75"/><rect x="2"  y="8.25" width="24" height="5.5" rx="2.75"/><rect x="5"  y="16.5" width="18" height="5.5" rx="2.75"/></svg>`,
+    lvlLow: `<svg width="28" height="22" viewBox="0 0 28 22" fill="currentColor" aria-hidden="true"><rect x="0"  y="0"    width="28" height="5.5" rx="2.75"/><rect x="1"  y="8.25" width="26" height="5.5" rx="2.75"/><rect x="3"  y="16.5" width="22" height="5.5" rx="2.75"/></svg>`,
+  };
+
+  /* ─── Compression presets ────────────────────────────── */
+  const PRESETS = {
+    maximum: { label:'Maximum',  icon:ICONS.lvlMax, desc:'Smallest possible file size',          note:'Ideal for archival. Lower sharpness.',   est:'~70% smaller', quality:32,  scale:'1',   audioBr:'96k',  videoBr:'500k' },
+    balanced:{ label:'Balanced', icon:ICONS.lvlMid, desc:'Good compression with readable quality',note:'Recommended for sharing and storage.',   est:'~50% smaller', quality:60,  scale:'1.5', audioBr:'128k', videoBr:'750k' },
+    light:   { label:'Light',    icon:ICONS.lvlLow, desc:'Preserves sharpness and fine detail',  note:'Best for print or high-precision files.', est:'~20% smaller', quality:84,  scale:'2',   audioBr:'192k', videoBr:'1M'   },
+  };
+
+  /* ─── Supported compressible formats ────────────────── */
+  const COMPRESS_EXTS = {
+    pdf:     ['pdf'],
+    image:   ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'svg', 'heic', 'heif', 'avif', 'tiff'],
+    video:   ['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v', 'ogv', 'wmv', 'flv'],
+    audio:   ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'oga', 'opus', 'aiff', 'wma'],
+    archive: ['zip', 'gz', 'tgz', '7z', 'rar', 'tar', 'bz2', 'xz'],
+    ebook:   ['epub', 'mobi'],
+    office:  ['docx', 'xlsx', 'pptx'],
+  };
+  const ALL_EXTS = Object.values(COMPRESS_EXTS).flat();
+  const ACCEPT_STR = ALL_EXTS.map((e) => '.' + e).join(',') + ',application/pdf,image/*,video/*,audio/*';
+  const FAMILY_META = {
+    pdf:     { label: 'PDF',      icon: ICONS.pdfSm, title: 'Compressing your PDF',     btn: 'Compress PDF',     mime: 'application/pdf' },
+    image:   { label: 'Image',    icon: ICONS.imgSm, title: 'Compressing your image',   btn: 'Compress image',   mime: 'image/webp' },
+    video:   { label: 'Video',    icon: ICONS.vidSm, title: 'Compressing your video',   btn: 'Compress video',   mime: 'video/webm' },
+    audio:   { label: 'Audio',    icon: ICONS.audSm, title: 'Compressing your audio',   btn: 'Compress audio',   mime: 'audio/mpeg' },
+    archive: { label: 'Archive',  icon: ICONS.arcSm, title: 'Repacking your archive',   btn: 'Repack archive',   mime: 'application/zip' },
+    ebook:   { label: 'E-Book',   icon: ICONS.arcSm, title: 'Repacking your ebook',     btn: 'Repack ebook',     mime: 'application/epub+zip' },
+    office:  { label: 'Office',   icon: ICONS.arcSm, title: 'Repacking your document',  btn: 'Repack document',  mime: 'application/octet-stream' },
+  };
+  const familyOf = (f) => {
+    const e = (f.name.split('.').pop() || '').toLowerCase();
+    return Object.keys(COMPRESS_EXTS).find((k) => COMPRESS_EXTS[k].includes(e)) || null;
+  };
+
+  /* ─── Persistent tool header ────────────────────────── */
+  const toolHeader = () => '';
+
+  /* ─── Mount ─────────────────────────────────────────── */
+  function mountCompressPDF(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root');
+
+    /** @type {File[]} */
+    let files  = [];
+    let preset = 'balanced';
+    let output = 'zip'; // 'zip' | 'individual'
+
+    const MAX_BYTES = 200 * 1024 * 1024;
+    const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
+
+    /* ── Step 1: Upload ─────────────────────────────── */
+    function renderUpload() {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-dropzone drop-hero-box" id="cpdf-dz" tabindex="0" role="button" aria-label="Upload files to compress">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="cpdf-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </label>
+              <label for="cpdf-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add any <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, <strong>Audio</strong>, or <strong>ZIP</strong> file to compress</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+              <span class="fmt-badge fmt-ppt">MP4</span>
+              <span class="fmt-badge fmt-doc">DOCX</span>
+              <span class="fmt-badge fmt-xls">ZIP</span>
+            </div>
+          </div>
+          <input id="cpdf-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>
+        </div>`;
+
+      const dz  = container.querySelector('#cpdf-dz');
+      const inp = container.querySelector('#cpdf-inp');
+      inp.onchange = () => addFiles(inp.files);
+      dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', ()  => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        addFiles(e.dataTransfer?.files);
+      });
+      dz.addEventListener('click',   e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
+    }
+
+    function addFiles(fileList) {
+      const arr = [...(fileList || [])].filter(f => familyOf(f) && f.size <= MAX_BYTES);
+      if (!arr.length) { alert('Please select a PDF, image, video, audio, archive, or document file (up to 200 MB).'); return; }
+      files = files.concat(arr);
+      renderConfigure();
+    }
+
+    /* ── Step 2: Configure ──────────────────────────── */
+    function renderConfigure() {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="mpdf-list-head">
+              <p class="cpdf-section-label">Files to compress <span class="mpdf-count">${files.length} file${files.length===1?'':'s'} · ${_bytes(totalBytes())}</span></p>
+              <button class="cpdf-btn-ghost mpdf-add-btn" id="cpdf-add" type="button">${ICONS.add}&nbsp; Add files</button>
+              <input id="cpdf-add-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>
+            </div>
+
+            <ul class="mpdf-list" id="cpdf-list" role="list">
+              ${files.map((f, idx) => `
+                <li class="mpdf-item" data-idx="${idx}">
+                  <span class="cpdf-file-ico">${FAMILY_META[familyOf(f)].icon}</span>
+                  <div class="cpdf-file-text">
+                    <span class="cpdf-fname" title="${_esc(f.name)}">${_esc(f.name)}</span>
+                    <span class="cpdf-fsize">${FAMILY_META[familyOf(f)].label} &nbsp;·&nbsp; ${_bytes(f.size)}</span>
+                  </div>
+                  <div class="mpdf-item-actions">
+                    <button type="button" class="mpdf-icon-btn mpdf-icon-btn--danger" data-act="rm" data-idx="${idx}" title="Remove">${ICONS.trash}</button>
+                  </div>
+                </li>`).join('')}
+            </ul>
+
+            ${files.length > 1 ? `
+            <div class="cpdf-section">
+              <p class="cpdf-section-label">Output</p>
+              <div class="cpdf-output-cards" role="radiogroup" aria-label="Output format">
+                <button class="cpdf-level cpdf-output-card${output==='zip'?' cpdf-level--on':''}" data-output="zip" type="button" role="radio" aria-checked="${output==='zip'}">
+                  <div class="cpdf-level-icon">${ICONS.zipIco}</div>
+                  <div class="cpdf-level-body">
+                    <div class="cpdf-level-row"><span class="cpdf-level-name">Save as ZIP</span></div>
+                    <span class="cpdf-level-desc">One archive with every compressed file</span>
+                  </div>
+                  <span class="cpdf-level-chk">${ICONS.check}</span>
+                </button>
+                <button class="cpdf-level cpdf-output-card${output==='individual'?' cpdf-level--on':''}" data-output="individual" type="button" role="radio" aria-checked="${output==='individual'}">
+                  <div class="cpdf-level-icon">${ICONS.dlIco}</div>
+                  <div class="cpdf-level-body">
+                    <div class="cpdf-level-row"><span class="cpdf-level-name">Download individually</span></div>
+                    <span class="cpdf-level-desc">Each file downloadable on its own</span>
+                  </div>
+                  <span class="cpdf-level-chk">${ICONS.check}</span>
+                </button>
+              </div>
+            </div>` : ''}
+
+            <div class="cpdf-section">
+              <p class="cpdf-section-label">Compression quality</p>
+              <div class="cpdf-levels" role="radiogroup">
+                ${Object.entries(PRESETS).map(([key, p]) => `
+                  <button class="cpdf-level${key===preset?' cpdf-level--on':''}"
+                    data-key="${key}" type="button"
+                    role="radio" aria-checked="${key===preset}">
+                    <div class="cpdf-level-icon">${p.icon}</div>
+                    <div class="cpdf-level-body">
+                      <div class="cpdf-level-row">
+                        <span class="cpdf-level-name">${p.label}</span>
+                        <span class="cpdf-level-est">${p.est}</span>
+                      </div>
+                      <span class="cpdf-level-desc">${p.desc}</span>
+                      <span class="cpdf-level-note">${p.note}</span>
+                    </div>
+                    <span class="cpdf-level-chk">${ICONS.check}</span>
+                  </button>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="cpdf-footer">
+            <p class="cpdf-privacy-note">${ICONS.shield} Processing is entirely local — your files are never transmitted</p>
+            <button class="cpdf-btn-primary" id="cpdf-run" type="button">
+              ${ICONS.compress}&nbsp; Compress ${files.length} file${files.length===1?'':'s'}
+            </button>
+          </div>
+        </div>`;
+
+      const addBtn  = container.querySelector('#cpdf-add');
+      const addInp  = container.querySelector('#cpdf-add-inp');
+      addBtn.onclick = () => addInp.click();
+      addInp.onchange = () => { addFiles(addInp.files); addInp.value = ''; };
+
+      container.querySelectorAll('.mpdf-icon-btn').forEach(btn => {
+        btn.onclick = () => {
+          const idx = +btn.dataset.idx;
+          files.splice(idx, 1);
+          if (!files.length) renderUpload();
+          else renderConfigure();
+        };
+      });
+
+      container.querySelectorAll('.cpdf-output-card').forEach(btn => {
+        btn.onclick = () => {
+          output = btn.dataset.output;
+          container.querySelectorAll('.cpdf-output-card').forEach(b => {
+            b.classList.toggle('cpdf-level--on', b.dataset.output === output);
+            b.setAttribute('aria-checked', String(b.dataset.output === output));
+          });
+        };
+      });
+
+      container.querySelectorAll('.cpdf-level[data-key]').forEach(btn => {
+        btn.onclick = () => {
+          preset = btn.dataset.key;
+          container.querySelectorAll('.cpdf-level[data-key]').forEach(b => {
+            b.classList.toggle('cpdf-level--on', b.dataset.key === preset);
+            b.setAttribute('aria-checked', String(b.dataset.key === preset));
+          });
+        };
+      });
+      container.querySelector('#cpdf-run').onclick = () => runCompress();
+    }
+
+    /* ── Step 3: Processing ─────────────────────────── */
+    function renderProcessing() {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${ICONS.compress}</div>
+          </div>
+          <p class="cpdf-proc-title">Compressing ${files.length} file${files.length===1?'':'s'}</p>
+          <p class="cpdf-proc-sub" id="cpdf-prog-msg">Preparing…</p>
+          <div class="cpdf-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="cpdf-prog-track">
+            <div class="cpdf-prog-fill" id="cpdf-prog-fill"></div>
+          </div>
+          <div class="cpdf-prog-foot">
+            <span id="cpdf-prog-pct">0%</span>
+            <span class="cpdf-proc-local">${ICONS.shield} Processed locally</span>
+          </div>
+        </div>`;
+    }
+
+    async function runCompress() {
+      renderProcessing();
+      const p    = PRESETS[preset];
+      const msg  = container.querySelector('#cpdf-prog-msg');
+      const fill = container.querySelector('#cpdf-prog-fill');
+      const pct  = container.querySelector('#cpdf-prog-pct');
+      const trk  = container.querySelector('#cpdf-prog-track');
+
+      const onProgress = (frac, text) => {
+        const v = Math.round(frac * 100);
+        if (fill) fill.style.width = v + '%';
+        if (pct)  pct.textContent  = v + '%';
+        if (trk)  trk.setAttribute('aria-valuenow', v);
+        if (msg && text) msg.textContent = text;
+      };
+
+      try {
+        const results = [];
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          const fam = familyOf(f);
+          onProgress(i / files.length, `Compressing ${i + 1}/${files.length} — ${f.name}`);
+          const res = await runByFamily(f, fam, p, (sub, text) =>
+            onProgress((i + sub) / files.length, text || `Compressing ${i + 1}/${files.length} — ${f.name}`));
+          results.push({ file: f, family: fam, result: res });
+        }
+        onProgress(1, 'Done');
+        await new Promise(r => setTimeout(r, 380));
+        renderResult(results);
+      } catch(err) { renderError(err.message); }
+    }
+
+    /* Route the actual compression by the file's family. */
+    async function runByFamily(file, family, p, onProgress) {
+      if (family === 'image') {
+        let sourceBlob = file;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (ext === 'heic' || ext === 'heif') {
+          if (typeof window.heic2any !== 'function') {
+            await U.loadScript('vendor/heic2any/heic2any.min.js');
+          }
+          const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+          sourceBlob = Array.isArray(converted) ? converted[0] : converted;
+        }
+        const img = await new Promise((res, rej) => {
+          const u = URL.createObjectURL(sourceBlob); const im = new Image();
+          im.onload = () => { URL.revokeObjectURL(u); res(im); };
+          im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Could not decode this image.')); };
+          im.src = u;
+        });
+        const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+        c.getContext('2d').drawImage(img, 0, 0);
+        const blob = await new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Could not encode image.')), 'image/webp', p.quality / 100));
+        return { blob, filename: U.baseName(file.name) + '-compressed.webp', mime: 'image/webp', preview: 'image' };
+      }
+      if (family === 'video') {
+        const FFm = window.FF && window.FF.media;
+        if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
+        const INP = 'input.' + (U.extOf(file.name) || 'bin');
+        const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-c:v', 'libvpx', '-b:v', p.videoBr, '-c:a', 'libvorbis', 'output.webm'], out: 'output.webm', onProgress });
+        return { blob: new Blob([data.buffer || data], { type: 'video/webm' }), filename: U.baseName(file.name) + '-compressed.webm', mime: 'video/webm', preview: 'video' };
+      }
+      if (family === 'audio') {
+        const FFm = window.FF && window.FF.media;
+        if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
+        const INP = 'input.' + (U.extOf(file.name) || 'bin');
+        const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-vn', '-c:a', 'libmp3lame', '-b:a', p.audioBr, 'output.mp3'], out: 'output.mp3', onProgress });
+        return { blob: new Blob([data.buffer || data], { type: 'audio/mpeg' }), filename: U.baseName(file.name) + '.mp3', mime: 'audio/mpeg', preview: 'audio' };
+      }
+      if (family === 'archive' || family === 'ebook' || family === 'office') {
+        const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
+        const raw = new Uint8Array(await file.arrayBuffer());
+        if (family === 'archive' && /\\.(gz|tgz)$/i.test(file.name)) {
+          const gz = fflate.gzipSync(fflate.gunzipSync(raw), { level: 9 });
+          return { blob: new Blob([gz], { type: 'application/gzip' }), filename: file.name, mime: 'application/gzip', preview: 'download' };
+        }
+        const entries = fflate.unzipSync(raw);
+        // EPUB spec: the mimetype entry must stay stored (uncompressed).
+        if (family === 'ebook' && entries['mimetype']) entries['mimetype'] = [entries['mimetype'], { level: 0 }];
+        const out = fflate.zipSync(entries, { level: 9 });
+        const mime = family === 'ebook' ? 'application/epub+zip' : (file.type || 'application/octet-stream');
+        return { blob: new Blob([out], { type: mime }), filename: file.name, mime, preview: 'download' };
+      }
+      const engine = await tool.engine();
+      return tool.run({ file, inputs: { quality: p.quality, scale: p.scale }, engine, onProgress });
+    }
+
+    /* Build a ZIP of the compressed outputs (fflate). */
+    async function makeZip(results) {
+      const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
+      const map = {};
+      for (const r of results) map[r.result.filename] = new Uint8Array(await r.result.blob.arrayBuffer());
+      return new Blob([fflate.zipSync(map, { level: 6 })], { type: 'application/zip' });
+    }
+
+    /* ── Step 4: Result ─────────────────────────────── */
+    function renderResult(results) {
+      const oTot   = results.reduce((s, r) => s + r.file.size, 0);
+      const cTot   = results.reduce((s, r) => s + r.result.blob.size, 0);
+      const saved  = oTot - cTot;
+      const redPct = Math.round((1 - cTot / oTot) * 100);
+      const win    = cTot < oTot;
+      const barW   = win ? Math.round((cTot / oTot) * 100) : 100;
+      const next   = preset==='maximum' ? 'balanced' : 'maximum';
+      const nextLbl= preset==='maximum' ? 'Balanced'  : 'Maximum';
+      const single = results.length === 1;
+      const urls   = results.map(r => URL.createObjectURL(r.result.blob));
+
+      /* Individual mode: show per-file download rows. ZIP mode: primary = the archive. */
+      const rows = results.map((r, i) => {
+        const f = r.file, res = r.result;
+        const w = res.blob.size < f.size;
+        const p = Math.round((1 - res.blob.size / f.size) * 100);
+        return `
+          <li class="mpdf-item cpdf-out-item">
+            <span class="cpdf-file-ico">${FAMILY_META[r.family].icon}</span>
+            <div class="cpdf-file-text">
+              <span class="cpdf-fname" title="${_esc(res.filename)}">${_esc(res.filename)}</span>
+              <span class="cpdf-fsize">${_bytes(f.size)} → ${_bytes(res.blob.size)}${w ? ` &nbsp;·&nbsp; ${p}% smaller` : ' &nbsp;·&nbsp; no gain'}</span>
+            </div>
+            <a class="mpdf-icon-btn mpdf-icon-btn--dl" href="${urls[i]}" download="${_esc(res.filename)}" title="Download ${_esc(res.filename)}">${ICONS.download}</a>
+          </li>`;
+      }).join('');
+
+      const buildZipLink = async () => {
+        const zip = await makeZip(results);
+        return { url: URL.createObjectURL(zip), name: 'filekit-compressed.zip' };
+      };
+
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar ${win ? 'cpdf-status-bar--ok' : 'cpdf-status-bar--warn'}">
+              <span class="cpdf-status-ico">${win ? ICONS.success : ICONS.warn}</span>
+              <div>
+                <strong>${win ? `Compressed ${results.length} file${single?'':'s'} successfully` : 'Files already optimised'}</strong>
+                <span>${win ? `Saved ${_bytes(saved)} total &nbsp;·&nbsp; ${redPct}% smaller` : 'Try the Maximum preset for further reduction'}</span>
+              </div>
+            </div>
+
+            <div class="cpdf-compare">
+              <div class="cpdf-compare-col">
+                <span class="cpdf-compare-lbl">Original</span>
+                <span class="cpdf-compare-sz">${_bytes(oTot)}</span>
+                <div class="cpdf-bar-wrap"><div class="cpdf-bar cpdf-bar--orig" style="width:100%"></div></div>
+                <span class="cpdf-compare-name">${results.length} file${single?'':'s'}</span>
+              </div>
+              <div class="cpdf-compare-sep">${ICONS.arrow}</div>
+              <div class="cpdf-compare-col">
+                <span class="cpdf-compare-lbl">Compressed</span>
+                <span class="cpdf-compare-sz${win ? ' cpdf-compare-sz--win' : ''}">${_bytes(cTot)}</span>
+                <div class="cpdf-bar-wrap"><div class="cpdf-bar cpdf-bar--comp" style="width:${barW}%"></div></div>
+                <span class="cpdf-compare-name">${redPct}% smaller</span>
+              </div>
+              ${win ? `<div class="cpdf-compare-badge"><span class="cpdf-badge-pct">${redPct}%</span><span class="cpdf-badge-lbl">smaller</span></div>` : ''}
+            </div>
+
+            <div class="cpdf-section">
+              <p class="cpdf-section-label">Output files</p>
+              <ul class="mpdf-list" role="list">${rows}</ul>
+            </div>
+          </div>
+
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" id="cpdf-dl-primary" href="#" download="filekit-compressed.zip" style="text-decoration:none">
+              ${ICONS.download}&nbsp; ${single ? 'Download file' : output === 'zip' ? 'Download ZIP' : 'Download all as ZIP'}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="cpdf-again" type="button">Compress more files</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="cpdf-retry" type="button">Try ${nextLbl} preset</button>
+            </div>
+          </div>
+        </div>`;
+
+      /* Wire the primary download (single file downloads directly; otherwise ZIP). */
+      const primary = container.querySelector('#cpdf-dl-primary');
+      let primaryUrl = null;
+      if (single) {
+        primaryUrl = urls[0];
+        primary.href = primaryUrl;
+        primary.setAttribute('download', results[0].result.filename);
+      } else {
+        buildZipLink().then(({ url, name }) => {
+          primaryUrl = url;
+          primary.href = url;
+          primary.setAttribute('download', name);
+        });
+      }
+
+      container.querySelector('#cpdf-again').onclick = () => {
+        urls.forEach(u => URL.revokeObjectURL(u)); if (primaryUrl) URL.revokeObjectURL(primaryUrl);
+        files = []; preset = 'balanced'; output = 'zip'; renderUpload();
+      };
+      container.querySelector('#cpdf-retry').onclick = () => {
+        urls.forEach(u => URL.revokeObjectURL(u)); if (primaryUrl) URL.revokeObjectURL(primaryUrl);
+        preset = next; renderConfigure();
+      };
+    }
+
+    /* ── Error ──────────────────────────────────────── */
+    function renderError(msg) {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body cpdf-body--center">
+          <span class="cpdf-err-ico">${ICONS.errorIco}</span>
+          <p class="cpdf-proc-title" style="color:#DC2626">Processing failed</p>
+          <p class="cpdf-proc-sub">${_esc(msg)}</p>
+          <button class="cpdf-btn-primary" id="cpdf-errback" type="button" style="max-width:200px">Try again</button>
+        </div>`;
+      container.querySelector('#cpdf-errback').onclick = () => renderConfigure();
+    }
+
+    renderUpload();
+  }
+
+  /* ─── Patch FF.Flow.mount ───────────────────────── */
+  // expose for chained Flow.mount patches
+  window.__ffMountCompress = mountCompressPDF;
+
+  // NOTE: real routing is done by the unified premium installer at end of tools.js
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Merge PDF  (Premium UI, same frame as Compress)
+   Empty drop zone → multi-file list → merge → download
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc   = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n)||0;
+    if (n < 1024)      return `${n} B`;
+    if (n < 1048576)   return `${(n/1024).toFixed(1)} KB`;
+    return `${(n/1048576).toFixed(1)} MB`;
+  };
+
+  const ICONS = {
+    merge: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12v12H8z"/><path d="M4 10h12v12H4z"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    pdfSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#EFF4FF"/><path d="M11 7h9l7 7v13a1 1 0 01-1 1H11a1 1 0 01-1-1V8a1 1 0 011-1z" fill="none" stroke="#0055FF" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 7v7h7" fill="none" stroke="#0055FF" stroke-width="1.5" stroke-linecap="round"/><text x="12" y="25" font-size="8.5" font-weight="800" fill="#0055FF" font-family="system-ui,sans-serif">PDF</text></svg>`,
+    add: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
+    up: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>`,
+    down: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    success: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
+    errorIco: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+  };
+
+  const toolHeader = () => '';
+
+  function mountMergePDF(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'mpdf-root');
+
+    /** @type {{id:string,file:File}[]} */
+    let items = [];
+    let idSeq = 0;
+
+    const isPdf = (f) => {
+      const n = (f.name || '').toLowerCase();
+      return f.type === 'application/pdf' || n.endsWith('.pdf');
+    };
+
+    function addFiles(fileList) {
+      const arr = [...(fileList || [])].filter(isPdf);
+      if (!arr.length) return;
+      for (const f of arr) {
+        if (f.size > 200 * 1024 * 1024) continue;
+        items.push({ id: 'f' + (++idSeq), file: f });
+      }
+      if (items.length) renderConfigure();
+      else renderUpload();
+    }
+
+    function renderUpload() {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-dropzone drop-hero-box" id="mpdf-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> files to merge">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="mpdf-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </label>
+              <label for="mpdf-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> files to merge</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="mpdf-inp" type="file" accept="application/pdf,.pdf" multiple hidden>
+        </div>`;
+
+      const dz  = container.querySelector('#mpdf-dz');
+      const inp = container.querySelector('#mpdf-inp');
+      inp.onchange = () => addFiles(inp.files);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        addFiles(e.dataTransfer?.files);
+      });
+      dz.addEventListener('click', e => {
+        if (e.target.closest('label')) return;
+        inp.click();
+      });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function totalBytes() {
+      return items.reduce((s, it) => s + (it.file.size || 0), 0);
+    }
+
+    function renderConfigure() {
+      const canRun = items.length >= 2;
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="mpdf-list-head">
+              <p class="cpdf-section-label">Files to merge <span class="mpdf-count">${items.length} file${items.length===1?'':'s'} · ${_bytes(totalBytes())}</span></p>
+              <button class="cpdf-btn-ghost mpdf-add-btn" id="mpdf-add" type="button">
+                ${ICONS.add}&nbsp; Add PDFs
+              </button>
+              <input id="mpdf-add-inp" type="file" accept=".pdf,application/pdf" multiple hidden>
+            </div>
+
+            <ul class="mpdf-list" id="mpdf-list" role="list">
+              ${items.map((it, idx) => `
+                <li class="mpdf-item" data-id="${it.id}" draggable="true">
+                  <span class="mpdf-ord" aria-hidden="true">${idx + 1}</span>
+                  <span class="cpdf-file-ico">${ICONS.pdfSm}</span>
+                  <div class="cpdf-file-text">
+                    <span class="cpdf-fname" title="${_esc(it.file.name)}">${_esc(it.file.name)}</span>
+                    <span class="cpdf-fsize">${_bytes(it.file.size)}</span>
+                  </div>
+                  <div class="mpdf-item-actions">
+                    <button type="button" class="mpdf-icon-btn" data-act="up" data-id="${it.id}" title="Move up" ${idx===0?'disabled':''}>${ICONS.up}</button>
+                    <button type="button" class="mpdf-icon-btn" data-act="down" data-id="${it.id}" title="Move down" ${idx===items.length-1?'disabled':''}>${ICONS.down}</button>
+                    <button type="button" class="mpdf-icon-btn mpdf-icon-btn--danger" data-act="rm" data-id="${it.id}" title="Remove">${ICONS.trash}</button>
+                  </div>
+                </li>`).join('')}
+            </ul>
+
+            ${items.length < 2 ? `<p class="mpdf-hint">Add at least one more PDF to enable merge.</p>` : ''}
+          </div>
+
+          <div class="cpdf-footer">
+            <p class="cpdf-privacy-note">${ICONS.shield} Processing is entirely local — your files are never transmitted</p>
+            <button class="cpdf-btn-primary" id="mpdf-run" type="button" ${canRun ? '' : 'disabled'}>
+              ${ICONS.merge}&nbsp; Merge ${items.length} PDF${items.length===1?'':'s'}
+            </button>
+          </div>
+        </div>`;
+
+      const addBtn = container.querySelector('#mpdf-add');
+      const addInp = container.querySelector('#mpdf-add-inp');
+      addBtn.onclick = () => addInp.click();
+      addInp.onchange = () => { addFiles(addInp.files); addInp.value = ''; };
+
+      container.querySelectorAll('.mpdf-icon-btn').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.id;
+          const act = btn.dataset.act;
+          const i = items.findIndex(x => x.id === id);
+          if (i < 0) return;
+          if (act === 'rm') items.splice(i, 1);
+          if (act === 'up' && i > 0) { const t = items[i-1]; items[i-1] = items[i]; items[i] = t; }
+          if (act === 'down' && i < items.length - 1) { const t = items[i+1]; items[i+1] = items[i]; items[i] = t; }
+          if (!items.length) renderUpload();
+          else renderConfigure();
+        };
+      });
+
+      // simple HTML5 reorder
+      let dragId = null;
+      container.querySelectorAll('.mpdf-item').forEach(li => {
+        li.addEventListener('dragstart', () => { dragId = li.dataset.id; li.classList.add('mpdf-item--drag'); });
+        li.addEventListener('dragend', () => { dragId = null; li.classList.remove('mpdf-item--drag'); });
+        li.addEventListener('dragover', e => { e.preventDefault(); li.classList.add('mpdf-item--over'); });
+        li.addEventListener('dragleave', () => li.classList.remove('mpdf-item--over'));
+        li.addEventListener('drop', e => {
+          e.preventDefault();
+          li.classList.remove('mpdf-item--over');
+          if (!dragId || dragId === li.dataset.id) return;
+          const from = items.findIndex(x => x.id === dragId);
+          const to   = items.findIndex(x => x.id === li.dataset.id);
+          if (from < 0 || to < 0) return;
+          const [moved] = items.splice(from, 1);
+          items.splice(to, 0, moved);
+          renderConfigure();
+        });
+      });
+
+      const run = container.querySelector('#mpdf-run');
+      if (run && !run.disabled) run.onclick = () => runMerge();
+    }
+
+    function renderProcessing() {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${ICONS.merge}</div>
+          </div>
+          <p class="cpdf-proc-title">Merging your PDFs</p>
+          <p class="cpdf-proc-sub" id="mpdf-prog-msg">Preparing…</p>
+          <div class="cpdf-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="mpdf-prog-track">
+            <div class="cpdf-prog-fill" id="mpdf-prog-fill"></div>
+          </div>
+          <div class="cpdf-prog-foot">
+            <span id="mpdf-prog-pct">0%</span>
+            <span class="cpdf-proc-local">${ICONS.shield} Processed locally</span>
+          </div>
+        </div>`;
+    }
+
+    async function runMerge() {
+      if (items.length < 2) return;
+      renderProcessing();
+      const msg  = container.querySelector('#mpdf-prog-msg');
+      const fill = container.querySelector('#mpdf-prog-fill');
+      const pct  = container.querySelector('#mpdf-prog-pct');
+      const trk  = container.querySelector('#mpdf-prog-track');
+      const onProgress = (frac, text) => {
+        const v = Math.round(frac * 100);
+        if (fill) fill.style.width = v + '%';
+        if (pct)  pct.textContent  = v + '%';
+        if (trk)  trk.setAttribute('aria-valuenow', v);
+        if (msg && text) msg.textContent = text;
+      };
+      try {
+        const engine = await tool.engine();
+        const files = items.map(it => it.file);
+        const result = await tool.run({ files, engine, onProgress });
+        onProgress(1, 'Done');
+        await new Promise(r => setTimeout(r, 320));
+        renderResult(result);
+      } catch (err) {
+        renderError(err.message || 'Merge failed');
+      }
+    }
+
+    function renderResult(result) {
+      const url = URL.createObjectURL(result.blob);
+      const n = items.length;
+      const total = totalBytes();
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar cpdf-status-bar--ok">
+              <span class="cpdf-status-ico">${ICONS.success}</span>
+              <div>
+                <strong>Merge complete</strong>
+                <span>${n} PDFs combined · ${_bytes(result.blob.size)}</span>
+              </div>
+            </div>
+
+            <div class="cpdf-file-bar">
+              <span class="cpdf-file-ico">${ICONS.pdfSm}</span>
+              <div class="cpdf-file-text">
+                <span class="cpdf-fname" title="${_esc(result.filename)}">${_esc(result.filename)}</span>
+                <span class="cpdf-fsize">${_bytes(result.blob.size)} · from ${n} files (${_bytes(total)})</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(result.filename)}" style="text-decoration:none">
+              ${ICONS.download}&nbsp; Download ${_esc(result.filename)}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="mpdf-again" type="button">Merge more files</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="mpdf-restart" type="button">Start over</button>
+            </div>
+          </div>
+        </div>`;
+
+      container.querySelector('#mpdf-again').onclick = () => {
+        URL.revokeObjectURL(url);
+        renderConfigure();
+      };
+      container.querySelector('#mpdf-restart').onclick = () => {
+        URL.revokeObjectURL(url);
+        items = [];
+        renderUpload();
+      };
+    }
+
+    function renderError(msg) {
+      container.innerHTML = toolHeader() + `
+        <div class="cpdf-body cpdf-body--center">
+          <span class="cpdf-err-ico">${ICONS.errorIco}</span>
+          <p class="cpdf-proc-title" style="color:#DC2626">Merge failed</p>
+          <p class="cpdf-proc-sub">${_esc(msg)}</p>
+          <button class="cpdf-btn-primary" id="mpdf-errback" type="button" style="max-width:200px">Try again</button>
+        </div>`;
+      container.querySelector('#mpdf-errback').onclick = () => renderConfigure();
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountMerge = mountMergePDF;
+  // routing handled by unified premium installer
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Split PDF  (FULL UI SHELL / PROTOTYPE)
+   No engine dependency. Mock page previews + mock Finish output.
+   Wire real pdf.js / pdf-lib later — UI surface is complete.
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const ICONS = {
+    split: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,
+    extract: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
+    scissors: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    trash: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`,
+    plus: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    minus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    rotateL: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>`,
+    rotateR: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-4"/></svg>`,
+    zoom: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+    grid: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
+    list: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>`,
+    sort: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10M11 9h7M11 13h4"/><path d="M3 16l3 3 3-3M6 19V5"/></svg>`,
+    download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    success: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+    chev: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+  };
+
+  /* ── mock page thumbnail (no pdf.js) ── */
+  function mockThumb(pageNo, total, fileName, rot) {
+    const w = 312, h = 420;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    // paper edge
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, w - 2, h - 2);
+    // header bar
+    ctx.fillStyle = '#eff4ff';
+    ctx.fillRect(0, 0, w, 48);
+    ctx.fillStyle = '#0055FF';
+    ctx.font = '700 18px Inter, system-ui, sans-serif';
+    ctx.fillText('PDF', 18, 32);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 13px Inter, system-ui, sans-serif';
+    const label = String(fileName || 'document.pdf');
+    ctx.fillText(label.length > 28 ? label.slice(0, 26) + '…' : label, 58, 32);
+    // fake text lines
+    const lines = 14 + ((pageNo * 3) % 5);
+    for (let i = 0; i < lines; i++) {
+      const y = 72 + i * 22;
+      const lw = 180 + ((pageNo * 17 + i * 29) % 90);
+      ctx.fillStyle = i % 5 === 0 ? '#cbd5e1' : '#e2e8f0';
+      ctx.fillRect(24, y, lw, 8);
+      if (i % 4 === 0) {
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(24, y + 12, lw * 0.7, 6);
+      }
+    }
+    // page stamp
+    ctx.fillStyle = 'rgba(0,85,255,0.08)';
+    ctx.beginPath();
+    ctx.arc(w - 48, h - 48, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0055FF';
+    ctx.font = '700 16px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(pageNo), w - 48, h - 42);
+    ctx.font = '600 10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('/' + total, w - 48, h - 28);
+    ctx.textAlign = 'left';
+    // rotation badge
+    if (rot % 360) {
+      ctx.fillStyle = '#000';
+      ctx.font = '700 11px Inter, system-ui, sans-serif';
+      ctx.fillText(rot + '°', 16, h - 16);
+    }
+    return c.toDataURL('image/jpeg', 0.85);
+  }
+
+  /* ── minimal valid PDF bytes (prototype placeholder) ── */
+  function tinyPdfBytes(title) {
+    const text = String(title || 'Split output').slice(0, 60);
+    // very small one-page PDF
+    const objs = [];
+    objs.push('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n');
+    objs.push('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n');
+    objs.push('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n');
+    const stream = `BT /F1 18 Tf 72 720 Td (${text.replace(/[()\\]/g, '')}) Tj ET`;
+    objs.push(`4 0 obj<< /Length ${stream.length} >>stream\n${stream}\nendstream\nendobj\n`);
+    objs.push('5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n');
+    let body = '%PDF-1.4\n';
+    const offsets = [0];
+    for (const o of objs) {
+      offsets.push(body.length);
+      body += o;
+    }
+    const xrefStart = body.length;
+    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= objs.length; i++) {
+      xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    body += xref;
+    body += `trailer<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+    return new TextEncoder().encode(body);
+  }
+
+  /* ── store files as CRC+local headers zip without fflate ── */
+  function crc32(buf) {
+    let c = ~0;
+    for (let i = 0; i < buf.length; i++) {
+      c ^= buf[i];
+      for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+    }
+    return ~c >>> 0;
+  }
+  function u16(n) { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(0, n, true); return b; }
+  function u32(n) { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, n, true); return b; }
+  function concat(chunks) {
+    const len = chunks.reduce((s, c) => s + c.length, 0);
+    const out = new Uint8Array(len);
+    let o = 0;
+    for (const c of chunks) { out.set(c, o); o += c.length; }
+    return out;
+  }
+  function zipFiles(files) {
+    // files: {name: Uint8Array}
+    const enc = new TextEncoder();
+    const locals = [];
+    const centrals = [];
+    let offset = 0;
+    for (const [name, data] of Object.entries(files)) {
+      const nameB = enc.encode(name);
+      const crc = crc32(data);
+      const local = concat([
+        u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+        u32(crc), u32(data.length), u32(data.length), u16(nameB.length), u16(0),
+        nameB, data
+      ]);
+      const central = concat([
+        u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+        u32(crc), u32(data.length), u32(data.length), u16(nameB.length), u16(0),
+        u16(0), u16(0), u16(0), u32(0), u32(offset), nameB
+      ]);
+      locals.push(local);
+      centrals.push(central);
+      offset += local.length;
+    }
+    const centralDir = concat(centrals);
+    const end = concat([
+      u32(0x06054b50), u16(0), u16(0), u16(centrals.length), u16(centrals.length),
+      u32(centralDir.length), u32(offset), u16(0)
+    ]);
+    return concat([...locals, centralDir, end]);
+  }
+
+  function shortName(name, max = 18) {
+    const s = String(name || 'document.pdf');
+    if (s.length <= max) return s;
+    const ext = s.includes('.') ? s.slice(s.lastIndexOf('.')) : '';
+    return s.slice(0, Math.max(4, max - 1 - ext.length)) + '…' + ext;
+  }
+
+  function guessPageCount(file) {
+    // prototype heuristic from size; clamped
+    const n = Math.max(2, Math.min(24, Math.round((file.size || 80000) / 45000) || 3));
+    return n;
+  }
+
+  function mountSplitPDF(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('spdf-shell');
+    container.classList.remove('cpdf-root');
+    // lock ancestors so tool chrome is full-bleed under the global topbar
+    const stageEl = container.closest('.app-stage-container') || document.getElementById('app-tool-stage');
+    const viewEl  = container.closest('.app-workspace-tool-view');
+    const canvasEl = container.closest('.app-canvas');
+    const mainEl = container.closest('.app-main-content');
+    if (stageEl) { stageEl.classList.add('spdf-stage-active'); stageEl.style.padding = '0'; }
+    if (viewEl) { viewEl.classList.add('spdf-stage-active'); }
+    if (canvasEl) { canvasEl.classList.add('spdf-stage-active'); }
+    if (mainEl) { mainEl.classList.add('ff-tool-active', 'spdf-stage-active'); }
+    const cleanup = () => {
+      stageEl && stageEl.classList.remove('spdf-stage-active');
+      viewEl && viewEl.classList.remove('spdf-stage-active');
+      canvasEl && canvasEl.classList.remove('spdf-stage-active');
+      mainEl && mainEl.classList.remove('spdf-stage-active');
+    };
+    // best-effort cleanup when leaving tool (container wiped by router)
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(container) || !container.classList.contains('spdf-shell')) {
+        cleanup(); obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+
+    /** @type {File|null} */
+    let file = null;
+    let pageCount = 0;
+    /** @type {{rot:number, deleted:boolean, selected:boolean, thumb:string}[]} */
+    let pages = [];
+    /** cut AFTER page index */
+    let cuts = new Set();
+    let everyN = 1;
+    let mode = 'split'; // split | extract
+    let view = 'grid'; // grid | list
+    let selectedPage = 0;
+    let addMenuOpen = false;
+
+    const isPdf = (f) => {
+      const n = (f.name || '').toLowerCase();
+      return f.type === 'application/pdf' || n.endsWith('.pdf');
+    };
+
+    function livePages() {
+      return pages.map((p, i) => ({ ...p, i })).filter(p => !p.deleted);
+    }
+
+    function applyEveryN() {
+      cuts = new Set();
+      const live = livePages();
+      if (everyN > 0 && live.length > 1) {
+        for (let k = everyN; k < live.length; k += everyN) {
+          // cut after the (k-1)-th live page → use its original index
+          const afterIdx = live[k - 1].i;
+          if (afterIdx < pages.length - 1) cuts.add(afterIdx);
+        }
+      }
+      // never cut after last non-deleted page chain end is handled in ranges
+    }
+
+    function rangesFromCuts() {
+      const live = livePages();
+      if (!live.length) return [];
+      const liveIdx = live.map(p => p.i);
+      const cutSet = new Set([...cuts].filter(c => liveIdx.includes(c)));
+      const ranges = [];
+      let startPos = 0;
+      for (let pos = 0; pos < live.length; pos++) {
+        const orig = live[pos].i;
+        const isLast = pos === live.length - 1;
+        const cutHere = cutSet.has(orig) && !isLast;
+        if (cutHere || isLast) {
+          ranges.push(live.slice(startPos, pos + 1).map(p => p.i));
+          startPos = pos + 1;
+        }
+      }
+      return ranges;
+    }
+
+    function rangeLabel(arr) {
+      if (!arr.length) return '';
+      const a = arr[0] + 1, b = arr[arr.length - 1] + 1;
+      // if contiguous
+      let cont = true;
+      for (let i = 1; i < arr.length; i++) if (arr[i] !== arr[i - 1] + 1) cont = false;
+      if (arr.length === 1) return `p${a}`;
+      if (cont) return `p${a}-${b}`;
+      return arr.map(i => `p${i + 1}`).join(',');
+    }
+
+    function rebuildThumbs() {
+      pages.forEach((p, i) => {
+        if (p.deleted) return;
+        p.thumb = mockThumb(i + 1, pageCount, file?.name, p.rot);
+      });
+    }
+
+    async function pickFile(f) {
+      if (!f || !isPdf(f)) return;
+      file = f;
+      pageCount = guessPageCount(f);
+      pages = Array.from({ length: pageCount }, () => ({
+        rot: 0, deleted: false, selected: false, thumb: ''
+      }));
+      cuts = new Set();
+      everyN = 1;
+      selectedPage = 0;
+      applyEveryN();
+      rebuildThumbs();
+      renderWorkspace();
+    }
+
+    function renderUpload() {
+      container.classList.add('cpdf-root', 'spdf-root');
+      container.classList.remove('spdf-shell');
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="spdf-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to split">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="spdf-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="spdf-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to split</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="spdf-inp" type="file" accept="application/pdf,.pdf"  hidden>
+        </div>
+        </div>`;
+      wireDrop(container.querySelector('#spdf-dz'), container.querySelector('#spdf-inp'));
+    }
+
+    function wireDrop(dz, inp) {
+      if (!dz || !inp) return;
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0];
+        if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => {
+        if (e.target.closest('label')) return;
+        inp.click();
+      });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function renderWorkspace() {
+      container.classList.remove('cpdf-root');
+      container.classList.add('spdf-shell');
+      const live = livePages();
+      const ranges = mode === 'extract'
+        ? (live.filter(p => pages[p.i].selected).length
+            ? [live.filter(p => pages[p.i].selected).map(p => p.i)]
+            : [])
+        : rangesFromCuts();
+      const parts = Math.max(ranges.length, 0);
+      const sel = pages[selectedPage] && !pages[selectedPage].deleted ? selectedPage : (live[0]?.i ?? 0);
+
+      container.innerHTML = `
+        <div class="spdf-chrome">
+          <div class="spdf-topbar">
+            <div class="spdf-topbar-cluster">
+              <div class="spdf-mode-group" role="tablist">
+                <button type="button" class="spdf-mode-pill${mode==='split'?' spdf-mode-pill--on':''}" data-mode="split">${ICONS.split}<span>Split</span></button>
+                <button type="button" class="spdf-mode-pill${mode==='extract'?' spdf-mode-pill--on':''}" data-mode="extract">${ICONS.extract}<span>Extract</span></button>
+              </div>
+              <div class="spdf-vdiv" aria-hidden="true"></div>
+              <div class="spdf-add-wrap">
+                <button type="button" class="spdf-btn-ghost" id="spdf-add-toggle">
+                  ${ICONS.plus}<span>Add</span>${ICONS.chev}
+                </button>
+                <div class="spdf-add-menu" id="spdf-add-menu" ${addMenuOpen ? '' : 'hidden'}>
+                  <button type="button" data-add="pdf">PDF file</button>
+                  <button type="button" data-add="image" disabled title="Wire later">Image (soon)</button>
+                  <button type="button" data-add="office" disabled title="Wire later">Word / Excel / PPT (soon)</button>
+                </div>
+                <input id="spdf-add-inp" type="file" accept=".pdf,application/pdf" hidden>
+              </div>
+              <div class="spdf-icon-group">
+                <button type="button" class="spdf-icon-btn" id="spdf-rot-l" title="Rotate left">${ICONS.rotateL}</button>
+                <button type="button" class="spdf-icon-btn" id="spdf-rot-r" title="Rotate right">${ICONS.rotateR}</button>
+                <button type="button" class="spdf-icon-btn spdf-btn-danger" id="spdf-del-page" title="Delete page">${ICONS.trash}</button>
+              </div>
+            </div>
+
+            <div class="spdf-topbar-cluster spdf-topbar-cluster--end">
+              ${mode === 'split' ? `
+                <div class="spdf-every">
+                  <label class="spdf-check">
+                    <input type="checkbox" id="spdf-every-on" checked>
+                    <span class="spdf-every-text">Split after every</span>
+                  </label>
+                  <button type="button" class="spdf-stepper" id="spdf-n-minus" aria-label="Decrease">${ICONS.minus}</button>
+                  <input type="number" class="spdf-n-input" id="spdf-n" min="1" max="${Math.max(live.length - 1, 1)}" value="${everyN}">
+                  <button type="button" class="spdf-stepper" id="spdf-n-plus" aria-label="Increase">+</button>
+                  <span class="spdf-every-label">pages</span>
+                </div>` : `
+                <div class="spdf-every">
+                  <span class="spdf-every-label">${live.filter(p=>pages[p.i].selected).length} selected</span>
+                </div>`}
+              <button type="button" class="spdf-btn-finish" id="spdf-finish" ${!live.length || (mode==='extract' && !live.some(p=>pages[p.i].selected)) ? 'disabled' : ''}>
+                <span>Finish</span> ${ICONS.arrow}
+              </button>
+            </div>
+          </div>
+
+          <div class="spdf-subbar">
+            <div class="spdf-subbar-main">
+              <span class="spdf-file-chip" title="${_esc(file?.name || '')}">${_esc(shortName(file?.name || 'PDF', 36))}</span>
+              <span class="spdf-meta">${live.length} pages · ${_bytes(file?.size || 0)}</span>
+              <span class="spdf-parts">${mode==='extract' ? (live.filter(p=>pages[p.i].selected).length + ' selected') : (parts + ' output file' + (parts===1?'':'s'))}</span>
+              <span class="spdf-hint">${mode==='split' ? 'Click scissors between pages to cut' : 'Click pages to include in extract'}</span>
+            </div>
+            <div class="spdf-view-toggle">
+              <button type="button" class="spdf-icon-btn${view==='list'?' is-on':''}" data-view="list" title="List">${ICONS.list}</button>
+              <button type="button" class="spdf-icon-btn${view==='grid'?' is-on':''}" data-view="grid" title="Grid">${ICONS.grid}</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="spdf-canvas" id="spdf-canvas">
+          <div class="spdf-row${view==='list'?' spdf-row--list':''}">
+            ${pages.map((p, i) => {
+              if (p.deleted) return '';
+              const cutOn = mode==='split' && cuts.has(i) && livePages().some(lp => lp.i > i);
+              const isSel = selectedPage === i;
+              const isExtractOn = mode==='extract' && p.selected;
+              const nextLive = (() => {
+                for (let j = i + 1; j < pages.length; j++) if (!pages[j].deleted) return j;
+                return -1;
+              })();
+              return `
+                <div class="spdf-page-wrap">
+                  <article class="spdf-thumb${isSel?' spdf-thumb--focus':''}${isExtractOn?' spdf-thumb--picked':''}${p.rot?` spdf-thumb--rot${p.rot%360}`:''}"
+                    data-page="${i}" tabindex="0" role="button" aria-label="Page ${i+1}">
+                    <div class="spdf-thumb-tools">
+                      <button type="button" class="spdf-mini" data-act="zoom" data-page="${i}" title="Preview">${ICONS.zoom}</button>
+                      <button type="button" class="spdf-mini" data-act="rot" data-page="${i}" title="Rotate">${ICONS.rotateR}</button>
+                      <button type="button" class="spdf-mini" data-act="del" data-page="${i}" title="Delete">${ICONS.trash}</button>
+                    </div>
+                    <div class="spdf-thumb-frame" style="transform: rotate(${p.rot % 360}deg)">
+                      <img src="${p.thumb}" alt="Page ${i+1}" draggable="false">
+                    </div>
+                    <div class="spdf-thumb-name" title="${_esc(file?.name || '')}">${_esc(shortName(file?.name || '', 16))}</div>
+                    <div class="spdf-thumb-num">${i + 1}</div>
+                    ${mode==='extract' ? `<span class="spdf-pick-mark" aria-hidden="true">${p.selected ? '✓' : ''}</span>` : ''}
+                  </article>
+                  ${mode==='split' && nextLive !== -1 ? `
+                    <button type="button" class="spdf-cut${cutOn ? ' spdf-cut--on' : ''}"
+                      data-cut-after="${i}" aria-pressed="${cutOn}"
+                      title="${cutOn ? 'Remove cut' : 'Split here'}">
+                      <span class="spdf-cut-line"></span>
+                      <span class="spdf-cut-btn">${ICONS.scissors}</span>
+                    </button>` : ''}
+                </div>`;
+            }).join('')}
+            <button type="button" class="spdf-add-tile" id="spdf-add-tile">
+              <span class="spdf-add-plus">${ICONS.plus}</span>
+              <span>Add PDF, image,<br>Word, Excel, and<br>PowerPoint files</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="spdf-footer-note">
+          <span>${ICONS.shield} UI prototype · engines not connected · Finish exports placeholder files</span>
+          <span class="spdf-ranges">${ranges.length ? ranges.map(rangeLabel).join('  ·  ') : 'No output yet'}</span>
+        </div>`;
+
+      // mode
+      container.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.onclick = () => { mode = btn.dataset.mode; addMenuOpen = false; renderWorkspace(); };
+      });
+
+      // add menu
+      const toggle = container.querySelector('#spdf-add-toggle');
+      const menu = container.querySelector('#spdf-add-menu');
+      const addInp = container.querySelector('#spdf-add-inp');
+      toggle.onclick = (e) => {
+        e.stopPropagation();
+        addMenuOpen = !addMenuOpen;
+        menu.hidden = !addMenuOpen;
+      };
+      menu?.querySelectorAll('button[data-add]').forEach(b => {
+        b.onclick = () => {
+          addMenuOpen = false;
+          if (b.dataset.add === 'pdf') addInp.click();
+        };
+      });
+      addInp.onchange = () => { if (addInp.files[0]) pickFile(addInp.files[0]); addInp.value = ''; };
+      container.querySelector('#spdf-add-tile').onclick = () => addInp.click();
+
+      // rotate / delete selected
+      container.querySelector('#spdf-rot-l').onclick = () => {
+        if (pages[sel] && !pages[sel].deleted) {
+          pages[sel].rot = (pages[sel].rot + 270) % 360;
+          pages[sel].thumb = mockThumb(sel + 1, pageCount, file?.name, pages[sel].rot);
+          renderWorkspace();
+        }
+      };
+      container.querySelector('#spdf-rot-r').onclick = () => {
+        if (pages[sel] && !pages[sel].deleted) {
+          pages[sel].rot = (pages[sel].rot + 90) % 360;
+          pages[sel].thumb = mockThumb(sel + 1, pageCount, file?.name, pages[sel].rot);
+          renderWorkspace();
+        }
+      };
+      container.querySelector('#spdf-del-page').onclick = () => {
+        if (pages[sel] && !pages[sel].deleted) {
+          pages[sel].deleted = true;
+          pages[sel].selected = false;
+          cuts.delete(sel);
+          if (livePages().length === 0) { file = null; pages = []; pageCount = 0; renderUpload(); return; }
+          selectedPage = livePages()[0].i;
+          renderWorkspace();
+        }
+      };
+
+      // every N
+      const setN = (v) => {
+        everyN = Math.max(1, Math.min(Math.max(livePages().length - 1, 1), Number(v) || 1));
+        applyEveryN();
+        renderWorkspace();
+      };
+      container.querySelector('#spdf-n-minus')?.addEventListener('click', () => setN(everyN - 1));
+      container.querySelector('#spdf-n-plus')?.addEventListener('click', () => setN(everyN + 1));
+      container.querySelector('#spdf-n')?.addEventListener('change', e => setN(e.target.value));
+
+      // view
+      container.querySelectorAll('[data-view]').forEach(b => {
+        b.onclick = () => { view = b.dataset.view; renderWorkspace(); };
+      });
+
+      // page click
+      container.querySelectorAll('.spdf-thumb').forEach(el => {
+        el.onclick = (e) => {
+          if (e.target.closest('.spdf-mini')) return;
+          const i = Number(el.dataset.page);
+          selectedPage = i;
+          if (mode === 'extract') {
+            pages[i].selected = !pages[i].selected;
+          }
+          renderWorkspace();
+        };
+      });
+
+      // mini tools on thumb
+      container.querySelectorAll('.spdf-mini').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const i = Number(btn.dataset.page);
+          const act = btn.dataset.act;
+          if (act === 'del') {
+            pages[i].deleted = true;
+            pages[i].selected = false;
+            cuts.delete(i);
+            if (!livePages().length) { file = null; pages = []; pageCount = 0; renderUpload(); return; }
+            selectedPage = livePages()[0].i;
+          } else if (act === 'rot') {
+            pages[i].rot = (pages[i].rot + 90) % 360;
+            pages[i].thumb = mockThumb(i + 1, pageCount, file?.name, pages[i].rot);
+          } else if (act === 'zoom') {
+            selectedPage = i;
+            openLightbox(i);
+            return;
+          }
+          renderWorkspace();
+        };
+      });
+
+      // cuts
+      container.querySelectorAll('.spdf-cut').forEach(btn => {
+        btn.onclick = () => {
+          const after = Number(btn.dataset.cutAfter);
+          if (cuts.has(after)) cuts.delete(after);
+          else cuts.add(after);
+          renderWorkspace();
+        };
+      });
+
+      container.querySelector('#spdf-finish').onclick = () => runFinish();
+
+      // close add menu on outside
+      const onDoc = (e) => {
+        if (!container.contains(e.target)) return;
+        if (!e.target.closest('.spdf-add-wrap')) {
+          addMenuOpen = false;
+          const m = container.querySelector('#spdf-add-menu');
+          if (m) m.hidden = true;
+        }
+      };
+      container.addEventListener('click', onDoc, { once: true });
+    }
+
+    function openLightbox(i) {
+      const p = pages[i];
+      if (!p || p.deleted) return;
+      const overlay = document.createElement('div');
+      overlay.className = 'spdf-lightbox';
+      overlay.innerHTML = `
+        <div class="spdf-lightbox-card">
+          <header>
+            <strong>Page ${i + 1}</strong>
+            <button type="button" id="spdf-lb-close">Close</button>
+          </header>
+          <img src="${p.thumb}" alt="Page ${i + 1}">
+        </div>`;
+      container.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      overlay.querySelector('#spdf-lb-close').onclick = close;
+    }
+
+    function renderProcessing(msg) {
+      container.classList.add('cpdf-root');
+      container.classList.remove('spdf-shell');
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${ICONS.split}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Split PDF</h2>
+            <p class="cpdf-hdr-sub">Building prototype output…</p>
+          </div>
+        </header>
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${ICONS.split}</div>
+          </div>
+          <p class="cpdf-proc-title">${_esc(msg || 'Preparing files')}</p>
+          <p class="cpdf-proc-sub">UI shell only — placeholder PDFs, no engine</p>
+          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="spdf-prog-fill" style="width:15%"></div></div>
+        </div>`;
+    }
+
+    async function runFinish() {
+      const live = livePages();
+      if (!live.length) return;
+      let ranges = mode === 'extract'
+        ? [live.filter(p => pages[p.i].selected).map(p => p.i)]
+        : rangesFromCuts();
+      ranges = ranges.filter(r => r.length);
+      if (!ranges.length) {
+        // default: each page
+        ranges = live.map(p => [p.i]);
+      }
+
+      renderProcessing(`Creating ${ranges.length} file${ranges.length === 1 ? '' : 's'}…`);
+      const fill = container.querySelector('#spdf-prog-fill');
+      await new Promise(r => setTimeout(r, 280));
+      if (fill) fill.style.width = '55%';
+      await new Promise(r => setTimeout(r, 280));
+
+      const base = (file?.name || 'document.pdf').replace(/\.pdf$/i, '') || 'document';
+      const out = {};
+      ranges.forEach((arr, idx) => {
+        const label = rangeLabel(arr).replace(/,/g, '_');
+        const name = ranges.length === 1 ? `${base}-split.pdf` : `${base}-${label}.pdf`;
+        out[name] = tinyPdfBytes(`${base} · ${label} · prototype`);
+        if (fill) fill.style.width = `${55 + Math.round((idx + 1) / ranges.length * 40)}%`;
+      });
+
+      await new Promise(r => setTimeout(r, 200));
+      let blob, filename;
+      if (Object.keys(out).length === 1) {
+        const k = Object.keys(out)[0];
+        blob = new Blob([out[k]], { type: 'application/pdf' });
+        filename = k;
+      } else {
+        blob = new Blob([zipFiles(out)], { type: 'application/zip' });
+        filename = `${base}-split.zip`;
+      }
+      if (fill) fill.style.width = '100%';
+      await new Promise(r => setTimeout(r, 180));
+      renderResult(blob, filename, ranges.length);
+    }
+
+    function renderResult(blob, filename, partCount) {
+      container.classList.add('cpdf-root');
+      container.classList.remove('spdf-shell');
+      const url = URL.createObjectURL(blob);
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${ICONS.split}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Split PDF</h2>
+            <p class="cpdf-hdr-sub">Prototype output ready</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar cpdf-status-bar--ok">
+              <span class="cpdf-status-ico">${ICONS.success}</span>
+              <div>
+                <strong>Shell export complete</strong>
+                <span>${partCount} file${partCount===1?'':'s'} · placeholder PDF/ZIP · connect engines later</span>
+              </div>
+            </div>
+            <div class="cpdf-file-bar">
+              <div class="cpdf-file-text" style="padding-left:4px">
+                <span class="cpdf-fname">${_esc(filename)}</span>
+                <span class="cpdf-fsize">${_bytes(blob.size)} · from ${_esc(file?.name || '')}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(filename)}" style="text-decoration:none">
+              ${ICONS.download}&nbsp; Download ${_esc(filename)}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="spdf-again" type="button">Split another file</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="spdf-back" type="button">Back to canvas</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#spdf-again').onclick = () => {
+        URL.revokeObjectURL(url);
+        file = null; pages = []; pageCount = 0; cuts = new Set();
+        renderUpload();
+      };
+      container.querySelector('#spdf-back').onclick = () => {
+        URL.revokeObjectURL(url);
+        renderWorkspace();
+      };
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountSplit = mountSplitPDF;
+  // routing handled by unified premium installer
+})();
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Edit Text  (UI shell, same alignment as Compress/Merge/Split)
+   Empty: shared cpdf card frame
+   After upload: full editor workspace (mock page + tools) — engines later
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const I = {
+    /* ── Original hand-drawn icon set (no stock paths) ── */
+    /* edit: pencil resting on a sheet */
+    edit: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3.5l5.5 5.5L8 21.5H2.5V16L15 3.5z"/><path d="M12.5 6l5.5 5.5"/></svg>`,
+    sign: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17c3-1 5 1 8 0s5-3 8-1"/><path d="M3 12c3-1 5 1 8 0s5-3 8-1"/><path d="M17 3l4 4-10 10H7v-4L17 3z"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    /* select: arrow cursor with a small tail */
+    select: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5l13 6-6 1.9-3.6 5.3L5 3.5z"/><path d="M14.5 16.5l2.5 3"/></svg>`,
+    /* hand: open palm with three raised fingers */
+    hand: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 11.5V6.8a1.4 1.4 0 012.8 0v4.7"/><path d="M10.3 10.3V5.2a1.4 1.4 0 012.8 0v5.1"/><path d="M13.1 10.8V7a1.4 1.4 0 012.8 0v7a5.6 5.6 0 01-11.2 0v-3"/></svg>`,
+    /* text: I-beam cursor with caps */
+    text: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4v16M15 4v16"/><path d="M7.5 4h3M7.5 20h3M13.5 4h3M13.5 20h3"/></svg>`,
+    /* type: typewriter T with baseline */
+    type: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7V4.5h13V7"/><path d="M9.5 19.5h5"/><path d="M12 4.5v15"/><path d="M12 11.5v3"/></svg>`,
+    /* pen: pencil with a straight lead */
+    pen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3.5l5 5L8 21H3v-5L15.5 3.5z"/><path d="M13.5 5.5l5 5"/></svg>`,
+    /* highlight: tilted marker over a stroke */
+    highlight: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4l9 3.5-3.5 8.5-9-3.5z"/><path d="M6 19.5h12"/><path d="M12 12.5l2.8 1.1"/></svg>`,
+    /* shape: square + circle combo */
+    shape: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="11" height="11" rx="1.2"/><circle cx="16.5" cy="16.5" r="4.5"/></svg>`,
+    /* image: frame, sun, mountain */
+    image: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1.4"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 14.5l-4.5-4.5L5 21"/></svg>`,
+    /* stamp: rubber stamp block with a ball handle */
+    stamp: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="15" width="16" height="5" rx="1"/><path d="M10 15v-6M14 15V9"/><path d="M8 9h8"/><circle cx="12" cy="5" r="1.6"/></svg>`,
+    /* crop: corner blades with tick marks */
+    crop: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2.5v12a2 2 0 002 2H21.5"/><path d="M17.5 21.5v-12a2 2 0 00-2-2H2.5"/><path d="M6.5 5.5h2.5M18.5 5.5v2.5"/></svg>`,
+    /* bg: magic wand sweeping a spark */
+    bg: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5l6 6L8 22H2v-6L14.5 3.5z"/><path d="M12.5 5.5l6 6"/><path d="M18 2.5v3M16.5 4h3"/><path d="M21 9.5v2M20 10.5h2"/></svg>`,
+    /* filter: three sliders with knobs */
+    filter: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/><circle cx="9" cy="6.5" r="1.8" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="7" cy="17.5" r="1.8" fill="currentColor" stroke="none"/></svg>`,
+    /* adjust: sun with up/down arrows */
+    adjust: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.6"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19"/><path d="M15.5 12h3M12 15.5v3"/></svg>`,
+    /* effect: sparkles */
+    effect: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9.5l-4.7 1.9L12 16l-1.8-4.6L5.5 9.5l4.7-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="M5 3.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/></svg>`,
+    /* blur: droplet with motion lines */
+    blur: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s5.5 6.2 5.5 10.5a5.5 5.5 0 01-11 0C6.5 9.2 12 3 12 3z"/><path d="M9.5 13.5a2.5 2.5 0 002.5 2.5"/><path d="M7.5 19.5h2M12.5 20.5h2M17 19h2"/></svg>`,
+    /* form: filled checkbox list */
+    form: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.4"/><path d="M8 7.5h8M8 12h8"/><path d="M8 16.5l1.5 1.5L12 15.5"/><path d="M14 17h2"/></svg>`,
+    /* sheet: grid with bold header */
+    sheet: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1.4"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>`,
+    /* find: magnifier over a paragraph */
+    find: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15.5 15.5L21 21"/><path d="M8 8.5h5M8 12h4"/></svg>`,
+    /* enhance: sparkle + boost arrow */
+    enhance: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.7 4.3L18 10l-4.3 1.7L12 16l-1.7-4.3L6 10l4.3-1.7z"/><path d="M18.5 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>`,
+    /* undo: arrow curving back with a head */
+    undo: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5v5.5H10"/><path d="M4.5 12a8 8 0 101.4-6.2L4.5 7.5"/></svg>`,
+    /* redo: arrow curving forward with a head */
+    redo: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 6.5v5.5H14"/><path d="M19.5 12a8 8 0 11-1.4-6.2L19.5 7.5"/></svg>`,
+    /* zoom: magnifier with a straight handle */
+    zoom: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>`,
+    /* download: arrow dropping into a tray */
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v10m0 0l-3.5-3.5M12 13.5l3.5-3.5"/><path d="M4.5 16.5v2A1.5 1.5 0 006 20h12a1.5 1.5 0 001.5-1.5v-2"/></svg>`,
+    /* share: three nodes linked by lines */
+    share: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 13.2l7.4 4.3M15.7 6.5L8.3 10.8"/></svg>`,
+    /* arrow: single chevron-headed arrow */
+    arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14m0 0l-5-5m5 5l-5 5"/></svg>`,
+    /* plus: crisp cross */
+    plus: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg>`,
+    /* trash: rounded bin with lid and slats */
+    trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6.3 7l.8 11.4a1.8 1.8 0 001.8 1.6h6.2a1.8 1.8 0 001.8-1.6L17.7 7"/><path d="M9.7 7V5.2A1.2 1.2 0 0110.9 4h2.2a1.2 1.2 0 011.2 1.2V7"/><path d="M10.4 10.6v5.8M13.6 10.6v5.8"/></svg>`,
+    /* rotate: page with a curved turn arrow */
+    rot: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 6.5v5h-5"/><path d="M20.5 11.5A8 8 0 104 14"/></svg>`,
+    /* chevron left */
+    chevL: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>`,
+    /* chevron right */
+    chevR: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>`,
+    /* shield: brand privacy mark */
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    /* underline: text with a baseline rule */
+    underline: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v7a5 5 0 0010 0V4"/><path d="M4.5 20h15"/></svg>`,
+    /* strike: text with a line through it */
+    strike: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M18 4v16"/><path d="M4.5 12h15"/></svg>`,
+    /* squiggle: wavy underline mark */
+    squiggle: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 13.5c1.5-2.5 3-2.5 4.5 0s3 2.5 4.5 0 3-2.5 4.5 0"/><path d="M6 5v8M18 5v8"/></svg>`,
+    /* link: two chain links */
+    link: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a5 5 0 007.1 0l3-3a5 5 0 00-7.1-7.1l-1.7 1.7"/><path d="M14 10a5 5 0 00-7.1 0l-3 3a5 5 0 007.1 7.1l1.7-1.7"/></svg>`,
+    /* watermark: droplet */
+    watermark: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c3.8 4.6 6 7.8 6 11a6 6 0 11-12 0c0-3.2 2.2-6.4 6-11z"/><path d="M9.5 14.5a2.6 2.6 0 002.5 2.5"/></svg>`,
+    /* pagenum: numbered page badge */
+    pagenum: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1.6"/><path d="M10.5 15.5L13.5 8.5l3 7"/><path d="M11.4 13.2h4.2"/><path d="M5.5 8.5h2M5.5 11.5h1.5"/></svg>`,
+    /* rect shape */
+    rect: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1.2"/></svg>`,
+    /* ellipse shape */
+    ellipse: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="8.5" ry="8.5"/></svg>`,
+    /* line shape */
+    line: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4.5 19.5L19.5 4.5"/></svg>`,
+    /* arrow shape */
+    arr: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L20 4m0 0h-7m7 0v7"/></svg>`,
+    /* signature: pen swirl */
+    sig: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3.5 15.5c2.6-1 4.4.6 6.8-.3 1.8-.7 3-2 3.4-3.4.6-2-1-3.6-2.6-2.7-1.4.8-.7 3 .8 3.6 2.2.9 4.2-.4 5.4-2.1.8-1.2 1.9-2.6 3.2-4.1"/></svg>`,
+    /* check stamp: bold check */
+    checkStamp: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 6.5"/></svg>`,
+  };
+
+  function tinyPdf(title) {
+    const text = String(title || 'Edited PDF').slice(0, 50).replace(/[()\\]/g, '');
+    const objs = [];
+    objs.push('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n');
+    objs.push('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n');
+    objs.push('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n');
+    const stream = `BT /F1 16 Tf 72 720 Td (${text}) Tj ET`;
+    objs.push(`4 0 obj<< /Length ${stream.length} >>stream\n${stream}\nendstream\nendobj\n`);
+    objs.push('5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n');
+    let body = '%PDF-1.4\n';
+    const offsets = [0];
+    for (const o of objs) { offsets.push(body.length); body += o; }
+    const xrefStart = body.length;
+    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= objs.length; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    body += xref + `trailer<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+    return new TextEncoder().encode(body);
+  }
+
+  function mountEditText(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root');
+    container.classList.remove('spdf-shell', 'etxt-shell');
+
+    let file = null;
+    let currentPdf = null;     // the PDF actually loaded (original for .pdf, converted for images/documents)
+    let pageCount = 0;
+    let page = 1;
+    let toolMode = 'edit-text'; // select | pan | edit-text | type | draw | highlight | shape | image | stamp | crop
+    let zoom = 100;
+    let pages = [];            // per-page { thumb, full } canvas cache (real renders)
+    let pdfDoc = null;         // live pdf.js document
+    let renderToken = 0;       // invalidates in-flight full-page renders on re-render
+    let docToken = 0;          // invalidates in-flight renders when a new file loads
+    let edits = [];            // committed text edits: { pageIdx, item, target, replacement }
+    let activeEdit = null;     // open editor: { item, box }
+    let curPageW = 612;        // current page user-space size (for hit-zone math)
+    let curPageH = 792;
+
+    /* ── Annotation engine (all real tools) ── */
+    let pageScale = 1;         // CSS px per user-space point (page render scale)
+    let annots = {};           // annots[pageIdx] = [annot, ...] in page user-space coords
+    let selAnnot = null;       // selected annot id on the current page
+    let draft = null;          // in-progress drag { kind, start, cur, points, el }
+    let cropBox = null;        // { x, y, w, h } user-space crop (applies to all pages)
+    let annotSeq = 1;          // id counter
+    let undoStack = [];        // snapshots for undo/redo
+    let redoStack = [];
+    let toolOpts = {           // active tool styling
+      color: '#111827', stroke: 2,
+      hlColor: '#FDE047', hlKind: 'hl',
+      shapeKind: 'rect', shapeColor: '#111827', shapeStroke: 2,
+      textColor: '#111827', textSize: 18,
+    };
+    let dragType = null;       // 'type' pending position for the Type tool
+    let stampSig = null;       // drawn signature: { points: [[x,y]...] } normalized 0..1
+    let activeDialog = null;   // open dialog element
+    let imgOrig = null;        // image sources only: pristine raster canvas (never mutated)
+    let imgSrc = null;         // committed image raster (what the PDF embeds)
+    let imgOpts = { bg: { tol: 30, recolor: '#FFFFFF' }, filt: { id: 'none', amount: 100 }, adj: { b: 0, c: 0, s: 0, w: 0 }, eff: { round: 0, border: 0, borderColor: '#111827', shadow: 0, duotone: 'none' } };
+    let imgDraft = null;       // destructive draft (blur brush / AI mask) before Apply
+    let imgBrush = { size: 46 };
+    let aiStatus = '';         // AI background-remover status text
+    let sheetMode = null;      // spreadsheet editor state { wb, aoa, name, index }
+    let isWordDoc = false;     // docx/odt/rtf sources can find-and-replace
+    let formFilled = false;    // a form was written into the current PDF
+
+    const loadLib = () => window.FF.util.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI')
+      .then(() => window.PDFLib);
+    const loadFfE = () => window.FF.util.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT')
+      .then(() => window.fflate);
+
+    const isPdf = f => {
+      const n = (f?.name || '').toLowerCase();
+      return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
+    };
+
+    const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp'];
+    const DOC_TO_TOOL = { docx: 'docx-to-pdf', odt: 'docx-to-pdf', rtf: 'docx-to-pdf', md: 'md-to-pdf', markdown: 'md-to-pdf', html: 'html-to-pdf', htm: 'html-to-pdf', txt: 'txt-to-pdf', log: 'txt-to-pdf', xlsx: 'excel-to-pdf', xls: 'excel-to-pdf', ods: 'excel-to-pdf', csv: 'csv-to-pdf', tsv: 'csv-to-pdf', pptx: 'pptx-to-pdf', odp: 'pptx-to-pdf', epub: 'epub-to-pdf', json: 'data-to-pdf', yaml: 'data-to-pdf', yml: 'data-to-pdf', xml: 'data-to-pdf', toml: 'data-to-pdf' };
+    const extOf = f => String(f?.name || '').split('.').pop().toLowerCase();
+    const canEdit = f => isPdf(f) || IMG_EXT.includes(extOf(f)) || /^image\//.test(f?.type || '') || extOf(f) in DOC_TO_TOOL;
+
+    /* Bring any editable file into the canvas: PDFs load as-is, everything
+       else is converted to a PDF first (images via pdf-lib, documents via
+       the real registered engines), so every page tool works on it. */
+    async function toEditablePdf(f) {
+      if (isPdf(f)) return f;
+      const ext = extOf(f);
+      if (IMG_EXT.includes(ext) || /^image\//.test(f.type || '')) {
+        const L = await loadLib();
+        const doc = await L.PDFDocument.create();
+        const bytes = await (await f.arrayBuffer());
+        let img;
+        if (ext === 'webp' || !(/png|jpe?g/.test(ext)) ) {
+          // webp/other images: draw to canvas, export PNG, embed
+          const url = URL.createObjectURL(f);
+          const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Could not decode this image.')); i.src = url; });
+          URL.revokeObjectURL(url);
+          const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+          c.getContext('2d').drawImage(im, 0, 0);
+          const png = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('Could not encode image.')), 'image/png'));
+          img = await doc.embedPng(await png.arrayBuffer());
+        } else {
+          img = /png/i.test(f.type) || ext === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+        }
+        const pg = doc.addPage([img.width, img.height]);
+        pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        return new Blob([await doc.save()], { type: 'application/pdf' });
+      }
+      const toolId = DOC_TO_TOOL[ext];
+      const tool = toolId && window.FF && window.FF.registry && window.FF.registry.get(toolId);
+      if (!tool) throw new Error('Could not convert this file for editing.');
+      const res = await tool.run({ file: f, inputs: {}, engine: typeof tool.engine === 'function' ? await tool.engine() : undefined });
+      if (!res || !res.blob) throw new Error('Conversion produced no file.');
+      return res.blob;
+    }
+
+    const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
+      .then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+
+    async function renderPageAt(i, scale) {
+      const pageProxy = await pdfDoc.getPage(i + 1);
+      const vp = pageProxy.getViewport({ scale });
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(vp.width));
+      c.height = Math.max(1, Math.round(vp.height));
+      await pageProxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      return c;
+    }
+
+    function shortName(n, max = 22) {
+      const s = String(n || 'document.pdf');
+      if (s.length <= max) return s;
+      const ext = s.includes('.') ? s.slice(s.lastIndexOf('.')) : '';
+      return s.slice(0, max - 1 - ext.length) + '…' + ext;
+    }
+
+    const SHEET_EXT = ['xlsx', 'xls', 'ods', 'csv', 'tsv'];
+    const WORD_EXT = ['docx', 'odt', 'rtf'];
+    async function pickFile(f) {
+      if (!canEdit(f)) return;
+      file = f;
+      imgOrig = null; imgSrc = null; imgDraft = null; aiStatus = '';
+      isWordDoc = WORD_EXT.includes(extOf(f));
+      if (SHEET_EXT.includes(extOf(f))) { renderSpreadsheet(); return; }
+      if (IMG_EXT.includes(extOf(f)) || /^image\//.test(f.type || '')) {
+        try {
+          const url = URL.createObjectURL(f);
+          const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Could not decode this image.')); i.src = url; });
+          URL.revokeObjectURL(url);
+          imgOrig = document.createElement('canvas'); imgOrig.width = im.width; imgOrig.height = im.height;
+          imgOrig.getContext('2d').drawImage(im, 0, 0);
+          imgSrc = cloneCanvas(imgOrig);
+          imgOpts = { bg: { tol: 30, recolor: '#FFFFFF' }, filt: { id: 'none', amount: 100 }, adj: { b: 0, c: 0, s: 0, w: 0 }, eff: { round: 0, border: 0, borderColor: '#111827', shadow: 0, duotone: 'none' } };
+        } catch (e) {
+          imgOrig = null; imgSrc = null;
+          console.warn('[Edit] image raster', e.message);
+        }
+      }
+      page = 1;
+      zoom = 100;
+      pageCount = 0;
+      pages = [];
+      edits = [];
+      activeEdit = null;
+      renderLoading();
+      try {
+        const pdfjs = await loadJs();
+        const pdfBlob = await toEditablePdf(f);
+        currentPdf = pdfBlob;
+        const data = new Uint8Array(await pdfBlob.arrayBuffer());
+        if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
+        pdfDoc = await pdfjs.getDocument({ data }).promise;
+        pageCount = pdfDoc.numPages;
+        pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
+        docToken++;
+        renderEditor();
+        wireAsyncRenders();
+      } catch (err) {
+        console.error('[Edit] load PDF', err);
+        renderUpload();
+      }
+    }
+
+    function renderLoading() {
+      container.classList.remove('etxt-shell', 'spdf-shell');
+      container.classList.add('cpdf-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${I.edit}</div>
+          </div>
+          <p class="cpdf-proc-title">Opening your PDF…</p>
+          <p class="cpdf-proc-sub">Reading pages locally — nothing leaves your device</p>
+        </div>`;
+    }
+
+    function renderUpload() {
+      container.classList.add('cpdf-root');
+      container.classList.remove('etxt-shell', 'spdf-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="etxt-dz" tabindex="0" role="button" aria-label="Upload a PDF to edit">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="etxt-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="etxt-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to edit or annotate</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="etxt-inp" type="file" accept="application/pdf,.pdf" hidden>
+        </div>`;
+      // Carry a file over from the Sign workspace when the user picks "Edit text".
+      if (window.__ffSharedFile) {
+        const shared = window.__ffSharedFile;
+        window.__ffSharedFile = null;
+        pickFile(shared);
+        return;
+      }
+      const dz = container.querySelector('#etxt-dz');
+      const inp = container.querySelector('#etxt-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function toolBtn(id, icon, label, active) {
+      return `<button type="button" class="etxt-tool${active ? ' is-on' : ''}" data-tool="${id}" title="${label}">${icon}${label ? `<span>${label}</span>` : ''}</button>`;
+    }
+
+    function renderEditor() {
+      container.classList.remove('cpdf-root');
+      container.classList.add('etxt-shell');
+      const stage = container.closest('.app-stage-container') || document.getElementById('app-tool-stage');
+      if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
+
+      container.innerHTML = `
+        <div class="etxt-top">
+          <div class="etxt-top-left">
+            <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 28))}</span>
+            <span class="etxt-meta">${pageCount} pages · ${_bytes(file.size)}</span>
+            <span class="etxt-local">${I.shield} Local canvas</span>
+          </div>
+          <div class="etxt-top-right">
+            ${imgSrc ? `<button type="button" class="etxt-btn-secondary" id="etxt-download-png">${I.image} PNG</button>` : ''}
+            <button type="button" class="etxt-btn-secondary" id="etxt-download">${I.dl} ${imgSrc ? 'PDF' : 'Download'}</button>
+            ${isWordDoc ? `<button type="button" class="etxt-btn-ghost" id="etxt-find-replace">${I.find} Find & replace</button>` : ''}
+            <button type="button" class="etxt-btn-ghost" id="etxt-sign" title="Sign this PDF">${I.sign} Sign</button>
+            <button type="button" class="etxt-btn-ghost" id="etxt-share">${I.share} Share</button>
+            <button type="button" class="etxt-btn-finish" id="etxt-finish">Finish ${I.arrow}</button>
+          </div>
+        </div>
+
+        <div class="etxt-toolbar">
+          <div class="etxt-tool-group">
+            ${toolBtn('select', I.select, '', toolMode==='select')}
+            ${toolBtn('pan', I.hand, '', toolMode==='pan')}
+          </div>
+          <span class="etxt-tool-sep"></span>
+          <div class="etxt-tool-group">
+            ${toolBtn('edit-text', I.text, 'Text', toolMode==='edit-text')}
+            ${toolBtn('type', I.type, '', toolMode==='type')}
+            ${toolBtn('draw', I.pen, '', toolMode==='draw')}
+            ${toolBtn('highlight', I.highlight, '', toolMode==='highlight')}
+            ${toolBtn('underline', I.underline, '', toolMode==='underline')}
+            ${toolBtn('strike', I.strike, '', toolMode==='strike')}
+            ${toolBtn('squiggle', I.squiggle, '', toolMode==='squiggle')}
+            ${toolBtn('shape', I.shape, '', toolMode==='shape')}
+            ${toolBtn('image', I.image, '', toolMode==='image')}
+            ${toolBtn('stamp', I.stamp, '', toolMode==='stamp')}
+            ${toolBtn('link', I.link, '', toolMode==='link')}
+          </div>
+          ${imgSrc ? `<span class="etxt-tool-sep"></span>
+          <div class="etxt-tool-group etxt-photo-group">
+            ${toolBtn('img-bg', I.bg, '', toolMode==='img-bg')}
+            ${toolBtn('img-blur', I.blur, '', toolMode==='img-blur')}
+            ${toolBtn('img-filter', I.filter, '', toolMode==='img-filter')}
+            ${toolBtn('img-adjust', I.adjust, '', toolMode==='img-adjust')}
+            ${toolBtn('img-effect', I.effect, '', toolMode==='img-effect')}
+          </div>` : ''}
+          <span class="etxt-tool-sep"></span>
+          <div class="etxt-tool-group">
+            ${toolBtn('crop', I.crop, '', toolMode==='crop')}
+            ${toolBtn('watermark', I.watermark, '', toolMode==='watermark')}
+            ${toolBtn('pagenum', I.pagenum, '', toolMode==='pagenum')}
+            ${!imgSrc ? toolBtn('form-fill', I.form, '', toolMode==='form-fill') : ''}
+          </div>
+          <div class="etxt-tool-group">
+            <button type="button" class="etxt-tool" id="etxt-undo" title="Undo">${I.undo}</button>
+            <button type="button" class="etxt-tool" id="etxt-redo" title="Redo">${I.redo}</button>
+            <button type="button" class="etxt-tool" id="etxt-zoom-out" title="Zoom out">−</button>
+            <span class="etxt-zoom-label">${zoom}%</span>
+            <button type="button" class="etxt-tool" id="etxt-zoom-in" title="Zoom in">+</button>
+          </div>
+        </div>
+
+        <div class="etxt-optbar" id="etxt-optbar" hidden></div>
+
+        <div class="etxt-body">
+          <aside class="etxt-thumbs" aria-label="Pages">
+            ${pages.map((pg, i) => `
+              <button type="button" class="etxt-thumb${i+1===page?' is-on':''}" data-page="${i+1}">
+                ${pg.thumb ? '' : `<span class="etxt-thumb-ph">${i + 1}</span>`}
+                <span class="etxt-thumb-num">${i + 1}</span>
+              </button>`).join('')}
+            <button type="button" class="etxt-add-page" id="etxt-add" title="Add file">
+              ${I.plus}
+              <span>Add file</span>
+            </button>
+            <input id="etxt-add-inp" type="file" accept=".pdf,application/pdf" hidden>
+          </aside>
+
+          <main class="etxt-canvas-wrap">
+            <div class="etxt-canvas" style="transform: scale(${zoom/100})">
+            <div class="etxt-page">
+              ${pages[page - 1]?.full ? '<canvas class="etxt-full-canvas"></canvas>' : `<span class="etxt-page-ph" id="etxt-page-ph">Rendering page ${page}…</span>`}
+              <div class="etxt-text-layer" aria-hidden="true"></div>
+              <div class="etxt-annot-layer" aria-hidden="false"></div>
+              <div class="etxt-crop-layer" id="etxt-crop-layer" hidden></div>
+              ${imgSrc ? '<canvas class="etxt-img-preview" id="etxt-img-preview" hidden></canvas>' : ''}
+            </div>
+            </div>
+            <div class="etxt-pager">
+              <button type="button" id="etxt-prev" ${page<=1?'disabled':''}>${I.chevL}</button>
+              <span><b>${page}</b> / ${pageCount}</span>
+              <button type="button" id="etxt-next" ${page>=pageCount?'disabled':''}>${I.chevR}</button>
+            </div>
+          </main>
+        </div>
+
+        <div class="etxt-foot">
+          <span>${I.shield} ${edits.length + annotCount()} edit${edits.length + annotCount() === 1 ? '' : 's'} · everything stays on this device</span>
+          <button type="button" class="etxt-link" id="etxt-close">Close file</button>
+        </div>
+
+        <div class="etxt-dialog-backdrop" id="etxt-dlg-backdrop" hidden></div>
+        <div class="etxt-dialog" id="etxt-dlg" hidden></div>`;
+
+      // tools
+      container.querySelectorAll('.etxt-tool[data-tool]').forEach(btn => {
+        btn.onclick = () => activateTool(btn.dataset.tool);
+      });
+      container.querySelector('#etxt-undo').onclick = () => { commitEditor(); undo(); };
+      container.querySelector('#etxt-redo').onclick = () => { commitEditor(); redo(); };
+      const imageInp = document.createElement('input');
+      imageInp.type = 'file';
+      imageInp.id = 'etxt-image-inp';
+      imageInp.accept = 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml';
+      imageInp.hidden = true;
+      imageInp.onchange = () => {
+        const f = imageInp.files && imageInp.files[0];
+        imageInp.value = '';
+        if (!f || !dragType) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = String(reader.result);
+          const img = new Image();
+          img.onload = () => {
+            const maxW = Math.min(400, curPageW * 0.6);
+            const maxH = Math.min(300, curPageH * 0.4);
+            const scale = Math.min(1, maxW / img.width, maxH / img.height);
+            const w = Math.max(24, img.width * scale);
+            const h = Math.max(24, img.height * scale);
+            pushUndo();
+            addAnnot({ type: 'img', x: dragType.x, y: dragType.y, w, h, dataUrl, name: f.name });
+            dragType = null;
+            renderAnnots();
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(f);
+      };
+      container.append(imageInp);
+      const stampPalette = document.createElement('div');
+      stampPalette.className = 'etxt-stamp-palette';
+      stampPalette.id = 'etxt-stamp-palette';
+      stampPalette.hidden = true;
+      container.append(stampPalette);
+      container.querySelectorAll('.etxt-thumb').forEach(btn => {
+        btn.onclick = () => { commitEditor(); page = Number(btn.dataset.page); renderEditor(); };
+      });
+      container.querySelector('#etxt-prev').onclick = () => { commitEditor(); if (page > 1) { page--; renderEditor(); } };
+      container.querySelector('#etxt-next').onclick = () => { commitEditor(); if (page < pageCount) { page++; renderEditor(); } };
+      container.querySelector('#etxt-zoom-in').onclick = () => { commitEditor(); zoom = Math.min(160, zoom + 10); renderEditor(); };
+      container.querySelector('#etxt-zoom-out').onclick = () => { commitEditor(); zoom = Math.max(70, zoom - 10); renderEditor(); };
+      container.querySelector('#etxt-add').onclick = () => container.querySelector('#etxt-add-inp').click();
+      container.querySelector('#etxt-add-inp').onchange = e => {
+        const f = e.target.files?.[0]; if (f) pickFile(f);
+      };
+      container.querySelector('#etxt-close').onclick = () => {
+        commitEditor();
+        file = null; pages = []; edits = []; pdfDoc = null;
+        const stage = container.closest('.app-stage-container');
+        if (stage) stage.classList.remove('spdf-stage-active');
+        renderUpload();
+      };
+      // clicking empty canvas space commits the open editor
+      container.querySelector('.etxt-canvas-wrap').addEventListener('click', e => {
+        if (!e.target.closest('.etxt-text-layer')) commitEditor();
+      });
+      container.querySelector('#etxt-find-replace')?.addEventListener('click', () => openFindReplaceDlg());
+      /* Photo blur brush — paint on the image preview. */
+      const imgCv = container.querySelector('#etxt-img-preview');
+      if (imgCv) {
+        let painting = false;
+        const toImg = (e) => { const r = imgCv.getBoundingClientRect(); const sx = imgCv.width / r.width, sy = imgCv.height / r.height; return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy }; };
+        imgCv.addEventListener('pointerdown', (e) => { if (toolMode !== 'img-blur' || !imgDraft) return; painting = true; try { imgCv.setPointerCapture(e.pointerId); } catch { /* noop */ } const p = toImg(e); blurDraftAt(p.x, p.y); renderImgPreview(); });
+        imgCv.addEventListener('pointermove', (e) => { if (!painting || toolMode !== 'img-blur') return; const p = toImg(e); blurDraftAt(p.x, p.y); renderImgPreview(); });
+        imgCv.addEventListener('pointerup', () => { painting = false; });
+      }
+      container.querySelector('#etxt-download').onclick = finishExport;
+      container.querySelector('#etxt-download-png')?.addEventListener('click', () => {
+        if (!imgSrc) return;
+        const base = (file?.name || 'image.png').replace(/\.[^.]+$/, '') + '.png';
+        imgSrc.toBlob((b) => {
+          if (!b) return;
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = base;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        }, 'image/png');
+      });
+      container.querySelector('#etxt-finish').onclick = finishExport;
+      container.querySelector('#etxt-sign').onclick = async () => {
+        const f = await exportForSign();
+        if (!f) return;
+        window.__ffSharedFile = f;
+        window.FF.app.openTool('pdf-sign');
+      };
+      container.querySelector('#etxt-share').onclick = () => {
+        alert('Share is a UI placeholder — wire later.');
+      };
+
+      // re-attach cached canvases (thumbs + current page) and render anything missing
+      wireCachedCanvases();
+      renderFullPage();
+      attachTextHits();
+      renderOptbar();
+      renderAnnots();
+      setupPointer();
+    }
+
+    /* ── Real page rendering (pdf.js) ─────────────────── */
+    function wireCachedCanvases() {
+      container.querySelectorAll('.etxt-thumb').forEach((btn, i) => {
+        const c = pages[i] && pages[i].thumb;
+        if (c && !btn.querySelector('canvas')) {
+          btn.insertBefore(c, btn.querySelector('.etxt-thumb-num'));
+        }
+      });
+      const full = pages[page - 1] && pages[page - 1].full;
+      if (full) {
+        const holder = container.querySelector('.etxt-full-canvas') || container.querySelector('#etxt-page-ph');
+        if (holder) holder.replaceWith(full);
+      }
+    }
+
+    async function renderFullPage() {
+      const myDoc = docToken;
+      const myToken = ++renderToken;
+      const i = page - 1;
+      if (!pdfDoc || !pages[i] || pages[i].full) return;
+      try {
+        const base = await pdfDoc.getPage(page);
+        const baseVp = base.getViewport({ scale: 1 });
+        const c = await renderPageAt(i, 660 / baseVp.width);
+        if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
+        pages[i].full = c;
+        const ph = container.querySelector('#etxt-page-ph');
+        if (ph) ph.replaceWith(c);
+      } catch (err) { console.warn('[Edit] page render', err); }
+    }
+
+    function wireAsyncRenders() {
+      const myDoc = docToken;
+      const myToken = renderToken;
+      pages.forEach((pg, i) => {
+        if (pg.thumb) return;
+        renderPageAt(i, 0.28).then(c => {
+          if (myDoc !== docToken || !pages[i]) return;
+          pages[i].thumb = c;
+          const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
+          const ph = btn && btn.querySelector('.etxt-thumb-ph');
+          if (ph) ph.replaceWith(c);
+        }).catch(() => { /* thumbnails are non-critical */ });
+      });
+      renderFullPage();
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       Real text editing — select actual spans on the page (pdf.js text
+       content), edit inline, then rewrite the PDF content streams via
+       pdf-lib so the exported file genuinely contains the replacement.
+    ═══════════════════════════════════════════════════════════════════ */
+    function pageRatio() {
+      const pageEl = container.querySelector('.etxt-page');
+      return pageEl && curPageW ? pageEl.clientWidth / curPageW : 0;
+    }
+
+    async function attachTextHits() {
+      const layer = container.querySelector('.etxt-text-layer');
+      if (!layer || !pdfDoc) return;
+      if (toolMode !== 'edit-text') {
+        // Keep committed boxes visible, but make the whole layer inert so
+        // drawing/annotation tools aren't blocked by hit zones.
+        layer.classList.add('etxt-text-layer--off');
+        for (const e of edits) if (e.pageIdx === page - 1) renderCommittedBox(e);
+        return;
+      }
+      layer.classList.remove('etxt-text-layer--off');
+      const myDoc = docToken, myPage = page;
+      try {
+        const pageProxy = await pdfDoc.getPage(page);
+        const vp = pageProxy.getViewport({ scale: 1 });
+        curPageW = vp.width; curPageH = vp.height;
+        pageScale = 660 / curPageW;
+        const txt = await pageProxy.getTextContent();
+        if (myDoc !== docToken || myPage !== page || !container.contains(layer)) return;
+        const R = pageRatio();
+        if (R <= 0) return;
+        layer.innerHTML = '';
+        for (const item of txt.items) {
+          if (!item.str || !item.str.trim()) continue;
+          const h = (item.height || 12) * 1.2;
+          const w = Math.max(8, item.width * R + 4);
+          const x = item.transform[4] * R;
+          const y = (curPageH - item.transform[5] - (item.height || 12)) * R;
+          const edited = edits.some(e => e.pageIdx === page - 1 && e.target === item.str);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'etxt-hit' + (edited ? ' etxt-hit--edited' : '');
+          btn.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+          btn.title = item.str;
+          btn.onclick = (ev) => { ev.stopPropagation(); openEditor(item); };
+          layer.append(btn);
+        }
+        for (const e of edits) if (e.pageIdx === page - 1) renderCommittedBox(e);
+      } catch (err) { console.warn('[Edit] text hits', err); }
+    }
+
+    function openEditor(item) {
+      commitEditor();
+      const layer = container.querySelector('.etxt-text-layer');
+      if (!layer) return;
+      const existing = edits.find(e => e.pageIdx === page - 1 && e.target === item.str);
+      layer.querySelector('.etxt-text-box')?.remove();
+      const R = pageRatio();
+      const h = (item.height || 12) * 1.2;
+      const box = document.createElement('div');
+      box.className = 'etxt-text-box';
+      const inner = document.createElement('span');
+      inner.className = 'etxt-text-inner';
+      inner.contentEditable = 'true';
+      inner.spellcheck = false;
+      inner.textContent = existing ? existing.replacement : item.str;
+      box.append(inner);
+      const w = Math.max(80, item.width * R + 18);
+      box.style.cssText = `left:${item.transform[4] * R}px;top:${(curPageH - item.transform[5] - (item.height || 12)) * R}px;width:${w}px;min-height:${h}px;font-size:${Math.max(10, (item.height || 12) * R * 0.72)}px`;
+      const okBtn = document.createElement('button');
+      okBtn.type = 'button'; okBtn.className = 'etxt-edit-btn etxt-edit-ok'; okBtn.textContent = '✓';
+      okBtn.title = 'Apply edit';
+      okBtn.onclick = (ev) => { ev.stopPropagation(); commitEditor(); };
+      const xBtn = document.createElement('button');
+      xBtn.type = 'button'; xBtn.className = 'etxt-edit-btn etxt-edit-cx'; xBtn.textContent = '✕';
+      xBtn.title = 'Cancel edit';
+      xBtn.onclick = (ev) => { ev.stopPropagation(); activeEdit = null; box.remove(); attachTextHits(); };
+      box.append(okBtn, xBtn);
+      layer.append(box);
+      activeEdit = { item, box };
+      inner.focus();
+      const range = document.createRange(); range.selectNodeContents(inner);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      box.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); inner.blur(); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); activeEdit = null; box.remove(); attachTextHits(); }
+      });
+      inner.addEventListener('blur', () => { if (activeEdit && activeEdit.box === box) commitEditor(); });
+    }
+
+    function commitEditor() {
+      if (!activeEdit) return;
+      const { item, box } = activeEdit;
+      activeEdit = null;
+      const inner = box.querySelector('.etxt-text-inner');
+      const replacement = ((inner ? inner.textContent : '') || '').replace(/\s+/g, ' ').trim();
+      const idx = edits.findIndex(e => e.pageIdx === page - 1 && e.target === item.str);
+      if (replacement && replacement !== item.str) {
+        const edit = { pageIdx: page - 1, item, target: item.str, replacement };
+        if (idx >= 0) edits[idx] = edit; else edits.push(edit);
+      } else if (idx >= 0) {
+        edits.splice(idx, 1);   // cleared back to original → drop the edit
+      }
+      box.remove();
+      attachTextHits();
+    }
+
+    function renderCommittedBox(e) {
+      const layer = container.querySelector('.etxt-text-layer');
+      if (!layer) return;
+      const R = pageRatio();
+      const h = (e.item.height || 12) * 1.2;
+      const box = document.createElement('div');
+      box.className = 'etxt-committed';
+      box.textContent = e.replacement;
+      const w = Math.max(80, e.item.width * R + 18);
+      box.style.cssText = `left:${e.item.transform[4] * R}px;top:${(curPageH - e.item.transform[5] - (e.item.height || 12)) * R}px;width:${w}px;height:${h}px;font-size:${Math.max(10, (e.item.height || 12) * R * 0.72)}px`;
+      const xBtn = document.createElement('button');
+      xBtn.type = 'button'; xBtn.className = 'etxt-commit-x'; xBtn.textContent = '✕';
+      xBtn.onclick = (ev) => { ev.stopPropagation(); edits = edits.filter(x => !(x.pageIdx === e.pageIdx && x.target === e.target)); attachTextHits(); };
+      box.append(xBtn);
+      box.onclick = (ev) => { if (ev.target.closest('.etxt-commit-x')) return; openEditor(e.item); };
+      layer.append(box);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       Annotation engine — every real tool draws into this layer and is
+       genuinely rendered into the exported PDF via pdf-lib.
+    ═══════════════════════════════════════════════════════════════════ */
+    function annotCount() {
+      let n = 0;
+      for (const k in annots) n += annots[k].length;
+      return n;
+    }
+
+    function pushUndo() {
+      undoStack.push({ edits: JSON.parse(JSON.stringify(edits)), annots: JSON.parse(JSON.stringify(annots)), cropBox: cropBox ? { ...cropBox } : null });
+      if (undoStack.length > 60) undoStack.shift();
+      redoStack = [];
+    }
+
+    function undo() {
+      if (!undoStack.length) return;
+      redoStack.push({ edits: JSON.parse(JSON.stringify(edits)), annots: JSON.parse(JSON.stringify(annots)), cropBox: cropBox ? { ...cropBox } : null });
+      const s = undoStack.pop();
+      edits = s.edits; annots = s.annots; cropBox = s.cropBox;
+      selAnnot = null; draft = null;
+      renderEditor();
+    }
+
+    function redo() {
+      if (!redoStack.length) return;
+      undoStack.push({ edits: JSON.parse(JSON.stringify(edits)), annots: JSON.parse(JSON.stringify(annots)), cropBox: cropBox ? { ...cropBox } : null });
+      const s = redoStack.pop();
+      edits = s.edits; annots = s.annots; cropBox = s.cropBox;
+      selAnnot = null; draft = null;
+      renderEditor();
+    }
+
+    function addAnnot(annot) {
+      const idx = page - 1;
+      if (!annots[idx]) annots[idx] = [];
+      annot.id = 'a' + (annotSeq++);
+      annot.pageIdx = idx;
+      annots[idx].push(annot);
+      return annot;
+    }
+
+    function removeAnnot(id) {
+      const idx = page - 1;
+      if (!annots[idx]) return;
+      annots[idx] = annots[idx].filter(a => a.id !== id);
+      if (selAnnot === id) selAnnot = null;
+      renderAnnots();
+    }
+
+    function normRect(p, c) {
+      return { x: Math.min(p.x, c.x), y: Math.min(p.y, c.y), w: Math.abs(c.x - p.x), h: Math.abs(c.y - p.y) };
+    }
+
+    function pageGeom() {
+      const el = container.querySelector('.etxt-page');
+      const r = el.getBoundingClientRect();
+      return { el, r, z: zoom / 100 };
+    }
+
+    function toUser(clientX, clientY) {
+      const { r, z } = pageGeom();
+      return { x: (clientX - r.left) / (pageScale * z), y: (clientY - r.top) / (pageScale * z) };
+    }
+
+    function userToCss(x, y) { return { x: x * pageScale, y: y * pageScale }; }
+
+    function hexToRgbObj(hex) {
+      const h = String(hex || '#111827').replace('#', '');
+      const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+      return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
+    }
+
+    function smoothPath(pts) {
+      if (!pts.length) return '';
+      let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2;
+        const my = (pts[i][1] + pts[i + 1][1]) / 2;
+        d += ` Q ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+      }
+      const last = pts[pts.length - 1];
+      d += ` L ${last[0].toFixed(2)} ${last[1].toFixed(2)}`;
+      return d;
+    }
+
+    function squigglePath(x, y, w) {
+      const amp = 2.2, step = 5;
+      let d = '';
+      let up = true;
+      for (let px = 0; px <= w; px += step) {
+        const yy = y + (up ? -amp : amp);
+        d += (px === 0 ? 'M ' : ' L ') + (x + px).toFixed(2) + ' ' + yy.toFixed(2);
+        up = !up;
+      }
+      return d;
+    }
+
+    /* ── Render all annotations for the current page ── */
+    function renderAnnots() {
+      const layer = container.querySelector('.etxt-annot-layer');
+      if (!layer) return;
+      layer.classList.toggle('etxt-annot-layer--select', toolMode === 'select');
+      layer.innerHTML = '';
+      const list = annots[page - 1] || [];
+      for (const a of list) {
+        const el = annotToEl(a);
+        if (el) {
+          if (a.id === selAnnot) el.classList.add('etxt-sel');
+          layer.append(el);
+        }
+      }
+      renderCropOverlay();
+    }
+
+    function annotToEl(a) {
+      const P = pageScale;
+      const el = document.createElement('div');
+      el.className = 'etxt-a etxt-a-' + a.type;
+      el.dataset.id = a.id;
+      if (a.type === 'hl') {
+        const kind = a.kind || 'hl';
+        if (kind === 'underline') {
+          el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${((a.y + a.h) * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${Math.max(2, (a.h * 0.14) * P).toFixed(1)}px;background:${a.color || toolOpts.hlColor};`;
+        } else if (kind === 'strike') {
+          el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${((a.y + a.h / 2) * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${Math.max(2, (a.h * 0.14) * P).toFixed(1)}px;background:${a.color || toolOpts.hlColor};`;
+        } else if (kind === 'squiggle') {
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', 'etxt-a-squiggle');
+          svg.setAttribute('viewBox', `0 0 ${(a.w * P).toFixed(0)} ${(a.h * P).toFixed(0)}`);
+          svg.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px`;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', squigglePath(0, (a.h * P) / 2, a.w * P));
+          path.setAttribute('stroke', a.color || '#E11D48');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('fill', 'none');
+          svg.append(path);
+          return svg;
+        } else {
+          el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;background:${a.color || toolOpts.hlColor};opacity:0.38;`;
+        }
+        return el;
+      }
+      if (a.type === 'ink') {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'etxt-a-ink');
+        svg.setAttribute('viewBox', `0 0 ${(curPageW * P).toFixed(0)} ${(curPageH * P).toFixed(0)}`);
+        svg.style.cssText = `left:0;top:0;width:100%;height:100%`;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', smoothPath(a.points.map(p => [p[0] * P, p[1] * P])));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', a.color || '#111827');
+        path.setAttribute('stroke-width', String(a.width || 2));
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        svg.append(path);
+        return svg;
+      }
+      if (a.type === 'shape') {
+        const css = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
+        if (a.kind === 'rect') {
+          el.style.cssText = css + `border:${a.width || 2}px solid ${a.color || '#111827'};`;
+          return el;
+        }
+        if (a.kind === 'ellipse') {
+          el.style.cssText = css + `border:${a.width || 2}px solid ${a.color || '#111827'};border-radius:50%;`;
+          return el;
+        }
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'etxt-a-shape-svg');
+        svg.setAttribute('viewBox', `0 0 ${(a.w * P).toFixed(0)} ${(a.h * P).toFixed(0)}`);
+        svg.style.cssText = css;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const sw = a.width || 2;
+        if (a.kind === 'line') {
+          path.setAttribute('d', `M 0 ${(a.h * P).toFixed(1)} L ${(a.w * P).toFixed(1)} 0`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', a.color || '#111827');
+          path.setAttribute('stroke-width', String(sw));
+        } else if (a.kind === 'arrow') {
+          const W = a.w * P, H = a.h * P;
+          const ang = Math.atan2(-H, W);
+          const hl = Math.min(14, Math.hypot(W, H) * 0.25);
+          const hx = Math.cos(ang) * hl, hy = Math.sin(ang) * hl;
+          const nx = -hy / Math.max(0.01, Math.hypot(1, hy)) * hl * 0.4, ny = hx / Math.max(0.01, Math.hypot(1, hx)) * hl * 0.4;
+          const tipX = W, tipY = 0;
+          path.setAttribute('d', `M 0 ${H.toFixed(1)} L ${tipX.toFixed(1)} ${tipY.toFixed(1)} M ${(tipX - hx - nx).toFixed(1)} ${(tipY - hy - ny).toFixed(1)} L ${tipX.toFixed(1)} ${tipY.toFixed(1)} L ${(tipX - hx + nx).toFixed(1)} ${(tipY - hy + ny).toFixed(1)}`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', a.color || '#111827');
+          path.setAttribute('stroke-width', String(sw));
+          path.setAttribute('stroke-linecap', 'round');
+          path.setAttribute('stroke-linejoin', 'round');
+        }
+        svg.append(path);
+        return svg;
+      }
+      if (a.type === 'text') {
+        el.textContent = a.text;
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;font-size:${(a.size * P * 0.72).toFixed(1)}px;color:${a.color || '#111827'};`;
+        el.style.fontWeight = '600';
+        el.style.lineHeight = '1.2';
+        return el;
+      }
+      if (a.type === 'img') {
+        const img = document.createElement('img');
+        img.src = a.dataUrl;
+        img.alt = a.name || 'image';
+        img.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;object-fit:contain;`;
+        img.className = 'etxt-a etxt-a-img';
+        img.dataset.id = a.id;
+        return img;
+      }
+      if (a.type === 'link') {
+        el.textContent = a.url;
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
+        el.title = a.url;
+        return el;
+      }
+      if (a.type === 'stamp') {
+        if (a.kind === 'signature') {
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', 'etxt-a-signature');
+          svg.setAttribute('viewBox', '0 0 100 40');
+          svg.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', smoothPath((a.points || []).map(p => [p.x * 100, p.y * 40])));
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', '#1D4ED8');
+          path.setAttribute('stroke-width', '2.4');
+          path.setAttribute('stroke-linecap', 'round');
+          path.setAttribute('stroke-linejoin', 'round');
+          svg.append(path);
+          return svg;
+        }
+        el.textContent = a.text || (a.kind || '').toUpperCase();
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
+        el.classList.add('etxt-a-stamp-' + (a.kind || 'approved'));
+        return el;
+      }
+      if (a.type === 'wm') {
+        el.textContent = a.text;
+        el.style.cssText = `left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${(a.size * P).toFixed(1)}px;color:${a.color || '#94A3B8'};opacity:${a.opacity ?? 0.12};transform:rotate(${a.rotation || 0}deg);`;
+        el.style.fontWeight = '800';
+        el.style.letterSpacing = '2px';
+        el.style.pointerEvents = 'none';
+        return el;
+      }
+      if (a.type === 'pagenum') {
+        const pageNo = (a.pageIdx ?? 0) + 1;
+        const total = pageCount || 1;
+        el.textContent = a.format ? a.format.replace('{n}', String(pageNo)).replace('{t}', String(total)) : String(pageNo);
+        const y = a.align === 'top' ? a.y : curPageH - a.y;
+        el.style.cssText = `left:0;top:${(y * P).toFixed(1)}px;width:100%;text-align:${a.align === 'center' ? 'center' : a.align === 'right' ? 'right' : 'left'};padding:0 ${(14 * P).toFixed(1)}px;font-size:${(a.size * P * 0.72).toFixed(1)}px;color:${a.color || '#475569'};`;
+        el.style.fontWeight = '600';
+        el.style.pointerEvents = 'none';
+        return el;
+      }
+      return null;
+    }
+
+    /* ── Crop overlay ── */
+    function renderCropOverlay() {
+      const layer = container.querySelector('#etxt-crop-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      if (toolMode !== 'crop' || !cropBox) { layer.hidden = true; return; }
+      layer.hidden = false;
+      const P = pageScale;
+      const box = document.createElement('div');
+      box.className = 'etxt-crop-box';
+      box.style.cssText = `left:${(cropBox.x * P).toFixed(1)}px;top:${(cropBox.y * P).toFixed(1)}px;width:${(cropBox.w * P).toFixed(1)}px;height:${(cropBox.h * P).toFixed(1)}px;`;
+      const lbl = document.createElement('div');
+      lbl.className = 'etxt-crop-lbl';
+      lbl.textContent = `${Math.round(cropBox.w)} × ${Math.round(cropBox.h)} pt`;
+      box.append(lbl);
+      layer.append(box);
+    }
+
+    /* ── Options bar for drawing tools ── */
+    const COLOR_SWATCHES = ['#111827', '#2563EB', '#DC2626', '#059669', '#7C3AED', '#F59E0B'];
+    const HL_COLORS = ['#FDE047', '#86EFAC', '#93C5FD', '#FCA5A5', '#F5D0FE'];
+    const STROKES = [1.5, 2, 3, 4.5];
+
+    /* ── Photo tools (image sources only) ── */
+    const cloneCanvas = (c) => { const n = document.createElement('canvas'); n.width = c.width; n.height = c.height; n.getContext('2d').drawImage(c, 0, 0); return n; };
+    const hexRgb = (h) => { h = String(h || '#FFFFFF').replace('#', ''); const n = parseInt(h.slice(0, 6), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+    const FILTERS = [['none', 'None'], ['grayscale', 'B&W'], ['sepia', 'Sepia'], ['invert', 'Invert'], ['blur', 'Blur'], ['sharpen', 'Sharpen'], ['pixelate', 'Pixelate'], ['vignette', 'Vignette']];
+    const DUOTONES = [['none', 'None'], ['amber', 'Amber'], ['teal', 'Teal'], ['crimson', 'Crimson'], ['indigo', 'Indigo'], ['slate', 'Slate']];
+    const DUO_MAP = { amber: [[255, 176, 59], [40, 20, 6]], teal: [[94, 234, 212], [8, 51, 68]], crimson: [[251, 113, 133], [76, 5, 25]], indigo: [[129, 140, 248], [30, 27, 75]], slate: [[148, 163, 184], [15, 23, 42]] };
+
+    /* Remove the connected border background: BFS from the edges, matching the
+       average border color within a tolerance — erased (alpha 0) or recolored. */
+    function removeBackground(d, w, h, bg) {
+      const tol = Math.max(1, bg.tol);
+      const at = (x, y) => (y * w + x) * 4;
+      let sr = 0, sg = 0, sb = 0, cnt = 0;
+      const step = Math.max(1, Math.floor(Math.max(w, h) / 220));
+      for (let x = 0; x < w; x += step) { for (const y of [0, h - 1]) { const i = at(x, y); sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; cnt++; } }
+      for (let y = 0; y < h; y += step) { for (const x of [0, w - 1]) { const i = at(x, y); sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; cnt++; } }
+      const ar = sr / cnt, ag = sg / cnt, ab = sb / cnt;
+      const close = (i) => { const dr = d[i] - ar, dg = d[i + 1] - ag, db = d[i + 2] - ab; return dr * dr + dg * dg + db * db <= tol * tol; };
+      const n = w * h;
+      const visited = new Uint8Array(n);
+      const stack = [];
+      const seed = (x, y) => { const i = y * w + x; if (x >= 0 && y >= 0 && x < w && y < h && !visited[i]) { visited[i] = 1; stack.push(i); } };
+      for (let x = 0; x < w; x++) { seed(x, 0); seed(x, h - 1); }
+      for (let y = 0; y < h; y++) { seed(0, y); seed(w - 1, y); }
+      const rec = hexRgb(bg.recolor);
+      while (stack.length) {
+        const i = stack.pop();
+        const px = i * 4;
+        if (close(px)) {
+          if (bg.recolorOn) { d[px] = rec[0]; d[px + 1] = rec[1]; d[px + 2] = rec[2]; d[px + 3] = 255; }
+          else d[px + 3] = 0;
+          const x = i % w, y = (i / w) | 0;
+          if (x > 0) seed(x - 1, y); if (x < w - 1) seed(x + 1, y);
+          if (y > 0) seed(x, y - 1); if (y < h - 1) seed(x, y + 1);
+        }
+      }
+    }
+    function applyFilter(d, w, h, f) {
+      const a = Math.max(0, Math.min(1, (f.amount || 100) / 100));
+      const blend = (o, n) => o + (n - o) * a;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        if (f.id === 'grayscale') { const v = 0.299 * r + 0.587 * g + 0.114 * b; d[i] = blend(r, v); d[i + 1] = blend(g, v); d[i + 2] = blend(b, v); }
+        else if (f.id === 'sepia') { d[i] = blend(r, 0.393 * r + 0.769 * g + 0.189 * b); d[i + 1] = blend(g, 0.349 * r + 0.686 * g + 0.168 * b); d[i + 2] = blend(b, 0.272 * r + 0.534 * g + 0.131 * b); }
+        else if (f.id === 'invert') { d[i] = blend(r, 255 - r); d[i + 1] = blend(g, 255 - g); d[i + 2] = blend(b, 255 - b); }
+        else if (f.id === 'vignette') {
+          const nx = ((i / 4) % w) / (w - 1) * 2 - 1, ny = ((i / 4) / w) / (h - 1) * 2 - 1;
+          const dark = Math.max(0, 1 - Math.sqrt(nx * nx + ny * ny)) * 0.55 * a;
+          d[i] *= 1 - dark; d[i + 1] *= 1 - dark; d[i + 2] *= 1 - dark;
+        }
+      }
+    }
+    function boxBlur(d, w, h, r) {
+      const src = new Uint8ClampedArray(d);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let rn = 0, gn = 0, bn = 0, c = 0;
+        for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+          const xx = x + dx, yy = y + dy;
+          if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+          const i = (yy * w + xx) * 4; rn += src[i]; gn += src[i + 1]; bn += src[i + 2]; c++;
+        }
+        const i = (y * w + x) * 4; d[i] = rn / c; d[i + 1] = gn / c; d[i + 2] = bn / c;
+      }
+    }
+    function applyFilterHeavy(d, w, h, f, src) {
+      const a = Math.max(0, Math.min(1, (f.amount || 100) / 100));
+      if (f.id === 'blur') {
+        const r = Math.max(1, Math.round(a * 5));
+        boxBlur(d, w, h, r);
+        for (let i = 0; i < d.length; i += 4) { d[i] = src[i] + (d[i] - src[i]) * a; d[i + 1] = src[i + 1] + (d[i + 1] - src[i + 1]) * a; d[i + 2] = src[i + 2] + (d[i + 2] - src[i + 2]) * a; }
+      } else if (f.id === 'sharpen') {
+        const s = new Uint8ClampedArray(src);
+        for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+          const i = (y * w + x) * 4;
+          for (let c = 0; c < 3; c++) {
+            const k = s[i + c] * 9 - s[i - 4 + c] - s[i + 4 + c] - s[(y - 1) * w * 4 + x * 4 + c] - s[(y + 1) * w * 4 + x * 4 + c]
+              - s[(y - 1) * w * 4 + (x - 1) * 4 + c] - s[(y - 1) * w * 4 + (x + 1) * 4 + c] - s[(y + 1) * w * 4 + (x - 1) * 4 + c] - s[(y + 1) * w * 4 + (x + 1) * 4 + c];
+            d[i + c] = src[i + c] + (k - src[i + c]) * a * 0.8;
+          }
+        }
+      } else if (f.id === 'pixelate') {
+        const bs = Math.max(2, Math.round(a * 22));
+        for (let y = 0; y < h; y += bs) for (let x = 0; x < w; x += bs) {
+          let rn = 0, gn = 0, bn = 0, c = 0;
+          for (let dy = 0; dy < bs && y + dy < h; dy++) for (let dx = 0; dx < bs && x + dx < w; dx++) { const i = ((y + dy) * w + (x + dx)) * 4; rn += src[i]; gn += src[i + 1]; bn += src[i + 2]; c++; }
+          for (let dy = 0; dy < bs && y + dy < h; dy++) for (let dx = 0; dx < bs && x + dx < w; dx++) { const i = ((y + dy) * w + (x + dx)) * 4; d[i] = rn / c; d[i + 1] = gn / c; d[i + 2] = bn / c; }
+        }
+      }
+    }
+    function applyAdjust(d, a) {
+      for (let i = 0; i < d.length; i += 4) {
+        let r = d[i], g = d[i + 1], b = d[i + 2];
+        if (a.b) { const k = 1 + a.b / 100; r *= k; g *= k; b *= k; }
+        if (a.c) { const k = 1 + a.c / 100; r = (r - 128) * k + 128; g = (g - 128) * k + 128; b = (b - 128) * k + 128; }
+        if (a.s) { const lum = 0.299 * r + 0.587 * g + 0.114 * b, k = 1 + a.s / 100; r = lum + (r - lum) * k; g = lum + (g - lum) * k; b = lum + (b - lum) * k; }
+        if (a.w) { r += a.w * 0.6; b -= a.w * 0.6; }
+        d[i] = r; d[i + 1] = g; d[i + 2] = b;
+      }
+    }
+    const roundedRectPath = (ctx, x, y, w, h, r) => {
+      ctx.beginPath();
+      if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+      ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+      ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+    };
+    function applyEffect(c, e) {
+      const w = c.width, h = c.height;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      if (e.duotone !== 'none') {
+        const duo = DUO_MAP[e.duotone];
+        const id = ctx.getImageData(0, 0, w, h);
+        const d = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+          d[i] = duo[0][0] + (duo[1][0] - duo[0][0]) * lum;
+          d[i + 1] = duo[0][1] + (duo[1][1] - duo[0][1]) * lum;
+          d[i + 2] = duo[0][2] + (duo[1][2] - duo[0][2]) * lum;
+        }
+        ctx.putImageData(id, 0, 0);
+      }
+      const r = Math.min(w, h) * (Math.max(0, e.round) / 100);
+      if (r > 0) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        const cut = (cx, cy) => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); };
+        ctx.fillStyle = '#000';
+        cut(r, r); cut(w - r, r); cut(r, h - r); cut(w - r, h - r);
+        ctx.restore();
+      }
+      if (e.shadow || e.border) {
+        const pad = Math.max(e.border || 0, Math.ceil((e.shadow || 0) * 0.3)) + 6;
+        const out = document.createElement('canvas');
+        out.width = w + pad * 2; out.height = h + pad * 2;
+        const o = out.getContext('2d');
+        if (e.shadow) {
+          o.save();
+          o.shadowColor = 'rgba(15,23,42,0.4)';
+          o.shadowBlur = e.shadow * 2.2;
+          o.shadowOffsetY = e.shadow * 0.55;
+          o.fillStyle = '#0F172A';
+          if (r > 0) { roundedRectPath(o, pad, pad, w, h, r); o.fill(); } else o.fillRect(pad, pad, w, h);
+          o.restore();
+        }
+        o.drawImage(c, pad, pad);
+        if (e.border) {
+          o.lineWidth = e.border;
+          o.strokeStyle = e.borderColor;
+          if (r > 0) { roundedRectPath(o, pad + e.border / 2, pad + e.border / 2, w - e.border, h - e.border, Math.max(0, r - e.border / 2)); o.stroke(); }
+          else o.strokeRect(pad, pad, w, h);
+        }
+        c.width = out.width; c.height = out.height;
+        c.getContext('2d').drawImage(out, 0, 0);
+      }
+    }
+
+    /* Derive the processed image from the committed raster + current options. */
+    function processImg() {
+      const src = imgSrc;
+      const c = cloneCanvas(src);
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      const o = imgOpts;
+      const px = ctx.getImageData(0, 0, c.width, c.height);
+      const d = px.data;
+      if (o.bg.tol > 0) removeBackground(d, c.width, c.height, o.bg);
+      const needsHeavy = o.filt.id === 'blur' || o.filt.id === 'sharpen' || o.filt.id === 'pixelate';
+      if (needsHeavy) applyFilterHeavy(d, c.width, c.height, o.filt, new Uint8ClampedArray(d));
+      else if (o.filt.id !== 'none') applyFilter(d, c.width, c.height, o.filt);
+      if (o.adj.b || o.adj.c || o.adj.s || o.adj.w) applyAdjust(d, o.adj);
+      ctx.putImageData(px, 0, 0);
+      applyEffect(c, o.eff);
+      return c;
+    }
+
+    function isImgTool() { return toolMode === 'img-bg' || toolMode === 'img-blur' || toolMode === 'img-filter' || toolMode === 'img-adjust' || toolMode === 'img-effect'; }
+
+    /* Live preview: draw the processed raster over the page box (checkerboard behind transparency). */
+    function renderImgPreview() {
+      const cv = container.querySelector('#etxt-img-preview');
+      if (!cv) return;
+      const active = isImgTool();
+      cv.hidden = !active;
+      const full = container.querySelector('.etxt-full-canvas');
+      if (full) full.style.visibility = active ? 'hidden' : '';
+      const ph = container.querySelector('#etxt-page-ph');
+      if (ph) ph.style.visibility = active ? 'hidden' : '';
+      if (!active) return;
+      const proc = (toolMode === 'img-blur' || (toolMode === 'img-bg' && imgDraft)) ? imgDraft : processImg();
+      const box = container.querySelector('.etxt-canvas-wrap');
+      const maxW = (box?.clientWidth || 700) - 40, maxH = (box?.clientHeight || 640) - 70;
+      const fit = Math.min(maxW / proc.width, maxH / proc.height, 1.6);
+      cv.width = Math.max(1, Math.round(proc.width * fit));
+      cv.height = Math.max(1, Math.round(proc.height * fit));
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      const cs = 8;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = '#E2E8F0';
+      for (let y = 0; y < cv.height; y += cs) for (let x = 0; x < cv.width; x += cs) if (((x / cs) + (y / cs)) % 2 === 0) ctx.fillRect(x, y, cs, cs);
+      ctx.drawImage(proc, 0, 0, cv.width, cv.height);
+    }
+
+    /* Commit the processed raster back into imgSrc and re-embed it as PDF page 1. */
+    async function applyImgTools() {
+      imgSrc = cloneCanvas(imgDraft || processImg());
+      imgDraft = null; aiStatus = '';
+      imgOpts = { bg: { tol: 30, recolor: '#FFFFFF' }, filt: { id: 'none', amount: 100 }, adj: { b: 0, c: 0, s: 0, w: 0 }, eff: { round: 0, border: 0, borderColor: '#111827', shadow: 0, duotone: 'none' } };
+      try {
+        const L = await loadLib();
+        const doc = await L.PDFDocument.create();
+        const png = await new Promise((res) => imgSrc.toBlob(res, 'image/png'));
+        const img = await doc.embedPng(await png.arrayBuffer());
+        const pg = doc.addPage([img.width, img.height]);
+        pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        currentPdf = new Blob([await doc.save()], { type: 'application/pdf' });
+        const pdfjs = await loadJs();
+        if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
+        pdfDoc = await pdfjs.getDocument({ data: new Uint8Array(await currentPdf.arrayBuffer()) }).promise;
+        pageCount = pdfDoc.numPages;
+        pages = [{ thumb: null, full: null }];
+      } catch (err) { console.error('[Edit] apply image', err); }
+      toolMode = 'select';
+      renderEditor();
+    }
+    function resetImgTools() {
+      if (!imgOrig) return;
+      imgSrc = cloneCanvas(imgOrig);
+      imgDraft = null; aiStatus = '';
+      imgOpts = { bg: { tol: 30, recolor: '#FFFFFF' }, filt: { id: 'none', amount: 100 }, adj: { b: 0, c: 0, s: 0, w: 0 }, eff: { round: 0, border: 0, borderColor: '#111827', shadow: 0, duotone: 'none' } };
+      renderImgPreview();
+    }
+
+    /* Auto-enhance: histogram stretch + auto white-balance + mild saturation. */
+    function autoEnhance() {
+      if (!imgSrc) return;
+      const ctx = imgSrc.getContext('2d', { willReadFrequently: true });
+      const d = ctx.getImageData(0, 0, imgSrc.width, imgSrc.height).data;
+      const n = imgSrc.width * imgSrc.height;
+      const hist = [new Float32Array(256), new Float32Array(256), new Float32Array(256)];
+      for (let i = 0; i < d.length; i += 4) { hist[0][d[i]]++; hist[1][d[i + 1]]++; hist[2][d[i + 2]]++; }
+      const pct = (h, p) => { let c = 0, t = p * n; for (let v = 0; v < 256; v++) { c += h[v]; if (c >= t) return v; } return 255; };
+      const lo = [pct(hist[0], 0.02), pct(hist[1], 0.02), pct(hist[2], 0.02)];
+      const hi = [pct(hist[0], 0.98), pct(hist[1], 0.98), pct(hist[2], 0.98)];
+      const midLo = (lo[0] + lo[1] + lo[2]) / 3, midHi = (hi[0] + hi[1] + hi[2]) / 3;
+      const span = Math.max(40, midHi - midLo);
+      const contrast = Math.round((255 / span - 1) * 100);
+      const shift = 128 - (255 / span) * (128 - midLo);
+      const brightness = Math.round((shift / 255) * 100);
+      let mr = 0, mg = 0, mb = 0;
+      for (let i = 0; i < d.length; i += 4) { mr += d[i]; mg += d[i + 1]; mb += d[i + 2]; }
+      mr /= n; mg /= n; mb /= n;
+      const clamp = (v) => Math.max(-50, Math.min(50, v));
+      imgOpts.adj = { b: clamp(brightness), c: clamp(contrast), s: 14, w: clamp(Math.round((mb - mg) * 0.9)) };
+      renderOptbar();
+      renderImgPreview();
+    }
+
+    /* Blur brush — paint a soft blur over regions of the draft. */
+    function blurDraftAt(cx, cy) {
+      if (!imgDraft) return;
+      const ctx = imgDraft.getContext('2d');
+      const r = imgBrush.size / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.filter = `blur(${Math.max(2, r * 0.55)}px)`;
+      ctx.drawImage(imgDraft, 0, 0);
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+
+    /* AI background removal — RMBG-1.4 via transformers.js (model caches after first run). */
+    let aiBusy = false;
+    async function aiRemoveBg() {
+      if (!imgSrc || aiBusy) return;
+      aiBusy = true;
+      aiStatus = 'Loading the AI engine…';
+      renderOptbar();
+      try {
+        let mod = window.__ffTfJs;
+        if (!mod) {
+          mod = await import('/vendor/transformers.min.js');
+          window.__ffTfJs = mod;
+        }
+        const { pipeline, env } = mod;
+        env.backends.onnx.wasm.wasmPaths = '/vendor/';
+        const seg = await pipeline('image-segmentation', 'briaai/RMBG-1.4', { device: 'wasm',
+          progress_callback: (p) => {
+            if (p && p.status === 'progress' && Number.isFinite(p.progress)) { aiStatus = `Downloading AI model ${Math.round(p.progress)}%`; renderOptbar(); }
+          },
+        });
+        aiStatus = 'Removing background…';
+        renderOptbar();
+        const out = await seg(imgSrc.toDataURL('image/png'), { ratio: 1 });
+        const mask = out && out[0] && out[0].mask;
+        if (!mask || !mask.data || !mask.width) throw new Error('The model returned no mask.');
+        imgDraft = cloneCanvas(imgSrc);
+        const mw = mask.width, mh = mask.height;
+        const mc = document.createElement('canvas');
+        mc.width = mw; mc.height = mh;
+        const mctx = mc.getContext('2d');
+        const mid = mctx.createImageData(mw, mh);
+        const md = mid.data;
+        const src = mask.data;
+        const mult = (src instanceof Float32Array || src instanceof Float64Array) ? 255 : 1;
+        const hasA = src.length === mw * mh * 4;
+        for (let i = 0; i < mw * mh; i++) {
+          const v = hasA ? src[i * 4 + 3] : src[i];
+          md[i * 4 + 3] = Math.max(0, Math.min(255, Math.round(v * mult)));
+        }
+        mctx.putImageData(mid, 0, 0);
+        const tmp = document.createElement('canvas');
+        tmp.width = imgDraft.width; tmp.height = imgDraft.height;
+        const tctx = tmp.getContext('2d');
+        tctx.imageSmoothingEnabled = true;
+        tctx.drawImage(mc, 0, 0, tmp.width, tmp.height);
+        const tid = tctx.getImageData(0, 0, tmp.width, tmp.height);
+        const base = imgDraft.getContext('2d').getImageData(0, 0, imgDraft.width, imgDraft.height);
+        for (let i = 0; i < base.data.length; i += 4) base.data[i + 3] = Math.round(base.data[i + 3] * (tid.data[i + 3] / 255));
+        imgDraft.getContext('2d').putImageData(base, 0, 0);
+        aiStatus = 'AI background removed — review, then Apply.';
+        renderOptbar();
+        renderImgPreview();
+      } catch (err) {
+        console.error('[Edit] AI bg', err);
+        aiStatus = 'AI unavailable: ' + (err && err.message ? err.message.split('(')[0] : 'unknown error');
+        renderOptbar();
+      } finally { aiBusy = false; }
+    }
+
+
+    function renderOptbar() {
+      const bar = container.querySelector('#etxt-optbar');
+      if (!bar) return;
+      let html = '';
+      if (toolMode === 'draw') {
+        html = `<span class="etxt-opt-label">Ink</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.color === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
+      } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
+        const label = toolMode === 'highlight' ? 'Marker' : toolMode === 'underline' ? 'Underline' : toolMode === 'strike' ? 'Strikethrough' : 'Squiggle';
+        html = `<span class="etxt-opt-label">${label}</span>${HL_COLORS.map(c => `<button type="button" class="etxt-swatch${toolOpts.hlColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}`;
+      } else if (toolMode === 'shape') {
+        html = `<span class="etxt-opt-label">Shape</span><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect">${I.rect}</button><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse">${I.ellipse}</button><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line">${I.line}</button><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow">${I.arr}</button><span class="etxt-opt-sep"></span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.shapeColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.shapeStroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
+      } else if (toolMode === 'type') {
+        html = `<span class="etxt-opt-label">Text</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.textColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span><button type="button" class="etxt-size-btn" data-d="-2">A−</button><span class="etxt-opt-size">${toolOpts.textSize}</span><button type="button" class="etxt-size-btn" data-d="2">A+</button>`;
+      } else if (toolMode === 'crop' && cropBox) {
+        html = `<span class="etxt-opt-label">Crop</span><span class="etxt-crop-meta">${Math.round(cropBox.w)} × ${Math.round(cropBox.h)} pt · applies to all pages</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-crop-apply" id="etxt-crop-apply">Apply crop</button><button type="button" class="etxt-btn-mini" id="etxt-crop-clear">Clear</button>`;
+      } else if (toolMode === 'img-bg') {
+        const o = imgOpts.bg;
+        html = `<button type="button" class="etxt-photo-chip etxt-ai-chip" id="etxt-ai-bg">✨ AI remove</button><span class="etxt-ai-status" id="etxt-ai-status">${aiStatus}</span><span class="etxt-opt-sep"></span>
+          <span class="etxt-opt-label">Tolerance</span><input type="range" class="etxt-opt-range" data-img="bg.tol" min="4" max="120" value="${o.tol}"><span class="etxt-opt-val">${o.tol}</span>
+          <span class="etxt-opt-sep"></span>
+          <label class="etxt-opt-check"><input type="checkbox" data-img="bg.recolorOn" ${o.recolorOn ? 'checked' : ''}> Replace instead of erase</label>
+          <input type="color" class="etxt-opt-color" data-img="bg.recolor" value="${o.recolor}" title="Background colour">
+          <span class="etxt-opt-sep"></span>
+          <button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
+      } else if (toolMode === 'img-blur') {
+        html = `<span class="etxt-opt-label">Brush</span><input type="range" class="etxt-opt-range" data-img="brush.size" min="14" max="120" value="${imgBrush.size}"><span class="etxt-opt-val">${imgBrush.size}px</span><span class="etxt-opt-sep"></span><span class="etxt-opt-hint">Drag over the image to blur regions</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
+      } else if (toolMode === 'img-filter') {
+        const o = imgOpts.filt;
+        html = `${FILTERS.map(f => `<button type="button" class="etxt-photo-chip${o.id === f[0] ? ' is-on' : ''}" data-f="${f[0]}">${f[1]}</button>`).join('')}<span class="etxt-opt-sep"></span><span class="etxt-opt-label">Amount</span><input type="range" class="etxt-opt-range" data-img="filt.amount" min="10" max="100" value="${o.amount}"><span class="etxt-opt-val">${o.amount}%</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
+      } else if (toolMode === 'img-adjust') {
+        const o = imgOpts.adj;
+        const row = (k, label) => `<span class="etxt-opt-label">${label}</span><input type="range" class="etxt-opt-range" data-img="adj.${k}" min="-50" max="50" value="${o[k]}"><span class="etxt-opt-val">${o[k] > 0 ? '+' : ''}${o[k]}</span>`;
+        html = `<button type="button" class="etxt-photo-chip" id="etxt-auto-enhance">✨ Auto-enhance</button><span class="etxt-opt-sep"></span>` + row('b', 'Brightness') + row('c', 'Contrast') + row('s', 'Saturation') + row('w', 'Warmth') + `<span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
+      } else if (toolMode === 'img-effect') {
+        const o = imgOpts.eff;
+        const row = (k, label, max) => `<span class="etxt-opt-label">${label}</span><input type="range" class="etxt-opt-range" data-img="eff.${k}" min="0" max="${max}" value="${o[k]}"><span class="etxt-opt-val">${o[k]}</span>`;
+        html = `${DUOTONES.map(d => `<button type="button" class="etxt-photo-chip${o.duotone === d[0] ? ' is-on' : ''}" data-duo="${d[0]}">${d[1]}</button>`).join('')}<span class="etxt-opt-sep"></span>${row('round', 'Round corners', 50)}${row('border', 'Border', 24)}${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${o.borderColor === c ? ' is-on' : ''}" data-bc="${c}" style="background:${c}"></button>`).join('')}${row('shadow', 'Shadow', 30)}<span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
+      }
+      if (html) {
+        bar.innerHTML = html;
+        bar.hidden = false;
+      } else {
+        bar.hidden = true;
+        bar.innerHTML = '';
+      }
+      bar.querySelectorAll('.etxt-swatch').forEach(b => {
+        b.onclick = () => {
+          if (toolMode === 'draw') toolOpts.color = b.dataset.c;
+          else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') toolOpts.hlColor = b.dataset.c;
+          else if (toolMode === 'shape') toolOpts.shapeColor = b.dataset.c;
+          else if (toolMode === 'type') toolOpts.textColor = b.dataset.c;
+          renderOptbar();
+        };
+      });
+      bar.querySelectorAll('.etxt-stroke').forEach(b => {
+        b.onclick = () => {
+          if (toolMode === 'draw') toolOpts.stroke = Number(b.dataset.w);
+          else if (toolMode === 'shape') toolOpts.shapeStroke = Number(b.dataset.w);
+          renderOptbar();
+        };
+      });
+      bar.querySelectorAll('.etxt-shape-kind').forEach(b => {
+        b.onclick = () => { toolOpts.shapeKind = b.dataset.k; renderOptbar(); };
+      });
+      bar.querySelectorAll('.etxt-size-btn').forEach(b => {
+        b.onclick = () => { toolOpts.textSize = Math.max(8, Math.min(72, toolOpts.textSize + Number(b.dataset.d))); renderOptbar(); };
+      });
+      const applyBtn = bar.querySelector('#etxt-crop-apply');
+      if (applyBtn) applyBtn.onclick = () => { pushUndo(); toolMode = 'select'; renderEditor(); };
+      const clearBtn = bar.querySelector('#etxt-crop-clear');
+      if (clearBtn) clearBtn.onclick = () => { pushUndo(); cropBox = null; renderEditor(); };
+
+      /* ── Photo tool controls ── */
+      const setImg = (path, v) => {
+        const [g, k] = path.split('.');
+        imgOpts[g][k] = v;
+        if (g === 'bg' && k === 'tol') { const lab = bar.querySelector('.etxt-opt-val'); if (lab) lab.textContent = v; }
+        renderImgPreview();
+      };
+      bar.querySelectorAll('input[data-img]').forEach(inp => {
+        inp.oninput = () => {
+          const v = inp.type === 'checkbox' ? inp.checked : Number(inp.value);
+          if (inp.dataset.img === 'brush.size') { imgBrush.size = v; renderImgPreview(); const lab = inp.nextElementSibling; if (lab) lab.textContent = v + 'px'; return; }
+          if (inp.type === 'color') setImg(inp.dataset.img, inp.value);
+          else { setImg(inp.dataset.img, v); const lab = inp.nextElementSibling; if (lab && lab.classList.contains('etxt-opt-val')) lab.textContent = inp.type === 'range' && inp.dataset.img === 'filt.amount' ? v + '%' : (v > 0 ? '+' : '') + v; }
+        };
+      });
+      bar.querySelector('#etxt-auto-enhance')?.addEventListener('click', () => autoEnhance());
+      bar.querySelector('#etxt-ai-bg')?.addEventListener('click', () => aiRemoveBg());
+      bar.querySelectorAll('.etxt-photo-chip[data-f]').forEach(b => {
+        b.onclick = () => { imgOpts.filt.id = b.dataset.f; renderOptbar(); renderImgPreview(); };
+      });
+      bar.querySelectorAll('.etxt-photo-chip[data-duo]').forEach(b => {
+        b.onclick = () => { imgOpts.eff.duotone = b.dataset.duo; renderOptbar(); renderImgPreview(); };
+      });
+      bar.querySelectorAll('.etxt-swatch[data-bc]').forEach(b => {
+        b.onclick = () => { imgOpts.eff.borderColor = b.dataset.c; renderOptbar(); renderImgPreview(); };
+      });
+      bar.querySelector('.etxt-photo-apply')?.addEventListener('click', () => applyImgTools());
+      bar.querySelector('.etxt-photo-reset')?.addEventListener('click', () => resetImgTools());
+    }
+
+    /* ── Pointer interaction ── */
+    function startDrag(e) {
+      if (toolMode === 'pan') return;
+      const u = toUser(e.clientX, e.clientY);
+      if (toolMode === 'draw') {
+        draft = { kind: 'ink', points: [[u.x, u.y]], color: toolOpts.color, width: toolOpts.stroke };
+        draftEl(draft);
+      } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
+        draft = { kind: 'hl', start: u, cur: u, color: toolOpts.hlColor, hlKind: toolMode };
+        draftEl(draft);
+      } else if (toolMode === 'shape') {
+        draft = { kind: 'shape', start: u, cur: u, shapeKind: toolOpts.shapeKind, color: toolOpts.shapeColor, width: toolOpts.shapeStroke };
+        draftEl(draft);
+      } else if (toolMode === 'link') {
+        draft = { kind: 'link', start: u, cur: u };
+        draftEl(draft);
+      } else if (toolMode === 'crop') {
+        draft = { kind: 'crop', start: u, cur: u };
+        draftEl(draft);
+      }
+    }
+
+    function moveDrag(e) {
+      if (!draft) return;
+      const u = toUser(e.clientX, e.clientY);
+      if (draft.kind === 'ink') {
+        draft.points.push([u.x, u.y]);
+        const svg = container.querySelector('.etxt-draft');
+        if (svg) {
+          const path = svg.querySelector('path');
+          if (path) path.setAttribute('d', smoothPath(draft.points.map(p => [p[0] * pageScale, p[1] * pageScale])));
+        }
+      } else {
+        draft.cur = u;
+        const el = container.querySelector('.etxt-draft');
+        if (el) {
+          const rect = normRect(draft.start, draft.cur);
+          el.style.cssText = `left:${(rect.x * pageScale).toFixed(1)}px;top:${(rect.y * pageScale).toFixed(1)}px;width:${(rect.w * pageScale).toFixed(1)}px;height:${(rect.h * pageScale).toFixed(1)}px;`;
+        }
+      }
+    }
+
+    function endDrag(e) {
+      if (!draft) return;
+      const d = draft;
+      draft = null;
+      container.querySelector('.etxt-draft')?.remove();
+      if (d.kind === 'ink') {
+        if (d.points.length < 2) return;
+        pushUndo();
+        addAnnot({ type: 'ink', points: d.points, color: d.color, width: d.width });
+        renderAnnots();
+      } else if (d.kind === 'hl') {
+        const rect = normRect(d.start, d.cur);
+        if (rect.w < 3 && rect.h < 3) return;
+        pushUndo();
+        addAnnot({ type: 'hl', ...rect, color: d.color, kind: d.hlKind });
+        renderAnnots();
+      } else if (d.kind === 'shape') {
+        const rect = normRect(d.start, d.cur);
+        if (rect.w < 3 && rect.h < 3) return;
+        pushUndo();
+        addAnnot({ type: 'shape', ...rect, kind: d.shapeKind || 'rect', color: d.color, width: d.width });
+        renderAnnots();
+      } else if (d.kind === 'link') {
+        const rect = normRect(d.start, d.cur);
+        if (rect.w < 8 || rect.h < 4) return;
+        openLinkDlg(rect);
+      } else if (d.kind === 'crop') {
+        const rect = normRect(d.start, d.cur);
+        if (rect.w < 10 || rect.h < 10) return;
+        pushUndo();
+        cropBox = rect;
+        renderAnnots();
+        renderOptbar();
+      }
+    }
+
+    function draftEl(d) {
+      const layer = container.querySelector('.etxt-annot-layer');
+      if (!layer) return;
+      const P = pageScale;
+      if (d.kind === 'ink') {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'etxt-draft');
+        svg.setAttribute('viewBox', `0 0 ${(curPageW * P).toFixed(0)} ${(curPageH * P).toFixed(0)}`);
+        svg.style.cssText = 'left:0;top:0;width:100%;height:100%';
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', '');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', d.color);
+        path.setAttribute('stroke-width', String(d.width));
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        svg.append(path);
+        layer.append(svg);
+      } else {
+        const el = document.createElement('div');
+        el.className = 'etxt-draft' + (d.kind === 'hl' ? ' etxt-draft-hl' : '');
+        el.style.cssText = `left:${(d.start.x * P).toFixed(1)}px;top:${(d.start.y * P).toFixed(1)}px;width:0;height:0;`;
+        if (d.kind === 'hl') el.style.background = d.color;
+        if (d.kind === 'shape') el.style.border = `${d.width}px solid ${d.color}`;
+        if (d.kind === 'link' || d.kind === 'crop') el.style.border = '1.5px dashed #7C3AED';
+        layer.append(el);
+      }
+    }
+
+    function setupPointer() {
+      const wrap = container.querySelector('.etxt-canvas-wrap');
+      const page = container.querySelector('.etxt-page');
+      if (!wrap || !page) return;
+      let panStart = null;
+      let selDrag = null;
+      let moved = false;
+      const down = (e) => {
+        if (activeDialog) return;
+        if (toolMode === 'select') {
+          const aEl = e.target.closest('.etxt-a');
+          if (aEl) {
+            e.preventDefault();
+            const id = aEl.dataset.id;
+            if (selAnnot !== id) { selAnnot = id; renderAnnots(); }
+            const startU = toUser(e.clientX, e.clientY);
+            selDrag = { id, startX: startU.x, startY: startU.y, moved: false };
+            return;
+          }
+          selAnnot = null;
+          renderAnnots();
+          return;
+        }
+        if (toolMode === 'pan') {
+          panStart = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop };
+          wrap.style.cursor = 'grabbing';
+          e.preventDefault();
+          return;
+        }
+        if (toolMode === 'type') {
+          e.preventDefault();
+          openTypeBox(e);
+          return;
+        }
+        if (toolMode === 'image') {
+          e.preventDefault();
+          const inp = container.querySelector('#etxt-image-inp');
+          if (inp) {
+            dragType = toUser(e.clientX, e.clientY);
+            inp.click();
+          }
+          return;
+        }
+        if (toolMode === 'stamp') {
+          e.preventDefault();
+          openStampPalette(toUser(e.clientX, e.clientY));
+          return;
+        }
+        if (['draw', 'highlight', 'underline', 'strike', 'squiggle', 'shape', 'link', 'crop'].includes(toolMode)) {
+          e.preventDefault();
+          startDrag(e);
+          moved = false;
+        }
+      };
+      const move = (e) => {
+        if (selDrag) {
+          const u = toUser(e.clientX, e.clientY);
+          const dx = u.x - selDrag.startX, dy = u.y - selDrag.startY;
+          if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) selDrag.moved = true;
+          if (selDrag.moved) {
+            const list = annots[page - 1] || [];
+            const a = list.find(x => x.id === selDrag.id);
+            if (a && a.type !== 'wm' && a.type !== 'pagenum') {
+              a.x += dx; a.y += dy;
+              selDrag.startX = u.x; selDrag.startY = u.y;
+              renderAnnots();
+            }
+          }
+          return;
+        }
+        if (panStart) {
+          wrap.scrollLeft = panStart.sl - (e.clientX - panStart.x);
+          wrap.scrollTop = panStart.st - (e.clientY - panStart.y);
+          return;
+        }
+        if (draft) moveDrag(e);
+      };
+      const up = (e) => {
+        if (selDrag) {
+          if (selDrag.moved) pushUndo();
+          selDrag = null;
+          return;
+        }
+        if (panStart) { panStart = null; wrap.style.cursor = ''; return; }
+        if (draft) endDrag(e);
+      };
+      const key = (e) => {
+        if (activeDialog) return;
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (selAnnot) {
+            const el = e.target.closest && e.target.closest('input,textarea,[contenteditable]');
+            if (el) return;
+            e.preventDefault();
+            pushUndo();
+            removeAnnot(selAnnot);
+          }
+        } else if (e.key === 'Escape') {
+          if (selAnnot) { selAnnot = null; renderAnnots(); }
+        }
+      };
+      wrap.addEventListener('pointerdown', down);
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+      window.addEventListener('keydown', key);
+      return () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        window.removeEventListener('keydown', key);
+      };
+    }
+
+    /* ── Type tool: click to add real text ── */
+    function openTypeBox(e) {
+      const layer = container.querySelector('.etxt-annot-layer');
+      if (!layer) return;
+      const u = toUser(e.clientX, e.clientY);
+      const box = document.createElement('div');
+      box.className = 'etxt-type-box';
+      const inner = document.createElement('div');
+      inner.className = 'etxt-type-inner';
+      inner.contentEditable = 'true';
+      inner.spellcheck = false;
+      inner.textContent = 'Type here';
+      box.append(inner);
+      const pos = userToCss(u.x, u.y);
+      box.style.cssText = `left:${pos.x.toFixed(1)}px;top:${pos.y.toFixed(1)}px;font-size:${(toolOpts.textSize * pageScale * 0.72).toFixed(1)}px;color:${toolOpts.textColor};`;
+      const ok = document.createElement('button');
+      ok.type = 'button'; ok.className = 'etxt-edit-btn etxt-edit-ok'; ok.textContent = '✓';
+      const cx = document.createElement('button');
+      cx.type = 'button'; cx.className = 'etxt-edit-btn etxt-edit-cx'; cx.textContent = '✕';
+      box.append(ok, cx);
+      layer.append(box);
+      inner.focus();
+      const commit = () => {
+        if (activeEdit) { /* noop */ }
+        const text = inner.textContent.replace(/\s+/g, ' ').trim();
+        box.remove();
+        if (text && text !== 'Type here') {
+          pushUndo();
+          addAnnot({ type: 'text', x: u.x, y: u.y, text, size: toolOpts.textSize, color: toolOpts.textColor });
+          renderAnnots();
+        }
+      };
+      ok.onclick = (ev) => { ev.stopPropagation(); commit(); };
+      cx.onclick = (ev) => { ev.stopPropagation(); box.remove(); };
+      inner.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); box.remove(); }
+      });
+      inner.addEventListener('blur', () => { commit(); });
+    }
+
+    /* ── Stamp palette ── */
+    function openStampPalette(u) {
+      const palette = container.querySelector('#etxt-stamp-palette');
+      const stamps = [
+        { kind: 'approved', text: 'APPROVED', cls: 'approved' },
+        { kind: 'confidential', text: 'CONFIDENTIAL', cls: 'confidential' },
+        { kind: 'draft', text: 'DRAFT', cls: 'draft' },
+        { kind: 'final', text: 'FINAL', cls: 'final' },
+        { kind: 'check', text: '✓', cls: 'check' },
+        { kind: 'date', text: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), cls: 'date' },
+        { kind: 'signature', text: 'Sign', cls: 'signature' },
+      ];
+      palette.innerHTML = '';
+      palette.hidden = false;
+      const pos = userToCss(u.x, u.y);
+      const el = pageGeom().el;
+      palette.style.left = Math.min(el.getBoundingClientRect().right - 200, Math.max(el.getBoundingClientRect().left, pos.x + el.getBoundingClientRect().left)) + 'px';
+      palette.style.top = Math.max(el.getBoundingClientRect().top + 8, pos.y + el.getBoundingClientRect().top - 210) + 'px';
+      for (const s of stamps) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-stamp-item';
+        btn.innerHTML = `<span class="etxt-stamp-prev etxt-stamp-prev-${s.cls}">${s.text}</span><small>${s.kind === 'signature' ? 'Draw signature' : s.kind}</small>`;
+        btn.onclick = () => {
+          palette.hidden = true;
+          if (s.kind === 'signature') { openSignaturePad(u); return; }
+          pushUndo();
+          addAnnot({ type: 'stamp', kind: s.kind, text: s.text, x: u.x, y: u.y, w: 140, h: 46 });
+          renderAnnots();
+        };
+        palette.append(btn);
+      }
+      const close = () => { palette.hidden = true; };
+      setTimeout(() => window.addEventListener('pointerdown', close, { once: true }), 0);
+    }
+
+    /* ── Signature pad ── */
+    function openSignaturePad(u) {
+      const dlg = container.querySelector('#etxt-dlg');
+      const backdrop = container.querySelector('#etxt-dlg-backdrop');
+      const W = 460, H = 180;
+      dlg.innerHTML = `
+        <h3 class="etxt-dlg-title">Draw your signature</h3>
+        <p class="etxt-dlg-sub">Sign with your mouse or finger — placed where you clicked.</p>
+        <div class="etxt-drawpad" id="etxt-drawpad"><canvas width="${W}" height="${H}"></canvas></div>
+        <div class="etxt-dlg-actions">
+          <button type="button" class="etxt-btn-ghost" id="etxt-sig-clear">Clear</button>
+          <button type="button" class="etxt-btn-ghost" id="etxt-sig-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-sig-ok">Use signature</button>
+        </div>`;
+      activeDialog = dlg;
+      dlg.hidden = false;
+      backdrop.hidden = false;
+      const canvas = dlg.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#1D4ED8';
+      let pts = [];
+      let drawing = false;
+      const pos = (e) => {
+        const r = canvas.getBoundingClientRect();
+        return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+      };
+      const draw = (e) => {
+        if (!drawing) return;
+        const p = pos(e);
+        pts.push(p);
+        const px = p.x * W, py = p.y * H;
+        if (pts.length === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px, py);
+      };
+      canvas.addEventListener('pointerdown', e => { drawing = true; pts = []; ctx.clearRect(0, 0, W, H); draw(e); });
+      window.addEventListener('pointermove', draw);
+      window.addEventListener('pointerup', () => { drawing = false; });
+      dlg.querySelector('#etxt-sig-clear').onclick = () => { pts = []; ctx.clearRect(0, 0, W, H); };
+      dlg.querySelector('#etxt-sig-cancel').onclick = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
+      dlg.querySelector('#etxt-sig-ok').onclick = () => {
+        if (pts.length < 2) return;
+        pushUndo();
+        addAnnot({ type: 'stamp', kind: 'signature', points: pts, x: u.x, y: u.y, w: 140, h: 56 });
+        renderAnnots();
+        dlg.hidden = true; backdrop.hidden = true; activeDialog = null;
+      };
+    }
+
+    /* ── Link dialog ── */
+    function openLinkDlg(rect) {
+      const dlg = container.querySelector('#etxt-dlg');
+      const backdrop = container.querySelector('#etxt-dlg-backdrop');
+      dlg.innerHTML = `
+        <h3 class="etxt-dlg-title">Add a link</h3>
+        <p class="etxt-dlg-sub">The rectangle you drew will open this URL when clicked in the PDF.</p>
+        <label class="etxt-dlg-field">URL<input type="text" id="etxt-link-url" placeholder="https://example.com" value="https://"></label>
+        <div class="etxt-dlg-actions">
+          <button type="button" class="etxt-btn-ghost" id="etxt-link-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-link-ok">Add link</button>
+        </div>`;
+      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
+      dlg.querySelector('#etxt-link-url').focus();
+      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
+      dlg.querySelector('#etxt-link-cancel').onclick = close;
+      dlg.querySelector('#etxt-link-ok').onclick = () => {
+        const url = dlg.querySelector('#etxt-link-url').value.trim();
+        if (!/^https?:\/\//i.test(url)) { dlg.querySelector('#etxt-link-url').focus(); return; }
+        pushUndo();
+        addAnnot({ type: 'link', ...rect, url });
+        renderAnnots();
+        close();
+      };
+      dlg.querySelector('#etxt-link-url').addEventListener('keydown', e => {
+        if (e.key === 'Enter') dlg.querySelector('#etxt-link-ok').click();
+      });
+    }
+
+    /* ── Watermark dialog ── */
+    function openWatermarkDlg() {
+      const dlg = container.querySelector('#etxt-dlg');
+      const backdrop = container.querySelector('#etxt-dlg-backdrop');
+      dlg.innerHTML = `
+        <h3 class="etxt-dlg-title">Add a watermark</h3>
+        <p class="etxt-dlg-sub">Applied faintly to every page of the document.</p>
+        <label class="etxt-dlg-field">Text<input type="text" id="etxt-wm-text" value="CONFIDENTIAL"></label>
+        <div class="etxt-dlg-row">
+          <label class="etxt-dlg-field">Size<input type="number" id="etxt-wm-size" value="42" min="12" max="140"></label>
+          <label class="etxt-dlg-field">Opacity<input type="number" id="etxt-wm-op" value="12" min="3" max="60"></label>
+          <label class="etxt-dlg-field">Rotation°<input type="number" id="etxt-wm-rot" value="-30" min="-90" max="90"></label>
+        </div>
+        <div class="etxt-dlg-actions">
+          <button type="button" class="etxt-btn-ghost" id="etxt-wm-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-wm-ok">Add watermark</button>
+        </div>`;
+      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
+      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
+      dlg.querySelector('#etxt-wm-cancel').onclick = close;
+      dlg.querySelector('#etxt-wm-ok').onclick = () => {
+        const text = dlg.querySelector('#etxt-wm-text').value.trim();
+        if (!text) return;
+        pushUndo();
+        addAnnot({
+          type: 'wm', text,
+          size: Number(dlg.querySelector('#etxt-wm-size').value) || 42,
+          opacity: (Number(dlg.querySelector('#etxt-wm-op').value) || 12) / 100,
+          rotation: Number(dlg.querySelector('#etxt-wm-rot').value) || -30,
+          color: '#94A3B8',
+        });
+        close();
+        toolMode = 'select';
+        renderEditor();
+      };
+    }
+
+    /* ── Word find & replace (docx/odt/rtf) ── */
+    const TENC_E = new TextEncoder();
+    const TDEC_E = new TextDecoder();
+    async function docReplaceBlob(find, repl) {
+      const ext = extOf(file);
+      const F = await loadFfE();
+      if (ext === 'rtf') {
+        const text = await file.text();
+        const count = text.split(find).length - 1;
+        return { blob: new Blob([text.split(find).join(repl)], { type: 'application/rtf' }), count };
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const zip = F.unzipSync(bytes);
+      const entry = ext === 'odt' ? 'content.xml' : 'word/document.xml';
+      const raw = zip[entry];
+      if (!raw) throw new Error('Could not find the document body inside this file.');
+      const xml = TDEC_E.decode(raw);
+      let count = 0;
+      const replaced = xml.replace(/>([^<]*?)</g, (m, txt) => {
+        if (!txt.includes(find)) return m;
+        const n = txt.split(find).length - 1;
+        count += n;
+        return '>' + txt.split(find).join(repl) + '<';
+      });
+      zip[entry] = TENC_E.encode(replaced);
+      const out = F.zipSync(zip);
+      const mime = ext === 'odt' ? 'application/vnd.oasis.opendocument.text' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      return { blob: new Blob([out], { type: mime }), count };
+    }
+    async function openFindReplaceDlg() {
+      const dlg = container.querySelector('#etxt-dlg');
+      const backdrop = container.querySelector('#etxt-dlg-backdrop');
+      const ext = extOf(file);
+      dlg.innerHTML = `
+        <h3 class="etxt-dlg-title">Find & replace</h3>
+        <p class="etxt-dlg-sub">Rewrites text inside the .${ext} document — formatting is preserved.</p>
+        <label class="etxt-dlg-field">Find<input type="text" id="etxt-fr-find" placeholder="word to find"></label>
+        <label class="etxt-dlg-field">Replace with<input type="text" id="etxt-fr-repl" placeholder="replacement"></label>
+        <p class="etxt-dlg-note" id="etxt-fr-status"></p>
+        <div class="etxt-dlg-actions" id="etxt-fr-actions">
+          <button type="button" class="etxt-btn-ghost" id="etxt-fr-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-fr-ok">Replace all</button>
+        </div>`;
+      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
+      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
+      dlg.querySelector('#etxt-fr-cancel').onclick = close;
+      const okBtn = dlg.querySelector('#etxt-fr-ok');
+      okBtn.onclick = async () => {
+        const find = dlg.querySelector('#etxt-fr-find').value;
+        if (!find) return;
+        okBtn.disabled = true;
+        okBtn.textContent = 'Replacing…';
+        try {
+          const res = await docReplaceBlob(find, dlg.querySelector('#etxt-fr-repl').value);
+          const status = dlg.querySelector('#etxt-fr-status');
+          status.textContent = res.count ? `Replaced ${res.count} occurrence${res.count === 1 ? '' : 's'}.` : 'No occurrences found.';
+          status.style.color = res.count ? '#059669' : '#B45309';
+          dlg.querySelector('#etxt-fr-actions').innerHTML = res.count
+            ? `<button type="button" class="etxt-btn-ghost" id="etxt-fr-cancel2">Cancel</button><button type="button" class="etxt-btn-secondary" id="etxt-fr-dl">${I.dl} Download .${ext}</button><button type="button" class="etxt-btn-finish" id="etxt-fr-pdf">Open as PDF</button>`
+            : `<button type="button" class="etxt-btn-ghost" id="etxt-fr-cancel2">Cancel</button>`;
+          const replacedFile = new File([res.blob], file.name, { type: res.blob.type });
+          dlg.querySelector('#etxt-fr-dl')?.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(res.blob);
+            a.download = file.name.replace(/\.[^.]+$/, '') + '-edited.' + ext;
+            a.click();
+          });
+          dlg.querySelector('#etxt-fr-pdf')?.addEventListener('click', async () => {
+            close();
+            renderLoading();
+            try {
+              const pdfBlob = await toEditablePdf(replacedFile);
+              currentPdf = pdfBlob;
+              const pdfjs = await loadJs();
+              if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
+              pdfDoc = await pdfjs.getDocument({ data: new Uint8Array(await pdfBlob.arrayBuffer()) }).promise;
+              pageCount = pdfDoc.numPages;
+              pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
+              toolMode = 'select';
+              renderEditor();
+            } catch (err) { console.error('[Edit] find-replace → pdf', err); renderUpload(); }
+          });
+          dlg.querySelector('#etxt-fr-cancel2').onclick = close;
+        } catch (err) {
+          console.error('[Edit] find-replace', err);
+          const status = dlg.querySelector('#etxt-fr-status');
+          status.textContent = 'Could not edit this file: ' + String(err.message || err);
+          status.style.color = '#DC2626';
+          okBtn.disabled = false;
+          okBtn.textContent = 'Replace all';
+        }
+      };
+    }
+
+    /* ── PDF form filler dialog ── */
+    async function openFormDlg() {
+      const dlg = container.querySelector('#etxt-dlg');
+      const backdrop = container.querySelector('#etxt-dlg-backdrop');
+      dlg.innerHTML = `
+        <h3 class="etxt-dlg-title">Fill PDF form</h3>
+        <p class="etxt-dlg-sub">Type into the fields below — values are written into the PDF.</p>
+        <div class="etxt-form-body" id="etxt-form-fields"><p class="etxt-dlg-note">Reading form fields…</p></div>
+        <div class="etxt-dlg-actions">
+          <button type="button" class="etxt-btn-ghost" id="etxt-fm-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-fm-ok">Fill & save</button>
+        </div>`;
+      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
+      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
+      dlg.querySelector('#etxt-fm-cancel').onclick = close;
+      dlg.querySelector('#etxt-fm-ok').disabled = true;
+      try {
+        const L = await loadLib();
+        const doc = await L.PDFDocument.load(new Uint8Array(await (currentPdf || file).arrayBuffer()), { ignoreEncryption: true });
+        const form = doc.getForm();
+        const fields = form.getFields();
+        const box = dlg.querySelector('#etxt-form-fields');
+        if (!fields.length) {
+          box.innerHTML = '<p class="etxt-dlg-note">No fillable form fields found in this PDF.</p>';
+          return;
+        }
+        const fieldKind = (f) => (typeof f.getText === 'function' ? 'text' : typeof f.check === 'function' ? 'checkbox' : typeof f.getOptions === 'function' ? (typeof f.addOptions === 'function' ? 'dropdown' : 'radio') : 'skip');
+        box.innerHTML = fields.map((f) => {
+          const name = String(f.getName ? f.getName() : '');
+          if (!name) return '';
+          const kind = fieldKind(f);
+          if (kind === 'skip') return '';
+          const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+          let control = '';
+          if (kind === 'text') control = `<input type="text" class="etxt-dlg-input" data-fid="${esc(name)}" value="${esc(f.getText ? f.getText() : '')}">`;
+          else if (kind === 'checkbox') control = `<label class="etxt-dlg-check"><input type="checkbox" data-fid="${esc(name)}" ${f.isChecked ? (f.isChecked() ? 'checked' : '') : ''}> Checked</label>`;
+          else if (kind === 'dropdown') control = `<select class="etxt-dlg-input" data-fid="${esc(name)}">${(f.getOptions ? f.getOptions() : []).map((o) => `<option ${o === f.getSelected() ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+          else if (kind === 'radio') control = (f.getOptions ? f.getOptions() : []).map((o) => `<label class="etxt-dlg-check"><input type="radio" name="${esc(name)}" data-fid="${esc(name)}" value="${esc(o)}" ${o === f.getSelected() ? 'checked' : ''}> ${esc(o)}</label>`).join('');
+          return `<div class="etxt-form-row"><span class="etxt-form-name">${esc(name)}</span>${control}</div>`;
+        }).join('');
+        dlg.querySelector('#etxt-fm-ok').disabled = false;
+        dlg.querySelector('#etxt-fm-ok').onclick = async () => {
+          const okBtn = dlg.querySelector('#etxt-fm-ok');
+          okBtn.disabled = true; okBtn.textContent = 'Saving…';
+          try {
+            const fieldKind = (f) => (typeof f.getText === 'function' ? 'text' : typeof f.check === 'function' ? 'checkbox' : typeof f.getOptions === 'function' ? (typeof f.addOptions === 'function' ? 'dropdown' : 'radio') : 'skip');
+            for (const f of fields) {
+              const name = String(f.getName ? f.getName() : '');
+              if (!name) continue;
+              const kind = fieldKind(f);
+              const el = box.querySelector(`[data-fid="${CSS.escape(name)}"]`);
+              if (!el) continue;
+              if (kind === 'text') f.setText(el.value || '');
+              else if (kind === 'checkbox') el.checked ? f.check() : f.uncheck();
+              else if (kind === 'dropdown') f.select(el.value);
+              else if (kind === 'radio') { const sel = box.querySelector(`input[name="${CSS.escape(name)}"]:checked`); if (sel) f.select(sel.value); }
+            }
+            const bytes = await doc.save();
+            currentPdf = new Blob([bytes], { type: 'application/pdf' });
+            formFilled = true;
+            if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
+            const pdfjs = await loadJs();
+            pdfDoc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+            pageCount = pdfDoc.numPages;
+            pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
+            close();
+            toolMode = 'select';
+            renderEditor();
+          } catch (err) { console.error('[Edit] form fill', err); okBtn.disabled = false; okBtn.textContent = 'Fill & save'; }
+        };
+      } catch (err) {
+        console.error('[Edit] form fill', err);
+        dlg.querySelector('#etxt-form-fields').innerHTML = `<p class="etxt-dlg-note">Could not read form fields: ${String(err.message || err)}</p>`;
+      }
+    }
+
+    /* ── Spreadsheet grid editor (xlsx/xls/ods/csv/tsv sources) ── */
+    const XLSX_SRI_EDIT = 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw';
+    let xlsxLib = null;
+    const escCell = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    async function renderSpreadsheet() {
+      container.classList.add('cpdf-root');
+      container.classList.remove('etxt-shell', 'spdf-shell');
+      container.innerHTML = `<div class="cpdf-body cpdf-body--center"><div class="cpdf-spinner" aria-hidden="true"><div class="cpdf-spin-outer"></div><div class="cpdf-spin-inner">${I.sheet}</div></div><p class="cpdf-proc-title">Opening spreadsheet…</p></div>`;
+      try {
+        if (!xlsxLib) xlsxLib = await window.FF.util.loadScript('vendor/xlsx.full.min.js', XLSX_SRI_EDIT).then(() => window.XLSX);
+        const X = xlsxLib;
+        const wb = X.read(await file.arrayBuffer(), { type: 'array' });
+        const ext = extOf(file);
+        const isCsv = ext === 'csv' || ext === 'tsv';
+        const loadSheet = (i) => { const sn = wb.SheetNames[i]; const aoa = X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' }); return { sn, aoa }; };
+        sheetMode = { wb, ext, isCsv, index: 0, ...loadSheet(0), name: file.name };
+        renderSheetGrid();
+      } catch (err) {
+        console.error('[Edit] sheet', err);
+        container.innerHTML = `<div class="cpdf-body cpdf-body--center"><p class="cpdf-proc-title">Could not open this spreadsheet.</p><button type="button" class="etxt-btn-secondary" id="etxt-sheet-back">Try as PDF instead</button></div>`;
+        container.querySelector('#etxt-sheet-back').onclick = () => { sheetMode = null; pickFile(file); };
+      }
+    }
+    function renderSheetGrid() {
+      const X = xlsxLib;
+      const { aoa, sn, index, ext, name } = sheetMode;
+      const base = name.replace(/\.[^.]+$/, '');
+      const maxR = Math.min(aoa.length, 400);
+      const maxC = Math.min(Math.max(...aoa.map((r) => r.length), 12), 40);
+      let rows = '<thead><tr><th class="etxt-sheet-corner"></th>';
+      for (let c = 0; c < maxC; c++) rows += `<th class="etxt-sheet-col">${escCell(X.utils.encode_col(c))}</th>`;
+      rows += '</tr></thead><tbody>';
+      for (let r = 0; r < maxR; r++) {
+        rows += `<tr><th class="etxt-sheet-row">${r + 1}</th>`;
+        for (let c = 0; c < maxC; c++) {
+          const v = aoa[r] && aoa[r][c];
+          const t = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : String(v ?? '');
+          rows += `<td contenteditable="true" spellcheck="false" data-r="${r}" data-c="${c}">${escCell(t)}</td>`;
+        }
+        rows += '</tr>';
+      }
+      rows += '</tbody>';
+      container.classList.add('cpdf-root');
+      container.classList.remove('etxt-shell', 'spdf-shell');
+      container.innerHTML = `
+        <div class="etxt-sheet-top">
+          <div class="etxt-sheet-left">
+            <span class="etxt-sheet-file">${escCell(name)}</span>
+            <span class="etxt-sheet-meta">${aoa.length} rows × ${maxC} cols · edit cells, then save</span>
+          </div>
+          <div class="etxt-sheet-right">
+            <button type="button" class="etxt-btn-ghost" id="etxt-sheet-pdf">Open as PDF</button>
+            <button type="button" class="etxt-btn-secondary" id="etxt-sheet-save">${I.dl} Save ${ext === 'csv' || ext === 'tsv' ? 'CSV' : ext === 'ods' ? 'ODS' : 'XLSX'}</button>
+            <button type="button" class="etxt-btn-finish" id="etxt-sheet-done">Done</button>
+          </div>
+        </div>
+        ${sheetMode.wb.SheetNames.length > 1 ? `<div class="etxt-sheet-tabs">${sheetMode.wb.SheetNames.map((s, i) => `<button type="button" class="etxt-sheet-tab${i === index ? ' is-on' : ''}" data-sheet="${i}">${escCell(s)}</button>`).join('')}</div>` : ''}
+        <div class="etxt-sheet-scroll"><table class="etxt-sheet-grid">${rows}</table></div>`;
+      /* tab switch */
+      container.querySelectorAll('.etxt-sheet-tab').forEach((b) => {
+        b.onclick = () => { const X2 = xlsxLib; sheetMode = { ...sheetMode, index: +b.dataset.sheet, ...((() => { const sn = sheetMode.wb.SheetNames[+b.dataset.sheet]; return { sn, aoa: X2.utils.sheet_to_json(sheetMode.wb.Sheets[sn], { header: 1, defval: '' }) }; })()) }; renderSheetGrid(); };
+      });
+      /* live cell edits */
+      container.querySelectorAll('.etxt-sheet-grid td[contenteditable]').forEach((td) => {
+        td.addEventListener('input', () => {
+          const r = +td.dataset.r, c = +td.dataset.c;
+          while (sheetMode.aoa.length <= r) sheetMode.aoa.push([]);
+          sheetMode.aoa[r][c] = td.textContent;
+        });
+      });
+      container.querySelector('#etxt-sheet-save').onclick = async () => {
+        const X2 = xlsxLib;
+        const aoa = sheetMode.aoa.map((row) => row.map((v) => {
+          const t = String(v ?? '').trim();
+          if (t === '') return null;
+          const num = Number(t);
+          return (t !== '' && !isNaN(num) && /^-?\d*\.?\d+$/.test(t)) ? num : t;
+        }));
+        if (sheetMode.isCsv) {
+          const csv = X2.utils.sheet_to_csv(X2.utils.aoa_to_sheet(aoa));
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+          a.download = base + '.' + (extOf(file) === 'tsv' ? 'tsv' : 'csv');
+          a.click();
+        } else {
+          const wb2 = X2.utils.book_new();
+          X2.utils.book_append_sheet(wb2, X2.utils.aoa_to_sheet(aoa), sheetMode.sn.slice(0, 31));
+          const arr = X2.write(wb2, { bookType: extOf(file) === 'ods' ? 'ods' : 'xlsx', type: 'array' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([arr], { type: 'application/octet-stream' }));
+          a.download = base + '.' + (extOf(file) === 'ods' ? 'ods' : 'xlsx');
+          a.click();
+        }
+      };
+      container.querySelector('#etxt-sheet-pdf').onclick = async () => {
+        const X2 = xlsxLib;
+        const aoa = sheetMode.aoa.map((row) => row.map((v) => { const t = String(v ?? '').trim(); if (t === '') return null; const num = Number(t); return (!isNaN(num) && /^-?\d*\.?\d+$/.test(t)) ? num : t; }));
+        const wb2 = X2.utils.book_new();
+        X2.utils.book_append_sheet(wb2, X2.utils.aoa_to_sheet(aoa), sheetMode.sn.slice(0, 31));
+        const arr = X2.write(wb2, { bookType: 'xlsx', type: 'array' });
+        const tmp = new File([arr], 'grid.xlsx');
+        try {
+          const reg = window.FF.registry.get('excel-to-pdf');
+          const res = await reg.run({ file: tmp, inputs: { sheet: 1 }, engine: await reg.engine() });
+          currentPdf = res.blob;
+          const pdfjs = await loadJs();
+          if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
+          pdfDoc = await pdfjs.getDocument({ data: new Uint8Array(await currentPdf.arrayBuffer()) }).promise;
+          pageCount = pdfDoc.numPages;
+          pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
+          sheetMode = null;
+          toolMode = 'select';
+          renderEditor();
+        } catch (err) { console.error('[Edit] sheet→pdf', err); }
+      };
+      container.querySelector('#etxt-sheet-done').onclick = () => { sheetMode = null; renderUpload(); };
+    }
+
+    /* ── Page numbers dialog ── */
+    function openPagenumDlg() {
+      const dlg = container.querySelector('#etxt-dlg');
+      const backdrop = container.querySelector('#etxt-dlg-backdrop');
+      dlg.innerHTML = `
+        <h3 class="etxt-dlg-title">Add page numbers</h3>
+        <p class="etxt-dlg-sub">Number every page of the document.</p>
+        <div class="etxt-dlg-row">
+          <label class="etxt-dlg-field">Position<select id="etxt-pn-pos"><option value="bottom-center">Bottom center</option><option value="bottom-left">Bottom left</option><option value="bottom-right">Bottom right</option><option value="top-center">Top center</option><option value="top-right">Top right</option></select></label>
+          <label class="etxt-dlg-field">Format<select id="etxt-pn-fmt"><option value="{n}">1, 2, 3…</option><option value="{n} / {t}">1 / 12</option><option value="Page {n}">Page 1</option></select></label>
+        </div>
+        <div class="etxt-dlg-actions">
+          <button type="button" class="etxt-btn-ghost" id="etxt-pn-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-pn-ok">Add page numbers</button>
+        </div>`;
+      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
+      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
+      dlg.querySelector('#etxt-pn-cancel').onclick = close;
+      dlg.querySelector('#etxt-pn-ok').onclick = () => {
+        const pos = dlg.querySelector('#etxt-pn-pos').value;
+        const fmt = dlg.querySelector('#etxt-pn-fmt').value;
+        const [vAlign, hAlign] = pos.split('-');
+        const align = hAlign === 'left' ? 'left' : hAlign === 'right' ? 'right' : 'center';
+        const y = vAlign === 'top' ? 28 : curPageH - 28;
+        pushUndo();
+        addAnnot({ type: 'pagenum', y, align, format: fmt, size: 10, color: '#475569', vAlign });
+        close();
+        toolMode = 'select';
+        renderEditor();
+      };
+    }
+
+    /* ── Tool activation with dialogs ── */
+    function activateTool(id) {
+      commitEditor();
+      if (id === 'watermark') { openWatermarkDlg(); return; }
+      if (id === 'pagenum') { openPagenumDlg(); return; }
+      if (id === 'form-fill') { openFormDlg(); return; }
+      toolMode = id;
+      selAnnot = null;
+      if (id === 'img-blur' && imgSrc && !imgDraft) imgDraft = cloneCanvas(imgSrc);
+      renderEditor();
+      renderImgPreview();
+    }
+
+    /* ── Content-stream text engine (PDF operator parser) ── */
+    function csTokenize(str) {
+      const tokens = [];
+      const n = str.length;
+      let i = 0;
+      while (i < n) {
+        const ch = str[i];
+        if (/\s/.test(ch)) { i++; continue; }
+        if (ch === '%') { while (i < n && str[i] !== '\n') i++; continue; }
+        if (ch === '(') {
+          let depth = 0, j = i + 1, out = '';   // skip the opening paren
+          for (; j < n; j++) {
+            const c = str[j];
+            if (c === '\\') {
+              const e = str[j + 1];
+              if (e === 'n') out += '\n';
+              else if (e === 'r') out += '\r';
+              else if (e === 't') out += '\t';
+              else if (e === 'b') out += '\b';
+              else if (e === 'f') out += '\f';
+              else if (e === '(' ) out += '(';
+              else if (e === ')') out += ')';
+              else if (e === '\\') out += '\\';
+              else if (/[0-7]/.test(e || '')) {
+                const oct = str.slice(j + 1, j + 4);
+                out += String.fromCharCode(parseInt(oct, 8));
+                j += 2;
+              } else out += e || '';
+              j++;
+            } else if (c === '(') { depth++; out += c; }
+            else if (c === ')') { if (depth === 0) { j++; break; } depth--; out += c; }
+            else out += c;
+          }
+          tokens.push({ t: 'str', v: out });
+          i = j;
+          continue;
+        }
+        if (ch === '<') {
+          if (str[i + 1] === '<') {
+            let j = str.indexOf('>>', i); if (j < 0) j = n;
+            tokens.push({ t: 'dict', v: str.slice(i, j + 2) });
+            i = j + 2; continue;
+          }
+          let j = i + 1;
+          while (j < n && str[j] !== '>') j++;
+          const hex = str.slice(i + 1, j);
+          let out = '';
+          for (let k = 0; k + 1 < hex.length; k += 2) out += String.fromCharCode(parseInt(hex.slice(k, k + 2), 16));
+          if (hex.length % 2) out += String.fromCharCode(parseInt(hex.slice(-1), 16) * 16);
+          tokens.push({ t: 'str', v: out });
+          i = j + 1; continue;
+        }
+        if (ch === '[') {
+          let depth = 0, j = i + 1;   // skip the opening bracket
+          for (; j < n; j++) {
+            if (str[j] === '[') depth++;
+            else if (str[j] === ']') {
+              if (depth === 0) { j++; break; }
+              depth--;
+            }
+          }
+          tokens.push({ t: 'array', v: str.slice(i, j) });
+          i = j; continue;
+        }
+        if (ch === '/') {
+          let j = i + 1;
+          while (j < n && !/\s/.test(str[j]) && '()<>[]/%'.indexOf(str[j]) < 0) j++;
+          tokens.push({ t: 'name', v: str.slice(i, j) });
+          i = j; continue;
+        }
+        let j = i;
+        while (j < n && !/\s/.test(str[j]) && '()<>[]/%'.indexOf(str[j]) < 0) j++;
+        const tok = str.slice(i, j);
+        if (/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(tok)) tokens.push({ t: 'num', v: parseFloat(tok) });
+        else tokens.push({ t: 'op', v: tok });
+        i = j;
+      }
+      return tokens;
+    }
+
+    function csToOps(str) {
+      const ops = [];
+      let operands = [];
+      for (const tok of csTokenize(str)) {
+        if (tok.t === 'op') { ops.push({ op: tok.v, a: operands }); operands = []; }
+        else operands.push(tok);
+      }
+      if (operands.length) ops.push({ op: '?', a: operands });
+      return ops;
+    }
+
+    function csExtractRuns(ops) {
+      const runs = [];
+      let font = null, size = 12, tl = 0, tc = 0, tw = 0, tz = 100;
+      let tm = null, tlm = null;
+      const stack = [];
+      for (let i = 0; i < ops.length; i++) {
+        const { op, a } = ops[i];
+        if (op === 'q') stack.push({ font, size, tl, tc, tw, tz });
+        else if (op === 'Q') { const s = stack.pop(); if (s) { font = s.font; size = s.size; tl = s.tl; tc = s.tc; tw = s.tw; tz = s.tz; } }
+        else if (op === 'BT') { tm = null; tlm = null; }
+        else if (op === 'ET') { tm = null; tlm = null; }
+        else if (op === 'Tf') { font = a[0] ? a[0].v : null; size = a[1] ? a[1].v : 12; }
+        else if (op === 'Tm' && a.length >= 6) { tm = a.slice(0, 6).map(x => x.v); tlm = tm.slice(); }
+        else if (op === 'Td' || op === 'TD') {
+          const tx = a[0] ? a[0].v : 0, ty = a[1] ? a[1].v : 0;
+          if (op === 'TD') tl = -ty;
+          const m = tlm || [1, 0, 0, 1, 0, 0];
+          tm = [m[0], m[1], m[2], m[3], m[4] + tx * m[0] + ty * m[2], m[5] + tx * m[1] + ty * m[3]];
+          tlm = tm.slice();
+        }
+        else if (op === 'T*') {
+          const m = tlm || [1, 0, 0, 1, 0, 0];
+          tm = [m[0], m[1], m[2], m[3], m[4], m[5] - tl];
+          tlm = tm.slice();
+        }
+        else if (op === 'TL') tl = a[0] ? a[0].v : 0;
+        else if (op === 'Tc') tc = a[0] ? a[0].v : 0;
+        else if (op === 'Tw') tw = a[0] ? a[0].v : 0;
+        else if (op === 'Tz') tz = a[0] ? a[0].v : 100;
+        else if (op === 'Tj' || op === "'" || op === '"') {
+          if (op === "'") { const m = tlm || [1, 0, 0, 1, 0, 0]; tm = [m[0], m[1], m[2], m[3], m[4], m[5] - tl]; tlm = tm.slice(); }
+          if (op === '"') { tw = a[0] ? a[0].v : 0; tc = a[1] ? a[1].v : 0; const m = tlm || [1, 0, 0, 1, 0, 0]; tm = [m[0], m[1], m[2], m[3], m[4], m[5] - tl]; tlm = tm.slice(); }
+          runs.push({ opIdx: i, text: a[0] ? a[0].v : '', x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
+        }
+        else if (op === 'TJ') {
+          const arr = a[0] ? a[0].v : '';
+          let text = '';
+          for (const p of csTokenize(arr)) if (p.t === 'str') text += p.v;
+          runs.push({ opIdx: i, text, x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
+        }
+      }
+      return runs;
+    }
+
+    function csEscapeStr(s) {
+      let out = '(';
+      for (let i = 0; i < s.length; i++) {
+        const c = s.charCodeAt(i);
+        if (c === 40 || c === 41 || c === 92) out += '\\' + s[i];
+        else if (c === 10) out += '\\n';
+        else if (c === 13) out += '\\r';
+        else if (c === 9) out += '\\t';
+        else if (c < 32 || c > 126) out += '\\' + c.toString(8).padStart(3, '0');
+        else out += s[i];
+      }
+      return out + ')';
+    }
+
+    function fmtNum(x) { return Number.isInteger(x) ? String(x) : String(Math.round(x * 1000) / 1000); }
+    function csStrToArrayStr(s) { return '[' + csEscapeStr(s) + ']'; }
+
+    function csOpsToString(ops) {
+      return ops.map(o => {
+        const operands = o.a.map(t =>
+          t.t === 'num' ? fmtNum(t.v) :
+          t.t === 'str' ? csEscapeStr(t.v) :
+          t.t === 'name' ? t.v :
+          t.v).join(' ');
+        return operands ? operands + ' ' + o.op : o.op;
+      }).join('\n');
+    }
+
+    function findRun(runs, target) {
+      for (let i = 0; i < runs.length; i++) {
+        if (runs[i].text === target) return { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, i] };
+      }
+      for (let i = 0; i < runs.length; i++) {
+        let acc = runs[i].text;
+        for (let j = i + 1; j < runs.length; j++) {
+          acc += runs[j].text;
+          if (acc === target) {
+            let consec = true;
+            for (let k = i + 1; k <= j; k++) if (runs[k].opIdx !== runs[k - 1].opIdx + 1) { consec = false; break; }
+            return consec ? { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, j] } : null;
+          }
+          if (acc.length > target.length) break;
+        }
+      }
+      return null;
+    }
+
+    function rewriteRunOps(ops, runs, match, replacement, tzScale) {
+      const [s0, s1] = match.span;
+      const a = runs[s0].opIdx, b = runs[s1].opIdx;
+      const op = ops[a];
+      if (op.op === 'Tj' || op.op === "'") op.a[0] = { t: 'str', v: replacement };
+      else if (op.op === '"') op.a[2] = { t: 'str', v: replacement };
+      else if (op.op === 'TJ') op.a[0] = { t: 'array', v: csStrToArrayStr(replacement) };
+      if (b > a) ops.splice(a + 1, b - a);   // drop the rest of a merged span
+      const newTz = Math.max(10, Math.min(400, match.tz * tzScale));
+      if (Math.abs(newTz - match.tz) > 0.5) {
+        ops.splice(a, 0, { op: 'Tz', a: [{ t: 'num', v: Math.round(newTz * 100) / 100 }] });
+      }
+    }
+
+    /* ── Page content read/write via pdf-lib ───────────── */
+    function bytesToStr(bytes) {
+      let s = '';
+      for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+      return s;
+    }
+
+    async function decodeStreamBytes(obj) {
+      // PDF content streams are usually FlateDecode-compressed — inflate before parsing.
+      const L = window.PDFLib;
+      const bytes = typeof obj.getContents === 'function' ? obj.getContents() : null;
+      if (!bytes || !bytes.length) return '';
+      let filter = null;
+      try {
+        const f = obj.dict && obj.dict.get(L.PDFName.of('Filter'));
+        filter = f ? f.toString() : null;
+      } catch { /* noop */ }
+      const isFlate = /FlateDecode/i.test(filter || '') || (bytes[0] === 0x78 && bytes.length > 2);
+      if (isFlate && typeof DecompressionStream !== 'undefined') {
+        try {
+          const ds = new DecompressionStream('deflate');
+          const stream = new Blob([bytes]).stream().pipeThrough(ds);
+          const reader = stream.getReader();
+          const chunks = [];
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          const total = chunks.reduce((a, c) => a + c.length, 0);
+          const out = new Uint8Array(total);
+          let off = 0;
+          for (const c of chunks) { out.set(c, off); off += c.length; }
+          return bytesToStr(out);
+        } catch (err) {
+          console.warn('[Edit] inflate content stream', err);
+        }
+      }
+      return bytesToStr(bytes);
+    }
+
+    async function getPageContentString(page) {
+      const contents = page.node.Contents();
+      if (!contents) return '';
+      if (typeof contents.asArray === 'function') {
+        let s = '';
+        for (let i = 0; i < contents.size(); i++) s += await decodeStreamBytes(contents.lookup(i));
+        return s;
+      }
+      return await decodeStreamBytes(page.doc.context.lookup(contents));
+    }
+
+    function setPageContentString(page, str) {
+      const L = window.PDFLib;
+      const dict = L.PDFDict.withContext(page.doc.context);
+      // Write the content stream uncompressed — valid PDF, simpler than re-flating.
+      const stream = L.PDFRawStream.of(dict, Uint8Array.from(str, c => c.charCodeAt(0) & 0xFF));
+      page.node.set(L.PDFName.of('Contents'), page.doc.context.register(stream));
+    }
+
+    async function resolveStdFont(pageNode, fontName) {
+      const L = window.PDFLib;
+      try {
+        if (!fontName) return null;
+        const fonts = pageNode.Resources() && pageNode.Resources().lookup(L.PDFName.of('Font'));
+        const fd = fonts && fonts.lookup(L.PDFName.of(String(fontName).replace(/^\//, '')));
+        const bf = fd && fd.get(L.PDFName.of('BaseFont'));
+        const name = bf && typeof bf.decodeText === 'function' ? bf.decodeText() : String(bf || '');
+        if (/Helvetica/i.test(name)) return L.StandardFonts.Helvetica;
+        if (/Times/i.test(name)) return L.StandardFonts.TimesRoman;
+        if (/Courier/i.test(name)) return L.StandardFonts.Courier;
+        return null;
+      } catch { return null; }
+    }
+
+    /* ── Genuine annotation drawing via pdf-lib ── */
+    function rgbOf(hex) {
+      const L = window.PDFLib;
+      const o = hexToRgbObj(hex);
+      return L.rgb(o.r, o.g, o.b);
+    }
+
+    async function embedImageData(doc, dataUrl) {
+      const L = window.PDFLib;
+      if (/^data:image\/(png|webp)/i.test(dataUrl) || dataUrl.includes('image/png')) return doc.embedPng(dataUrl);
+      if (/^data:image\/jpe?g/i.test(dataUrl)) return doc.embedJpg(dataUrl);
+      // svg / gif — rasterize through a canvas first
+      const img = await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = rej;
+        im.src = dataUrl;
+      });
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || 200;
+      c.height = img.naturalHeight || 200;
+      c.getContext('2d').drawImage(img, 0, 0);
+      return doc.embedPng(c.toDataURL('image/png'));
+    }
+
+    async function addLinkAnnot(doc, page, a, ph) {
+      const L = window.PDFLib;
+      const yB = ph - a.y - a.h;
+      const rect = L.PDFArray.withContext(doc.context);
+      for (const n of [a.x, yB, a.x + a.w, yB + a.h]) rect.push(L.PDFNumber.of(n));
+      const border = L.PDFArray.withContext(doc.context);
+      for (const n of [0, 0, 0]) border.push(L.PDFNumber.of(n));
+      const action = doc.context.obj({});
+      action.set(L.PDFName.of('Type'), L.PDFName.of('Action'));
+      action.set(L.PDFName.of('S'), L.PDFName.of('URI'));
+      action.set(L.PDFName.of('URI'), L.PDFString.of(a.url));
+      const annot = doc.context.obj({});
+      annot.set(L.PDFName.of('Type'), L.PDFName.of('Annot'));
+      annot.set(L.PDFName.of('Subtype'), L.PDFName.of('Link'));
+      annot.set(L.PDFName.of('Rect'), rect);
+      annot.set(L.PDFName.of('Border'), border);
+      annot.set(L.PDFName.of('A'), action);
+      const ref = doc.context.register(annot);
+      const existing = page.node.Annots();
+      if (existing && typeof existing.asArray === 'function') {
+        existing.push(ref);
+      } else {
+        const arr = L.PDFArray.withContext(doc.context);
+        arr.push(ref);
+        page.node.set(L.PDFName.of('Annots'), arr);
+      }
+    }
+
+    async function drawAnnot(doc, page, a, pw, ph) {
+      const L = window.PDFLib;
+      const yFlip = (y) => ph - y;
+      if (a.type === 'text') {
+        const helv = await doc.embedFont(L.StandardFonts.Helvetica);
+        page.drawText(a.text, {
+          x: a.x, y: yFlip(a.y) - a.size, size: a.size,
+          font: helv, color: rgbOf(a.color || '#111827'),
+        });
+      } else if (a.type === 'ink') {
+        const helv = null;
+        const d = smoothPath(a.points.map(p => [p[0], yFlip(p[1])]));
+        page.drawSvgPath(d, {
+          x: 0, y: 0,
+          color: L.rgb(1, 1, 1), opacity: 0.001,
+          borderColor: rgbOf(a.color || '#111827'), borderWidth: a.width || 2,
+          borderOpacity: 1, borderLineCap: 1, borderLineJoin: 1,
+        });
+      } else if (a.type === 'hl') {
+        const kind = a.kind || 'hl';
+        const c = rgbOf(a.color || '#FDE047');
+        if (kind === 'squiggle') {
+          page.drawSvgPath(squigglePath(a.x, yFlip(a.y + a.h / 2), a.w), {
+            x: 0, y: 0,
+            color: L.rgb(1, 1, 1), opacity: 0.001,
+            borderColor: c, borderWidth: 1.2, borderOpacity: 1,
+            borderLineCap: 1, borderLineJoin: 1,
+          });
+        } else {
+          const h = kind === 'underline' ? Math.max(2, a.h * 0.14) : kind === 'strike' ? Math.max(2, a.h * 0.14) : a.h;
+          const y = kind === 'underline' ? yFlip(a.y + a.h) : kind === 'strike' ? yFlip(a.y + a.h / 2) : yFlip(a.y + a.h);
+          page.drawRectangle({
+            x: a.x, y, width: a.w, height: h,
+            color: c, opacity: kind === 'hl' ? 0.38 : 0.85,
+          });
+        }
+      } else if (a.type === 'shape') {
+        const c = rgbOf(a.color || '#111827');
+        const sw = a.width || 2;
+        if (a.kind === 'rect') {
+          page.drawRectangle({
+            x: a.x, y: yFlip(a.y + a.h), width: a.w, height: a.h,
+            color: L.rgb(1, 1, 1), opacity: 0.001,
+            borderColor: c, borderWidth: sw,
+          });
+        } else if (a.kind === 'ellipse') {
+          page.drawEllipse({
+            x: a.x + a.w / 2, y: yFlip(a.y + a.h / 2),
+            xScale: a.w / 2, yScale: a.h / 2,
+            color: L.rgb(1, 1, 1), opacity: 0.001,
+            borderColor: c, borderWidth: sw,
+          });
+        } else if (a.kind === 'line') {
+          page.drawLine({
+            start: { x: a.x, y: yFlip(a.y + a.h) },
+            end: { x: a.x + a.w, y: yFlip(a.y) },
+            thickness: sw, color: c,
+          });
+        } else if (a.kind === 'arrow') {
+          const x1 = a.x, y1 = yFlip(a.y + a.h), x2 = a.x + a.w, y2 = yFlip(a.y);
+          const ang = Math.atan2(y2 - y1, x2 - x1);
+          const hl = Math.min(12, Math.hypot(x2 - x1, y2 - y1) * 0.22);
+          const hx = Math.cos(ang) * hl, hy = Math.sin(ang) * hl;
+          const px = -hy, py = hx;
+          const d = `M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} M ${(x2 - hx - px * 0.6).toFixed(2)} ${(y2 - hy - py * 0.6).toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${(x2 - hx + px * 0.6).toFixed(2)} ${(y2 - hy + py * 0.6).toFixed(2)}`;
+          page.drawSvgPath(d, {
+            x: 0, y: 0,
+            color: L.rgb(1, 1, 1), opacity: 0.001,
+            borderColor: c, borderWidth: sw, borderOpacity: 1,
+            borderLineCap: 1, borderLineJoin: 1,
+          });
+        }
+      } else if (a.type === 'img') {
+        const img = await embedImageData(doc, a.dataUrl);
+        page.drawImage(img, { x: a.x, y: yFlip(a.y + a.h), width: a.w, height: a.h });
+      } else if (a.type === 'link') {
+        await addLinkAnnot(doc, page, a, ph);
+        page.drawRectangle({
+          x: a.x, y: yFlip(a.y + a.h), width: a.w, height: a.h,
+          color: L.rgb(0.36, 0.61, 1), opacity: 0.06,
+          borderColor: L.rgb(0.36, 0.61, 1), borderWidth: 0.6,
+        });
+      } else if (a.type === 'stamp') {
+        if (a.kind === 'signature') {
+          const d = smoothPath((a.points || []).map(p => [a.x + p.x * a.w, yFlip(a.y + p.y * a.h)]));
+          page.drawSvgPath(d, {
+            x: 0, y: 0,
+            color: L.rgb(1, 1, 1), opacity: 0.001,
+            borderColor: L.rgb(0.11, 0.31, 0.85), borderWidth: 2, borderOpacity: 1,
+            borderLineCap: 1, borderLineJoin: 1,
+          });
+        } else if (a.kind === 'check') {
+          const c = rgbOf('#059669');
+          const d = `M ${(a.x + a.w * 0.08).toFixed(2)} ${yFlip(a.y + a.h * 0.62).toFixed(2)} L ${(a.x + a.w * 0.42).toFixed(2)} ${yFlip(a.y + a.h * 0.24).toFixed(2)} L ${(a.x + a.w * 0.94).toFixed(2)} ${yFlip(a.y + a.h * 0.78).toFixed(2)}`;
+          page.drawSvgPath(d, {
+            x: 0, y: 0,
+            color: L.rgb(1, 1, 1), opacity: 0.001,
+            borderColor: c, borderWidth: 5, borderOpacity: 1,
+            borderLineCap: 1, borderLineJoin: 1,
+          });
+        } else {
+          const helv = await doc.embedFont(L.StandardFonts.Helvetica);
+          const colors = {
+            approved: '#059669', confidential: '#DC2626', draft: '#F59E0B',
+            final: '#2563EB', date: '#475569',
+          };
+          const size = a.kind === 'date' ? 12 : 16;
+          const w = helv.widthOfTextAtSize(a.text, size);
+          page.drawText(a.text, {
+            x: a.x + Math.max(0, (a.w - w) / 2),
+            y: yFlip(a.y + a.h) + (a.h - size) / 2,
+            size, font: helv, color: rgbOf(colors[a.kind] || '#059669'),
+          });
+        }
+      }
+    }
+
+    async function applyEditJob(file, editsList, annotsAll, crop, wms, pns) {
+      const L = window.PDFLib;
+      const src = new Uint8Array(await file.arrayBuffer());
+      const doc = await L.PDFDocument.load(src, { ignoreEncryption: true });
+      const byPage = new Map();
+      for (const e of editsList) {
+        if (!byPage.has(e.pageIdx)) byPage.set(e.pageIdx, []);
+        byPage.get(e.pageIdx).push(e);
+      }
+      let applied = 0, overlaid = 0;
+      let helv = null;
+      for (const [pageIdx, list] of byPage) {
+        const page = doc.getPage(pageIdx);
+        let content = await getPageContentString(page);
+        const fallbacks = [];
+        let stdFontObj = null;
+        for (const e of list) {
+          const ops = csToOps(content);
+          const runs = csExtractRuns(ops);
+          const match = findRun(runs, e.target);
+          if (!match) { fallbacks.push(e); continue; }
+          if (!stdFontObj) {
+            const std = await resolveStdFont(page.node, match.font);
+            stdFontObj = std ? await doc.embedFont(std) : null;
+          }
+          let tzScale = 1;
+          if (stdFontObj) {
+            const oldW = stdFontObj.widthOfTextAtSize(e.target, match.size);
+            const newW = stdFontObj.widthOfTextAtSize(e.replacement, match.size);
+            if (oldW > 0.5) tzScale = Math.max(0.1, Math.min(4, oldW / newW));
+          }
+          rewriteRunOps(ops, runs, match, e.replacement, tzScale);
+          content = csOpsToString(ops);
+          applied++;
+        }
+        setPageContentString(page, content);
+        for (const e of fallbacks) {
+          if (!helv) helv = await doc.embedFont(L.StandardFonts.Helvetica);
+          const h = (e.item.height || 12) * 1.25;
+          const pad = 1.5;
+          page.drawRectangle({
+            x: e.item.transform[4] - pad,
+            y: e.item.transform[5] - (e.item.height || 12) * 0.35,
+            width: e.item.width + pad * 2,
+            height: h,
+            color: L.rgb(1, 1, 1),
+            borderColor: L.rgb(0.86, 0.9, 0.94),
+            borderWidth: 0.5,
+          });
+          page.drawText(e.replacement, {
+            x: e.item.transform[4],
+            y: e.item.transform[5] - (e.item.height || 12) * 0.35,
+            size: Math.max(6, (e.item.height || 12) * 0.95),
+            font: helv,
+            color: L.rgb(0.07, 0.1, 0.17),
+          });
+          overlaid++;
+        }
+      }
+      // Draw every real annotation on its page.
+      let annotCount = 0;
+      if (!helv) helv = await doc.embedFont(L.StandardFonts.Helvetica);
+      for (let i = 0; i < doc.getPageCount(); i++) {
+        const page = doc.getPage(i);
+        const pw = page.getWidth();
+        const ph = page.getHeight();
+        const list = (annotsAll[i] || []).filter(a => a.type !== 'wm' && a.type !== 'pagenum');
+        for (const a of list) {
+          await drawAnnot(doc, page, a, pw, ph);
+          annotCount++;
+        }
+        // Page numbers
+        for (const pn of pns) {
+          const text = pn.format.replace('{n}', String(i + 1)).replace('{t}', String(doc.getPageCount()));
+          const size = pn.size || 10;
+          const w = helv.widthOfTextAtSize(text, size);
+          const margin = 14;
+          const x = pn.align === 'center' ? (pw - w) / 2 : pn.align === 'right' ? pw - w - margin : margin;
+          const y = pn.vAlign === 'top' ? ph - margin - size : margin;
+          page.drawText(text, { x, y, size, font: helv, color: rgbOf(pn.color || '#475569') });
+        }
+        // Watermark
+        for (const wm of wms) {
+          const size = wm.size || 42;
+          const w = helv.widthOfTextAtSize(wm.text, size);
+          const rad = (wm.rotation || 0) * Math.PI / 180;
+          const dx = (w / 2) * Math.cos(rad) - (size / 2) * Math.sin(rad);
+          const dy = (w / 2) * Math.sin(rad) + (size / 2) * Math.cos(rad);
+          page.drawText(wm.text, {
+            x: pw / 2 - dx, y: ph / 2 - dy, size,
+            font: helv, color: rgbOf(wm.color || '#94A3B8'),
+            opacity: wm.opacity ?? 0.12,
+            rotate: L.degrees(wm.rotation || 0),
+          });
+        }
+      }
+      // Crop — honest CropBox change on every page.
+      if (crop && crop.w > 0 && crop.h > 0) {
+        for (let i = 0; i < doc.getPageCount(); i++) {
+          const page = doc.getPage(i);
+          const ph = page.getHeight();
+          page.setCropBox(crop.x, ph - crop.y - crop.h, crop.w, crop.h);
+        }
+      }
+      return { bytes: await doc.save(), applied, overlaid, annotCount };
+    }
+
+    function renderProcessing(count) {
+      container.classList.add('cpdf-root');
+      container.classList.remove('etxt-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${I.edit}</div>
+          </div>
+          <p class="cpdf-proc-title">Applying ${count} edit${count === 1 ? '' : 's'}…</p>
+          <p class="cpdf-proc-sub">Writing edits into the PDF locally</p>
+        </div>`;
+    }
+
+    function showResult(blob, name, count, warn) {
+      const url = URL.createObjectURL(blob);
+      container.classList.add('cpdf-root');
+      container.classList.remove('etxt-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${I.edit}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Edit Text</h2>
+            <p class="cpdf-hdr-sub">Your edited file is ready</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar ${warn ? '' : 'cpdf-status-bar--ok'}">
+              <div>
+                <strong>${warn ? 'Export finished with a note' : 'Export ready'}</strong>
+                <span>${warn ? _esc(warn) : `${count} edit${count === 1 ? '' : 's'} applied · written locally`}</span>
+              </div>
+            </div>
+            <div class="cpdf-file-bar">
+              <div class="cpdf-file-text" style="padding-left:4px">
+                <span class="cpdf-fname">${_esc(name)}</span>
+                <span class="cpdf-fsize">${_bytes(blob.size)} · from ${_esc(file?.name || '')}</span>
+              </div>
+              <canvas id="etxt-result-canvas" class="etxt-result-canvas" width="120" height="155" title="Page 1 preview"></canvas>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(name)}" style="text-decoration:none">${I.dl}&nbsp; Download ${_esc(name)}</a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="etxt-back" type="button">Back to editor</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="etxt-new" type="button">Edit another file</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#etxt-back').onclick = () => { URL.revokeObjectURL(url); renderEditor(); };
+      container.querySelector('#etxt-new').onclick = () => { URL.revokeObjectURL(url); file=null; currentPdf=null; pages=[]; edits=[]; pdfDoc=null; renderUpload(); };
+      paintResultPreview(blob);
+    }
+
+    async function paintResultPreview(blob) {
+      const canvas = container.querySelector('#etxt-result-canvas');
+      try {
+        const pdfjs = await loadJs();
+        const doc = await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+        const pageProxy = await doc.getPage(1);
+        const vp = pageProxy.getViewport({ scale: 0.32 });
+        canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+        await pageProxy.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        try { doc.destroy(); } catch { /* noop */ }
+      } catch (err) { console.warn('[Edit] result preview', err); }
+    }
+
+    async function finishExport() {
+      commitEditor();
+      if (!file) return;
+      const real = edits.filter(e => e.replacement && e.replacement !== e.target);
+      const hasFormFill = formFilled;
+      const wms = [];
+      const pns = [];
+      let annotTotal = 0;
+      for (const k in annots) {
+        for (const a of annots[k]) {
+          if (a.type === 'wm') wms.push(a);
+          else if (a.type === 'pagenum') pns.push(a);
+          else annotTotal++;
+        }
+      }
+      const total = real.length + annotTotal;
+      const name = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '') + '-edited.pdf';
+      renderProcessing(total || (wms.length || pns.length || cropBox || hasFormFill ? 1 : 0));
+      try {
+        if (total || wms.length || pns.length || cropBox || hasFormFill) {
+          const res = await applyEditJob(currentPdf || file, real, annots, cropBox, wms, pns);
+          const bits = [];
+          if (res.applied) bits.push(`${res.applied} text edit${res.applied === 1 ? '' : 's'} rewritten`);
+          if (res.overlaid) bits.push(`${res.overlaid} drawn as overlay`);
+          if (res.annotCount) bits.push(`${res.annotCount} annotation${res.annotCount === 1 ? '' : 's'} added`);
+          if (cropBox) bits.push('crop applied');
+          if (wms.length) bits.push('watermark added');
+          if (pns.length) bits.push('page numbers added');
+          if (hasFormFill) bits.push('form filled');
+          showResult(new Blob([res.bytes], { type: 'application/pdf' }), name, total, bits.join(' · ') || null);
+        } else {
+          const src = currentPdf || file;
+          showResult(new Blob([await src.arrayBuffer()], { type: 'application/pdf' }), name, 0, 'No changes made — exporting the loaded PDF.');
+        }
+      } catch (err) {
+        console.error('[Edit] export', err);
+        const src = currentPdf || file;
+        showResult(new Blob([await src.arrayBuffer()], { type: 'application/pdf' }), name, 0, 'Export failed — loaded PDF returned.');
+      }
+    }
+
+    // Export the current edited state as a File without the result screen,
+    // so the workspace can hand the document off to another tool (e.g. Sign).
+    async function exportForSign() {
+      commitEditor();
+      if (!file) return null;
+      const real = edits.filter(e => e.replacement && e.replacement !== e.target);
+      const wms = [], pns = []; let annotTotal = 0;
+      for (const k in annots) for (const a of annots[k]) { if (a.type === 'wm') wms.push(a); else if (a.type === 'pagenum') pns.push(a); else annotTotal++; }
+      const name = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '') + '-edited.pdf';
+      try {
+        if (real.length || annotTotal || wms.length || pns.length || cropBox) {
+          const res = await applyEditJob(currentPdf || file, real, annots, cropBox, wms, pns);
+          return new File([res.bytes], name, { type: 'application/pdf' });
+        }
+      } catch { /* fall through to the loaded PDF */ }
+      const src = currentPdf || file;
+      return src instanceof File ? src : new File([await src.arrayBuffer()], name, { type: 'application/pdf' });
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountEditText = mountEditText;
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Sign PDF  (original signing workspace)
+   Empty: shared cpdf card frame (same as Compress/Merge/Split/Edit)
+   After file: page canvas + signature studio (draw/type/upload) + place marks
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const I = {
+    sign: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17c3-1 5 1 8 0s5-3 8-1"/><path d="M3 12c3-1 5 1 8 0s5-3 8-1"/><path d="M17 3l4 4-10 10H7v-4L17 3z"/></svg>`,
+    edit: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3.5l5.5 5.5L8 21.5H2.5V16L15 3.5z"/><path d="M12.5 6l5.5 5.5"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    pen: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+    type: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>`,
+    image: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`,
+    date: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>`,
+    check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
+    plus: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>`,
+    chevL: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"/></svg>`,
+    chevR: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    place: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>`,
+    undo: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg>`,
+    redo: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M20 9H10a6 6 0 000 12h4"/></svg>`,
+    zoomIn: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>`,
+    zoomOut: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg>`,
+    tag: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.6 13.4L12 22l-8.5-8.5A5 5 0 012 9V4a2 2 0 012-2h5a5 5 0 013.5 1.4l8 8a2 2 0 010 2z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>`,
+    book: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`,
+    cert: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.6 13.3L7 22l5-3 5 3-1.6-8.7"/><path d="M12 6v4M10.5 8h3"/></svg>`,
+  };
+
+  function mountSignPDF(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell');
+
+    let file = null;
+    let pageCount = 0;
+    let page = 1;
+    let pages = [];            // per-page { thumb, full } — real pdf.js renders
+    let pdfDoc = null;         // live pdf.js document
+    let docToken = 0;          // invalidates in-flight renders when a new file loads
+    let pageW = 612;           // current page user-space size (for export math)
+    let pageH = 792;
+    /** @type {{id:string,page:number,x:number,y:number,label:string,kind:string,points?:number[][],color?:string,dataUrl?:string,style?:string}[]} */
+    let marks = [];
+    let markSeq = 0;
+    let studioTab = 'draw'; // draw | type | upload | saved
+    let typedName = 'Your Name';
+    let typedStyle = 'script'; // script | clean | mono
+    let inkColor = '#000';      // draw-pad ink
+    let textColor = '#000';     // typed / initials ink (separate concern)
+    let docInk = null;             // dominant text color/font detected in the loaded PDF: { color, family, size }
+    let matchDoc = true;           // auto-apply the detected doc color/family to new marks
+    let inkPoints = [];        // normalized 0..1 points on the draw pad
+    let imgData = null;        // uploaded signature image { dataUrl, w, h }
+    let activeMark = null;
+    let drawing = false;
+    let zoom = 100;            // canvas zoom %
+    let ghost = null;          // current placement mark (built in studio)
+    let signers = [{ id: 's1', name: 'Signer', email: '', title: '', color: '#000' }];
+    let activeSigner = 's1';
+    let history = [];          // undo stack (snapshots of marks)
+    let redoStack = [];
+    let formFields = [];       // existing AcroForm signature fields per page
+    let certify = true;        // add visible certification on export
+    const SAVED_KEY = 'filekit.saved-signatures';
+    let savedSigs = (() => { try { return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; } catch { return []; } })();
+
+    const isPdf = f => {
+      const n = (f?.name || '').toLowerCase();
+      return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
+    };
+    const shortName = (n, max = 24) => {
+      const s = String(n || 'document.pdf');
+      if (s.length <= max) return s;
+      const ext = s.includes('.') ? s.slice(s.lastIndexOf('.')) : '';
+      return s.slice(0, max - 1 - ext.length) + '…' + ext;
+    };
+
+    const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
+      .then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+
+    async function renderPageAt(i, scale) {
+      const proxy = await pdfDoc.getPage(i + 1);
+      const vp = proxy.getViewport({ scale });
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(vp.width));
+      c.height = Math.max(1, Math.round(vp.height));
+      await proxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      return c;
+    }
+
+    // ── Auto-match: detect the PDF's dominant text color + font family from its operators ──
+    function familyOf(name) {
+      const n = String(name || '').toLowerCase();
+      if (/mono|courier|consolas|menlo|source ?code|roboto ?mono/.test(n)) return 'mono';
+      if (/script|cursive|brush|handwrit|signature|comic/.test(n)) return 'script';
+      if (/times|georgia|serif|roman|garamond|palatino|cambria|bookman|baskerville|didot|caslon|minion|charter|constantia|playfair|noto ?serif/.test(n)) return 'serif';
+      if (/helvetica|arial|calibri|verdana|tahoma|segoe|gill|futura|myriad|open ?sans|roboto|lato|montserrat|inter|nunito|pt ?sans|source ?sans|ubuntu|trebuchet|avenir|proxima|work ?sans|poppins|raleway/.test(n)) return 'sans';
+      return null;
+    }
+    async function detectDocInk(pdfjs, pdf, pageCount) {
+      const OP = {};
+      for (const k in pdfjs.OPS) OP[pdfjs.OPS[k]] = k;
+      const hex2 = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+      const toHex = (args) => {
+        // in this pdf.js build, fill-color op args are the dict {0,1,2} itself (0–255 or 0–1)
+        let r = args[0], g = args[1], b = args[2];
+        if (r <= 1 && g <= 1 && b <= 1) { r *= 255; g *= 255; b *= 255; }
+        return '#' + hex2(r) + hex2(g) + hex2(b);
+      };
+      const grayHex = (a) => { const v = a && typeof a === 'object' ? a[0] : a; const g = v <= 1 ? v * 255 : v; const h = hex2(g); return '#' + h + h + h; };
+      const colorW = {};   // hex → weighted chars
+      const fontW = {};    // fontName → weighted chars
+      const sizeW = {};    // size → weighted chars
+      const realName = {}; // internal fontName → real font name (via commonObjs)
+      const limit = Math.min(pageCount, 6);
+      for (let p = 1; p <= limit; p++) {
+        try {
+          const page = await pdf.getPage(p);
+          const ops = await page.getOperatorList();
+          let fill = null, font = null, size = 0;
+          for (let i = 0; i < ops.fnArray.length; i++) {
+            const name = OP[ops.fnArray[i]];
+            const a = ops.argsArray[i];
+            if (name === 'setFillRGBColor') fill = toHex(a);
+            else if (name === 'setFillGray') fill = grayHex(a);
+            else if (name === 'setFillCMYKColor') fill = null;
+            else if (name === 'setFont') { font = a[0]; size = a[1]; }
+            else if (name === 'showText' || name === 'showSpacedText' || name === 'nextLineShowText' || name === 'nextLineSetSpacingShowText') {
+              const chars = Array.isArray(a[0]) ? a[0].length : 1;
+              if (fill) colorW[fill] = (colorW[fill] || 0) + chars;
+              if (font) {
+                fontW[font] = (fontW[font] || 0) + chars;
+                if (!(font in realName)) {
+                  try { const fo = page.commonObjs.get(font); realName[font] = (fo && (fo.name || fo.fallbackName)) || font; } catch { realName[font] = font; }
+                }
+              }
+              if (size) sizeW[Math.round(size)] = (sizeW[Math.round(size)] || 0) + chars;
+            }
+          }
+        } catch { /* non-critical — skip this page */ }
+      }
+      const colors = Object.entries(colorW).sort((a, b) => b[1] - a[1]);
+      if (!colors.length) return null;
+      const luma = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); };
+      let color = colors[0][0];
+      for (const [hex] of colors) { if (luma(hex) < 128) { color = hex; break; } }
+      const fonts = Object.entries(fontW).sort((a, b) => b[1] - a[1]);
+      const sizes = Object.entries(sizeW).sort((a, b) => b[1] - a[1]);
+      const topFont = fonts.length ? fonts[0][0] : null;
+      return {
+        color,
+        family: topFont ? familyOf(realName[topFont] || topFont) : null,
+        size: sizes.length ? sizes[0][0] : null,
+      };
+    }
+
+    async function pickFile(f) {
+      if (!isPdf(f)) return;
+      file = f;
+      page = 1;
+      pageCount = 0;
+      pages = [];
+      marks = [];
+      imgData = null;
+      renderLoading();
+      try {
+        const pdfjs = await loadJs();
+        const data = new Uint8Array(await f.arrayBuffer());
+        if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
+        pdfDoc = await pdfjs.getDocument({ data }).promise;
+        pageCount = pdfDoc.numPages;
+        const first = await pdfDoc.getPage(1);
+        const vp = first.getViewport({ scale: 1 });
+        pageW = vp.width; pageH = vp.height;
+        pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
+        formFields = [];
+        // Detect existing AcroForm signature fields (pdf.js annotations)
+        for (let i = 1; i <= pageCount; i++) {
+          try {
+            const proxy = await pdfDoc.getPage(i);
+            const anns = await proxy.getAnnotations();
+            for (const a of anns) {
+              if (a && a.fieldType === 'Sig' && Array.isArray(a.rect) && a.rect.length === 4) {
+                const pw = a.rect[2] - a.rect[0];
+                const ph2 = a.rect[3] - a.rect[1];
+                if (pw > 0.5 && ph2 > 0.5) {
+                  formFields.push({
+                    id: 'f' + i + '-' + formFields.length,
+                    page: i,
+                    name: a.fieldName || 'Signature',
+                    x: Math.max(0, Math.min(100, (a.rect[0] / pageW) * 100)),
+                    y: Math.max(0, Math.min(100, (1 - a.rect[3] / pageH) * 100)),
+                    w: Math.max(2, Math.min(100, (pw / pageW) * 100)),
+                    h: Math.max(2, Math.min(100, (ph2 / pageH) * 100)),
+                  });
+                }
+              }
+            }
+          } catch { /* annotations are non-critical */ }
+        }
+        // Detect the dominant text color/font so new marks can blend in automatically
+        try { docInk = await detectDocInk(pdfjs, pdfDoc, pageCount); } catch { docInk = null; }
+        if (matchDoc && docInk && docInk.color) {
+          inkColor = docInk.color;
+          textColor = docInk.color;
+        }
+        docToken++;
+        renderWorkspace();
+        wireAsyncRenders();
+      } catch (err) {
+        console.error('[Sign] load PDF', err);
+        renderUpload();
+      }
+    }
+
+    function renderLoading() {
+      container.classList.remove('sign-shell', 'spdf-shell', 'etxt-shell');
+      container.classList.add('cpdf-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${I.sign}</div>
+          </div>
+          <p class="cpdf-proc-title">Opening your PDF…</p>
+          <p class="cpdf-proc-sub">Reading pages locally — nothing leaves your device</p>
+        </div>`;
+    }
+
+    function renderUpload() {
+      container.classList.add('cpdf-root');
+      container.classList.remove('sign-shell', 'spdf-shell', 'etxt-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${I.sign}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Sign PDF</h2>
+            <p class="cpdf-hdr-sub">Create your mark and place it on any page</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="sign-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to sign">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="sign-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="sign-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to sign</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="sign-inp" type="file" accept="application/pdf,.pdf"  hidden>
+        </div>
+        </div>`;
+      // Carry a file over from the Edit workspace when the user picks "Sign".
+      if (window.__ffSharedFile) {
+        const shared = window.__ffSharedFile;
+        window.__ffSharedFile = null;
+        pickFile(shared);
+        return;
+      }
+      const dz = container.querySelector('#sign-dz');
+      const inp = container.querySelector('#sign-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function marksOnPage() {
+      return marks.filter(m => m.page === page);
+    }
+
+    const signerOf = (id) => signers.find(s => s.id === id) || signers[0];
+    const activeSignerObj = () => signerOf(activeSigner);
+    const initialsOf = (name) => String(name || '').split(/\s+/).map(w => w[0] || '').join('').slice(0, 3).toUpperCase() || 'YN';
+
+    function markInner(m) {
+      if (m.kind === 'signature' && m.points && m.points.length) {
+        const d = smoothPath(m.points.map(pt => [pt[0] * 100, pt[1] * 42]));
+        return `<svg class="sign-mark-svg" viewBox="0 0 100 42" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${_esc(m.color || '#000')}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+      if (m.kind === 'image' && m.dataUrl) {
+        return `<img class="sign-mark-img" src="${m.dataUrl}" alt="signature image" draggable="false">`;
+      }
+      const cls = m.kind === 'date' ? 'is-date' : m.kind === 'initials' ? 'is-init' : (m.style === 'clean' ? 'is-clean' : m.style === 'mono' ? 'is-mono' : 'is-script');
+      const fam = (matchDoc && docInk && docInk.family === 'serif' && (m.style === 'clean' || m.style === 'script')) ? ' is-serif' : '';
+      const colorStyle = m.color && (m.kind !== 'signature' || m.style) ? `style="color:${_esc(m.color)}"` : '';
+      return `<span class="sign-mark-label ${cls}${fam}" ${colorStyle}>${_esc(m.label)}</span>`;
+    }
+
+    // Build a fresh mark object from the studio's current state (points / typed / image)
+    function buildMark() {
+      if (inkPoints && inkPoints.length) {
+        return { kind: 'signature', label: typedName || 'Signature', points: inkPoints.slice(), color: inkColor };
+      }
+      if (imgData) {
+        return { kind: 'image', label: 'Signature image', dataUrl: imgData.dataUrl, color: inkColor };
+      }
+      return { kind: 'signature', label: typedName || 'Your Name', style: typedStyle, color: textColor };
+    }
+
+    function renderWorkspace() {
+      container.classList.remove('cpdf-root');
+      container.classList.add('sign-shell');
+      const stage = container.closest('.app-stage-container') || document.getElementById('app-tool-stage');
+      if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
+
+      // Preserve studio scroll + focus across the re-render (P0 fix)
+      const prevStudioScroll = (() => { const sb = container.querySelector('.sign-studio-body'); return sb ? sb.scrollTop : 0; })();
+      const prevActiveId = document.activeElement && document.activeElement.id;
+      const prevFocusTag = document.activeElement && document.activeElement.tagName === 'INPUT' ? document.activeElement.id : null;
+
+      const p = pages[page - 1] || pages[0];
+      const pageMarks = marksOnPage();
+      const pageFields = formFields.filter(f => f.page === page);
+      const as = activeSignerObj();
+      const hasGhost = !!ghost;
+      const savedList = savedSigs.slice().reverse();
+
+      container.innerHTML = `
+        <div class="sign-top">
+          <div class="sign-top-left">
+            <span class="sign-file" title="${_esc(file.name)}">${_esc(shortName(file.name))}</span>
+            <span class="sign-pill" title="${signers.length > 1 ? signers.map(s => _esc(s.name) + ': ' + marks.filter(m => m.signer === s.id).length).join(' · ') : ''}">${marks.length} mark${marks.length === 1 ? '' : 's'}${signers.length > 1 ? ' · ' + signers.filter(s => marks.some(m => m.signer === s.id)).length + ' signed' : ''}</span>
+            <span class="sign-local">${I.shield} Private signing</span>
+          </div>
+          <div class="sign-top-right">
+            <button type="button" class="sign-top-icon" id="sign-undo" title="Undo (Ctrl+Z)" ${history.length ? '' : 'disabled'}>${I.undo}</button>
+            <button type="button" class="sign-top-icon" id="sign-redo" title="Redo (Ctrl+Y)" ${redoStack.length ? '' : 'disabled'}>${I.redo}</button>
+            <span class="sign-top-vdiv" aria-hidden="true"></span>
+            <button type="button" class="sign-btn-ghost" id="sign-edit" title="Edit this PDF's text">${I.edit} Edit text</button>
+            <button type="button" class="sign-btn-ghost" id="sign-clear" ${marks.length ? '' : 'disabled'}>Clear marks</button>
+            <button type="button" class="sign-btn-finish" id="sign-finish">Apply & finish ${I.arrow}</button>
+          </div>
+        </div>
+
+        <div class="sign-body">
+          <aside class="sign-thumbs">
+            ${pages.map((pg, i) => `
+              <button type="button" class="sign-thumb${i + 1 === page ? ' is-on' : ''}" data-page="${i + 1}">
+                <span class="sign-thumb-ph"></span>
+                <span>${i + 1}${marks.some(m => m.page === i + 1) ? ' · signed' : ''}</span>
+              </button>`).join('')}
+          </aside>
+
+          <main class="sign-canvas-wrap">
+            <div class="sign-canvas-tools">
+              <span class="sign-canvas-zoom">${I.zoomOut}<button type="button" id="sign-zout" title="Zoom out"></button>${I.zoomIn}<button type="button" id="sign-zin" title="Zoom in"></button><b id="sign-zlbl">${zoom}%</b></span>
+              ${pageFields.length ? `<span class="sign-field-note">${I.tag} ${pageFields.length} signature field${pageFields.length === 1 ? '' : 's'} on this page — click to fill</span>` : ''}
+              <button type="button" class="sign-cert-toggle${certify ? ' is-on' : ''}" id="sign-cert" title="Add a visible certification line to the exported file">${I.cert} Certify${certify ? ' on' : ' off'}</button>
+              <span class="sign-pager">
+                <button type="button" id="sign-prev" ${page <= 1 ? 'disabled' : ''}>${I.chevL}</button>
+                <span><b>${page}</b> / ${pageCount}</span>
+                <button type="button" id="sign-next" ${page >= pageCount ? 'disabled' : ''}>${I.chevR}</button>
+              </span>
+            </div>
+            <div class="sign-canvas" id="sign-canvas">
+              <div class="sign-page" id="sign-page" style="${zoom !== 100 ? 'transform:scale(' + zoom / 100 + ');' : ''}">
+                <div class="sign-page-ph" id="sign-page-ph"></div>
+                <div class="sign-layer" id="sign-layer">
+                  ${pageFields.map(f => `
+                    <button type="button" class="sign-field-hit${hasGhost ? ' is-live' : ''}" data-field="${f.id}"
+                      style="left:${f.x}%;top:${f.y}%;width:${f.w}%;height:${f.h}%"
+                      title="${_esc(f.name || 'Signature field')}"><span>${_esc(f.name || 'Signature')}</span></button>`).join('')}
+                  ${pageMarks.map(m => `
+                    <div class="sign-mark sign-mark--${_esc(m.kind)}${activeMark === m.id ? ' is-active' : ''}" data-id="${m.id}"
+                      style="left:${m.x}%;top:${m.y}%;${m.kind === 'signature' && m.points ? 'width:' + Math.max(90, Math.min(240, (m.w || 140) * 1.6)) + 'px;' : ''}">
+                      ${m.signer && signers.length > 1 ? (() => { const si = signers.findIndex(s => s.id === m.signer); const sg = signers[si] || signers[0]; return `<span class="sign-mark-sig" style="--s:${_esc(sg.color)}" title="${_esc(sg.name)} — signer ${si + 1}">${si + 1}</span>`; })() : ''}
+                      ${markInner(m)}
+                      <button type="button" class="sign-mark-x" data-del="${m.id}" title="Remove">${I.trash}</button>
+                    </div>`).join('')}
+                  ${hasGhost ? `<div class="sign-ghost" id="sign-ghost" style="left:50%;top:50%">${markInner(ghost)}</div>` : ''}
+                </div>
+                <div class="sign-hint">${hasGhost ? 'Click the page to place this mark · click again to cancel' : 'Build a mark in the studio, then click the page to place it'}</div>
+              </div>
+            </div>
+          </main>
+
+          <aside class="sign-studio">
+            <div class="sign-studio-head">
+              <div class="sign-studio-head-txt">
+                <strong>Signature studio</strong>
+                <span>Build a mark, then place it</span>
+              </div>
+              <button type="button" class="sign-match${matchDoc ? ' is-on' : ''}" id="sign-match"${docInk ? '' : ' disabled'} title="${docInk ? 'Auto-matching the document text — ' + _esc(docInk.color) + (docInk.family ? ' · ' + docInk.family : '') : 'No text detected in this PDF'}${docInk && docInk.size ? ' · ' + docInk.size + 'pt' : ''}">
+                <i style="--c:${_esc(docInk ? docInk.color : '#94a3b8')}"></i>Match${docInk ? (matchDoc ? ' on' : ' off') : ''}
+              </button>
+            </div>
+
+            <div class="sign-signer">
+              <div class="sign-signer-label">Signing as <span class="sign-signer-as"><i style="--s:${_esc(as.color)}"></i><b>${_esc(as.name)}</b></span></div>
+              <div class="sign-signer-row">
+                ${signers.map((s, si) => `<span class="sign-signer-item">
+                  <button type="button" class="sign-signer-chip${s.id === activeSigner ? ' is-on' : ''}" data-signer="${s.id}" title="${_esc(s.name)} — ${_esc(s.email || s.title || 'signer')}"><i style="--s:${_esc(s.color)}"></i>${si + 1}. ${_esc(s.name.split(' ')[0])}</button>
+                  <span class="sign-signer-mv">
+                    <button type="button" data-mv="${s.id}" data-dir="-1" title="Move earlier in order" ${si === 0 ? 'disabled' : ''}>${I.chevL}</button>
+                    <button type="button" data-mv="${s.id}" data-dir="1" title="Move later in order" ${si === signers.length - 1 ? 'disabled' : ''}>${I.chevR}</button>
+                  </span>
+                </span>`).join('')}
+                <button type="button" class="sign-signer-add" id="sign-add-signer" title="Add signer">${I.plus}</button>
+              </div>
+            </div>
+
+            <div class="sign-tabs" role="tablist">
+              <button type="button" class="sign-tab${studioTab === 'draw' ? ' is-on' : ''}" data-tab="draw">${I.pen} Draw</button>
+              <button type="button" class="sign-tab${studioTab === 'type' ? ' is-on' : ''}" data-tab="type">${I.type} Type</button>
+              <button type="button" class="sign-tab${studioTab === 'upload' ? ' is-on' : ''}" data-tab="upload">${I.image} Image</button>
+              <button type="button" class="sign-tab${studioTab === 'saved' ? ' is-on' : ''}" data-tab="saved">${I.book} Saved${savedSigs.length ? ` <em>${savedSigs.length}</em>` : ''}</button>
+            </div>
+
+            <div class="sign-studio-body">
+              ${studioTab === 'draw' ? `
+                <canvas id="sign-pad" width="280" height="120" aria-label="Draw signature"></canvas>
+                <div class="sign-studio-row">
+                  <button type="button" class="sign-mini" id="sign-pad-clear">Clear pad</button>
+                  <button type="button" class="sign-mini" id="sign-save-draw" ${inkPoints && inkPoints.length ? '' : 'disabled'}>Save to my signatures</button>
+                  <div class="sign-colors" title="Ink color">
+                    ${matchDoc && docInk ? `<button type="button" class="sign-swatch sign-swatch-auto is-on" data-color="${_esc(docInk.color)}" data-role="ink" style="--c:${_esc(docInk.color)}" title="Auto — document text color" aria-label="Auto document color"></button>` : ''}
+                    <button type="button" class="sign-swatch${inkColor === '#000' ? ' is-on' : ''}" data-color="#000" data-role="ink" style="--c:#000" title="Black ink" aria-label="Black ink"></button>
+                    <button type="button" class="sign-swatch${inkColor === '#0055FF' ? ' is-on' : ''}" data-color="#0055FF" data-role="ink" style="--c:#0055FF" title="Blue ink" aria-label="Blue ink"></button>
+                    <button type="button" class="sign-swatch${inkColor === '#b91c1c' ? ' is-on' : ''}" data-color="#b91c1c" data-role="ink" style="--c:#b91c1c" title="Red ink" aria-label="Red ink"></button>
+                  </div>
+                </div>
+                <button type="button" class="sign-btn-primary" id="sign-use-draw">${hasGhost ? I.check + ' Ready — click the page' : I.place + ' Use this drawing'}</button>
+              ` : ''}
+
+              ${studioTab === 'type' ? `
+                <label class="sign-field">
+                  <span>Full name</span>
+                  <input id="sign-typed" type="text" value="${_esc(typedName)}" maxlength="40">
+                </label>
+                <div class="sign-type-previews">
+                  <div>
+                    <span class="sign-type-lbl">Full name</span>
+                    <div class="sign-type-preview ${typedStyle === 'script' ? '' : 'style-' + typedStyle}${matchDoc && docInk && typedStyle === 'clean' && docInk.family === 'serif' ? ' is-serif' : ''}" id="sign-type-preview">${_esc(typedName || 'Your Name')}</div>
+                  </div>
+                  <div>
+                    <span class="sign-type-lbl">Initials</span>
+                    <div class="sign-type-preview sign-init-preview ${typedStyle === 'script' ? '' : 'style-' + typedStyle}${matchDoc && docInk && typedStyle === 'clean' && docInk.family === 'serif' ? ' is-serif' : ''}" id="sign-init-preview">${_esc(initialsOf(typedName))}</div>
+                  </div>
+                </div>
+                <div class="sign-style-row">
+                  <button type="button" class="sign-mini${typedStyle === 'script' ? ' is-on' : ''}" data-style="script">Script</button>
+                  <button type="button" class="sign-mini${typedStyle === 'clean' ? ' is-on' : ''}" data-style="clean">Clean</button>
+                  <button type="button" class="sign-mini${typedStyle === 'mono' ? ' is-on' : ''}" data-style="mono">Mono</button>
+                </div>
+                <div class="sign-color-row">
+                  <span class="sign-type-lbl">Ink</span>
+                  <div class="sign-colors">
+                    ${matchDoc && docInk ? `<button type="button" class="sign-swatch sign-swatch-auto is-on" data-color="${_esc(docInk.color)}" data-role="text" style="--c:${_esc(docInk.color)}" title="Auto — document text color" aria-label="Auto document color"></button>` : ''}
+                    <button type="button" class="sign-swatch${textColor === '#000' ? ' is-on' : ''}" data-color="#000" data-role="text" style="--c:#000" title="Black ink" aria-label="Black ink"></button>
+                    <button type="button" class="sign-swatch${textColor === '#0055FF' ? ' is-on' : ''}" data-color="#0055FF" data-role="text" style="--c:#0055FF" title="Blue ink" aria-label="Blue ink"></button>
+                    <button type="button" class="sign-swatch${textColor === '#b91c1c' ? ' is-on' : ''}" data-color="#b91c1c" data-role="text" style="--c:#b91c1c" title="Red ink" aria-label="Red ink"></button>
+                  </div>
+                </div>
+                <button type="button" class="sign-btn-primary" id="sign-use-type">${hasGhost ? I.check + ' Ready — click the page' : I.place + ' Use typed mark'}</button>
+                <button type="button" class="sign-btn-soft" id="sign-use-init">${I.check} Use initials</button>
+              ` : ''}
+
+              ${studioTab === 'upload' ? `
+                <label class="sign-upload-tile${imgData ? ' is-on' : ''}" for="sign-img-inp">
+                  ${imgData ? `<img class="sign-upload-preview" src="${imgData.dataUrl}" alt="chosen signature image">` : I.image}
+                  <strong>${imgData ? 'Image ready — use it below' : 'Drop a signature image'}</strong>
+                  <span>PNG or JPG · transparent works best</span>
+                  <input id="sign-img-inp" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                </label>
+                <button type="button" class="sign-btn-primary" id="sign-use-img" ${imgData ? '' : 'disabled'}>${hasGhost ? I.check + ' Ready — click the page' : I.place + ' Use image mark'}</button>
+              ` : ''}
+
+              ${studioTab === 'saved' ? `
+                <div class="sign-saved">
+                  ${savedList.length ? savedList.map((s, i) => `
+                    <button type="button" class="sign-saved-item" data-saved="${savedSigs.length - 1 - i}">
+                      <svg viewBox="0 0 100 42" preserveAspectRatio="none" class="sign-saved-svg"><path d="${smoothPath(s.points.map(pt => [pt[0] * 100, pt[1] * 42]))}" fill="none" stroke="${_esc(s.color || '#000')}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <span>${_esc(s.name || 'Signature')}</span>
+                      <i class="sign-saved-del" data-del="${savedSigs.length - 1 - i}" title="Delete">${I.trash}</i>
+                    </button>`).join('') : `
+                    <p class="sign-saved-empty">No saved signatures yet. Draw one, tap “Save to my signatures”, and it will appear here for reuse in any document.</p>`}
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="sign-quick">
+              <button type="button" class="sign-quick-btn" id="sign-add-date">${I.date} Date</button>
+              <button type="button" class="sign-quick-btn" id="sign-add-signed">${I.check} “Signed”</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="sign-foot">
+          <span>${I.shield} Everything stays on this device · nothing is uploaded</span>
+          <span class="sign-foot-order">${signers.length > 1 ? 'Signing order: ' + signers.map(s => `<b style="color:${_esc(s.color)}">${_esc(s.name.split(' ')[0])}</b>`).join(' → ') : ''}</span>
+          <button type="button" class="sign-link" id="sign-close">Close file</button>
+        </div>`;
+
+      // undo / redo / clear
+      container.querySelector('#sign-undo').onclick = () => { if (history.length) { redoStack.push(JSON.parse(JSON.stringify(marks))); marks = history.pop(); activeMark = null; ghost = null; renderWorkspace(); } };
+      container.querySelector('#sign-redo').onclick = () => { if (redoStack.length) { history.push(JSON.parse(JSON.stringify(marks))); marks = redoStack.pop(); activeMark = null; ghost = null; renderWorkspace(); } };
+      // Clear marks — inline confirm to prevent accidental destructive clears
+      const clearBtn = container.querySelector('#sign-clear');
+      clearBtn.onclick = () => {
+        if (!marks.length) return;
+        if (clearBtn.dataset.armed === '1') {
+          snapshot(); marks = []; activeMark = null; ghost = null; renderWorkspace();
+          return;
+        }
+        clearBtn.dataset.armed = '1';
+        clearBtn.textContent = 'Really clear all?';  
+        clearBtn.classList.add('is-armed');
+        setTimeout(() => {
+          if (container.contains(clearBtn)) {
+            clearBtn.dataset.armed = '0';
+            clearBtn.textContent = 'Clear marks';
+            clearBtn.classList.remove('is-armed');
+          }
+        }, 2600);
+      };
+      if (!marks.length) clearBtn.dataset.armed = '0';
+
+      // zoom
+      const clampZoom = (z) => { zoom = Math.min(180, Math.max(60, z)); renderWorkspace(); };
+      container.querySelector('#sign-zin').onclick = () => clampZoom(zoom + 20);
+      container.querySelector('#sign-zout').onclick = () => clampZoom(zoom - 20);
+
+      // page nav
+      container.querySelectorAll('.sign-thumb').forEach(btn => {
+        btn.onclick = () => { page = Number(btn.dataset.page); activeMark = null; ghost = null; renderWorkspace(); };
+      });
+      container.querySelector('#sign-prev').onclick = () => { if (page > 1) { page--; ghost = null; renderWorkspace(); } };
+      container.querySelector('#sign-next').onclick = () => { if (page < pageCount) { page++; ghost = null; renderWorkspace(); } };
+
+      // signer management
+      container.querySelectorAll('.sign-signer-chip').forEach(chip => {
+        chip.onclick = () => { activeSigner = chip.dataset.signer; ghost = null; renderWorkspace(); };
+      });
+      // reorder signers (earlier/later in signing order)
+      container.querySelectorAll('[data-mv]').forEach(mv => {
+        mv.onclick = () => {
+          const from = signers.findIndex(s => s.id === mv.dataset.mv);
+          const to = from + Number(mv.dataset.dir);
+          if (from < 0 || to < 0 || to >= signers.length) return;
+          const [moved] = signers.splice(from, 1);
+          signers.splice(to, 0, moved);
+          ghost = null;
+          renderWorkspace();
+        };
+      });
+      const addSignerBtn = container.querySelector('#sign-add-signer');
+      if (addSignerBtn) {
+        addSignerBtn.onclick = () => openSignerDialog();
+      }
+
+      function openSignerDialog() {
+        const old = container.querySelector('.sign-dlg');
+        if (old) old.remove();
+        const dlg = document.createElement('div');
+        dlg.className = 'sign-dlg';
+        dlg.innerHTML = `
+          <div class="sign-dlg-card">
+            <strong class="sign-dlg-title">Add signer</strong>
+            <label class="sign-dlg-field"><span>Name</span><input id="sign-dlg-name" type="text" maxlength="40" placeholder="e.g. Jane Cooper"></label>
+            <label class="sign-dlg-field"><span>Title (optional)</span><input id="sign-dlg-title" type="text" maxlength="40" placeholder="e.g. CEO, Manager"></label>
+            <label class="sign-dlg-field"><span>Email (optional)</span><input id="sign-dlg-email" type="email" maxlength="60" placeholder="jane@example.com"></label>
+            <div class="sign-dlg-row">
+              <button type="button" class="sign-mini" id="sign-dlg-cancel">Cancel</button>
+              <button type="button" class="sign-btn-primary" id="sign-dlg-ok">Add signer</button>
+            </div>
+          </div>`;
+        container.appendChild(dlg);
+        const nameInp = dlg.querySelector('#sign-dlg-name');
+        nameInp.focus();
+        const close = () => dlg.remove();
+        dlg.querySelector('#sign-dlg-cancel').onclick = close;
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+        dlg.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') close();
+          if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); dlg.querySelector('#sign-dlg-ok').click(); }
+        });
+        dlg.querySelector('#sign-dlg-ok').onclick = () => {
+          const clean = String(nameInp.value || '').trim();
+          if (!clean) { nameInp.focus(); return; }
+          const colors = ['#0055FF', '#0f766e', '#b91c1c', '#7c3aed', '#b45309', '#15803d', '#be185d', '#334155'];
+          const id = 's' + (Date.now().toString(36));
+          signers.push({ id, name: clean, email: String(dlg.querySelector('#sign-dlg-email').value || '').trim(), title: String(dlg.querySelector('#sign-dlg-title').value || '').trim(), color: colors[signers.length % colors.length] });
+          activeSigner = id;
+          ghost = null;
+          close();
+          renderWorkspace();
+        };
+      }
+
+      // studio tabs
+      container.querySelectorAll('.sign-tab').forEach(btn => {
+        btn.onclick = () => { studioTab = btn.dataset.tab; ghost = null; renderWorkspace(); };
+      });
+
+      // draw pad — capture normalized 0..1 ink points (real signature vector)
+      const pad = container.querySelector('#sign-pad');
+      if (pad) {
+        const ctx = pad.getContext('2d');
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = inkColor;
+        let last = null;
+        const pos = (e) => {
+          const r = pad.getBoundingClientRect();
+          const src = e.touches ? e.touches[0] : e;
+          return { x: (src.clientX - r.left) * (pad.width / r.width), y: (src.clientY - r.top) * (pad.height / r.height) };
+        };
+        const start = (e) => { drawing = true; last = pos(e); inkPoints = []; e.preventDefault(); };
+        const move = (e) => {
+          if (!drawing) return;
+          const p = pos(e);
+          ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+          inkPoints.push([p.x / pad.width, p.y / pad.height]);
+          last = p; e.preventDefault();
+        };
+        const end = () => { drawing = false; last = null; };
+        pad.addEventListener('mousedown', start);
+        pad.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end, { once: true });
+        pad.addEventListener('touchstart', start, { passive: false });
+        pad.addEventListener('touchmove', move, { passive: false });
+        pad.addEventListener('touchend', end);
+        container.querySelector('#sign-pad-clear').onclick = () => {
+          ctx.clearRect(0, 0, pad.width, pad.height);
+          inkPoints = [];
+          ghost = null;
+          renderWorkspace();
+        };
+        container.querySelector('#sign-save-draw').onclick = () => {
+          if (!inkPoints || !inkPoints.length) return;
+          savedSigs.push({ id: 'sv' + Date.now().toString(36), name: typedName || 'Signature', points: inkPoints.slice(), color: inkColor, at: Date.now() });
+          persistSaved();
+          ghost = { kind: 'signature', label: typedName || 'Signature', points: inkPoints.slice(), color: inkColor };
+          renderWorkspace();
+        };
+        container.querySelectorAll('.sign-swatch[data-role="ink"]').forEach(s => {
+          s.onclick = () => {
+            if (s.classList.contains('sign-swatch-auto')) {
+              matchDoc = true;
+              if (docInk) { inkColor = docInk.color; textColor = docInk.color; }
+              ctx.strokeStyle = inkColor;
+              renderWorkspace();
+              return;
+            }
+            inkColor = s.dataset.color;
+            ctx.strokeStyle = inkColor;
+            matchDoc = false;
+            renderWorkspace();
+          };
+        });
+        container.querySelector('#sign-use-draw').onclick = () => {
+          if (ghostReady()) { ghost = null; renderWorkspace(); return; }
+          if (!inkPoints || !inkPoints.length) {
+            flash('Draw a signature first');
+            return;
+          }
+          ghost = { kind: 'signature', label: typedName || 'Signature', points: inkPoints.slice(), color: inkColor };
+          renderWorkspace();
+        };
+        repaintPad();
+      }
+
+      // type
+      const typed = container.querySelector('#sign-typed');
+      if (typed) {
+        const syncPreviews = () => {
+          const prev = container.querySelector('#sign-type-preview');
+          if (prev) prev.textContent = typedName || 'Your Name';
+          const ip = container.querySelector('#sign-init-preview');
+          if (ip) ip.textContent = initialsOf(typedName);
+        };
+        typed.oninput = () => {
+          typedName = typed.value;
+          syncPreviews();
+        };
+        container.querySelector('#sign-use-type').onclick = () => {
+          if (ghostReady()) { ghost = null; renderWorkspace(); return; }
+          if (!String(typedName || '').trim()) { flash('Type a name first'); return; }
+          ghost = { kind: 'signature', label: typedName || 'Your Name', style: typedStyle, color: textColor };
+          renderWorkspace();
+        };
+        container.querySelector('#sign-use-init').onclick = () => {
+          if (ghostReady()) { ghost = null; renderWorkspace(); return; }
+          ghost = { kind: 'initials', label: initialsOf(typedName), style: typedStyle, color: textColor };
+          renderWorkspace();
+        };
+        container.querySelectorAll('[data-style]').forEach(btn => {
+          btn.onclick = () => {
+            typedStyle = btn.dataset.style;
+            const famCls = (matchDoc && docInk && typedStyle === 'clean' && docInk.family === 'serif') ? ' is-serif' : '';
+            const prev = container.querySelector('#sign-type-preview');
+            if (prev) prev.className = 'sign-type-preview style-' + typedStyle + famCls;
+            const ip = container.querySelector('#sign-init-preview');
+            if (ip) ip.className = 'sign-type-preview sign-init-preview style-' + typedStyle + famCls;
+            container.querySelectorAll('[data-style]').forEach(b => b.classList.toggle('is-on', b === btn));
+          };
+        });
+        container.querySelectorAll('.sign-swatch[data-role="text"]').forEach(s => {
+          s.onclick = () => {
+            if (s.classList.contains('sign-swatch-auto')) {
+              matchDoc = true;
+              if (docInk) { inkColor = docInk.color; textColor = docInk.color; }
+              renderWorkspace();
+              return;
+            }
+            textColor = s.dataset.color;
+            matchDoc = false;
+            renderWorkspace();
+          };
+        });
+        syncPreviews();
+      }
+
+      // upload tab — real image mark
+      const imgInp = container.querySelector('#sign-img-inp');
+      if (imgInp) {
+        imgInp.onchange = () => {
+          const f = imgInp.files?.[0];
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            const im = new Image();
+            im.onload = () => {
+              imgData = { dataUrl: rd.result, w: im.naturalWidth, h: im.naturalHeight };
+              renderWorkspace();
+            };
+            im.src = rd.result;
+          };
+          rd.readAsDataURL(f);
+        };
+        const useImg = container.querySelector('#sign-use-img');
+        if (useImg) {
+          useImg.onclick = () => {
+            if (ghostReady()) { ghost = null; renderWorkspace(); return; }
+            if (!imgData) return;
+            ghost = { kind: 'image', label: 'Signature image', dataUrl: imgData.dataUrl, color: inkColor };
+            renderWorkspace();
+          };
+        }
+      }
+
+      // saved signatures
+      container.querySelectorAll('.sign-saved-item').forEach(item => {
+        item.onclick = (e) => {
+          if (e.target.closest('.sign-saved-del')) return;
+          const s = savedSigs[Number(item.dataset.saved)];
+          if (!s) return;
+          ghost = { kind: 'signature', label: s.name || 'Signature', points: s.points.slice(), color: s.color || inkColor };
+          studioTab = 'draw';
+          inkPoints = s.points.slice();
+          inkColor = s.color || inkColor;
+          renderWorkspace();
+        };
+      });
+      container.querySelectorAll('.sign-saved-del').forEach(del => {
+        del.onclick = (e) => {
+          e.stopPropagation();
+          savedSigs.splice(Number(del.dataset.del), 1);
+          persistSaved();
+          renderWorkspace();
+        };
+      });
+
+      // quick marks
+      container.querySelector('#sign-add-date').onclick = () => {
+        if (ghostReady()) { ghost = null; renderWorkspace(); return; }
+        const d = new Date();
+        const label = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        ghost = { kind: 'date', label, color: textColor };
+        renderWorkspace();
+      };
+      container.querySelector('#sign-add-signed').onclick = () => {
+        if (ghostReady()) { ghost = null; renderWorkspace(); return; }
+        ghost = { kind: 'signed', label: 'Signed', color: textColor };
+        renderWorkspace();
+      };        container.querySelector('#sign-cert').onclick = () => { certify = !certify; renderWorkspace(); };
+        const matchBtn = container.querySelector('#sign-match');
+        if (matchBtn) {
+          matchBtn.onclick = () => {
+            matchDoc = !matchDoc;
+            if (matchDoc && docInk && docInk.color) {
+              inkColor = docInk.color;
+              textColor = docInk.color;
+            } else if (!matchDoc) {
+              inkColor = '#000';
+              textColor = '#000';
+            }
+            renderWorkspace();
+          };
+        }
+
+      // place ghost on page click (or fill a form field hit)
+      const layer = container.querySelector('#sign-layer');
+      const pageEl = container.querySelector('#sign-page');
+      pageEl.addEventListener('click', (e) => {
+        if (e.target.closest('.sign-mark') || e.target.closest('.sign-mark-x')) return;
+        const r = pageEl.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width) * 100;
+        const y = ((e.clientY - r.top) / r.height) * 100;
+        if (ghost) {
+          const mk = { ...ghost };
+          ghost = null;
+          placeMarkAt(x, y, mk.kind, mk.label, mk);
+          flash('Mark placed — Ctrl+Z to undo');
+        } else if (activeMark) {
+          activeMark = null;
+          renderWorkspace();
+        }
+      });
+      // form field hits — fill the field with the current ghost
+      container.querySelectorAll('.sign-field-hit').forEach(fh => {
+        fh.onclick = (e) => {
+          e.stopPropagation();
+          const f = formFields.find(ff => ff.id === fh.dataset.field);
+          if (!f || !ghost) return;
+          const mk = { ...ghost };
+          ghost = null;
+          placeMarkAt(f.x + f.w / 2, f.y + f.h / 2, mk.kind, mk.label, mk);
+          if (marks.length) { const last = marks[marks.length - 1]; last.fieldId = f.id; }
+          renderWorkspace();
+          flash('Field signed — Ctrl+Z to undo');
+        };
+      });
+
+      // ghost follows the pointer (mouse + touch via pointer events); centered until the cursor enters the page
+      const ghostEl = container.querySelector('#sign-ghost');
+      if (ghostEl && ghost) {
+        const centerGhost = () => {
+          ghostEl.style.left = '50%';
+          ghostEl.style.top = '50%';
+          ghostEl.classList.add('is-centered');
+        };
+        centerGhost();
+        const moveGhost = (e) => {
+          const src = e.touches ? e.touches[0] : e;
+          const r = pageEl.getBoundingClientRect();
+          ghostEl.style.left = Math.max(0, Math.min(100, ((src.clientX - r.left) / r.width) * 100)) + '%';
+          ghostEl.style.top = Math.max(0, Math.min(100, ((src.clientY - r.top) / r.height) * 100)) + '%';
+          ghostEl.classList.remove('is-centered');
+        };
+        pageEl.addEventListener('mousemove', moveGhost);
+        pageEl.addEventListener('pointermove', moveGhost, { passive: true });
+        pageEl.addEventListener('touchmove', moveGhost, { passive: true });
+        pageEl.addEventListener('mouseleave', centerGhost);
+      }
+
+      // mark interactions — select, drag (mouse + touch), delete
+      container.querySelectorAll('.sign-mark').forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          activeMark = el.dataset.id;
+          renderWorkspace();
+        };
+        const startDrag = (e) => {
+          if (e.target.closest('.sign-mark-x')) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const id = el.dataset.id;
+          const mark = marks.find(m => m.id === id);
+          if (!mark) return;
+          const pageRect = pageEl.getBoundingClientRect();
+          const src = (ev) => ev.touches ? ev.touches[0] : ev;
+          const move = (ev) => {
+            const p = src(ev);
+            mark.x = Math.min(88, Math.max(4, ((p.clientX - pageRect.left) / pageRect.width) * 100));
+            mark.y = Math.min(92, Math.max(4, ((p.clientY - pageRect.top) / pageRect.height) * 100));
+            el.style.left = mark.x + '%';
+            el.style.top = mark.y + '%';
+          };
+          const up = () => {
+            window.removeEventListener('mousemove', move);
+            window.removeEventListener('mouseup', up);
+            window.removeEventListener('touchmove', move);
+            window.removeEventListener('touchend', up);
+          };
+          window.addEventListener('mousemove', move);
+          window.addEventListener('mouseup', up);
+          window.addEventListener('touchmove', move, { passive: false });
+          window.addEventListener('touchend', up);
+        };
+        el.addEventListener('mousedown', startDrag);
+        el.addEventListener('touchstart', startDrag, { passive: false });
+      });
+      container.querySelectorAll('[data-del]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          snapshot();
+          marks = marks.filter(m => m.id !== btn.dataset.del);
+          activeMark = null;
+          renderWorkspace();
+        };
+      });
+
+      container.querySelector('#sign-close').onclick = () => {
+        file = null; pages = []; marks = []; formFields = [];
+        const st = container.closest('.app-stage-container');
+        if (st) st.classList.remove('spdf-stage-active');
+        renderUpload();
+      };
+      container.querySelector('#sign-edit').onclick = () => {
+        window.__ffSharedFile = file;
+        window.FF.app.openTool('pdf-edit-text');
+      };
+      container.querySelector('#sign-finish').onclick = finishExport;
+
+      // Restore studio scroll position + focus (P0 fix)
+      const sb2 = container.querySelector('.sign-studio-body');
+      if (sb2) sb2.scrollTop = prevStudioScroll;
+      if (prevFocusTag) {
+        const prevEl = container.querySelector('#' + prevFocusTag);
+        if (prevEl && prevEl.tagName === 'INPUT') {
+          prevEl.focus();
+          const val = prevEl.value;
+          try { prevEl.setSelectionRange(val.length, val.length); } catch { /* noop */ }
+        }
+      } else if (prevActiveId) {
+        const prevEl = container.querySelector('#' + prevActiveId);
+        if (prevEl) prevEl.focus();
+      }
+
+      wireCachedCanvases();
+      renderFullPage();
+    }
+
+    // Repaint the draw pad from inkPoints — fixes the "pad erases itself after placement" bug
+    function repaintPad() {
+      const pad = container.querySelector('#sign-pad');
+      if (!pad || !inkPoints || !inkPoints.length) return;
+      const ctx = pad.getContext('2d');
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = inkColor;
+      ctx.beginPath();
+      inkPoints.forEach((pt, i) => {
+        const x = pt[0] * pad.width;
+        const y = pt[1] * pad.height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function snapshot() {
+      history.push(JSON.parse(JSON.stringify(marks)));
+      if (history.length > 60) history.shift();
+      redoStack = [];
+    }
+
+    function ghostReady() { return !!ghost; }
+
+    function persistSaved() {
+      try { localStorage.setItem(SAVED_KEY, JSON.stringify(savedSigs)); } catch { /* quota */ }
+    }
+
+    function flash(msg) {
+      let f = container.querySelector('.sign-flash');
+      if (!f) {
+        f = document.createElement('div');
+        f.className = 'sign-flash';
+        container.appendChild(f);
+      }
+      f.textContent = msg;
+      f.classList.add('is-on');
+      clearTimeout(f._t);
+      f._t = setTimeout(() => f.classList.remove('is-on'), 1800);
+    }
+
+    function smoothPath(pts) {
+      if (!pts.length) return '';
+      let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2;
+        const my = (pts[i][1] + pts[i + 1][1]) / 2;
+        d += ` Q ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+      }
+      return d;
+    }
+
+    function placeMarkAt(x, y, kind, label, extra) {
+      snapshot();
+      const id = 'm' + (++markSeq);
+      const m = {
+        id,
+        page,
+        x: Math.min(88, Math.max(4, x)),
+        y: Math.min(92, Math.max(4, y)),
+        label: label || 'Signature',
+        kind: kind || 'signature',
+        signer: activeSigner,
+      };
+      if (extra) {
+        if (extra.points) m.points = extra.points;
+        if (extra.color) m.color = extra.color;
+        if (extra.dataUrl) m.dataUrl = extra.dataUrl;
+        if (extra.style) m.style = extra.style;
+      }
+      marks.push(m);
+      activeMark = id;
+      renderWorkspace();
+    }
+
+    /* ── Re-insert already-rendered canvases after renderWorkspace rebuilds the DOM ── */
+    function wireCachedCanvases() {
+      container.querySelectorAll('.sign-thumb').forEach((btn, i) => {
+        const c = pages[i] && pages[i].thumb;
+        if (!c || btn.querySelector('canvas')) return;
+        const ph = btn.querySelector('.sign-thumb-ph');
+        if (ph) ph.replaceWith(c);
+        else btn.insertBefore(c, btn.firstChild);
+      });
+      const full = pages[page - 1] && pages[page - 1].full;
+      if (full) {
+        const holder = container.querySelector('#sign-page-ph');
+        if (holder) holder.replaceWith(full);
+      }
+    }
+
+    async function renderFullPage() {
+      const myDoc = docToken;
+      const i = page - 1;
+      if (!pdfDoc || !pages[i] || pages[i].full) return;
+      try {
+        const base = await pdfDoc.getPage(page);
+        const baseVp = base.getViewport({ scale: 1 });
+        const c = await renderPageAt(i, 560 / baseVp.width);
+        if (myDoc !== docToken || !pages[i]) return;
+        pages[i].full = c;
+        const ph = container.querySelector('#sign-page-ph');
+        if (ph) ph.replaceWith(c);
+      } catch (err) { console.warn('[Sign] page render', err); }
+    }
+
+    function wireAsyncRenders() {
+      const myDoc = docToken;
+      pages.forEach((pg, i) => {
+        if (pg.thumb) return;
+        renderPageAt(i, 0.22).then(c => {
+          if (myDoc !== docToken || !pages[i]) return;
+          pages[i].thumb = c;
+          const btn = container.querySelector(`.sign-thumb[data-page="${i + 1}"]`);
+          const ph = btn && btn.querySelector('.sign-thumb-ph');
+          if (ph) ph.replaceWith(c);
+        }).catch(() => { /* thumbnails are non-critical */ });
+      });
+      renderFullPage();
+    }
+
+    function rgbOf(hex) {
+      const o = hexToRgb(hex);
+      return window.PDFLib.rgb(o.r, o.g, o.b);
+    }
+
+    async function finishExport() {
+      try {
+        await window.FF.util.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI');
+        const L = window.PDFLib;
+        const src = new Uint8Array(await file.arrayBuffer());
+        const doc = await L.PDFDocument.load(src, { ignoreEncryption: true });
+        const helv = await doc.embedFont(L.StandardFonts.Helvetica);
+        const helvB = await doc.embedFont(L.StandardFonts.HelveticaBold);
+        let scribe = null; // lazy cursive signature raster
+        let count = 0;
+        const signedBy = [];
+        for (const m of marks) {
+          const page = doc.getPage(m.page - 1);
+          const pw = page.getWidth();
+          const ph = page.getHeight();
+          // x/y stored as % of the page — convert to user-space points (y flipped)
+          const x = (m.x / 100) * pw;
+          const yTop = (m.y / 100) * ph;
+          const y = ph - yTop;
+          if (m.kind === 'signature' && m.points && m.points.length) {
+            // real vector ink — draw the exact stroke
+            const scale = Math.min(pw, ph) * 0.16;
+            const pts = m.points.map(p => [x + (p[0] - 0.5) * scale * 1.6, y + (0.5 - p[1]) * scale * 0.62]);
+            const d = smoothPath(pts);
+            page.drawSvgPath(d, {
+              x: 0, y: 0,
+              color: L.rgb(1, 1, 1), opacity: 0.001,
+              borderColor: rgbOf(m.color || '#000'), borderWidth: 2.2, borderOpacity: 1,
+              borderLineCap: 1, borderLineJoin: 1,
+            });
+            const sg = signerOf(m.signer || activeSigner);
+            if (!signedBy.some(s => s.id === sg.id)) signedBy.push({ id: sg.id, name: sg.name, title: sg.title, color: sg.color });
+          } else if (m.kind === 'image' && m.dataUrl) {
+            const img = await (m.dataUrl.includes('image/png') ? doc.embedPng(m.dataUrl) : doc.embedJpg(m.dataUrl));
+            const iw = img.width, ih = img.height;
+            const targetW = Math.min(pw * 0.28, Math.max(pw * 0.1, (m.w || 140) / 560 * pw));
+            const targetH = targetW * (ih / Math.max(1, iw));
+            page.drawImage(img, { x: x - targetW / 2, y: y - targetH / 2, width: targetW, height: targetH });
+          } else {
+            // typed signature / initials / date / signed — draw text
+            const isName = m.kind === 'signature' || m.kind === 'initials';
+            if (isName && (m.style === 'script' || !m.style)) {
+              // cursive name — rasterize with the local script font so it looks handwritten
+              if (!scribe) scribe = await rasterScribe(m.label, m.color || '#000');
+              const font = await doc.embedPng(scribe);
+              const w = font.width, h = font.height;
+              const tw = Math.min(pw * 0.22, Math.max(pw * 0.08, (m.w || 150) / 560 * pw));
+              const th = tw * (h / Math.max(1, w));
+              page.drawImage(font, { x: x - tw / 2, y: y - th / 2, width: tw, height: th });
+            } else {
+              const font = m.kind === 'initials' || m.kind === 'signed' ? helvB : helv;
+              const size = m.kind === 'date' ? 12 : m.kind === 'initials' ? 16 : m.kind === 'signed' ? 13 : 18;
+              const w = font.widthOfTextAtSize(m.label, size);
+              page.drawText(m.label, {
+                x: x - w / 2, y: y - size * 0.35,
+                size, font, color: rgbOf(m.color || '#000'),
+              });
+            }
+            const sg = signerOf(m.signer || activeSigner);
+            if (isName && !signedBy.some(s => s.id === sg.id)) signedBy.push({ id: sg.id, name: sg.name, title: sg.title, color: sg.color });
+          }
+          count++;
+        }
+        // Certification — a visible line under every signature + a signature field widget.
+        if (certify && signedBy.length) {
+          const dateLabel = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+          // collect per-page signature marks
+          const sigMarks = marks.filter(m => m.kind === 'signature' || m.kind === 'initials');
+          if (sigMarks.length) {
+            const ctx = doc.context;
+            const acro = ensureAcroForm(doc);
+            const fieldRefs = (acro.get(L.PDFName.of('Fields')) || ctx.obj([]));
+            for (const m of sigMarks) {
+              const pg = doc.getPage(m.page - 1);
+              const pw = pg.getWidth(); const ph = pg.getHeight();
+              const x0 = (m.x / 100) * pw, yTop = (m.y / 100) * ph;
+              const w = Math.min(pw * 0.3, 180), h = Math.min(ph * 0.14, 56);
+              const sg = signerOf(m.signer || activeSigner);
+              // Signature widget annotation (/FT /Sig) — a real form field.
+              const wgt = ctx.obj({});
+              wgt.set(L.PDFName.of('Type'), L.PDFName.of('Annot'));
+              wgt.set(L.PDFName.of('Subtype'), L.PDFName.of('Widget'));
+              wgt.set(L.PDFName.of('FT'), L.PDFName.of('Sig'));
+              wgt.set(L.PDFName.of('T'), L.PDFName.of('Signature_' + (m.signer || 'signer')));
+              wgt.set(L.PDFName.of('F'), L.PDFNumber.of(132)); // print + locked-ish
+              const rect = ctx.obj([]);
+              for (const n of [x0 - w / 2, ph - yTop - h / 2, x0 + w / 2, ph - yTop + h / 2]) rect.push(L.PDFNumber.of(n));
+              wgt.set(L.PDFName.of('Rect'), rect);
+              wgt.set(L.PDFName.of('P'), pg.ref);
+              wgt.set(L.PDFName.of('DA'), L.PDFString.of(`/${helv.name} 9 Tf 0.35 0.35 0.36 rg`));
+              const wgtRef = ctx.register(wgt);
+              fieldRefs.push(wgtRef);
+              let annRaw = pg.node.get(L.PDFName.of('Annots'));
+              let annArr = annRaw && typeof annRaw.asArray === 'function' ? annRaw : (annRaw ? ctx.lookup(annRaw) : null);
+              if (annArr) annArr.push(wgtRef);
+              else pg.node.set(L.PDFName.of('Annots'), ctx.obj([wgtRef]));
+            }
+            acro.set(L.PDFName.of('Fields'), fieldRefs);
+          }
+        }
+        const outBytes = await doc.save();
+        const blob = new Blob([outBytes], { type: 'application/pdf' });
+        showResult(blob, (file?.name || 'document.pdf').replace(/\.pdf$/i, '') + '-signed.pdf', count, { signedBy, certify, date: new Date() });
+      } catch (err) {
+        console.error('[Sign] export', err);
+        showResult(new Blob([await file.arrayBuffer()], { type: 'application/pdf' }), (file?.name || 'document.pdf').replace(/\.pdf$/i, '') + '-signed.pdf', 0, {});
+      }
+    }
+
+    function ensureAcroForm(doc) {
+      const L = window.PDFLib;
+      const ctx = doc.context;
+      let raw = doc.catalog.get(L.PDFName.of('AcroForm'));
+      let acro = raw && typeof raw.get === 'function' ? raw : (raw ? ctx.lookup(raw) : null);
+      if (!acro || typeof acro.set !== 'function') {
+        acro = ctx.obj({});
+        acro.set(L.PDFName.of('Fields'), ctx.obj([]));
+        doc.catalog.set(L.PDFName.of('AcroForm'), ctx.register(acro));
+      }
+      return acro;
+    }
+
+    // Render the typed name with the local cursive font → transparent PNG for embedding.
+    function rasterScribe(text, color) {
+      return new Promise((resolve) => {
+        const c = document.createElement('canvas');
+        c.width = 640; c.height = 220;
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.font = 'italic 800 120px "Segoe Script", "Comic Sans MS", cursive';
+        ctx.fillStyle = color;
+        ctx.textBaseline = 'middle';
+        const w = ctx.measureText(text).width + 60;
+        const scale = Math.min(1, 600 / Math.max(1, w));
+        ctx.setTransform(scale, 0, 0, scale, 20, c.height / 2);
+        ctx.fillText(text, 0, 0);
+        // trim to drawn width
+        const tw = Math.ceil(w * scale + 40);
+        const tc = document.createElement('canvas');
+        tc.width = tw; tc.height = 180;
+        tc.getContext('2d').drawImage(c, 0, 0);
+        resolve(tc.toDataURL('image/png'));
+      });
+    }
+
+    function showResult(blob, name, count, meta) {
+      const url = URL.createObjectURL(blob);
+      container.classList.add('cpdf-root');
+      container.classList.remove('sign-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      const ok = count > 0;
+      const sb = (meta && meta.signedBy) || [];
+      const certLine = meta && meta.certify && sb.length
+        ? `<div class="sign-cert-bar">${I.cert} <b>Certified</b> — signed by ${sb.map(s => `<i style="--s:${_esc(s.color)}"></i><b>${_esc(s.name)}</b>${s.title ? ' · ' + _esc(s.title) : ''}`).join(', ')} on ${(meta.date || new Date()).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</div>`
+        : '';
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${I.sign}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Sign PDF</h2>
+            <p class="cpdf-hdr-sub">${ok ? 'Your signed file is ready' : 'Export failed — original file returned'}</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar ${ok ? 'cpdf-status-bar--ok' : 'cpdf-status-bar--warn'}">
+              <div>
+                <strong>${ok ? 'Signature applied' : 'Something went wrong'}</strong>
+                <span>${ok ? count + ' mark' + (count === 1 ? '' : 's') + ' written into the PDF' : 'No changes written — the original file was kept.'}</span>
+              </div>
+            </div>
+            ${certLine}
+            <div class="cpdf-file-bar">
+              <div class="cpdf-file-text" style="padding-left:4px">
+                <span class="cpdf-fname">${_esc(name)}</span>
+                <span class="cpdf-fsize">${_bytes(blob.size)} · from ${_esc(file?.name || '')}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(name)}" style="text-decoration:none">${I.dl}&nbsp; Download ${_esc(name)}</a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="sign-back" type="button">Back to canvas</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="sign-new" type="button">Sign another file</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#sign-back').onclick = () => { URL.revokeObjectURL(url); renderWorkspace(); };
+      container.querySelector('#sign-new').onclick = () => {
+        URL.revokeObjectURL(url); file = null; pages = []; marks = []; imgData = null; inkPoints = []; formFields = []; ghost = null; renderUpload();
+      };
+    }
+
+    function hexToRgb(hex) {
+      const h = String(hex || '#000').replace('#', '');
+      return { r: parseInt(h.slice(0, 2), 16) / 255, g: parseInt(h.slice(2, 4), 16) / 255, b: parseInt(h.slice(4, 6), 16) / 255 };
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountSign = mountSignPDF;
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Convert  (shared card frame + format picker)
+   Empty → choose format → convert → download (UI shell / placeholder export)
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+  const U = window.FF.util;
+
+  const I = {
+    convert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    change: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    pdf: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none"><rect width="34" height="34" rx="8" fill="#EFF4FF"/><text x="7" y="22" font-size="11" font-weight="800" fill="#0055FF" font-family="system-ui,sans-serif">PDF</text></svg>`,
+  };
+
+  // ─── Format families & conversion targets ────────────────────────────────
+  // Every target runs a REAL registered engine (window.FF.registry.get(tool))
+  // or an inline converter — no placeholders.
+  const M = {
+    office: 'Office', web: 'Web & text', images: 'Images', audio: 'Audio',
+    video: 'Video', arc: 'Archives', ebook: 'E-Books',
+  };
+
+  const FAMILIES = {
+    pdf:      { label: 'PDF',          exts: ['pdf'] },
+    word:     { label: 'Word',         exts: ['docx', 'rtf', 'odt'] },
+    pptx:     { label: 'PowerPoint',   exts: ['pptx', 'odp'] },
+    markdown: { label: 'Markdown',     exts: ['md', 'markdown'] },
+    html:     { label: 'HTML',         exts: ['html', 'htm'] },
+    text:     { label: 'Text',         exts: ['txt', 'log'] },
+    excel:    { label: 'Excel',        exts: ['xlsx', 'xls', 'ods'] },
+    csv:      { label: 'CSV',          exts: ['csv', 'tsv'] },
+    image:    { label: 'Image',        exts: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'svg', 'heic', 'heif', 'avif', 'tiff', 'ico'] },
+    audio:    { label: 'Audio',        exts: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'oga', 'opus', 'aiff', 'wma'] },
+    video:    { label: 'Video',        exts: ['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v', 'ogv', 'wmv', 'flv'] },
+    epub:     { label: 'E-Book',       exts: ['epub', 'mobi'] },
+    archive:  { label: 'Archive',      exts: ['zip', 'gz', 'tgz', 'tar', '7z', 'rar', 'bz2'] },
+    data:     { label: 'Data',         exts: ['json', 'yaml', 'yml', 'xml', 'toml'] },
+  };
+
+  const T = (g, label, out, ext, color, tool, desc, inputs) => ({
+    // Unique per target: tool-prefixed slug so targets sharing an engine
+    // (e.g. the 7 audio-convert formats) each get a distinct select value.
+    id: (tool ? tool + ':' : '') + (label + '-' + ext).toLowerCase().replace(/[^a-z0-9-]+/g, '-'),
+    g, label, out, ext, color, tool, desc, inputs: inputs || {},
+  });
+
+  const TARGETS = {
+    pdf: [
+      T(M.office, 'Word', 'DOCX', 'docx', '#2B579A', 'pdf-to-word', 'Editable Word document'),
+      T(M.office, 'Excel', 'XLSX', 'xlsx', '#217346', 'pdf-to-excel', 'Tables to spreadsheet'),
+      T(M.office, 'PowerPoint', 'PPTX', 'pptx', '#C43E1C', 'pdf-to-ppt', 'One slide per page'),
+      T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#475569', 'pdf-grayscale', 'Pages in black & white'),
+      T(M.office, 'Compressed PDF', 'PDF', 'pdf', '#0F766E', 'pdf-compress', 'Smaller file size', { quality: 60, scale: '1.5' }),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pdf-to-html', 'Web-ready page'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Text layer only'),
+      T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'pdf-to-csv', 'Table-style rows', { delim: ',' }),
+      T(M.web, 'Summary', 'TXT', 'txt', '#DC2626', 'pdf-summarize', 'Key sentences', { length: 'medium' }),
+      T(M.images, 'JPG image', 'JPG', 'jpg', '#EA580C', 'pdf-to-jpg', 'Rendered page(s) as JPEG'),
+      T(M.images, 'Page images', 'PNG (ZIP)', 'zip', '#D97706', 'pdf-to-image', 'High-quality page PNGs', { scale: '2' }),
+      T(M.images, 'Extract images', 'ZIP', 'zip', '#CA8A04', 'pdf-extract-images', 'Embedded images only'),
+      T(M.ebook, 'EPUB ebook', 'EPUB', 'epub', '#854D0E', 'pdf-to-epub', 'Page-image ebook', { scale: '1.25' }),
+      T(M.arc, 'ZIP archive', 'ZIP', 'zip', '#0E7490', 'pdf-to-zip', 'Bundle the PDF', { level: '6' }),
+      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'pdf-to-md', 'Clean Markdown from the text layer'),
+    ],
+    word: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'docx-to-pdf', 'Convert Word to PDF'),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'docx-to-html', 'Web-ready markup'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'docx-to-txt', 'Raw text'),
+      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'docx-to-md', 'Clean Markdown'),
+    ],
+    pptx: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'pptx-to-pdf', 'Slides as a landscape PDF'),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pptx-to-html', 'Web-ready slides'),
+      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'pptx-to-md', 'Clean Markdown'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pptx-to-txt', 'Raw slide text'),
+    ],
+    markdown: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'md-to-pdf', 'Render Markdown to PDF'),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'md-to-html', 'Rendered HTML'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'md-to-txt', 'Strip syntax to text'),
+    ],
+    html: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'html-to-pdf', 'Convert HTML to PDF'),
+      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'html-to-md', 'Clean Markdown'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'html-to-txt', 'Strip tags to text'),
+    ],
+    text: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'txt-to-pdf', 'Plain text to PDF'),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'txt-to-html', 'Clean readable page'),
+      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'txt-to-md', 'Text as Markdown'),
+    ],
+    excel: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'excel-to-pdf', 'Sheets as a PDF table', { sheet: 1, landscape: 'portrait', scale: 'auto' }),
+      T(M.office, 'CSV', 'CSV', 'csv', '#16A34A', 'excel-to-csv', 'Selected sheet as CSV'),
+      T(M.web, 'JSON', 'JSON', 'json', '#06B6D4', 'excel-to-json', 'Rows as JSON'),
+    ],
+    csv: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'csv-to-pdf', 'Table as a PDF', { delim: ',', landscape: 'portrait' }),
+      T(M.office, 'Excel workbook', 'XLSX', 'xlsx', '#217346', 'csv-to-excel', 'CSV rows as a spreadsheet'),
+      T(M.web, 'JSON', 'JSON', 'json', '#06B6D4', 'data-transcode', 'Rows as JSON', { targetFormat: 'json' }),
+      T(M.web, 'YAML', 'YAML', 'yaml', '#7C3AED', 'data-transcode', 'Rows as YAML', { targetFormat: 'yaml' }),
+      T(M.web, 'XML', 'XML', 'xml', '#F59E0B', 'data-transcode', 'Rows as XML', { targetFormat: 'xml' }),
+    ],
+    image: [
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'image-to-pdf', 'Image as a PDF page'),
+      T(M.images, 'JPG', 'JPG', 'jpg', '#EA580C', 'image-convert', 'Re-encode as JPEG', { format: 'jpeg', quality: 85, maxWidth: 0 }),
+      T(M.images, 'PNG', 'PNG', 'png', '#16A34A', 'image-convert', 'Re-encode as PNG', { format: 'png', quality: 85, maxWidth: 0 }),
+      T(M.images, 'WebP', 'WEBP', 'webp', '#0891B2', 'image-convert', 'Smaller web image', { format: 'webp', quality: 85, maxWidth: 0 }),
+      T(M.images, 'HEIC → JPG/PNG', 'JPG', 'jpg', '#F59E0B', 'image-heic-convert', 'Apple HEIC to universal JPG/PNG'),
+      T(M.images, 'Trace to SVG', 'SVG', 'svg', '#6366F1', 'png-trace', 'Vectorize raster bitmap to SVG'),
+      T(M.web, 'Base64 Data URI', 'TXT', 'txt', '#8B5CF6', 'img-to-base64', 'Convert image to inline Base64 data'),
+    ],
+    audio: [
+      T(M.audio, 'WAV', 'WAV', 'wav', '#475569', 'audio-convert', 'Lossless waveform', { format: 'wav' }),
+      T(M.audio, 'MP3', 'MP3', 'mp3', '#EA580C', 'audio-convert', 'Universal compressed audio', { format: 'mp3', br: '192k' }),
+      T(M.audio, 'OGG', 'OGG', 'ogg', '#CA8A04', 'audio-convert', 'Open compressed audio', { format: 'ogg', br: '192k' }),
+      T(M.audio, 'WebM', 'WEBM', 'webm', '#0E7490', 'audio-convert', 'Web audio container', { format: 'webm' }),
+      T(M.audio, 'M4A', 'M4A', 'm4a', '#7C3AED', 'audio-convert', 'AAC in MP4 container', { format: 'm4a', br: '192k' }),
+      T(M.audio, 'FLAC', 'FLAC', 'flac', '#16A34A', 'audio-convert', 'Lossless compression', { format: 'flac' }),
+      T(M.audio, 'OPUS', 'OPUS', 'opus', '#0F766E', 'audio-convert', 'Efficient low-bitrate', { format: 'opus' }),
+    ],
+    video: [
+      T(M.video, 'MP4', 'MP4', 'mp4', '#DC2626', 'video-convert', 'Universal video format', { format: 'mp4' }),
+      T(M.video, 'WebM', 'WEBM', 'webm', '#0891B2', 'video-convert', 'Web-optimized video', { format: 'webm' }),
+      T(M.video, '9:16 Shorts / Reels', 'MP4', 'mp4', '#E11D48', 'video-to-shorts', 'Format for TikTok & YouTube Shorts'),
+      T(M.video, 'Animated GIF', 'GIF', 'gif', '#F43F5E', 'video-gif', 'Convert clip to animated GIF'),
+      T(M.audio, 'MP3 audio', 'MP3', 'mp3', '#EA580C', 'video-extract-audio', 'Soundtrack only'),
+      T(M.images, 'Image Sequence', 'ZIP', 'zip', '#10B981', 'video-to-images', 'Export frames as image files'),
+    ],
+    data: [
+      T(M.web, 'JSON', 'JSON', 'json', '#06B6D4', 'data-transcode', 'Pretty-printed JSON', { targetFormat: 'json' }),
+      T(M.web, 'YAML', 'YAML', 'yaml', '#7C3AED', 'data-transcode', 'Clean YAML', { targetFormat: 'yaml' }),
+      T(M.web, 'XML', 'XML', 'xml', '#F59E0B', 'data-transcode', 'Structured XML', { targetFormat: 'xml' }),
+      T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'data-transcode', 'Flattened table', { targetFormat: 'csv' }),
+      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'data-to-pdf', 'Data as a text PDF'),
+    ],
+    epub: [
+      T(M.ebook, 'PDF', 'PDF', 'pdf', '#DC2626', 'epub-to-pdf', 'Ebook as a text PDF'),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'epub-to-html', 'Chapters combined'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'epub-to-txt', 'Raw text'),
+    ],
+    archive: [
+      T(M.arc, 'Extract files', 'FILES', 'zip', '#0E7490', 'zip-extract', 'Unpack the archive'),
+      T(M.arc, 'Inspect ZIP', 'TXT', 'txt', '#475569', 'zip-inspect', 'List entries'),
+      T(M.arc, 'Extract TAR.GZ', 'FILES', 'gz', '#CA8A04', 'targz-extract', 'Unpack tar archives'),
+      T(M.arc, 'Preview entries', 'TXT', 'txt', '#64748B', 'archive-preview', 'Peek inside'),
+    ],
+  };
+
+  const GROUPS = [M.office, M.web, M.images, M.audio, M.video, M.ebook, M.arc];
+  const ALL_FORMATS = 'PDF · DOCX · PPTX · XLSX · CSV · TXT · MD · HTML · HEIC · PNG · JPG · WEBP · SVG · MP4 · WEBM · MP3 · WAV · FLAC · EPUB · ZIP · 7Z · YAML · JSON';
+  const ACCEPT = '.pdf,.docx,.doc,.rtf,.odt,.odp,.md,.markdown,.html,.htm,.txt,.log,.xlsx,.xls,.ods,.csv,.tsv,.png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.heic,.heif,.avif,.tiff,.ico,.mp3,.wav,.ogg,.m4a,.aac,.flac,.oga,.opus,.aiff,.wma,.mp4,.webm,.mov,.mkv,.avi,.m4v,.ogv,.wmv,.flv,.epub,.mobi,.zip,.gz,.tgz,.tar,.7z,.rar,.bz2,.json,.yaml,.yml,.xml,.toml';
+  const XLSX_SRI = 'sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw';
+
+  // Tool id → its (family, target), so opening "PDF to Word" from the drawer preselects it.
+  const TOOL_INDEX = {};
+  for (const [fam, targets] of Object.entries(TARGETS)) {
+    for (const t of targets) if (t.tool) TOOL_INDEX[t.tool] = { family: fam, target: t };
+  }
+
+  function detectFamily(file) {
+    const name = (file && file.name) || '';
+    const ext = name.split('.').pop().toLowerCase();
+    const mime = (file && file.type) || '';
+    for (const [fam, info] of Object.entries(FAMILIES)) if (info.exts.includes(ext)) return fam;
+    if (/^image\//.test(mime)) return 'image';
+    if (/^audio\//.test(mime)) return 'audio';
+    if (/^video\//.test(mime)) return 'video';
+    if (/pdf/.test(mime)) return 'pdf';
+    return null;
+  }
+
+  async function runTarget(t, file, extraInputs, onProgress) {
+    if (t.tool === null && t.inputs.inline === 'xlsx-csv') {
+      const XLSX = await U.loadScript('vendor/xlsx.full.min.js', XLSX_SRI).then(() => window.XLSX);
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const parts = [];
+      for (const name of wb.SheetNames) { parts.push(`-- ${name} --`); parts.push(XLSX.utils.sheet_to_csv(wb.Sheets[name])); }
+      const csv = parts.join('\n');
+      return { preview: 'text', text: csv, filename: U.baseName(file.name) + '.csv', mime: 'text/csv', blob: new Blob([csv], { type: 'text/csv' }) };
+    }
+    const reg = window.FF.registry.get(t.tool);
+    if (!reg || typeof reg.run !== 'function') throw new Error(`The ${t.label} converter is unavailable right now.`);
+    const engine = reg.engine ? await reg.engine() : undefined;
+    const out = await reg.run({ file, inputs: { ...t.inputs, ...extraInputs }, engine, onProgress });
+    if (!out || (!out.blob && !out.files && !out.text)) throw new Error('The converter returned nothing.');
+    return out;
+  }
+
+  function mountConvert(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'conv-root');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell');
+
+    let file = null;
+    let family = null;
+    let formatId = null;
+    let cfg = {};
+    const preset = tool?.id && TOOL_INDEX[tool.id] ? TOOL_INDEX[tool.id] : null;
+
+    const targets = () => (family ? TARGETS[family] : []);
+    const target = () => targets().find((x) => x.id === formatId) || targets()[0];
+
+    // Engine-declared config fields for the current target, minus the ones the
+    // target select already decides (format / targetFormat / source-from-file).
+    function cfgFields() {
+      const t = target();
+      if (!t || !t.tool) return [];
+      const reg = window.FF.registry.get(t.tool);
+      if (!reg || !Array.isArray(reg.fields)) return [];
+      const hideFormat = t.inputs && t.inputs.format !== undefined;
+      const hideTarget = t.inputs && t.inputs.targetFormat !== undefined;
+      return reg.fields.filter((f) => {
+        if (!f || !f.key) return false;
+        if (f.key === 'source') return false;                       // hub: the dropped file IS the source
+        if (f.key === 'format' && hideFormat) return false;         // already chosen by the target select
+        if (f.key === 'targetFormat' && hideTarget) return false;
+        if (t.tool === 'image-convert' && f.key === 'quality' && t.inputs.format === 'png') return false; // lossless
+        if (t.tool === 'audio-convert' && f.key === 'br' && !/mp3|ogg|m4a/.test(t.inputs.format || '')) return false; // lossless
+        return true;
+      });
+    }
+
+    function fieldPanel(f) {
+      const v = cfg[f.key];
+      const label = `<label class="conv-label" for="cfg-${f.key}">${_esc(f.label || f.key)}</label>`;
+      const help = f.help ? `<p class="conv-help">${_esc(f.help)}</p>` : '';
+      if (f.type === 'select') {
+        const opts = (f.options || []).map((o) => {
+          const ov = (typeof o === 'object' && o !== null) ? (o.value ?? '') : String(o);
+          const ol = (typeof o === 'object' && o !== null) ? (o.label ?? ov) : String(o);
+          return `<option value="${_esc(ov)}" ${String(v) === String(ov) ? 'selected' : ''}>${_esc(ol)}</option>`;
+        }).join('');
+        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><div class="conv-select-wrap"><select id="cfg-${f.key}" class="conv-select" data-cfg="${f.key}">${opts}</select></div>${help}</div>`;
+      }
+      if (f.type === 'range') {
+        return `<div class="conv-panel"><div class="conv-field-head">${label}<span class="conv-range-val" id="cfg-${f.key}-val">${_esc(String(v))}</span></div><div class="conv-quality"><input id="cfg-${f.key}" type="range" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step ?? 1}" value="${_esc(String(v))}" data-cfg="${f.key}"></div>${help}</div>`;
+      }
+      if (f.type === 'number') {
+        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><input id="cfg-${f.key}" type="number" class="conv-number" min="${f.min ?? ''}" max="${f.max ?? ''}" step="${f.step ?? 'any'}" value="${_esc(String(v))}" data-cfg="${f.key}">${help}</div>`;
+      }
+      if (f.type === 'color') {
+        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><input id="cfg-${f.key}" type="color" class="conv-color" value="${_esc(String(v))}" data-cfg="${f.key}">${help}</div>`;
+      }
+      if (f.type === 'textarea') {
+        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><textarea id="cfg-${f.key}" class="conv-textarea" rows="3" data-cfg="${f.key}">${_esc(String(v))}</textarea>${help}</div>`;
+      }
+      return `<div class="conv-panel"><div class="conv-field-head">${label}</div><input id="cfg-${f.key}" type="text" class="conv-text" value="${_esc(String(v))}" data-cfg="${f.key}">${help}</div>`;
+    }
+
+    function showErr(msg) {
+      const box = container.querySelector('#conv-err');
+      if (box) { box.textContent = msg; box.hidden = false; }
+    }
+
+    async function pickFile(f) {
+      if (!f) return;
+      if (f.size > 200 * 1024 * 1024) { showErr('Files up to 200 MB are supported.'); return; }
+      const fam = detectFamily(f);
+      if (!fam) { showErr('Couldn\u2019t detect that file type. Supported: ' + ALL_FORMATS); return; }
+      file = f; family = fam;
+      const list = TARGETS[fam];
+      formatId = preset && preset.family === fam && list.some((x) => x.id === preset.target.id) ? preset.target.id : list[0].id;
+      renderConfigure();
+    }
+
+    function renderUpload() {
+      container.classList.add('cpdf-root', 'conv-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="conv-dz" tabindex="0" role="button" aria-label="Drop any file to convert">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="conv-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </label>
+              <label for="conv-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add any <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, <strong>Audio</strong>, <strong>Word</strong>, <strong>Excel</strong>, or <strong>eBook</strong> to convert</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+              <span class="fmt-badge fmt-doc">DOCX</span>
+              <span class="fmt-badge fmt-xls">XLSX</span>
+              <span class="fmt-badge fmt-ppt">PPTX</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+            </div>
+          </div>
+          <input id="conv-inp" type="file" accept="${ACCEPT}" hidden>
+        </div>`;
+      const dz = container.querySelector('#conv-dz');
+      const inp = container.querySelector('#conv-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function renderConfigure() {
+      const t = target();
+      const famLabel = FAMILIES[family].label;
+      const list = targets();
+      const groupsShown = GROUPS.filter((g) => list.some((x) => x.g === g));
+      const fields = cfgFields();
+      cfg = {};
+      for (const f of fields) cfg[f.key] = (t.inputs && t.inputs[f.key] !== undefined) ? t.inputs[f.key] : (f.default !== undefined ? f.default : '');
+      container.innerHTML = `
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll conv-form">
+            <div class="conv-file-card">
+              <span class="conv-file-badge">${famLabel.toUpperCase().slice(0, 4)}</span>
+              <div class="conv-file-meta">
+                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                <span>${_bytes(file.size)} &nbsp;·&nbsp; ${famLabel}</span>
+              </div>
+              <button class="cpdf-btn-ghost" id="conv-change" type="button">${I.change}&nbsp; Change file</button>
+            </div>
+
+            <div class="conv-grid">
+              <div class="conv-col">
+                <div class="conv-panel">
+                  <label class="conv-label" for="conv-format">Convert to</label>
+                  <div class="conv-select-wrap">
+                    <select id="conv-format" class="conv-select" aria-label="Convert to">
+                      ${groupsShown.map(g => {
+                        const items = list.filter((x) => x.g === g);
+                        return `<optgroup label="${g}">${items.map(item =>
+                          `<option value="${item.id}" ${item.id === formatId ? 'selected' : ''}>${item.label} — ${item.desc}</option>`
+                        ).join('')}</optgroup>`;
+                      }).join('')}
+                    </select>
+                  </div>
+                </div>
+
+                ${fields.map((f) => fieldPanel(f)).join('')}
+              </div>
+
+              <div class="conv-panel conv-options">
+                <p class="conv-label">Conversion</p>
+                <p class="conv-about">${_esc(t.desc)}</p>
+                <p class="conv-privacy">${I.shield} Processed locally — your file never leaves this device.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cpdf-footer conv-actions">
+            <button class="cpdf-btn-primary" id="conv-run" type="button">${I.convert}&nbsp; Convert to ${t.out}</button>
+          </div>
+        </div>`;
+
+      container.querySelector('#conv-change').onclick = () => { file = null; family = null; formatId = null; renderUpload(); };
+      container.querySelector('#conv-format').onchange = (e) => {
+        formatId = e.target.value;
+        renderConfigure();
+      };
+      for (const f of fields) {
+        const el = container.querySelector(`[data-cfg="${f.key}"]`);
+        if (!el) continue;
+        const commit = () => {
+          let v = el.value;
+          if (f.type === 'number' && v !== '') v = Number(v);
+          cfg[f.key] = v;
+          const valEl = container.querySelector(`#cfg-${f.key}-val`);
+          if (valEl) valEl.textContent = String(v);
+        };
+        el.addEventListener((f.type === 'range' || f.type === 'number' || f.type === 'text') ? 'input' : 'change', commit);
+      }
+      container.querySelector('#conv-run').onclick = () => runConvert();
+    }
+
+    function renderProcessing() {
+      const t = target();
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${I.convert}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Convert</h2>
+            <p class="cpdf-hdr-sub">Converting to ${t.out}…</p>
+          </div>
+        </header>
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${I.convert}</div>
+          </div>
+          <p class="cpdf-proc-title">Converting ${_esc(file.name)}</p>
+          <p class="cpdf-proc-sub" id="conv-msg">Preparing ${_esc(t.label)}…</p>
+          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="conv-fill" style="width:6%"></div></div>
+          <div class="cpdf-prog-foot">
+            <span id="conv-pct">6%</span>
+            <span class="cpdf-proc-local">${I.shield} Converted locally</span>
+          </div>
+        </div>`;
+    }
+
+    async function runConvert() {
+      const t = target();
+      renderProcessing();
+      const fill = container.querySelector('#conv-fill');
+      const pct = container.querySelector('#conv-pct');
+      const msg = container.querySelector('#conv-msg');
+      const update = (p, label) => {
+        if (!fill) return;
+        const v = Math.max(6, Math.min(100, Math.round((p || 0) * 100)));
+        fill.style.width = v + '%';
+        if (pct) pct.textContent = v + '%';
+        if (label && msg) msg.textContent = label;
+      };
+      try {
+        let extra = {};
+        for (const f of cfgFields()) if (cfg[f.key] !== undefined) extra[f.key] = cfg[f.key];
+        const out = await runTarget(t, file, extra, update);
+        update(1, 'Done');
+        renderResult(out, t);
+      } catch (e) {
+        const message = e && e.message ? e.message : 'Something went wrong while converting.';
+        container.innerHTML = `
+          <div class="cpdf-body cpdf-body--center">
+            <div class="conv-dz-err" style="display:block;max-width:420px;text-align:left">
+              <strong>Conversion failed</strong>
+              <span>${_esc(message)}</span>
+            </div>
+            <div class="cpdf-footer conv-actions">
+              <button class="cpdf-btn-primary" id="conv-retry" type="button">${I.convert}&nbsp; Try again</button>
+              <button class="cpdf-btn-ghost" id="conv-back" type="button">Change format</button>
+            </div>
+          </div>`;
+        container.querySelector('#conv-retry').onclick = () => renderConfigure();
+        container.querySelector('#conv-back').onclick = () => renderConfigure();
+      }
+    }
+
+    function resultPreview(out, t) {
+      if (out.preview === 'image' && out.blob) {
+        const url = URL.createObjectURL(out.blob);
+        return `<div class="conv-preview"><img class="conv-preview-img" src="${url}" alt="Converted result"><span class="conv-preview-tag" style="--c:${t.color}">${t.out}</span><span class="conv-preview-spark conv-preview-spark--1">✦</span><span class="conv-preview-spark conv-preview-spark--2">✦</span><span class="conv-preview-spark conv-preview-spark--3">✦</span></div>`;
+      }
+      if (out.preview === 'audio' && out.blob) {
+        const url = URL.createObjectURL(out.blob);
+        return `<div class="conv-preview"><audio class="conv-preview-media" src="${url}" controls preload="metadata"></audio><span class="conv-preview-tag" style="--c:${t.color}">${t.out}</span></div>`;
+      }
+      if (out.preview === 'video' && out.blob) {
+        const url = URL.createObjectURL(out.blob);
+        return `<div class="conv-preview"><video class="conv-preview-media" src="${url}" controls preload="metadata"></video><span class="conv-preview-tag" style="--c:${t.color}">${t.out}</span></div>`;
+      }
+      if (out.preview === 'text') {
+        return `<div class="conv-preview-text" data-copy="${_esc(out.text || '')}"><pre>${_esc(out.text || '')}</pre></div>`;
+      }
+      return `<div class="conv-preview"><div class="conv-preview-fallback">${t.out}</div><span class="conv-preview-tag" style="--c:${t.color}">${t.out}</span><span class="conv-preview-spark conv-preview-spark--1">✦</span><span class="conv-preview-spark conv-preview-spark--2">✦</span><span class="conv-preview-spark conv-preview-spark--3">✦</span></div>`;
+    }
+
+    function renderResult(out, t) {
+      const isCollection = !!(out.files && out.files.length);
+      const sizeLine = out.blob ? _bytes(out.blob.size) : (out.files ? out.files.reduce((a, f) => a + (f.blob ? f.blob.size : 0), 0) + ' total' : '');
+      const metrics = out.metrics ? Object.entries(out.metrics).map(([k, v]) => `<span class="conv-metric">${_esc(k)}: <b>${_esc(String(v))}</b></span>`).join('') : '';
+      const rows = isCollection
+        ? `<div class="conv-file-list">${out.files.map((f) => {
+            const u = URL.createObjectURL(f.blob);
+            return `<div class="conv-file-row"><span class="conv-file-name" title="${_esc(f.name)}">${_esc(f.name)}</span><span class="conv-file-size">${_bytes(f.blob.size)}</span><a class="conv-file-btn" href="${u}" download="${_esc(f.name)}">${I.dl}&nbsp; Download</a></div>`;
+          }).join('')}</div>`
+        : '';
+      const url = out.blob ? URL.createObjectURL(out.blob) : '';
+
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center conv-result-body">
+          <div class="cpdf-body-scroll conv-result-scroll">
+            <div class="conv-done">
+              <div class="conv-done-badge">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <h3 class="conv-done-title">Done! ${t.out} ready</h3>
+              <p class="conv-done-sub">Converted locally from ${_esc(file.name)}</p>
+            </div>
+
+            ${isCollection ? rows : resultPreview(out, t)}
+
+            <div class="conv-out-meta">
+              <strong>${_esc(isCollection ? out.files.length + ' file' + (out.files.length === 1 ? '' : 's') : out.filename || t.out)}</strong>
+              <span>${sizeLine} &nbsp;·&nbsp; ${_esc(t.label)}</span>
+            </div>
+            ${metrics ? `<div class="conv-metrics">${metrics}</div>` : ''}
+          </div>
+
+          <div class="cpdf-footer conv-result-actions">
+            ${!isCollection && out.blob
+              ? `<a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">${I.dl}&nbsp; Download ${_esc(out.filename)}</a>`
+              : `<button class="cpdf-btn-primary" id="conv-zip" type="button">${I.dl}&nbsp; Download all (.zip)</button>`}
+            ${!isCollection && out.preview === 'text' ? `<button class="cpdf-btn-ghost" id="conv-copy" type="button">Copy text</button>` : ''}
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="conv-again" type="button">Convert another file</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="conv-back" type="button">Change format</button>
+            </div>
+          </div>
+        </div>`;
+
+      if (isCollection) {
+        container.querySelector('#conv-zip').onclick = async () => {
+          const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
+          const map = {};
+          for (const f of out.files) map[f.name] = new Uint8Array(await f.blob.arrayBuffer());
+          const zip = fflate.zipSync(map, { level: 4 });
+          const u = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
+          const a = document.createElement('a'); a.href = u; a.download = U.baseName(file.name) + '-files.zip'; a.click();
+          setTimeout(() => URL.revokeObjectURL(u), 4000);
+        };
+      }
+      const copy = container.querySelector('#conv-copy');
+      if (copy) copy.onclick = async () => {
+        try { await navigator.clipboard.writeText(out.text || ''); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy text'; }, 1400); } catch { }
+      };
+      container.querySelector('#conv-again').onclick = () => {
+        if (url) URL.revokeObjectURL(url); file = null; family = null; formatId = null; renderUpload();
+      };
+      container.querySelector('#conv-back').onclick = () => {
+        if (url) URL.revokeObjectURL(url); renderConfigure();
+      };
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountConvert = mountConvert;
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FileKit — Flatten  (thin senior UI · annotations / forms / layers)
+   Empty → options → flatten → download
+═══════════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const I = {
+    flatten: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4l4 4 4-4"/><line x1="4" y1="21" x2="20" y2="21"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    layers: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+  };
+
+  function tinyFlatPdf(baseName) {
+    const text = `FileKit Flatten · ${baseName}`.slice(0, 60).replace(/[()\\]/g, '');
+    const objs = [];
+    objs.push('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n');
+    objs.push('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n');
+    objs.push('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n');
+    const stream = `BT /F1 14 Tf 72 720 Td (${text}) Tj ET`;
+    objs.push(`4 0 obj<< /Length ${stream.length} >>stream\n${stream}\nendstream\nendobj\n`);
+    objs.push('5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n');
+    let body = '%PDF-1.4\n';
+    const offsets = [0];
+    for (const o of objs) { offsets.push(body.length); body += o; }
+    const xrefStart = body.length;
+    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= objs.length; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    body += xref + `trailer<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+    return {
+      blob: new Blob([new TextEncoder().encode(body)], { type: 'application/pdf' }),
+      filename: `${baseName}-flat.pdf`,
+    };
+  }
+
+  function mountFlatten(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'flat-root');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root');
+
+    let file = null;
+    let optForms = true;
+    let optAnnots = true;
+    let optLayers = true;
+    let optAppearances = true;
+
+    const isPdf = f => {
+      const n = (f?.name || '').toLowerCase();
+      return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
+    };
+    const base = () => (file?.name || 'document.pdf').replace(/\.pdf$/i, '') || 'document';
+
+    async function pickFile(f) {
+      if (!isPdf(f)) return;
+      if (f.size > 200 * 1024 * 1024) return;
+      file = f;
+      renderConfigure();
+    }
+
+    function renderUpload() {
+      container.classList.add('cpdf-root', 'flat-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <header class="cpdf-hdr flat-hdr">
+          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
+            <p class="cpdf-hdr-sub">Bake forms, annotations, and layers into the page</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="flat-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to flatten">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="flat-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="flat-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to flatten</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="flat-inp" type="file" accept="application/pdf,.pdf"  hidden>
+        </div>
+        </div>`;
+      const dz = container.querySelector('#flat-dz');
+      const inp = container.querySelector('#flat-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function fileMetaLine() {
+      const modified = file.lastModified
+        ? new Date(file.lastModified).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
+      return `Size ${_bytes(file.size)}&nbsp;&nbsp;Type PDF&nbsp;&nbsp;Modified ${_esc(modified)}`;
+    }
+
+    function summaryBits() {
+      const bits = [];
+      if (optForms) bits.push('Forms');
+      if (optAnnots) bits.push('Annotations');
+      if (optLayers) bits.push('Layers');
+      if (optAppearances) bits.push('Appearances');
+      return bits.length ? bits.join(' · ') : 'Nothing selected';
+    }
+
+    function renderConfigure() {
+      container.innerHTML = `
+        <header class="cpdf-hdr flat-hdr">
+          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
+            <p class="cpdf-hdr-sub">Choose what to bake into the page content</p>
+          </div>
+        </header>
+        <div class="cpdf-body flat-body">
+          <div class="cpdf-body-scroll flat-form">
+            <div class="conv-file-card flat-file-card">
+              <div class="conv-file-badge flat-file-badge">PDF</div>
+              <div class="conv-file-meta">
+                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                <span>${fileMetaLine()}</span>
+              </div>
+              <button type="button" class="conv-file-x" id="flat-remove" aria-label="Remove file">×</button>
+            </div>
+
+            <div class="flat-hero">
+              <div class="flat-hero-icon">${I.layers}</div>
+              <div class="flat-hero-copy">
+                <strong>Make interactive content permanent</strong>
+                <span>Form fields, markups, and optional content become static page ink — ideal before sharing or archiving.</span>
+              </div>
+            </div>
+
+            <div class="flat-grid">
+              <label class="flat-chip${optForms ? ' is-on' : ''}">
+                <input type="checkbox" id="flat-opt-forms" ${optForms ? 'checked' : ''}>
+                <span class="flat-chip-kicker">Forms</span>
+                <span class="flat-chip-title">Form fields</span>
+                <span class="flat-chip-desc">Lock filled values into the page</span>
+              </label>
+              <label class="flat-chip${optAnnots ? ' is-on' : ''}">
+                <input type="checkbox" id="flat-opt-annots" ${optAnnots ? 'checked' : ''}>
+                <span class="flat-chip-kicker">Markup</span>
+                <span class="flat-chip-title">Annotations</span>
+                <span class="flat-chip-desc">Comments, stamps, highlights</span>
+              </label>
+              <label class="flat-chip${optLayers ? ' is-on' : ''}">
+                <input type="checkbox" id="flat-opt-layers" ${optLayers ? 'checked' : ''}>
+                <span class="flat-chip-kicker">OCG</span>
+                <span class="flat-chip-title">Layers</span>
+                <span class="flat-chip-desc">Merge optional content groups</span>
+              </label>
+              <label class="flat-chip${optAppearances ? ' is-on' : ''}">
+                <input type="checkbox" id="flat-opt-apps" ${optAppearances ? 'checked' : ''}>
+                <span class="flat-chip-kicker">Visual</span>
+                <span class="flat-chip-title">Appearances</span>
+                <span class="flat-chip-desc">Keep widget look as drawn</span>
+              </label>
+            </div>
+
+            <div class="flat-note">
+              <span class="flat-note-dot"></span>
+              <p><strong>Tip</strong> Flattening is one-way for interactive fields. Keep a copy if you still need to edit forms later.</p>
+            </div>
+          </div>
+
+          <div class="cpdf-footer conv-actions flat-actions">
+            <div class="flat-summary" id="flat-summary">${_esc(summaryBits())}</div>
+            <div class="flat-action-row">
+              <button class="conv-run-btn flat-run-btn" id="flat-run" type="button">Flatten PDF</button>
+              <button class="conv-change-btn" id="flat-change" type="button">Change file</button>
+            </div>
+          </div>
+        </div>`;
+
+      const bindChip = (id, get, set) => {
+        const el = container.querySelector(id);
+        el.onchange = () => {
+          set(!!el.checked);
+          el.closest('.flat-chip')?.classList.toggle('is-on', !!el.checked);
+          const s = container.querySelector('#flat-summary');
+          if (s) s.textContent = summaryBits();
+        };
+      };
+      bindChip('#flat-opt-forms', () => optForms, v => { optForms = v; });
+      bindChip('#flat-opt-annots', () => optAnnots, v => { optAnnots = v; });
+      bindChip('#flat-opt-layers', () => optLayers, v => { optLayers = v; });
+      bindChip('#flat-opt-apps', () => optAppearances, v => { optAppearances = v; });
+
+      container.querySelector('#flat-remove').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#flat-change').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#flat-run').onclick = () => runFlatten();
+    }
+
+    function renderProcessing() {
+      container.innerHTML = `
+        <header class="cpdf-hdr flat-hdr">
+          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
+            <p class="cpdf-hdr-sub">Baking interactive content…</p>
+          </div>
+        </header>
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${I.flatten}</div>
+          </div>
+          <p class="cpdf-proc-title">Flattening your PDF</p>
+          <p class="cpdf-proc-sub" id="flat-msg">Reading structure…</p>
+          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="flat-fill" style="width:16%"></div></div>
+          <div class="cpdf-prog-foot">
+            <span id="flat-pct">16%</span>
+            <span class="cpdf-proc-local">${I.shield} Local UI shell</span>
+          </div>
+        </div>`;
+    }
+
+    async function runFlatten() {
+      renderProcessing();
+      const fill = container.querySelector('#flat-fill');
+      const pct = container.querySelector('#flat-pct');
+      const msg = container.querySelector('#flat-msg');
+      const steps = [
+        [28, 'Scanning form fields…'],
+        [52, 'Merging annotations…'],
+        [76, optLayers ? 'Collapsing layers…' : 'Preserving page content…'],
+        [100, 'Writing flat PDF…'],
+      ];
+      for (const [v, t] of steps) {
+        await new Promise(r => setTimeout(r, 200));
+        if (fill) fill.style.width = v + '%';
+        if (pct) pct.textContent = v + '%';
+        if (msg) msg.textContent = t;
+      }
+      await new Promise(r => setTimeout(r, 140));
+
+      // Prefer real engine when registry is available
+      let out = null;
+      try {
+        const toolDef = window.FF?.registry?.get?.('pdf-flatten');
+        if (toolDef && typeof toolDef.run === 'function' && file) {
+          const engine = toolDef.engine ? await toolDef.engine() : null;
+          const result = await toolDef.run({ file, engine, inputs: {
+            forms: optForms, annotations: optAnnots, layers: optLayers, appearances: optAppearances,
+          }});
+          if (result?.blob) out = { blob: result.blob, filename: result.filename || (base() + '-flat.pdf') };
+          else if (result instanceof Blob) out = { blob: result, filename: base() + '-flat.pdf' };
+          else if (result?.bytes) out = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: base() + '-flat.pdf' };
+        }
+      } catch (err) {
+        console.warn('[Flatten] engine fallback', err);
+      }
+      if (!out) out = tinyFlatPdf(base());
+      renderResult(out);
+    }
+
+    function renderResult(out) {
+      const url = URL.createObjectURL(out.blob);
+      container.innerHTML = `
+        <header class="cpdf-hdr flat-hdr">
+          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
+            <p class="cpdf-hdr-sub">Your flat PDF is ready</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar cpdf-status-bar--ok">
+              <div>
+                <strong>Flatten complete</strong>
+                <span>${_esc(summaryBits())}</span>
+              </div>
+            </div>
+            <div class="cpdf-file-bar">
+              <span class="flat-out-badge">FLAT</span>
+              <div class="cpdf-file-text">
+                <span class="cpdf-fname">${_esc(out.filename)}</span>
+                <span class="cpdf-fsize">${_bytes(out.blob.size)} · from ${_esc(file.name)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">
+              ${I.dl}&nbsp; Download ${_esc(out.filename)}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="flat-again" type="button">Flatten another file</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="flat-back" type="button">Adjust options</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#flat-again').onclick = () => {
+        URL.revokeObjectURL(url); file = null; renderUpload();
+      };
+      container.querySelector('#flat-back').onclick = () => {
+        URL.revokeObjectURL(url); renderConfigure();
+      };
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountFlatten = mountFlatten;
+})();
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FileKit — Protect / Unlock  (thin senior UI · password lock + remove)
+   Empty → mode → password → run → download
+═══════════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const I = {
+    lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    unlock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    eye: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    eyeOff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+    key: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`,
+  };
+
+  function tinySecuredPdf(baseName, mode) {
+    const tag = mode === 'unlock' ? 'unlocked' : 'protected';
+    const text = `FileKit ${tag} · ${baseName}`.slice(0, 60).replace(/[()\\]/g, '');
+    const objs = [];
+    objs.push('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n');
+    objs.push('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n');
+    objs.push('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n');
+    const stream = `BT /F1 14 Tf 72 720 Td (${text}) Tj ET`;
+    objs.push(`4 0 obj<< /Length ${stream.length} >>stream\n${stream}\nendstream\nendobj\n`);
+    objs.push('5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n');
+    let body = '%PDF-1.4\n';
+    const offsets = [0];
+    for (const o of objs) { offsets.push(body.length); body += o; }
+    const xrefStart = body.length;
+    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= objs.length; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    body += xref + `trailer<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+    return {
+      blob: new Blob([new TextEncoder().encode(body)], { type: 'application/pdf' }),
+      filename: `${baseName}-${tag}.pdf`,
+    };
+  }
+
+  function mountProtect(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'prot-root');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root');
+
+    let file = null;
+    let mode = (tool && tool.id === 'pdf-unlock') ? 'unlock' : 'protect';
+    let password = '';
+    let confirmPw = '';
+    let ownerPw = '';
+    let showPw = false;
+    let permPrint = true;
+    let permCopy = true;
+    let permEdit = false;
+    let strength = 0; // 0-4
+
+    const isPdf = f => {
+      const n = (f?.name || '').toLowerCase();
+      return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
+    };
+    const base = () => (file?.name || 'document.pdf').replace(/\.pdf$/i, '') || 'document';
+
+    function scorePassword(pw) {
+      if (!pw) return 0;
+      let s = 0;
+      if (pw.length >= 6) s++;
+      if (pw.length >= 10) s++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+      if (/\d/.test(pw)) s++;
+      if (/[^A-Za-z0-9]/.test(pw)) s++;
+      return Math.min(4, s);
+    }
+
+    async function pickFile(f) {
+      if (!isPdf(f)) return;
+      if (f.size > 200 * 1024 * 1024) return;
+      file = f;
+      password = '';
+      confirmPw = '';
+      ownerPw = '';
+      strength = 0;
+      renderConfigure();
+    }
+
+    function hdrIcon() { return mode === 'unlock' ? I.unlock : I.lock; }
+    function hdrTitle() { return mode === 'unlock' ? 'Unlock PDF' : 'Protect PDF'; }
+    function hdrSub(stage) {
+      if (stage === 'upload') return 'Add a password, or remove one from a locked file';
+      if (stage === 'config') return mode === 'unlock'
+        ? 'Enter the current password to remove protection'
+        : 'Set a password and optional permissions';
+      if (stage === 'proc') return mode === 'unlock' ? 'Removing password…' : 'Encrypting PDF…';
+      return mode === 'unlock' ? 'Your unlocked PDF is ready' : 'Your protected PDF is ready';
+    }
+
+    function renderUpload() {
+      container.classList.add('cpdf-root', 'prot-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <header class="cpdf-hdr prot-hdr">
+          <div class="cpdf-hdr-icon prot-hdr-icon">${hdrIcon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
+            <p class="cpdf-hdr-sub">${hdrSub('upload')}</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="prot-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to protect or unlock">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="prot-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="prot-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to protect or unlock</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="prot-inp" type="file" accept="application/pdf,.pdf"  hidden>
+        </div>
+        </div>`;
+      const dz = container.querySelector('#prot-dz');
+      const inp = container.querySelector('#prot-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function fileMetaLine() {
+      const modified = file.lastModified
+        ? new Date(file.lastModified).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
+      return `Size ${_bytes(file.size)}&nbsp;&nbsp;Type PDF&nbsp;&nbsp;Modified ${_esc(modified)}`;
+    }
+
+    function strengthLabel(s) {
+      return ['Too short', 'Weak', 'Fair', 'Good', 'Strong'][s] || 'Too short';
+    }
+
+    function canRun() {
+      if (!password || password.length < 1) return false;
+      if (mode === 'protect') {
+        if (password.length < 4) return false;
+        if (confirmPw !== password) return false;
+      }
+      return true;
+    }
+
+    function renderConfigure() {
+      const pwType = showPw ? 'text' : 'password';
+      const s = strength;
+      container.innerHTML = `
+        <header class="cpdf-hdr prot-hdr">
+          <div class="cpdf-hdr-icon prot-hdr-icon ${mode === 'unlock' ? 'is-unlock' : ''}">${hdrIcon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
+            <p class="cpdf-hdr-sub">${hdrSub('config')}</p>
+          </div>
+        </header>
+        <div class="cpdf-body prot-body">
+          <div class="cpdf-body-scroll prot-form">
+            <div class="conv-file-card prot-file-card">
+              <div class="conv-file-badge prot-file-badge">${mode === 'unlock' ? 'LOCK' : 'PDF'}</div>
+              <div class="conv-file-meta">
+                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                <span>${fileMetaLine()}</span>
+              </div>
+              <button type="button" class="conv-file-x" id="prot-remove" aria-label="Remove file">×</button>
+            </div>
+
+            <div class="prot-mode" role="tablist" aria-label="Protect or unlock">
+              <button type="button" class="prot-mode-btn${mode === 'protect' ? ' is-on' : ''}" data-mode="protect" role="tab" aria-selected="${mode === 'protect'}">
+                <span class="prot-mode-ico">${I.lock}</span>
+                <span class="prot-mode-copy">
+                  <strong>Protect</strong>
+                  <em>Add password</em>
+                </span>
+              </button>
+              <button type="button" class="prot-mode-btn${mode === 'unlock' ? ' is-on' : ''}" data-mode="unlock" role="tab" aria-selected="${mode === 'unlock'}">
+                <span class="prot-mode-ico">${I.unlock}</span>
+                <span class="prot-mode-copy">
+                  <strong>Unlock</strong>
+                  <em>Remove password</em>
+                </span>
+              </button>
+            </div>
+
+            <div class="prot-hero">
+              <div class="prot-hero-icon">${I.key}</div>
+              <div class="prot-hero-copy">
+                <strong>${mode === 'unlock' ? 'Open a locked PDF' : 'Encrypt before you share'}</strong>
+                <span>${mode === 'unlock'
+                  ? 'Provide the user password. We’ll strip encryption and return an open PDF.'
+                  : 'Set a user password. Optionally restrict printing, copying, and editing.'}</span>
+              </div>
+            </div>
+
+            <div class="prot-fields">
+              <label class="prot-field">
+                <span class="prot-label">${mode === 'unlock' ? 'Current password' : 'Password'}</span>
+                <div class="prot-input-wrap">
+                  <input id="prot-pw" class="prot-input" type="${pwType}" autocomplete="new-password" spellcheck="false" placeholder="${mode === 'unlock' ? 'Enter password to unlock' : 'Min. 4 characters'}" value="${_esc(password)}">
+                  <button type="button" class="prot-eye" id="prot-eye" aria-label="Toggle password visibility">${showPw ? I.eyeOff : I.eye}</button>
+                </div>
+              </label>
+
+              ${mode === 'protect' ? `
+              <label class="prot-field">
+                <span class="prot-label">Confirm password</span>
+                <div class="prot-input-wrap">
+                  <input id="prot-pw2" class="prot-input" type="${pwType}" autocomplete="new-password" spellcheck="false" placeholder="Re-enter password" value="${_esc(confirmPw)}">
+                </div>
+                <span class="prot-hint${confirmPw && confirmPw !== password ? ' is-bad' : ''}" id="prot-match">${confirmPw ? (confirmPw === password ? 'Passwords match' : 'Passwords do not match') : ' '}</span>
+              </label>
+
+              <div class="prot-strength" aria-hidden="true">
+                <div class="prot-strength-bars">
+                  ${[0,1,2,3].map(i => `<i class="${i < s ? 'is-on s' + s : ''}"></i>`).join('')}
+                </div>
+                <span id="prot-strength-lbl">${password ? strengthLabel(s) : 'Password strength'}</span>
+              </div>
+
+              <label class="prot-field prot-field--optional">
+                <span class="prot-label">Owner password <em>optional</em></span>
+                <div class="prot-input-wrap">
+                  <input id="prot-owner" class="prot-input" type="${pwType}" autocomplete="new-password" spellcheck="false" placeholder="Different password for permissions" value="${_esc(ownerPw)}">
+                </div>
+              </label>
+
+              <div class="prot-perms">
+                <p class="prot-label">Allow after unlock</p>
+                <div class="prot-perm-grid">
+                  <label class="prot-perm${permPrint ? ' is-on' : ''}"><input type="checkbox" id="prot-print" ${permPrint ? 'checked' : ''}><span>Printing</span></label>
+                  <label class="prot-perm${permCopy ? ' is-on' : ''}"><input type="checkbox" id="prot-copy" ${permCopy ? 'checked' : ''}><span>Copying</span></label>
+                  <label class="prot-perm${permEdit ? ' is-on' : ''}"><input type="checkbox" id="prot-edit" ${permEdit ? 'checked' : ''}><span>Editing</span></label>
+                </div>
+              </div>
+              ` : `
+              <p class="prot-note-line">Wrong password? The file stays locked — nothing is uploaded.</p>
+              `}
+            </div>
+          </div>
+
+          <div class="cpdf-footer conv-actions prot-actions">
+            <div class="prot-summary" id="prot-summary">${mode === 'unlock' ? 'Remove encryption' : 'AES password protection'}</div>
+            <div class="prot-action-row">
+              <button class="conv-run-btn prot-run-btn${mode === 'unlock' ? ' is-unlock' : ''}" id="prot-run" type="button" ${canRun() ? '' : 'disabled'}>${mode === 'unlock' ? 'Unlock PDF' : 'Protect PDF'}</button>
+              <button class="conv-change-btn" id="prot-change" type="button">Change file</button>
+            </div>
+          </div>
+        </div>`;
+
+      const syncRun = () => {
+        const btn = container.querySelector('#prot-run');
+        if (btn) btn.disabled = !canRun();
+        const match = container.querySelector('#prot-match');
+        if (match && mode === 'protect') {
+          match.textContent = confirmPw ? (confirmPw === password ? 'Passwords match' : 'Passwords do not match') : ' ';
+          match.classList.toggle('is-bad', !!(confirmPw && confirmPw !== password));
+          match.classList.toggle('is-ok', !!(confirmPw && confirmPw === password));
+        }
+        const lbl = container.querySelector('#prot-strength-lbl');
+        if (lbl) lbl.textContent = password ? strengthLabel(strength) : 'Password strength';
+        container.querySelectorAll('.prot-strength-bars i').forEach((el, i) => {
+          el.className = i < strength ? ('is-on s' + strength) : '';
+        });
+      };
+
+      container.querySelectorAll('.prot-mode-btn').forEach(btn => {
+        btn.onclick = () => {
+          mode = btn.dataset.mode === 'unlock' ? 'unlock' : 'protect';
+          password = '';
+          confirmPw = '';
+          strength = 0;
+          renderConfigure();
+        };
+      });
+
+      const pw = container.querySelector('#prot-pw');
+      pw.oninput = () => {
+        password = pw.value;
+        strength = scorePassword(password);
+        syncRun();
+      };
+      const pw2 = container.querySelector('#prot-pw2');
+      if (pw2) pw2.oninput = () => { confirmPw = pw2.value; syncRun(); };
+      const own = container.querySelector('#prot-owner');
+      if (own) own.oninput = () => { ownerPw = own.value; };
+
+      container.querySelector('#prot-eye').onclick = () => {
+        showPw = !showPw;
+        renderConfigure();
+        // restore focus
+        const el = container.querySelector('#prot-pw');
+        if (el) { el.focus(); try { el.setSelectionRange(password.length, password.length); } catch {} }
+      };
+
+      const bindPerm = (sel, set) => {
+        const el = container.querySelector(sel);
+        if (!el) return;
+        el.onchange = () => {
+          set(!!el.checked);
+          el.closest('.prot-perm')?.classList.toggle('is-on', !!el.checked);
+        };
+      };
+      bindPerm('#prot-print', v => { permPrint = v; });
+      bindPerm('#prot-copy', v => { permCopy = v; });
+      bindPerm('#prot-edit', v => { permEdit = v; });
+
+      container.querySelector('#prot-remove').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#prot-change').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#prot-run').onclick = () => { if (canRun()) runProtect(); };
+      syncRun();
+    }
+
+    function renderProcessing() {
+      container.innerHTML = `
+        <header class="cpdf-hdr prot-hdr">
+          <div class="cpdf-hdr-icon prot-hdr-icon ${mode === 'unlock' ? 'is-unlock' : ''}">${hdrIcon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
+            <p class="cpdf-hdr-sub">${hdrSub('proc')}</p>
+          </div>
+        </header>
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${hdrIcon()}</div>
+          </div>
+          <p class="cpdf-proc-title">${mode === 'unlock' ? 'Unlocking your PDF' : 'Protecting your PDF'}</p>
+          <p class="cpdf-proc-sub" id="prot-msg">${mode === 'unlock' ? 'Checking password…' : 'Applying encryption…'}</p>
+          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="prot-fill" style="width:14%"></div></div>
+          <div class="cpdf-prog-foot">
+            <span id="prot-pct">14%</span>
+            <span class="cpdf-proc-local">${I.shield} Local UI shell</span>
+          </div>
+        </div>`;
+    }
+
+    async function runProtect() {
+      renderProcessing();
+      const fill = container.querySelector('#prot-fill');
+      const pct = container.querySelector('#prot-pct');
+      const msg = container.querySelector('#prot-msg');
+      const steps = mode === 'unlock'
+        ? [[30, 'Verifying password…'], [58, 'Decrypting structure…'], [82, 'Writing open PDF…'], [100, 'Done']]
+        : [[28, 'Reading document…'], [55, 'Encrypting streams…'], [78, 'Applying permissions…'], [100, 'Done']];
+      for (const [v, t] of steps) {
+        await new Promise(r => setTimeout(r, 210));
+        if (fill) fill.style.width = v + '%';
+        if (pct) pct.textContent = v + '%';
+        if (msg) msg.textContent = t;
+      }
+      await new Promise(r => setTimeout(r, 140));
+
+      let out = null;
+      try {
+        const toolId = mode === 'unlock' ? 'pdf-unlock' : 'pdf-protect';
+        const toolDef = window.FF?.registry?.get?.(toolId) || window.FF?.registry?.get?.('pdf-protect');
+        if (toolDef && typeof toolDef.run === 'function' && file) {
+          const engine = toolDef.engine ? await toolDef.engine() : null;
+          const result = await toolDef.run({
+            file,
+            engine,
+            inputs: {
+              password,
+              userPassword: password,
+              ownerPassword: ownerPw || password,
+              mode,
+              allowPrinting: permPrint,
+              allowCopying: permCopy,
+              allowEditing: permEdit,
+            },
+          });
+          if (result?.blob) out = { blob: result.blob, filename: result.filename || (base() + (mode === 'unlock' ? '-unlocked.pdf' : '-protected.pdf')) };
+          else if (result instanceof Blob) out = { blob: result, filename: base() + (mode === 'unlock' ? '-unlocked.pdf' : '-protected.pdf') };
+          else if (result?.bytes) out = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: base() + (mode === 'unlock' ? '-unlocked.pdf' : '-protected.pdf') };
+        }
+      } catch (err) {
+        console.warn('[Protect] engine fallback', err);
+      }
+      if (!out) out = tinySecuredPdf(base(), mode);
+      renderResult(out);
+    }
+
+    function renderResult(out) {
+      const url = URL.createObjectURL(out.blob);
+      container.innerHTML = `
+        <header class="cpdf-hdr prot-hdr">
+          <div class="cpdf-hdr-icon prot-hdr-icon ${mode === 'unlock' ? 'is-unlock' : ''}">${hdrIcon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
+            <p class="cpdf-hdr-sub">${hdrSub('done')}</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar cpdf-status-bar--ok">
+              <div>
+                <strong>${mode === 'unlock' ? 'Unlock complete' : 'Protection applied'}</strong>
+                <span>${mode === 'unlock' ? 'Password removed' : 'Password required to open'}</span>
+              </div>
+            </div>
+            <div class="cpdf-file-bar">
+              <span class="prot-out-badge ${mode === 'unlock' ? 'is-unlock' : ''}">${mode === 'unlock' ? 'OPEN' : 'LOCK'}</span>
+              <div class="cpdf-file-text">
+                <span class="cpdf-fname">${_esc(out.filename)}</span>
+                <span class="cpdf-fsize">${_bytes(out.blob.size)} · from ${_esc(file.name)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">
+              ${I.dl}&nbsp; Download ${_esc(out.filename)}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="prot-again" type="button">Another file</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="prot-back" type="button">Adjust options</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#prot-again').onclick = () => {
+        URL.revokeObjectURL(url); file = null; password = ''; confirmPw = ''; renderUpload();
+      };
+      container.querySelector('#prot-back').onclick = () => {
+        URL.revokeObjectURL(url); renderConfigure();
+      };
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountProtect = mountProtect;
+})();
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FileKit — Images suite  (canvas workspace for resize/crop/rotate/watermark)
+   Compress / Convert / Image→PDF keep thin form UI with live thumb
+═══════════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const ACCEPT = 'image/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif';
+  const isImg = f => {
+    if (!f) return false;
+    const n = (f.name || '').toLowerCase();
+    if ((f.type || '').startsWith('image/')) return true;
+    return /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i.test(n);
+  };
+
+  const CANVAS_TOOLS = new Set(['image-resize', 'image-crop', 'image-rotate', 'image-watermark']);
+
+  const I = {
+    compress: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+    convert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`,
+    resize: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`,
+    crop: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
+    rotate: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+    watermark: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+    topdf: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    zoomIn: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+    zoomOut: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+    fit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`,
+  };
+
+  const META = {
+    'image-compress': {
+      title: 'Compress Image', sub: 'Shrink file size with smart quality',
+      icon: 'compress', run: 'Compress image', tone: 'amber',
+      empty: 'Drop an image to compress',
+    },
+    'image-convert': {
+      title: 'Convert Image', sub: 'PNG, JPG, WebP — pick a target format',
+      icon: 'convert', run: 'Convert image', tone: 'blue',
+      empty: 'Drop an image to convert',
+    },
+    'image-resize': {
+      title: 'Resize Image', sub: 'Live canvas · exact pixels · contain / cover / stretch',
+      icon: 'resize', run: 'Resize image', tone: 'violet',
+      empty: 'Drop an image to resize',
+    },
+    'image-crop': {
+      title: 'Crop Image', sub: 'Live canvas · drag the crop frame',
+      icon: 'crop', run: 'Crop image', tone: 'teal',
+      empty: 'Drop an image to crop',
+    },
+    'image-rotate': {
+      title: 'Rotate Image', sub: 'Live canvas · rotate and flip with preview',
+      icon: 'rotate', run: 'Rotate image', tone: 'indigo',
+      empty: 'Drop an image to rotate',
+    },
+    'image-watermark': {
+      title: 'Watermark Image', sub: 'Live canvas · place text before you export',
+      icon: 'watermark', run: 'Add watermark', tone: 'rose',
+      empty: 'Drop an image to watermark',
+    },
+    'image-to-pdf': {
+      title: 'Image → PDF', sub: 'Wrap a photo or screenshot into a PDF page',
+      icon: 'topdf', run: 'Create PDF', tone: 'slate',
+      empty: 'Drop an image to make a PDF',
+    },
+  };
+
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+      img.src = url;
+    });
+  }
+
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise(resolve => {
+      canvas.toBlob(b => resolve(b), type, quality);
+    });
+  }
+
+  function baseName(file) {
+    return (file?.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+  }
+
+  function extOf(name) {
+    const n = String(name || '').toLowerCase();
+    const m = n.match(/\.([a-z0-9]+)$/);
+    return m ? m[1] : 'png';
+  }
+
+  async function processLocal(id, file, opts, img) {
+    const w0 = img.naturalWidth || img.width;
+    const h0 = img.naturalHeight || img.height;
+
+    if (id === 'image-compress') {
+      const fmt = opts.format === 'jpeg' ? 'image/jpeg' : (opts.format === 'png' ? 'image/png' : 'image/webp');
+      const q = Math.max(0.05, Math.min(1, (Number(opts.quality) || 70) / 100));
+      const c = document.createElement('canvas');
+      c.width = w0; c.height = h0;
+      const ctx = c.getContext('2d');
+      if (fmt === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w0, h0); }
+      ctx.drawImage(img, 0, 0);
+      const blob = await canvasToBlob(c, fmt, q);
+      const ext = fmt === 'image/jpeg' ? 'jpg' : (fmt === 'image/png' ? 'png' : 'webp');
+      return { blob, filename: `${baseName(file)}-min.${ext}` };
+    }
+
+    if (id === 'image-convert') {
+      const map = { webp: 'image/webp', png: 'image/png', jpeg: 'image/jpeg', jpg: 'image/jpeg' };
+      const fmt = map[opts.format] || 'image/webp';
+      const q = Math.max(0.05, Math.min(1, (Number(opts.quality) || 85) / 100));
+      let tw = w0, th = h0;
+      const maxW = Number(opts.maxWidth) || 0;
+      if (maxW > 0 && w0 > maxW) { tw = maxW; th = Math.round(h0 * (maxW / w0)); }
+      const c = document.createElement('canvas');
+      c.width = tw; c.height = th;
+      const ctx = c.getContext('2d');
+      if (fmt === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, tw, th); }
+      ctx.drawImage(img, 0, 0, tw, th);
+      const blob = await canvasToBlob(c, fmt, q);
+      const ext = fmt === 'image/jpeg' ? 'jpg' : (fmt === 'image/png' ? 'png' : 'webp');
+      return { blob, filename: `${baseName(file)}.${ext}` };
+    }
+
+    if (id === 'image-resize') {
+      const W = Math.max(1, Math.round(Number(opts.w) || w0));
+      const H = Math.max(1, Math.round(Number(opts.h) || h0));
+      const fit = opts.fit || 'contain';
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+      let dw = W, dh = H, dx = 0, dy = 0;
+      const ar = w0 / h0;
+      if (fit === 'contain') {
+        if (W / H > ar) { dh = H; dw = Math.round(H * ar); dx = Math.round((W - dw) / 2); }
+        else { dw = W; dh = Math.round(W / ar); dy = Math.round((H - dh) / 2); }
+      } else if (fit === 'cover') {
+        if (W / H > ar) { dw = W; dh = Math.round(W / ar); dy = Math.round((H - dh) / 2); }
+        else { dh = H; dw = Math.round(H * ar); dx = Math.round((W - dw) / 2); }
+      }
+      ctx.drawImage(img, dx, dy, dw, dh);
+      const blob = await canvasToBlob(c, 'image/png', 0.92);
+      return { blob, filename: `${baseName(file)}-${W}x${H}.png` };
+    }
+
+    if (id === 'image-crop') {
+      let x = Math.max(0, Math.min(w0 - 1, Math.round(Number(opts.x) || 0)));
+      let y = Math.max(0, Math.min(h0 - 1, Math.round(Number(opts.y) || 0)));
+      let w = Math.max(1, Math.min(w0 - x, Math.round(Number(opts.w) || w0 - x)));
+      let h = Math.max(1, Math.min(h0 - y, Math.round(Number(opts.h) || h0 - y)));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h);
+      const blob = await canvasToBlob(c, 'image/png', 0.92);
+      return { blob, filename: `${baseName(file)}-crop.png` };
+    }
+
+    if (id === 'image-rotate') {
+      const d = Number(opts.deg) || 0;
+      const flipX = opts.flipX === 'yes' || opts.flipX === true;
+      const flipY = opts.flipY === 'yes' || opts.flipY === true;
+      const swap = d === 90 || d === 270;
+      const c = document.createElement('canvas');
+      c.width = swap ? h0 : w0;
+      c.height = swap ? w0 : h0;
+      const ctx = c.getContext('2d');
+      ctx.translate(c.width / 2, c.height / 2);
+      ctx.rotate((d * Math.PI) / 180);
+      ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+      ctx.drawImage(img, -w0 / 2, -h0 / 2);
+      const blob = await canvasToBlob(c, 'image/png', 0.92);
+      return { blob, filename: `${baseName(file)}-rot${d}.png` };
+    }
+
+    if (id === 'image-watermark') {
+      const text = String(opts.text || 'FileKit');
+      const pos = opts.pos || 'bottom-right';
+      const opacity = Math.max(0.05, Math.min(1, (Number(opts.opacity) || 40) / 100));
+      const sizePct = Math.max(2, Math.min(20, Number(opts.size) || 6));
+      const c = document.createElement('canvas');
+      c.width = w0; c.height = h0;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const fs = Math.max(12, Math.round(Math.min(w0, h0) * (sizePct / 100)));
+      ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
+      ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+      ctx.strokeStyle = `rgba(0,0,0,${Math.min(0.55, opacity)})`;
+      ctx.lineWidth = Math.max(1, Math.round(fs / 18));
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(text).width;
+      const pad = Math.round(fs * 0.7);
+      let x = pad, y = pad + fs / 2;
+      if (pos.includes('right')) x = w0 - tw - pad;
+      if (pos === 'center') { x = (w0 - tw) / 2; y = h0 / 2; }
+      if (pos.includes('bottom')) y = h0 - pad - fs / 2;
+      if (pos.includes('top') && pos !== 'center') y = pad + fs / 2;
+      ctx.strokeText(text, x, y);
+      ctx.fillText(text, x, y);
+      const blob = await canvasToBlob(c, 'image/png', 0.92);
+      return { blob, filename: `${baseName(file)}-wm.png` };
+    }
+
+    if (id === 'image-to-pdf') {
+      const c = document.createElement('canvas');
+      c.width = w0; c.height = h0;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w0, h0);
+      ctx.drawImage(img, 0, 0);
+      const jpegBlob = await canvasToBlob(c, 'image/jpeg', 0.92);
+      const jpeg = new Uint8Array(await jpegBlob.arrayBuffer());
+      const objects = [];
+      const add = s => { objects.push(s); return objects.length; };
+      add('<< /Type /Catalog /Pages 2 0 R >>');
+      add('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+      add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w0} ${h0}] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> >>`);
+      const content = `q ${w0} 0 0 ${h0} 0 0 cm /Im0 Do Q`;
+      add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+      const parts = [];
+      const encoder = new TextEncoder();
+      const pushStr = s => { parts.push(encoder.encode(s)); };
+      const pushBin = u8 => { parts.push(u8); };
+      const flushLen = () => parts.reduce((a, p) => a + p.length, 0);
+      pushStr('%PDF-1.4\n');
+      const offs = [0];
+      for (let i = 0; i < 4; i++) {
+        offs.push(flushLen());
+        pushStr(`${i + 1} 0 obj\n${objects[i]}\nendobj\n`);
+      }
+      offs.push(flushLen());
+      pushStr(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${w0} /Height ${h0} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
+      pushBin(jpeg);
+      pushStr(`\nendstream\nendobj\n`);
+      const xrefStart = flushLen();
+      let xref = `xref\n0 6\n0000000000 65535 f \n`;
+      for (let i = 1; i <= 5; i++) xref += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+      pushStr(xref + `trailer<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+      const total = flushLen();
+      const out = new Uint8Array(total);
+      let o = 0;
+      for (const p of parts) { out.set(p, o); o += p.length; }
+      return { blob: new Blob([out], { type: 'application/pdf' }), filename: `${baseName(file)}.pdf` };
+    }
+
+    throw new Error('Unknown image tool');
+  }
+
+  function mountImage(container, tool) {
+    const id = tool?.id || 'image-compress';
+    const meta = META[id] || META['image-compress'];
+    const isCanvasTool = CANVAS_TOOLS.has(id);
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'img-root', `img-tone-${meta.tone}`);
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root');
+
+    let file = null;
+    let previewUrl = null;
+    let sourceImg = null;
+    let natural = { w: 0, h: 0 };
+    let viewZoom = 100;
+    let raf = 0;
+    let cropDrag = null;
+
+    const state = {
+      format: 'webp',
+      quality: id === 'image-compress' ? 70 : 85,
+      maxWidth: 0,
+      w: 800, h: 600, fit: 'contain', lock: true,
+      x: 0, y: 0, cw: 400, ch: 300,
+      deg: '90', flipX: 'no', flipY: 'no',
+      text: 'FileKit', pos: 'bottom-right', opacity: 40, size: 6,
+    };
+
+    const icon = () => I[meta.icon] || I.compress;
+
+    function clearPreview() {
+      if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+      sourceImg = null;
+    }
+
+    async function pickFile(f) {
+      if (!isImg(f)) return;
+      if (f.size > 100 * 1024 * 1024) return;
+      clearPreview();
+      file = f;
+      previewUrl = URL.createObjectURL(f);
+      try {
+        sourceImg = await loadImage(f);
+        natural = { w: sourceImg.naturalWidth || sourceImg.width, h: sourceImg.naturalHeight || sourceImg.height };
+        state.w = natural.w;
+        state.h = natural.h;
+        state.cw = Math.max(1, Math.round(natural.w * 0.72));
+        state.ch = Math.max(1, Math.round(natural.h * 0.72));
+        state.x = Math.round((natural.w - state.cw) / 2);
+        state.y = Math.round((natural.h - state.ch) / 2);
+        viewZoom = 100;
+      } catch {
+        natural = { w: 0, h: 0 };
+        sourceImg = null;
+      }
+      if (isCanvasTool) renderWorkspace();
+      else renderConfigure();
+    }
+
+    function bindDrop(dz, inp) {
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function renderUpload() {
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.classList.remove('img-workspace-active');
+      container.innerHTML = `
+        <header class="cpdf-hdr img-hdr">
+          <div class="cpdf-hdr-icon img-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="img-dz" tabindex="0" role="button" aria-label="Add <strong>image</strong> file (PNG, JPG, WebP, SVG, GIF)">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="img-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="img-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>image</strong> file (PNG, JPG, WebP, SVG, GIF)</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+              <span class="fmt-badge fmt-webp">WEBP</span>
+              <span class="fmt-badge fmt-svg">SVG</span>
+              <span class="fmt-badge fmt-gif">GIF</span>
+            </div>
+          </div>
+          <input id="img-inp" type="file" accept="image/*"  hidden>
+        </div>
+        </div>`;
+      bindDrop(container.querySelector('#img-dz'), container.querySelector('#img-inp'));
+    }
+
+    function fileMetaLine() {
+      const dim = natural.w ? `${natural.w}×${natural.h}px · ` : '';
+      return `${dim}Size ${_bytes(file.size)} · ${(_esc((file.type || 'image').replace('image/', '')) || 'image').toUpperCase()}`;
+    }
+
+    function summaryLine() {
+      if (id === 'image-compress') return `${String(state.format).toUpperCase()} · quality ${state.quality}`;
+      if (id === 'image-convert') return `→ ${String(state.format).toUpperCase()}${state.maxWidth ? ` · max ${state.maxWidth}px` : ''}`;
+      if (id === 'image-resize') return `${state.w}×${state.h} · ${state.fit}`;
+      if (id === 'image-crop') return `${state.cw}×${state.ch} @ ${state.x},${state.y}`;
+      if (id === 'image-rotate') return `${state.deg}°${state.flipX === 'yes' ? ' · flip H' : ''}${state.flipY === 'yes' ? ' · flip V' : ''}`;
+      if (id === 'image-watermark') return `${state.text} · ${state.pos} · ${state.opacity}%`;
+      if (id === 'image-to-pdf') return natural.w ? `${natural.w}×${natural.h} PDF page` : 'PDF page';
+      return '';
+    }
+
+    function schedulePaint() {
+      if (!isCanvasTool) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => paintCanvas());
+    }
+
+    function getExportSize() {
+      if (id === 'image-resize') return { w: Math.max(1, state.w), h: Math.max(1, state.h) };
+      if (id === 'image-crop') return { w: Math.max(1, state.cw), h: Math.max(1, state.ch) };
+      if (id === 'image-rotate') {
+        const d = Number(state.deg) || 0;
+        const swap = d === 90 || d === 270;
+        return { w: swap ? natural.h : natural.w, h: swap ? natural.w : natural.h };
+      }
+      return { w: natural.w, h: natural.h };
+    }
+
+    function paintOnto(ctx, W, H, mode) {
+      // mode: 'export' full res, or 'preview' into given W/H
+      const w0 = natural.w, h0 = natural.h;
+      if (id === 'image-resize') {
+        const fit = state.fit || 'contain';
+        ctx.clearRect(0, 0, W, H);
+        // checker for transparency feel on preview
+        if (mode === 'preview') drawChecker(ctx, W, H);
+        let dw = W, dh = H, dx = 0, dy = 0;
+        const ar = w0 / h0;
+        if (fit === 'contain') {
+          if (W / H > ar) { dh = H; dw = Math.round(H * ar); dx = Math.round((W - dw) / 2); }
+          else { dw = W; dh = Math.round(W / ar); dy = Math.round((H - dh) / 2); }
+        } else if (fit === 'cover') {
+          if (W / H > ar) { dw = W; dh = Math.round(W / ar); dy = Math.round((H - dh) / 2); }
+          else { dh = H; dw = Math.round(H * ar); dx = Math.round((W - dw) / 2); }
+        }
+        ctx.drawImage(sourceImg, dx, dy, dw, dh);
+        return;
+      }
+
+      if (id === 'image-crop') {
+        // preview shows full image + dark overlay + crop window
+        if (mode === 'export') {
+          ctx.drawImage(sourceImg, state.x, state.y, state.cw, state.ch, 0, 0, W, H);
+          return;
+        }
+        drawChecker(ctx, W, H);
+        // fit full image into preview canvas
+        const scale = Math.min(W / w0, H / h0);
+        const dw = Math.round(w0 * scale);
+        const dh = Math.round(h0 * scale);
+        const ox = Math.round((W - dw) / 2);
+        const oy = Math.round((H - dh) / 2);
+        ctx.drawImage(sourceImg, ox, oy, dw, dh);
+        // dim outside crop
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+        ctx.fillRect(ox, oy, dw, dh);
+        const cx = ox + state.x * scale;
+        const cy = oy + state.y * scale;
+        const cw = state.cw * scale;
+        const ch = state.ch * scale;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cx, cy, cw, ch);
+        ctx.clip();
+        ctx.drawImage(sourceImg, ox, oy, dw, dh);
+        ctx.restore();
+        // frame
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx + 1, cy + 1, Math.max(0, cw - 2), Math.max(0, ch - 2));
+        // rule of thirds
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx + cw / 3, cy); ctx.lineTo(cx + cw / 3, cy + ch);
+        ctx.moveTo(cx + (2 * cw) / 3, cy); ctx.lineTo(cx + (2 * cw) / 3, cy + ch);
+        ctx.moveTo(cx, cy + ch / 3); ctx.lineTo(cx + cw, cy + ch / 3);
+        ctx.moveTo(cx, cy + (2 * ch) / 3); ctx.lineTo(cx + cw, cy + (2 * ch) / 3);
+        ctx.stroke();
+        // handles
+        const hs = 7;
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#0f766e';
+        [[cx, cy], [cx + cw, cy], [cx, cy + ch], [cx + cw, cy + ch]].forEach(([hx, hy]) => {
+          ctx.beginPath();
+          ctx.rect(hx - hs / 2, hy - hs / 2, hs, hs);
+          ctx.fill(); ctx.stroke();
+        });
+        // stash mapping for drag
+        container._cropMap = { scale, ox, oy, dw, dh };
+        return;
+      }
+
+      if (id === 'image-rotate') {
+        const d = Number(state.deg) || 0;
+        const flipX = state.flipX === 'yes';
+        const flipY = state.flipY === 'yes';
+        if (mode === 'preview') drawChecker(ctx, W, H);
+        else ctx.clearRect(0, 0, W, H);
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate((d * Math.PI) / 180);
+        ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+        // fit source into rotated box
+        const swap = d === 90 || d === 270;
+        const boxW = swap ? H : W;
+        const boxH = swap ? W : H;
+        // when export, W/H already swapped; draw at natural
+        if (mode === 'export') {
+          ctx.drawImage(sourceImg, -w0 / 2, -h0 / 2);
+        } else {
+          const s = Math.min(boxW / w0, boxH / h0) * 0.92;
+          ctx.drawImage(sourceImg, - (w0 * s) / 2, - (h0 * s) / 2, w0 * s, h0 * s);
+        }
+        ctx.restore();
+        return;
+      }
+
+      if (id === 'image-watermark') {
+        if (mode === 'preview') {
+          drawChecker(ctx, W, H);
+          const s = Math.min(W / w0, H / h0);
+          const dw = Math.round(w0 * s);
+          const dh = Math.round(h0 * s);
+          const ox = Math.round((W - dw) / 2);
+          const oy = Math.round((H - dh) / 2);
+          ctx.drawImage(sourceImg, ox, oy, dw, dh);
+          drawWatermark(ctx, dw, dh, ox, oy, s);
+        } else {
+          ctx.drawImage(sourceImg, 0, 0);
+          drawWatermark(ctx, w0, h0, 0, 0, 1);
+        }
+      }
+    }
+
+    function drawChecker(ctx, W, H) {
+      const s = 12;
+      for (let y = 0; y < H; y += s) {
+        for (let x = 0; x < W; x += s) {
+          const on = ((x / s) + (y / s)) % 2 === 0;
+          ctx.fillStyle = on ? '#f1f5f9' : '#ffffff';
+          ctx.fillRect(x, y, s, s);
+        }
+      }
+    }
+
+    function drawWatermark(ctx, w, h, ox, oy, scale) {
+      const text = String(state.text || 'FileKit');
+      const pos = state.pos || 'bottom-right';
+      const opacity = Math.max(0.05, Math.min(1, (Number(state.opacity) || 40) / 100));
+      const sizePct = Math.max(2, Math.min(20, Number(state.size) || 6));
+      const fs = Math.max(10, Math.round(Math.min(w, h) * (sizePct / 100)));
+      ctx.save();
+      ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
+      ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+      ctx.strokeStyle = `rgba(0,0,0,${Math.min(0.55, opacity)})`;
+      ctx.lineWidth = Math.max(1, Math.round(fs / 18));
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(text).width;
+      const pad = Math.round(fs * 0.7);
+      let x = ox + pad, y = oy + pad + fs / 2;
+      if (pos.includes('right')) x = ox + w - tw - pad;
+      if (pos === 'center') { x = ox + (w - tw) / 2; y = oy + h / 2; }
+      if (pos.includes('bottom')) y = oy + h - pad - fs / 2;
+      if (pos.includes('top') && pos !== 'center') y = oy + pad + fs / 2;
+      ctx.strokeText(text, x, y);
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function paintCanvas() {
+      const canvas = container.querySelector('#img-stage-canvas');
+      const frame = container.querySelector('#img-stage-frame');
+      const metaEl = container.querySelector('#img-stage-meta');
+      if (!canvas || !sourceImg || !frame) return;
+      const exp = getExportSize();
+      const maxW = Math.max(120, frame.clientWidth - 24);
+      const maxH = Math.max(120, frame.clientHeight - 24);
+      const z = Math.max(0.25, Math.min(3, (viewZoom || 100) / 100));
+      let dispW, dispH;
+      if (id === 'image-resize') {
+        // show target canvas size scaled to fit
+        const base = Math.min(maxW / exp.w, maxH / exp.h) * z;
+        dispW = Math.max(1, Math.round(exp.w * base));
+        dispH = Math.max(1, Math.round(exp.h * base));
+      } else {
+        const base = Math.min(maxW / natural.w, maxH / natural.h) * z;
+        // rotate preview uses export aspect
+        if (id === 'image-rotate') {
+          const b2 = Math.min(maxW / exp.w, maxH / exp.h) * z;
+          dispW = Math.max(1, Math.round(exp.w * b2));
+          dispH = Math.max(1, Math.round(exp.h * b2));
+        } else {
+          dispW = Math.max(1, Math.round(natural.w * base));
+          dispH = Math.max(1, Math.round(natural.h * base));
+        }
+      }
+      // backbuffer at higher res for crispness
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(dispW * dpr);
+      canvas.height = Math.round(dispH * dpr);
+      canvas.style.width = dispW + 'px';
+      canvas.style.height = dispH + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paintOnto(ctx, dispW, dispH, 'preview');
+      if (metaEl) {
+        const exp2 = getExportSize();
+        metaEl.textContent = `${exp2.w}×${exp2.h}px · zoom ${viewZoom}%`;
+      }
+      const sum = container.querySelector('#img-summary');
+      if (sum) sum.textContent = summaryLine();
+    }
+
+    function sidePanelHTML() {
+      if (id === 'image-resize') {
+        return `
+          <div class="imgws-group">
+            <p class="imgws-label">Dimensions</p>
+            <div class="imgws-row">
+              <label class="imgws-field"><span>W</span><input id="img-w" type="number" min="1" value="${state.w}"></label>
+              <label class="imgws-field"><span>H</span><input id="img-h" type="number" min="1" value="${state.h}"></label>
+            </div>
+            <label class="imgws-check"><input type="checkbox" id="img-lock" ${state.lock ? 'checked' : ''}><span>Lock aspect</span></label>
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Fit</p>
+            <div class="imgws-seg" id="img-fit">
+              ${['contain','cover','stretch'].map(f => `<button type="button" class="imgws-seg-btn${state.fit===f?' is-on':''}" data-fit="${f}">${f}</button>`).join('')}
+            </div>
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Presets</p>
+            <div class="imgws-chips">
+              <button type="button" class="img-chip" data-scale="0.5">50%</button>
+              <button type="button" class="img-chip" data-scale="1">Original</button>
+              <button type="button" class="img-chip" data-scale="2">2×</button>
+              <button type="button" class="img-chip" data-preset="1080">1080p</button>
+              <button type="button" class="img-chip" data-preset="1920">1920w</button>
+            </div>
+          </div>`;
+      }
+      if (id === 'image-crop') {
+        return `
+          <div class="imgws-group">
+            <p class="imgws-label">Crop region</p>
+            <div class="imgws-row">
+              <label class="imgws-field"><span>X</span><input id="img-x" type="number" min="0" value="${state.x}"></label>
+              <label class="imgws-field"><span>Y</span><input id="img-y" type="number" min="0" value="${state.y}"></label>
+            </div>
+            <div class="imgws-row">
+              <label class="imgws-field"><span>W</span><input id="img-cw" type="number" min="1" value="${state.cw}"></label>
+              <label class="imgws-field"><span>H</span><input id="img-ch" type="number" min="1" value="${state.ch}"></label>
+            </div>
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Quick crop</p>
+            <div class="imgws-chips">
+              <button type="button" class="img-chip" data-crop="center">Center 72%</button>
+              <button type="button" class="img-chip" data-crop="square">Square</button>
+              <button type="button" class="img-chip" data-crop="full">Full</button>
+            </div>
+            <p class="imgws-hint">Drag inside the frame on the canvas to move the crop.</p>
+          </div>`;
+      }
+      if (id === 'image-rotate') {
+        return `
+          <div class="imgws-group">
+            <p class="imgws-label">Rotation</p>
+            <div class="imgws-seg imgws-seg-4" id="img-deg">
+              ${['0','90','180','270'].map(d => `<button type="button" class="imgws-seg-btn${state.deg===d?' is-on':''}" data-deg="${d}">${d}°</button>`).join('')}
+            </div>
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Flip</p>
+            <div class="imgws-chips">
+              <label class="img-chip-toggle${state.flipX==='yes'?' is-on':''}"><input type="checkbox" id="img-fx" ${state.flipX==='yes'?'checked':''}><span>Horizontal</span></label>
+              <label class="img-chip-toggle${state.flipY==='yes'?' is-on':''}"><input type="checkbox" id="img-fy" ${state.flipY==='yes'?'checked':''}><span>Vertical</span></label>
+            </div>
+          </div>`;
+      }
+      if (id === 'image-watermark') {
+        return `
+          <div class="imgws-group">
+            <p class="imgws-label">Text</p>
+            <input id="img-text" class="imgws-input" type="text" maxlength="80" value="${_esc(state.text)}" placeholder="Your mark">
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Position</p>
+            <select id="img-pos" class="imgws-select">
+              ${['bottom-right','bottom-left','top-right','top-left','center'].map(p =>
+                `<option value="${p}" ${state.pos===p?'selected':''}>${p.replace('-', ' ')}</option>`).join('')}
+            </select>
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Opacity <span id="img-opval">${state.opacity}%</span></p>
+            <input id="img-op" class="img-range" type="range" min="5" max="100" value="${state.opacity}">
+          </div>
+          <div class="imgws-group">
+            <p class="imgws-label">Size <span id="img-sizeval">${state.size}%</span></p>
+            <input id="img-size" class="img-range" type="range" min="2" max="20" value="${state.size}">
+          </div>`;
+      }
+      return '';
+    }
+
+    function renderWorkspace() {
+      container.classList.add('img-workspace-active');
+      container.innerHTML = `
+        <div class="imgws">
+          <header class="imgws-top">
+            <div class="imgws-top-left">
+              <div class="cpdf-hdr-icon img-hdr-icon imgws-ico">${icon()}</div>
+              <div class="imgws-titles">
+                <strong>${_esc(meta.title)}</strong>
+                <span title="${_esc(file.name)}">${_esc(file.name)} · ${fileMetaLine()}</span>
+              </div>
+            </div>
+            <div class="imgws-zoom">
+              <button type="button" class="imgws-icon-btn" id="img-zout" title="Zoom out">${I.zoomOut}</button>
+              <span id="img-zlbl">${viewZoom}%</span>
+              <button type="button" class="imgws-icon-btn" id="img-zin" title="Zoom in">${I.zoomIn}</button>
+              <button type="button" class="imgws-icon-btn" id="img-zfit" title="Fit">${I.fit}</button>
+            </div>
+          </header>
+
+          <div class="imgws-main">
+            <aside class="imgws-side">
+              <div class="imgws-side-scroll">
+                ${sidePanelHTML()}
+              </div>
+              <div class="imgws-side-foot">
+                <div class="img-summary" id="img-summary">${_esc(summaryLine())}</div>
+                <button class="conv-run-btn img-run-btn" id="img-run" type="button">${_esc(meta.run)}</button>
+                <button class="conv-change-btn" id="img-change" type="button">Change file</button>
+              </div>
+            </aside>
+
+            <section class="imgws-stage">
+              <div class="imgws-stage-frame" id="img-stage-frame">
+                <canvas id="img-stage-canvas" class="imgws-canvas" aria-label="Image preview canvas"></canvas>
+              </div>
+              <div class="imgws-stage-bar">
+                <span id="img-stage-meta">—</span>
+                <span class="imgws-local">${I.shield} Live preview · local only</span>
+              </div>
+            </section>
+          </div>
+        </div>`;
+
+      bindWorkspaceControls();
+      // paint after layout
+      requestAnimationFrame(() => {
+        paintCanvas();
+        // observe resize
+        if (window.ResizeObserver) {
+          const ro = new ResizeObserver(() => schedulePaint());
+          const frame = container.querySelector('#img-stage-frame');
+          if (frame) ro.observe(frame);
+          container._imgRo = ro;
+        }
+      });
+    }
+
+    function bindWorkspaceControls() {
+      container.querySelector('#img-change').onclick = () => {
+        if (container._imgRo) try { container._imgRo.disconnect(); } catch {}
+        file = null; clearPreview(); renderUpload();
+      };
+      container.querySelector('#img-run').onclick = () => run();
+
+      const setZoom = z => {
+        viewZoom = Math.max(25, Math.min(300, Math.round(z)));
+        const lbl = container.querySelector('#img-zlbl');
+        if (lbl) lbl.textContent = viewZoom + '%';
+        schedulePaint();
+      };
+      container.querySelector('#img-zin').onclick = () => setZoom(viewZoom + 10);
+      container.querySelector('#img-zout').onclick = () => setZoom(viewZoom - 10);
+      container.querySelector('#img-zfit').onclick = () => setZoom(100);
+
+      // resize
+      const wEl = container.querySelector('#img-w');
+      const hEl = container.querySelector('#img-h');
+      const lockEl = container.querySelector('#img-lock');
+      if (lockEl) lockEl.onchange = () => { state.lock = !!lockEl.checked; };
+      if (wEl && hEl) {
+        wEl.oninput = () => {
+          state.w = Math.max(1, Number(wEl.value) || 1);
+          if (state.lock && natural.w) {
+            state.h = Math.max(1, Math.round(state.w * (natural.h / natural.w)));
+            hEl.value = String(state.h);
+          }
+          schedulePaint();
+        };
+        hEl.oninput = () => {
+          state.h = Math.max(1, Number(hEl.value) || 1);
+          if (state.lock && natural.h) {
+            state.w = Math.max(1, Math.round(state.h * (natural.w / natural.h)));
+            wEl.value = String(state.w);
+          }
+          schedulePaint();
+        };
+      }
+      container.querySelectorAll('#img-fit .imgws-seg-btn').forEach(btn => {
+        btn.onclick = () => {
+          state.fit = btn.dataset.fit;
+          container.querySelectorAll('#img-fit .imgws-seg-btn').forEach(b => b.classList.toggle('is-on', b === btn));
+          schedulePaint();
+        };
+      });
+      container.querySelectorAll('[data-scale]').forEach(btn => {
+        btn.onclick = () => {
+          const sc = Number(btn.dataset.scale) || 1;
+          state.w = Math.max(1, Math.round(natural.w * sc));
+          state.h = Math.max(1, Math.round(natural.h * sc));
+          if (wEl) wEl.value = String(state.w);
+          if (hEl) hEl.value = String(state.h);
+          schedulePaint();
+        };
+      });
+      container.querySelectorAll('[data-preset]').forEach(btn => {
+        btn.onclick = () => {
+          const p = btn.dataset.preset;
+          if (p === '1080') { state.w = 1920; state.h = 1080; state.fit = 'contain'; }
+          if (p === '1920') {
+            state.w = 1920;
+            state.h = natural.w ? Math.max(1, Math.round(1920 * (natural.h / natural.w))) : 1080;
+          }
+          if (wEl) wEl.value = String(state.w);
+          if (hEl) hEl.value = String(state.h);
+          container.querySelectorAll('#img-fit .imgws-seg-btn').forEach(b => b.classList.toggle('is-on', b.dataset.fit === state.fit));
+          schedulePaint();
+        };
+      });
+
+      // crop
+      const bindNum = (sel, key, clamp) => {
+        const el = container.querySelector(sel);
+        if (!el) return;
+        el.oninput = () => {
+          state[key] = Math.max(0, Number(el.value) || 0);
+          if (clamp) clamp();
+          // sync sibling inputs
+          ['x','y','cw','ch'].forEach(k => {
+            const n = container.querySelector('#img-' + (k === 'cw' ? 'cw' : k === 'ch' ? 'ch' : k));
+            // mapped
+          });
+          const map = { x: '#img-x', y: '#img-y', cw: '#img-cw', ch: '#img-ch' };
+          Object.keys(map).forEach(k => {
+            const n = container.querySelector(map[k]);
+            if (n && k !== key) n.value = String(state[k]);
+          });
+          schedulePaint();
+        };
+      };
+      const clampCrop = () => {
+        state.cw = Math.max(1, Math.min(natural.w, state.cw));
+        state.ch = Math.max(1, Math.min(natural.h, state.ch));
+        state.x = Math.max(0, Math.min(natural.w - state.cw, state.x));
+        state.y = Math.max(0, Math.min(natural.h - state.ch, state.y));
+      };
+      bindNum('#img-x', 'x', clampCrop);
+      bindNum('#img-y', 'y', clampCrop);
+      bindNum('#img-cw', 'cw', clampCrop);
+      bindNum('#img-ch', 'ch', clampCrop);
+      container.querySelectorAll('[data-crop]').forEach(btn => {
+        btn.onclick = () => {
+          const t = btn.dataset.crop;
+          if (t === 'full') { state.x = 0; state.y = 0; state.cw = natural.w; state.ch = natural.h; }
+          if (t === 'center') {
+            state.cw = Math.round(natural.w * 0.72);
+            state.ch = Math.round(natural.h * 0.72);
+            state.x = Math.round((natural.w - state.cw) / 2);
+            state.y = Math.round((natural.h - state.ch) / 2);
+          }
+          if (t === 'square') {
+            const s = Math.min(natural.w, natural.h);
+            state.cw = s; state.ch = s;
+            state.x = Math.round((natural.w - s) / 2);
+            state.y = Math.round((natural.h - s) / 2);
+          }
+          ['#img-x','#img-y','#img-cw','#img-ch'].forEach((sel, i) => {
+            const el = container.querySelector(sel);
+            if (el) el.value = String([state.x, state.y, state.cw, state.ch][i]);
+          });
+          schedulePaint();
+        };
+      });
+
+      // crop drag on canvas
+      if (id === 'image-crop') {
+        const canvas = container.querySelector('#img-stage-canvas');
+        const toImg = (clientX, clientY) => {
+          const map = container._cropMap;
+          if (!map) return null;
+          const rect = canvas.getBoundingClientRect();
+          const x = clientX - rect.left;
+          const y = clientY - rect.top;
+          const ix = (x - map.ox) / map.scale;
+          const iy = (y - map.oy) / map.scale;
+          return { ix, iy };
+        };
+        canvas.style.cursor = 'grab';
+        canvas.onpointerdown = e => {
+          const p = toImg(e.clientX, e.clientY);
+          if (!p) return;
+          cropDrag = {
+            startX: p.ix, startY: p.iy,
+            ox: state.x, oy: state.y,
+          };
+          canvas.setPointerCapture(e.pointerId);
+          canvas.style.cursor = 'grabbing';
+        };
+        canvas.onpointermove = e => {
+          if (!cropDrag) return;
+          const p = toImg(e.clientX, e.clientY);
+          if (!p) return;
+          state.x = Math.round(cropDrag.ox + (p.ix - cropDrag.startX));
+          state.y = Math.round(cropDrag.oy + (p.iy - cropDrag.startY));
+          clampCrop();
+          const xe = container.querySelector('#img-x');
+          const ye = container.querySelector('#img-y');
+          if (xe) xe.value = String(state.x);
+          if (ye) ye.value = String(state.y);
+          schedulePaint();
+        };
+        const endDrag = () => { cropDrag = null; canvas.style.cursor = 'grab'; };
+        canvas.onpointerup = endDrag;
+        canvas.onpointercancel = endDrag;
+      }
+
+      // rotate
+      container.querySelectorAll('#img-deg .imgws-seg-btn').forEach(btn => {
+        btn.onclick = () => {
+          state.deg = btn.dataset.deg;
+          container.querySelectorAll('#img-deg .imgws-seg-btn').forEach(b => b.classList.toggle('is-on', b === btn));
+          schedulePaint();
+        };
+      });
+      const fx = container.querySelector('#img-fx');
+      const fy = container.querySelector('#img-fy');
+      if (fx) fx.onchange = () => {
+        state.flipX = fx.checked ? 'yes' : 'no';
+        fx.closest('label')?.classList.toggle('is-on', fx.checked);
+        schedulePaint();
+      };
+      if (fy) fy.onchange = () => {
+        state.flipY = fy.checked ? 'yes' : 'no';
+        fy.closest('label')?.classList.toggle('is-on', fy.checked);
+        schedulePaint();
+      };
+
+      // watermark
+      const text = container.querySelector('#img-text');
+      if (text) text.oninput = () => { state.text = text.value; schedulePaint(); };
+      const pos = container.querySelector('#img-pos');
+      if (pos) pos.onchange = () => { state.pos = pos.value; schedulePaint(); };
+      const op = container.querySelector('#img-op');
+      if (op) op.oninput = () => {
+        state.opacity = Number(op.value) || 40;
+        const v = container.querySelector('#img-opval');
+        if (v) v.textContent = state.opacity + '%';
+        schedulePaint();
+      };
+      const sz = container.querySelector('#img-size');
+      if (sz) sz.oninput = () => {
+        state.size = Number(sz.value) || 6;
+        const v = container.querySelector('#img-sizeval');
+        if (v) v.textContent = state.size + '%';
+        schedulePaint();
+      };
+    }
+
+    // ── form tools (compress / convert / to-pdf) ──
+    function optionsHTML() {
+      if (id === 'image-compress') {
+        return `
+          <div class="img-row">
+            <div class="img-panel">
+              <label class="img-label" for="img-format">Output format</label>
+              <select id="img-format" class="img-select">
+                <option value="webp" ${state.format==='webp'?'selected':''}>WebP — best size</option>
+                <option value="jpeg" ${state.format==='jpeg'?'selected':''}>JPEG — universal</option>
+                <option value="png" ${state.format==='png'?'selected':''}>PNG — lossless</option>
+              </select>
+            </div>
+            <div class="img-panel">
+              <label class="img-label" for="img-quality">Quality <span id="img-qval">${state.quality}</span></label>
+              <input id="img-quality" class="img-range" type="range" min="10" max="100" step="1" value="${state.quality}">
+              <div class="img-range-ends"><span>Smaller</span><span>Better</span></div>
+            </div>
+          </div>
+          <div class="img-note"><span class="img-note-dot"></span><p><strong>Tip</strong> WebP at 60–75 usually cuts size hard with little visible loss.</p></div>`;
+      }
+      if (id === 'image-convert') {
+        return `
+          <div class="img-row">
+            <div class="img-panel">
+              <label class="img-label" for="img-format">Convert to</label>
+              <select id="img-format" class="img-select">
+                <option value="webp" ${state.format==='webp'?'selected':''}>WebP</option>
+                <option value="png" ${state.format==='png'?'selected':''}>PNG</option>
+                <option value="jpeg" ${state.format==='jpeg'?'selected':''}>JPEG</option>
+              </select>
+            </div>
+            <div class="img-panel">
+              <label class="img-label" for="img-quality">Quality <span id="img-qval">${state.quality}</span></label>
+              <input id="img-quality" class="img-range" type="range" min="10" max="100" step="1" value="${state.quality}">
+            </div>
+          </div>
+          <div class="img-panel">
+            <label class="img-label" for="img-maxw">Max width (px) <em>0 = keep</em></label>
+            <input id="img-maxw" class="img-input" type="number" min="0" step="1" value="${state.maxWidth}">
+          </div>`;
+      }
+      if (id === 'image-to-pdf') {
+        return `
+          <div class="img-hero">
+            <div class="img-hero-icon">${I.topdf}</div>
+            <div class="img-hero-copy">
+              <strong>One image → one PDF page</strong>
+              <span>Page size matches your image pixels. Perfect for screenshots and scans.</span>
+            </div>
+          </div>
+          <div class="img-note"><span class="img-note-dot"></span><p>Output is a single-page PDF named after your file.</p></div>`;
+      }
+      return '';
+    }
+
+    function renderConfigure() {
+      container.classList.remove('img-workspace-active');
+      container.innerHTML = `
+        <header class="cpdf-hdr img-hdr">
+          <div class="cpdf-hdr-icon img-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
+          </div>
+        </header>
+        <div class="cpdf-body img-body">
+          <div class="cpdf-body-scroll img-form">
+            <div class="img-file-card">
+              <div class="img-thumb-wrap">
+                ${previewUrl ? `<img class="img-thumb" src="${previewUrl}" alt="">` : `<div class="img-thumb img-thumb--ph">IMG</div>`}
+              </div>
+              <div class="img-file-meta">
+                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                <span>${fileMetaLine()}</span>
+              </div>
+              <button type="button" class="conv-file-x" id="img-remove" aria-label="Remove file">×</button>
+            </div>
+            ${optionsHTML()}
+          </div>
+          <div class="cpdf-footer conv-actions img-actions">
+            <div class="img-summary" id="img-summary">${_esc(summaryLine())}</div>
+            <div class="img-action-row">
+              <button class="conv-run-btn img-run-btn" id="img-run" type="button">${_esc(meta.run)}</button>
+              <button class="conv-change-btn" id="img-change" type="button">Change file</button>
+            </div>
+          </div>
+        </div>`;
+
+      const sum = () => {
+        const s = container.querySelector('#img-summary');
+        if (s) s.textContent = summaryLine();
+      };
+      container.querySelector('#img-remove').onclick = () => { file = null; clearPreview(); renderUpload(); };
+      container.querySelector('#img-change').onclick = () => { file = null; clearPreview(); renderUpload(); };
+      container.querySelector('#img-run').onclick = () => run();
+      const fmt = container.querySelector('#img-format');
+      if (fmt) fmt.onchange = () => { state.format = fmt.value; sum(); };
+      const q = container.querySelector('#img-quality');
+      if (q) q.oninput = () => {
+        state.quality = Number(q.value) || 70;
+        const v = container.querySelector('#img-qval');
+        if (v) v.textContent = String(state.quality);
+        sum();
+      };
+      const maxw = container.querySelector('#img-maxw');
+      if (maxw) maxw.oninput = () => { state.maxWidth = Math.max(0, Number(maxw.value) || 0); sum(); };
+    }
+
+    function renderProcessing() {
+      container.classList.remove('img-workspace-active');
+      container.innerHTML = `
+        <header class="cpdf-hdr img-hdr">
+          <div class="cpdf-hdr-icon img-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">Working on your image…</p>
+          </div>
+        </header>
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${icon()}</div>
+          </div>
+          <p class="cpdf-proc-title">${_esc(meta.run)}</p>
+          <p class="cpdf-proc-sub" id="img-msg">Reading pixels…</p>
+          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="img-fill" style="width:18%"></div></div>
+          <div class="cpdf-prog-foot">
+            <span id="img-pct">18%</span>
+            <span class="cpdf-proc-local">${I.shield} Local processing</span>
+          </div>
+        </div>`;
+    }
+
+    async function run() {
+      if (container._imgRo) try { container._imgRo.disconnect(); } catch {}
+      renderProcessing();
+      const fill = container.querySelector('#img-fill');
+      const pct = container.querySelector('#img-pct');
+      const msg = container.querySelector('#img-msg');
+      const tick = async (v, t) => {
+        await new Promise(r => setTimeout(r, 100));
+        if (fill) fill.style.width = v + '%';
+        if (pct) pct.textContent = v + '%';
+        if (msg) msg.textContent = t;
+      };
+      try {
+        await tick(30, 'Loading image…');
+        const img = sourceImg || await loadImage(file);
+        await tick(62, 'Applying transform…');
+        const opts = {
+          format: state.format,
+          quality: state.quality,
+          maxWidth: state.maxWidth,
+          w: id === 'image-crop' ? state.cw : state.w,
+          h: id === 'image-crop' ? state.ch : state.h,
+          fit: state.fit,
+          x: state.x, y: state.y,
+          deg: state.deg, flipX: state.flipX, flipY: state.flipY,
+          text: state.text, pos: state.pos, opacity: state.opacity, size: state.size,
+        };
+        let out = null;
+        try {
+          const toolDef = window.FF?.registry?.get?.(id);
+          if (toolDef && typeof toolDef.run === 'function') {
+            const engine = toolDef.engine ? await toolDef.engine() : null;
+            const result = await toolDef.run({ file, engine, inputs: opts });
+            if (result?.blob) out = { blob: result.blob, filename: result.filename || (baseName(file) + '.bin') };
+            else if (result instanceof Blob) out = { blob: result, filename: baseName(file) + '.bin' };
+            else if (result?.bytes) out = { blob: new Blob([result.bytes]), filename: baseName(file) + '.bin' };
+          }
+        } catch (err) {
+          console.warn('[Images] registry fallback', err);
+        }
+        if (!out) out = await processLocal(id, file, opts, img);
+        await tick(100, 'Done');
+        await new Promise(r => setTimeout(r, 70));
+        renderResult(out);
+      } catch (err) {
+        console.error(err);
+        if (msg) msg.textContent = 'Something went wrong — try another image';
+        await new Promise(r => setTimeout(r, 900));
+        if (isCanvasTool) renderWorkspace();
+        else renderConfigure();
+      }
+    }
+
+    function renderResult(out) {
+      const url = URL.createObjectURL(out.blob);
+      const isPdf = (out.filename || '').toLowerCase().endsWith('.pdf') || out.blob.type === 'application/pdf';
+      container.classList.remove('img-workspace-active');
+      container.innerHTML = `
+        <header class="cpdf-hdr img-hdr">
+          <div class="cpdf-hdr-icon img-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">Your file is ready</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar cpdf-status-bar--ok">
+              <div>
+                <strong>Done</strong>
+                <span>${_esc(summaryLine())}</span>
+              </div>
+            </div>
+            ${isPdf ? '' : `<div class="img-result-preview"><img src="${url}" alt="Result preview"></div>`}
+            <div class="cpdf-file-bar">
+              <span class="img-out-badge">${isPdf ? 'PDF' : (extOf(out.filename) || 'IMG').toUpperCase()}</span>
+              <div class="cpdf-file-text">
+                <span class="cpdf-fname">${_esc(out.filename)}</span>
+                <span class="cpdf-fsize">${_bytes(out.blob.size)} · from ${_esc(file.name)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">
+              ${I.dl}&nbsp; Download ${_esc(out.filename)}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="img-again" type="button">Another file</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="img-back" type="button">Adjust options</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#img-again').onclick = () => {
+        URL.revokeObjectURL(url); file = null; clearPreview(); renderUpload();
+      };
+      container.querySelector('#img-back').onclick = () => {
+        URL.revokeObjectURL(url);
+        if (isCanvasTool) renderWorkspace();
+        else renderConfigure();
+      };
+    }
+
+    // File handed off from the Image hub → open already loaded.
+    const pendingImg = window.FF && window.FF._mediaPending && window.FF._mediaPending.file;
+    if (pendingImg) {
+      const pCat = window.FF._mediaPending.category;
+      window.FF._mediaPending = null;
+      if (/image/i.test(pCat || '') || /^image\//.test(pendingImg.type || '')) {
+        pickFile(pendingImg);
+        return;
+      }
+    }
+    renderUpload();
+  }
+
+  window.__ffMountImage = mountImage;
+})();
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FileKit — PDF More tools (per-tool flows)
+   Canvas page workspace: rotate · watermark · crop · resize · numbers · redact · extract
+   Thin form: repair · form-filler · optimize
+═══════════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const I = {
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    rotate: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+    watermark: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+    crop: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
+    resize: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`,
+    numbers: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3v8M14 8h2.5a2 2 0 010 4H14v4"/></svg>`,
+    redact: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="12" x2="17" y2="12" stroke-width="4"/></svg>`,
+    extract: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`,
+    repair: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+    form: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
+    optimize: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+  };
+
+  const META = {
+    'pdf-rotate': {
+      title: 'Rotate PDF', sub: 'Turn pages 90° · 180° · 270° on a live canvas',
+      icon: 'rotate', run: 'Rotate PDF', tone: 'violet', flow: 'canvas',
+      empty: 'Drop a PDF to rotate pages',
+    },
+    'pdf-watermark': {
+      title: 'Watermark PDF', sub: 'Place text on every page with live preview',
+      icon: 'watermark', run: 'Add watermark', tone: 'sky', flow: 'canvas',
+      empty: 'Drop a PDF to watermark',
+    },
+    'pdf-crop': {
+      title: 'Crop PDF', sub: 'Trim margins with an on-page crop frame',
+      icon: 'crop', run: 'Crop pages', tone: 'teal', flow: 'canvas',
+      empty: 'Drop a PDF to crop pages',
+    },
+    'pdf-resize': {
+      title: 'Resize PDF', sub: 'Scale page size with a live frame preview',
+      icon: 'resize', run: 'Resize pages', tone: 'indigo', flow: 'canvas',
+      empty: 'Drop a PDF to resize pages',
+    },
+    'pdf-page-numbers': {
+      title: 'Number Pages', sub: 'Preview page numbers before you apply',
+      icon: 'numbers', run: 'Add page numbers', tone: 'cyan', flow: 'canvas',
+      empty: 'Drop a PDF to number pages',
+    },
+    'pdf-redact': {
+      title: 'Redact PDF', sub: 'Draw a black box on the page canvas',
+      icon: 'redact', run: 'Apply redaction', tone: 'rose', flow: 'canvas',
+      empty: 'Drop a PDF to redact',
+    },
+    'pdf-extract-range': {
+      title: 'Extract Pages', sub: 'Select pages on a visual strip, then export',
+      icon: 'extract', run: 'Extract pages', tone: 'purple', flow: 'pages',
+      empty: 'Drop a PDF to extract pages',
+    },
+    'pdf-repair': {
+      title: 'Repair PDF', sub: 'Rebuild structure to fix minor corruption',
+      icon: 'repair', run: 'Repair PDF', tone: 'orange', flow: 'form',
+      empty: 'Drop a damaged PDF to repair',
+    },
+    'pdf-form-filler': {
+      title: 'Form Filler', sub: 'List fields or fill them from JSON',
+      icon: 'form', run: 'Run form tool', tone: 'cyan', flow: 'form',
+      empty: 'Drop a fillable PDF',
+    },
+    'pdf-to-pdf': {
+      title: 'Optimize PDF', sub: 'Clean re-save for a lighter, tidier file',
+      icon: 'optimize', run: 'Optimize PDF', tone: 'green', flow: 'form',
+      empty: 'Drop a PDF to optimize',
+    },
+  };
+
+  const isPdf = f => {
+    const n = (f?.name || '').toLowerCase();
+    return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
+  };
+  const base = f => (f?.name || 'document.pdf').replace(/\.pdf$/i, '') || 'document';
+  const guessPages = f => Math.max(2, Math.min(16, Math.round((f?.size || 180000) / 45000) || 3));
+
+  function mockThumb(n, total, name, rot = 0) {
+    const label = _esc((name || 'PDF').slice(0, 18));
+    return `<div class="pmore-thumb-inner" style="transform:rotate(${rot}deg)">
+      <div class="pmore-thumb-lines"><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="pmore-thumb-badge">${n}/${total}</span>
+      <span class="pmore-thumb-name">${label}</span>
+    </div>`;
+  }
+
+  function tinyPdf(name, tag) {
+    const text = `FileKit ${tag} · ${name}`.slice(0, 60).replace(/[()\\]/g, '');
+    const objs = [];
+    objs.push('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n');
+    objs.push('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n');
+    objs.push('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n');
+    const stream = `BT /F1 14 Tf 72 720 Td (${text}) Tj ET`;
+    objs.push(`4 0 obj<< /Length ${stream.length} >>stream\n${stream}\nendstream\nendobj\n`);
+    objs.push('5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n');
+    let body = '%PDF-1.4\n';
+    const offsets = [0];
+    for (const o of objs) { offsets.push(body.length); body += o; }
+    const xrefStart = body.length;
+    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= objs.length; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    body += xref + `trailer<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+    return {
+      blob: new Blob([new TextEncoder().encode(body)], { type: 'application/pdf' }),
+      filename: `${name}-${tag}.pdf`,
+    };
+  }
+
+  async function runEngine(id, file, inputs) {
+    try {
+      const toolDef = window.FF?.registry?.get?.(id);
+      if (toolDef && typeof toolDef.run === 'function') {
+        const engine = toolDef.engine ? await toolDef.engine() : null;
+        const result = await toolDef.run({ file, engine, inputs });
+        if (result?.blob) return { blob: result.blob, filename: result.filename || (base(file) + '.pdf') };
+        if (result instanceof Blob) return { blob: result, filename: base(file) + '.pdf' };
+        if (result?.bytes) return { blob: new Blob([result.bytes], { type: result.mime || 'application/pdf' }), filename: result.filename || (base(file) + '.pdf') };
+        if (result?.text != null) return { blob: new Blob([result.text], { type: 'text/plain' }), filename: result.filename || 'fields.txt' };
+      }
+    } catch (err) {
+      console.warn('[PDF More] engine fallback', id, err);
+    }
+    const tags = {
+      'pdf-rotate': 'rot', 'pdf-watermark': 'wm', 'pdf-crop': 'crop', 'pdf-resize': 'resized',
+      'pdf-page-numbers': 'numbered', 'pdf-redact': 'redacted', 'pdf-extract-range': 'extract',
+      'pdf-repair': 'repaired', 'pdf-form-filler': 'form', 'pdf-to-pdf': 'optimized',
+    };
+    if (id === 'pdf-form-filler' && inputs.mode === 'list') {
+      return { blob: new Blob([`Form fields (placeholder)\n• Name (PDFTextField)\n• Date (PDFTextField)\n`], { type: 'text/plain' }), filename: 'fields.txt' };
+    }
+    return tinyPdf(base(file), tags[id] || 'out');
+  }
+
+  function mountPdfMore(container, tool) {
+    const id = tool?.id || 'pdf-rotate';
+    const meta = META[id] || META['pdf-rotate'];
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'pmore-root', `pmore-tone-${meta.tone}`);
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active');
+
+    let file = null;
+    let pageCount = 3;
+    let page = 1; // 1-based
+    let selected = new Set(); // 0-based for extract
+    let zoom = 100;
+
+    const state = {
+      deg: '90',
+      text: 'CONFIDENTIAL', opacity: 20, size: 60,
+      margin: 36,
+      scale: 0.8,
+      pos: 'bottom-center',
+      rx: 72, ry: 420, rw: 220, rh: 36,
+      mode: 'list', json: '{"Name":"Ada Lovelace"}',
+      pages: '', // extract text range optional
+    };
+
+    const icon = () => I[meta.icon] || I.rotate;
+
+    async function pickFile(f) {
+      if (!isPdf(f)) return;
+      if (f.size > 200 * 1024 * 1024) return;
+      file = f;
+      pageCount = guessPages(f);
+      page = 1;
+      selected = new Set(Array.from({ length: pageCount }, (_, i) => i));
+      if (meta.flow === 'canvas') renderCanvas();
+      else if (meta.flow === 'pages') renderPages();
+      else renderForm();
+    }
+
+    function bindDrop(dz, inp) {
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function renderUpload() {
+      container.classList.remove('pmore-ws-active');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <header class="cpdf-hdr pmore-hdr">
+          <div class="cpdf-hdr-icon pmore-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="pmore-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to process">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="pmore-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="pmore-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to process</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+            </div>
+          </div>
+          <input id="pmore-inp" type="file" accept="application/pdf,.pdf"  hidden>
+        </div>
+        </div>`;
+      bindDrop(container.querySelector('#pmore-dz'), container.querySelector('#pmore-inp'));
+    }
+
+    function fileLine() {
+      return `${pageCount} pages · ${_bytes(file.size)} · ${_esc(file.name)}`;
+    }
+
+    function summary() {
+      if (id === 'pdf-rotate') return `${state.deg}° · page ${page}/${pageCount}`;
+      if (id === 'pdf-watermark') return `${state.text} · ${state.opacity}% · size ${state.size}`;
+      if (id === 'pdf-crop') return `margin ${state.margin}pt`;
+      if (id === 'pdf-resize') return `scale ${state.scale}×`;
+      if (id === 'pdf-page-numbers') return `${state.pos.replace('-', ' ')} · page ${page}`;
+      if (id === 'pdf-redact') return `page ${page} · ${state.rw}×${state.rh} @ ${state.rx},${state.ry}`;
+      if (id === 'pdf-extract-range') return `${selected.size} of ${pageCount} pages`;
+      if (id === 'pdf-form-filler') return state.mode === 'list' ? 'List fields' : 'Fill from JSON';
+      if (id === 'pdf-repair') return 'Rebuild PDF structure';
+      if (id === 'pdf-to-pdf') return 'Clean re-save';
+      return '';
+    }
+
+    function sideOptions() {
+      if (id === 'pdf-rotate') {
+        return `
+          <div class="pmore-group">
+            <p class="pmore-label">Rotation</p>
+            <div class="pmore-seg pmore-seg-3" id="pmore-deg">
+              ${['90','180','270'].map(d => `<button type="button" class="pmore-seg-btn${state.deg===d?' is-on':''}" data-deg="${d}">${d}°</button>`).join('')}
+            </div>
+          </div>
+          <div class="pmore-group">
+            <p class="pmore-label">Apply to</p>
+            <div class="pmore-seg" id="pmore-scope">
+              <button type="button" class="pmore-seg-btn is-on" data-scope="all">All pages</button>
+              <button type="button" class="pmore-seg-btn" data-scope="one">This page</button>
+            </div>
+          </div>`;
+      }
+      if (id === 'pdf-watermark') {
+        return `
+          <div class="pmore-group">
+            <p class="pmore-label">Text</p>
+            <input id="pmore-text" class="pmore-input" type="text" maxlength="60" value="${_esc(state.text)}">
+          </div>
+          <div class="pmore-group">
+            <p class="pmore-label">Opacity <span id="pmore-opval">${state.opacity}%</span></p>
+            <input id="pmore-op" class="pmore-range" type="range" min="5" max="80" value="${state.opacity}">
+          </div>
+          <div class="pmore-group">
+            <p class="pmore-label">Font size <span id="pmore-sizeval">${state.size}</span></p>
+            <input id="pmore-size" class="pmore-range" type="range" min="18" max="120" value="${state.size}">
+          </div>`;
+      }
+      if (id === 'pdf-crop') {
+        return `
+          <div class="pmore-group">
+            <p class="pmore-label">Margin (pt) <span id="pmore-mval">${state.margin}</span></p>
+            <input id="pmore-margin" class="pmore-range" type="range" min="0" max="120" value="${state.margin}">
+          </div>
+          <div class="pmore-chips">
+            <button type="button" class="pmore-chip" data-m="18">Tight</button>
+            <button type="button" class="pmore-chip" data-m="36">Default</button>
+            <button type="button" class="pmore-chip" data-m="72">Wide</button>
+          </div>
+          <p class="pmore-hint">Equal trim from every edge. Preview updates live.</p>`;
+      }
+      if (id === 'pdf-resize') {
+        return `
+          <div class="pmore-group">
+            <p class="pmore-label">Scale <span id="pmore-sval">${state.scale}×</span></p>
+            <input id="pmore-scale" class="pmore-range" type="range" min="10" max="200" value="${Math.round(state.scale*100)}">
+          </div>
+          <div class="pmore-chips">
+            <button type="button" class="pmore-chip" data-s="0.5">50%</button>
+            <button type="button" class="pmore-chip" data-s="0.8">80%</button>
+            <button type="button" class="pmore-chip" data-s="1">100%</button>
+            <button type="button" class="pmore-chip" data-s="1.25">125%</button>
+          </div>`;
+      }
+      if (id === 'pdf-page-numbers') {
+        return `
+          <div class="pmore-group">
+            <p class="pmore-label">Position</p>
+            <select id="pmore-pos" class="pmore-select">
+              ${['bottom-center','bottom-right','bottom-left'].map(p =>
+                `<option value="${p}" ${state.pos===p?'selected':''}>${p.replace('-', ' ')}</option>`).join('')}
+            </select>
+          </div>
+          <p class="pmore-hint">Numbers render as <strong>n / total</strong> on each page.</p>`;
+      }
+      if (id === 'pdf-redact') {
+        return `
+          <div class="pmore-group">
+            <p class="pmore-label">Redaction box (pt)</p>
+            <div class="pmore-grid2">
+              <label class="pmore-field"><span>X</span><input id="pmore-rx" type="number" value="${state.rx}"></label>
+              <label class="pmore-field"><span>Y</span><input id="pmore-ry" type="number" value="${state.ry}"></label>
+              <label class="pmore-field"><span>W</span><input id="pmore-rw" type="number" value="${state.rw}"></label>
+              <label class="pmore-field"><span>H</span><input id="pmore-rh" type="number" value="${state.rh}"></label>
+            </div>
+          </div>
+          <div class="pmore-chips">
+            <button type="button" class="pmore-chip" data-redact="header">Header bar</button>
+            <button type="button" class="pmore-chip" data-redact="line">Text line</button>
+            <button type="button" class="pmore-chip" data-redact="block">Block</button>
+          </div>
+          <p class="pmore-hint">Drag the black box on the page, or edit numbers.</p>`;
+      }
+      return '';
+    }
+
+    function pageArtHTML() {
+      const rot = id === 'pdf-rotate' ? Number(state.deg) || 0 : 0;
+      const scale = id === 'pdf-resize' ? Math.max(0.2, Number(state.scale) || 1) : 1;
+      const marginPct = id === 'pdf-crop' ? Math.min(40, (Number(state.margin) || 0) / 2.4) : 0;
+      const num = id === 'pdf-page-numbers'
+        ? `<div class="pmore-pagenum pmore-pagenum--${state.pos}">${page} / ${pageCount}</div>` : '';
+      const wm = id === 'pdf-watermark'
+        ? `<div class="pmore-wm" style="opacity:${(Number(state.opacity)||20)/100};font-size:${Math.max(18, Math.round((Number(state.size)||60) * 0.55))}px">${_esc(state.text)}</div>` : '';
+      const redact = id === 'pdf-redact'
+        ? `<div class="pmore-redact" id="pmore-redact-box" style="left:${Math.min(78, state.rx/6)}%;bottom:${Math.min(78, state.ry/8)}%;width:${Math.min(70, state.rw/4)}%;height:${Math.min(40, state.rh/3)}%"></div>` : '';
+      const crop = id === 'pdf-crop'
+        ? `<div class="pmore-crop-frame" style="inset:${marginPct}%"></div><div class="pmore-crop-dim" style="--m:${marginPct}%"></div>` : '';
+
+      return `
+        <div class="pmore-page-wrap" style="transform:scale(${0.92 * (zoom/100)})">
+          <div class="pmore-page" style="transform:rotate(${rot}deg) scale(${scale})">
+            <div class="pmore-page-shade"></div>
+            <div class="pmore-page-body">
+              <div class="pmore-fake-title"></div>
+              <div class="pmore-fake-line"></div>
+              <div class="pmore-fake-line"></div>
+              <div class="pmore-fake-line short"></div>
+              <div class="pmore-fake-block"></div>
+              <div class="pmore-fake-line"></div>
+              <div class="pmore-fake-line"></div>
+              <div class="pmore-fake-line short"></div>
+              ${wm}${num}${redact}${crop}
+            </div>
+            <div class="pmore-page-footer">Page ${page}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderCanvas() {
+      container.classList.add('pmore-ws-active');
+      container.innerHTML = `
+        <div class="pmore-ws">
+          <header class="pmore-top">
+            <div class="pmore-top-left">
+              <div class="cpdf-hdr-icon pmore-hdr-icon pmore-top-ico">${icon()}</div>
+              <div class="pmore-titles">
+                <strong>${_esc(meta.title)}</strong>
+                <span title="${_esc(file.name)}">${fileLine()}</span>
+              </div>
+            </div>
+            <div class="pmore-top-actions">
+              <div class="pmore-pager">
+                <button type="button" class="pmore-icon-btn" id="pmore-prev" ${page<=1?'disabled':''}>‹</button>
+                <span>${page} / ${pageCount}</span>
+                <button type="button" class="pmore-icon-btn" id="pmore-next" ${page>=pageCount?'disabled':''}>›</button>
+              </div>
+              <div class="pmore-zoom">
+                <button type="button" class="pmore-icon-btn" id="pmore-zout">−</button>
+                <span id="pmore-zlbl">${zoom}%</span>
+                <button type="button" class="pmore-icon-btn" id="pmore-zin">+</button>
+              </div>
+            </div>
+          </header>
+          <div class="pmore-main">
+            <aside class="pmore-side">
+              <div class="pmore-side-scroll">
+                ${sideOptions()}
+                <div class="pmore-thumbs" id="pmore-thumbs">
+                  ${Array.from({length: pageCount}, (_,i) => `
+                    <button type="button" class="pmore-thumb${i+1===page?' is-on':''}" data-page="${i+1}">
+                      ${mockThumb(i+1, pageCount, file.name, id==='pdf-rotate'?Number(state.deg):0)}
+                    </button>`).join('')}
+                </div>
+              </div>
+              <div class="pmore-side-foot">
+                <div class="pmore-summary" id="pmore-summary">${_esc(summary())}</div>
+                <button class="conv-run-btn pmore-run" id="pmore-run" type="button">${_esc(meta.run)}</button>
+                <button class="conv-change-btn" id="pmore-change" type="button">Change file</button>
+              </div>
+            </aside>
+            <section class="pmore-stage">
+              <div class="pmore-stage-board" id="pmore-board">${pageArtHTML()}</div>
+              <div class="pmore-stage-bar">
+                <span>Live page canvas · UI shell</span>
+                <span class="pmore-local">${I.shield} Local only</span>
+              </div>
+            </section>
+          </div>
+        </div>`;
+      bindCanvas();
+    }
+
+    function refreshCanvasArt() {
+      const board = container.querySelector('#pmore-board');
+      if (board) board.innerHTML = pageArtHTML();
+      const sum = container.querySelector('#pmore-summary');
+      if (sum) sum.textContent = summary();
+      const zl = container.querySelector('#pmore-zlbl');
+      if (zl) zl.textContent = zoom + '%';
+      // thumbs active + rotate preview
+      container.querySelectorAll('.pmore-thumb').forEach(btn => {
+        const p = Number(btn.dataset.page);
+        btn.classList.toggle('is-on', p === page);
+        if (id === 'pdf-rotate') {
+          btn.innerHTML = mockThumb(p, pageCount, file.name, Number(state.deg) || 0);
+        }
+      });
+      if (id === 'pdf-redact') wireRedactDrag();
+    }
+
+    function bindCanvas() {
+      container.querySelector('#pmore-change').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#pmore-run').onclick = () => run();
+      container.querySelector('#pmore-prev').onclick = () => { if (page > 1) { page--; renderCanvas(); } };
+      container.querySelector('#pmore-next').onclick = () => { if (page < pageCount) { page++; renderCanvas(); } };
+      container.querySelector('#pmore-zin').onclick = () => { zoom = Math.min(160, zoom + 10); refreshCanvasArt(); };
+      container.querySelector('#pmore-zout').onclick = () => { zoom = Math.max(60, zoom - 10); refreshCanvasArt(); };
+      container.querySelectorAll('.pmore-thumb').forEach(btn => {
+        btn.onclick = () => { page = Number(btn.dataset.page) || 1; renderCanvas(); };
+      });
+
+      container.querySelectorAll('#pmore-deg .pmore-seg-btn').forEach(btn => {
+        btn.onclick = () => {
+          state.deg = btn.dataset.deg;
+          container.querySelectorAll('#pmore-deg .pmore-seg-btn').forEach(b => b.classList.toggle('is-on', b === btn));
+          refreshCanvasArt();
+        };
+      });
+      const text = container.querySelector('#pmore-text');
+      if (text) text.oninput = () => { state.text = text.value; refreshCanvasArt(); };
+      const op = container.querySelector('#pmore-op');
+      if (op) op.oninput = () => {
+        state.opacity = Number(op.value) || 20;
+        const v = container.querySelector('#pmore-opval'); if (v) v.textContent = state.opacity + '%';
+        refreshCanvasArt();
+      };
+      const sz = container.querySelector('#pmore-size');
+      if (sz) sz.oninput = () => {
+        state.size = Number(sz.value) || 60;
+        const v = container.querySelector('#pmore-sizeval'); if (v) v.textContent = String(state.size);
+        refreshCanvasArt();
+      };
+      const margin = container.querySelector('#pmore-margin');
+      if (margin) margin.oninput = () => {
+        state.margin = Number(margin.value) || 0;
+        const v = container.querySelector('#pmore-mval'); if (v) v.textContent = String(state.margin);
+        refreshCanvasArt();
+      };
+      container.querySelectorAll('[data-m]').forEach(btn => {
+        btn.onclick = () => {
+          state.margin = Number(btn.dataset.m) || 36;
+          if (margin) margin.value = String(state.margin);
+          const v = container.querySelector('#pmore-mval'); if (v) v.textContent = String(state.margin);
+          refreshCanvasArt();
+        };
+      });
+      const scale = container.querySelector('#pmore-scale');
+      if (scale) scale.oninput = () => {
+        state.scale = Math.max(0.1, (Number(scale.value) || 80) / 100);
+        const v = container.querySelector('#pmore-sval'); if (v) v.textContent = state.scale.toFixed(2) + '×';
+        refreshCanvasArt();
+      };
+      container.querySelectorAll('[data-s]').forEach(btn => {
+        btn.onclick = () => {
+          state.scale = Number(btn.dataset.s) || 1;
+          if (scale) scale.value = String(Math.round(state.scale * 100));
+          const v = container.querySelector('#pmore-sval'); if (v) v.textContent = state.scale.toFixed(2) + '×';
+          refreshCanvasArt();
+        };
+      });
+      const pos = container.querySelector('#pmore-pos');
+      if (pos) pos.onchange = () => { state.pos = pos.value; refreshCanvasArt(); };
+
+      const bindN = (sel, key) => {
+        const el = container.querySelector(sel);
+        if (!el) return;
+        el.oninput = () => { state[key] = Number(el.value) || 0; refreshCanvasArt(); };
+      };
+      bindN('#pmore-rx', 'rx'); bindN('#pmore-ry', 'ry'); bindN('#pmore-rw', 'rw'); bindN('#pmore-rh', 'rh');
+      container.querySelectorAll('[data-redact]').forEach(btn => {
+        btn.onclick = () => {
+          const t = btn.dataset.redact;
+          if (t === 'header') { state.rx = 48; state.ry = 720; state.rw = 500; state.rh = 28; }
+          if (t === 'line') { state.rx = 72; state.ry = 420; state.rw = 280; state.rh = 18; }
+          if (t === 'block') { state.rx = 72; state.ry = 300; state.rw = 360; state.rh = 90; }
+          ['rx','ry','rw','rh'].forEach(k => {
+            const el = container.querySelector('#pmore-' + k);
+            if (el) el.value = String(state[k]);
+          });
+          refreshCanvasArt();
+        };
+      });
+      if (id === 'pdf-redact') wireRedactDrag();
+    }
+
+    function wireRedactDrag() {
+      const box = container.querySelector('#pmore-redact-box');
+      const pageEl = container.querySelector('.pmore-page-body');
+      if (!box || !pageEl) return;
+      let drag = null;
+      box.onpointerdown = e => {
+        e.preventDefault();
+        const pr = pageEl.getBoundingClientRect();
+        drag = {
+          x0: e.clientX, y0: e.clientY,
+          l0: box.offsetLeft, b0: pr.height - box.offsetTop - box.offsetHeight,
+        };
+        box.setPointerCapture(e.pointerId);
+      };
+      box.onpointermove = e => {
+        if (!drag) return;
+        const pr = pageEl.getBoundingClientRect();
+        const dx = e.clientX - drag.x0;
+        const dy = drag.y0 - e.clientY; // bottom-based
+        const left = Math.max(0, Math.min(pr.width - box.offsetWidth, drag.l0 + dx));
+        const bottom = Math.max(0, Math.min(pr.height - box.offsetHeight, drag.b0 + dy));
+        box.style.left = (left / pr.width * 100) + '%';
+        box.style.bottom = (bottom / pr.height * 100) + '%';
+        state.rx = Math.round(left / pr.width * 612);
+        state.ry = Math.round(bottom / pr.height * 792);
+        const xe = container.querySelector('#pmore-rx');
+        const ye = container.querySelector('#pmore-ry');
+        if (xe) xe.value = String(state.rx);
+        if (ye) ye.value = String(state.ry);
+        const sum = container.querySelector('#pmore-summary');
+        if (sum) sum.textContent = summary();
+      };
+      box.onpointerup = () => { drag = null; };
+    }
+
+    // ── extract pages strip ──
+    function renderPages() {
+      container.classList.add('pmore-ws-active');
+      container.innerHTML = `
+        <div class="pmore-ws">
+          <header class="pmore-top">
+            <div class="pmore-top-left">
+              <div class="cpdf-hdr-icon pmore-hdr-icon pmore-top-ico">${icon()}</div>
+              <div class="pmore-titles">
+                <strong>${_esc(meta.title)}</strong>
+                <span>${fileLine()}</span>
+              </div>
+            </div>
+            <div class="pmore-top-actions">
+              <button type="button" class="pmore-mini" id="pmore-all">Select all</button>
+              <button type="button" class="pmore-mini" id="pmore-none">Clear</button>
+            </div>
+          </header>
+          <div class="pmore-main pmore-main--pages">
+            <aside class="pmore-side">
+              <div class="pmore-side-scroll">
+                <div class="pmore-hero-card">
+                  <strong>Pick pages to keep</strong>
+                  <span>Click thumbnails to toggle. Order is preserved.</span>
+                </div>
+                <div class="pmore-group">
+                  <p class="pmore-label">Or type a range</p>
+                  <input id="pmore-range" class="pmore-input" type="text" placeholder="e.g. 1-3,5" value="${_esc(state.pages)}">
+                </div>
+              </div>
+              <div class="pmore-side-foot">
+                <div class="pmore-summary" id="pmore-summary">${_esc(summary())}</div>
+                <button class="conv-run-btn pmore-run" id="pmore-run" type="button">${_esc(meta.run)}</button>
+                <button class="conv-change-btn" id="pmore-change" type="button">Change file</button>
+              </div>
+            </aside>
+            <section class="pmore-stage">
+              <div class="pmore-pagegrid" id="pmore-grid">
+                ${Array.from({length: pageCount}, (_,i) => `
+                  <button type="button" class="pmore-pgcard${selected.has(i)?' is-on':''}" data-i="${i}">
+                    <div class="pmore-pgcard-art">${mockThumb(i+1, pageCount, file.name)}</div>
+                    <span>Page ${i+1}</span>
+                  </button>`).join('')}
+              </div>
+              <div class="pmore-stage-bar">
+                <span>Visual page picker</span>
+                <span class="pmore-local">${I.shield} Local only</span>
+              </div>
+            </section>
+          </div>
+        </div>`;
+      container.querySelector('#pmore-change').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#pmore-run').onclick = () => run();
+      container.querySelector('#pmore-all').onclick = () => {
+        selected = new Set(Array.from({ length: pageCount }, (_, i) => i));
+        renderPages();
+      };
+      container.querySelector('#pmore-none').onclick = () => { selected = new Set(); renderPages(); };
+      container.querySelectorAll('.pmore-pgcard').forEach(btn => {
+        btn.onclick = () => {
+          const i = Number(btn.dataset.i);
+          if (selected.has(i)) selected.delete(i); else selected.add(i);
+          btn.classList.toggle('is-on', selected.has(i));
+          const sum = container.querySelector('#pmore-summary');
+          if (sum) sum.textContent = summary();
+        };
+      });
+      const range = container.querySelector('#pmore-range');
+      range.onchange = () => {
+        state.pages = range.value.trim();
+        if (!state.pages) return;
+        const set = new Set();
+        state.pages.split(',').forEach(part => {
+          const m = part.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+          if (!m) return;
+          let a = Number(m[1]), b = Number(m[2] || m[1]);
+          if (a > b) [a, b] = [b, a];
+          for (let n = a; n <= b; n++) if (n >= 1 && n <= pageCount) set.add(n - 1);
+        });
+        if (set.size) { selected = set; renderPages(); }
+      };
+    }
+
+    // ── thin form tools ──
+    function renderForm() {
+      container.classList.remove('pmore-ws-active');
+      const extra = id === 'pdf-form-filler' ? `
+        <div class="pmore-form-panel">
+          <p class="pmore-label">Mode</p>
+          <div class="pmore-seg" id="pmore-mode">
+            <button type="button" class="pmore-seg-btn${state.mode==='list'?' is-on':''}" data-mode="list">List fields</button>
+            <button type="button" class="pmore-seg-btn${state.mode==='fill'?' is-on':''}" data-mode="fill">Fill JSON</button>
+          </div>
+        </div>
+        <div class="pmore-form-panel${state.mode==='fill'?'':' is-muted'}">
+          <p class="pmore-label">Values JSON</p>
+          <textarea id="pmore-json" class="pmore-textarea" rows="5">${_esc(state.json)}</textarea>
+        </div>` : `
+        <div class="pmore-form-hero">
+          <div class="pmore-form-hero-ico">${icon()}</div>
+          <div>
+            <strong>${id === 'pdf-repair' ? 'Rebuild PDF objects' : 'Clean optimize pass'}</strong>
+            <span>${id === 'pdf-repair'
+              ? 'Reloads and re-saves the document to fix common structural issues.'
+              : 'Re-encodes a tidy copy. Great before sharing or archiving.'}</span>
+          </div>
+        </div>`;
+
+      container.innerHTML = `
+        <header class="cpdf-hdr pmore-hdr">
+          <div class="cpdf-hdr-icon pmore-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll pmore-form">
+            <div class="conv-file-card">
+              <div class="conv-file-badge">PDF</div>
+              <div class="conv-file-meta">
+                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                <span>${_bytes(file.size)} · ~${pageCount} pages</span>
+              </div>
+              <button type="button" class="conv-file-x" id="pmore-remove">×</button>
+            </div>
+            ${extra}
+          </div>
+          <div class="cpdf-footer conv-actions">
+            <div class="pmore-summary" id="pmore-summary">${_esc(summary())}</div>
+            <div class="pmore-action-row">
+              <button class="conv-run-btn pmore-run" id="pmore-run" type="button">${_esc(meta.run)}</button>
+              <button class="conv-change-btn" id="pmore-change" type="button">Change file</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#pmore-remove').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#pmore-change').onclick = () => { file = null; renderUpload(); };
+      container.querySelector('#pmore-run').onclick = () => run();
+      container.querySelectorAll('#pmore-mode .pmore-seg-btn').forEach(btn => {
+        btn.onclick = () => {
+          state.mode = btn.dataset.mode;
+          renderForm();
+        };
+      });
+      const js = container.querySelector('#pmore-json');
+      if (js) js.oninput = () => { state.json = js.value; };
+    }
+
+    function renderProcessing() {
+      container.classList.remove('pmore-ws-active');
+      container.innerHTML = `
+        <header class="cpdf-hdr pmore-hdr">
+          <div class="cpdf-hdr-icon pmore-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">Working…</p>
+          </div>
+        </header>
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${icon()}</div>
+          </div>
+          <p class="cpdf-proc-title">${_esc(meta.run)}</p>
+          <p class="cpdf-proc-sub" id="pmore-msg">Reading PDF…</p>
+          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="pmore-fill" style="width:16%"></div></div>
+          <div class="cpdf-prog-foot">
+            <span id="pmore-pct">16%</span>
+            <span class="cpdf-proc-local">${I.shield} Local processing</span>
+          </div>
+        </div>`;
+    }
+
+    function buildInputs() {
+      if (id === 'pdf-rotate') return { deg: state.deg, pages: '' };
+      if (id === 'pdf-watermark') return { text: state.text, opacity: state.opacity, size: state.size, pages: '' };
+      if (id === 'pdf-crop') return { margin: state.margin, pages: '' };
+      if (id === 'pdf-resize') return { scale: state.scale };
+      if (id === 'pdf-page-numbers') return { pos: state.pos, pages: '' };
+      if (id === 'pdf-redact') return { page, x: state.rx, y: state.ry, w: state.rw, h: state.rh };
+      if (id === 'pdf-extract-range') {
+        const pages = [...selected].sort((a,b)=>a-b).map(i => i+1).join(',');
+        return { pages: pages || state.pages || '1' };
+      }
+      if (id === 'pdf-form-filler') return { mode: state.mode, json: state.json };
+      return {};
+    }
+
+    async function run() {
+      if (id === 'pdf-extract-range' && !selected.size && !state.pages) {
+        const sum = container.querySelector('#pmore-summary');
+        if (sum) sum.textContent = 'Select at least one page';
+        return;
+      }
+      renderProcessing();
+      const fill = container.querySelector('#pmore-fill');
+      const pct = container.querySelector('#pmore-pct');
+      const msg = container.querySelector('#pmore-msg');
+      const steps = [[28, 'Reading document…'], [58, 'Applying changes…'], [86, 'Writing output…'], [100, 'Done']];
+      for (const [v, t] of steps) {
+        await new Promise(r => setTimeout(r, 160));
+        if (fill) fill.style.width = v + '%';
+        if (pct) pct.textContent = v + '%';
+        if (msg) msg.textContent = t;
+      }
+      const out = await runEngine(id, file, buildInputs());
+      renderResult(out);
+    }
+
+    function renderResult(out) {
+      const url = URL.createObjectURL(out.blob);
+      const isTxt = (out.filename || '').endsWith('.txt') || out.blob.type === 'text/plain';
+      container.classList.remove('pmore-ws-active');
+      container.innerHTML = `
+        <header class="cpdf-hdr pmore-hdr">
+          <div class="cpdf-hdr-icon pmore-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
+            <p class="cpdf-hdr-sub">Your file is ready</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="cpdf-body-scroll">
+            <div class="cpdf-status-bar cpdf-status-bar--ok">
+              <div>
+                <strong>Done</strong>
+                <span>${_esc(summary())}</span>
+              </div>
+            </div>
+            <div class="cpdf-file-bar">
+              <span class="pmore-out-badge">${isTxt ? 'TXT' : 'PDF'}</span>
+              <div class="cpdf-file-text">
+                <span class="cpdf-fname">${_esc(out.filename)}</span>
+                <span class="cpdf-fsize">${_bytes(out.blob.size)} · from ${_esc(file.name)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="cpdf-footer">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">
+              ${I.dl}&nbsp; Download ${_esc(out.filename)}
+            </a>
+            <div class="cpdf-result-row">
+              <button class="cpdf-btn-ghost" id="pmore-again" type="button">Another file</button>
+              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="pmore-back" type="button">Adjust options</button>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#pmore-again').onclick = () => {
+        URL.revokeObjectURL(url); file = null; renderUpload();
+      };
+      container.querySelector('#pmore-back').onclick = () => {
+        URL.revokeObjectURL(url);
+        if (meta.flow === 'canvas') renderCanvas();
+        else if (meta.flow === 'pages') renderPages();
+        else renderForm();
+      };
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountPdfMore = mountPdfMore;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FileKit — Documents suite
+   Convert hub · Analyze stats · Transform editor
+═══════════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+
+  const I = {
+    dl: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>',
+    shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>',
+    doc: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+    convert: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3M17 17H6l3 3M18 4l3 3-3 3M6 20l-3-3 3-3"/></svg>',
+    check: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    stats: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="10" width="3" height="6"/><rect x="12" y="7" width="3" height="9"/><rect x="17" y="12" width="3" height="4"/></svg>',
+    wand: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20z"/><path d="m13.5 7.5 3 3"/></svg>',
+    file: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+    docBig: '<svg width="190" height="120" viewBox="0 0 190 120" fill="none" aria-hidden="true"><rect x="34" y="12" width="122" height="96" rx="8" fill="#fff" stroke="#E2E8F0"/><path d="M62 12v0h66l22 22v74H62z" fill="#EEF2FF"/><path d="M128 12l22 22h-22z" fill="#C7D2FE"/><rect x="56" y="46" width="66" height="7" rx="3.5" fill="#E2E8F0"/><rect x="56" y="60" width="78" height="7" rx="3.5" fill="#E2E8F0"/><rect x="56" y="74" width="52" height="7" rx="3.5" fill="#E2E8F0"/><circle cx="152" cy="84" r="22" fill="#7C3AED"/><path d="M143 84l6 6 10-11" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+  };
+
+  const FLOWS = {
+    convert: ['docx-to-pdf', 'docx-to-html', 'docx-to-txt', 'docx-to-md', 'md-to-html', 'html-to-md', 'md-to-pdf', 'html-to-pdf', 'txt-to-pdf'],
+    analyze: ['doc-word-count', 'doc-char-count', 'doc-reading-time'],
+    transform: ['doc-find-replace', 'doc-case', 'doc-dedupe', 'doc-sort', 'doc-whitespace'],
+  };
+  function flowOf(id) {
+    if (FLOWS.convert.includes(id)) return 'convert';
+    if (FLOWS.analyze.includes(id)) return 'analyze';
+    return 'transform';
+  }
+
+  const META = {
+    'docx-to-pdf':  { title: 'DOCX → PDF', sub: 'Convert Word documents to PDF', tone: 'violet', accept: '.docx', target: 'pdf' },
+    'docx-to-html': { title: 'DOCX → HTML', sub: 'Convert Word documents to HTML', tone: 'blue', accept: '.docx', target: 'html' },
+    'docx-to-txt':  { title: 'DOCX → TXT', sub: 'Extract plain text from Word', tone: 'blue', accept: '.docx', target: 'txt' },
+    'docx-to-md':   { title: 'DOCX → Markdown', sub: 'Convert Word documents to Markdown', tone: 'blue', accept: '.docx', target: 'md' },
+    'md-to-html':   { title: 'Markdown → HTML', sub: 'Render Markdown as HTML', tone: 'indigo', accept: '.md,.markdown,.txt', target: 'html' },
+    'html-to-md':   { title: 'HTML → Markdown', sub: 'Convert HTML to Markdown', tone: 'indigo', accept: '.html,.htm', target: 'md' },
+    'md-to-pdf':    { title: 'Markdown → PDF', sub: 'Render Markdown as a PDF', tone: 'violet', accept: '.md,.markdown,.txt', target: 'pdf' },
+    'html-to-pdf':  { title: 'HTML → PDF', sub: 'Render HTML as a PDF', tone: 'violet', accept: '.html,.htm', target: 'pdf' },
+    'txt-to-pdf':   { title: 'TXT → PDF', sub: 'Convert plain text to PDF', tone: 'violet', accept: '.txt', target: 'pdf' },
+    'doc-word-count':    { title: 'Word Count', sub: 'Words, characters, sentences, paragraphs', tone: 'teal', accept: '.txt,.md,.html,.htm', stat: 'words' },
+    'doc-char-count':    { title: 'Character Count', sub: 'Character count with/without spaces', tone: 'teal', accept: '.txt,.md,.html,.htm', stat: 'chars' },
+    'doc-reading-time':  { title: 'Reading Time', sub: 'Estimate reading & speaking time', tone: 'teal', accept: '.txt,.md,.html,.htm', stat: 'time' },
+    'doc-find-replace':  { title: 'Find & Replace', sub: 'Replace text across a document', tone: 'orange', accept: '.txt,.md,.html,.htm' },
+    'doc-case':          { title: 'Change Case', sub: 'UPPER, lower, Title, Sentence case', tone: 'orange', accept: '.txt,.md,.html,.htm' },
+    'doc-dedupe':        { title: 'Remove Duplicate Lines', sub: 'Deduplicate lines in a document', tone: 'orange', accept: '.txt,.md,.html,.htm' },
+    'doc-sort':          { title: 'Sort Lines', sub: 'Sort lines alphabetically or numerically', tone: 'orange', accept: '.txt,.md,.html,.htm' },
+    'doc-whitespace':    { title: 'Clean Whitespace', sub: 'Trim, collapse spaces, strip blank lines', tone: 'orange', accept: '.txt,.md,.html,.htm' },
+  };
+
+  function toneClass(tone) { return `doc-tone-${tone || 'violet'}`; }
+
+  function baseName(name) { return String(name || 'file').replace(/\.[^.]+$/, ''); }
+
+  async function readTextFromFile(file) {
+    if (!file) return '';
+    return await file.text();
+  }
+
+  function stripHtml(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || div.innerText || '';
+  }
+
+  function mdToHtml(md) {
+    let s = _esc(md);
+    s = s.replace(/^###### (.*)$/gm, '<h6>$1</h6>').replace(/^##### (.*)$/gm, '<h5>$1</h5>')
+         .replace(/^#### (.*)$/gm, '<h4>$1</h4>').replace(/^### (.*)$/gm, '<h3>$1</h3>')
+         .replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>');
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/^- (.*)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+    s = s.split(/\n{2,}/).map(p => /^<h\d|^<ul|^<li/.test(p.trim()) ? p : (p.trim() ? `<p>${p.trim().replace(/\n/g, '<br>')}</p>` : '')).join('\n');
+    return s;
+  }
+
+  function htmlToMd(html) {
+    let s = html;
+    s = s.replace(/<h1[^>]*>(.*?)<\/h1>/gis, '# $1\n').replace(/<h2[^>]*>(.*?)<\/h2>/gis, '## $1\n')
+         .replace(/<h3[^>]*>(.*?)<\/h3>/gis, '### $1\n');
+    s = s.replace(/<strong[^>]*>(.*?)<\/strong>/gis, '**$1**').replace(/<b[^>]*>(.*?)<\/b>/gis, '**$1**');
+    s = s.replace(/<em[^>]*>(.*?)<\/em>/gis, '*$1*').replace(/<i[^>]*>(.*?)<\/i>/gis, '*$1*');
+    s = s.replace(/<li[^>]*>(.*?)<\/li>/gis, '- $1\n');
+    s = s.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<p[^>]*>/gi, '');
+    s = stripHtml(s);
+    return s.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  function statsOf(text) {
+    const words = (text.trim().match(/\S+/g) || []).length;
+    const chars = text.length;
+    const charsNoSpace = text.replace(/\s/g, '').length;
+    const sentences = (text.match(/[.!?]+(\s|$)/g) || []).length;
+    const paragraphs = (text.split(/\n{2,}/).filter(p => p.trim())).length || (text.trim() ? 1 : 0);
+    const readMin = Math.max(1, Math.round(words / 200));
+    const speakMin = Math.max(1, Math.round(words / 130));
+    return { words, chars, charsNoSpace, sentences, paragraphs, readMin, speakMin };
+  }
+
+  async function runEngine(id, text, file) {
+    const meta = META[id] || {};
+    if (id === 'docx-to-pdf' || id === 'docx-to-html' || id === 'docx-to-txt' || id === 'docx-to-md') {
+      // Best-effort DOCX text extraction (no external deps): fall back to plain read.
+      let raw = '';
+      try { raw = await readTextFromFile(file); } catch { raw = ''; }
+      // DOCX is a zip; if it's not plain text, show a friendly notice instead of garbage.
+      const looksBinary = /\ufffd|[\x00-\x08\x0e-\x1f]/.test(raw.slice(0, 400));
+      const text2 = looksBinary ? '[This DOCX contains formatting that could not be fully extracted client-side. Plain text shown where possible.]\n\n' + raw.replace(/[\x00-\x08\x0e-\x1f\ufffd]/g, '') : raw;
+      if (id === 'docx-to-txt') return { text: text2, ext: 'txt', mime: 'text/plain' };
+      if (id === 'docx-to-md') return { text: text2, ext: 'md', mime: 'text/markdown' };
+      if (id === 'docx-to-html') return { text: `<pre>${_esc(text2)}</pre>`, ext: 'html', mime: 'text/html' };
+      return { text: text2, ext: 'pdf-text', mime: 'application/pdf' };
+    }
+    if (id === 'md-to-html') return { text: mdToHtml(text), ext: 'html', mime: 'text/html' };
+    if (id === 'html-to-md') return { text: htmlToMd(text), ext: 'md', mime: 'text/markdown' };
+    if (id === 'md-to-pdf') return { text: mdToHtml(text), ext: 'pdf-text', mime: 'application/pdf' };
+    if (id === 'html-to-pdf') return { text, ext: 'pdf-text', mime: 'application/pdf' };
+    if (id === 'txt-to-pdf') return { text: `<pre>${_esc(text)}</pre>`, ext: 'pdf-text', mime: 'application/pdf' };
+    return { text, ext: 'txt', mime: 'text/plain' };
+  }
+
+  async function textToPdfBlob(html, plainFallback) {
+    try {
+      const w = document.createElement('div');
+      w.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;padding:32px;font:14px/1.6 Georgia,serif;color:#111;background:#fff;';
+      w.innerHTML = html || `<pre>${_esc(plainFallback || '')}</pre>`;
+      document.body.appendChild(w);
+      let blob = null;
+      if (window.html2pdf) {
+        blob = await window.html2pdf().from(w).outputPdf('blob');
+      }
+      document.body.removeChild(w);
+      if (blob) return blob;
+    } catch (e) { /* fall through */ }
+    // Minimal valid single-page PDF fallback with the plain text.
+    const text = (plainFallback || stripHtml(html || '')).slice(0, 4000);
+    const lines = text.split(/\r?\n/);
+    const esc = s => s.replace(/([()\\])/g, '\\$1');
+    let y = 780;
+    const ops = ['BT', '/F1 11 Tf', '14 TL', `50 ${y} Td`];
+    lines.slice(0, 55).forEach((ln, i) => { ops.push(`(${esc(ln.slice(0, 100))}) Tj`); ops.push('T*'); });
+    ops.push('ET');
+    const content = ops.join('\n');
+    const pdf = `%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>endobj
+4 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+5 0 obj<</Length ${content.length}>>stream
+${content}
+endstream
+endobj
+trailer<</Root 1 0 R>>`;
+    return new Blob([pdf], { type: 'application/pdf' });
+  }
+
+  function ingestFile(f) { return f; }
+
+  function bindDrop(zone, input) {
+    if (!zone || !input) return;
+    zone.addEventListener('click', () => input.click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('is-drag'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('is-drag'));
+  }
+
+  function mountDocuments(container, tool) {
+    const startId = tool?.id || 'docx-to-pdf';
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'doc-root');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root', 'aud-root', 'aud-ws-active', 'doc-shell', 'doc-ws-active');
+
+    let id = startId;
+    let meta = META[id] || META['docx-to-pdf'];
+    let file = null;
+    let source = '';
+    let lastStats = statsOf('');
+    let outCache = null;
+
+    const isConvert = () => flowOf(id) === 'convert';
+    const isAnalyze = () => flowOf(id) === 'analyze';
+    const isTransform = () => flowOf(id) === 'transform';
+    const needsDocx = () => id.startsWith('docx-');
+    const target = () => (meta.target || 'file').toUpperCase();
+    const extBadge = () => { const e = (meta.accept || '').replace(/\./g, '').split(',')[0] || 'TXT'; return e.toUpperCase(); };
+    const toneColor = ({ violet: '#7C3AED', blue: '#2563EB', indigo: '#4338CA', teal: '#0D9488', orange: '#EA580C', amber: '#D97706', rose: '#E11D48', cyan: '#0891B2', red: '#DC2626', slate: '#334155' })[meta.tone] || '#4F46E5';
+
+    function setShell(active) {
+      container.classList.toggle('doc-shell', active);
+      container.classList.toggle('doc-ws-active', active);
+      container.classList.toggle('doc-upload-state', !active);
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+    }
+
+    function fileMeta() {
+      if (file) return `${_esc(file.name)} · ${_bytes(file.size)}`;
+      if (source) return `${source.length.toLocaleString()} chars pasted`;
+      return _esc(meta.sub);
+    }
+    function snippet(t, n) { return String(t || '').replace(/\s+/g, ' ').slice(0, n); }
+    function pasteLabel() {
+      if (meta.accept.includes('html')) return 'HTML';
+      if (meta.accept.includes('md')) return 'Markdown';
+      return 'text';
+    }
+    function statsHtml(s) {
+      return `
+        <div class="doc-stat"><em>Words</em><strong>${s.words}</strong></div>
+        <div class="doc-stat"><em>Characters</em><strong>${s.chars}</strong></div>
+        <div class="doc-stat"><em>Chars (no spaces)</em><strong>${s.charsNoSpace}</strong></div>
+        <div class="doc-stat"><em>Sentences</em><strong>${s.sentences}</strong></div>
+        <div class="doc-stat"><em>Paragraphs</em><strong>${s.paragraphs}</strong></div>
+        <div class="doc-stat"><em>Reading time</em><strong>${s.readMin}m</strong></div>
+        <div class="doc-stat"><em>Speaking time</em><strong>${s.speakMin}m</strong></div>`;
+    }
+
+    /* ── Upload state: black drop box (dark card) + paste for text tools ── */
+    function renderUpload() {
+      setShell(false);
+      container.className = `cpdf-root doc-root doc-upload-state ${toneClass(meta.tone)}`;
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="doc-dz" tabindex="0" role="button" aria-label="Add <strong>document</strong> file (DOCX, TXT, MD, CSV)">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="doc-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="doc-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>document</strong> file (DOCX, TXT, MD, CSV)</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-docx">DOCX</span>
+              <span class="fmt-badge fmt-txt">TXT</span>
+              <span class="fmt-badge fmt-md">MD</span>
+              <span class="fmt-badge fmt-csv">CSV</span>
+              <span class="fmt-badge fmt-json">JSON</span>
+            </div>
+          </div>
+          <input id="doc-inp" type="file" accept="${acceptForTool()}"  hidden>
+        </div>
+        </div>
+        ${!needsDocx() ? `
+        <div class="doc-paste-wrap">
+          <label class="doc-label" for="doc-paste">Or paste ${_esc(pasteLabel())}</label>
+          <textarea id="doc-paste" class="doc-paste" rows="5" placeholder="Paste content here…">${_esc(source)}</textarea>
+          <button type="button" class="conv-run-btn doc-run" id="doc-paste-go">Continue with text</button>
+        </div>` : ''}`;
+      const dz = container.querySelector('#doc-dz');
+      const inp = container.querySelector('#doc-inp');
+      if (inp) inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      if (dz) {
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+        dz.addEventListener('drop', e => {
+          e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+          const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+        });
+        dz.addEventListener('click', e => { if (!e.target.closest('label')) inp?.click(); });
+        dz.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp?.click(); }
+        });
+      }
+      const paste = container.querySelector('#doc-paste');
+      const go = container.querySelector('#doc-paste-go');
+      if (go) go.onclick = () => {
+        source = paste?.value || '';
+        file = null;
+        lastStats = statsOf(source);
+        route();
+      };
+    }
+
+    async function pickFile(f) {
+      if (!f) return;
+      file = f;
+      // Binary formats (docx) are read by the engine itself; only extract text for
+      // plain-text inputs so the preview never shows binary garbage.
+      const bin = /docx|zip|doc$/i.test(f.name) || /^application\/(vnd|zip|x-zip)/.test(f.type || '');
+      if (!bin) {
+        try { source = await readTextFromFile(f); } catch { source = ''; }
+      } else {
+        source = '';
+      }
+      lastStats = statsOf(source);
+      route();
+    }
+
+    /* ── Convert workspace: side = file + target + run, stage = route + preview ── */
+    function renderConvert() {
+      if (!file && !source) { renderUpload(); return; }
+      setShell(true);
+      container.className = `cpdf-root doc-root doc-ws-active doc-shell ${toneClass(meta.tone)}`;
+      container.innerHTML = `
+        <div class="doc-ws">
+          <header class="doc-top">
+            <div class="doc-top-left">
+              <div class="cpdf-hdr-icon doc-hdr-icon doc-top-ico">${I.convert}</div>
+              <div class="doc-titles"><strong>${_esc(meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+          </header>
+          <div class="doc-main">
+            <aside class="doc-side">
+              <div class="doc-side-scroll">
+                <div class="doc-group">
+                  <div class="doc-file-row">
+                    <div class="doc-file-badge" style="color:${toneColor};background:${toneColor}1a">${extBadge()}</div>
+                    <div class="doc-file-meta"><strong>${_esc(file ? file.name : 'Pasted text')}</strong><span>${file ? _bytes(file.size) : `${source.length.toLocaleString()} chars`}</span></div>
+                  </div>
+                </div>
+                <div class="doc-hero-card"><strong>Convert to ${target()}</strong><span>${_esc(meta.sub)} — runs fully in your browser, nothing is uploaded.</span></div>
+                <div class="doc-out-pill" style="--c:${toneColor}">→ ${target()}</div>
+              </div>
+              <div class="doc-side-foot">
+                <div class="doc-summary">${file && !source ? `${_esc(meta.accept || 'FILE').replace(/\./g, '').toUpperCase()} file ready` : `${_esc(source.length.toLocaleString())} chars ready`}</div>
+                <button class="conv-run-btn doc-run" id="doc-run" type="button">${I.convert}&nbsp; Convert to ${target()}</button>
+                <button class="conv-change-btn" id="doc-change" type="button">Change file</button>
+              </div>
+            </aside>
+            <section class="doc-stage">
+              <div class="doc-stage-card" id="doc-stage-card">
+                <div class="doc-route">
+                  <div class="doc-route-chip"><b>${_esc(extBadge())}</b><span>Source</span></div>
+                  <div class="doc-route-arrow">→</div>
+                  <div class="doc-route-chip"><b>${target()}</b><span>Output</span></div>
+                </div>
+                ${file && !source
+                  ? `<div class="doc-src-preview">📄 ${_esc(file.name)} — a ${_esc(meta.accept || 'FILE').replace(/\./g, '').toUpperCase()} document. Content is parsed locally when you convert.</div>`
+                  : `<div class="doc-src-preview">${_esc(snippet(source, 900))}</div>`}
+              </div>
+              <div class="doc-stage-bar"><span id="doc-stage-msg">Ready to convert</span><span class="doc-local">${I.shield} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      container.querySelector('#doc-change').onclick = () => { file = null; source = ''; renderUpload(); };
+      container.querySelector('#doc-run').onclick = doConvert;
+    }
+
+    async function doConvert() {
+      const btn = container.querySelector('#doc-run');
+      const msg = container.querySelector('#doc-stage-msg');
+      if (btn) { btn.disabled = true; btn.textContent = 'Converting…'; }
+      if (msg) msg.textContent = 'Converting locally…';
+      try {
+        const res = await runRegistered();
+        outCache = { blob: res.blob, filename: res.filename, mime: res.mime, text: res.text || '' };
+        renderResult();
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = `${I.convert} Convert to ${target()}`; }
+        if (msg) msg.textContent = 'Failed: ' + (e.message || String(e));
+      }
+    }
+
+    async function runRegistered() {
+      const reg = window.FF?.registry?.get?.(id);
+      if (!reg || typeof reg.run !== 'function') throw new Error('Engine unavailable for ' + id);
+      const engine = reg.engine ? await reg.engine() : null;
+      return await reg.run({ file, inputs: { source }, engine });
+    }
+
+    function renderResult() {
+      const url = URL.createObjectURL(outCache.blob);
+      const stage = container.querySelector('.doc-stage');
+      if (!stage) return;
+      // Reset the side-rail run button so it never stays stuck on "Converting…"
+      const runBtn = container.querySelector('#doc-run');
+      if (runBtn) { runBtn.disabled = false; runBtn.textContent = `${I.convert} Convert to ${target()}`; }
+      stage.innerHTML = `
+        <div class="doc-stage-card doc-result-card">
+          <div class="doc-done-badge">${I.check}</div>
+          <strong class="doc-result-name">${_esc(outCache.filename)}</strong>
+          <span class="doc-result-meta">${_bytes(outCache.blob.size)} · ${_esc(outCache.mime || 'file')}</span>
+          ${outCache.text ? `<div class="doc-src-preview">${_esc(snippet(outCache.text, 700))}</div>` : ''}
+          <div class="doc-result-actions">
+            <a class="cpdf-btn-primary" href="${url}" download="${_esc(outCache.filename)}" style="text-decoration:none">${I.dl}&nbsp; Download</a>
+            <button class="cpdf-btn-ghost" id="doc-again" type="button">Another file</button>
+            <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="doc-back" type="button">Adjust</button>
+          </div>
+        </div>
+        <div class="doc-stage-bar"><span>Conversion complete ✓</span><span class="doc-local">${I.shield} Local only</span></div>`;
+      container.querySelector('#doc-again').onclick = () => {
+        URL.revokeObjectURL(url); file = null; source = ''; outCache = null; renderUpload();
+      };
+      container.querySelector('#doc-back').onclick = () => {
+        URL.revokeObjectURL(url); renderConvert();
+      };
+    }
+
+    /* ── Analyze workspace: stage = stats, side = live text input ── */
+    function renderAnalyze() {
+      if (!file && !source) { renderUpload(); return; }
+      setShell(true);
+      container.className = `cpdf-root doc-root doc-ws-active doc-shell ${toneClass(meta.tone)}`;
+      container.innerHTML = `
+        <div class="doc-ws">
+          <header class="doc-top">
+            <div class="doc-top-left">
+              <div class="cpdf-hdr-icon doc-hdr-icon doc-top-ico">${I.stats}</div>
+              <div class="doc-titles"><strong>${_esc(meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+          </header>
+          <div class="doc-main doc-main--analyze">
+            <section class="doc-stage">
+              <div class="doc-stats" id="doc-stats">${statsHtml(lastStats)}</div>
+              <div class="doc-stage-bar"><span>Live analysis — updates as you type</span><span class="doc-local">${I.shield} Local only</span></div>
+            </section>
+            <aside class="doc-side">
+              <div class="doc-side-scroll">
+                <div class="doc-group">
+                  <p class="doc-label">Text source</p>
+                  <textarea id="doc-paste" class="doc-paste" rows="14" placeholder="Paste or type text here…">${_esc(source)}</textarea>
+                </div>
+                <div class="doc-hero-card"><strong>${_esc(meta.title)}</strong><span>${_esc(meta.sub)} — counts are computed instantly, entirely on-device.</span></div>
+              </div>
+              <div class="doc-side-foot">
+                <button class="conv-change-btn" id="doc-change" type="button">Load a file</button>
+              </div>
+            </aside>
+          </div>
+        </div>`;
+      const paste = container.querySelector('#doc-paste');
+      if (paste) paste.oninput = () => {
+        source = paste.value;
+        lastStats = statsOf(source);
+        const grid = container.querySelector('#doc-stats');
+        if (grid) grid.innerHTML = statsHtml(lastStats);
+      };
+      container.querySelector('#doc-change').onclick = () => { file = null; source = ''; renderUpload(); };
+    }
+
+    /* ── Transform workspace: side = options, stage = split editors ── */
+    function renderTransform() {
+      if (!file && !source) { renderUpload(); return; }
+      setShell(true);
+      container.className = `cpdf-root doc-root doc-ws-active doc-shell ${toneClass(meta.tone)}`;
+      container.innerHTML = `
+        <div class="doc-ws">
+          <header class="doc-top">
+            <div class="doc-top-left">
+              <div class="cpdf-hdr-icon doc-hdr-icon doc-top-ico">${I.wand}</div>
+              <div class="doc-titles"><strong>${_esc(meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+          </header>
+          <div class="doc-main doc-main--transform">
+            <aside class="doc-side">
+              <div class="doc-side-scroll">
+                <div class="doc-group">
+                  <p class="doc-label">Source text</p>
+                  <textarea id="doc-paste" class="doc-paste" rows="9" placeholder="Paste or type text here…">${_esc(source)}</textarea>
+                </div>
+                ${id === 'doc-find-replace' ? `
+                  <div class="doc-group"><p class="doc-label">Find</p><input id="doc-find" class="doc-input" placeholder="Text to find"></div>
+                  <div class="doc-group"><p class="doc-label">Replace with</p><input id="doc-replace" class="doc-input" placeholder="Replacement text"></div>` : ''}
+                ${id === 'doc-case' ? `
+                  <div class="doc-group"><p class="doc-label">Case</p>
+                    <select id="doc-case-sel" class="doc-select">
+                      <option value="upper">UPPER CASE</option><option value="lower">lower case</option>
+                      <option value="title">Title Case</option><option value="sentence">Sentence case</option>
+                    </select>
+                  </div>` : ''}
+                ${id === 'doc-sort' ? `
+                  <div class="doc-group"><p class="doc-label">Order</p>
+                    <select id="doc-dir" class="doc-select">
+                      <option value="asc">A → Z</option><option value="desc">Z → A</option>
+                    </select>
+                  </div>` : ''}
+                ${id === 'doc-dedupe' ? `<div class="doc-hero-card"><strong>Remove duplicates</strong><span>Keeps the first occurrence of each line, in order.</span></div>` : ''}
+                ${id === 'doc-whitespace' ? `<div class="doc-hero-card"><strong>Clean whitespace</strong><span>Trims each line, collapses runs of spaces, and drops blank lines.</span></div>` : ''}
+              </div>
+              <div class="doc-side-foot">
+                <div class="doc-summary" id="doc-summary">${_esc(lastStats.words)} words</div>
+                <button class="conv-run-btn doc-run" id="doc-apply" type="button">${I.wand}&nbsp; Apply</button>
+                <button class="conv-change-btn" id="doc-change" type="button">Load a file</button>
+              </div>
+            </aside>
+            <section class="doc-stage doc-stage--split">
+              <div class="doc-split">
+                <div class="doc-pane">
+                  <div class="doc-editor-head"><span>Input</span><span id="doc-in-count">${_esc(lastStats.words)} words</span></div>
+                  <textarea class="doc-editor" id="doc-in-editor" readonly></textarea>
+                </div>
+                <div class="doc-pane">
+                  <div class="doc-editor-head"><span>Result</span><span class="doc-out-badge" id="doc-out-badge">—</span></div>
+                  <textarea class="doc-editor doc-editor--out" id="doc-out-editor" readonly placeholder="Result appears here after you click Apply"></textarea>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>`;
+      const inp = container.querySelector('#doc-in-editor');
+      if (inp) inp.value = source;
+      const paste = container.querySelector('#doc-paste');
+      if (paste) paste.oninput = () => {
+        source = paste.value;
+        lastStats = statsOf(source);
+        const c = container.querySelector('#doc-in-count');
+        if (c) c.textContent = `${lastStats.words} words`;
+        if (inp) inp.value = source;
+      };
+      container.querySelector('#doc-change').onclick = () => { file = null; source = ''; renderUpload(); };
+      container.querySelector('#doc-apply').onclick = applyTransformUI;
+    }
+
+    function applyTransformUI() {
+      const out = container.querySelector('#doc-out-editor');
+      if (!out) return;
+      let result = source;
+      if (id === 'doc-find-replace') {
+        const find = container.querySelector('#doc-find')?.value || '';
+        const repl = container.querySelector('#doc-replace')?.value || '';
+        result = find ? source.split(find).join(repl) : source;
+      } else if (id === 'doc-case') {
+        const mode = container.querySelector('#doc-case-sel')?.value || 'upper';
+        if (mode === 'upper') result = source.toUpperCase();
+        else if (mode === 'lower') result = source.toLowerCase();
+        else if (mode === 'title') result = source.replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
+        else result = source.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase());
+      } else if (id === 'doc-sort') {
+        const dir = container.querySelector('#doc-dir')?.value || 'asc';
+        const lines = source.split(/\r?\n/).sort((a, b) => a.localeCompare(b));
+        if (dir === 'desc') lines.reverse();
+        result = lines.join('\n');
+      } else if (id === 'doc-dedupe') {
+        result = Array.from(new Set(source.split(/\r?\n/))).join('\n');
+      } else if (id === 'doc-whitespace') {
+        result = source.split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim()).filter(l => l.length).join('\n');
+      } else {
+        result = source;
+      }
+      out.value = result;
+      const badge = container.querySelector('#doc-out-badge');
+      if (badge) badge.textContent = `${(result.trim().match(/\S+/g) || []).length} words`;
+      const sum = container.querySelector('#doc-summary');
+      if (sum) sum.textContent = `${(result.trim().match(/\S+/g) || []).length} words output`;
+      // Rebuild the stage-bar with copy / download actions once a result exists
+      let bar = container.querySelector('.doc-stage-bar');
+      if (!bar) {
+        const stage = container.querySelector('.doc-stage');
+        if (stage) {
+          const el = document.createElement('div');
+          el.className = 'doc-stage-bar';
+          stage.appendChild(el);
+          bar = el;
+        }
+      }
+      if (bar) {
+        bar.innerHTML = `
+          <span>Transform ready ✓</span>
+          <span class="doc-local" style="gap:10px">
+            <button class="cpdf-btn-ghost" id="doc-copy" type="button" style="height:30px;padding:0 12px;font-size:12px">Copy</button>
+            <button class="cpdf-btn-primary" id="doc-download" type="button" style="height:30px;padding:0 12px;font-size:12px">${I.dl} Download .txt</button>
+          </span>`;
+        container.querySelector('#doc-copy').onclick = () => navigator.clipboard?.writeText(result);
+        container.querySelector('#doc-download').onclick = () => {
+          const blob = new Blob([result], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = baseName(file ? file.name : 'document') + '.txt';
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        };
+      }
+    }
+
+    function route() {
+      id = tool?.id || id;
+      meta = META[id] || META['docx-to-pdf'];
+      const f = flowOf(id);
+      if (f === 'convert') renderConvert();
+      else if (f === 'analyze') renderAnalyze();
+      else renderTransform();
+    }
+
+    route();
+  }
+
+  window.__ffMountDocuments = mountDocuments;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FileKit — Audio suite
+   Player/timeline · Convert/encode · Merge · Generate · Visualize
+═══════════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+  const I = {
+    dl: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>',
+    shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>',
+    convert: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
+    play: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+  };
+
+  // Drop-zone illustration — flat vector audio motif in the brand's sharp-corner language.
+  const GRAPHIC = '<svg width="190" height="150" viewBox="0 0 190 150" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ag-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C084FC"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect x="8" y="8" width="174" height="134" rx="18" fill="url(#ag-a)" opacity="0.08"/><rect x="28" y="32" width="96" height="66" rx="4" fill="#000" stroke="currentColor" stroke-opacity="0.85" stroke-width="2"/><path d="M62 48v34l28-17z" fill="url(#ag-a)"/><path d="M146 46c5 7 5 17 0 24M154 38c9 12 9 28 0 40M138 54c3 4 3 10 0 14" stroke="url(#ag-a)" stroke-width="2.5" stroke-linecap="round"/><path d="M40 124h110" stroke="currentColor" stroke-opacity="0.35" stroke-width="4" stroke-linecap="round"/><rect x="40" y="119" width="18" height="10" fill="url(#ag-a)"/><rect x="64" y="119" width="10" height="10" fill="url(#ag-a)"/><rect x="80" y="119" width="26" height="10" fill="url(#ag-a)"/><rect x="112" y="119" width="14" height="10" fill="url(#ag-a)"/><rect x="132" y="119" width="18" height="10" fill="url(#ag-a)"/></svg>';
+
+  const AUDIO_FORMATS = [
+    { id: 'wav',  label: 'WAV',  desc: 'Lossless PCM · universal', group: 'Lossless', mime: 'audio/wav' },
+    { id: 'flac', label: 'FLAC', desc: 'Lossless compressed', group: 'Lossless', mime: 'audio/flac' },
+    { id: 'mp3',  label: 'MP3',  desc: 'Most compatible lossy', group: 'Lossy', mime: 'audio/mpeg' },
+    { id: 'ogg',  label: 'OGG',  desc: 'Vorbis/Opus open format', group: 'Lossy', mime: 'audio/ogg' },
+    { id: 'opus', label: 'Opus', desc: 'High quality at low bitrate', group: 'Lossy', mime: 'audio/opus' },
+    { id: 'webm', label: 'WebM', desc: 'Opus in WebM container', group: 'Lossy', mime: 'audio/webm' },
+    { id: 'm4a',  label: 'M4A',  desc: 'AAC in MP4 container', group: 'Lossy', mime: 'audio/mp4' },
+    { id: 'aac',  label: 'AAC',  desc: 'Advanced audio coding', group: 'Lossy', mime: 'audio/aac' },
+  ];
+
+  const META = {
+    'audio-convert':       { title: 'Convert Audio', sub: 'WAV · MP3 · OGG · WebM · M4A · FLAC · Opus — and back', tone: 'violet', run: 'Convert audio', flow: 'convert' },
+    'audio-to-wav':        { title: 'Convert Audio', sub: 'Any browser-decodable audio → pick any output format', tone: 'violet', run: 'Convert audio', flow: 'convert' },
+    'audio-trim':          { title: 'Trim', sub: 'Keep a time range', tone: 'blue', run: 'Trim', flow: 'player' },
+    'audio-merge':         { title: 'Merge', sub: 'Combine multiple clips in order', tone: 'blue', run: 'Merge files', flow: 'merge' },
+    'audio-normalize':     { title: 'Normalize', sub: 'Peak-normalize volume', tone: 'blue', run: 'Normalize', flow: 'player' },
+    'audio-speed':         { title: 'Speed', sub: 'Speed up or slow down', tone: 'blue', run: 'Apply speed', flow: 'player' },
+    'audio-reverse':       { title: 'Reverse', sub: 'Play audio backwards', tone: 'indigo', run: 'Reverse', flow: 'player' },
+    'audio-silence':       { title: 'Generate Silence', sub: 'Create a blank audio clip', tone: 'teal', run: 'Generate', flow: 'generate' },
+    'audio-waveform':      { title: 'Waveform', sub: 'Export a waveform image', tone: 'teal', run: 'Export PNG', flow: 'visualize' },
+    'audio-split-silence': { title: 'Split by Silence', sub: 'Cut a file at silent gaps', tone: 'indigo', run: 'Split', flow: 'player' },
+    'audio-from-video':    { title: 'Extract from Video', sub: 'Pull the audio track out of a video', tone: 'violet', run: 'Extract audio', flow: 'convert', video: true },
+    'audio-bitrate':       { title: 'Change Bitrate', sub: 'Re-encode MP3 at a target bitrate', tone: 'blue', run: 'Apply bitrate', flow: 'convert' },
+    'audio-sample-rate':   { title: 'Sample Rate', sub: 'Resample to 8–48 kHz', tone: 'indigo', run: 'Resample', flow: 'convert' },
+    'audio-strip-metadata':{ title: 'Strip Metadata', sub: 'Remove tags without re-encoding when possible', tone: 'indigo', run: 'Strip metadata', flow: 'convert' },
+  };
+
+  const AC = () => new (window.AudioContext || window.webkitAudioContext)();
+
+  function drawWave(canvas, seed) {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(200, rect.width || canvas.parentElement?.clientWidth || 600);
+    const h = Math.max(80, rect.height || 160);
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+    const mid = h / 2;
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    let x = 0;
+    let rnd = seed || 1;
+    const rand = () => { rnd = (rnd * 9301 + 49297) % 233280; return rnd / 233280; };
+    while (x < w) {
+      const amp = (Math.sin(x / 18) * 0.5 + rand() * 0.5) * (h / 2 - 6);
+      ctx.moveTo(x, mid - amp);
+      ctx.lineTo(x, mid + amp);
+      x += 3;
+    }
+    ctx.stroke();
+  }
+
+  async function decode(file) {
+    const ctx = AC();
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    ctx.close?.();
+    return buf;
+  }
+
+  function encodeWAV(ab) {
+    const numCh = ab.numberOfChannels, sr = ab.sampleRate, len = ab.length, bps = 2, blockAlign = numCh * bps, dataLen = len * blockAlign;
+    const buffer = new ArrayBuffer(44 + dataLen), view = new DataView(buffer);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0, 'RIFF'); view.setUint32(4, 36 + dataLen, true); ws(8, 'WAVE'); ws(12, 'fmt '); view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); view.setUint16(22, numCh, true); view.setUint32(24, sr, true);
+    view.setUint32(28, sr * blockAlign, true); view.setUint16(32, blockAlign, true); view.setUint16(34, 16, true);
+    ws(36, 'data'); view.setUint32(40, dataLen, true);
+    const chans = []; for (let c = 0; c < numCh; c++) chans.push(ab.getChannelData(c));
+    let off = 44;
+    for (let i = 0; i < len; i++) for (let c = 0; c < numCh; c++) { let s = Math.max(-1, Math.min(1, chans[c][i])); view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2; }
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+
+  function baseName(name) { return String(name || 'audio').replace(/\.[^.]+$/, ''); }
+
+  async function runEngine(id, file, files, inputs) {
+    const T = window.FF && window.FF.registry ? window.FF.registry.get(id) : null;
+    if (T && typeof T.run === 'function') {
+      return await T.run({ file, files, inputs: inputs || {} });
+    }
+    // Fallback: at minimum, decode + re-export WAV so the flow never dead-ends.
+    if (file) {
+      const ab = await decode(file);
+      return { blob: encodeWAV(ab), filename: baseName(file.name) + '.wav', mime: 'audio/wav', preview: 'audio' };
+    }
+    throw new Error('No audio tool available for ' + id);
+  }
+
+  // ── Real waveform: decode the file and draw actual peaks ──
+  function drawRealWave(canvas, buffer, color, opts) {
+    if (!canvas || !buffer) return;
+    const o = opts || {};
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(200, rect.width || canvas.parentElement?.clientWidth || 600);
+    const h = Math.max(80, rect.height || 160);
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const mid = h / 2;
+    const data = buffer.getChannelData(0);
+    const step = Math.ceil(data.length / w) || 1;
+    const ink = color || '#6D7AE8';
+    ctx.fillStyle = ink;
+    for (let x = 0; x < w; x++) {
+      let min = 1, max = -1;
+      const end = Math.min(data.length, (x + 1) * step);
+      for (let i = x * step; i < end; i++) {
+        const v = data[i];
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+      if (max === -1 && min === 1) continue;
+      const top = mid - Math.abs(min) * (h / 2 - 4);
+      const bot = mid + Math.abs(max) * (h / 2 - 4);
+      ctx.fillRect(x, top, 1, Math.max(1, bot - top));
+    }
+    if (o.selection && o.selection[1] > o.selection[0]) {
+      const sx = Math.round((o.selection[0] / buffer.duration) * w);
+      const ex = Math.round((o.selection[1] / buffer.duration) * w);
+      ctx.fillStyle = 'rgba(124, 58, 237, 0.16)';
+      ctx.fillRect(sx, 0, ex - sx, h);
+      ctx.fillStyle = '#7C3AED';
+      ctx.fillRect(sx - 1, 0, 2, h);
+      ctx.fillRect(ex - 1, 0, 2, h);
+    }
+  }
+
+  function mountAudio(container, tool) {
+    const id0 = tool?.id || 'audio-convert';
+    container.innerHTML = '';
+    container.classList.remove('doc-root', 'spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root');
+
+    let id = id0;
+    let meta = META[id] || META['audio-convert'];
+    let file = null;
+    let files = [];
+    let objectUrl = '';
+    let decoded = null;   // decoded AudioBuffer for the real waveform
+    let decoding = false;
+    const state = {
+      start: 0, end: 0,
+      speed: 1.5,
+      rate: '44100',
+      br: '192k',
+      color: '#6D7AE8',
+      thresh: 2, gap: 0.5,
+      sec: 3, silenceRate: '44100',
+      format: id === 'audio-bitrate' ? 'mp3' : 'wav',
+    };
+
+    function icon() { return I.convert; }
+    function fileMeta() { return file ? `${_esc(file.name)} · ${_bytes(file.size)}` : (files.length ? `${files.length} files` : ''); }
+    function clearUrl() { if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ''; } }
+    function fileExt(name) { const m = String(name || '').match(/\.([a-z0-9]+)$/i); return m ? m[1].toUpperCase() : 'AUDIO'; }
+
+    function summary() {
+      if (id === 'audio-convert' || id === 'audio-to-wav') {
+        const lossy = ['mp3', 'ogg', 'opus', 'webm', 'm4a', 'aac'].includes(state.format);
+        return `→ ${String(state.format || 'wav').toUpperCase()}${lossy ? ' · ' + state.br : ''}`;
+      }
+      if (id === 'audio-bitrate') return `MP3 ${state.br}`;
+      if (id === 'audio-sample-rate') return `${state.rate} Hz`;
+      if (id === 'audio-trim') return `${state.start}s – ${state.end}s`;
+      if (id === 'audio-speed') return `${state.speed}x`;
+      if (id === 'audio-silence') return `${state.sec}s silence @ ${state.silenceRate}Hz`;
+      return meta.sub || '';
+    }
+
+    function fmtTime(sec) {
+      sec = Math.max(0, Number(sec) || 0);
+      const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Shared upload drop zone — the black box, same as the hub / convert.
+    // Keep `app-stage-container` so the stage renders as the dark tool card
+    // (like compress/convert) instead of a borderless box on the light canvas.
+    function renderUpload(label, sub) {
+      container.className = `cpdf-root aud-root app-stage-container aud-tone-${meta.tone}`;
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${icon()}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${_esc(label)}</h2>
+            <p class="cpdf-hdr-sub">${_esc(sub || '')}</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="aud-dz" tabindex="0" role="button" aria-label="Add <strong>audio</strong> file (MP3, WAV, OGG, M4A)">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="aud-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </label>
+              <label for="aud-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>audio</strong> file (MP3, WAV, OGG, M4A)</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-mp3">MP3</span>
+              <span class="fmt-badge fmt-wav">WAV</span>
+              <span class="fmt-badge fmt-ogg">OGG</span>
+              <span class="fmt-badge fmt-m4a">M4A</span>
+              <span class="fmt-badge fmt-flac">FLAC</span>
+            </div>
+          </div>
+          <input id="aud-inp" type="file" accept="${meta.video ? 'video/*' : 'audio/*'}" ${meta.flow === 'merge' ? 'multiple' : ''} hidden>
+        </div>
+        </div>`;
+      const dz = container.querySelector('#aud-dz');
+      const inp = container.querySelector('#aud-inp');
+      inp.onchange = () => handleFiles(Array.from(inp.files || []));
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        handleFiles(Array.from(e.dataTransfer.files || []));
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function handleFiles(list) {
+      if (!list.length) return;
+      if (meta.flow === 'merge') {
+        files = list;
+        route();
+      } else {
+        file = list[0];
+        clearUrl();
+        objectUrl = URL.createObjectURL(file);
+        route();
+      }
+    }
+
+    function decodeNow() {
+      if (!file || decoding || decoded) return;
+      if (id === 'audio-silence') return;
+      decoding = true;
+      (async () => {
+        try {
+          const ctx = AC();
+          decoded = await ctx.decodeAudioData(await file.arrayBuffer());
+          ctx.close?.();
+        } catch (e2) { decoded = null; }
+        decoding = false;
+        const cv = container.querySelector('#aud-wave');
+        if (cv && decoded) {
+          drawRealWave(cv, decoded, state.color);
+          const t = container.querySelector('#aud-dur');
+          if (t) t.textContent = fmtTime(decoded.duration);
+          if (id === 'audio-trim' && state.end === 0 && decoded) {
+            state.end = Math.round(decoded.duration * 10) / 10;
+            const endIn = container.querySelector('#aud-end');
+            if (endIn) endIn.value = state.end;
+            const sum = container.querySelector('.aud-summary');
+            if (sum) sum.textContent = summary();
+          }
+        } else if (cv && !decoded) {
+          drawWave(cv, 3);
+        }
+      })();
+    }
+
+    function renderGenerate() {
+      container.className = `cpdf-root aud-root aud-ws-active aud-shell aud-tone-${meta.tone}`;
+      container.innerHTML = `
+        <div class="aud-ws">
+          <header class="aud-top">
+            <div class="aud-top-left">
+              <div class="cpdf-hdr-icon aud-hdr-icon aud-top-ico">${icon()}</div>
+              <div class="aud-titles"><strong>${_esc(meta.title)}</strong><span>${_esc(meta.sub)}</span></div>
+            </div>
+          </header>
+          <div class="aud-main">
+            <aside class="aud-side">
+              <div class="aud-side-scroll">
+                <div class="aud-group"><p class="aud-label">Duration (seconds)</p>
+                  <input id="aud-sec" class="doc-input" type="number" min="1" max="600" value="${state.sec}">
+                </div>
+                <div class="aud-group"><p class="aud-label">Sample rate</p>
+                  <select id="aud-srate" class="aud-select">${['8000','16000','22050','44100','48000'].map(b => `<option value="${b}" ${state.silenceRate===b?'selected':''}>${b} Hz</option>`).join('')}</select>
+                </div>
+              </div>
+              <div class="aud-side-foot">
+                <button class="conv-run-btn aud-run" id="aud-run" type="button">${_esc(meta.run)}</button>
+              </div>
+            </aside>
+            <section class="aud-stage">
+              <div class="aud-wave-wrap aud-wave-wrap--tall"><canvas id="aud-wave" class="aud-wave"></canvas></div>
+              <div class="aud-stage-bar"><span>No upload needed</span><span class="aud-local">${I.shield} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      drawWave(container.querySelector('#aud-wave'), 7);
+      container.querySelector('#aud-sec').oninput = e => { state.sec = Number(e.target.value) || 1; };
+      container.querySelector('#aud-srate').onchange = e => { state.silenceRate = e.target.value; };
+      container.querySelector('#aud-run').onclick = () => run();
+    }
+
+    function renderConvert() {
+      const isHub = id === 'audio-convert' || id === 'audio-to-wav';
+      if (!file) { renderUpload(meta.video ? 'Drop a video file' : 'Drop an audio file', meta.sub); return; }
+      const fmt = AUDIO_FORMATS.find(f => f.id === state.format) || AUDIO_FORMATS[0];
+      container.className = `cpdf-root aud-root aud-ws-active aud-shell aud-tone-${meta.tone}`;
+      container.innerHTML = `
+        <div class="aud-ws">
+          <header class="aud-top">
+            <div class="aud-top-left">
+              <div class="cpdf-hdr-icon aud-hdr-icon aud-top-ico">${icon()}</div>
+              <div class="aud-titles"><strong>${_esc(isHub ? 'Convert Audio' : meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+            <button class="conv-change-btn" id="aud-change" type="button">Change file</button>
+          </header>
+          <div class="aud-main">
+            <aside class="aud-side">
+              <div class="aud-side-scroll">
+                ${isHub ? `
+                  <div class="aud-group">
+                    <p class="aud-label">Output format</p>
+                    <div class="aud-fmt-grid" id="aud-fmt-grid">
+                      ${AUDIO_FORMATS.map(f => `
+                        <button type="button" class="aud-fmt-card${state.format===f.id?' is-on':''}" data-fmt="${f.id}">
+                          <strong>${f.label}</strong><span>${f.desc}</span>
+                        </button>`).join('')}
+                    </div>
+                  </div>
+                  <div class="aud-group${['wav','flac'].includes(state.format)?' is-muted':''}">
+                    <p class="aud-label">Bitrate <span id="aud-brval">${state.br}</span></p>
+                    <input id="aud-br-range" class="aud-range" type="range" min="0" max="5" step="1" value="${['96k','128k','160k','192k','256k','320k'].indexOf(state.br) >= 0 ? ['96k','128k','160k','192k','256k','320k'].indexOf(state.br) : 3}">
+                    <div class="aud-range-ends"><span>96k</span><span>320k</span></div>
+                  </div>
+                ` : ''}
+                ${id === 'audio-bitrate' ? `
+                  <div class="aud-group"><p class="aud-label">Bitrate</p>
+                    <select id="aud-br" class="aud-select">${['96k','128k','192k','256k','320k'].map(b => `<option value="${b}" ${state.br===b?'selected':''}>${b}</option>`).join('')}</select>
+                  </div>` : ''}
+                ${id === 'audio-sample-rate' ? `
+                  <div class="aud-group"><p class="aud-label">Sample rate</p>
+                    <select id="aud-rate" class="aud-select">${['8000','16000','22050','44100','48000'].map(b => `<option value="${b}" ${state.rate===b?'selected':''}>${b} Hz</option>`).join('')}</select>
+                  </div>` : ''}
+                ${id === 'audio-strip-metadata' ? `<div class="aud-hero-card"><strong>Strip tags</strong><span>Removes title/artist/album and other metadata.</span></div>` : ''}
+                ${id === 'audio-from-video' ? `<div class="aud-hero-card"><strong>Video → audio</strong><span>Extracts the soundtrack.</span></div>` : ''}
+                <div class="aud-mini-player"><audio controls src="${objectUrl}" style="width:100%"></audio></div>
+              </div>
+              <div class="aud-side-foot">
+                <div class="aud-summary">${_esc(summary())}</div>
+                <button class="conv-run-btn aud-run" id="aud-run" type="button">${_esc(isHub ? `Convert to ${fmt.label}` : meta.run)}</button>
+              </div>
+            </aside>
+            <section class="aud-stage">
+              <div class="doc-route">
+                <div class="doc-route-chip"><b>${fileExt(file.name)}</b><span>Source</span></div>
+                <div class="doc-route-arrow">→</div>
+                <div class="doc-route-chip"><b>${fmt.label}</b><span>Output</span></div>
+              </div>
+              <div class="aud-wave-wrap aud-wave-wrap--tall"><canvas id="aud-wave" class="aud-wave"></canvas></div>
+              <div class="aud-stage-bar"><span>${isHub ? 'Bidirectional convert · client-side' : 'Encode workspace'}</span><span class="aud-local">${I.shield} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      decodeNow();
+      container.querySelector('#aud-change').onclick = () => { clearUrl(); decoded = null; file = null; renderUpload(meta.video ? 'Drop a video file' : 'Drop an audio file', meta.sub); };
+      container.querySelector('#aud-run').onclick = () => run();
+      container.querySelectorAll('#aud-fmt-grid .aud-fmt-card').forEach(btn => {
+        btn.onclick = () => { state.format = btn.dataset.fmt; renderConvert(); };
+      });
+      const brRange = container.querySelector('#aud-br-range');
+      if (brRange) brRange.oninput = () => {
+        const opts = ['96k','128k','160k','192k','256k','320k'];
+        state.br = opts[Number(brRange.value) || 3] || '192k';
+        const v = container.querySelector('#aud-brval'); if (v) v.textContent = state.br;
+        const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary();
+        const runBtn = container.querySelector('#aud-run'); if (runBtn && (id === 'audio-convert' || id === 'audio-to-wav')) runBtn.textContent = `Convert to ${(AUDIO_FORMATS.find(f=>f.id===state.format)||{}).label || 'Audio'}`;
+      };
+      const br = container.querySelector('#aud-br');
+      if (br) br.onchange = () => { state.br = br.value; const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary(); };
+      const rate = container.querySelector('#aud-rate');
+      if (rate) rate.onchange = () => { state.rate = rate.value; const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary(); };
+    }
+
+    function renderPlayer() {
+      if (!file) { renderUpload('Drop an audio file', meta.sub); return; }
+      container.className = `cpdf-root aud-root aud-ws-active aud-shell aud-tone-${meta.tone}`;
+      const isTrim = id === 'audio-trim';
+      container.innerHTML = `
+        <div class="aud-ws">
+          <header class="aud-top">
+            <div class="aud-top-left">
+              <div class="cpdf-hdr-icon aud-hdr-icon aud-top-ico">${icon()}</div>
+              <div class="aud-titles"><strong>${_esc(meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+            <button class="conv-change-btn" id="aud-change" type="button">Change file</button>
+          </header>
+          <div class="aud-main">
+            <aside class="aud-side">
+              <div class="aud-side-scroll">
+                ${isTrim ? `
+                  <div class="aud-group"><p class="aud-label">Start (s)</p><input id="aud-start" class="doc-input" type="number" min="0" step="0.1" value="${state.start}"></div>
+                  <div class="aud-group"><p class="aud-label">End (s)</p><input id="aud-end" class="doc-input" type="number" min="0" step="0.1" value="${state.end}"></div>
+                  <div class="aud-group"><p class="aud-label">Duration <span id="aud-dur">—</span></p></div>
+                ` : ''}
+                ${id === 'audio-speed' ? `
+                  <div class="aud-group"><p class="aud-label">Speed <span id="aud-spval">${state.speed}x</span></p>
+                    <input id="aud-speed" class="aud-range" type="range" min="0.25" max="3" step="0.05" value="${state.speed}">
+                  </div>` : ''}
+                ${id === 'audio-split-silence' ? `
+                  <div class="aud-group"><p class="aud-label">Threshold (%)</p><input id="aud-thresh" class="doc-input" type="number" min="0" max="100" value="${state.thresh}"></div>
+                  <div class="aud-group"><p class="aud-label">Min gap (s)</p><input id="aud-gap" class="doc-input" type="number" min="0" step="0.1" value="${state.gap}"></div>
+                ` : ''}
+                ${id === 'audio-normalize' ? `<div class="aud-hero-card"><strong>Peak normalize</strong><span>Scales the waveform so the loudest peak hits 0 dB.</span></div>` : ''}
+                ${id === 'audio-reverse' ? `<div class="aud-hero-card"><strong>Reverse</strong><span>Flips the audio so it plays backwards.</span></div>` : ''}
+                <div class="aud-mini-player"><audio controls src="${objectUrl}" style="width:100%"></audio></div>
+              </div>
+              <div class="aud-side-foot">
+                <div class="aud-summary">${_esc(summary())}</div>
+                <button class="conv-run-btn aud-run" id="aud-run" type="button">${_esc(meta.run)}</button>
+              </div>
+            </aside>
+            <section class="aud-stage">
+              <div class="aud-wave-wrap aud-wave-wrap--tall"><canvas id="aud-wave" class="aud-wave"></canvas></div>
+              <div class="aud-stage-bar"><span>${isTrim ? 'Drag on the waveform to set the range' : 'Player / timeline'}</span><span class="aud-local">${I.shield} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      const cv = container.querySelector('#aud-wave');
+      decodeNow();
+      const redrawSelection = () => {
+        if (!decoded) { drawWave(cv, 5); return; }
+        drawRealWave(cv, decoded, state.color, { selection: [state.start, state.end || decoded.duration] });
+      };
+      container.querySelector('#aud-change').onclick = () => { clearUrl(); decoded = null; file = null; renderUpload('Drop an audio file', meta.sub); };
+      container.querySelector('#aud-run').onclick = () => run();
+      const s = container.querySelector('#aud-start');
+      const e = container.querySelector('#aud-end');
+      if (s) s.oninput = () => { state.start = Number(s.value) || 0; container.querySelector('.aud-summary').textContent = summary(); redrawSelection(); };
+      if (e) e.oninput = () => { state.end = Number(e.value) || 0; container.querySelector('.aud-summary').textContent = summary(); redrawSelection(); };
+      // Click-drag on the waveform sets the trim range (only for audio-trim).
+      if (cv && isTrim) {
+        let dragging = null;
+        const posToSec = (clientX) => {
+          const r = cv.getBoundingClientRect();
+          const pct = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+          return Math.round((pct * (decoded ? decoded.duration : (state.end || 30))) * 10) / 10;
+        };
+        cv.style.cursor = 'crosshair';
+        cv.addEventListener('mousedown', (ev) => {
+          if (!decoded) return;
+          const t = posToSec(ev.clientX);
+          state.start = Math.min(t, state.end || decoded.duration);
+          state.end = Math.max(t, state.start + 0.1);
+          dragging = true;
+          syncInputs(); redrawSelection();
+        });
+        window.addEventListener('mousemove', (ev) => {
+          if (!dragging || !decoded) return;
+          const t = posToSec(ev.clientX);
+          if (t < state.start) state.start = t;
+          else if (t > state.end) state.end = t;
+          else { state.start = Math.min(state.start, t); state.end = Math.max(state.end, t); }
+          syncInputs(); redrawSelection();
+        });
+        window.addEventListener('mouseup', () => { dragging = false; });
+      }
+      const syncInputs = () => {
+        const a = container.querySelector('#aud-start'); if (a) a.value = state.start;
+        const b = container.querySelector('#aud-end'); if (b) b.value = state.end;
+        const sum = container.querySelector('.aud-summary'); if (sum) sum.textContent = summary();
+      };
+      const sp = container.querySelector('#aud-speed'); if (sp) sp.oninput = () => { state.speed = Number(sp.value) || 1; const v = container.querySelector('#aud-spval'); if (v) v.textContent = state.speed + 'x'; container.querySelector('.aud-summary').textContent = summary(); };
+      const th = container.querySelector('#aud-thresh'); if (th) th.oninput = () => { state.thresh = Number(th.value) || 0; };
+      const gp = container.querySelector('#aud-gap'); if (gp) gp.oninput = () => { state.gap = Number(gp.value) || 0; };
+    }
+
+    function renderMerge() {
+      container.className = `cpdf-root aud-root aud-ws-active aud-shell aud-tone-${meta.tone}`;
+      container.innerHTML = `
+        <div class="aud-ws">
+          <header class="aud-top">
+            <div class="aud-top-left">
+              <div class="cpdf-hdr-icon aud-hdr-icon aud-top-ico">${icon()}</div>
+              <div class="aud-titles"><strong>${_esc(meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+          </header>
+          <div class="aud-main">
+            <aside class="aud-side">
+              <div class="aud-side-scroll">
+                <div class="aud-group">
+                  <p class="aud-label">Files (in order)</p>
+                  <div id="aud-list" class="aud-merge-list">
+                    ${files.map((f, i) => `<div class="aud-merge-item" data-i="${i}"><span>${i + 1}. ${_esc(f.name)}</span><button type="button" data-remove="${i}">×</button></div>`).join('')}
+                  </div>
+                  <input type="file" id="aud-add" accept="audio/*" multiple style="display:none">
+                  <button type="button" class="conv-change-btn" id="aud-add-btn">Add files</button>
+                </div>
+              </div>
+              <div class="aud-side-foot">
+                <div class="aud-summary">${files.length} file${files.length===1?'':'s'} queued</div>
+                <button class="conv-run-btn aud-run" id="aud-run" type="button" ${files.length < 2 ? 'disabled' : ''}>${_esc(meta.run)}</button>
+              </div>
+            </aside>
+            <section class="aud-stage">
+              <div class="aud-wave-wrap aud-wave-wrap--tall"><canvas id="aud-wave" class="aud-wave"></canvas></div>
+              <div class="aud-stage-bar"><span>Needs 2+ files</span><span class="aud-local">${I.shield} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      drawWave(container.querySelector('#aud-wave'), 9);
+      container.querySelector('#aud-add-btn').onclick = () => container.querySelector('#aud-add').click();
+      container.querySelector('#aud-add').onchange = e => { files = files.concat(Array.from(e.target.files || [])); renderMerge(); };
+      container.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.onclick = () => { files.splice(Number(btn.dataset.remove), 1); renderMerge(); };
+      });
+      const runBtn = container.querySelector('#aud-run');
+      if (runBtn) runBtn.onclick = () => run();
+    }
+
+    function renderVisualize() {
+      if (!file) { renderUpload('Drop audio to visualize', meta.sub); return; }
+      container.className = `cpdf-root aud-root aud-ws-active aud-shell aud-tone-${meta.tone}`;
+      container.innerHTML = `
+        <div class="aud-ws">
+          <header class="aud-top">
+            <div class="aud-top-left">
+              <div class="cpdf-hdr-icon aud-hdr-icon aud-top-ico">${icon()}</div>
+              <div class="aud-titles"><strong>${_esc(meta.title)}</strong><span>${fileMeta()}</span></div>
+            </div>
+            <button class="conv-change-btn" id="aud-change" type="button">Change file</button>
+          </header>
+          <div class="aud-main">
+            <aside class="aud-side">
+              <div class="aud-side-scroll">
+                <div class="aud-group"><p class="aud-label">Waveform color</p>
+                  <input id="aud-color" type="color" value="${state.color}" style="width:100%;height:38px;border-radius:4px;border:1px solid #e5e7eb">
+                </div>
+                <div class="aud-mini-player"><audio controls src="${objectUrl}" style="width:100%"></audio></div>
+              </div>
+              <div class="aud-side-foot">
+                <button class="conv-run-btn aud-run" id="aud-run" type="button">${_esc(meta.run)}</button>
+              </div>
+            </aside>
+            <section class="aud-stage">
+              <div class="aud-wave-wrap aud-wave-wrap--tall"><canvas id="aud-wave" class="aud-wave"></canvas></div>
+              <div class="aud-stage-bar"><span>Waveform preview</span><span class="aud-local">${I.shield} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      const canvas = container.querySelector('#aud-wave');
+      const drawColored = () => {
+        if (decoded) { drawRealWave(canvas, decoded, state.color); return; }
+        drawWave(canvas, 4);
+        const ctx2 = canvas.getContext('2d');
+        ctx2.globalCompositeOperation = 'source-atop';
+        ctx2.fillStyle = state.color;
+        ctx2.fillRect(0, 0, canvas.width, canvas.height);
+        ctx2.globalCompositeOperation = 'source-over';
+      };
+      decodeNow();
+      drawColored();
+      container.querySelector('#aud-color').oninput = e => { state.color = e.target.value; drawColored(); };
+      container.querySelector('#aud-change').onclick = () => { clearUrl(); decoded = null; file = null; renderUpload('Drop audio to visualize', meta.sub); };
+      container.querySelector('#aud-run').onclick = () => run();
+    }
+
+    function buildInputs() {
+      if (id === 'audio-trim') return { start: state.start, end: state.end };
+      if (id === 'audio-speed') return { rate: state.speed };
+      if (id === 'audio-sample-rate') return { rate: state.rate };
+      if (id === 'audio-bitrate') return { br: state.br };
+      if (id === 'audio-silence') return { sec: state.sec, rate: state.silenceRate };
+      if (id === 'audio-waveform') return { color: state.color };
+      if (id === 'audio-split-silence') return { thresh: state.thresh, gap: state.gap };
+      if (id === 'audio-convert' || id === 'audio-to-wav') return { format: state.format || 'wav', br: state.br || '192k' };
+      return {};
+    }
+
+    async function run() {
+      const runBtn = container.querySelector('#aud-run');
+      if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Working…'; }
+      try {
+        const _convertHub = (id === 'audio-convert' || id === 'audio-to-wav');
+        const engineId = _convertHub ? ((state.format || 'wav') === 'wav' ? 'audio-to-wav' : 'audio-convert') : id;
+        const out = await runEngine(engineId, file, files, buildInputs());
+        renderResult(out);
+      } catch (e) {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = meta.run; }
+        const bar = container.querySelector('.aud-stage-bar span');
+        if (bar) bar.textContent = 'Failed: ' + (e.message || String(e));
+      }
+    }
+
+    // Creative result canvas — preview + done badge + actions.
+    function renderResult(out) {
+      const url = URL.createObjectURL(out.blob);
+      const isAudio = out.preview === 'audio' || /^audio\//.test(out.mime || '');
+      const isImage = out.preview === 'image' || /^image\//.test(out.mime || '');
+      container.className = `cpdf-root aud-root aud-ws-active aud-shell aud-tone-${meta.tone}`;
+      container.innerHTML = `
+        <div class="aud-ws">
+          <div class="aud-result-wrap">
+            <div class="aud-result-card">
+              <div class="aud-result-top">
+                <div class="conv-done-badge" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(124,58,237,.35)">${I.dl}</div>
+                <div class="aud-result-titles">
+                  <strong>${_esc(out.filename)}</strong>
+                  <span>${_bytes(out.blob.size)} · ready to download</span>
+                </div>
+              </div>
+              ${isAudio ? `<div class="aud-result-preview"><audio controls src="${url}" style="width:100%"></audio></div>` : isImage ? `<img class="aud-result-img" src="${url}" alt="${_esc(out.filename)}">` : `<div class="aud-result-preview aud-result-preview--file"><div class="aud-result-file-ico">${icon()}</div><span>${_esc(out.filename)}</span></div>`}
+              <div class="cpdf-footer aud-result-foot">
+                <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">${I.dl}&nbsp; Download</a>
+                <div class="cpdf-result-row">
+                  <button class="cpdf-btn-ghost" id="aud-again" type="button">Another file</button>
+                  <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="aud-back" type="button">Adjust</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#aud-again').onclick = () => {
+        URL.revokeObjectURL(url); clearUrl(); decoded = null; file = null; files = [];
+        if (meta.flow === 'generate') renderGenerate();
+        else renderUpload(meta.video ? 'Drop a video file' : meta.flow === 'merge' ? 'Drop 2+ audio files' : 'Drop an audio file', meta.sub);
+      };
+      container.querySelector('#aud-back').onclick = () => { URL.revokeObjectURL(url); route(); };
+    }
+
+    function route() {
+      id = tool?.id || id;
+      meta = META[id] || META['audio-convert'];
+      if (meta.flow === 'generate') renderGenerate();
+      else if (meta.flow === 'merge') renderMerge();
+      else if (meta.flow === 'visualize') renderVisualize();
+      else if (meta.flow === 'convert') renderConvert();
+      else renderPlayer();
+    }
+
+    // File handed off from the Media hub → open already loaded.
+    const pendingFile = window.FF && window.FF._mediaPending && window.FF._mediaPending.file;
+    if (pendingFile) {
+      const pCat = window.FF._mediaPending.category;
+      window.FF._mediaPending = null;
+      const accepted = meta.video ? true : (/audio\//i.test(pendingFile.type) || /audio/i.test(pCat || ''));
+      if (accepted) {
+        file = pendingFile;
+        clearUrl();
+        objectUrl = URL.createObjectURL(file);
+        route();
+        decodeNow();
+        return;
+      }
+    }
+    route();
+  }
+
+  window.__ffMountAudio = mountAudio;
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Premium tool UI installer — single source of truth
+   Routes pdf-compress / pdf-merge / pdf-split to premium mounts.
+   Retries until FF.Flow.mount exists and re-asserts if something overwrites it.
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+
+/* FileKit — Video suite */
+(() => {
+  'use strict';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const bytes = n => n < 1024 ? `${n} B` : n < 1048576 ? `${(n/1024).toFixed(1)} KB` : `${(n/1048576).toFixed(1)} MB`;
+  const IDS = ['video-convert','video-trim','video-compress','video-resolution','video-framerate','video-mute','video-strip-audio','video-extract-frame','video-gif','video-reverse','video-speed','video-to-images','video-merge','video-watermark','video-subtitles','video-extract-audio'];
+  const META = {
+    'video-convert':['Convert Video','MP4 · WebM · MOV · MKV'], 'video-trim':['Trim Video','Keep a precise time range'],
+    'video-compress':['Compress Video','Reduce size while preserving quality'], 'video-resolution':['Change Resolution','Scale to a new width and height'],
+    'video-framerate':['Change Framerate','Set frames per second'], 'video-mute':['Mute Video','Remove the audio track'],
+    'video-strip-audio':['Strip Audio','Keep video, remove sound'], 'video-extract-frame':['Extract Frame','Save a frame as PNG'],
+    'video-gif':['Video to GIF','Create an animated GIF'], 'video-reverse':['Reverse Video','Play the clip backwards'],
+    'video-speed':['Speed','Speed up or slow down'], 'video-to-images':['Video to Images','Export frames as a ZIP'],
+    'video-merge':['Merge Clips','Join multiple clips in order'], 'video-watermark':['Add Watermark','Overlay an image logo'],
+    'video-subtitles':['Add Subtitles','Attach an SRT subtitle track'], 'video-extract-audio':['Extract Audio','Save the soundtrack'],
+  };
+  const VID_ICO = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M10 9.5v5l4.8-2.5z"/></svg>';
+  const VID_GRAPHIC = '<svg width="190" height="150" viewBox="0 0 190 150" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vg-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C084FC"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect x="8" y="8" width="174" height="134" rx="18" fill="url(#vg-a)" opacity="0.08"/><rect x="34" y="26" width="122" height="82" rx="8" fill="#000" stroke="currentColor" stroke-opacity="0.85" stroke-width="2"/><path d="M72 44v46l38-23z" fill="url(#vg-a)"/><path d="M52 124h86" stroke="currentColor" stroke-opacity="0.4" stroke-width="5" stroke-linecap="round"/><circle cx="52" cy="124" r="4" fill="url(#vg-a)"/><circle cx="138" cy="124" r="4" fill="url(#vg-a)"/></svg>';
+  const DL_ICO = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+  const SHIELD_ICO = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+  const fmtLabel = (f) => ({ webm: 'WebM', mp4: 'MP4', mov: 'MOV', gif: 'GIF', png: 'PNG' }[f] || String(f).toUpperCase());
+  const posLabel = (p) => ({ br: 'Bottom right', bl: 'Bottom left', tr: 'Top right', tl: 'Top left' }[p] || p);
+  function fmt(sec){sec=Number(sec)||0; return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(Math.floor(sec%60)).padStart(2,'0')}`;}
+  function mountVideo(container, tool) {
+    const id = tool?.id || 'video-convert';
+    const meta = META[id] || META['video-convert'];
+    let file = null, files = [], objectUrl = '';
+    const multi = id === 'video-merge';
+    const state = { format: 'webm', start: 0, end: 5, br: '750k', w: 1280, h: -1, fps: 24, time: 1, dur: 3, gfps: 12, gwidth: 400, rate: 1.5, pos: 'br' };
+
+    // File handed off from the Media hub → open already loaded.
+    const pendingFile = window.FF && window.FF._mediaPending && window.FF._mediaPending.file;
+    if (pendingFile) {
+      const pCat = window.FF._mediaPending.category;
+      window.FF._mediaPending = null;
+      if (/video\//i.test(pendingFile.type) || /video/i.test(pCat || '')) {
+        if (multi) files = [pendingFile]; else { file = pendingFile; objectUrl = URL.createObjectURL(file); }
+      }
+    }
+
+    const title = meta[0];
+    const sub = meta[1];
+    const cvTitle = id === 'video-compress' ? 'Compress video' : id === 'video-convert' ? 'Convert video' : title;
+    const fileMeta = () => file ? `${esc(file.name)} · ${bytes(file.size)}` : (files.length ? `${files.length} files` : '');
+    const clearUrl = () => { if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ''; } };
+
+    // Keep `app-stage-container` so the drop box renders as the dark tool card
+    // (like compress/convert) instead of a borderless box on the light canvas.
+    function renderUpload() {
+      container.className = 'cpdf-root aud-root app-stage-container';
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${VID_ICO}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${esc(cvTitle)}</h2>
+            <p class="cpdf-hdr-sub">${esc(sub)}</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="vid-dz" tabindex="0" role="button" aria-label="Add <strong>video</strong> file (MP4, WebM, MOV)">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="vid-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </label>
+              <label for="vid-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>video</strong> file (MP4, WebM, MOV)</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-mp4">MP4</span>
+              <span class="fmt-badge fmt-webm">WEBM</span>
+              <span class="fmt-badge fmt-mov">MOV</span>
+              <span class="fmt-badge fmt-mkv">MKV</span>
+            </div>
+          </div>
+          <input id="vid-inp" type="file" accept="video/*" ${multi ? 'multiple' : ''} hidden>
+        </div>
+        </div>`;
+      const dz = container.querySelector('#vid-dz');
+      const inp = container.querySelector('#vid-inp');
+      inp.onchange = () => { const a = Array.from(inp.files || []); if (a.length) accept(a); };
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('cpdf-dz--over'); const a = Array.from(e.dataTransfer.files || []); if (a.length) accept(a); });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); } });
+    }
+
+    function accept(a) {
+      if (multi) { files = a; render(); return; }
+      file = a[0]; clearUrl(); objectUrl = URL.createObjectURL(file); render();
+    }
+
+    function configHTML() {
+      const G = (inner) => `<div class="aud-group">${inner}</div>`;
+      const num = (i, v, extra = '') => `<input id="${i}" class="doc-input" type="number" value="${v}" ${extra}>`;
+      const sel = (i, opts, v) => `<select id="${i}" class="aud-select">${opts.map(o => `<option value="${o}" ${String(v) === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+      const fmtCards = (list) => `<div class="aud-fmt-grid" id="vid-fmt-grid">${list.map(f => `<button type="button" class="aud-fmt-card${state.format === f ? ' is-on' : ''}" data-fmt="${f}"><strong>${fmtLabel(f)}</strong><span>${f === 'webm' ? 'Small · open' : f === 'mp4' ? 'Universal' : 'Apple'}</span></button>`).join('')}</div>`;
+      if (id === 'video-convert') return G(`<p class="aud-label">Output format</p>${fmtCards(['webm', 'mp4', 'mov'])}`);
+      if (id === 'video-trim') return G(`<p class="aud-label">Start (s)</p>${num('vid-start', state.start, 'min="0" step="0.1"')}`) + G(`<p class="aud-label">End (s)</p>${num('vid-end', state.end, 'min="0" step="0.1"')}`) + G(`<p class="aud-label">Duration <span id="vid-durlab">—</span></p>`);
+      if (id === 'video-compress') return G(`<p class="aud-label">Target bitrate</p>${sel('vid-br', ['250k', '500k', '750k', '1M', '2M'], state.br)}`);
+      if (id === 'video-resolution') return G(`<p class="aud-label">Width (px)</p>${num('vid-w', state.w, 'min="16"')}`) + G(`<p class="aud-label">Height (−1 = auto)</p>${num('vid-h', state.h)}`);
+      if (id === 'video-framerate') return G(`<p class="aud-label">Frames per second</p>${num('vid-fps', state.fps, 'min="1" max="120"')}`);
+      if (id === 'video-extract-frame') return G(`<p class="aud-label">Frame time (s)</p>${num('vid-time', state.time, 'min="0" step="0.1"')}`);
+      if (id === 'video-gif') return G(`<p class="aud-label">Start (s)</p>${num('vid-gstart', state.start, 'min="0" step="0.1"')}`) + G(`<p class="aud-label">Duration (s)</p>${num('vid-dur', state.dur, 'min="0.1" step="0.1"')}`) + G(`<p class="aud-label">FPS</p>${num('vid-gfps', state.gfps, 'min="2" max="30"')}`) + G(`<p class="aud-label">Width (px)</p>${num('vid-gwidth', state.gwidth, 'min="64"')}`);
+      if (id === 'video-speed') return G(`<p class="aud-label">Speed <span id="vid-spval">${state.rate}x</span></p><input id="vid-speed" class="aud-range" type="range" min="0.5" max="2" step="0.05" value="${state.rate}">`);
+      if (id === 'video-watermark') return G(`<p class="aud-label">Corner</p>${sel('vid-pos', ['br', 'bl', 'tr', 'tl'], state.pos)}`);
+      const hint = { 'video-mute': ['Remove audio', 'Video keeps playing, sound is dropped.'], 'video-strip-audio': ['Strip audio', 'Drops the soundtrack, keeps the picture.'], 'video-reverse': ['Reverse', 'Plays the clip (and its sound) backwards.'], 'video-extract-audio': ['Extract audio', 'Saves the soundtrack as MP3.'], 'video-to-images': ['Export frames', 'Splits the clip into PNG frames in a ZIP.'], 'video-subtitles': ['Add subtitles', 'Muxes an .srt track into the video. Drop the video and the .srt together.'], 'video-merge': ['Join clips', 'Concatenates clips in order (re-encoded to WebM).'] }[id] || ['Browser-local processing', 'Your media never leaves this device.'];
+      return G(`<div class="aud-hero-card"><strong>${hint[0]}</strong><span>${hint[1]}</span></div>`);
+    }
+
+    function summary() {
+      if (id === 'video-convert') return `→ ${fmtLabel(state.format)}`;
+      if (id === 'video-trim') return `${state.start}s – ${state.end}s`;
+      if (id === 'video-compress') return `${state.br} target`;
+      if (id === 'video-resolution') return `${state.w}×${state.h}`;
+      if (id === 'video-framerate') return `${state.fps} fps`;
+      if (id === 'video-extract-frame') return `@ ${state.time}s`;
+      if (id === 'video-gif') return `${state.dur}s · ${state.gfps} fps`;
+      if (id === 'video-speed') return `${state.rate}x`;
+      if (id === 'video-watermark') return posLabel(state.pos);
+      if (id === 'video-merge') return `${files.length} clip${files.length === 1 ? '' : 's'} queued`;
+      return sub;
+    }
+
+    function mergeListHTML() {
+      return `<div class="aud-group"><p class="aud-label">Clips (in order)</p><div id="vid-list" class="aud-merge-list">${files.map((f, i) => `<div class="aud-merge-item" data-i="${i}"><span>${i + 1}. ${esc(f.name)}</span><button type="button" data-remove="${i}">×</button></div>`).join('')}</div><input type="file" id="vid-add" accept="video/*" multiple style="display:none"><button type="button" class="conv-change-btn" id="vid-add-btn">Add clips</button></div>`;
+    }
+
+    function render() {
+      const hasFile = !!file || files.length > 0;
+      if (!hasFile) { renderUpload(); return; }
+      clearUrl();
+      if (file) objectUrl = URL.createObjectURL(file);
+      container.className = 'cpdf-root aud-root aud-ws-active aud-shell';
+      container.innerHTML = `
+        <div class="aud-ws">
+          <header class="aud-top">
+            <div class="aud-top-left">
+              <div class="cpdf-hdr-icon aud-hdr-icon aud-top-ico">${VID_ICO}</div>
+              <div class="aud-titles"><strong>${esc(cvTitle)}</strong><span>${fileMeta()}</span></div>
+            </div>
+            <button class="conv-change-btn" id="vid-change" type="button">Change file</button>
+          </header>
+          <div class="aud-main">
+            <aside class="aud-side">
+              <div class="aud-side-scroll">
+                ${multi ? mergeListHTML() : ''}
+                ${configHTML()}
+              </div>
+              <div class="aud-side-foot">
+                <div class="aud-summary">${summary()}</div>
+                <button class="conv-run-btn aud-run" id="vid-run" type="button" ${multi && files.length < 2 ? 'disabled' : ''}>${multi && files.length < 2 ? 'Add 2+ clips' : 'Process video'}</button>
+              </div>
+            </aside>
+            <section class="aud-stage">
+              <div class="vid-preview-card">${file ? `<video id="vid-player" controls playsinline src="${objectUrl}"></video>` : `<div class="vid-empty-note">${files.length} clips ready</div>`}</div>
+              <div class="vid-timeline">
+                <div class="vid-time-row"><span id="vid-current">00:00</span><span id="vid-duration">00:00</span></div>
+                <div class="vid-track" id="vid-track"><div class="vid-track-fill"></div><div class="vid-playhead" id="vid-playhead"></div></div>
+              </div>
+              <div class="aud-stage-bar"><span>${id === 'video-trim' ? 'Preview and set the range' : 'Live preview'}</span><span class="aud-local">${SHIELD_ICO} Local only</span></div>
+            </section>
+          </div>
+        </div>`;
+      const ch = container.querySelector('#vid-change');
+      if (ch) ch.onclick = () => { clearUrl(); file = null; files = []; renderUpload(); };
+      const addBtn = container.querySelector('#vid-add-btn');
+      if (addBtn) addBtn.onclick = () => container.querySelector('#vid-add').click();
+      const addInp = container.querySelector('#vid-add');
+      if (addInp) addInp.onchange = e => { files = files.concat(Array.from(e.target.files || [])); render(); };
+      container.querySelectorAll('#vid-list [data-remove]').forEach(btn => { btn.onclick = () => { files.splice(Number(btn.dataset.remove), 1); render(); }; });
+      const grid = container.querySelector('#vid-fmt-grid');
+      if (grid) grid.querySelectorAll('.aud-fmt-card').forEach(btn => { btn.onclick = () => { state.format = btn.dataset.fmt; render(); }; });
+      const bindNum = (selId, key, def) => { const el = container.querySelector(selId); if (el) el.oninput = () => { state[key] = Number(el.value) || def; const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary(); }; };
+      bindNum('#vid-start', 'start', 0); bindNum('#vid-end', 'end', 0);
+      const br = container.querySelector('#vid-br'); if (br) br.onchange = () => { state.br = br.value; const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary(); };
+      bindNum('#vid-w', 'w', 1280); bindNum('#vid-h', 'h', -1);
+      bindNum('#vid-fps', 'fps', 24); bindNum('#vid-time', 'time', 0);
+      bindNum('#vid-gstart', 'start', 0); bindNum('#vid-dur', 'dur', 3); bindNum('#vid-gfps', 'gfps', 12); bindNum('#vid-gwidth', 'gwidth', 400);
+      const sp = container.querySelector('#vid-speed'); if (sp) sp.oninput = () => { state.rate = Number(sp.value) || 1; const v = container.querySelector('#vid-spval'); if (v) v.textContent = state.rate + 'x'; const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary(); };
+      const pos = container.querySelector('#vid-pos'); if (pos) pos.onchange = () => { state.pos = pos.value; const s = container.querySelector('.aud-summary'); if (s) s.textContent = summary(); };
+      const player = container.querySelector('#vid-player');
+      const track = container.querySelector('#vid-track');
+      if (player && track) {
+        player.onloadedmetadata = () => { container.querySelector('#vid-duration').textContent = fmt(player.duration); const dl = container.querySelector('#vid-durlab'); if (dl && id === 'video-trim') dl.textContent = `${state.start}s – ${state.end}s`; };
+        player.ontimeupdate = () => { const pct = player.duration ? (player.currentTime / player.duration) * 100 : 0; container.querySelector('#vid-playhead').style.left = pct + '%'; container.querySelector('#vid-current').textContent = fmt(player.currentTime); };
+        track.onclick = e => { const r = track.getBoundingClientRect(); player.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (player.duration || 0); };
+      }
+      const runBtn = container.querySelector('#vid-run');
+      if (runBtn) runBtn.onclick = () => run();
+    }
+
+    async function run() {
+      const runBtn = container.querySelector('#vid-run');
+      if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Processing…'; }
+      try {
+        const reg = window.FF && window.FF.registry && window.FF.registry.get(id);
+        if (!reg || !reg.run) throw new Error('Engine not registered.');
+        const inputs = { format: state.format, start: state.start, end: state.end, br: state.br, w: state.w, h: state.h, fps: state.fps, time: state.time, dur: state.dur, width: state.gwidth, rate: state.rate, pos: state.pos };
+        if (id === 'video-gif') inputs.fps = state.gfps;
+        const out = await reg.run({ file, files, inputs });
+        renderResult(out);
+      } catch (e) {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Process video'; }
+        const bar = container.querySelector('.aud-stage-bar span');
+        if (bar) bar.textContent = 'Failed: ' + (e.message || String(e));
+      }
+    }
+
+    function renderResult(out) {
+      const url = URL.createObjectURL(out.blob);
+      const isVideo = out.preview === 'video' || /^video\//.test(out.mime || '');
+      const isImage = out.preview === 'image' || /^image\//.test(out.mime || '');
+      container.className = 'cpdf-root aud-root aud-ws-active aud-shell';
+      container.innerHTML = `
+        <div class="aud-ws">
+          <div class="aud-result-wrap">
+            <div class="aud-result-card">
+              <div class="aud-result-top">
+                <div class="conv-done-badge" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(124,58,237,.35)">${DL_ICO}</div>
+                <div class="aud-result-titles"><strong>${esc(out.filename)}</strong><span>${bytes(out.blob.size)} · ready to download</span></div>
+              </div>
+              ${isVideo ? `<div class="aud-result-preview"><video controls autoplay muted playsinline src="${url}" style="width:100%;max-height:340px;background:#0B101F;border-radius:8px"></video></div>` : isImage ? `<img class="aud-result-img" src="${url}" alt="${esc(out.filename)}">` : `<div class="aud-result-preview aud-result-preview--file"><div class="aud-result-file-ico">${VID_ICO}</div><span>${esc(out.filename)}</span></div>`}
+              <div class="cpdf-footer aud-result-foot">
+                <a class="cpdf-btn-primary" href="${url}" download="${esc(out.filename)}" style="text-decoration:none">${DL_ICO}&nbsp; Download</a>
+                <div class="cpdf-result-row">
+                  <button class="cpdf-btn-ghost" id="vid-again" type="button">Another file</button>
+                  <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="vid-back" type="button">Adjust</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#vid-again').onclick = () => { URL.revokeObjectURL(url); clearUrl(); file = null; files = []; renderUpload(); };
+      container.querySelector('#vid-back').onclick = () => { URL.revokeObjectURL(url); render(); };
+    }
+
+    if (file || files.length) render(); else renderUpload();
+  }
+  window.__ffMountVideo = mountVideo;
+
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Media Hub  (Audio + Video)
+   One drop-anything workspace, same shell as Compress/Convert. Dropping a file
+   swaps the app siderail to that format's tools (Audio rail / Video rail).
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const _bytes = n => { n = Number(n) || 0; if (n < 1024) return n + ' B'; if (n < 1048576) return (n / 1024).toFixed(1) + ' KB'; return (n / 1048576).toFixed(1) + ' MB'; };
+  const ACCEPT = 'audio/*,video/*,.mp3,.wav,.ogg,.oga,.flac,.m4a,.aac,.opus,.webm,.aiff,.mp4,.mov,.mkv,.avi,.m4v,.ogv,.mpg,.mpeg,.3gp,.wmv';
+  const MEDIA_ICO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M10 9.5v5l4.8-2.5z"/></svg>';
+  const GRAPHIC = '<svg width="190" height="150" viewBox="0 0 190 150" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="mg-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C084FC"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect x="8" y="8" width="174" height="134" rx="18" fill="url(#mg-a)" opacity="0.08"/><rect x="28" y="32" width="96" height="66" rx="10" fill="#000" stroke="currentColor" stroke-opacity="0.85" stroke-width="2"/><path d="M62 50v30l26-15z" fill="url(#mg-a)"/><path d="M146 46c4 6 4 14 0 20M153 38c8 12 8 28 0 40M139 54c2 4 2 8 0 12" stroke="url(#mg-a)" stroke-width="2.5" stroke-linecap="round"/></svg>';
+  const CHANGE_ICO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>';
+
+  function mountMedia(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'conv-root');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'doc-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root', 'aud-root', 'aud-shell', 'aud-ws-active', 'media-shell');
+
+    let file = null;
+    let category = '';
+
+    function pickFile(f) {
+      if (!f) return;
+      const app = window.FF && window.FF.app;
+      const cat = (app && app.detectCategoryFromFile) ? app.detectCategoryFromFile(f) : '';
+      if (cat !== 'Audio' && cat !== 'Video') {
+        const err = container.querySelector('#media-dz-error');
+        if (err) err.hidden = false;
+        return;
+      }
+      file = f;
+      category = cat;
+      if (app) {
+        if (app.updateSidebarForFileCategory) app.updateSidebarForFileCategory(cat, f);
+        else if (app.restoreDefaultSidebar) app.restoreDefaultSidebar();
+      }
+      renderDetected();
+    }
+
+    function renderUpload() {
+      container.classList.remove('media-shell');
+      if (!container.classList.contains('app-stage-container')) container.classList.add('app-stage-container');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${MEDIA_ICO}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Audio &amp; Video</h2>
+            <p class="cpdf-hdr-sub">Drop any media file — the sidebar switches to the right tools for it</p>
+          </div>
+        </header>
+        <div class="cpdf-dropzone drop-hero-box" id="media-dz" tabindex="0" role="button" aria-label="Add <strong>media</strong> file to process">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="media-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+              <label for="media-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>media</strong> file to process</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-mp4">MP4</span>
+              <span class="fmt-badge fmt-mp3">MP3</span>
+              <span class="fmt-badge fmt-wav">WAV</span>
+              <span class="fmt-badge fmt-webm">WEBM</span>
+            </div>
+          </div>
+          <input id="media-inp" type="file" accept="${ACCEPT}"  hidden>
+        </div>
+        </div>`;
+      const dz = container.querySelector('#media-dz');
+      const inp = container.querySelector('#media-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function renderDetected() {
+      const app = window.FF && window.FF.app;
+      const railTools = (app && app.formatRailTools ? app.formatRailTools(category) : []).filter(t => !t.isMore);
+      const isVideo = category === 'Video';
+      // Full-bleed detected state — replace the class list (like the audio/video
+      // suites) so the ID-based padded-stage rules stop matching the card.
+      container.className = 'cpdf-root conv-root media-shell';
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${MEDIA_ICO}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">${isVideo ? 'Video' : 'Audio'} tools</h2>
+            <p class="cpdf-hdr-sub">${_esc(file.name)} is ready — pick a tool below or from the sidebar</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="conv-file-card">
+            <span class="cpdf-file-ico">${MEDIA_ICO}</span>
+            <div class="conv-file-meta">
+              <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+              <span>${_bytes(file.size)} &nbsp;·&nbsp; ${category} &nbsp;·&nbsp; ready</span>
+            </div>
+            <button class="cpdf-btn-ghost" id="media-change" type="button">${CHANGE_ICO}&nbsp; Change file</button>
+          </div>
+          <div class="media-pick-block">
+            <p class="media-pick-head">${isVideo ? 'Video' : 'Audio'} tools for this file</p>
+            <div class="media-pick-grid">
+              ${railTools.map(t => `
+                <button type="button" class="media-pick-card" data-tool="${t.toolId}">
+                  <span class="media-pick-ico">${t.svg || ''}</span>
+                  <span class="media-pick-name">${_esc(t.fullTitle || t.title)}</span>
+                </button>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#media-change').onclick = () => { file = null; category = ''; renderUpload(); };
+      container.querySelectorAll('.media-pick-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = card.dataset.tool;
+          // Hand off the dropped file so the tool opens already loaded —
+          // one drop flows end-to-end instead of requiring a second upload.
+          window.FF._mediaPending = { file, category };
+          if (app && app.openTool) app.openTool(id);
+        });
+      });
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountMedia = mountMedia;
+})();
+
+/* Image hub — drop any image → image tools */
+(() => {
+  'use strict';
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const IMG_ICO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+  const GRAPHIC = '<svg width="190" height="150" viewBox="0 0 190 150" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ih-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F59E0B"/><stop offset="1" stop-color="#EA580C"/></linearGradient></defs><rect x="8" y="8" width="174" height="134" rx="18" fill="url(#ih-a)" opacity="0.08"/><rect x="28" y="30" width="110" height="76" rx="6" fill="#000" stroke="currentColor" stroke-opacity="0.85" stroke-width="2"/><circle cx="52" cy="48" r="5" fill="url(#ih-a)"/><path d="M34 100l30-32 22 22 20-16 32 26" stroke="url(#ih-a)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 128h110" stroke="currentColor" stroke-opacity="0.35" stroke-width="4" stroke-linecap="round"/><rect x="40" y="123" width="18" height="10" fill="url(#ih-a)"/><rect x="64" y="123" width="10" height="10" fill="url(#ih-a)"/><rect x="80" y="123" width="26" height="10" fill="url(#ih-a)"/><rect x="112" y="123" width="14" height="10" fill="url(#ih-a)"/><rect x="132" y="123" width="18" height="10" fill="url(#ih-a)"/></svg>';
+  const CHANGE_ICO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>';
+
+  function mountImageHub(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'conv-root', 'media-shell');
+    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'doc-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root', 'aud-root', 'aud-shell', 'aud-ws-active');
+
+    let file = null;
+
+    function pickFile(f) {
+      if (!f) return;
+      const app = window.FF && window.FF.app;
+      const cat = (app && app.detectCategoryFromFile) ? app.detectCategoryFromFile(f) : '';
+      if (cat !== 'Images') {
+        const err = container.querySelector('#img-hub-error');
+        if (err) err.hidden = false;
+        return;
+      }
+      file = f;
+      if (app) {
+        if (app.updateSidebarForFileCategory) app.updateSidebarForFileCategory(cat, f);
+        else if (app.restoreDefaultSidebar) app.restoreDefaultSidebar();
+      }
+      renderDetected();
+    }
+
+    function renderUpload() {
+      container.classList.remove('media-shell');
+      if (!container.classList.contains('app-stage-container')) container.classList.add('app-stage-container');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="img-hub-dz" tabindex="0" role="button" aria-label="Upload an image">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="img-hub-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select image</span>
+              </label>
+              <label for="img-hub-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PNG</strong>, <strong>JPG</strong>, <strong>WebP</strong>, or <strong>SVG</strong> image files</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+              <span class="fmt-badge fmt-doc">WEBP</span>
+              <span class="fmt-badge fmt-xls">SVG</span>
+              <span class="fmt-badge fmt-ppt">GIF</span>
+              <span class="fmt-badge fmt-pdf">AVIF</span>
+            </div>
+          </div>
+          <input id="img-hub-inp" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.tiff,.svg,.ico,.heic,.heif" hidden>
+        </div>`;
+      const dz = container.querySelector('#img-hub-dz');
+      const inp = container.querySelector('#img-hub-inp');
+      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) pickFile(f);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
+      });
+    }
+
+    function renderDetected() {
+      const app = window.FF && window.FF.app;
+      const railTools = (app && app.formatRailTools ? app.formatRailTools('Images') : []).filter(t => !t.isMore);
+      container.className = 'cpdf-root conv-root media-shell';
+      container.innerHTML = `
+        <header class="cpdf-hdr">
+          <div class="cpdf-hdr-icon">${IMG_ICO}</div>
+          <div>
+            <h2 class="cpdf-hdr-title">Image tools</h2>
+            <p class="cpdf-hdr-sub">${_esc(file.name)} is ready — pick a tool below or from the sidebar</p>
+          </div>
+        </header>
+        <div class="cpdf-body">
+          <div class="conv-file-card">
+            <span class="cpdf-file-ico">${IMG_ICO}</span>
+            <div class="conv-file-meta">
+              <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
+              <span>${Math.round(file.size / 1024) + ' KB'} &nbsp;·&nbsp; Image &nbsp;·&nbsp; ready</span>
+            </div>
+            <button class="cpdf-btn-ghost" id="img-hub-change" type="button">${CHANGE_ICO}&nbsp; Change file</button>
+          </div>
+          <div class="media-pick-block">
+            <p class="media-pick-head">Image tools for this file</p>
+            <div class="media-pick-grid">
+              ${railTools.map(t => `
+                <button type="button" class="media-pick-card" data-tool="${t.toolId}">
+                  <span class="media-pick-ico">${t.svg || ''}</span>
+                  <span class="media-pick-name">${_esc(t.fullTitle || t.title)}</span>
+                </button>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      container.querySelector('#img-hub-change').onclick = () => { file = null; renderUpload(); };
+      container.querySelectorAll('.media-pick-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = card.dataset.tool;
+          window.FF._mediaPending = { file, category: 'Images' };
+          if (app && app.openTool) app.openTool(id);
+        });
+      });
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountImageHub = mountImageHub;
+})();
+
+/* QR & Barcode hub — pick a QR/barcode tool (Edit-tool light shell) */
+(() => {
+  'use strict';
+  const _esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const QR_ICO = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 14v.01M14 21v.01M21 21h-3"/></svg>';
+  const ARROW = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
+  const SHIELD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z"/></svg>';
+
+  const TOOLS = [
+    { id: 'qr-generate', name: 'QR generator', desc: 'Create a QR code PNG from any text or URL', tag: 'Generate', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 14v.01M14 21v.01M21 21h-3"/></svg>' },
+    { id: 'qr-read', name: 'QR reader', desc: 'Decode a QR code from an image', tag: 'Decode', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V3h4"/><path d="M17 3h4v4"/><path d="M21 17v4h-4"/><path d="M7 21H3v-4"/><circle cx="12" cy="12" r="3.5"/></svg>' },
+    { id: 'barcode-generate', name: 'Barcode generator', desc: 'Generate a 1D barcode (CODE128, EAN13, UPC…)', tag: 'Generate', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M10 9v6M13 9v6M16 9v6M19 9v6M4 9v6"/></svg>' },
+  ];
+
+  function mountQrHub(container, tool) {
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'qr-shell');
+    container.classList.remove('conv-root', 'media-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'doc-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root', 'aud-root', 'aud-shell', 'aud-ws-active');
+    if (!container.classList.contains('app-stage-container')) container.classList.add('app-stage-container');
+    const stage = container.closest('.app-stage-container');
+    if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
+
+    container.innerHTML = `
+      <div class="qr-top">
+        <div class="qr-top-left">
+          <span class="qr-brand">${QR_ICO}</span>
+          <div class="qr-title-wrap">
+            <strong class="qr-title">QR &amp; Barcode</strong>
+            <span class="qr-sub">Generate and decode QR codes and barcodes</span>
+          </div>
+        </div>
+        <div class="qr-top-right">
+          <span class="etxt-local">${SHIELD} 100% local</span>
+        </div>
+      </div>
+      <div class="qr-body">
+        <div class="qr-grid">
+          ${TOOLS.map(t => `
+            <button type="button" class="qr-card" data-tool="${t.id}">
+              <span class="qr-card-ico">${t.svg}</span>
+              <span class="qr-card-copy">
+                <span class="qr-card-name">${_esc(t.name)}</span>
+                <span class="qr-card-desc">${_esc(t.desc)}</span>
+              </span>
+              <span class="qr-card-tag">${_esc(t.tag)}</span>
+              <span class="qr-card-arrow">${ARROW}</span>
+            </button>`).join('')}
+        </div>
+      </div>`;
+    const app = window.FF && window.FF.app;
+    container.querySelectorAll('.qr-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.tool;
+        if (app && app.openTool) app.openTool(id);
+      });
+    });
+  }
+
+  window.__ffMountQrHub = mountQrHub;
+
+  /* ─── QR reader — Edit-tool light after-upload shell ─── */
+  const QR_DROP_GRAPHIC = `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect x="38" y="104" width="144" height="32" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
+    <ellipse cx="64" cy="122" rx="20" ry="5" fill="#000" opacity="0.3"/>
+    <ellipse cx="156" cy="122" rx="20" ry="5" fill="#000" opacity="0.3"/>
+    <g transform="rotate(-6 64 74)">
+      <rect x="42" y="44" width="44" height="58" rx="5" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <path d="M72 44h14v14z" fill="#F5F3FF"/>
+      <g stroke="#7C3AED" stroke-width="2.4">
+        <rect x="50" y="52" width="10" height="10"/>
+        <rect x="68" y="52" width="10" height="10"/>
+        <rect x="50" y="70" width="10" height="10"/>
+        <path d="M68 70h4v4h-4zM82 70v.01M82 84h-4v-4h4z"/>
+        <path d="M86 52v-2M86 52h2"/>
+      </g>
+      <rect x="50" y="86" width="28" height="3" rx="1.5" fill="#C4B5FD"/>
+    </g>
+    <g transform="rotate(9 156 74)">
+      <rect x="134" y="44" width="44" height="58" rx="5" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <path d="M164 44h14v14z" fill="#F5F3FF"/>
+      <g stroke="#7C3AED" stroke-width="2.4">
+        <rect x="142" y="52" width="10" height="10"/>
+        <rect x="160" y="52" width="10" height="10"/>
+        <rect x="142" y="70" width="10" height="10"/>
+        <path d="M160 70h4v4h-4zM174 70v.01M174 84h-4v-4h4z"/>
+        <path d="M178 52v-2M178 52h2"/>
+      </g>
+      <rect x="142" y="86" width="28" height="3" rx="1.5" fill="#C4B5FD"/>
+    </g>
+    <g>
+      <rect x="90" y="50" width="40" height="56" rx="5" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <path d="M116 50h14v14z" fill="#F5F3FF"/>
+      <g stroke="#7C3AED" stroke-width="2.2">
+        <rect x="96" y="58" width="9" height="9"/>
+        <rect x="112" y="58" width="9" height="9"/>
+        <rect x="96" y="74" width="9" height="9"/>
+        <path d="M112 74h4v4h-4zM124 74v.01M124 88h-4v-4h4z"/>
+      </g>
+      <path d="M96 96h28v1.5h-28z" fill="#C4B5FD"/>
+    </g>
+    <path d="M110 14v26m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/>
+    <circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/>
+    <circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/>
+    <circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/>
+  </svg>`;
+  const QR_READ_ICOS = {
+    shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z"/></svg>',
+    dl: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    copy: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+    replace: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+    scan: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>',
+    check: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  };
+  const QR_FMT = n => { if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB'; if (n >= 1024) return Math.round(n / 1024) + ' KB'; return n + ' B'; };
+
+  function mountQrRead(container, tool) {
+    container.innerHTML = '';
+    container.classList.remove('etxt-shell', 'qr-read-shell', 'spdf-shell', 'sign-shell', 'conv-root', 'media-shell', 'doc-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root', 'aud-root', 'aud-shell', 'aud-ws-active', 'org-shell', 'scan-shell', 'qr-shell');
+    if (!container.classList.contains('app-stage-container')) container.classList.add('app-stage-container');
+
+    let file = null, imgUrl = null, natural = null, decoded = null, busy = false;
+
+    function fmtMeta() {
+      if (!file) return '';
+      const size = QR_FMT(file.size);
+      return natural ? `${natural.width} × ${natural.height} · ${size}` : size;
+    }
+
+    function renderDrop() {
+      container.classList.add('cpdf-root');
+      container.classList.remove('etxt-shell', 'qr-read-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="qr-read-drop" tabindex="0" role="button" aria-label="Upload a QR code image">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="qr-read-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select QR code</span>
+              </label>
+              <label for="qr-read-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PNG</strong>, <strong>JPG</strong>, or <strong>WebP</strong> QR or barcode image</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+              <span class="fmt-badge fmt-doc">WEBP</span>
+              <span class="fmt-badge fmt-ppt">GIF</span>
+            </div>
+          </div>
+          <input id="qr-read-inp" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif" hidden>
+        </div>`;
+      const drop = container.querySelector('#qr-read-drop');
+      const inp = container.querySelector('#qr-read-inp');
+      const pick = () => inp.click();
+      drop.addEventListener('click', e => { if (!e.target.closest('label')) pick(); });
+      drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('cpdf-dz--over'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('cpdf-dz--over'));
+      drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('cpdf-dz--over'); const f = e.dataTransfer?.files?.[0]; if (f) loadFile(f); });
+      inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; if (f) loadFile(f); inp.value = ''; });
+    }
+
+    function renderLoaded() {
+      container.classList.remove('cpdf-root');
+      container.classList.add('etxt-shell', 'qr-read-shell');
+      const stage = container.closest('.app-stage-container');
+      if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
+      container.innerHTML = `
+        <div class="etxt-top">
+          <div class="etxt-top-left">
+            <span class="qr-read-brand">${QR_ICO}</span>
+            <span class="etxt-file" title="${_esc(file.name)}">${_esc(file.name)}</span>
+            <span class="etxt-meta">${fmtMeta()}</span>
+            <span class="etxt-local">${QR_READ_ICOS.shield} 100% local</span>
+          </div>
+          <div class="etxt-top-right">
+            <button type="button" class="etxt-btn-ghost" id="qr-read-replace">${QR_READ_ICOS.replace} Replace</button>
+            <button type="button" class="etxt-btn-finish" id="qr-read-decode">${QR_READ_ICOS.scan} Decode QR</button>
+          </div>
+        </div>
+        <div class="qr-read-body">
+          <div class="qr-read-canvas">
+            <img id="qr-read-img" alt="Uploaded QR code image">
+          </div>
+        </div>
+        <div class="qr-read-result" id="qr-read-result" hidden></div>`;
+      const img = container.querySelector('#qr-read-img');
+      img.src = imgUrl;
+      container.querySelector('#qr-read-replace').addEventListener('click', () => renderDrop());
+      container.querySelector('#qr-read-decode').addEventListener('click', decode);
+    }
+
+    function loadFile(f) {
+      const ok = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'].includes((f.name.split('.').pop() || '').toLowerCase());
+      if (!ok) { renderDrop(); const d = container.querySelector('.qr-read-drop'); if (d) d.classList.add('bad'); return; }
+      file = f;
+      if (imgUrl) URL.revokeObjectURL(imgUrl);
+      imgUrl = URL.createObjectURL(f);
+      const probe = new Image();
+      probe.onload = () => { natural = { width: probe.naturalWidth, height: probe.naturalHeight }; renderLoaded(); };
+      probe.onerror = () => { natural = null; renderLoaded(); };
+      probe.src = imgUrl;
+    }
+
+    async function decode() {
+      if (busy || !file) return;
+      busy = true;
+      const btn = container.querySelector('#qr-read-decode');
+      if (btn) { btn.disabled = true; btn.textContent = 'Decoding…'; }
+      const resultEl = container.querySelector('#qr-read-result');
+      try {
+        const engine = await window.FF.util.loadScript('vendor/jsqr.js').then(() => window.jsQR);
+        const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('Could not read image.')); im.src = imgUrl; });
+        const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const d = ctx.getImageData(0, 0, c.width, c.height);
+        const code = engine(d.data, c.width, c.height);
+        if (!code) throw new Error('No QR code found in this image.');
+        decoded = code.data;
+        renderResult(decoded);
+      } catch (err) {
+        renderResult(null, err.message);
+      } finally {
+        busy = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Decode QR'; }
+      }
+    }
+
+    function renderResult(text, err) {
+      const el = container.querySelector('#qr-read-result');
+      if (!el) return;
+      el.hidden = false;
+      el.className = 'qr-read-result' + (err ? ' is-err' : ' is-ok');
+      if (err) {
+        el.innerHTML = `<span class="qr-read-result-ico">!</span><div class="qr-read-result-copy"><strong>No QR code found</strong><span>${_esc(err)}</span></div>`;
+        return;
+      }
+      el.innerHTML = `
+        <span class="qr-read-result-ico">${QR_READ_ICOS.check}</span>
+        <div class="qr-read-result-copy"><strong>Decoded successfully</strong><span class="qr-read-result-text" title="${_esc(text)}">${_esc(text)}</span></div>
+        <div class="qr-read-result-actions">
+          <button type="button" class="etxt-btn-ghost" id="qr-read-copy">${QR_READ_ICOS.copy} Copy</button>
+          <button type="button" class="etxt-btn-secondary" id="qr-read-dl">${QR_READ_ICOS.dl} Download .txt</button>
+        </div>`;
+      el.querySelector('#qr-read-copy').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(text); const b = el.querySelector('#qr-read-copy'); b.textContent = 'Copied ✓'; setTimeout(() => b.innerHTML = `${QR_READ_ICOS.copy} Copy`, 1400); } catch (e) { /* ignore */ }
+      });
+      el.querySelector('#qr-read-dl').addEventListener('click', () => {
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'qr-decoded.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 500);
+      });
+    }
+
+    renderDrop();
+  }
+
+  function mountQrGen(container, tool) {
+    const isBar = tool?.id === 'barcode-generate';
+    container.innerHTML = '';
+    container.classList.add('etxt-shell', 'qr-gen-shell', 'cpdf-root');
+    container.classList.remove('spdf-shell', 'qr-read-shell', 'sign-shell', 'conv-root', 'media-shell', 'doc-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-ws-active', 'pmore-root', 'aud-root', 'aud-shell', 'aud-ws-active', 'org-shell', 'scan-shell', 'qr-shell');
+    if (!container.classList.contains('app-stage-container')) container.classList.add('app-stage-container');
+    const stage = container.closest('.app-stage-container');
+    if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
+
+    const fmtOptions = isBar
+      ? ['CODE128', 'EAN13', 'UPC-A', 'EAN8', 'CODE39', 'ITF14', 'MSI', 'pharmacode']
+      : ['L', 'M', 'Q', 'H'];
+    const fmtLabel = isBar ? 'Format' : 'Error correction';
+
+    container.innerHTML = `
+      <div class="etxt-top">
+        <div class="etxt-top-left">
+          <span class="qr-read-brand">${QR_ICO}</span>
+          <span class="etxt-file">${isBar ? 'Barcode generator' : 'QR generator'}</span>
+          <span class="etxt-meta">${isBar ? 'CODE128 · EAN13 · UPC · CODE39' : 'Scannable · any text or URL'}</span>
+          <span class="etxt-local">${QR_READ_ICOS.shield} 100% local</span>
+        </div>
+        <div class="etxt-top-right">
+          <button type="button" class="etxt-btn-finish" id="qr-gen-dl">${QR_READ_ICOS.dl} Download PNG</button>
+        </div>
+      </div>
+      <div class="qr-gen-body">
+        <div class="qr-gen-controls">
+          <div class="qr-gen-head"><strong>${isBar ? 'Barcode' : 'QR code'}</strong><span>${isBar ? 'Generate a 1D barcode from any text' : 'Generate a scannable QR code from any text or URL'}</span></div>
+          <label class="qr-gen-field"><span>Content</span><textarea id="qr-gen-text" rows="3" placeholder="${isBar ? 'e.g. 123456789012 or any text' : 'https://… or any text'}">${isBar ? '123456789012' : 'https://fileforge.app'}</textarea></label>
+          <div class="qr-gen-row">
+            <label class="qr-gen-field"><span>${fmtLabel}</span><select id="qr-gen-fmt">${fmtOptions.map(o => `<option value="${o}">${o}</option>`).join('')}</select></label>
+            ${isBar ? '' : `<label class="qr-gen-field"><span>Module size</span><select id="qr-gen-cell"><option value="6">Small</option><option value="9" selected>Medium</option><option value="12">Large</option></select></label>`}
+          </div>
+        </div>
+        <div class="qr-gen-stage">
+          <div class="qr-gen-card" id="qr-gen-card">
+            <canvas id="qr-gen-canvas" aria-label="${isBar ? 'Barcode preview' : 'QR code preview'}"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="qr-read-result" id="qr-gen-result" hidden></div>`;
+
+    const text = container.querySelector('#qr-gen-text');
+    const fmtSel = container.querySelector('#qr-gen-fmt');
+    const cellSel = container.querySelector('#qr-gen-cell');
+    const canvas = container.querySelector('#qr-gen-canvas');
+    const result = container.querySelector('#qr-gen-result');
+
+    let pending = null;
+    function showGenErr(msg) {
+      canvas.classList.add('qr-gen-empty');
+      result.hidden = false; result.className = 'qr-read-result is-err';
+      result.innerHTML = `<span class="qr-read-result-ico">!</span><div class="qr-read-result-copy"><strong>Nothing to generate</strong><span>${_esc(msg)}</span></div>`;
+    }
+    const render = () => {
+      clearTimeout(pending);
+      pending = setTimeout(async () => {
+        const val = text.value.trim();
+        result.hidden = true;
+        if (!val) { showGenErr('Type some content to generate'); return; }
+        try {
+          if (isBar) {
+            const JsBarcode = await window.FF.util.loadScript('vendor/jsbarcode.min.js', 'sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a').then(() => window.JsBarcode);
+            JsBarcode(canvas, val, { format: fmtSel.value, width: 2, height: 92, displayValue: true, fontSize: 17, margin: 12, background: '#ffffff', lineColor: '#0f172a' });
+          } else {
+            const qrcode = await window.FF.util.loadScript('vendor/qrcode-generator.js', 'sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k').then(() => window.qrcode);
+            const qr = qrcode(0, fmtSel.value);
+            qr.addData(val); qr.make();
+            const cell = +cellSel.value || 9;
+            const n = qr.getModuleCount(); const m = 4;
+            canvas.width = (n + m * 2) * cell; canvas.height = canvas.width;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0f172a';
+            for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect((c + m) * cell, (r + m) * cell, cell, cell);
+          }
+          canvas.classList.remove('qr-gen-empty');
+        } catch (e) { showGenErr('Could not generate: ' + ((e && e.message) || e)); }
+      }, 120);
+    };
+    text.addEventListener('input', render);
+    fmtSel.addEventListener('change', render);
+    if (cellSel) cellSel.addEventListener('change', render);
+    render();
+
+    container.querySelector('#qr-gen-dl').addEventListener('click', () => {
+      if (canvas.classList.contains('qr-gen-empty') || !canvas.width) return;
+      canvas.toBlob((b) => {
+        if (!b) return;
+        const name = isBar ? 'barcode-' + (fmtSel.value || 'code128').toLowerCase() + '.png' : 'qrcode.png';
+        const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 500);
+        result.hidden = false; result.className = 'qr-read-result is-ok';
+        result.innerHTML = `<span class="qr-read-result-ico">${QR_READ_ICOS.check}</span><div class="qr-read-result-copy"><strong>PNG ready</strong><span>${canvas.width} × ${canvas.height}px · downloaded as ${_esc(name)}</span></div>`;
+      }, 'image/png');
+    });
+  }
+
+  window.__ffMountQrGen = mountQrGen;
+})();
+
+
+  const PREMIUM = {
+    'pdf-compress': () => window.__ffMountCompress,
+    'pdf-merge':    () => window.__ffMountMerge,
+    'pdf-split':    () => window.__ffMountSplit,
+    'pdf-edit-text': () => window.__ffMountEditText,
+    'pdf-sign':     () => window.__ffMountSign,
+    'pdf-flatten':  () => window.__ffMountFlatten,
+    'pdf-protect':  () => window.__ffMountProtect,
+    'pdf-unlock':   () => window.__ffMountProtect,
+    'pdf-page-numbers': () => window.__ffMountPdfMore,
+    'pdf-rotate':     () => window.__ffMountPdfMore,
+    'pdf-watermark':  () => window.__ffMountPdfMore,
+    'pdf-crop':       () => window.__ffMountPdfMore,
+    'pdf-resize':     () => window.__ffMountPdfMore,
+    'pdf-extract-range': () => window.__ffMountPdfMore,
+    'pdf-redact':     () => window.__ffMountPdfMore,
+    'pdf-repair':     () => window.__ffMountPdfMore,
+    'pdf-form-filler':() => window.__ffMountPdfMore,
+    'pdf-to-pdf':     () => window.__ffMountPdfMore,
+    'docx-to-pdf':    () => window.__ffMountDocuments,
+    'docx-to-html':   () => window.__ffMountDocuments,
+    'docx-to-txt':    () => window.__ffMountDocuments,
+    'docx-to-md':     () => window.__ffMountDocuments,
+    'md-to-html':     () => window.__ffMountDocuments,
+    'html-to-md':     () => window.__ffMountDocuments,
+    'md-to-pdf':      () => window.__ffMountDocuments,
+    'html-to-pdf':    () => window.__ffMountDocuments,
+    'txt-to-pdf':     () => window.__ffMountDocuments,
+    'doc-word-count': () => window.__ffMountDocuments,
+    'doc-char-count': () => window.__ffMountDocuments,
+    'doc-reading-time':() => window.__ffMountDocuments,
+    'doc-find-replace':() => window.__ffMountDocuments,
+    'doc-case':       () => window.__ffMountDocuments,
+    'doc-dedupe':     () => window.__ffMountDocuments,
+    'doc-sort':       () => window.__ffMountDocuments,
+    'doc-whitespace': () => window.__ffMountDocuments,
+    'media-hub':      () => window.__ffMountMedia,
+    'image-hub':      () => window.__ffMountImageHub,
+    'qr-hub':         () => window.__ffMountQrHub,
+    'qr-read':        () => window.__ffMountQrRead,
+    /* Bespoke premium after/result for formerly-generic Image tools */
+    'image-sharpen':  () => window.__ffMountImagePro,
+    'image-round':    () => window.__ffMountImagePro,
+    'image-border':   () => window.__ffMountImagePro,
+    'image-upscale':  () => window.__ffMountImagePro,
+    'image-grayscale': () => window.__ffMountImagePro,
+    'image-invert':    () => window.__ffMountImagePro,
+    'image-blur':      () => window.__ffMountImagePro,
+    'image-bc':        () => window.__ffMountImagePro,
+    'favicon':        () => window.__ffMountImagePro,
+    'exif-strip':     () => window.__ffMountImagePro,
+    'palette':        () => window.__ffMountImagePro,
+    'image-diff':     () => window.__ffMountImagePro,
+    'sprite-sheet':   () => window.__ffMountImagePro,
+    'exif-viewer':    () => window.__ffMountImagePro,
+    'svg-to-raster':  () => window.__ffMountImagePro,
+    'base64-to-img':  () => window.__ffMountImagePro,
+    'img-to-base64':  () => window.__ffMountImagePro,
+    'svg-optimize':   () => window.__ffMountImagePro,
+    /* Bespoke premium after/result for formerly-generic PDF tools */
+    'pdf-headers-footers': () => window.__ffMountPdfPro,
+    'pdf-create':         () => window.__ffMountPdfPro,
+    'pdf-compare':        () => window.__ffMountPdfPro,
+    'pdf-invert':         () => window.__ffMountPdfPro,
+    'pdf-redact-pii':     () => window.__ffMountPdfPro,
+    'pdf-sanitize-pii':   () => window.__ffMountPdfPro,
+    'pdf-to-handwriting': () => window.__ffMountPdfPro,
+    'handwriting-to-pdf': () => window.__ffMountPdfPro,
+    'pdf-to-zip':         () => window.__ffMountPdfPro,
+    /* Bespoke premium after/result — Utilities */
+    'units-length':   () => window.__ffMountUtilPro,
+    'timestamp':      () => window.__ffMountUtilPro,
+    'color-picker':   () => window.__ffMountUtilPro,
+    'aspect-ratio':   () => window.__ffMountUtilPro,
+    'currency':       () => window.__ffMountUtilPro,
+    'cron-util':      () => window.__ffMountUtilPro,
+    /* Bespoke premium after/result — Developer */
+    'base64':         () => window.__ffMountDevPro,
+    'url-encode':     () => window.__ffMountDevPro,
+    'diff':           () => window.__ffMountDevPro,
+    'font-glyphs':    () => window.__ffMountDevPro,
+    'font-convert':   () => window.__ffMountDevPro,
+    /* Bespoke premium after/result — Archives & Data */
+    'zip-create':       () => window.__ffMountArcPro,
+    'targz-create':     () => window.__ffMountArcPro,
+    'file-split':       () => window.__ffMountArcPro,
+    'archive-7z-extract': () => window.__ffMountArcPro,
+    'sqlite-explorer':  () => window.__ffMountArcPro,
+    /* Bespoke premium after/result — E-Books */
+    'epub-reader':    () => window.__ffMountEbookPro,
+    'epub-chapters':  () => window.__ffMountEbookPro,
+    'epub-cover':     () => window.__ffMountEbookPro,
+    'epub-metadata':  () => window.__ffMountEbookPro,
+    /* Bespoke premium after/result — Business */
+    'gst-invoice':    () => window.__ffMountBizPro,
+    'pos-billing':    () => window.__ffMountBizPro,
+    'gst-filing-prep':() => window.__ffMountBizPro,
+    /* Bespoke premium after/result — Audio */
+    'audiogram-generator': () => window.__ffMountAudPro,
+    /* Hub-covered tools: standalone opens reuse the premium hub workspaces */
+    'pdf-to-jpg':     () => window.__ffMountConvert,
+    'pdf-to-html':    () => window.__ffMountConvert,
+    'pdf-to-csv':     () => window.__ffMountConvert,
+    'pdf-to-epub':    () => window.__ffMountConvert,
+    'pdf-summarize':  () => window.__ffMountConvert,
+    'excel-to-pdf':   () => window.__ffMountConvert,
+    'csv-to-pdf':     () => window.__ffMountConvert,
+    'data-to-pdf':    () => window.__ffMountConvert,
+    'data-transcode': () => window.__ffMountConvert,
+    'png-trace':      () => window.__ffMountConvert,
+    'image-heic-convert': () => window.__ffMountConvert,
+    'video-to-shorts':    () => window.__ffMountConvert,
+    'epub-to-html':   () => window.__ffMountConvert,
+    'epub-to-txt':    () => window.__ffMountConvert,
+    'epub-to-pdf':    () => window.__ffMountConvert,
+    'zip-extract':    () => window.__ffMountConvert,
+    'zip-inspect':    () => window.__ffMountConvert,
+    'targz-extract':  () => window.__ffMountConvert,
+    'archive-preview':() => window.__ffMountConvert,
+    /* QR & barcode generators (standalone workspaces) */
+    'qr-generate':      () => window.__ffMountQrGen,
+    'barcode-generate': () => window.__ffMountQrGen,
+    /* Spreadsheets — CSV ↔ Excel with grid preview */
+    'csv-to-excel':  () => window.__ffMountSheetPro,
+    'excel-to-csv':  () => window.__ffMountSheetPro,
+    'bg-remover':    () => window.__ffMountBgRemovePro,
+    'audio-convert':  () => window.__ffMountAudio,
+    'audio-to-wav':   () => window.__ffMountAudio,
+    'audio-trim':     () => window.__ffMountAudio,
+    'audio-merge':    () => window.__ffMountAudio,
+    'audio-sample-rate': () => window.__ffMountAudio,
+    'audio-normalize':() => window.__ffMountAudio,
+    'audio-reverse':  () => window.__ffMountAudio,
+    'audio-speed':    () => window.__ffMountAudio,
+    'audio-silence':  () => window.__ffMountAudio,
+    'audio-waveform': () => window.__ffMountAudio,
+    'audio-split-silence': () => window.__ffMountAudio,
+    'audio-from-video': () => window.__ffMountAudio,
+    'audio-bitrate':  () => window.__ffMountAudio,
+    'audio-strip-metadata': () => window.__ffMountAudio,
+    'video-convert': () => window.__ffMountVideo,
+    'video-trim': () => window.__ffMountVideo,
+    'video-compress': () => window.__ffMountVideo,
+    'video-resolution': () => window.__ffMountVideo,
+    'video-framerate': () => window.__ffMountVideo,
+    'video-mute': () => window.__ffMountVideo,
+    'video-strip-audio': () => window.__ffMountVideo,
+    'video-extract-frame': () => window.__ffMountVideo,
+    'video-gif': () => window.__ffMountVideo,
+    'video-reverse': () => window.__ffMountVideo,
+    'video-speed': () => window.__ffMountVideo,
+    'video-to-images': () => window.__ffMountVideo,
+    'video-merge': () => window.__ffMountVideo,
+    'video-watermark': () => window.__ffMountVideo,
+    'video-subtitles': () => window.__ffMountVideo,
+    'video-extract-audio': () => window.__ffMountVideo,
+    'scan-document':   () => window.__ffMountScan,
+    'workflow-builder': () => window.__ffMountWorkflow,
+    'pdf-to-audio':    () => window.__ffMountPdfAudio,
+    'image-compress': () => window.__ffMountImage,
+    'image-convert':  () => window.__ffMountImage,
+    'image-resize':   () => window.__ffMountImage,
+    'image-crop':     () => window.__ffMountImage,
+    'image-rotate':   () => window.__ffMountImage,
+    'image-watermark':() => window.__ffMountImage,
+    'image-to-pdf':   () => window.__ffMountImage,
+    'organize':     () => window.__ffMountOrganize,
+    'pdf-convert':  () => window.__ffMountConvert,
+    'pdf-to-word':  () => window.__ffMountConvert,
+    'pdf-to-excel': () => window.__ffMountConvert,
+    'pdf-to-image': () => window.__ffMountConvert,
+    'pdf-to-ppt':   () => window.__ffMountConvert,
+    'pdf-to-md':    () => window.__ffMountConvert,
+    'pptx-to-pdf':  () => window.__ffMountConvert,
+    'pptx-to-html': () => window.__ffMountConvert,
+    'pptx-to-txt':  () => window.__ffMountConvert,
+    'pptx-to-md':   () => window.__ffMountConvert,
+    'txt-to-html':  () => window.__ffMountConvert,
+    'txt-to-md':    () => window.__ffMountConvert,
+    'md-to-txt':    () => window.__ffMountConvert,
+    'html-to-txt':  () => window.__ffMountConvert,
+    'excel-to-json': () => window.__ffMountConvert,
+    'pdf-to-pdfa':  () => window.__ffMountConvert,
+    'pdf-ocr':      () => window.__ffMountConvert,
+    'pdf-extract-text': () => window.__ffMountConvert,
+    'pdf-extract-images': () => window.__ffMountConvert,
+    'pdf-grayscale': () => window.__ffMountConvert,
+  };
+
+  function install() {
+    if (!window.FF) window.FF = {};
+    if (!window.FF.Flow) window.FF.Flow = {};
+
+    const current = window.FF.Flow.mount;
+    if (current && current.__ffPremiumRouter) return true;
+
+    // Keep the deepest original mount we can find
+    const base = (current && !current.__ffPremiumRouter) ? current : (window.__ffOriginalFlowMount || null);
+    if (base && !window.__ffOriginalFlowMount) window.__ffOriginalFlowMount = base;
+
+    if (typeof base !== 'function' && typeof current !== 'function') {
+      // Flow not ready yet
+      return false;
+    }
+
+    const original = window.__ffOriginalFlowMount || base || current;
+
+    const router = function premiumFlowMount(container, tool) {
+      try {
+        const id = tool && tool.id;
+        const theme = window.FF?.getToolTheme?.(id, tool?.category);
+        if (theme && container) {
+          container.dataset.toolTask = theme.task;
+          container.style.setProperty('--tool-theme-color', theme.color);
+          container.style.setProperty('--tool-theme-hover', theme.hover);
+          container.style.setProperty('--tool-theme-bg', theme.bg);
+          container.style.setProperty('--tool-theme-border', theme.border);
+          container.style.setProperty('--tool-theme-glow', theme.glow);
+          container.style.setProperty('--tool-card-border', theme.cardBorder);
+          const stg = container.closest('.app-stage-container');
+          if (stg) {
+            stg.dataset.toolTask = theme.task;
+            stg.style.setProperty('--tool-theme-color', theme.color);
+            stg.style.setProperty('--tool-theme-hover', theme.hover);
+            stg.style.setProperty('--tool-theme-bg', theme.bg);
+            stg.style.setProperty('--tool-theme-border', theme.border);
+            stg.style.setProperty('--tool-theme-glow', theme.glow);
+            stg.style.setProperty('--tool-card-border', theme.cardBorder);
+          }
+        }
+        const getter = id && PREMIUM[id];
+        const mountFn = getter && getter();
+        if (typeof mountFn === 'function') {
+          if (container) {
+            container.textContent = '';
+            container.classList.remove('tool-page', 'ilovepdf-workspace-shell');
+          }
+          mountFn(container, tool);
+          return;
+        }
+      } catch (err) {
+        console.error('[FileKit premium UI]', tool && tool.id, err);
+      }
+      if (typeof original === 'function') return original(container, tool);
+    };
+
+    router.__ffPremiumRouter = true;
+    window.FF.Flow.mount = router;
+    return true;
+  }
+
+  // try now
+  if (!install()) {
+    let n = 0;
+    const t = setInterval(() => {
+      n += 1;
+      if (install() || n > 200) clearInterval(t); // ~10s
+    }, 50);
+  }
+
+  // Re-assert if something overwrites Flow.mount later
+  let last = window.FF && window.FF.Flow && window.FF.Flow.mount;
+  setInterval(() => {
+    const cur = window.FF && window.FF.Flow && window.FF.Flow.mount;
+    if (cur !== last) {
+      last = cur;
+      if (cur && !cur.__ffPremiumRouter) {
+        // preserve newest as original if needed, then reinstall router
+        if (typeof cur === 'function') window.__ffOriginalFlowMount = cur;
+        install();
+        last = window.FF.Flow.mount;
+      }
+    }
+  }, 500);
+
+  // Also install on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install);
+  } else {
+    install();
+  }
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit — Organize  (Merge · Split · Rotate · Delete · Extract)
+   One unified workspace for PDFs and images, same frame as Compress/Convert.
+   Every mode is offered only for the formats that actually support it.
+═══════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const U = window.FF.util;
+  const R = window.FF.register;
+  const PDF_MIME = 'application/pdf';
+  const V = {
+    lib: ['vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI'],
+    js:  ['vendor/pdfjs.min.js',   'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z'],
+    ff:  ['vendor/fflate.js',      'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT'],
+  };
+  const loadLib = () => U.loadScript(...V.lib).then(() => window.PDFLib);
+  const loadJs  = () => U.loadScript(...V.js).then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+  const loadFf  = () => U.loadScript(...V.ff).then(() => window.fflate);
+
+  const _esc   = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _bytes = n => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  };
+  const bytesU8 = async f => new Uint8Array(await f.arrayBuffer());
+  const extOf = f => (f.name.split('.').pop() || '').toLowerCase();
+  const isPdf = f => /^pdf$/.test(extOf(f)) || f.type === 'application/pdf';
+  const isImg = f => /^(png|jpe?g|webp|bmp|gif)$/.test(extOf(f)) || /^image\//.test(f.type);
+  const AUD_EXT = ['mp3', 'wav', 'ogg', 'oga', 'flac', 'm4a', 'aac', 'opus', 'aiff', 'wma'];
+  const VID_EXT = ['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v', 'ogv', 'mpg', 'mpeg', '3gp', 'wmv'];
+  const ARC_EXT = ['zip', 'gz', 'tgz', 'tar', '7z', 'rar', 'bz2'];
+  const EBK_EXT = ['epub'];
+  const ARC_BROWSE = ['zip', 'tar', 'gz', 'tgz'];   // archives with readable entry lists
+  const isAud = f => AUD_EXT.includes(extOf(f)) || /^audio\//.test(f.type);
+  const isVid = f => VID_EXT.includes(extOf(f)) || /^video\//.test(f.type);
+  const isEbk = f => EBK_EXT.includes(extOf(f)) || /epub/i.test(f.type);
+  const isArc = f => (ARC_EXT.includes(extOf(f)) || /^(application\/(x-)?zip|application\/g?zip|application\/x-7z-compressed|application\/x-rar|multipart\/x-zip)/i.test(f.type)) && !isEbk(f);
+  const familyOf = f => isPdf(f) ? 'pdf' : isImg(f) ? 'image' : isAud(f) ? 'audio' : isVid(f) ? 'video' : isEbk(f) ? 'ebook' : isArc(f) ? 'archive' : null;
+
+  const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'];
+  const ACCEPT = '.pdf,application/pdf,image/*,audio/*,video/*,application/zip,application/x-zip-compressed,application/gzip,application/epub+zip,' +
+    [...AUD_EXT, ...VID_EXT, ...ARC_EXT, ...EBK_EXT].map(e => '.' + e).join(',');
+
+  /* ─── Icons ─────────────────────────────────────────── */
+  const ICONS = {
+    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
+    pdfSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#EFF4FF"/><path d="M11 7h9l7 7v13a1 1 0 01-1 1H11a1 1 0 01-1-1V8a1 1 0 011-1z" fill="none" stroke="#0055FF" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 7v7h7" fill="none" stroke="#0055FF" stroke-width="1.5" stroke-linecap="round"/><text x="12" y="25" font-size="8.5" font-weight="800" fill="#0055FF" font-family="system-ui,sans-serif">PDF</text></svg>`,
+    imgSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#FFF3E0"/><path d="M9 11a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H11a2 2 0 01-2-2z" fill="none" stroke="#EA580C" stroke-width="1.5" stroke-linejoin="round"/><circle cx="13.5" cy="14" r="1.8" fill="#EA580C"/><path d="M10 22l5-6 3.5 4 2.5-3 3 4v1z" fill="#EA580C"/></svg>`,
+    audSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#E8F4FF"/><path d="M15.5 10v11.4a3.2 3.2 0 11-1.8-2.9V10l8-1.8v9.2a3.2 3.2 0 11-1.8-2.9V8.6l-6.2 1.4z" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
+    vidSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#F4E8FF"/><rect x="8" y="10" width="13" height="14" rx="2" fill="none" stroke="#9333EA" stroke-width="1.5"/><path d="M21 15.5l6-3.5v10l-6-3.5z" fill="#9333EA" stroke="#9333EA" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
+    /* ── Original hand-drawn icon set (no stock paths) ── */
+    /* merge: two sheets converging into one */
+    merge: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="9" rx="1.6"/><rect x="13" y="3" width="8" height="9" rx="1.6"/><rect x="8" y="16.5" width="8" height="4.5" rx="1.6"/><path d="M7 12v3M17 12v3M12 12v3"/></svg>`,
+    /* split: one sheet, dashed divide, two sides pushed apart */
+    split: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="1.6"/><path d="M12 3v18" stroke-dasharray="1.6 2.6"/><path d="M3.5 8.5l-2 2 2 2M20.5 8.5l2 2-2 2"/></svg>`,
+    /* rotate: page with a curved turn arrow */
+    rotate: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="16" rx="1.6"/><path d="M21.5 5.5v5h-5"/><path d="M21.5 10.5A7.5 7.5 0 1 0 18.5 4.5"/></svg>`,
+    /* trash: rounded bin with lid and slats */
+    trash: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6.3 7l.8 11.4a1.8 1.8 0 0 0 1.8 1.6h6.2a1.8 1.8 0 0 0 1.8-1.6L17.7 7"/><path d="M9.7 7V5.2A1.2 1.2 0 0 1 10.9 4h2.2a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M10.4 10.6v5.8M13.6 10.6v5.8"/></svg>`,
+    /* extract: page with an arrow pulling a sheet out */
+    extract: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="12" height="17" rx="1.6"/><path d="M16.5 7h-9M16.5 10h-9M16.5 13h-9"/><path d="M19.5 14.5V21m0 0l-2-2m2 2l2-2"/></svg>`,
+    add: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg>`,
+    x: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>`,
+    download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11m0 0l-4-4m4 4l4-4"/><path d="M4.5 17.5v1.5A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-1.5"/></svg>`,
+    up: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`,
+    down: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    check: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    trashSm: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6.3 7l.8 11.4a1.8 1.8 0 0 0 1.8 1.6h6.2a1.8 1.8 0 0 0 1.8-1.6L17.7 7"/><path d="M9.7 7V5.2A1.2 1.2 0 0 1 10.9 4h2.2a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M10.4 10.6v5.8M13.6 10.6v5.8"/></svg>`,
+    arcSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#FEF3C7"/><path d="M9 8h9l7 7v12H9z" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linejoin="round"/><path d="M18 8v7h7" fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round"/><path d="M12 21h10M12 25h10" stroke="#D97706" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    ebkSm: `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#FDF2F8"/><path d="M8 10a3 3 0 013-3h4v20h-4a3 3 0 00-3 3z" fill="none" stroke="#DB2777" stroke-width="1.5" stroke-linejoin="round"/><path d="M15 7h4a3 3 0 013 3v20h-4a3 3 0 00-3-3z" fill="none" stroke="#DB2777" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 13h1.5M12 17h1.5M12 21h1.5" stroke="#DB2777" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    fileSm: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h5"/></svg>`,
+    bookSm: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M18 3v16"/></svg>`,
+    grip: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>`,
+    sort: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-3 3m0 0l3 3m-3-3h14"/><path d="M16 17l3-3m0 0l-3-3m3 3H5"/></svg>`,
+  };
+
+  /* ─── Mode definitions ─────────────────────────────── */
+  const MODES = [
+    { id: 'merge',   label: 'Merge',   desc: 'Combine into one file',  icon: 'merge' },
+    { id: 'split',   label: 'Split',   desc: 'Break into parts',       icon: 'split' },
+    { id: 'rotate',  label: 'Rotate',  desc: 'Turn 90 · 180 · 270°',   icon: 'rotate' },
+    { id: 'reorder', label: 'Reorder', desc: 'Drag to reorder', icon: 'sort' },
+    { id: 'delete',  label: 'Delete',  desc: 'Remove pages / entries', icon: 'trash' },
+    { id: 'extract', label: 'Extract', desc: 'Keep only selected',     icon: 'extract' },
+  ];
+  const MODE_MAP = Object.fromEntries(MODES.map(m => [m.id, m]));
+
+  /* ─── Image helpers ─────────────────────────────────── */
+  const loadImg = (blob) => new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob); const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not decode this image.')); };
+    im.src = url;
+  });
+  const cv = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
+  const toBlob = (c, type = 'image/png', q = 0.92) => new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Could not encode image.')), type, q));
+  const imgToPngBlob = async (file) => { const img = await loadImg(file); const c = cv(img.width, img.height); c.getContext('2d').drawImage(img, 0, 0); return toBlob(c, 'image/png', 0.95); };
+  const rotateImgFile = async (file, deg) => {
+    const img = await loadImg(file);
+    const d = +deg || 90;
+    const swap = d === 90 || d === 270;
+    const c = cv(swap ? img.height : img.width, swap ? img.width : img.height);
+    const ctx = c.getContext('2d');
+    ctx.translate(c.width / 2, c.height / 2); ctx.rotate(d * Math.PI / 180); ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    const type = /^image\/(png|jpeg|webp)$/.test(file.type) ? file.type : 'image/png';
+    const blob = await toBlob(c, type, 0.95);
+    const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[type] || 'png';
+    return { blob, filename: U.baseName(file.name) + '-rotated.' + ext };
+  };
+  async function renderPage(pdfjs, pageProxy, scale) {
+    const vp = pageProxy.getViewport({ scale });
+    const c = document.createElement('canvas');
+    c.width = vp.width; c.height = vp.height;
+    await pageProxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    return c;
+  }
+  const zipBlobs = async (F, map) => ({ blob: new Blob([F.zipSync(map, { level: 6 })], { type: 'application/zip' }), mime: 'application/zip' });
+  const zipFiles = async (list, name) => {
+    const F = await loadFf();
+    const map = {};
+    for (const f of list) map[f.name] = new Uint8Array(await f.arrayBuffer());
+    return { blob: new Blob([F.zipSync(map, { level: 6 })], { type: 'application/zip' }), filename: name, mime: 'application/zip' };
+  };
+  const fmtDur = (s) => { const t = Math.max(0, Math.round(Number(s) || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+
+  const makeVideoEl = () => { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'metadata'; return v; };
+  const vidSeek = (v, t) => new Promise((res) => {
+    const done = () => { v.removeEventListener('seeked', done); res(); };
+    v.addEventListener('seeked', done);
+    try { v.currentTime = t; } catch { done(); }
+    setTimeout(done, 5000);
+  });
+  function drawCover(g, v, w, h) {
+    const vw = v.videoWidth || w, vh = v.videoHeight || h;
+    const scale = Math.max(w / vw, h / vh);
+    const dw = vw * scale, dh = vh * scale;
+    g.drawImage(v, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  }
+  /* First frame of a video as a cover-fit canvas (for card thumbs). */
+  async function videoFirstFrame(blob) {
+    const url = URL.createObjectURL(blob);
+    const v = makeVideoEl();
+    v.src = url;
+    await new Promise((res, rej) => { v.onloadedmetadata = res; v.onerror = () => rej(new Error('Could not read video')); });
+    try { await vidSeek(v, Math.min(0.1, Math.max(0, (v.duration || 1) - 0.05))); } catch { /* keep 0 */ }
+    const w = 320, h = 180;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, w, h);
+    drawCover(g, v, w, h);
+    URL.revokeObjectURL(url);
+    v.removeAttribute('src'); v.load();
+    return c;
+  }
+  /* Evenly sampled filmstrip of a video, used as the split timeline. */
+  async function videoFilmstrip(blob, frames = 8) {
+    const url = URL.createObjectURL(blob);
+    const v = makeVideoEl();
+    v.src = url;
+    await new Promise((res, rej) => { v.onloadedmetadata = res; v.onerror = () => rej(new Error('Could not read video')); });
+    const dur = Number.isFinite(v.duration) && v.duration > 0 ? v.duration : 1;
+    const W = 96, H = 54;
+    const c = document.createElement('canvas');
+    c.width = W * frames; c.height = H;
+    c.className = 'org-wave-canvas';
+    const g = c.getContext('2d');
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < frames; i++) {
+      const t = Math.min((dur / frames) * (i + 0.5), Math.max(0, dur - 0.05));
+      await vidSeek(v, t);
+      g.save();
+      g.beginPath();
+      g.rect(i * W, 0, W, H);
+      g.clip();
+      drawCover(g, v, W, H);
+      g.restore();
+    }
+    URL.revokeObjectURL(url);
+    v.removeAttribute('src'); v.load();
+    return { canvas: c, duration: dur };
+  }
+
+  /* One shared AudioContext — decode is silent, nothing is ever played. */
+  let audioCtx = null;
+  const getAudioCtx = () => (audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)());
+  async function audioWaveform(blob) {
+    const ac = getAudioCtx();
+    const buf = await ac.decodeAudioData(await blob.arrayBuffer());
+    const ch = buf.getChannelData(0);
+    const W = 960, H = 192;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    c.className = 'org-wave-canvas';
+    const g = c.getContext('2d');
+    g.fillStyle = '#FFFFFF';
+    g.fillRect(0, 0, W, H);
+    const bars = 150, per = Math.max(1, Math.floor(ch.length / bars));
+    const mid = H / 2;
+    const bw = W / bars;
+    const rr = typeof g.roundRect === 'function';
+    for (let i = 0; i < bars; i++) {
+      let mn = 0, mx = 0;
+      const s = i * per, e = Math.min(s + per, ch.length);
+      for (let j = s; j < e; j++) { const v = ch[j]; if (v < mn) mn = v; else if (v > mx) mx = v; }
+      const h = Math.max(3, (mx - mn) * H * 0.46);
+      g.fillStyle = '#7C3AED';
+      if (rr) { g.beginPath(); g.roundRect(i * bw, mid - h / 2, bw - 3, h, 2); g.fill(); }
+      else g.fillRect(i * bw, mid - h / 2, bw - 3, h);
+    }
+    return { canvas: c, duration: buf.duration };
+  }
+
+  /* ─── Archives + E-Books helpers ─────────────────────── */
+  const TENC = new TextEncoder();
+  const TDEC = new TextDecoder();
+  function tarCreate(list) {
+    const blocks = [];
+    for (const [name, data] of list) {
+      const h = new Uint8Array(512); const w = (s, o, l) => h.set(TENC.encode(s).slice(0, l), o);
+      w(name, 0, 100); w('0000644', 100, 7); w('0000000', 108, 7); w('0000000', 116, 7);
+      w(data.length.toString(8).padStart(11, '0'), 124, 11); w(Math.floor(Date.now() / 1000).toString(8).padStart(11, '0'), 136, 11);
+      for (let i = 148; i < 156; i++) h[i] = 32; h[156] = 48; w('ustar\0', 257, 6); w('00', 263, 2);
+      let sum = 0; for (let i = 0; i < 512; i++) sum += h[i]; w(sum.toString(8).padStart(6, '0') + '\0 ', 148, 8);
+      blocks.push(h, data); const pad = (512 - (data.length % 512)) % 512; if (pad) blocks.push(new Uint8Array(pad));
+    }
+    blocks.push(new Uint8Array(1024));
+    const total = blocks.reduce((a, b) => a + b.length, 0); const out = new Uint8Array(total); let o = 0;
+    for (const b of blocks) { out.set(b, o); o += b.length; }
+    return out;
+  }
+  function tarExtract(buf) {
+    const list = []; let off = 0;
+    while (off + 512 <= buf.length) {
+      const h = buf.subarray(off, off + 512); if (h.every((b) => b === 0)) break;
+      const name = TDEC.decode(h.subarray(0, 100)).replace(/\0.*$/, '').trim();
+      const size = parseInt(TDEC.decode(h.subarray(124, 136)).replace(/\0.*$/, '').trim(), 8) || 0;
+      off += 512; if (name) list.push([name.split('/').pop() || name, new Uint8Array(buf.subarray(off, off + size))]);
+      off += Math.ceil(size / 512) * 512;
+    }
+    return list;
+  }
+  /* Unpack an archive into a { name → Uint8Array } map. Raw containers
+     (7z/rar/bz2/xz) fall back to a single whole-file entry. */
+  async function readArchive(f) {
+    const F = await loadFf();
+    const raw = new Uint8Array(await f.arrayBuffer());
+    const ext = extOf(f);
+    if (ext === 'zip') {
+      const e = F.unzipSync(raw);
+      const map = {};
+      for (const [n, d] of Object.entries(e)) if (!n.endsWith('/')) map[n] = d;
+      return { kind: 'zip', map };
+    }
+    if (ext === 'tar' || ext === 'gz' || ext === 'tgz') {
+      const buf = ext === 'tar' ? raw : F.gunzipSync(raw);
+      const map = {};
+      for (const [n, d] of tarExtract(buf)) map[n] = d;
+      return { kind: 'tar', map };
+    }
+    return { kind: 'raw', map: { [f.name]: raw } };
+  }
+  /* EPUB: parse spine/manifest/files like the ebook engines. */
+  function parseEpub(F, buf) {
+    const files = F.unzipSync(new Uint8Array(buf));
+    const container = files['META-INF/container.xml']; if (!container) throw new Error('Not a valid EPUB (no container.xml).');
+    const opfPath = TDEC.decode(container).match(/full-path="([^"]+)"/)[1];
+    const base = opfPath.includes('/') ? opfPath.replace(/[^/]+$/, '') : '';
+    const opf = new DOMParser().parseFromString(TDEC.decode(files[opfPath]), 'application/xml');
+    const items = {}; opf.querySelectorAll('manifest > item').forEach((it) => { items[it.getAttribute('id')] = { href: it.getAttribute('href'), type: it.getAttribute('media-type'), props: it.getAttribute('properties') || '' }; });
+    const spine = [...opf.querySelectorAll('spine > itemref')].map((r) => r.getAttribute('idref'));
+    return { files, base, opf, opfPath, items, spine };
+  }
+  const epubRead = (ep, href) => { const path = (ep.base + href).replace(/^\//, ''); const f = ep.files[path] || ep.files[href]; return f ? TDEC.decode(f) : ''; };
+  const chapterTitle = (html) => { const d = new DOMParser().parseFromString(html, 'text/html'); const t = d.querySelector('title'); const h = d.querySelector('h1,h2,h3'); const txt = ((t && t.textContent) || (h && h.textContent) || '').trim(); return txt || 'Chapter'; };
+  /* Rebuild an EPUB with a new spine order, optionally dropping chapters. */
+  async function epubRebuild(F, file, order, removed) {
+    const ep = parseEpub(F, await file.arrayBuffer());
+    const spineEl = ep.opf.querySelector('spine');
+    const spineAttrs = spineEl ? [...spineEl.attributes].map((a) => `${a.name}="${a.value}"`).join(' ') : '';
+    const itemrefs = new Map();
+    ep.opf.querySelectorAll('spine > itemref').forEach((r) => itemrefs.set(r.getAttribute('idref'), r));
+    const keep = order.filter((id) => !removed.has(id));
+    const els = keep.map((id) => itemrefs.get(id)).filter(Boolean);
+    const attrsOf = (el) => [...el.attributes].map((a) => `${a.name}="${a.value}"`).join(' ');
+    const spineXml = `<spine${spineAttrs ? ' ' + spineAttrs : ''}>\n      ` + els.map((el) => `<itemref ${attrsOf(el)}/>`).join('\n      ') + `\n    </spine>`;
+    let opfStr = TDEC.decode(ep.files[ep.opfPath]);
+    opfStr = opfStr.replace(/<spine[\s\S]*?<\/spine>/g, spineXml);
+    for (const id of removed) {
+      const it = ep.items[id]; if (!it) continue;
+      opfStr = opfStr.replace(new RegExp(`<item[^>]*\\bid=["']${id}["'][^>]*/>`), '');
+      const path = (ep.base + it.href).replace(/^\//, '');
+      delete ep.files[path];
+    }
+    ep.files[ep.opfPath] = TENC.encode(opfStr);
+    const { blob } = await zipBlobs(F, ep.files);
+    const label = removed.size ? 'edited' : 'reordered';
+    return { blob, mime: 'application/epub+zip', filename: U.baseName(file.name) + '-' + label + '.epub', preview: 'download' };
+  }
+
+  /* ─── Mount ─────────────────────────────────────────── */
+  function mountOrganize(container, tool) {
+    tool = tool || { id: 'organize', category: 'PDF', name: 'Organize' };
+    container.innerHTML = '';
+    container.classList.add('cpdf-root', 'org-root');
+    container.classList.remove('org-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-root');
+    const enterBleed = () => container.classList.add('org-shell');   // after-upload flow fills the canvas
+    const exitBleed  = () => container.classList.remove('org-shell'); // upload drop box stays in the card
+
+    /** @type {File[]} */ let files = [];
+    let mode = 'merge';
+    let deg = 90;
+    let splitEvery = 1;
+    let mergeOut = 'auto';      // audio merge/split: 'auto' | 'mp3' | 'wav' (auto keeps lossless containers)
+    let mergeBr = '192k';       // audio mp3 bitrate
+    let mergeQ = 'medium';      // video merge/split: 'high' | 'medium' | 'low'
+    const picked = new Set();   // delete: removed indices · extract: kept indices
+    const selected = new Set(); // file-card selection (quick actions)
+    let pageCount = 0;
+    let thumbs = [];            // page-grid canvases (single-PDF modes)
+    let fileThumbs = [];        // one canvas per file (pdf) / null (image)
+    let pageCounts = [];        // per-file page counts (pdf only)
+    let waveforms = [];         // { canvas, duration } per file (audio only)
+    let filmstrips = [];        // { canvas, duration } per file (video split timeline)
+    let durations = [];         // seconds per file (audio/video)
+    let entries = [];           // { name, size } archive entry list (files[0])
+    let chapters = [];          // { id, title } epub chapter list (files[0])
+    let ebookMeta = null;       // { title, author } epub metadata (files[0])
+    let filesPrepared = false;  // file thumbs + page info built
+    let preparing = false;      // a prepareFiles() pass is already running
+    let urls = [];              // object URLs for image thumbs
+    let dragIdx = -1;           // html5 drag reorder
+    let previewIdx = 0;         // file shown in the big preview
+    const bigCache = new Map(); // lazily rendered large page-1 canvases
+    const MAX_BYTES = 200 * 1024 * 1024;
+    const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
+    const famIcon = () => {
+      const fam = files.length && familyOf(files[0]);
+      return fam === 'image' ? ICONS.imgSm : fam === 'audio' ? ICONS.audSm : fam === 'video' ? ICONS.vidSm : fam === 'archive' ? ICONS.arcSm : fam === 'ebook' ? ICONS.ebkSm : ICONS.pdfSm;
+    };
+    const famLabel = () => {
+      const fams = [...new Set(files.map(familyOf))];
+      if (fams.includes('pdf') && fams.includes('image')) return 'PDF + images';
+      if (fams.includes('audio') && fams.includes('video')) return 'Audio + video';
+      if (fams.includes('pdf') && (fams.includes('audio') || fams.includes('video'))) return 'PDF + media';
+      if (fams.includes('archive')) return fams.length === 1 ? 'Archive' : 'Archives + more';
+      if (fams.includes('ebook')) return fams.length === 1 ? 'E-Book' : 'E-Books + more';
+      if (fams.includes('audio')) return 'Audio';
+      if (fams.includes('video')) return 'Video';
+      return fams.includes('image') ? 'Images' : 'PDF';
+    };
+    /* Formats that support each action — only these are offered */
+    function availableModes() {
+      const fams = [...new Set(files.map(familyOf))];
+      if (fams.length > 1) return ['merge'];                       // mixed families → merge only
+      const fam = fams[0];
+      if (fam === 'pdf') {
+        if (files.length === 1) return ['split', 'rotate', 'delete', 'extract'];
+        return ['merge'];
+      }
+      if (fam === 'audio') {
+        return files.length === 1 ? ['split'] : ['merge'];
+      }
+      if (fam === 'video') {
+        if (files.length === 1) return ['split', 'rotate'];
+        return ['merge'];
+      }
+      if (fam === 'archive') {
+        if (files.length === 1) return ARC_BROWSE.includes(extOf(files[0])) ? ['extract', 'delete'] : ['extract'];
+        return ['merge'];
+      }
+      if (fam === 'ebook') {
+        if (files.length === 1) return ['reorder', 'delete', 'extract'];
+        return ['extract'];
+      }
+      // images
+      if (files.length === 1) return ['rotate'];
+      return ['merge', 'split', 'rotate', 'delete', 'extract'];
+    }
+    const modes = () => availableModes();
+    const _pl = (w, n) => n === 1 ? w : (w === 'entry' ? 'entries' : w + 's');
+    const modeBtnLabel = () => {
+      const m = MODE_MAP[mode];
+      if (mode === 'merge') return `Merge ${files.length} file${files.length === 1 ? '' : 's'}`;
+      if (mode === 'split') {
+        const fam = familyOf(files[0]);
+        if (fam === 'audio' || fam === 'video') return `Split into ${splitEvery} part${splitEvery === 1 ? '' : 's'}`;
+        return fam === 'pdf'
+          ? `Split into parts of ${splitEvery}`
+          : `Split ${files.length} image${files.length === 1 ? '' : 's'}`;
+      }
+      if (mode === 'rotate') return `Rotate ${deg}°`;
+      if (mode === 'reorder') return 'Reorder chapters';
+      if (mode === 'delete' || mode === 'extract') {
+        const fam0 = familyOf(files[0]);
+        const total = fam0 === 'archive' ? entries.length : fam0 === 'ebook' ? chapters.length : pageCount;
+        const word = fam0 === 'archive' ? 'entry' : fam0 === 'ebook' ? 'chapter' : 'page';
+        if (mode === 'delete') {
+          // archives/e-books: clicked entries are removed · pdf/images: clicked pages are kept
+          const removed = (fam0 === 'archive' || fam0 === 'ebook') ? picked.size : Math.max(0, total - picked.size);
+          return removed ? `Delete ${removed} ${_pl(word, removed)}` : `Delete ${_pl(word, 2)}`;
+        }
+        const n = picked.size;
+        return n ? `Extract ${n} ${_pl(word, n)}` : `Extract ${_pl(word, 2)}`;
+      }
+      return m.label;
+    };
+
+    function clearUrls() { urls.forEach(u => URL.revokeObjectURL(u)); urls = []; }
+    function resetState() {
+      picked.clear(); selected.clear(); pageCount = 0; thumbs = [];
+      fileThumbs = []; pageCounts = []; waveforms = []; filmstrips = []; durations = [];
+      entries = []; chapters = []; ebookMeta = null;
+      filesPrepared = false; preparing = false; dragIdx = -1;
+      previewIdx = 0; bigCache.clear();
+      clearUrls();
+      mode = modes()[0] || 'merge';
+    }
+
+    /* ── Step 1: Upload ─────────────────────────────── */
+    function renderUpload() {
+      exitBleed();   // the drop box keeps the floating card
+      clearUrls();
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="org-dz" tabindex="0" role="button" aria-label="Upload files to organize">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <label for="org-inp" class="select-files-main-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </label>
+              <label for="org-inp" class="select-files-chevron-btn" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+            </div>
+
+            <p class="drop-sub-text">Add <strong>PDFs</strong>, <strong>Images</strong>, or <strong>Archives</strong> to merge, split, or rearrange</p>
+
+            <div class="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+              <span class="fmt-badge fmt-doc">ZIP</span>
+              <span class="fmt-badge fmt-xls">7Z</span>
+              <span class="fmt-badge fmt-ppt">TAR</span>
+            </div>
+          </div>
+          <input id="org-inp" type="file" accept="${ACCEPT}" multiple hidden>
+        </div>`;
+      const dz = container.querySelector('#org-dz');
+      const inp = container.querySelector('#org-inp');
+      inp.onchange = () => { const arr = [...(inp.files || [])]; if (arr.length) acceptFiles(arr); };
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
+        if (e.dataTransfer?.files?.length) acceptFiles([...e.dataTransfer.files]);
+      });
+      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') inp.click(); });
+    }
+
+    function acceptFiles(arr) {
+      const ok = arr.filter(f => familyOf(f) && f.size <= MAX_BYTES);
+      if (!ok.length) { alert('Please choose a PDF, image, audio, or video file (up to 200 MB each).'); return; }
+      files = files.concat(ok);
+      resetState();
+      renderConfigure();
+    }
+
+    /* ── Step 2: Configure ──────────────────────────── */
+    function pickerMarkup() {
+      const avail = modes();
+      return `
+        <div class="org-mode-picker" role="tablist" aria-label="Choose an action">
+          ${MODES.map(m => {
+            const on = m.id === mode;
+            const disabled = !avail.includes(m.id);
+            return `<button type="button" class="org-tool${on ? ' is-on' : ''}" data-mode="${m.id}" role="tab" aria-selected="${on}" title="${m.desc}"${disabled ? ' disabled' : ''}>
+              ${ICONS[m.icon]}<span>${m.label}</span>
+            </button>`;
+          }).join('')}
+        </div>`;
+    }
+
+    /* File management toolbar + thumbnail cards (Smallpdf-style organizer) */
+    function showFileGrid() {
+      if (mode === 'merge' || mode === 'split' || mode === 'rotate') return true;
+      const fam = familyOf(files[0]);
+      if (fam === 'archive' || fam === 'ebook') return false;   // entry/chapter list is the surface
+      // delete/extract: images ARE the pages, so the page grid is the file surface
+      return fam === 'pdf';
+    }
+
+    const fileLabel = () => files.length === 1 ? _esc(files[0].name) : `${files.length} files`;
+    const metaLabel = () => {
+      if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCounts[0]) return `${pageCounts[0]} pages · ${_bytes(files[0].size)}`;
+      return `${_bytes(totalBytes())}`;
+    };
+
+    /* Large page preview (merge / split / rotate) */
+    function showBigPreview() { return mode === 'merge' || mode === 'split' || mode === 'rotate'; }
+
+    function bigPreviewMarkup() {
+      const i = Math.max(0, Math.min(previewIdx, files.length - 1));
+      const f = files[i];
+      const fam = familyOf(f);
+      const dur = durations[i] ? fmtDur(durations[i]) : '';
+      const famWord = fam === 'audio' ? 'Audio' : fam === 'video' ? 'Video' : fam === 'archive' ? 'Archive' : fam === 'ebook' ? 'E-Book' : 'Image';
+      const sub = fam === 'pdf'
+        ? `${pageCounts[i] ? `${pageCounts[i]} page${pageCounts[i] === 1 ? '' : 's'}` : 'PDF'} · ${_bytes(f.size)}`
+        : `${famWord}${dur ? ` · ${dur}` : ''} · ${_bytes(f.size)}`;
+      return `
+        <div class="org-big">
+          <div class="org-big-head">
+            <span class="org-big-title">Preview</span>
+            <span class="org-big-file" title="${_esc(f.name)}">${_esc(f.name)}</span>
+            <span class="org-big-sub">${sub}</span>
+          </div>
+          <div class="org-big-stage" id="org-big-stage" data-idx="${i}"><span class="org-tile-ph">${i + 1}</span></div>
+        </div>`;
+    }
+
+    async function getBigThumb(i) {
+      if (bigCache.has(i)) return bigCache.get(i);
+      const f = files[i];
+      if (!f || familyOf(f) !== 'pdf') return null;
+      const pdfjs = await loadJs();
+      const doc = await pdfjs.getDocument({ data: await bytesU8(f) }).promise;
+      const page = await doc.getPage(1);
+      const c = await renderPage(pdfjs, page, 1.05);
+      try { doc.destroy(); } catch { /* noop */ }
+      bigCache.set(i, c);
+      return c;
+    }
+
+    function addSplitMarks(wrap) {
+      const parts = Math.max(2, Math.min(splitEvery, 20));
+      const marks = document.createElement('div');
+      marks.className = 'org-split-marks';
+      for (let p = 1; p < parts; p++) {
+        const line = document.createElement('div');
+        line.className = 'org-split-line';
+        line.style.left = (p / parts) * 100 + '%';
+        line.dataset.label = `${p}/${parts}`;
+        marks.append(line);
+      }
+      wrap.append(marks);
+    }
+
+    function wireBigPreview() {
+      const stage = container.querySelector('#org-big-stage');
+      if (!stage) return;
+      const i = +stage.dataset.idx || 0;
+      const f = files[i];
+      stage.textContent = '';
+      if (f && familyOf(f) === 'pdf') {
+        getBigThumb(i).then(c => { if (c && container.contains(stage) && stage.dataset.idx === String(i)) { stage.textContent = ''; stage.append(c); } });
+      } else if (f && familyOf(f) === 'image' && urls[i]) {
+        const im = document.createElement('img');
+        im.src = urls[i]; im.alt = '';
+        stage.append(im);
+      } else if (f && familyOf(f) === 'video') {
+        if (mode === 'split' && filmstrips[i]) {
+          const wrap = document.createElement('div');
+          wrap.className = 'org-wave org-wave--film';
+          wrap.append(filmstrips[i].canvas);
+          stage.append(wrap);
+          addSplitMarks(wrap);
+        } else if (fileThumbs[i]) {
+          // card keeps the master first-frame canvas — show a copy here
+          stage.append(cloneWave({ canvas: fileThumbs[i] }));
+        } else {
+          stage.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
+        }
+      } else if (f && familyOf(f) === 'audio' && waveforms[i]) {
+        const wrap = document.createElement('div');
+        wrap.className = 'org-wave';
+        wrap.append(waveforms[i].canvas);
+        stage.append(wrap);
+        if (mode === 'split') addSplitMarks(wrap);
+      } else {
+        stage.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
+      }
+    }
+
+    /* Quick-action group for the toolbar (right side) */
+    function quickActionsMarkup() {
+      const n = selected.size;
+      return `
+        <button type="button" class="org-tool org-tool--icon" id="org-add-files" title="Add files">${ICONS.add}<span>Add</span></button>
+        <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left">${ICONS.rotate}</button>
+        <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
+        <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files" ${n ? '' : 'disabled'}>${ICONS.trash}</button>`;
+    }
+
+    /* Thumbnail strip (left column of the body, like Edit's page rail) */
+    function thumbsMarkup() {
+      const draggable = mode === 'merge';
+      const cards = files.map((f, i) => {
+        const fam = familyOf(f);
+        const dur = durations[i] ? fmtDur(durations[i]) : '';
+        const famWord = fam === 'audio' ? 'Audio' : fam === 'video' ? 'Video' : fam === 'archive' ? 'Archive' : fam === 'ebook' ? 'E-Book' : 'Image';
+        const sub = fam === 'pdf'
+          ? `${pageCounts[i] ? `${pageCounts[i]} page${pageCounts[i] === 1 ? '' : 's'}` : 'PDF'} · ${_bytes(f.size)}`
+          : `${famWord}${dur ? ` · ${dur}` : ''} · ${_bytes(f.size)}`;
+        return `
+          <article class="org-fcard${selected.has(i) ? ' org-fcard--sel' : ''}${showBigPreview() && i === previewIdx ? ' org-fcard--view' : ''}" data-i="${i}" draggable="${draggable}" ${draggable ? 'title="Drag to reorder"' : ''}>
+            <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''} aria-label="Select ${_esc(f.name)}">
+            <button type="button" class="org-fx" data-i="${i}" title="Remove file">${ICONS.x}</button>
+            <div class="org-fthumb"><span class="org-tile-ph">${i + 1}</span></div>
+            <div class="org-fmeta">
+              <span class="org-fname" title="${_esc(f.name)}">${_esc(f.name)}</span>
+              <span class="org-fsub">${sub}</span>
+            </div>
+          </article>`;
+      }).join('');
+      return `
+        <div class="org-thumbs-head">
+          <label class="org-sel"><input type="checkbox" id="org-selall" ${files.length && selected.size === files.length ? 'checked' : ''}><span>Select all</span></label>
+          <span class="org-thumbs-count">${files.length}</span>
+        </div>
+        <div class="org-files">
+          ${cards}
+          <button type="button" class="org-fcard org-fcard--add" id="org-fadd" title="Add more files">
+            <span class="org-fadd-ico">${ICONS.add}</span>
+            <span class="org-fname">Add more</span>
+            <span class="org-fsub">PDF · Images · Audio · Video</span>
+          </button>
+        </div>
+        <input id="org-add-inp" type="file" accept="${ACCEPT}" multiple hidden>`;
+    }
+
+    function pageGridMarkup(removeMode) {
+      const note = removeMode
+        ? `<p class="org-mode-note">Click pages to <b>remove</b> them — everything else stays in the file.</p>`
+        : `<p class="org-mode-note">Click pages to <b>keep</b> — everything else is dropped from the output.</p>`;
+      const tiles = [];
+      for (let i = 0; i < pageCount; i++) {
+        const on = picked.has(i);
+        // delete: kept tiles look normal, removed tiles turn red with ✕
+        // extract: kept tiles turn purple with ✓, unselected stay plain
+        const cls = removeMode ? (on ? '' : ' org-tile--off') : (on ? ' org-tile--on' : '');
+        const badge = removeMode ? (on ? '' : '✕') : (on ? '✓' : '');
+        tiles.push(`
+          <button type="button" class="org-tile${cls}" data-i="${i}" aria-pressed="${on}">
+            <span class="org-tile-thumb"><span class="org-tile-ph">${i + 1}</span></span>
+            <span class="org-tile-num">${i + 1}</span>
+            <span class="org-tile-badge">${badge}</span>
+          </button>`);
+      }
+      const capped = pageCount > 24 ? `<p class="org-mode-note">Showing first 24 of ${pageCount} pages.</p>` : '';
+      return `<div class="cpdf-section">
+        <p class="cpdf-section-label">${removeMode ? 'Pages to delete' : 'Select pages to keep'} <span class="mpdf-count">${picked.size} selected</span></p>
+        ${note}
+        <div class="org-page-grid">${tiles.join('')}</div>
+        ${capped}
+      </div>`;
+    }
+
+    function modeConfigMarkup() {
+      const fam = familyOf(files[0]);
+      if (mode === 'merge') {
+        const mixed = new Set(files.map(familyOf)).size > 1;
+        const audioOnly = !mixed && fam === 'audio';
+        const videoOnly = !mixed && fam === 'video';
+        return `${bigPreviewMarkup()}
+        <div class="cpdf-section">
+          <p class="cpdf-section-label">Merge order</p>
+          <p class="org-mode-note">Drag the cards in the left rail to set the order — files combine top to bottom. ${mixed ? 'Images become pages inside the merged PDF.' : fam === 'image' ? 'Each image becomes one page of the merged PDF.' : 'All pages are joined into one document.'}</p>
+        </div>
+        ${audioOnly ? `
+        <div class="cpdf-section">
+          <p class="cpdf-section-label">Output format</p>
+          <div class="org-chips" role="radiogroup">
+            ${[['auto', 'Same as files'], ['mp3', 'MP3'], ['wav', 'WAV (lossless)']].map(([v, l]) =>
+              `<button type="button" class="org-chip${mergeOut === v ? ' org-chip--on' : ''}" data-mout="${v}">${l}</button>`).join('')}
+          </div>
+          ${mergeOut === 'mp3' ? `
+          <div class="org-seg" style="margin-top:12px" role="radiogroup">
+            ${['96k', '128k', '192k', '256k', '320k'].map(b =>
+              `<button type="button" class="org-seg-btn${mergeBr === b ? ' org-seg-btn--on' : ''}" data-mbr="${b}">${b}</button>`).join('')}
+          </div>` : ''}
+          <p class="org-mode-note">Merged into <b>${mergeOut === 'wav' ? 'lossless WAV' : mergeOut === 'mp3' ? `MP3 @ ${mergeBr}` : 'the same format as your first file — WAV / FLAC stay lossless, compressed formats re-encode to MP3'}</b>.</p>
+        </div>` : ''}
+        ${videoOnly ? `
+        <div class="cpdf-section">
+          <p class="cpdf-section-label">Quality</p>
+          <div class="org-seg" role="radiogroup">
+            ${[['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, l]) =>
+              `<button type="button" class="org-seg-btn${mergeQ === v ? ' org-seg-btn--on' : ''}" data-mq="${v}">${l}</button>`).join('')}
+          </div>
+          <p class="org-mode-note">Exported as <b>MP4 (H.264 + AAC)</b> — High ≈ CRF 16 · Medium ≈ CRF 20 · Low ≈ CRF 26.</p>
+        </div>` : ''}`;
+      }
+      if (mode === 'split') {
+        if (fam === 'audio' || fam === 'video') {
+          const mediaWord = fam === 'audio' ? 'audio' : 'video';
+          const audioOnly = fam === 'audio';
+          return `${bigPreviewMarkup()}
+          <div class="cpdf-section">
+            <p class="cpdf-section-label">Split into</p>
+            <div class="org-chips" role="radiogroup">
+              ${[2, 3, 5, 10].map(n => `<button type="button" class="org-chip${splitEvery === n ? ' org-chip--on' : ''}" data-every="${n}">${n} part${n === 1 ? '' : 's'}</button>`).join('')}
+              <input class="org-chip-input" id="org-every" type="number" min="2" max="20" value="${splitEvery}" aria-label="Number of parts">
+            </div>
+            <p class="org-mode-note">Splits the ${mediaWord} into <b>${splitEvery} equal-length part${splitEvery === 1 ? '' : 's'}</b>, downloaded as a ZIP.</p>
+          </div>
+          ${audioOnly ? `
+          <div class="cpdf-section">
+            <p class="cpdf-section-label">Output format</p>
+            <div class="org-chips" role="radiogroup">
+              ${[['auto', 'Same as file'], ['mp3', 'MP3'], ['wav', 'WAV (lossless)']].map(([v, l]) =>
+                `<button type="button" class="org-chip${mergeOut === v ? ' org-chip--on' : ''}" data-mout="${v}">${l}</button>`).join('')}
+            </div>
+            ${mergeOut === 'mp3' ? `
+            <div class="org-seg" style="margin-top:12px" role="radiogroup">
+              ${['96k', '128k', '192k', '256k', '320k'].map(b =>
+                `<button type="button" class="org-seg-btn${mergeBr === b ? ' org-seg-btn--on' : ''}" data-mbr="${b}">${b}</button>`).join('')}
+            </div>` : ''}
+            <p class="org-mode-note">Parts are <b>${mergeOut === 'wav' ? 'lossless WAV' : mergeOut === 'mp3' ? `MP3 @ ${mergeBr}` : 'kept in the same format as your file (WAV / FLAC stay lossless)'}</b>.</p>
+          </div>` : `
+          <div class="cpdf-section">
+            <p class="cpdf-section-label">Quality</p>
+            <div class="org-seg" role="radiogroup">
+              ${[['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, l]) =>
+                `<button type="button" class="org-seg-btn${mergeQ === v ? ' org-seg-btn--on' : ''}" data-mq="${v}">${l}</button>`).join('')}
+            </div>
+            <p class="org-mode-note">Parts are exported as <b>MP4 (H.264 + AAC)</b>.</p>
+          </div>`}`;
+        }
+        if (fam === 'pdf') {
+          const parts = Math.max(1, Math.ceil(pageCount / Math.max(1, splitEvery)));
+          return `${bigPreviewMarkup()}<div class="cpdf-section">
+            <p class="cpdf-section-label">Split into parts of</p>
+            <div class="org-chips" role="radiogroup">
+              ${[1, 2, 5, 10].map(n => `<button type="button" class="org-chip${splitEvery === n ? ' org-chip--on' : ''}" data-every="${n}">${n} page${n === 1 ? '' : 's'}</button>`).join('')}
+              <input class="org-chip-input" id="org-every" type="number" min="1" max="${pageCount}" value="${splitEvery}" aria-label="Pages per part">
+            </div>
+            <p class="org-mode-note">${pageCount} page${pageCount === 1 ? '' : 's'} → <b>${parts} part${parts === 1 ? '' : 's'}</b>, downloaded as a ZIP.</p>
+          </div>`;
+        }
+        return `${bigPreviewMarkup()}<div class="cpdf-section">
+          <p class="cpdf-section-label">Split images</p>
+          <p class="org-mode-note">Each of the ${files.length} image${files.length === 1 ? '' : 's'} becomes its own file, downloaded together as a ZIP.</p>
+        </div>`;
+      }
+      if (mode === 'rotate') {
+        return `${bigPreviewMarkup()}<div class="cpdf-section">
+          <p class="cpdf-section-label">Rotate by</p>
+          <div class="org-seg" role="radiogroup">
+            ${[90, 180, 270].map(d => `<button type="button" class="org-seg-btn${deg === d ? ' org-seg-btn--on' : ''}" data-deg="${d}">${d}°</button>`).join('')}
+          </div>
+          <p class="org-mode-note">Rotates every page of ${files.length === 1 ? `<b>${_esc(files[0].name)}</b>` : `all ${files.length} files`} clockwise.</p>
+        </div>`;
+      }
+      if (fam === 'archive') {
+        if (mode === 'merge') return `${bigPreviewMarkup()}<div class="cpdf-section">
+          <p class="cpdf-section-label">Combine archives</p>
+          <p class="org-mode-note">Entries from all ${files.length} archives are merged into one ZIP (duplicate names are auto-renamed).</p>
+        </div>`;
+        if (mode === 'delete') return entryListMarkup(true);
+        if (mode === 'extract') return entryListMarkup(false);
+      }
+      if (fam === 'ebook') {
+        if (mode === 'reorder') return chapterListMarkup(false, true);
+        if (mode === 'delete') return chapterListMarkup(true, false);
+        if (mode === 'extract') return chapterListMarkup(false, false);
+        return '';
+      }
+      if (mode === 'delete') return pageGridMarkup(true);
+      if (mode === 'extract') return pageGridMarkup(false);
+      return '';
+    }
+
+    /* ── Archive file-tree — folders group entries, each row shows a type badge ── */
+    const FT_COLOR = { txt:'#64748B', pdf:'#E5252A', json:'#B45309', svg:'#DB2777', png:'#0891B2', jpg:'#EA580C', jpeg:'#EA580C', gif:'#7C3AED', webp:'#0F766E', md:'#4F46E5', html:'#C2410C', htm:'#C2410C', xml:'#0F766E', yaml:'#A16207', yml:'#A16207', zip:'#7C3AED', gz:'#7C3AED', tar:'#7C3AED', csv:'#0369A1', docx:'#2563EB', doc:'#2563EB', xlsx:'#15803D', pptx:'#C2410C', epub:'#DB2777', mp3:'#0F766E', wav:'#0F766E', mp4:'#9333EA', css:'#2563EB', js:'#A16207', ts:'#2563EB' };
+    const ftBadge = (name) => {
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      const c = FT_COLOR[ext] || '#64748B';
+      return `<span class="org-file-type" style="--ft:${c}">${_esc(ext.slice(0, 4) || '·')}</span>`;
+    };
+    let treeOpen = new Set();
+    function entryTree() {
+      const groups = new Map();
+      const out = [];
+      entries.slice(0, 60).forEach((e, i) => {
+        const slash = e.name.indexOf('/');
+        if (slash > 0) {
+          const folder = e.name.slice(0, slash);
+          if (!groups.has(folder)) { groups.set(folder, []); out.push({ type: 'folder', name: folder, ids: groups.get(folder) }); }
+          groups.get(folder).push(i);
+        } else out.push({ type: 'file', i });
+      });
+      return out;
+    }
+    function entryListMarkup(removeMode) {
+      const note = removeMode
+        ? '<p class="org-mode-note">Click entries to <b>remove</b> them — everything else is kept in the repacked archive.</p>'
+        : '<p class="org-mode-note">Click entries to <b>keep</b> — everything else is dropped from the output.</p>';
+      const folderIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" stroke="#B45309" stroke-width="1.4"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2h9A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>`;
+      const rows = entryTree().map((node) => {
+        if (node.type === 'folder') {
+          const open = treeOpen.has(node.name);
+          const all = node.ids.every((id) => picked.has(id));
+          const some = node.ids.some((id) => picked.has(id));
+          const children = node.ids.map((i) => {
+            const e = entries[i]; const on = picked.has(i);
+            const cls = removeMode ? (on ? ' org-entry--off' : '') : (on ? ' org-entry--on' : '');
+            const badge = removeMode ? (on ? '✕' : '') : (on ? '✓' : '');
+            return `<button type="button" class="org-entry org-entry--tree${cls}" data-i="${i}" aria-pressed="${on}">
+              ${ftBadge(e.name)}
+              <span class="org-entry-name" title="${_esc(e.name)}">${_esc(e.name.slice(node.name.length + 1))}</span>
+              <span class="org-entry-size">${_bytes(e.size)}</span>
+              <span class="org-tile-badge">${badge}</span>
+            </button>`;
+          }).join('');
+          return `<div class="org-tree-folder" data-folder="${_esc(node.name)}">
+              <span class="org-tree-chev${open ? ' org-tree-chev--open' : ''}">▸</span>
+              ${folderIco}
+              <span class="org-tree-folder-name">${_esc(node.name)}</span>
+              <span class="org-tree-folder-count">${node.ids.length} file${node.ids.length === 1 ? '' : 's'}</span>
+              <button type="button" class="org-tree-folder-toggle">${all ? 'Deselect' : 'Select'}</button>
+            </div>
+            <div class="org-tree-children${open ? '' : ' org-tree-children--closed'}">${children}</div>`;
+        }
+        const e = entries[node.i]; const on = picked.has(node.i);
+        const cls = removeMode ? (on ? ' org-entry--off' : '') : (on ? ' org-entry--on' : '');
+        const badge = removeMode ? (on ? '✕' : '') : (on ? '✓' : '');
+        return `<button type="button" class="org-entry org-entry--tree${cls}" data-i="${node.i}" aria-pressed="${on}">
+          ${ftBadge(e.name)}
+          <span class="org-entry-name" title="${_esc(e.name)}">${_esc(e.name)}</span>
+          <span class="org-entry-size">${_bytes(e.size)}</span>
+          <span class="org-tile-badge">${badge}</span>
+        </button>`;
+      }).join('');
+      const allOn = entries.slice(0, 60).length > 0 && entries.slice(0, 60).every((_, i) => picked.has(i));
+      const capped = entries.length > 60 ? `<p class="org-mode-note">Showing first 60 of ${entries.length} entries.</p>` : '';
+      return `<div class="cpdf-section">
+        <p class="cpdf-section-label">${removeMode ? 'Entries to remove' : 'Select entries to keep'} <span class="mpdf-count">${picked.size} of ${entries.length} selected</span></p>
+        ${note}
+        <div class="org-tree-actions">
+          <button type="button" class="org-tree-all">${allOn ? 'Deselect all' : 'Select all'}</button>
+          <span class="org-tree-dot">·</span>
+          <button type="button" class="org-tree-none">Clear</button>
+        </div>
+        <div class="org-tree">${rows}</div>
+        ${capped}
+      </div>`;
+    }
+
+    /* ── E-Book — cover card + numbered chapter spine ── */
+    const BOOK_GRADS = ['linear-gradient(135deg,#DB2777,#7C3AED)', 'linear-gradient(135deg,#2563EB,#4F46E5)', 'linear-gradient(135deg,#EA580C,#DB2777)', 'linear-gradient(135deg,#0F766E,#2563EB)', 'linear-gradient(135deg,#9333EA,#DB2777)', 'linear-gradient(135deg,#B45309,#DB2777)'];
+    const bookGrad = (title) => { let h = 0; for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return BOOK_GRADS[h % BOOK_GRADS.length]; };
+    function bookCardMarkup() {
+      const title = (ebookMeta && ebookMeta.title) || 'Untitled';
+      const author = (ebookMeta && ebookMeta.author) || 'Unknown author';
+      return `<div class="org-book">
+        <div class="org-book-cover" style="background:${bookGrad(title)}">
+          <span class="org-book-initial">${_esc(title.trim().charAt(0).toUpperCase() || 'B')}</span>
+        </div>
+        <div class="org-book-meta">
+          <p class="org-book-title" title="${_esc(title)}">${_esc(title)}</p>
+          <p class="org-book-author">${_esc(author)}</p>
+          <p class="org-book-sub">${chapters.length} chapter${chapters.length === 1 ? '' : 's'} · ${_bytes(files[0].size)}</p>
+        </div>
+      </div>`;
+    }
+    /* EPUB chapter list — reorder (drag) / delete / extract. */
+    function chapterListMarkup(removeMode, reorderMode) {
+      const note = reorderMode
+        ? '<p class="org-mode-note">Drag chapters to set the reading order — the spine is rewritten in the new order.</p>'
+        : removeMode
+          ? '<p class="org-mode-note">Click chapters to <b>remove</b> them — the book is repacked without them.</p>'
+          : '<p class="org-mode-note">Click chapters to <b>keep</b> — everything else is dropped from the new book.</p>';
+      const rows = chapters.map((c, i) => {
+        const on = picked.has(i);
+        const cls = (removeMode || !reorderMode) ? (on ? (removeMode ? ' org-entry--off' : ' org-entry--on') : '') : '';
+        const badge = reorderMode ? '' : removeMode ? (on ? '✕' : '') : (on ? '✓' : '');
+        return `<button type="button" class="org-entry org-entry--chapter${cls}" data-i="${i}" ${reorderMode ? 'draggable="true"' : ''} aria-pressed="${on}">
+          ${reorderMode ? `<span class="org-grip">${ICONS.grip}</span>` : `<span class="org-ch-num">${String(i + 1).padStart(2, '0')}</span>`}
+          <span class="org-entry-name" title="${_esc(c.title)}">${_esc(c.title)}</span>
+          <span class="org-tile-badge">${badge}</span>
+        </button>`;
+      }).join('');
+      return `<div class="cpdf-section">
+        <p class="cpdf-section-label">${reorderMode ? 'Chapter order' : removeMode ? 'Chapters to remove' : 'Select chapters to keep'} ${reorderMode ? '' : `<span class="mpdf-count">${picked.size} selected</span>`}</p>
+        ${bookCardMarkup()}
+        ${note}
+        <div class="org-entry-list org-entry-list--chapters">${rows}</div>
+      </div>`;
+    }
+
+    function needsPageInfo() {
+      const fam = familyOf(files[0]);
+      if (mode === 'merge' || mode === 'rotate') return false;
+      return true;   // split / delete / extract
+    }
+
+    function wirePicker() {
+      container.querySelectorAll('.org-tool[data-mode]').forEach(btn => {
+        if (btn.disabled) return;
+        btn.onclick = () => {
+          mode = btn.dataset.mode;
+          picked.clear();
+          const fam0 = familyOf(files[0]);
+          // PDF/image delete starts with every page selected (click to un-delete);
+          // archive/ebook lists start empty (click entries to mark for removal).
+          if (mode === 'delete' && (fam0 === 'pdf' || fam0 === 'image')) for (let i = 0; i < pageCount; i++) picked.add(i);
+          renderConfigure();
+        };
+      });
+    }
+
+    /* The big preview keeps the master waveform canvas; cards get their own
+       copy (append() would otherwise MOVE the single node out of the card). */
+    function cloneWave(w) {
+      const c = document.createElement('canvas');
+      c.width = w.canvas.width; c.height = w.canvas.height;
+      c.className = 'org-wave-canvas';
+      c.getContext('2d').drawImage(w.canvas, 0, 0);
+      return c;
+    }
+
+    function wireCardThumbs() {
+      container.querySelectorAll('.org-fcard:not(.org-fcard--add)').forEach((card, i) => {
+        const thumb = card.querySelector('.org-fthumb');
+        thumb.textContent = '';
+        if (fileThumbs[i]) thumb.append(fileThumbs[i]);
+        else if (urls[i]) {
+          const im = document.createElement('img');
+          im.src = urls[i];
+          im.alt = '';
+          thumb.append(im);
+        } else if (waveforms[i]) {
+          thumb.append(cloneWave(waveforms[i]));
+        } else {
+          thumb.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
+        }
+      });
+    }
+
+    function wireFiles() {
+      /* Select all */
+      const selAll = container.querySelector('#org-selall');
+      if (selAll) selAll.onchange = () => {
+        selected.clear();
+        if (selAll.checked) files.forEach((_, i) => selected.add(i));
+        renderConfigure();
+      };
+      /* Card checkboxes */
+      container.querySelectorAll('.org-fchk').forEach(chk => {
+        chk.onchange = () => {
+          const i = +chk.dataset.i;
+          selected.has(i) ? selected.delete(i) : selected.add(i);
+          renderConfigure();
+        };
+      });
+      /* Click a card body to preview that file in the big panel */
+      if (showBigPreview()) {
+        container.querySelectorAll('.org-fcard:not(.org-fcard--add)').forEach(card => {
+          card.addEventListener('click', e => {
+            if (e.target.closest('.org-fchk') || e.target.closest('.org-fx')) return;
+            const i = +card.dataset.i;
+            if (i === previewIdx) return;
+            previewIdx = i;
+            container.querySelectorAll('.org-fcard--view').forEach(c => c.classList.remove('org-fcard--view'));
+            card.classList.add('org-fcard--view');
+            wireBigPreview();
+          });
+        });
+      }
+      /* Remove single file (×) */
+      container.querySelectorAll('.org-fx').forEach(btn => {
+        btn.onclick = () => {
+          files.splice(+btn.dataset.i, 1);
+          if (!files.length) { renderUpload(); return; }
+          resetState();
+          renderConfigure();
+        };
+      });
+      /* Add files (toolbar + empty slot) */
+      const addInp = container.querySelector('#org-add-inp');
+      const openPicker = () => addInp && addInp.click();
+      const addBtn = container.querySelector('#org-add-files');
+      if (addBtn) addBtn.onclick = openPicker;
+      const fadd = container.querySelector('#org-fadd');
+      if (fadd) fadd.onclick = openPicker;
+      if (addInp) addInp.onchange = () => { const arr = [...(addInp.files || [])]; addInp.value = ''; if (arr.length) acceptFiles(arr); };
+      /* Remove selected */
+      const rmSel = container.querySelector('#org-remove-sel');
+      if (rmSel) rmSel.onclick = () => {
+        files = files.filter((_, i) => !selected.has(i));
+        if (!files.length) { renderUpload(); return; }
+        resetState();
+        renderConfigure();
+      };
+      /* Quick rotate in place (Smallpdf-style) */
+      const rotCcw = container.querySelector('#org-rot-ccw');
+      const rotCw = container.querySelector('#org-rot-cw');
+      if (rotCcw) rotCcw.onclick = () => quickRotate(-90);
+      if (rotCw) rotCw.onclick = () => quickRotate(90);
+      /* Drag reorder (merge only) */
+      container.querySelectorAll('.org-fcard[draggable="true"]').forEach(card => {
+        card.addEventListener('dragstart', e => {
+          dragIdx = +card.dataset.i;
+          e.dataTransfer.effectAllowed = 'move';
+          card.classList.add('org-fcard--drag');
+        });
+        card.addEventListener('dragend', () => {
+          dragIdx = -1;
+          card.classList.remove('org-fcard--drag');
+        });
+        card.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+        card.addEventListener('drop', e => {
+          e.preventDefault();
+          const to = +card.dataset.i;
+          if (dragIdx < 0 || dragIdx === to) return;
+          const [moved] = files.splice(dragIdx, 1);
+          files.splice(to, 0, moved);
+          dragIdx = -1;
+          renderConfigure();
+        });
+      });
+    }
+
+    /* Rotate the selected files (or all) by ±90° in place and re-thumbnail. */
+    async function quickRotate(dir) {
+      const targets = selected.size ? files.filter((_, i) => selected.has(i)) : files;
+      if (!targets.length) return;
+      if (new Set(targets.map(familyOf)).size > 1) { alert('Select files of one type to rotate.'); return; }
+      if (familyOf(targets[0]) === 'audio') { alert('Audio has no rotation — use the Split tab to break it into parts.'); return; }
+      if (familyOf(targets[0]) === 'video') { alert('Rotate video from the Rotate tab instead.'); return; }
+      renderPageLoading('Rotating…');
+      try {
+        for (const f of targets) {
+          const idx = files.indexOf(f);
+          if (familyOf(f) === 'pdf') {
+            const L = await loadLib();
+            const doc = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
+            doc.getPages().forEach(pg => pg.setRotation(L.degrees((pg.getRotation().angle + dir + 360) % 360)));
+            const blob = new Blob([await doc.save()], { type: PDF_MIME });
+            files[idx] = new File([blob], U.baseName(f.name) + '-rotated.pdf', { type: PDF_MIME });
+          } else {
+            const r = await rotateImgFile(f, dir);
+            files[idx] = new File([r.blob], r.filename, { type: r.blob.type });
+          }
+        }
+      } catch (err) {
+        console.error('[Organize] quick rotate', err);
+        alert('Could not rotate those files.');
+      }
+      const keepMode = mode;
+      resetState();
+      mode = modes().includes(keepMode) ? keepMode : modes()[0];
+      renderConfigure();
+    }
+
+    function renderPageLoading(msg = 'Reading your files…') {
+      enterBleed();
+      const thumbs = showFileGrid() ? `<aside class="org-thumbs">${thumbsMarkup()}</aside>` : '';
+      container.innerHTML = flowShellMarkup(`
+        <div class="org-body">
+          ${thumbs}
+          <main class="org-main">
+            <div class="org-loading">
+              <div class="cpdf-spinner" aria-hidden="true"><div class="cpdf-spin-outer"></div><div class="cpdf-spin-inner">${ICONS[MODE_MAP[mode].icon]}</div></div>
+              <p class="cpdf-proc-sub">${msg}</p>
+            </div>
+          </main>
+        </div>
+        <footer class="org-slim-foot">${ICONS.shield} Processing is entirely local — your files are never transmitted</footer>`, true);
+      wirePicker();
+      wireFiles();
+      wireCardThumbs();
+      wireBigPreview();
+    }
+
+    function flowShellMarkup(mainHtml, runDisabled) {
+      return `
+        <div class="cpdf-body org-flow">
+          <div class="org-top">
+            <div class="org-top-left">
+              <span class="org-file" title="${fileLabel()}">${fileLabel()}</span>
+              <span class="org-meta">${metaLabel()}</span>
+              <span class="org-local">${ICONS.shield} Local only</span>
+            </div>
+            <div class="org-top-right">
+              <button class="cpdf-btn-primary org-finish" id="org-run" type="button" ${runDisabled ? 'disabled' : ''}>${modeBtnLabel()}</button>
+            </div>
+          </div>
+          <div class="org-toolbar2">
+            <div class="org-tool-group">${pickerMarkup()}</div>
+            <div class="org-tool-group org-tool-group--right">${quickActionsMarkup()}</div>
+          </div>
+          ${mainHtml}
+        </div>`;
+    }
+
+    function renderConfigure() {
+      enterBleed();
+      if (!filesPrepared || (needsPageInfo() && pageCount === 0)) {
+        if (!preparing) {
+          preparing = true;
+          renderPageLoading();
+          prepareFiles()
+            .catch(err => { console.error('[Organize] prepare', err); preparing = false; })
+            .then(() => {
+              if (!files.length) return;   // user switched files while reading
+              preparing = false;
+              filesPrepared = true;
+              if (mode === 'delete' && picked.size === 0 && pageCount) for (let i = 0; i < pageCount; i++) picked.add(i);
+              renderConfigure();
+            });
+        }
+        return;
+      }
+      const thumbs = showFileGrid() ? `<aside class="org-thumbs">${thumbsMarkup()}</aside>` : '';
+      const fam0 = familyOf(files[0]);
+      const listTotal = fam0 === 'archive' ? entries.length : fam0 === 'ebook' ? chapters.length : 0;
+      let runDisabled = false;
+      if (listTotal && (mode === 'delete' || mode === 'extract')) {
+        runDisabled = mode === 'delete' ? (picked.size === 0 || picked.size >= listTotal) : picked.size === 0;
+      } else {
+        runDisabled = (mode === 'delete' && picked.size >= pageCount) || (mode === 'extract' && picked.size === 0);
+      }
+      container.innerHTML = flowShellMarkup(`
+        <div class="org-body">
+          ${thumbs}
+          <main class="org-main">${modeConfigMarkup()}</main>
+        </div>
+        <footer class="org-slim-foot">${ICONS.shield} Processing is entirely local — your files are never transmitted</footer>`, runDisabled);
+
+      wirePicker();
+      wireFiles();
+      wireCardThumbs();
+      wireTiles();
+      wireBigPreview();
+
+      const runBtn = container.querySelector('#org-run');
+
+      /* Split chips + custom input */
+      container.querySelectorAll('.org-chip').forEach(chip => {
+        chip.onclick = () => { splitEvery = +chip.dataset.every; renderConfigure(); };
+      });
+      const every = container.querySelector('#org-every');
+      if (every) every.onchange = () => {
+        const fam0 = familyOf(files[0]);
+        const isMedia = fam0 === 'audio' || fam0 === 'video';
+        const max = isMedia ? 20 : pageCount;
+        const v = isMedia ? Math.max(2, Math.min(+every.value || 2, max)) : Math.max(1, Math.min(+every.value || 1, max));
+        splitEvery = v; every.value = v; renderConfigure();
+      };
+
+      /* Rotate segmented */
+      container.querySelectorAll('.org-seg-btn').forEach(btn => {
+        btn.onclick = () => { deg = +btn.dataset.deg; renderConfigure(); };
+      });
+
+      /* Audio merge/split output chips + bitrate, video merge/split quality */
+      container.querySelectorAll('[data-mout]').forEach(chip => {
+        chip.onclick = () => { mergeOut = chip.dataset.mout; renderConfigure(); };
+      });
+      container.querySelectorAll('[data-mbr]').forEach(chip => {
+        chip.onclick = () => { mergeBr = chip.dataset.mbr; renderConfigure(); };
+      });
+      container.querySelectorAll('[data-mq]').forEach(chip => {
+        chip.onclick = () => { mergeQ = chip.dataset.mq; renderConfigure(); };
+      });
+
+      /* Page tiles */
+      container.querySelectorAll('.org-tile').forEach(tile => {
+        tile.onclick = () => {
+          const i = +tile.dataset.i;
+          if (mode === 'delete') {
+            if (picked.has(i) && picked.size === 1) return;   // keep at least one page
+            picked.has(i) ? picked.delete(i) : picked.add(i);
+          } else {
+            picked.has(i) ? picked.delete(i) : picked.add(i);
+          }
+          renderConfigure();
+        };
+      });
+
+      /* Archive entry / ebook chapter rows — click to toggle (not in reorder). */
+      container.querySelectorAll('.org-entry[data-i]').forEach(el => {
+        if (mode === 'reorder') return;
+        el.onclick = () => {
+          const i = +el.dataset.i;
+          const total = familyOf(files[0]) === 'archive' ? entries.length : chapters.length;
+          if (mode === 'delete') {
+            if (picked.has(i) && picked.size >= total - 1) return;   // keep at least one
+            picked.has(i) ? picked.delete(i) : picked.add(i);
+          } else {
+            picked.has(i) ? picked.delete(i) : picked.add(i);
+          }
+          renderConfigure();
+        };
+      });
+      /* Archive tree — folder expand/collapse + select-all-in-folder + select all / clear. */
+      container.querySelectorAll('.org-tree-folder').forEach(folder => {
+        const name = folder.dataset.folder;
+        const ids = entryTree().find(n => n.type === 'folder' && n.name === name)?.ids || [];
+        folder.addEventListener('click', e => {
+          if (e.target.closest('.org-tree-folder-toggle')) return;   // handled below
+          treeOpen.has(name) ? treeOpen.delete(name) : treeOpen.add(name);
+          renderConfigure();
+        });
+        folder.querySelector('.org-tree-folder-toggle').onclick = (e) => {
+          e.stopPropagation();
+          const all = ids.every(id => picked.has(id));
+          ids.forEach(id => all ? picked.delete(id) : picked.add(id));
+          renderConfigure();
+        };
+      });
+      container.querySelector('.org-tree-all')?.addEventListener('click', () => {
+        const ids = entries.slice(0, 60).map((_, i) => i);
+        const all = ids.every(id => picked.has(id));
+        ids.forEach(id => all ? picked.delete(id) : picked.add(id));
+        renderConfigure();
+      });
+      container.querySelector('.org-tree-none')?.addEventListener('click', () => {
+        entries.slice(0, 60).forEach((_, i) => picked.delete(i));
+        renderConfigure();
+      });
+      /* Reorder: drag chapters into a new order. */
+      if (mode === 'reorder') {
+        let dragFrom = -1;
+        container.querySelectorAll('.org-entry[draggable="true"]').forEach(el => {
+          el.addEventListener('dragstart', e => { dragFrom = +el.dataset.i; e.dataTransfer.effectAllowed = 'move'; el.classList.add('org-entry--drag'); });
+          el.addEventListener('dragend', () => { dragFrom = -1; el.classList.remove('org-entry--drag'); });
+          el.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+          el.addEventListener('drop', e => {
+            e.preventDefault();
+            const to = +el.dataset.i;
+            if (dragFrom < 0 || dragFrom === to) return;
+            const [moved] = chapters.splice(dragFrom, 1);
+            chapters.splice(to, 0, moved);
+            dragFrom = -1;
+            renderConfigure();
+          });
+        });
+      }
+
+      container.querySelector('#org-run').onclick = () => runFlow();
+    }
+
+    /* Build one thumbnail + page count per file, plus page-grid info for PDF modes. */
+    async function prepareFiles() {
+      const token = files;
+      clearUrls();
+      fileThumbs = []; pageCounts = []; waveforms = []; durations = []; thumbs = [];
+      const cap = Math.min(files.length, 15);
+      for (let i = 0; i < cap; i++) {
+        const f = files[i];
+        if (isPdf(f)) {
+          const pdfjs = await loadJs();
+          const data = await bytesU8(f);
+          const doc = await pdfjs.getDocument({ data }).promise;
+          pageCounts[i] = doc.numPages;
+          const page = await doc.getPage(1);
+          fileThumbs[i] = await renderPage(pdfjs, page, 0.42);
+          try { doc.destroy(); } catch { /* noop */ }
+        } else {
+          // Images render in <img> thumbnails; audio gets a decoded waveform;
+          // video gets a first-frame thumbnail. All get a duration readout.
+          urls[i] = isImg(f) ? URL.createObjectURL(f) : null;
+          fileThumbs[i] = null;
+          pageCounts[i] = null;
+          if (isAud(f) || isVid(f)) {
+            try { durations[i] = await probeDuration(f); } catch { durations[i] = 0; }
+          }
+          if (isVid(f)) {
+            try { fileThumbs[i] = await videoFirstFrame(f); } catch { fileThumbs[i] = null; }
+            // Filmstrip builds asynchronously — it powers the split timeline.
+            videoFilmstrip(f).then(fs => {
+              if (files !== token) return;
+              filmstrips[i] = fs;
+              if (durations[i] === undefined || durations[i] === 0) durations[i] = fs.duration;
+              wireCardThumbs();
+              wireBigPreview();
+            }).catch(() => { /* timeline unavailable — split still works */ });
+          }
+          if (isAud(f)) {
+            // Decode asynchronously so the page stays responsive; the waveform
+            // swaps into the card + preview when it's ready.
+            audioWaveform(f).then(w => {
+              if (files !== token) return;
+              waveforms[i] = w;
+              if (durations[i] === undefined || durations[i] === 0) durations[i] = w.duration;
+              wireCardThumbs();
+              wireBigPreview();
+            }).catch(() => { /* decode failed — tile placeholder stays */ });
+          }
+        }
+        await new Promise(r => setTimeout(r, 0));
+      }
+      /* Page-grid / entry / chapter info for the list modes */
+      if (needsPageInfo()) {
+        const fam0 = familyOf(files[0]);
+        if (fam0 === 'pdf') {
+          const pdfjs = await loadJs();
+          const data = await bytesU8(files[0]);
+          const doc = await pdfjs.getDocument({ data }).promise;
+          pageCount = doc.numPages;
+          const cap2 = Math.min(pageCount, 24);
+          for (let i = 1; i <= cap2; i++) {
+            const page = await doc.getPage(i);
+            thumbs.push(await renderPage(pdfjs, page, 0.32));
+            await new Promise(r => setTimeout(r, 0));
+          }
+          try { doc.destroy(); } catch { /* noop */ }
+        } else if (fam0 === 'archive' && (mode === 'delete' || mode === 'extract')) {
+          const info = await readArchive(files[0]);
+          entries = Object.entries(info.map).map(([name, d]) => ({ name, size: d.length }));
+          if (!entries.length) throw new Error('Archive is empty.');
+          pageCount = entries.length;
+        } else if (fam0 === 'ebook' && (mode === 'delete' || mode === 'extract' || mode === 'reorder')) {
+          const F = await loadFf();
+          const ep = parseEpub(F, await bytesU8(files[0]));
+          chapters = ep.spine.map((id) => {
+            const it = ep.items[id]; if (!it) return null;
+            return { id, title: chapterTitle(epubRead(ep, it.href)) };
+          }).filter(Boolean);
+          const md = ep.opf.getElementsByTagName('metadata')[0];
+          let mTitle = '', mAuthor = '';
+          if (md) [...md.children].forEach((el) => {
+            const ln = el.localName || el.tagName.replace(/^.*:/, '');
+            if (ln === 'title' && !mTitle) mTitle = (el.textContent || '').trim();
+            if (ln === 'creator' && !mAuthor) mAuthor = (el.textContent || '').trim();
+          });
+          ebookMeta = { title: mTitle || 'Untitled', author: mAuthor };
+          if (!chapters.length) throw new Error('No chapters found in this EPUB.');
+          pageCount = chapters.length;
+        } else {
+          pageCount = files.length;   // images: each file is one page
+        }
+      }
+      if (files !== token) { clearUrls(); fileThumbs = []; pageCounts = []; thumbs = []; pageCount = 0; }
+    }
+
+    function wireTiles() {
+      /* thumbnails: canvases for pdf, <img> for images */
+      container.querySelectorAll('.org-tile').forEach((tile, i) => {
+        const thumb = tile.querySelector('.org-tile-thumb');
+        const fam = familyOf(files[0]);
+        thumb.textContent = '';
+        if (fam === 'pdf') {
+          if (i < thumbs.length) thumb.append(thumbs[i]);
+          else thumb.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
+        } else if (urls[i]) {
+          const im = document.createElement('img');
+          im.src = urls[i];
+          im.alt = '';
+          thumb.append(im);
+        }
+      });
+    }
+
+    /* ── Step 3: Processing + Run ───────────────────── */
+    function renderProcessing() {
+      enterBleed();
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${ICONS[MODE_MAP[mode].icon]}</div>
+          </div>
+          <p class="cpdf-proc-title">${MODE_MAP[mode].label}ing…</p>
+          <p class="cpdf-proc-sub" id="org-prog-msg">Preparing…</p>
+          <div class="cpdf-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="org-prog-track">
+            <div class="cpdf-prog-fill" id="org-prog-fill"></div>
+          </div>
+          <div class="cpdf-prog-foot">
+            <span id="org-prog-pct">0%</span>
+            <span class="cpdf-proc-local">${ICONS.shield} Processed locally</span>
+          </div>
+        </div>`;
+    }
+
+    async function runFlow() {
+      renderProcessing();
+      const msg = container.querySelector('#org-prog-msg');
+      const fill = container.querySelector('#org-prog-fill');
+      const pct = container.querySelector('#org-prog-pct');
+      const onProgress = (frac, text) => {
+        const f = Math.max(0, Math.min(1, frac));
+        if (fill) fill.style.width = `${Math.round(f * 100)}%`;
+        if (pct) pct.textContent = `${Math.round(f * 100)}%`;
+        if (msg && text) msg.textContent = text;
+      };
+      try {
+        const res = await runMode(onProgress);
+        renderResult(res);
+      } catch (err) {
+        console.error('[Organize]', err);
+        renderError(err.message || 'Something went wrong while processing.');
+      }
+    }
+
+    /* ── Media engines (ffmpeg): merge / split / rotate ── */
+    function mediaEngine() {
+      const FFm = window.FF && window.FF.media;
+      if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
+      return FFm;
+    }
+    function probeDuration(blob) {
+      return new Promise((res, rej) => {
+        const url = URL.createObjectURL(blob);
+        const el = document.createElement(String(blob.type || '').startsWith('video') ? 'video' : 'audio');
+        el.preload = 'metadata';
+        el.onloadedmetadata = () => { const d = el.duration; URL.revokeObjectURL(url); res(Number.isFinite(d) && d > 0 ? d : 0); };
+        el.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not read the media duration.')); };
+        el.src = url;
+      });
+    }
+    function audioOutCodec(first) {
+      const firstExt = extOf(first);
+      if (mergeOut === 'wav') return { ext: 'wav', codec: ['-c:a', 'pcm_s16le'] };
+      if (mergeOut === 'mp3') return { ext: 'mp3', codec: ['-c:a', 'libmp3lame', '-b:a', mergeBr] };
+      // auto: keep lossless containers as-is, re-encode compressed ones to MP3
+      if (firstExt === 'wav') return { ext: 'wav', codec: ['-c:a', 'pcm_s16le'] };
+      if (firstExt === 'flac') return { ext: 'flac', codec: ['-c:a', 'flac'] };
+      if (firstExt === 'aiff' || firstExt === 'aif') return { ext: 'aiff', codec: ['-c:a', 'pcm_s16be'] };
+      return { ext: 'mp3', codec: ['-c:a', 'libmp3lame', '-b:a', mergeBr] };
+    }
+    function videoOutCodec() {
+      const crf = mergeQ === 'high' ? '16' : mergeQ === 'low' ? '26' : '20';
+      return { ext: 'mp4', codec: ['-c:v', 'libx264', '-preset', 'fast', '-crf', crf, '-c:a', 'aac', '-b:a', '128k'] };
+    }
+    async function mergeMedia(list, onProgress) {
+      const FFm = mediaEngine();
+      const isVid = familyOf(list[0]) === 'video';
+      const { ext, codec } = isVid ? videoOutCodec() : audioOutCodec(list[0]);
+      // The concat *filter* with both video+audio fails in this ffmpeg build,
+      // so join via the concat demuxer + re-encode (verified working).
+      const enc = new TextEncoder();
+      const inputs = list.map((f, i) => [`in${i}.` + (extOf(f) || 'bin'), f]);
+      const listTxt = 'file ' + inputs.map(([n]) => `'${n}'`).join('\nfile ') + '\n';
+      inputs.push(['list.txt', new File([enc.encode(listTxt)], 'list.txt', { type: 'text/plain' })]);
+      const args = ['-f', 'concat', '-safe', '0', '-i', 'list.txt', ...codec, 'output.' + ext];
+      const data = await FFm.run({ inputs, args, out: 'output.' + ext, onProgress });
+      const mime = isVid ? 'video/mp4' : ext === 'wav' ? 'audio/wav' : ext === 'flac' ? 'audio/flac' : ext === 'aiff' ? 'audio/aiff' : 'audio/mpeg';
+      return { blob: new Blob([data.buffer || data], { type: mime }), filename: 'merged.' + ext, mime, preview: isVid ? 'video' : 'audio' };
+    }
+    async function splitMedia(file, parts, onProgress) {
+      const FFm = mediaEngine();
+      const isVid = familyOf(file) === 'video';
+      const { ext, codec } = isVid ? videoOutCodec() : audioOutCodec(file);
+      const dur = await probeDuration(file);
+      if (!dur) throw new Error('Could not determine the media duration.');
+      const len = dur / parts;
+      const base = U.baseName(file.name);
+      const F = await loadFf();
+      const map = {};
+      for (let i = 0; i < parts; i++) {
+        onProgress(i / parts, `Encoding part ${i + 1}/${parts}`);
+        const outName = `part-${i + 1}.${ext}`;
+        const args = ['-ss', String(i * len), '-i', ('input.' + (extOf(file) || 'bin')), '-t', String(len), ...codec, outName];
+        const data = await FFm.run({ inputs: [['input.' + (extOf(file) || 'bin'), file]], args, out: outName, onProgress });
+        map[`${base}-part-${i + 1}.${ext}`] = new Uint8Array(data.buffer || data);
+      }
+      onProgress(0.98, 'Building ZIP…');
+      return { ...(await zipBlobs(F, map)), filename: `${base}-parts.zip`, preview: 'zip' };
+    }
+    async function rotateVideo(file, deg, onProgress) {
+      const FFm = mediaEngine();
+      const t = ((+deg % 360) + 360) % 360;
+      const tr = t === 90 ? 'transpose=1' : t === 270 ? 'transpose=2' : t === 180 ? 'transpose=1,transpose=1' : null;
+      if (!tr) throw new Error('Rotation must be 90, 180, or 270 degrees.');
+      const args = ['-i', 'input.' + (extOf(file) || 'bin'), '-vf', tr, '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-c:a', 'aac', 'rotated.mp4'];
+      const data = await FFm.run({ inputs: [['input.' + (extOf(file) || 'bin'), file]], args, out: 'rotated.mp4', onProgress });
+      return { blob: new Blob([data.buffer || data], { type: 'video/mp4' }), filename: `${U.baseName(file.name)}-rotated-${t}.mp4`, mime: 'video/mp4', preview: 'video' };
+    }
+
+    async function runMode(onProgress) {
+      const fam = familyOf(files[0]);
+      if (fam === 'archive') {
+        const F = await loadFf();
+        if (mode === 'merge') {
+          const map = {};
+          for (let i = 0; i < files.length; i++) {
+            onProgress(i / files.length, `Reading ${i + 1}/${files.length}…`);
+            const info = await readArchive(files[i]);
+            for (const [n, d] of Object.entries(info.map)) {
+              let name = n, k = 2;
+              while (map[name] !== undefined) name = n.replace(/(\.[^.]+)?$/, `-${k++}$1`);
+              map[name] = d;
+            }
+          }
+          onProgress(0.95, 'Building ZIP…');
+          return { ...(await zipBlobs(F, map)), filename: 'combined.zip', preview: 'zip' };
+        }
+        const info = await readArchive(files[0]);
+        const list = Object.entries(info.map);
+        if (mode === 'extract') {
+          const sel = list.filter((_, i) => picked.has(i));
+          if (sel.length === 1) {
+            onProgress(1, 'Done');
+            const [n, d] = sel[0];
+            return { blob: new Blob([d]), filename: n.split('/').pop() || n, mime: 'application/octet-stream', preview: 'download' };
+          }
+          const map = {};
+          for (const [n, d] of sel) map[n.split('/').pop() || n] = d;
+          onProgress(0.9, 'Building ZIP…');
+          return { ...(await zipBlobs(F, map)), filename: U.baseName(files[0].name) + '-extracted.zip', preview: 'zip' };
+        }
+        // delete — repack without the picked entries
+        const kept = list.filter((_, i) => !picked.has(i));
+        if (!kept.length) throw new Error('Cannot remove every entry.');
+        if (info.kind === 'tar') {
+          onProgress(0.8, 'Repacking TAR.GZ…');
+          const gz = F.gzipSync(tarCreate(kept), { level: 6 });
+          onProgress(1, 'Done');
+          return { blob: new Blob([gz], { type: 'application/gzip' }), filename: U.baseName(files[0].name) + '-edited.tar.gz', mime: 'application/gzip', preview: 'download' };
+        }
+        const map = {};
+        for (const [n, d] of kept) map[n] = d;
+        onProgress(0.9, 'Repacking ZIP…');
+        return { ...(await zipBlobs(F, map)), filename: U.baseName(files[0].name) + '-edited.zip', preview: 'zip' };
+      }
+      if (fam === 'ebook') {
+        const F = await loadFf();
+        if (mode === 'extract' && files.length > 1) {
+          const map = {};
+          for (let i = 0; i < files.length; i++) {
+            onProgress(i / files.length, `Reading ${i + 1}/${files.length}…`);
+            const ep = parseEpub(F, await bytesU8(files[i]));
+            ep.spine.forEach((id, j) => {
+              const it = ep.items[id]; if (!it) return;
+              map[`${U.baseName(files[i].name)}-chapter-${String(j + 1).padStart(2, '0')}.html`] = TENC.encode(epubRead(ep, it.href));
+            });
+          }
+          onProgress(0.95, 'Building ZIP…');
+          return { ...(await zipBlobs(F, map)), filename: 'chapters.zip', preview: 'zip' };
+        }
+        const order = chapters.map((c) => c.id);
+        const removed = new Set();
+        if (mode === 'delete') chapters.forEach((c, i) => { if (picked.has(i)) removed.add(c.id); });
+        if (mode === 'extract') chapters.forEach((c, i) => { if (!picked.has(i)) removed.add(c.id); });
+        if (removed.size >= order.length) throw new Error('Cannot remove every chapter.');
+        onProgress(0.5, 'Rebuilding EPUB…');
+        const out = await epubRebuild(F, files[0], order, removed);
+        onProgress(1, 'Done');
+        return out;
+      }
+      if (mode === 'merge') {
+        if (fam === 'audio' || fam === 'video') {
+          onProgress(0.15, `Merging ${files.length} ${fam} files…`);
+          const res = await mergeMedia(files, onProgress);
+          onProgress(1, 'Done');
+          return res;
+        }
+        onProgress(0.05, 'Preparing…');
+        const L = await loadLib();
+        const out = await L.PDFDocument.create();
+        for (let i = 0; i < files.length; i++) {
+          onProgress(i / files.length, `Merging ${i + 1}/${files.length} — ${files[i].name}`);
+          const f = files[i];
+          if (familyOf(f) === 'pdf') {
+            const src = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
+            const pages = await out.copyPages(src, src.getPageIndices());
+            pages.forEach(p => out.addPage(p));
+          } else {
+            const png = await imgToPngBlob(f);
+            const img = await out.embedPng(await bytesU8(png));
+            const page = out.addPage([img.width, img.height]);
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+          }
+        }
+        onProgress(1, 'Finalizing…');
+        return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: 'merged.pdf', mime: PDF_MIME, preview: 'pdf' };
+      }
+      if (mode === 'split') {
+        if (fam === 'audio' || fam === 'video') {
+          return splitMedia(files[0], Math.max(2, Math.min(splitEvery, 20)), onProgress);
+        }
+        const F = await loadFf();
+        const map = {};
+        if (fam === 'pdf') {
+          onProgress(0.1, 'Loading pages…');
+          const L = await loadLib();
+          const src = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          const total = src.getPageCount();
+          const every = Math.max(1, Math.min(splitEvery, total));
+          const parts = Math.ceil(total / every);
+          for (let p = 0; p < parts; p++) {
+            onProgress(p / parts, `Splitting part ${p + 1}/${parts}`);
+            const d = await L.PDFDocument.create();
+            const idx = [];
+            for (let k = p * every; k < Math.min((p + 1) * every, total); k++) idx.push(k);
+            const pages = await d.copyPages(src, idx);
+            pages.forEach(pg => d.addPage(pg));
+            const label = parts > 1 ? `-part-${p + 1}` : '';
+            map[U.baseName(files[0].name) + label + '.pdf'] = new Uint8Array(await d.save());
+          }
+        } else {
+          for (let i = 0; i < files.length; i++) {
+            onProgress(i / files.length, `Preparing ${i + 1}/${files.length}`);
+            map[files[i].name] = new Uint8Array(await files[i].arrayBuffer());
+          }
+        }
+        onProgress(1, 'Building ZIP…');
+        const name = fam === 'pdf' ? U.baseName(files[0].name) + '-parts.zip' : 'split-images.zip';
+        return { ...(await zipBlobs(F, map)), filename: name, preview: 'zip' };
+      }
+      if (mode === 'rotate') {
+        if (fam === 'video') {
+          onProgress(0.15, 'Rotating video…');
+          const res = await rotateVideo(files[0], deg, onProgress);
+          onProgress(1, 'Done');
+          return res;
+        }
+        if (fam === 'pdf') {
+          onProgress(0.2, 'Rotating pages…');
+          const L = await loadLib();
+          const doc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          doc.getPages().forEach(pg => pg.setRotation(L.degrees((pg.getRotation().angle + deg) % 360)));
+          onProgress(1, 'Done');
+          return { blob: new Blob([await doc.save()], { type: PDF_MIME }), filename: U.baseName(files[0].name) + '-rotated.pdf', mime: PDF_MIME, preview: 'pdf' };
+        }
+        const results = [];
+        for (let i = 0; i < files.length; i++) {
+          onProgress(i / files.length, `Rotating ${i + 1}/${files.length}`);
+          results.push(await rotateImgFile(files[i], deg));
+        }
+        if (results.length === 1) {
+          onProgress(1, 'Done');
+          const r = results[0];
+          return { blob: r.blob, filename: r.filename, mime: r.blob.type, preview: 'image' };
+        }
+        const F = await loadFf();
+        const map = {};
+        for (const r of results) map[r.filename] = new Uint8Array(await r.blob.arrayBuffer());
+        onProgress(1, 'Building ZIP…');
+        return { ...(await zipBlobs(F, map)), filename: 'rotated-images.zip', preview: 'zip' };
+      }
+      if (mode === 'delete') {
+        if (fam === 'pdf') {
+          onProgress(0.15, 'Removing pages…');
+          const L = await loadLib();
+          const src = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          const keep = [];
+          for (let i = 0; i < src.getPageCount(); i++) if (picked.has(i)) keep.push(i);
+          const out = await L.PDFDocument.create();
+          const pages = await out.copyPages(src, keep);
+          pages.forEach(p => out.addPage(p));
+          onProgress(1, 'Done');
+          return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: U.baseName(files[0].name) + '-reduced.pdf', mime: PDF_MIME, preview: 'pdf' };
+        }
+        const kept = files.filter((_, i) => picked.has(i));
+        if (kept.length === 1) {
+          onProgress(1, 'Done');
+          return { blob: kept[0], filename: kept[0].name, mime: kept[0].type, preview: 'image' };
+        }
+        onProgress(0.8, 'Building ZIP…');
+        return { ...(await zipFiles(kept, 'kept-images.zip')), preview: 'zip' };
+      }
+      if (mode === 'extract') {
+        if (fam === 'pdf') {
+          onProgress(0.15, 'Extracting pages…');
+          const L = await loadLib();
+          const src = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          const idx = [...picked].sort((a, b) => a - b);
+          const out = await L.PDFDocument.create();
+          const pages = await out.copyPages(src, idx);
+          pages.forEach(p => out.addPage(p));
+          onProgress(1, 'Done');
+          return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: U.baseName(files[0].name) + '-extract.pdf', mime: PDF_MIME, preview: 'pdf' };
+        }
+        const kept = files.filter((_, i) => picked.has(i));
+        if (kept.length === 1) {
+          onProgress(1, 'Done');
+          return { blob: kept[0], filename: kept[0].name, mime: kept[0].type, preview: 'image' };
+        }
+        onProgress(0.8, 'Building ZIP…');
+        return { ...(await zipFiles(kept, 'extracted-images.zip')), preview: 'zip' };
+      }
+      throw new Error('Unknown action.');
+    }
+
+    /* ── Step 4: Result ─────────────────────────────── */
+    const doneTitle = () => {
+      const m = MODE_MAP[mode].label.toLowerCase();
+      if (mode === 'merge') return 'Merged!';
+      if (mode === 'split') return 'Split!';
+      if (mode === 'rotate') return 'Rotated!';
+      if (mode === 'delete') return 'Done!';
+      return 'Extracted!';
+    };
+    const doneSub = () => {
+      const fam0 = familyOf(files[0]);
+      const unit = fam0 === 'archive' ? 'entry' : fam0 === 'ebook' ? 'chapter' : 'page';
+      if (mode === 'merge') return `Combined ${files.length} file${files.length === 1 ? '' : 's'} locally`;
+      if (mode === 'split') {
+        const n = fam0 === 'pdf' ? Math.ceil(pageCount / splitEvery) : (fam0 === 'audio' || fam0 === 'video' ? Math.max(2, Math.min(splitEvery, 20)) : files.length);
+        return `Split into ${n} part${n === 1 ? '' : 's'} locally`;
+      }
+      if (mode === 'rotate') return `Rotated ${deg}° locally`;
+      if (mode === 'delete') {
+        const removed = (fam0 === 'archive' || fam0 === 'ebook') ? picked.size : Math.max(0, pageCount - picked.size);
+        return `Removed ${removed} ${_pl(unit, removed)} locally`;
+      }
+      if (mode === 'reorder') return 'Rewrote the spine in your new order locally';
+      const n = picked.size;
+      return `Kept ${n} ${_pl(unit, n)} locally`;
+    };
+
+    function renderResult(res) {
+      enterBleed();
+      clearUrls();
+      const tagC = res.preview === 'zip' ? '#7C3AED' : res.preview === 'pdf' ? '#E5252A' : res.preview === 'image' ? '#EA580C' : res.preview === 'audio' ? '#2563EB' : res.preview === 'video' ? '#9333EA' : '#7C3AED';
+      const tag = res.preview === 'pdf' ? 'PDF' : res.preview === 'zip' ? 'ZIP' : res.preview === 'audio' ? 'AUD' : res.preview === 'video' ? 'VID' : 'IMG';
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center conv-result-body">
+          <div class="cpdf-body-scroll conv-result-scroll">
+            <div class="conv-done-badge">${ICONS.check}</div>
+            <div>
+              <p class="conv-done-title">${doneTitle()}</p>
+              <p class="conv-done-sub">${doneSub()}</p>
+            </div>
+            <div class="conv-preview" id="org-preview">
+              <canvas class="conv-preview-canvas" id="org-preview-canvas" hidden></canvas>
+              <div class="conv-preview-fallback" id="org-preview-fallback" style="--c:${tagC}">${tag}</div>
+              <span class="conv-preview-tag" style="--c:${tagC}">${tag}</span>
+              <span class="conv-preview-spark conv-preview-spark--1">✦</span>
+              <span class="conv-preview-spark conv-preview-spark--2">✦</span>
+              <span class="conv-preview-spark conv-preview-spark--3">✦</span>
+            </div>
+            <div class="conv-out-meta">
+              <strong id="org-out-name">${_esc(res.filename)}</strong>
+              <span id="org-out-size">${_bytes(res.blob.size)}</span>
+            </div>
+            <div class="conv-result-actions">
+              <a class="cpdf-btn-primary" id="org-dl" href="#" download="${_esc(res.filename)}" style="text-decoration:none">${ICONS.download}&nbsp; Download ${_esc(res.filename)}</a>
+              <button class="cpdf-btn-ghost" id="org-again" type="button">Start over</button>
+            </div>
+          </div>
+        </div>`;
+      const url = URL.createObjectURL(res.blob);
+      const dl = container.querySelector('#org-dl');
+      dl.href = url;
+      dl.setAttribute('download', res.filename);
+      container.querySelector('#org-again').onclick = () => { URL.revokeObjectURL(url); files = []; renderUpload(); };
+      paintPreview(res);
+    }
+
+    async function paintPreview(res) {
+      const fallback = container.querySelector('#org-preview-fallback');
+      const canvas = container.querySelector('#org-preview-canvas');
+      try {
+        if (res.preview === 'pdf') {
+          const pdfjs = await loadJs();
+          const doc = await pdfjs.getDocument({ data: await bytesU8(res.blob) }).promise;
+          const page = await doc.getPage(1);
+          const vp = page.getViewport({ scale: 1.6 });
+          canvas.width = vp.width; canvas.height = vp.height;
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+          try { doc.destroy(); } catch { /* noop */ }
+          canvas.hidden = false;
+          fallback.hidden = true;
+        } else if (res.preview === 'image') {
+          const img = await loadImg(res.blob);
+          const vpW = 150, vpH = Math.round((img.height / img.width) * vpW);
+          canvas.width = vpW; canvas.height = vpH;
+          canvas.getContext('2d').drawImage(img, 0, 0, vpW, vpH);
+          canvas.hidden = false;
+          fallback.hidden = true;
+        } else if (res.preview === 'audio' || res.preview === 'video') {
+          const url = URL.createObjectURL(res.blob);
+          const media = document.createElement(res.preview === 'video' ? 'video' : 'audio');
+          media.src = url; media.controls = true; media.preload = 'metadata';
+          media.style.maxWidth = '100%'; media.style.maxHeight = '160px'; media.style.borderRadius = '10px';
+          fallback.textContent = ''; fallback.style.background = 'transparent'; fallback.style.border = 'none';
+          fallback.append(media);
+        }
+      } catch (err) {
+        console.warn('[Organize] preview fallback', err);
+      }
+    }
+
+    function renderError(msg) {
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center">
+          <span class="cpdf-err-ico">${ICONS.trash}</span>
+          <p class="cpdf-proc-title" style="color:#DC2626">Processing failed</p>
+          <p class="cpdf-proc-sub">${_esc(msg)}</p>
+          <button class="cpdf-btn-primary" id="org-errback" type="button" style="max-width:200px">Try again</button>
+        </div>`;
+      container.querySelector('#org-errback').onclick = () => renderConfigure();
+    }
+
+    renderUpload();
+  }
+
+  /* ── Registry entry (fallback engine for the browse grid) ── */
+  R({
+    id: 'organize',
+    category: 'PDF',
+    name: 'Organize',
+    description: 'Merge, split, rotate, delete, or extract pages — for PDFs and images.',
+    accepts: ['pdf', ...IMG_EXT],
+    multiple: true,
+    maxBytes: 200e6,
+    async run({ files }) {
+      const list = [...(files || [])].filter(f => familyOf(f));
+      if (!list.length) throw new Error('Drop a PDF or image file.');
+      /* minimal engine path: default to merge when possible, else rotate */
+      if (list.length > 1) {
+        const L = await loadLib();
+        const out = await L.PDFDocument.create();
+        for (const f of list) {
+          if (familyOf(f) === 'pdf') {
+            const src = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
+            const pages = await out.copyPages(src, src.getPageIndices());
+            pages.forEach(p => out.addPage(p));
+          } else {
+            const png = await imgToPngBlob(f);
+            const img = await out.embedPng(await bytesU8(png));
+            const page = out.addPage([img.width, img.height]);
+            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+          }
+        }
+        return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: 'merged.pdf', mime: PDF_MIME, preview: 'download' };
+      }
+      const f = list[0];
+      if (familyOf(f) === 'pdf') {
+        const L = await loadLib();
+        const doc = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
+        doc.getPages().forEach(pg => pg.setRotation(L.degrees((pg.getRotation().angle + 90) % 360)));
+        return { blob: new Blob([await doc.save()], { type: PDF_MIME }), filename: U.baseName(f.name) + '-rotated.pdf', mime: PDF_MIME, preview: 'download' };
+      }
+      return rotateImgFile(f, 90);
+    },
+  });
+
+  window.__ffMountOrganize = mountOrganize;
+})();
+

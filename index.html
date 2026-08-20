@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="#ffffff" name="theme-color"/>
+<title>FileKit — Every File Tool You Need</title><link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Poppins:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,700&family=Outfit:wght@200;300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/styles.css?v=live_reload_fresh_38_tools"/>
+<style id="workspace-centering-fix">
+/* ── Guaranteed Viewport Dead-Centering & Zero Scroll in App Workspace ── */
+body:has(#app-view:not([hidden])) {
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+
+body #app-view:not([hidden]) {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+body #app-view .app-layout-wrapper {
+  margin-top: 56px !important;
+  height: calc(100vh - 56px) !important;
+  max-height: calc(100vh - 56px) !important;
+  overflow: hidden !important;
+}
+
+body #app-view .app-main-content {
+  margin-left: 80px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+body #app-view #app-canvas.app-canvas,
+body #app-view .app-canvas.ff-tool-active,
+html body #app-view #app-canvas.app-canvas.ff-tool-active {
+  padding: 24px 32px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+#app-workspace-tool-view.app-workspace-tool-view:not([hidden]) {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+#app-tool-stage,
+#app-tool-stage.cpdf-root,
+#app-tool-stage.doc-root,
+#app-tool-stage.conv-root,
+#app-tool-stage.aud-root,
+#app-tool-stage.vid-root,
+#app-tool-stage.img-root,
+#app-tool-stage.sign-root,
+#app-tool-stage.etxt-root,
+#app-tool-stage.spdf-shell,
+#app-tool-stage.org-shell,
+#app-tool-stage.scan-shell,
+#app-tool-stage.app-stage-container,
+.app-workspace-tool-view #app-tool-stage,
+body #app-view .cpdf-root {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+/* Collapse all duplicate tool headers */
+body #app-view header:not(.app-topbar),
+body #app-view .cpdf-hdr,
+body #app-view .conv-hdr,
+body #app-view .doc-hdr,
+body #app-view [class*="-hdr"] {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
+}
+
+/* Dashed Drop Box — Exact 100% Symmetrical Viewport Center */
+body #app-view #app-tool-stage .cpdf-dropzone,
+body #app-view #app-tool-stage .drop-hero-box,
+body #app-view #app-tool-stage .stage-dropzone,
+body #app-view #app-tool-stage [class*="-dropzone"],
+#app-tool-stage .cpdf-dropzone,
+#app-tool-stage .drop-hero-box {
+  background: #FFFFFF !important;
+  border: 1.5px dashed #CBD5E1 !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #0F172A !important;
+  text-align: center !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+
+body #app-view #app-tool-stage .cpdf-dropzone:hover,
+body #app-view #app-tool-stage .drop-hero-box:hover {
+  transform: none !important;
+  border-color: #94A3B8 !important;
+  background: #FAFAFC !important;
+}
+
+#app-tool-stage .dropzone-idle {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 680px !important;
+  margin: auto !important;
+  padding: 0 !important;
+}
+
+#app-tool-stage .drop-illustration {
+  width: 160px !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 0 0 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#app-tool-stage .drop-illustration svg,
+#app-tool-stage .standard-dz-svg {
+  width: 160px !important;
+  height: auto !important;
+  filter: none !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+#app-tool-stage .drop-action-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #1A1714 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+  overflow: hidden !important;
+  margin: 4px 0 0 !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#app-tool-stage .drop-action-group:hover {
+  transform: none !important;
+  background: #2D2926 !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+#app-tool-stage .select-files-main-btn {
+  background: transparent !important;
+  color: #FFFFFF !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  padding: 10px 20px 10px 22px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+}
+
+#app-tool-stage .select-files-chevron-btn {
+  background: transparent !important;
+  color: #FFFFFF !important;
+  padding: 10px 14px 10px 10px !important;
+  border: none !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+#app-tool-stage .drop-sub-text {
+  color: #1E293B !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  margin: 12px 0 0 !important;
+  text-align: center !important;
+}
+
+#app-tool-stage .drop-sub-text strong {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}
+
+#app-tool-stage .supported-formats-row {
+  color: #64748B !important;
+  font-size: 11.5px !important;
+  margin: 8px 0 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+#app-tool-stage .fmt-badge {
+  background: #F1F5F9 !important;
+  color: #334155 !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 4px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  padding: 2px 6px !important;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+<button aria-label="FileKit home" class="brand" id="home-button" type="button">
+<svg class="brand-icon" width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="fk-badge-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1A1714" flood-opacity="0.2"/></filter>
+    <linearGradient id="fk-tile-bg" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1F5F9"/></linearGradient>
+  </defs>
+  <g filter="url(#fk-badge-shadow)">
+    <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#fk-tile-bg)"/>
+    <rect x="4" y="4" width="40" height="40" rx="10" stroke="rgba(255,255,255,0.9)" stroke-width="0.8"/>
+    <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+    <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+    <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+    <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+    <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+  </g>
+</svg>
+<strong>FileKit</strong>
+</button>
+<button aria-controls="tool-drawer" aria-expanded="false" class="nav-tools" id="tools-button" type="button"><svg aria-hidden="true" class="grid-mark" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg><span>All Tools</span><svg aria-hidden="true" class="nav-chev" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6"/></svg></button>
+<button aria-controls="palette-overlay" aria-expanded="false" aria-label="Search tools" class="header-search-trigger" id="header-search-trigger" type="button"><svg aria-hidden="true" class="nav-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><span id="header-search-label">Search 187 tools...</span><kbd aria-label="Keyboard shortcut Command K">⌘K</kbd></button>
+<nav aria-label="Main navigation" class="nav-links">
+<button data-category="PDF" type="button">PDF</button>
+<button data-category="Images" type="button">Images</button>
+<button data-category="Documents" type="button">Documents</button>
+<button data-category="Video" type="button">Video</button>
+</nav>
+<div class="nav-spacer"></div>
+<button class="header-cta app-launch-btn" id="header-enter-app" type="button">Enter App →</button>
+<button aria-controls="tool-drawer" aria-expanded="false" aria-label="Open navigation menu" class="mobile-menu" id="mobile-menu" type="button">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3.5" y1="6" x2="20.5" y2="6"></line>
+    <line x1="3.5" y1="12" x2="20.5" y2="12"></line>
+    <line x1="3.5" y1="18" x2="20.5" y2="18"></line>
+  </svg>
+</button>
+</header>
+<div aria-labelledby="drawer-title" aria-modal="true" class="tool-drawer" hidden="" id="tool-drawer" role="dialog">
+<div class="drawer-head"><h2 id="drawer-title">All FileKit tools</h2><button aria-label="Close tools dialog" id="drawer-close" type="button">×</button></div>
+<div class="drawer-body">
+<aside class="drawer-side" aria-label="Categories">
+<div class="drawer-side-title">Categories</div>
+<div class="drawer-categories" id="drawer-categories"></div>
+</aside>
+<div class="drawer-main">
+<div class="drawer-search"><svg aria-hidden="true" class="drawer-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><label class="sr-only" for="drawer-search">Search all tools</label><input autocomplete="off" id="drawer-search" placeholder="Search all tools…" type="search"/></div>
+<div aria-atomic="true" aria-live="polite" class="sr-only" id="drawer-search-status" role="status"></div>
+<div class="drawer-results" id="drawer-results"></div>
+</div>
+</div>
+</div>
+
+<div aria-label="Search tools" aria-modal="true" class="palette-overlay" id="palette-overlay" role="dialog" hidden="">
+<div class="palette-box">
+<div class="palette-search"><svg aria-hidden="true" class="palette-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><label class="sr-only" for="palette-input">Search tools</label><input autocomplete="off" id="palette-input" placeholder="Search tools or describe what you need…" type="search"/><button class="palette-esc" id="palette-esc" type="button" title="Close (Esc)">ESC</button></div>
+<div class="palette-results" id="palette-results"></div>
+<div class="palette-foot"><span><kbd>↑↓</kbd> Navigate</span><span><kbd>↵</kbd> Select</span><span><kbd>ESC</kbd> Close</span></div>
+</div>
+</div><main id="home-view">
+<section class="hero page-width" id="hero-section">
+  <div class="hero-copy">
+    <h1 class="hero-title"><span class="hero-title-bold">Every file task.</span><br/><span class="hero-title-light">One <span class="hero-human-highlight"><span class="highlight-word">private</span><svg class="highlighter-marker-svg" viewBox="0 0 220 54" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M 6 34 C 45 24, 125 22, 212 26 C 217 30, 216 46, 209 50 C 158 53, 68 54, 8 50 C 2 46, 2 37, 6 34 Z" fill="rgba(169, 145, 247, 0.42)"/><path d="M 12 28 C 55 22, 140 20, 205 24 C 210 27, 208 42, 202 45 C 150 48, 62 49, 14 45 C 8 42, 8 32, 12 28 Z" fill="rgba(169, 145, 247, 0.48)"/><path d="M 4 36 C 30 30, 90 28, 160 30" stroke="#A991F7" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.3" fill="none"/></svg></span></span><br/><span class="hero-title-bold">toolkit.</span></h1>
+    <p class="hero-subtext"><strong>Drag and drop</strong> to convert videos, images, audio, and documents locally. <span class="hero-hand-underline">Files never leave your device.<svg class="hand-drawn-green-line" viewBox="0 0 240 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M2.5 8.5 C 50 4.5, 110 9.5, 170 5.5 C 195 4, 220 7, 237.5 5" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></p>
+    <div class="hero-actions">
+      <button class="primary-button hero-app-launch" id="hero-enter-app" type="button">Enter App →</button>
+      <button class="outline-button hero-outline" id="hero-explore" type="button">Browse tools</button>
+    </div>
+    <div class="hero-trust"><span>✓ No uploads</span><span>✓ No account</span><span>✓ Works offline</span></div>
+  </div>
+
+  <div class="hero-visual-stage" id="hero-visual-stage" aria-hidden="true">
+    <div class="hero-topo-bg" aria-hidden="true">
+      <svg viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M-100 480 C 200 440, 450 560, 750 490 C 1050 420, 1250 540, 1540 460" stroke="rgba(124, 58, 237, 0.05)" stroke-width="1.5" fill="none"/>
+        <path d="M-80 520 C 240 480, 500 620, 800 530 C 1100 440, 1300 580, 1560 500" stroke="rgba(245, 158, 11, 0.04)" stroke-width="1.5" fill="none"/>
+        <path d="M-120 400 C 180 340, 420 490, 700 420 C 1000 350, 1200 470, 1500 390" stroke="rgba(16, 185, 129, 0.04)" stroke-width="1.2" fill="none"/>
+      </svg>
+    </div>
+
+    <div class="hero-dot-grid" aria-hidden="true"></div>
+
+    <div class="hero-scene-core" id="hero-scene-core">
+      <div class="hero-pedestal-disc" id="hero-pedestal-disc" aria-hidden="true"></div>
+
+      <div class="hero-folder-wrapper" id="hero-folder-wrapper">
+        <svg class="hero-folder-svg" viewBox="0 0 420 310" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="f-main-drop" x="-20%" y="-20%" width="140%" height="150%">
+              <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#7C2D00" flood-opacity="0.18"/>
+              <feDropShadow dx="0" dy="4"  stdDeviation="6"  flood-color="#1A1714"  flood-opacity="0.08"/>
+            </filter>
+            <linearGradient id="g-back" x1="80" y1="60" x2="340" y2="250" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#FFD080"/>
+              <stop offset="50%"  stop-color="#FFA020"/>
+              <stop offset="100%" stop-color="#E07010"/>
+            </linearGradient>
+            <linearGradient id="g-front" x1="70" y1="110" x2="350" y2="268" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#FFB84D"/>
+              <stop offset="30%"  stop-color="#F47B00"/>
+              <stop offset="100%" stop-color="#CC5500"/>
+            </linearGradient>
+            <linearGradient id="g-bevel" x1="80" y1="0" x2="340" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#FFF0C8" stop-opacity="1"/>
+              <stop offset="60%"  stop-color="#FFD888" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#FFB340" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="g-fold" x1="210" y1="108" x2="210" y2="148" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#6B2200" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#CC5500" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="210" cy="274" rx="130" ry="14" fill="rgba(100,40,0,0.12)" filter="blur(8px)"/>
+          
+          <g filter="url(#f-main-drop)">
+            <path d="M 80 88 C 80 76 90 66 102 66 L 168 66 C 177 66 185 72 190 80 L 204 100 L 330 100 C 342 100 352 110 352 122 L 352 248 C 352 260 342 270 330 270 L 102 270 C 90 270 80 260 80 248 Z" fill="url(#g-back)"/>
+          </g>
+          
+          <path d="M 84 107 L 348 107 L 348 148 L 84 148 Z" fill="url(#g-fold)"/>
+
+          <g filter="url(#f-main-drop)">
+            <path d="M 68 136 C 68 124 78 114 90 114 L 334 114 C 346 114 356 124 356 136 L 342 256 C 340 266 330 274 318 274 L 104 274 C 92 274 82 266 80 256 Z" fill="url(#g-front)"/>
+            <path d="M 90 115 L 334 115" stroke="url(#g-bevel)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M 74 138 Q 212 146 350 138" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" fill="none"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="hero-micro-accent accent-emoji" title="Happy">
+        <span class="emoji-icon">&#128522;</span>
+      </div>
+
+      <div class="hero-micro-accent accent-pencil" title="Edit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16.86 3.14a2 2 0 0 1 2.83 2.83L7.5 18.17l-4 1 1-4L16.86 3.14z"
+                fill="#C68642" stroke="#8B4513" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="popular page-width" id="popular-section">
+<div class="section-heading">
+<h2>Most Popular File Tools</h2>
+<p>Fast tools to convert, compress, edit, and organize your files for free.</p>
+</div>
+<div class="popular-grid" id="popular-grid"></div>
+<div class="center-action"><button class="primary-button" id="see-all-button" type="button">Enter App to See All Tools →</button></div>
+</section>
+
+<!-- =========================================================================
+     FILEKIT STUDIO WORKBENCH — ORIGINAL INTERACTIVE MEDIA LAB
+     Interactive Control Deck (Top) · Dual-Pane Live Interactive Studio (Bottom)
+     Palette: Pure White, Signature Sunlit Amber/Yellow, Obsidian Deep Black, Lavender Lilac
+     ========================================================================= -->
+<!-- Interactive Feature Capability Showcase Gallery (HowToConvert style) -->
+<section class="htc-features-section page-width" id="tc-feature-gallery" aria-label="Feature capabilities showcase">
+
+  <div class="htc-grid-container">
+
+    <!-- Left Column: Pure Clean Borderless Accordion (All 11 Features) -->
+    <div class="htc-accordion-list" role="tablist" aria-orientation="vertical">
+
+      <!-- Item 1: Batch Convert (Active by default) -->
+      <div class="htc-acc-item active" data-feature="batch" role="tab" aria-selected="true" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="true">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Convert multiple files at a time</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Save time by converting batches of files simultaneously. Drop multiple images, videos, or documents and convert them all in one go. Perfect for processing entire folders or photo collections.</p>
+        </div>
+      </div>
+
+      <!-- Item 2: Convert images -->
+      <div class="htc-acc-item" data-feature="images" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Convert images</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>HEIC to JPG, RAW to JPG, WebP to PNG, PNG to ICO. Configure quality, resize images and compress. Handles professional formats like PSD and camera RAW.</p>
+        </div>
+      </div>
+
+      <!-- Item 3: Crop images and videos -->
+      <div class="htc-acc-item" data-feature="crop" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Crop images and videos</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Precisely crop images and videos to focus on what matters. Remove unwanted areas, adjust aspect ratios, and create perfect thumbnails. Works with all popular image and video formats.</p>
+        </div>
+      </div>
+
+      <!-- Item 4: Convert videos -->
+      <div class="htc-acc-item" data-feature="videos" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Convert videos</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>MP4 to MOV, MKV to MP4, AVI to MP4, WebM to MP4, video to GIF. Adjust quality, resolution, and codec settings.</p>
+        </div>
+      </div>
+
+      <!-- Item 5: Convert or extract audio -->
+      <div class="htc-acc-item" data-feature="audio" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Convert or extract audio</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Extract audio from video files or convert between audio formats. MP4 to MP3, WAV to MP3, FLAC to MP3, M4A to MP3, OGG to MP3, and more. Customize bitrate and quality.</p>
+        </div>
+      </div>
+
+      <!-- Item 6: Convert documents -->
+      <div class="htc-acc-item" data-feature="documents" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Convert documents</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Convert documents between popular formats including PDF, Word (DOCX), Excel, PowerPoint, ePub, HTML, and Markdown. Preserve formatting and layouts accurately.</p>
+        </div>
+      </div>
+
+      <!-- Item 7: Compress PDFs -->
+      <div class="htc-acc-item" data-feature="compress" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0 0 5.25 5.25"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Compress PDFs</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Reduce PDF file sizes dramatically while maintaining crisp document quality. Ideal for email attachments, web uploads, and saving disk space.</p>
+        </div>
+      </div>
+
+      <!-- Item 8: Vectorise images into real SVGs -->
+      <div class="htc-acc-item" data-feature="vectorise" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Vectorise images into real SVGs</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Convert PNG, JPG, and other raster formats into clean, scalable vector graphics. Perfect for logos, illustrations, and icons that scale infinitely without pixelation.</p>
+        </div>
+      </div>
+
+      <!-- Item 9: Convert emails -->
+      <div class="htc-acc-item" data-feature="emails" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Convert emails</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Convert EML and MSG email archives directly to PDF, HTML, or clean text with all headers, attachments metadata, and formatting preserved.</p>
+        </div>
+      </div>
+
+      <!-- Item 10: Make your files over 20x smaller -->
+      <div class="htc-acc-item" data-feature="smaller" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">Make your files over 20x smaller</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Ultra-efficient local compression algorithms shrink massive video, audio, image, and PDF files by more than 95% without noticeable loss in human-perceived quality.</p>
+        </div>
+      </div>
+
+      <!-- Item 11: and much more -->
+      <div class="htc-acc-item" data-feature="more" role="tab" aria-selected="false" tabindex="0">
+        <button type="button" class="htc-acc-btn" aria-expanded="false">
+          <span class="htc-acc-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"></path>
+            </svg>
+          </span>
+          <span class="htc-acc-title">... and much more</span>
+        </button>
+        <div class="htc-acc-body">
+          <p>Explore OCR text extraction, EXIF metadata scrubbers, hash calculators, color palette generators, archive extractors, and 90+ client-side tools designed for privacy.</p>
+        </div>
+      </div>
+
+    </div><!-- /htc-accordion-list -->
+
+    <!-- Right Column: Interactive App Window Mockup matching White / Yellow / Black / Lavender Design System -->
+    <div class="htc-stage-col">
+      <div class="htc-mockup-window" id="htc-mockup-window">
+
+        <!-- Dark Window Chrome Bar -->
+        <div class="htc-window-header">
+          <div class="htc-window-dots">
+            <span class="htc-dot htc-dot-red"></span>
+            <span class="htc-dot htc-dot-yellow"></span>
+            <span class="htc-dot htc-dot-green"></span>
+          </div>
+          <div class="htc-window-title">
+            <span>FileKit</span>
+            <span class="htc-window-badge-lavender">Instant Offline</span>
+          </div>
+          <div style="width: 48px;"></div>
+        </div>
+
+        <!-- Window Workspace Body with 11 Screens -->
+        <div class="htc-window-canvas" id="htc-window-canvas">
+
+          <!-- SCREEN 1: BATCH CONVERT -->
+          <div class="htc-screen active" data-screen="batch">
+            <div class="htc-app-body">
+              <div class="htc-hero-convert-row">
+                <!-- Drop Box (Left: White + Lavender badge) -->
+                <div class="htc-drop-zone">
+                  <div class="htc-drop-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" class="htc-drop-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
+                    </svg>
+                  </div>
+                  <p class="htc-drop-text">Drag 'n' drop files here, or click to select files</p>
+                </div>
+
+                <!-- Action Group (Center: Deep Black Button + Gear) -->
+                <div class="htc-action-group">
+                  <button type="button" class="htc-btn-convert">
+                    Convert
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                    </svg>
+                  </button>
+                  <button type="button" class="htc-btn-gear" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="#1A1714" width="18" height="18">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Dropdown Format Selector (Right: Bright Golden Yellow) -->
+                <div class="htc-format-dropdown-box">
+                  <div class="htc-select-trigger">
+                    <span class="htc-cursor-blink">|</span>
+                    <span class="htc-selected-val">WEBP</span>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+
+                  <!-- Open dropdown menu -->
+                  <div class="htc-select-menu">
+                    <div class="htc-menu-header">IMAGE</div>
+                    <div class="htc-menu-item active"><span>WEBP</span><span style="font-size:11px;color:#7C3AED;">✓</span></div>
+                    <div class="htc-menu-item"><span>JPG</span></div>
+                    <div class="htc-menu-item"><span>GIF</span></div>
+                  </div>
+
+                  <!-- Realistic Mouse Pointer Hovering over WEBP! -->
+                  <div class="htc-mouse-cursor" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 2L18.5 12.5L12 13.5L16 21.5L13 23L9 15L4 19L4 2Z" fill="#18181B" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom hint line -->
+              <div class="htc-bottom-hint">
+                <span>Select the output format and click <strong style="color: #1A1714;">Convert</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 2: Convert Images -->
+          <div class="htc-screen" data-screen="images">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-sub-layout-image">
+                <div class="htc-img-preview-box">
+                  <img src="assets/showcase_puppy.jpg" alt="Preview" class="htc-preview-img"/>
+                  <div class="htc-img-badge">HEIC &middot; 4.2 MB</div>
+                </div>
+                <div class="htc-img-controls">
+                  <div class="htc-field-group">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                      <label style="margin:0;">Target Format</label>
+                      <span class="htc-tag-lavender">Auto Optimize</span>
+                    </div>
+                    <div class="htc-pill-row">
+                      <span class="htc-pill active">PNG</span>
+                      <span class="htc-pill">JPG</span>
+                      <span class="htc-pill">WEBP</span>
+                      <span class="htc-pill">AVIF</span>
+                    </div>
+                  </div>
+                  <div class="htc-field-group">
+                    <label>Quality: <strong style="color:#1A1714;">92% (High)</strong></label>
+                    <div class="htc-slider-track"><div class="htc-slider-fill" style="width: 92%;"></div></div>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Convert to PNG &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 3: Crop Images and Videos -->
+          <div class="htc-screen" data-screen="crop">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-crop-box">
+                <div class="htc-crop-frame">
+                  <img src="assets/showcase_puppy.jpg" alt="Crop frame" class="htc-crop-img"/>
+                  <div class="htc-crop-overlay-rect">
+                    <div class="htc-crop-grid-h"></div>
+                    <div class="htc-crop-grid-v"></div>
+                    <span class="htc-corner-handle tl"></span>
+                    <span class="htc-corner-handle tr"></span>
+                    <span class="htc-corner-handle bl"></span>
+                    <span class="htc-corner-handle br"></span>
+                    <span class="htc-crop-aspect-tag">16:9 &middot; 1920 &times; 1080</span>
+                  </div>
+                </div>
+                <div class="htc-crop-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">16:9</span>
+                    <span class="htc-pill">1:1</span>
+                    <span class="htc-pill">9:16</span>
+                    <span class="htc-pill">4:3</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Apply Crop &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 4: Convert Videos -->
+          <div class="htc-screen" data-screen="videos">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-video-box">
+                <div class="htc-video-preview">
+                  <img src="assets/showcase_puppy.jpg" alt="Video preview" class="htc-video-img"/>
+                  <div class="htc-play-circle">&#x25B6;</div>
+                  <span class="htc-vtag">MOV 4K &middot; 00:42</span>
+                </div>
+                <div class="htc-timeline">
+                  <div class="htc-timeline-bar"><div class="htc-timeline-fill" style="width: 45%;"></div></div>
+                </div>
+                <div class="htc-video-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">MP4</span>
+                    <span class="htc-pill">WebM</span>
+                    <span class="htc-pill">GIF</span>
+                    <span class="htc-pill">MOV</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Export MP4 &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 5: Convert or extract audio -->
+          <div class="htc-screen" data-screen="audio">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-audio-box">
+                <div class="htc-audio-header">
+                  <span class="htc-audio-title">&#x1F3B5; Podcast_Master_Ep12.flac</span>
+                  <span class="htc-tag-yellow">320 kbps &middot; 48 kHz</span>
+                </div>
+                <div class="htc-waveform">
+                  <svg viewBox="0 0 400 60" preserveAspectRatio="none" style="width:100%;height:50px;">
+                    <rect x="0" y="15" width="4" height="30" rx="2" fill="#7C3AED"/>
+                    <rect x="8" y="10" width="4" height="40" rx="2" fill="#7C3AED"/>
+                    <rect x="16" y="5" width="4" height="50" rx="2" fill="#7C3AED"/>
+                    <rect x="24" y="18" width="4" height="24" rx="2" fill="#7C3AED"/>
+                    <rect x="32" y="8" width="4" height="44" rx="2" fill="#7C3AED"/>
+                    <rect x="40" y="2" width="4" height="56" rx="2" fill="#7C3AED"/>
+                    <rect x="48" y="12" width="4" height="36" rx="2" fill="#7C3AED"/>
+                    <rect x="56" y="20" width="4" height="20" rx="2" fill="#7C3AED"/>
+                    <rect x="64" y="6" width="4" height="48" rx="2" fill="#7C3AED"/>
+                    <rect x="72" y="14" width="4" height="32" rx="2" fill="#7C3AED"/>
+                    <rect x="80" y="0" width="4" height="60" rx="2" fill="#7C3AED"/>
+                    <rect x="88" y="10" width="4" height="40" rx="2" fill="#7C3AED"/>
+                    <rect x="96" y="22" width="4" height="16" rx="2" fill="#DDD6FE"/>
+                    <rect x="104" y="8" width="4" height="44" rx="2" fill="#DDD6FE"/>
+                    <rect x="112" y="4" width="4" height="52" rx="2" fill="#DDD6FE"/>
+                    <rect x="120" y="16" width="4" height="28" rx="2" fill="#DDD6FE"/>
+                    <rect x="128" y="12" width="4" height="36" rx="2" fill="#DDD6FE"/>
+                    <rect x="136" y="20" width="4" height="20" rx="2" fill="#DDD6FE"/>
+                    <rect x="144" y="6" width="4" height="48" rx="2" fill="#DDD6FE"/>
+                    <rect x="152" y="14" width="4" height="32" rx="2" fill="#DDD6FE"/>
+                  </svg>
+                </div>
+                <div class="htc-audio-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">MP3 (320k)</span>
+                    <span class="htc-pill">WAV</span>
+                    <span class="htc-pill">M4A</span>
+                    <span class="htc-pill">AAC</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Extract MP3 &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 6: Convert Documents -->
+          <div class="htc-screen" data-screen="documents">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-doc-box">
+                <div class="htc-doc-sheet">
+                  <div class="htc-doc-header">
+                    <span class="htc-doc-icon">DOCX</span>
+                    <span class="htc-doc-name">Annual_Report_2026.docx</span>
+                    <span class="htc-tag-yellow" style="margin-left:auto;">12 Pages</span>
+                  </div>
+                  <div class="htc-doc-lines">
+                    <div class="htc-doc-line title"></div>
+                    <div class="htc-doc-line" style="width:90%;"></div>
+                    <div class="htc-doc-line" style="width:75%;"></div>
+                    <div class="htc-doc-line" style="width:85%;"></div>
+                  </div>
+                </div>
+                <div class="htc-doc-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">PDF</span>
+                    <span class="htc-pill">HTML</span>
+                    <span class="htc-pill">EPUB</span>
+                    <span class="htc-pill">MD</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Convert to PDF &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 7: Compress PDFs -->
+          <div class="htc-screen" data-screen="compress">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-compress-box">
+                <div class="htc-comp-compare">
+                  <div class="htc-comp-card original">
+                    <span class="htc-comp-tag">ORIGINAL</span>
+                    <span class="htc-comp-size">14.8 MB</span>
+                  </div>
+                  <div class="htc-comp-arrow">&rarr;</div>
+                  <div class="htc-comp-card optimized">
+                    <span class="htc-comp-tag green">OPTIMIZED</span>
+                    <span class="htc-comp-size green">2.1 MB</span>
+                    <span class="htc-comp-savings">-86% Saved</span>
+                  </div>
+                </div>
+                <div class="htc-comp-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">High (-86%)</span>
+                    <span class="htc-pill">Balanced (-60%)</span>
+                    <span class="htc-pill">Lossless</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Compress PDF &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 8: Vectorise images into real SVGs -->
+          <div class="htc-screen" data-screen="vectorise">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-vector-box">
+                <div class="htc-vector-canvas">
+                  <svg viewBox="0 0 360 140" style="width:100%;height:140px;background:#FAF8FF;border-radius:10px;border:1px solid #EDE9FE;">
+                    <defs>
+                      <pattern id="htc-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+                        <circle cx="8" cy="8" r="1" fill="#DDD6FE"/>
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#htc-grid)" />
+                    <!-- Vector shape -->
+                    <path d="M 40 100 C 70 20, 130 20, 160 80 S 260 120, 310 40" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+                    <!-- Control handles -->
+                    <line x1="40" y1="100" x2="70" y2="20" stroke="#A78BFA" stroke-width="1.2" stroke-dasharray="2,2"/>
+                    <line x1="160" y1="80" x2="130" y2="20" stroke="#A78BFA" stroke-width="1.2" stroke-dasharray="2,2"/>
+                    <circle cx="70" cy="20" r="4.5" fill="#F6D860" stroke="#1A1714" stroke-width="1"/>
+                    <circle cx="130" cy="20" r="4.5" fill="#F6D860" stroke="#1A1714" stroke-width="1"/>
+                    <!-- Anchor nodes -->
+                    <rect x="36" y="96" width="8" height="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+                    <rect x="156" y="76" width="8" height="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+                    <rect x="306" y="36" width="8" height="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+                  </svg>
+                  <span class="htc-vector-badge">&lt;svg&gt; Scalable Vector Paths</span>
+                </div>
+                <div class="htc-vector-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">Clean Curves</span>
+                    <span class="htc-pill">High Precision</span>
+                    <span class="htc-pill">Outline</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Export SVG &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 9: Convert emails -->
+          <div class="htc-screen" data-screen="emails">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-email-box">
+                <div class="htc-email-card">
+                  <div class="htc-email-head">
+                    <div class="htc-email-row"><strong>From:</strong> <span>billing@cloudservices.com</span></div>
+                    <div class="htc-email-row"><strong>Subject:</strong> <span style="font-weight:700;color:#1A1714;">Invoice Statement #48192 — Paid</span></div>
+                    <div class="htc-email-row"><strong>Format:</strong> <span class="htc-tag-pill">EML Archive</span></div>
+                  </div>
+                  <div class="htc-email-body-preview">
+                    <p>Dear customer, your subscription has been renewed. Thank you for using our service. Find receipt details enclosed.</p>
+                  </div>
+                </div>
+                <div class="htc-email-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">PDF Document</span>
+                    <span class="htc-pill">HTML</span>
+                    <span class="htc-pill">Clean Text</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Convert Email &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 10: Make your files over 20x smaller -->
+          <div class="htc-screen" data-screen="smaller">
+            <div class="htc-app-body htc-screen-pad">
+              <div class="htc-smaller-box">
+                <div class="htc-ratio-banner">
+                  <div class="htc-ratio-stat">
+                    <span class="htc-ratio-num">22.2&times;</span>
+                    <span class="htc-ratio-label">SMALLER FILE SIZE</span>
+                  </div>
+                  <div class="htc-ratio-meta">
+                    <div>Original: <strong style="color:#FFFFFF;">24.5 MB</strong></div>
+                    <div>Compressed: <strong style="color:#F6D860;">1.1 MB</strong></div>
+                    <div class="htc-savings-chip">-95.5% Saved</div>
+                  </div>
+                </div>
+                <div class="htc-smaller-bar">
+                  <div class="htc-pill-row">
+                    <span class="htc-pill active">Smart 20x</span>
+                    <span class="htc-pill">Ultra Shrink</span>
+                    <span class="htc-pill">Lossless</span>
+                  </div>
+                  <button type="button" class="htc-btn-primary">Shrink 20x &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 11: and much more (Matches Finder Documents window with theme palette) -->
+          <div class="htc-screen" data-screen="more">
+            <div class="htc-finder-body">
+              <!-- Finder Window Top Bar -->
+              <div class="htc-finder-chrome">
+                <div class="htc-finder-nav">
+                  <span>&lsaquo;</span>
+                  <span>&rsaquo;</span>
+                  <span class="htc-finder-folder-title">&#x1F4C1; Documents</span>
+                </div>
+                <div class="htc-finder-actions">
+                  <span class="htc-tag-lavender">90+ Offline Tools</span>
+                </div>
+              </div>
+
+              <!-- Finder File List -->
+              <div class="htc-finder-table">
+                <div class="htc-finder-thead">
+                  <span style="flex:2;">Name</span>
+                  <span style="flex:1.2;">Date Modified</span>
+                  <span style="flex:0.8;">Size</span>
+                  <span style="flex:1;">Kind</span>
+                </div>
+                <div class="htc-finder-tbody">
+                  <div class="htc-finder-row active">
+                    <span class="htc-fn"><span class="htc-ficon">&#x1F5BC;</span>Screenshot 2025-02-23 at 8.09.26 am_converted.jpg</span>
+                    <span class="htc-fd">Today at 8:47 pm</span>
+                    <span class="htc-fs">63 KB</span>
+                    <span class="htc-fk"><span class="htc-tag-yellow">JPEG</span></span>
+                  </div>
+                  <div class="htc-finder-row">
+                    <span class="htc-fn"><span class="htc-ficon">&#x1F5BC;</span>Screenshot 2025-02-23 at 9.08.33 am_converted.jpg</span>
+                    <span class="htc-fd">Today at 8:47 pm</span>
+                    <span class="htc-fs">134 KB</span>
+                    <span class="htc-fk"><span class="htc-tag-yellow">JPEG</span></span>
+                  </div>
+                  <div class="htc-finder-row">
+                    <span class="htc-fn"><span class="htc-ficon">&#x1F5BC;</span>Invoice_Contract_Signed_2026.pdf</span>
+                    <span class="htc-fd">Today at 8:47 pm</span>
+                    <span class="htc-fs">53 KB</span>
+                    <span class="htc-fk"><span class="htc-tag-lavender">PDF</span></span>
+                  </div>
+                  <div class="htc-finder-row">
+                    <span class="htc-fn"><span class="htc-ficon">&#x1F5BC;</span>Product_Hero_Mockup_Export.webp</span>
+                    <span class="htc-fd">Today at 8:47 pm</span>
+                    <span class="htc-fs">23 KB</span>
+                    <span class="htc-fk"><span class="htc-tag-yellow">WEBP</span></span>
+                  </div>
+                  <div class="htc-finder-row">
+                    <span class="htc-fn"><span class="htc-ficon">&#x1F5BC;</span>Presentation_Deck_Archive.epub</span>
+                    <span class="htc-fd">Today at 8:47 pm</span>
+                    <span class="htc-fs">23 KB</span>
+                    <span class="htc-fk"><span class="htc-tag-lavender">EPUB</span></span>
+                  </div>
+                  <div class="htc-finder-row">
+                    <span class="htc-fn"><span class="htc-ficon">&#x1F5BC;</span>Vector_Branding_Asset.svg</span>
+                    <span class="htc-fd">Today at 8:47 pm</span>
+                    <span class="htc-fs">133 KB</span>
+                    <span class="htc-fk"><span class="htc-tag-yellow">SVG</span></span>
+                  </div>
+                </div>
+
+                <!-- Realistic Mouse Pointer Hovering on list -->
+                <div class="htc-finder-cursor" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 2L18.5 12.5L12 13.5L16 21.5L13 23L9 15L4 19L4 2Z" fill="#18181B" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /htc-window-canvas -->
+
+      </div><!-- /htc-mockup-window -->
+    </div><!-- /htc-stage-col -->
+
+  </div><!-- /htc-grid-container -->
+</section>
+
+<section class="fk-featured-showcase page-width" id="featured-showcase" aria-label="Featured Pro Tools">
+  
+  <div class="fk-feat-header">
+    <h2 class="fk-feat-title">Free Tools You'd Usually Pay For</h2>
+    <p class="fk-feat-subtitle">No Limits, No Sign-Up</p>
+    <span class="fk-feat-kicker">Here's our featured tools</span>
+  </div>
+
+  <div class="fk-feat-grid">
+
+    <article class="fk-feat-card" data-tool-id="pdf-merge" role="button" tabindex="0">
+      <div class="fk-feat-visual fk-visual-ice">
+        <div class="fk-pro-window">
+          <div class="fk-pro-header">
+            <div class="fk-pro-dots">
+              <span class="fk-pdot"></span><span class="fk-pdot"></span><span class="fk-pdot"></span>
+            </div>
+            <span class="fk-pro-filename">Contract_Agreement.pdf</span>
+            <span class="fk-pro-pages-tag">Page 1 / 8</span>
+          </div>
+
+          <div class="fk-pro-toolstrip">
+            <div class="fk-pro-tools-group">
+              <span class="fk-ptool active">✏️ Edit</span>
+              <span class="fk-ptool">🔤 Text</span>
+              <span class="fk-ptool">🖍️ Highlight</span>
+              <span class="fk-ptool">✒️ Sign</span>
+              <span class="fk-ptool">📐 Shapes</span>
+            </div>
+            <span class="fk-pro-zoom">100% ▾</span>
+          </div>
+
+          <div class="fk-pro-canvas fk-pro-canvas-pdf">
+            <div class="fk-pro-sheet">
+              <div class="fk-pro-sheet-rail">
+                <div class="fk-pro-thumb active"></div>
+                <div class="fk-pro-thumb"></div>
+                <div class="fk-pro-thumb"></div>
+              </div>
+
+              <div class="fk-pro-sheet-page">
+                <div class="fk-pro-doc-title">MUTUAL NON-DISCLOSURE AGREEMENT</div>
+                <div class="fk-pro-doc-line w-90"></div>
+                <div class="fk-pro-doc-line w-75"></div>
+                
+                <div class="fk-pro-sel-block">
+                  <div class="fk-pro-hl-streak"></div>
+                  <span class="fk-pro-sel-text">All proprietary files remain private &amp; confidential.</span>
+                  <span class="fk-pro-handle tl"></span><span class="fk-pro-handle tr"></span>
+                  <span class="fk-pro-handle bl"></span><span class="fk-pro-handle br"></span>
+                </div>
+
+                <div class="fk-pro-doc-line w-85"></div>
+                
+                <div class="fk-pro-sign-row">
+                  <div class="fk-pro-sign-seal">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Verified E-Sign</span>
+                  </div>
+                  <div class="fk-pro-sign-line"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="fk-feat-body">
+        <h3 class="fk-feat-card-title">PDF Creator &amp; Suite</h3>
+        <p class="fk-feat-card-desc">Create, annotate, merge, split, and electronically sign PDF documents seamlessly.</p>
+        <div class="fk-feat-link-row">
+          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">→</span></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="fk-feat-card" data-tool-id="image-crop" role="button" tabindex="0">
+      <div class="fk-feat-visual fk-visual-lavender">
+        <div class="fk-pro-window">
+          <div class="fk-pro-header">
+            <div class="fk-pro-dots">
+              <span class="fk-pdot"></span><span class="fk-pdot"></span><span class="fk-pdot"></span>
+            </div>
+            <span class="fk-pro-filename">Portrait_Cutout_Studio.png</span>
+            <span class="fk-pro-dims-tag">3840 × 2160</span>
+          </div>
+
+          <div class="fk-pro-toolstrip">
+            <div class="fk-pro-tools-group">
+              <span class="fk-ptool active">✂️ Cutout</span>
+              <span class="fk-ptool">🎨 Fill</span>
+              <span class="fk-ptool">🔍 Edge</span>
+              <span class="fk-ptool">📐 Resize</span>
+            </div>
+            <div class="fk-pro-fmts">
+              <span class="fk-pfmt active">PNG</span>
+              <span class="fk-pfmt">WEBP</span>
+              <span class="fk-pfmt">AVIF</span>
+            </div>
+          </div>
+
+          <div class="fk-pro-canvas fk-pro-canvas-bgr">
+            <div class="fk-pro-cutout-frame">
+              <img src="assets/portrait_model.jpg" alt="Portrait background removal" class="fk-pro-cutout-img"/>
+              
+              <div class="fk-pro-cutout-mask"></div>
+              <div class="fk-pro-cutout-line">
+                <span class="fk-pro-cutout-badge">Isolated Cutout</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fk-feat-body">
+        <h3 class="fk-feat-card-title">Background Remover</h3>
+        <p class="fk-feat-card-desc">Isolate subjects, remove backgrounds, and export transparent PNGs with crisp edges.</p>
+        <div class="fk-feat-link-row">
+          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">→</span></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="fk-feat-card" data-tool-id="pdf-compress" role="button" tabindex="0">
+      <div class="fk-feat-visual fk-visual-mint">
+        <div class="fk-pro-window">
+          <div class="fk-pro-header">
+            <div class="fk-pro-dots">
+              <span class="fk-pdot"></span><span class="fk-pdot"></span><span class="fk-pdot"></span>
+            </div>
+            <span class="fk-pro-filename">Media_Package_4K.zip</span>
+            <span class="fk-pro-saved-tag">-86% Saved</span>
+          </div>
+
+          <div class="fk-pro-toolstrip">
+            <div class="fk-pro-tools-group">
+              <span class="fk-ptool active">Extreme (-86%)</span>
+              <span class="fk-ptool">Balanced</span>
+              <span class="fk-ptool">Lossless</span>
+            </div>
+            <span class="fk-pro-zoom">Neural Engine</span>
+          </div>
+
+          <div class="fk-pro-canvas fk-pro-canvas-comp">
+            <div class="fk-pro-comp-flow">
+              <div class="fk-pro-comp-card before">
+                <span class="fk-pro-cc-label">RAW ORIGINAL</span>
+                <span class="fk-pro-cc-size">14.8 MB</span>
+                <div class="fk-pro-cc-bar"><div class="fk-pro-cc-fill w-100"></div></div>
+              </div>
+
+              <div class="fk-pro-comp-bridge">
+                <div class="fk-pro-comp-arrow">➔</div>
+              </div>
+
+              <div class="fk-pro-comp-card after">
+                <span class="fk-pro-cc-label green">OPTIMIZED</span>
+                <span class="fk-pro-cc-size green">2.1 MB</span>
+                <div class="fk-pro-cc-bar"><div class="fk-pro-cc-fill w-14"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fk-feat-body">
+        <h3 class="fk-feat-card-title">Smart File Compressor</h3>
+        <p class="fk-feat-card-desc">Shrink heavy PDFs, videos, and images by up to 90% while preserving crisp quality.</p>
+        <div class="fk-feat-link-row">
+          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">→</span></span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="fk-faq-section" id="faq-section">
+  <div class="fk-faq-container page-width">
+    
+    <div class="fk-faq-left">
+      <div class="fk-faq-header">
+        <span class="fk-faq-kicker">FAQ</span>
+        <h2 class="fk-faq-title">Frequently Asked Questions</h2>
+      </div>
+
+      <div class="fk-faq-mascot-box">
+        <svg class="fk-mascot-svg" width="220" height="230" viewBox="0 0 220 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="fk-mascot-shadow" x="-20%" y="-10%" width="140%" height="130%">
+              <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#1E1B4B" flood-opacity="0.09"/>
+            </filter>
+            <filter id="fk-bubble-shadow" x="-30%" y="-20%" width="160%" height="150%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#EF4444" flood-opacity="0.25"/>
+            </filter>
+          </defs>
+
+          <ellipse cx="100" cy="205" rx="55" ry="8" fill="#E2E8F0"/>
+
+          <rect x="74" y="195" width="16" height="12" rx="6" fill="#334155"/>
+          <rect x="110" y="195" width="16" height="12" rx="6" fill="#334155"/>
+
+          <g filter="url(#fk-mascot-shadow)">
+            <path d="M50 56C50 47.1634 57.1634 40 66 40H120L150 70V180C150 188.837 142.837 196 134 196H66C57.1634 196 50 188.837 50 180V56Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+            <path d="M120 40V62C120 66.4183 123.582 70 128 70H150L120 40Z" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1.5"/>
+          </g>
+
+          <path d="M50 135 C38 142 34 152 38 160 C40 162 44 162 46 158 C48 152 49 146 51 142" stroke="#334155" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+          <path d="M149 135 C162 120 174 106 182 108 C185 111 183 118 174 128 C166 137 156 144 149 146" stroke="#334155" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+          <circle cx="80" cy="118" r="7" fill="#1E293B"/>
+          <circle cx="78" cy="116" r="2.2" fill="#FFFFFF"/>
+          
+          <circle cx="120" cy="118" r="7" fill="#1E293B"/>
+          <circle cx="118" cy="116" r="2.2" fill="#FFFFFF"/>
+
+          <circle cx="70" cy="128" r="6" fill="#FDA4AF" opacity="0.75"/>
+          <circle cx="130" cy="128" r="6" fill="#FDA4AF" opacity="0.75"/>
+
+          <path d="M94 126 C97 132 103 132 106 126" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+          <rect x="71" y="152" width="58" height="18" rx="9" fill="#FFF1F2" stroke="#FECDD3" stroke-width="1.2"/>
+          <text x="100" y="164.5" text-anchor="middle" fill="#E11D48" font-family="'Poppins', sans-serif" font-size="8.5" font-weight="700" letter-spacing="0.04em">HEIC → JPG</text>
+
+          <g filter="url(#fk-bubble-shadow)">
+            <path d="M142 36 C142 27.1634 149.163 20 158 20 H178 C186.837 20 194 27.1634 194 36 V48 C194 56.8366 186.837 64 178 64 H162 L152 74 V62 C146.5 60 142 54.5 142 48 V36 Z" fill="#EF4444"/>
+            <text x="168" y="49" text-anchor="middle" fill="#FFFFFF" font-family="'Poppins', sans-serif" font-size="22" font-weight="800">?</text>
+          </g>
+        </svg>
+
+        <p class="fk-mascot-caption">hi! ask me anything</p>
+      </div>
+    </div>
+
+    <div class="fk-faq-right">
+      <div class="fk-faq-accordion" id="fk-faq-accordion">
+
+        <div class="fk-faq-item active">
+          <button class="fk-faq-question" type="button" aria-expanded="true">
+            <span>What is FileKit?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>FileKit is a 100% private, browser-based file workstation. It empowers you to convert, compress, merge, split, edit, crop, and inspect files across PDFs, images, videos, audio, and documents directly on your device without installing software or creating an account.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fk-faq-item">
+          <button class="fk-faq-question" type="button" aria-expanded="false">
+            <span>How does it run locally without uploading my files?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>FileKit is powered by modern WebAssembly (WASM) and native browser hardware acceleration. When you drop a file, the processing engine runs inside your browser's local sandbox memory. Zero bytes ever leave your device or touch a remote server.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fk-faq-item">
+          <button class="fk-faq-question" type="button" aria-expanded="false">
+            <span>What formats does it support?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>FileKit supports dozens of formats across 6 core categories: PDFs, Images (PNG, JPG, WebP, AVIF, HEIC, SVG, GIF), Videos (MP4, WebM, MOV, GIF), Audio (MP3, WAV, AAC, FLAC, M4A), Documents (Word DOCX, Excel XLSX, PPTX, EPUB, TXT), and Archive bundles (ZIP, TAR).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fk-faq-item">
+          <button class="fk-faq-question" type="button" aria-expanded="false">
+            <span>Can I use it for NDA, confidential, or sensitive files?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>Yes. Because files never leave your client device, FileKit is completely compliant with strict confidentiality policies, NDAs, HIPAA, and GDPR standards. Your data is never logged, stored, or inspected by third parties.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fk-faq-item">
+          <button class="fk-faq-question" type="button" aria-expanded="false">
+            <span>Does it work fully offline?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>Yes! Once the page has loaded once, our progressive service worker caches all essential conversion binaries. You can disconnect your Wi-Fi, turn on airplane mode, and continue working with all your file tools seamlessly.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fk-faq-item">
+          <button class="fk-faq-question" type="button" aria-expanded="false">
+            <span>Is FileKit free, and are there file size caps?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>FileKit is 100% free with no forced subscriptions or hidden tiers. Since processing runs on your own device's CPU/GPU rather than costly cloud servers, you don't face arbitrary cloud size limits or wait in artificial upload queues.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="fk-faq-item">
+          <button class="fk-faq-question" type="button" aria-expanded="false">
+            <span>Do I need to install any software or extensions?</span>
+            <div class="fk-faq-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+          </button>
+          <div class="fk-faq-answer">
+            <div class="fk-faq-answer-inner">
+              <p>None at all. FileKit runs in any standard modern web browser (Chrome, Safari, Firefox, Edge, Arc, Brave) across macOS, Windows, Linux, Chromebooks, iPads, and mobile devices.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+
+
+<main hidden="" id="app-view">
+  <header class="app-topbar" id="app-topbar" role="banner">
+    <div class="app-topbar-brand-zone" id="app-home-brand-btn" role="button" tabindex="0" title="FileKit Home">
+      <svg class="brand-icon" width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="fk-app-badge-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1A1714" flood-opacity="0.4"/></filter>
+          <linearGradient id="fk-app-tile-bg" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1F5F9"/></linearGradient>
+        </defs>
+        <g filter="url(#fk-app-badge-shadow)">
+          <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#fk-app-tile-bg)"/>
+          <rect x="4" y="4" width="40" height="40" rx="10" stroke="rgba(255,255,255,0.9)" stroke-width="0.8"/>
+          <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+          <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+          <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+          <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+          <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="app-topbar-content">
+      <div class="app-topbar-left">
+        <strong class="app-brand-name" id="app-brand-text-btn" style="cursor:pointer;">FileKit</strong>
+        <span class="app-topbar-divider">/</span>
+        <h1 class="app-topbar-page-title" id="app-workspace-title">Home</h1>
+      </div>
+
+      <div class="nav-spacer"></div>
+
+      <div class="app-topbar-right">
+        <button type="button" class="app-getpro-btn" id="app-getpro-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#EAB308" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.7 6.3L22 10l-5.6 5.1L18 22l-6-3.8L6 22l1.6-6.9L2 10l7.3-1.7z"/></svg>
+          <span>Get Pro</span>
+        </button>
+        <button type="button" class="app-login-btn" id="app-login-btn">Log In</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout-wrapper">
+
+    <aside class="app-sidebar-rail" id="app-sidebar-rail" aria-label="Category Navigation">
+      <nav class="rail-nav">
+        <button type="button" class="rail-item active" data-task-rail="compress" title="Compress tools">
+          <span class="rail-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></span>
+          <span class="rail-label">Compress</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="convert" title="Convert tools">
+          <span class="rail-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7h11l-3-3M17 17H6l3 3M18 4l3 3-3 3M6 20l-3-3 3-3"/></svg></span>
+          <span class="rail-label">Convert</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="organize" title="Organize tools">
+          <span class="rail-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="11" height="14" rx="1.6"/><path d="M9 3h11a2 2 0 0 1 2 2v11"/><path d="M4 12h11M4 16h11"/></svg></span>
+          <span class="rail-label">Organize</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="edit" title="Edit tools">
+          <span class="rail-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20z"/><path d="m13.5 7.5 3 3"/></svg></span>
+          <span class="rail-label">Edit</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="image" title="Image tools">
+          <span class="rail-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>
+          <span class="rail-label">Image</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="scan" title="Scan & capture tools">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h4l2-3h8l2 3h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 14.5h.01M20 12h.01"/></svg>
+          </span>
+          <span class="rail-label">Scan</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="qr" title="QR & Barcode tools">
+          <span class="rail-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 14v.01M14 21v.01M21 21h-3"/></svg></span>
+          <span class="rail-label">QR &amp; Barcode</span>
+        </button>
+
+        <button type="button" class="rail-item" data-task-rail="more" title="All FileKit tools">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/><circle cx="19" cy="19" r="1.5" fill="currentColor"/></svg>
+          </span>
+          <span class="rail-label">All tools</span>
+        </button>
+
+      </nav>
+
+      <div class="rail-bottom">
+        <button type="button" class="rail-item" id="rail-account-btn" title="Local Privacy & Account">
+          <span class="rail-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span class="rail-label">Account</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="app-main-content">
+
+      <div class="app-canvas" id="app-canvas">
+
+      <div class="app-home-view" id="app-home-view">
+        <section class="sp-section">
+          <h2 class="sp-section-heading">Popular Tools</h2>
+          <div class="sp-tools-grid" id="sp-popular-grid"></div>
+        </section>
+        <section class="sp-section">
+          <h2 class="sp-section-heading">More Tools</h2>
+          <div class="sp-tools-grid" id="sp-more-grid"></div>
+        </section>
+      </div>
+
+      <div class="app-category-view" id="app-category-view" hidden="">
+        <section class="app-dropzone-hero" id="app-dropzone-section">
+          <input type="file" id="app-file-input" hidden multiple />
+          <div class="drop-hero-box" id="app-file-dropzone" role="button" tabindex="0" aria-label="Drop files to start">
+            
+            <div class="dropzone-idle" id="dropzone-idle">
+
+            <div class="drop-illustration">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group">
+              <button type="button" class="select-files-main-btn" id="app-choose-file-btn">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select files</span>
+              </button>
+              <button type="button" class="select-files-chevron-btn" id="app-choose-file-dropdown" aria-label="More file options">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+
+            <p class="drop-sub-text" id="drop-sub-text">
+              Add <strong>PDF</strong>, <strong>image</strong>, <strong>Word</strong>, <strong>Excel</strong>, and <strong>PowerPoint</strong> files
+            </p>
+
+            <div class="supported-formats-row" id="supported-formats-row">
+              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf">PDF</span>
+              <span class="fmt-badge fmt-doc">DOC</span>
+              <span class="fmt-badge fmt-xls">XLS</span>
+              <span class="fmt-badge fmt-ppt">PPT</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+            </div>
+            </div>
+
+            <div class="drop-detected-panel" id="dropzone-detected" hidden="">
+              <div class="drop-detected-file">
+                <span class="drop-file-icon" id="detected-file-icon">📄</span>
+                <div class="drop-file-info">
+                  <strong id="detected-file-name">document.pdf</strong>
+                  <span id="detected-file-meta">2.4 MB · PDF</span>
+                </div>
+                <button type="button" class="drop-clear-btn" id="clear-dropped-file">Change ×</button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <section class="app-workspace-tools-section" id="app-workspace-tools-section" hidden="">
+          <div class="app-tools-container grid-view" id="app-tools-grid"></div>
+          <div class="app-category-hub-grid" id="app-category-hub" hidden=""></div>
+        </section>
+      </div>
+
+      <div class="app-workspace-tool-view" id="app-workspace-tool-view" hidden="">
+        <div class="app-stage-container" id="app-tool-stage"></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+
+<main hidden="" id="seo-tool-view">
+  <div class="tool-page-wrap page-width">
+    <!-- Breadcrumb Bar -->
+    <nav aria-label="Breadcrumb" class="breadcrumbs">
+      <ol>
+        <li><button id="seo-crumb-home" type="button">Home</button></li>
+        <li><span class="crumb-sep">›</span><span id="crumb-category">PDF</span></li>
+        <li><span class="crumb-sep">›</span><strong aria-current="page" id="crumb-tool">Compress PDF</strong></li>
+      </ol>
+    </nav>
+
+    <!-- Page Title & Header for SEO -->
+    <div class="fk-seo-hero-header">
+      <h1 class="fk-seo-hero-title" id="fk-seo-hero-title">Compress PDF for Free</h1>
+    </div>
+
+    <!-- Hero Interactive Tool Stage (FF.Flow.mount mounts the tool here) -->
+    <div class="stage" id="stage"></div>
+
+    <!-- Dynamic SEO Content Container -->
+    <div id="fk-seo-dynamic-content"></div>
+
+    <!-- Section 7: Related Tools in This Category -->
+    <section class="more-tools related-tools-section" style="margin-top: 60px;">
+      <div class="section-heading">
+        <h2>More tools in this category</h2>
+      </div>
+      <div class="popular-grid compact" id="related-grid"></div>
+    </section>
+  </div>
+</main>
+
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-main page-width">
+    <div class="footer-brand">
+      <div class="brand">
+        <svg class="brand-icon" width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="fk-footer-badge-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1A1714" flood-opacity="0.12"/></filter>
+            <linearGradient id="fk-footer-tile-bg" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F8FAFC"/></linearGradient>
+          </defs>
+          <g filter="url(#fk-footer-badge-shadow)">
+            <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#fk-footer-tile-bg)"/>
+            <rect x="4" y="4" width="40" height="40" rx="10" stroke="#CBD5E1" stroke-width="0.8"/>
+            <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+            <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+            <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+            <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+            <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+          </g>
+        </svg>
+        <strong>FileKit</strong>
+      </div>
+      <p class="footer-desc">The modern, all-in-one browser file suite. Convert, compress, edit, and organize documents, media, and archives with speed and precision.</p>
+      <div class="footer-meta-pill">Fast · Intuitive · Universal</div>
+    </div>
+
+    <div class="footer-col">
+      <strong>PDF Tools</strong>
+      <button data-footer-category="PDF" type="button">Merge PDF</button>
+      <button data-footer-category="PDF" type="button">Split PDF</button>
+      <button data-footer-category="PDF" type="button">Compress PDF</button>
+      <button data-footer-category="PDF" type="button">PDF to Word</button>
+      <button data-footer-category="PDF" type="button">Word to PDF</button>
+      <button data-footer-category="PDF" type="button">Sign PDF</button>
+      <button data-footer-category="PDF" type="button">PDF OCR</button>
+    </div>
+
+    <div class="footer-col">
+      <strong>Image &amp; Media</strong>
+      <button data-footer-category="Images" type="button">Convert Image</button>
+      <button data-footer-category="Images" type="button">Compress Image</button>
+      <button data-footer-category="Images" type="button">Crop &amp; Resize</button>
+      <button data-footer-category="Video" type="button">Convert Video</button>
+      <button data-footer-category="Video" type="button">Compress Video</button>
+      <button data-footer-category="Audio" type="button">Convert Audio</button>
+    </div>
+
+    <div class="footer-col">
+      <strong>Utilities</strong>
+      <button data-footer-category="Archive" type="button">ZIP Archive</button>
+      <button data-footer-category="QR" type="button">QR Code Generator</button>
+      <button data-footer-category="Documents" type="button">Markdown to PDF</button>
+      <button data-footer-category="Images" type="button">WebP Converter</button>
+      <button data-footer-category="Security" type="button">Password Generator</button>
+      <button data-footer-category="PDF" type="button">Extract Text</button>
+    </div>
+
+    <div class="footer-col">
+      <strong>Company</strong>
+      <button data-footer-link="about" type="button">About FileKit</button>
+      <button data-footer-link="privacy" type="button">Privacy &amp; Security</button>
+      <button data-footer-link="terms" type="button">Terms of Service</button>
+      <button data-footer-link="help" type="button">Help Centre &amp; FAQ</button>
+      <button data-footer-link="shortcuts" type="button">Keyboard Shortcuts</button>
+    </div>
+  </div>
+
+  <div class="footer-bottom page-width">
+    <span class="footer-copy">© 2026 FileKit Inc. All rights reserved.</span>
+    <div class="footer-bottom-links">
+      <button data-footer-link="privacy" type="button">Privacy</button>
+      <span class="footer-dot-sep">·</span>
+      <button data-footer-link="terms" type="button">Terms</button>
+      <span class="footer-dot-sep">·</span>
+      <button data-footer-link="help" type="button">Support</button>
+      <span class="footer-dot-sep">·</span>
+      <button data-footer-link="shortcuts" type="button">Shortcuts</button>
+    </div>
+  </div>
+</footer>
+</div>
+  <script src="js/app.js?v=artisan_bespoke_illustrations_v13"></script>
+<script src="js/tools.js?v=artisan_bespoke_illustrations_v13"></script>
+<script src="js/tools-new.js?v=artisan_bespoke_illustrations_v13"></script>
+<script src="js/tools-premium.js?v=artisan_bespoke_illustrations_v13"></script>
+<script src="js/tools-premium2.js?v=artisan_bespoke_illustrations_v13"></script>
+</body>
+</html>

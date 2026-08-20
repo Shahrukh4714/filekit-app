@@ -1,0 +1,182 @@
+[
+  {
+    "id": "pdf-edit-text",
+    "name": "Edit Text",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-sign",
+    "name": "Sign",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-convert",
+    "name": "Convert",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-flatten",
+    "name": "Flatten",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-protect",
+    "name": "Protect",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-unlock",
+    "name": "Unlock",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-page-numbers",
+    "name": "Number Pages",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-rotate",
+    "name": "Rotate",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-watermark",
+    "name": "Watermark",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-crop",
+    "name": "Crop",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-resize",
+    "name": "Resize",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-extract-range",
+    "name": "Extract Pages",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-redact",
+    "name": "Redact",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-repair",
+    "name": "Repair",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-form-filler",
+    "name": "Form Filler",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-to-pdf",
+    "name": "Optimize PDF",
+    "cat": "PDF"
+  },
+  {
+    "id": "docx-to-pdf",
+    "name": "DOCX to PDF",
+    "cat": "Documents"
+  },
+  {
+    "id": "md-to-pdf",
+    "name": "MD to PDF",
+    "cat": "Documents"
+  },
+  {
+    "id": "html-to-pdf",
+    "name": "HTML to PDF",
+    "cat": "Documents"
+  },
+  {
+    "id": "txt-to-pdf",
+    "name": "TXT to PDF",
+    "cat": "Documents"
+  },
+  {
+    "id": "image-to-pdf",
+    "name": "Image to PDF",
+    "cat": "Images"
+  },
+  {
+    "id": "pdf-to-word",
+    "name": "PDF to Word",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-to-excel",
+    "name": "PDF to Excel",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-to-image",
+    "name": "PDF to Image",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-compress",
+    "name": "Compress",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-merge",
+    "name": "Merge",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-split",
+    "name": "Split",
+    "cat": "PDF"
+  },
+  {
+    "id": "organize",
+    "name": "Organize PDF & Media",
+    "cat": "PDF"
+  },
+  {
+    "id": "scan-document",
+    "name": "Scan Document",
+    "cat": "Scan & Workflow"
+  },
+  {
+    "id": "workflow-builder",
+    "name": "Workflow Builder",
+    "cat": "Scan & Workflow"
+  },
+  {
+    "id": "pdf-to-audio",
+    "name": "PDF to Audio",
+    "cat": "Audio"
+  },
+  {
+    "id": "pdf-extract-text",
+    "name": "OCR PDF",
+    "cat": "PDF"
+  },
+  {
+    "id": "xlsx-to-csv",
+    "name": "EXCEL to PDF",
+    "cat": "Spreadsheets"
+  },
+  {
+    "id": "pdf-to-ppt",
+    "name": "PDF to POWERPOINT",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-to-pdfa",
+    "name": "PDF to PDF/A",
+    "cat": "PDF"
+  },
+  {
+    "id": "pdf-sanitize-pii",
+    "name": "Auto-Redact PII",
+    "cat": "PDF"
+  }
+]

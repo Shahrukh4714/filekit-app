@@ -1,0 +1,15 @@
+# Local dev preview & database cache
+.freebuff/
+*.log
+*.log.err
+
+# Temporary scratch & backup files
+scratch_*
+*.backup.*
+New folder/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileKit — Current Brand Icon Upgrades & Concept Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-page: #0B0F19;
+    --bg-surface: #131A29;
+    --bg-card: #192236;
+    --border: #2A364F;
+    --border-subtle: #1E283D;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    
+    /* FileKit Core Colors */
+    --red: #FF4D4D;
+    --yellow: #FFC700;
+    --green: #00E676;
+    --sky: #00B0FF;
+    --purple: #7C3AED;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 44px 24px 80px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    color: #C4B5FD;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00E676;
+    box-shadow: 0 0 10px #00E676;
+  }
+
+  h1 {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+
+  header p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    max-width: 720px;
+    margin: 12px auto 0;
+    line-height: 1.6;
+  }
+
+  /* Current vs Upgraded Comparison Banner */
+  .comparison-banner {
+    background: linear-gradient(135deg, #161F33 0%, #101624 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px 32px;
+    margin-bottom: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .compare-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .compare-stage {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #0B0E17;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .compare-info h4 {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .compare-info p {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .compare-arrow {
+    font-size: 24px;
+    color: #7C3AED;
+    font-weight: 800;
+  }
+
+  /* Grid of Upgraded Directions */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 28px;
+    margin-bottom: 56px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card:hover {
+    border-color: rgba(124, 58, 237, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(124, 58, 237, 0.2);
+    color: #C4B5FD;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+  }
+
+  .card-stage-container {
+    background: #0D1322;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 32px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .card-stage-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 14px 14px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .card-stage-container svg {
+    filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .card-stage-container:hover svg {
+    transform: scale(1.08);
+  }
+
+  /* Live Lockup Preview (Icon + Brand Name) */
+  .lockup-preview {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .lockup-preview strong {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+
+  .card h3 {
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-bottom: 18px;
+    min-height: 40px;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+  }
+
+  .btn-sm {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn-sm:hover {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+  }
+
+  .btn-sm.primary {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+  }
+
+  .btn-sm.primary:hover {
+    background: #6D28D9;
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #10B981;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="badge"><span class="badge-dot"></span> Brand Identity Lab</div>
+    <h1>Upgraded Variations of Our Current Brand Icon</h1>
+    <p>Exploring 6 tier-1 professional evolutions of the FileKit 5-tile mosaic mark (Red, Yellow, Green, Sky Blue with Purple Core), elevated with tactile depth, glassmorphism, isometric physics, and optical micro-radii.</p>
+  </header>
+
+  <!-- Comparison Banner -->
+  <div class="comparison-banner">
+    <div class="compare-item">
+      <div class="compare-stage">
+        <!-- Current Raw SVG -->
+        <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
+          <rect x="16.5" y="7" width="15" height="15" rx="4" fill="#FF4D4D"/>
+          <rect x="26" y="16.5" width="15" height="15" rx="4" fill="#FFC700"/>
+          <rect x="16.5" y="26" width="15" height="15" rx="4" fill="#00E676"/>
+          <rect x="7" y="16.5" width="15" height="15" rx="4" fill="#00B0FF"/>
+          <rect x="20" y="20" width="8" height="8" rx="2.5" fill="#7C3AED"/>
+        </svg>
+      </div>
+      <div class="compare-info">
+        <h4>Current Flat Icon</h4>
+        <p>5 simple flat squares with hard 90° overlaps and zero lighting.</p>
+      </div>
+    </div>
+
+    <div class="compare-arrow">→</div>
+
+    <div class="compare-item">
+      <div class="compare-stage" style="background: radial-gradient(circle at center, rgba(124, 58, 237, 0.25), #0B0E17);">
+        <!-- Quick Preview of 3D Tactile Pinwheel -->
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+          <rect x="16" y="6.5" width="16" height="16" rx="4.5" fill="#FF5252"/>
+          <rect x="25.5" y="16" width="16" height="16" rx="4.5" fill="#FFC700"/>
+          <rect x="16" y="25.5" width="16" height="16" rx="4.5" fill="#00E676"/>
+          <rect x="6.5" y="16" width="16" height="16" rx="4.5" fill="#00B0FF"/>
+          <rect x="19.5" y="19.5" width="9" height="9" rx="2.8" fill="#7C3AED" stroke="#fff" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <div class="compare-info">
+        <h4>Upgraded Evolution</h4>
+        <p>Polished lighting, depth bevels, harmonious overlaps, and crisp scale integrity.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matrix of 6 Upgraded Variations -->
+  <div class="grid">
+
+    <!-- ================= 1. Tactile 3D Enamel Jewel ================= -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-num">1</div>
+        <span class="card-tag">Tactile 3D</span>
+      </div>
+      <div class="card-stage-container">
+        <svg id="svg-mark-1" width="120" height="120" viewBox="0 0 48 48" fill="none">
+          <defs>
+            <filter id="m1-shadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000" flood-opacity="0.35"/>
+            </filter>
+            <filter id="m1-center-shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#000" flood-opacity="0.45"/>
+            </filter>
+            <linearGradient id="m1-red" x1="16" y1="6" x2="32" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#FF6B6B"/><stop offset="1" stop-color="#E5252A"/></linearGradient>
+            <linearGradient id="m1-yellow" x1="25" y1="16" x2="41" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#FFDF00"/><stop offset="1" stop-color="#F59E0B"/></linearGradient>
+            <linearGradient id="m1-green" x1="16" y1="25" x2="32" y2="41" gradientUnits="userSpaceOnUse"><stop stop-color="#4EFA9D"/><stop offset="1" stop-color="#00C853"/></linearGradient>
+            <linearGradient id="m1-sky" x1="6" y1="16" x2="22" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#4DC6FF"/><stop offset="1" stop-color="#0091EA"/></linearGradient>
+            <linearGradient id="m1-purp" x1="19" y1="19" x2="29" y2="29" gradientUnits="userSpaceOnUse"><stop stop-color="#A855F7"/><stop offset="1" stop-color="#6D28D9"/></linearGradient>
+            <linearGradient id="m1-spec" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          </defs>
+          <!-- Petal Tiles -->
+          <g filter="url(#m1-shadow)">
+            <!-- Top Red -->
+            <rect x="16.5" y="6.5" width="15" height="15" rx="4.5" fill="url(#m1-red)"/>
+            <rect x="17" y="7" width="14" height="6.5" rx="3" fill="url(#m1-spec)"/>
+            <rect x="16.5" y="6.5" width="15" height="15" rx="4.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.75"/>
+            <!-- Right Yellow -->
+            <rect x="26.5" y="16.5" width="15" height="15" rx="4.5" fill="url(#m1-yellow)"/>
+            <rect x="27" y="17" width="14" height="6.5" rx="3" fill="url(#m1-spec)"/>
+            <rect x="26.5" y="16.5" width="15" height="15" rx="4.5" stroke="rgba(255,255,255,0.45)" stroke-width="0.75"/>
+            <!-- Bottom Green -->
+            <rect x="16.5" y="26.5" width="15" height="15" rx="4.5" fill="url(#m1-green)"/>
+            <rect x="17" y="27" width="14" height="6.5" rx="3" fill="url(#m1-spec)"/>
+            <rect x="16.5" y="26.5" width="15" height="15" rx="4.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.75"/>
+            <!-- Left Sky Blue -->
+            <rect x="6.5" y="16.5" width="15" height="15" rx="4.5" fill="url(#m1-sky)"/>
+            <rect x="7" y="17" width="14" height="6.5" rx="3" fill="url(#m1-spec)"/>
+            <rect x="6.5" y="16.5" width="15" height="15" rx="4.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.75"/>
+          </g>
+          <!-- Center Purple Core Jewel (Elevated) -->
+          <g filter="url(#m1-center-shadow)">
+            <rect x="19.5" y="19.5" width="9" height="9" rx="2.8" fill="url(#m1-purp)"/>
+            <rect x="20" y="20" width="8" height="4" rx="1.5" fill="url(#m1-spec)"/>
+            <rect x="19.5" y="19.5" width="9" height="9" rx="2.8" stroke="#FFFFFF" stroke-width="1.2"/>
+          </g>
+        </svg>
+
+        <div class="lockup-preview">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><use href="#svg-mark-1"/></svg>
+          <strong>FileKit</strong>
+        </div>
+      </div>
+      <h3>1. Tactile 3D Enamel Jewel</h3>
+      <p class="card-desc">Gives each tile glossy top-lighting, smooth specular bevels, and lifts the central purple core with a crisp white border and drop shadow.</p>
+      <div class="card-actions">
+        <button class="btn-sm primary" onclick="copySvgCode('svg-mark-1')">Copy SVG</button>
+        <button class="btn-sm" onclick="downloadSvg('svg-mark-1', 'filekit-mark-tactile-3d.svg')">Download</button>
+      </div>
+    </div>
+
+    <!-- ================= 2. Glassmorphic Frosted Overlap ================= -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-num">2</div>
+        <span class="card-tag">Glassmorphic</span>
+      </div>
+      <div class="card-stage-container">
+        <svg id="svg-mark-2" width="120" height="120" viewBox="0 0 48 48" fill="none">
+          <defs>
+            <filter id="m2-blur"><feGaussianBlur stdDeviation="0.4"/></filter>
+            <linearGradient id="m2-center-glow" x1="19" y1="19" x2="29" y2="29" gradientUnits="userSpaceOnUse"><stop stop-color="#C084FC"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+          </defs>
+          <!-- Petals with Translucent Glass Overlap (Screen/Blend Effect) -->
+          <rect x="16.5" y="7" width="15" height="15" rx="5" fill="#FF4D4D" fill-opacity="0.88"/>
+          <rect x="16.5" y="7" width="15" height="15" rx="5" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+
+          <rect x="26" y="16.5" width="15" height="15" rx="5" fill="#FFC700" fill-opacity="0.88"/>
+          <rect x="26" y="16.5" width="15" height="15" rx="5" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+
+          <rect x="16.5" y="26" width="15" height="15" rx="5" fill="#00E676" fill-opacity="0.88"/>
+          <rect x="16.5" y="26" width="15" height="15" rx="5" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+
+          <rect x="7" y="16.5" width="15" height="15" rx="5" fill="#00B0FF" fill-opacity="0.88"/>
+          <rect x="7" y="16.5" width="15" height="15" rx="5" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>
+
+          <!-- Glowing Center Core with Subpixel Inner Stroke -->
+          <rect x="19" y="19" width="10" height="10" rx="3.2" fill="url(#m2-center-glow)"/>
+          <rect x="19" y="19" width="10" height="10" rx="3.2" stroke="#FFFFFF" stroke-width="1.5"/>
+          <circle cx="24" cy="24" r="1.5" fill="#FFFFFF"/>
+        </svg>
+
+        <div class="lockup-preview">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><use href="#svg-mark-2"/></svg>
+          <strong>FileKit</strong>
+        </div>
+      </div>
+      <h3>2. Glassmorphic Frosted Hub</h3>
+      <p class="card-desc">Translucent frosted tiles with crisp illuminated edges and an optical focal aperture dot inside the purple core.</p>
+      <div class="card-actions">
+        <button class="btn-sm primary" onclick="copySvgCode('svg-mark-2')">Copy SVG</button>
+        <button class="btn-sm" onclick="downloadSvg('svg-mark-2', 'filekit-mark-glassmorphic.svg')">Download</button>
+      </div>
+    </div>
+
+    <!-- ================= 3. Interlocking Continuous Ribbon ================= -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-num">3</div>
+        <span class="card-tag">Continuous Loop</span>
+      </div>
+      <div class="card-stage-container">
+        <svg id="svg-mark-3" width="120" height="120" viewBox="0 0 48 48" fill="none">
+          <defs>
+            <filter id="m3-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000" flood-opacity="0.4"/></filter>
+          </defs>
+          <g filter="url(#m3-shadow)">
+            <!-- Top Red to Yellow -->
+            <path d="M20 7 C20 7, 28 7, 30 7 C31.5 7, 33 8.5, 33 10 C33 12, 33 18, 33 20" stroke="#FF4D4D" stroke-width="6" stroke-linecap="round"/>
+            <!-- Right Yellow to Green -->
+            <path d="M41 20 C41 20, 41 28, 41 30 C41 31.5, 39.5 33, 38 33 C36 33, 30 33, 28 33" stroke="#FFC700" stroke-width="6" stroke-linecap="round"/>
+            <!-- Bottom Green to Blue -->
+            <path d="M28 41 C28 41, 20 41, 18 41 C16.5 41, 15 39.5, 15 38 C15 36, 15 30, 15 28" stroke="#00E676" stroke-width="6" stroke-linecap="round"/>
+            <!-- Left Blue to Red -->
+            <path d="M7 28 C7 28, 7 20, 7 18 C7 16.5, 8.5 15, 10 15 C12 15, 18 15, 20 15" stroke="#00B0FF" stroke-width="6" stroke-linecap="round"/>
+            <!-- Center Purple Core -->
+            <rect x="19.5" y="19.5" width="9" height="9" rx="3" fill="#7C3AED" stroke="#FFFFFF" stroke-width="1.2"/>
+          </g>
+        </svg>
+
+        <div class="lockup-preview">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><use href="#svg-mark-3"/></svg>
+          <strong>FileKit</strong>
+        </div>
+      </div>
+      <h3>3. Interlocking File Loops</h3>
+      <p class="card-desc">Translates the 4 squares into smooth kinetic rounded corner tracks converging around the purple core. Conveys conversion & movement.</p>
+      <div class="card-actions">
+        <button class="btn-sm primary" onclick="copySvgCode('svg-mark-3')">Copy SVG</button>
+        <button class="btn-sm" onclick="downloadSvg('svg-mark-3', 'filekit-mark-ribbon-loop.svg')">Download</button>
+      </div>
+    </div>
+
+    <!-- ================= 4. Precision Isometric Toolkit ================= -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-num">4</div>
+        <span class="card-tag">2.5D Isometric</span>
+      </div>
+      <div class="card-stage-container">
+        <svg id="svg-mark-4" width="120" height="120" viewBox="0 0 48 48" fill="none">
+          <defs>
+            <filter id="m4-iso-shadow"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.45"/></filter>
+          </defs>
+          <g filter="url(#m4-iso-shadow)" transform="translate(0, 1)">
+            <!-- Top Tile Red (Isometric Extrusion) -->
+            <path d="M24 7 L34 12 L24 17 L14 12 Z" fill="#FF5252"/>
+            <path d="M14 12 L24 17 L24 20 L14 15 Z" fill="#D32F2F"/>
+            <path d="M24 17 L34 12 L34 15 L24 20 Z" fill="#C62828"/>
+
+            <!-- Right Tile Yellow -->
+            <path d="M34 16 L44 21 L34 26 L24 21 Z" fill="#FFD54F"/>
+            <path d="M24 21 L34 26 L34 29 L24 24 Z" fill="#FFA000"/>
+            <path d="M34 26 L44 21 L44 24 L34 29 Z" fill="#FF8F00"/>
+
+            <!-- Bottom Tile Green -->
+            <path d="M24 25 L34 30 L24 35 L14 30 Z" fill="#69F0AE"/>
+            <path d="M14 30 L24 35 L24 38 L14 33 Z" fill="#00C853"/>
+            <path d="M24 35 L34 30 L34 33 L24 38 Z" fill="#00B248"/>
+
+            <!-- Left Tile Blue -->
+            <path d="M14 16 L24 21 L14 26 L4 21 Z" fill="#40C4FF"/>
+            <path d="M4 21 L14 26 L14 29 L4 24 Z" fill="#0091EA"/>
+            <path d="M14 26 L24 21 L24 24 L14 29 Z" fill="#00838F"/>
+
+            <!-- Central Floating Diamond Purple -->
+            <path d="M24 17 L29 19.5 L24 22 L19 19.5 Z" fill="#C084FC"/>
+            <path d="M19 19.5 L24 22 L24 24 L19 21.5 Z" fill="#7C3AED"/>
+            <path d="M24 22 L29 19.5 L29 21.5 L24 24 Z" fill="#6D28D9"/>
+          </g>
+        </svg>
+
+        <div class="lockup-preview">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><use href="#svg-mark-4"/></svg>
+          <strong>FileKit</strong>
+        </div>
+      </div>
+      <h3>4. Isometric Modular Kit</h3>
+      <p class="card-desc">An isometric 2.5D perspective where each tool module snaps together physically into the FileKit engine hub.</p>
+      <div class="card-actions">
+        <button class="btn-sm primary" onclick="copySvgCode('svg-mark-4')">Copy SVG</button>
+        <button class="btn-sm" onclick="downloadSvg('svg-mark-4', 'filekit-mark-isometric.svg')">Download</button>
+      </div>
+    </div>
+
+    <!-- ================= 5. App Store Squircle Badge ================= -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-num">5</div>
+        <span class="card-tag">App Tile Badge</span>
+      </div>
+      <div class="card-stage-container">
+        <svg id="svg-mark-5" width="120" height="120" viewBox="0 0 48 48" fill="none">
+          <defs>
+            <filter id="m5-badge-shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/></filter>
+            <linearGradient id="m5-tile-bg" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1F5F9"/></linearGradient>
+          </defs>
+          <g filter="url(#m5-badge-shadow)">
+            <!-- Squircle Container -->
+            <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#m5-tile-bg)"/>
+            <rect x="4" y="4" width="40" height="40" rx="10" stroke="rgba(255,255,255,0.9)" stroke-width="0.8"/>
+            
+            <!-- Scaled & Perfectly Centered 5-Tile Mark -->
+            <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+            <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+            <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+            <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+            <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+          </g>
+        </svg>
+
+        <div class="lockup-preview">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><use href="#svg-mark-5"/></svg>
+          <strong>FileKit</strong>
+        </div>
+      </div>
+      <h3>5. iOS Superellipse App Tile</h3>
+      <p class="card-desc">Houses the 5-tile mark in a refined iOS squircle with subtle drop shadow, perfect for mobile app icons, favicons, and browser tabs.</p>
+      <div class="card-actions">
+        <button class="btn-sm primary" onclick="copySvgCode('svg-mark-5')">Copy SVG</button>
+        <button class="btn-sm" onclick="downloadSvg('svg-mark-5', 'filekit-mark-app-tile.svg')">Download</button>
+      </div>
+    </div>
+
+    <!-- ================= 6. Precision Optical Notch & Bevel ================= -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-num">6</div>
+        <span class="card-tag">Precision Modern</span>
+      </div>
+      <div class="card-stage-container">
+        <svg id="svg-mark-6" width="120" height="120" viewBox="0 0 48 48" fill="none">
+          <defs>
+            <filter id="m6-glow"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#7C3AED" flood-opacity="0.3"/></filter>
+          </defs>
+          <!-- 4 Floating Petal Pills with Engineered Gap Radii -->
+          <rect x="17" y="7" width="14" height="14" rx="4.5" fill="#FF4D4D"/>
+          <rect x="27" y="17" width="14" height="14" rx="4.5" fill="#FFC700"/>
+          <rect x="17" y="27" width="14" height="14" rx="4.5" fill="#00E676"/>
+          <rect x="7" y="17" width="14" height="14" rx="4.5" fill="#00B0FF"/>
+
+          <!-- Precision Purple Diamond Center Notch -->
+          <rect x="19" y="19" width="10" height="10" rx="3.2" fill="#7C3AED" stroke="#0B0F19" stroke-width="1.8"/>
+          <!-- Inner Precision Crosshair -->
+          <line x1="24" y1="21.5" x2="24" y2="26.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="21.5" y1="24" x2="26.5" y2="24" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+
+        <div class="lockup-preview">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none"><use href="#svg-mark-6"/></svg>
+          <strong>FileKit</strong>
+        </div>
+      </div>
+      <h3>6. Precision Optical Notch</h3>
+      <p class="card-desc">Features precision negative-space cutouts, optical alignment gaps, and a delicate white crosshair inside the purple hub for that Swiss toolkit aesthetic.</p>
+      <div class="card-actions">
+        <button class="btn-sm primary" onclick="copySvgCode('svg-mark-6')">Copy SVG</button>
+        <button class="btn-sm" onclick="downloadSvg('svg-mark-6', 'filekit-mark-precision-notch.svg')">Download</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">SVG code copied to clipboard!</div>
+
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  function copySvgCode(svgId) {
+    const el = document.getElementById(svgId);
+    if (!el) return;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(el);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    navigator.clipboard.writeText(source).then(() => {
+      showToast('✓ SVG code copied to clipboard!');
+    }).catch(err => {
+      showToast('Press Ctrl+C to copy');
+    });
+  }
+
+  function downloadSvg(svgId, filename) {
+    const el = document.getElementById(svgId);
+    if (!el) return;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(el);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    const blob = new Blob([source], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'filekit-mark.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✓ SVG file downloaded!');
+  }
+</script>
+
+</body>
+</html>
