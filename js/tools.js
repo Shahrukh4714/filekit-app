@@ -8181,49 +8181,139 @@
     function renderResult(out, t) {
       const isCollection = !!(out.files && out.files.length);
       const sizeLine = out.blob ? _bytes(out.blob.size) : (out.files ? out.files.reduce((a, f) => a + (f.blob ? f.blob.size : 0), 0) + ' total' : '');
-      const metrics = out.metrics ? Object.entries(out.metrics).map(([k, v]) => `<span class="conv-metric">${_esc(k)}: <b>${_esc(String(v))}</b></span>`).join('') : '';
-      const rows = isCollection
-        ? `<div class="conv-file-list">${out.files.map((f) => {
-            const u = URL.createObjectURL(f.blob);
-            return `<div class="conv-file-row"><span class="conv-file-name" title="${_esc(f.name)}">${_esc(f.name)}</span><span class="conv-file-size">${_bytes(f.blob.size)}</span><a class="conv-file-btn" href="${u}" download="${_esc(f.name)}">${I.dl}&nbsp; Download</a></div>`;
-          }).join('')}</div>`
-        : '';
+      const outName = isCollection ? (out.files.length + ' files') : (out.filename || `${U.baseName(file.name)}.${(t.out || 'out').toLowerCase()}`);
       const url = out.blob ? URL.createObjectURL(out.blob) : '';
+      
+      const bannerColorMap = {
+        'docx': '#2563EB', 'word': '#2563EB', 'odt': '#2563EB', 'rtf': '#2563EB',
+        'pdf': '#DC2626', 'pdfa': '#DC2626',
+        'xlsx': '#16A34A', 'csv': '#16A34A', 'excel': '#16A34A',
+        'webp': '#D97706', 'png': '#7C3AED', 'jpg': '#EA580C', 'jpeg': '#EA580C', 'gif': '#E11D48', 'svg': '#F59E0B',
+        'mp3': '#7C3AED', 'wav': '#7C3AED', 'm4a': '#7C3AED',
+        'mp4': '#9333EA', 'webm': '#9333EA'
+      };
+      const fmtKey = (t.out || '').toLowerCase();
+      const bannerBg = bannerColorMap[fmtKey] || '#2563EB';
+
+      // Suggestions
+      let smartTip = 'Did you know you can edit and organize PDFs directly in FileKit?';
+      let smartTools = [
+        { id: 'pdf-compress', name: 'Compress PDF', icon: '🗜️', bg: '#EF4444' },
+        { id: 'pdf-edit-text', name: 'Edit Text', icon: 'T', bg: '#06B6D4' }
+      ];
+
+      if (/docx|word|odt/i.test(fmtKey)) {
+        smartTip = 'Did you know you can edit text in PDFs directly without converting to Word? Check out:';
+        smartTools = [
+          { id: 'pdf-edit-text', name: 'Edit Text', icon: 'T', bg: '#06B6D4' },
+          { id: 'pdf-sign', name: 'Sign Document', icon: '✍️', bg: '#8B5CF6' }
+        ];
+      } else if (/png|jpg|jpeg|webp|gif|avif/i.test(fmtKey)) {
+        smartTip = 'Enhance or crop your converted image with these tools:';
+        smartTools = [
+          { id: 'bg-remover', name: 'Remove Background', icon: '🪄', bg: '#8B5CF6' },
+          { id: 'image-crop', name: 'Crop & Resize', icon: '✂️', bg: '#F59E0B' }
+        ];
+      } else if (/xlsx|csv/i.test(fmtKey)) {
+        smartTip = 'Spreadsheet ready! You can also convert to PDF or inspect data:';
+        smartTools = [
+          { id: 'excel-to-pdf', name: 'Excel to PDF', icon: '📄', bg: '#10B981' },
+          { id: 'csv-to-excel', name: 'Excel & CSV Studio', icon: '📊', bg: '#059669' }
+        ];
+      }
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center conv-result-body">
-          <div class="cpdf-body-scroll conv-result-scroll">
-            <div class="conv-done">
-              <div class="conv-done-badge">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden;">
+          <div class="conv-result-studio">
+            
+            <!-- LEFT: Output Preview -->
+            <div class="conv-result-preview-col">
+              ${out.preview === 'image' && out.blob ? `
+                <img src="${url}" alt="Converted Preview" style="max-width:180px;max-height:190px;object-fit:contain;border-radius:4px;border:1px solid #CBD5E1;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.04);" />
+              ` : `
+                <div class="conv-doc-illustration">
+                  <div class="conv-doc-lines">
+                    <div class="conv-doc-line"></div>
+                    <div class="conv-doc-line"></div>
+                    <div class="conv-doc-line" style="width: 70%;"></div>
+                  </div>
+                  <div class="conv-doc-banner" style="background: ${bannerBg};">${_esc(t.out || 'FILE')}</div>
+                </div>
+              `}
+              <span class="conv-result-name-sub" title="${_esc(outName)}">${_esc(outName)}</span>
+              <span style="font-size:11px;color:#94A3B8;margin-top:2px;">${sizeLine}</span>
+            </div>
+
+            <!-- RIGHT: Actions & Smart Tips -->
+            <div class="conv-result-action-col">
+              
+              <div class="conv-result-done-header">
+                <div class="conv-result-done-badge">✓</div>
+                <h3 class="conv-result-done-title">Done</h3>
               </div>
-              <h3 class="conv-done-title">Done! ${t.out} ready</h3>
-              <p class="conv-done-sub">Converted locally from ${_esc(file.name)}</p>
+              <p class="conv-result-filename-title" title="${_esc(outName)}">${_esc(outName)}</p>
+
+              <!-- Main Download Button -->
+              ${!isCollection && out.blob ? `
+                <a class="conv-result-btn-download" href="${url}" download="${_esc(out.filename || outName)}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download</span>
+                </a>
+              ` : `
+                <button class="conv-result-btn-download" id="conv-zip" type="button">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download All (.zip)</span>
+                </button>
+              `}
+
+              <!-- Secondary Actions -->
+              <div class="conv-result-btn-row">
+                <button type="button" class="conv-result-btn-secondary" id="conv-again">
+                  <span>+ Convert another</span>
+                </button>
+                <button type="button" class="conv-result-btn-secondary" id="conv-back">
+                  <span>Change format</span>
+                </button>
+                ${!isCollection && out.preview === 'text' ? `<button type="button" class="conv-result-btn-secondary" id="conv-copy">Copy text</button>` : ''}
+              </div>
+
+              <!-- Smart Tip Card -->
+              <div class="conv-smart-tip-card">
+                <div class="conv-smart-tip-header">
+                  <span>Smart tip! 💡</span>
+                </div>
+                <p class="conv-smart-tip-desc">${smartTip}</p>
+                <div class="conv-smart-tools-list">
+                  ${smartTools.map(st => `
+                    <div class="conv-smart-tool-item" data-tool-id="${st.id}">
+                      <div class="conv-smart-tool-left">
+                        <span class="conv-smart-tool-icon" style="background: ${st.bg};">${st.icon}</span>
+                        <span>${st.name}</span>
+                      </div>
+                      <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
             </div>
 
-            ${isCollection ? rows : resultPreview(out, t)}
-
-            <div class="conv-out-meta">
-              <strong>${_esc(isCollection ? out.files.length + ' file' + (out.files.length === 1 ? '' : 's') : out.filename || t.out)}</strong>
-              <span>${sizeLine} &nbsp;·&nbsp; ${_esc(t.label)}</span>
-            </div>
-            ${metrics ? `<div class="conv-metrics">${metrics}</div>` : ''}
           </div>
+        </div>
+      `;
 
-          <div class="cpdf-footer conv-result-actions">
-            ${!isCollection && out.blob
-              ? `<a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">${I.dl}&nbsp; Download ${_esc(out.filename)}</a>`
-              : `<button class="cpdf-btn-primary" id="conv-zip" type="button">${I.dl}&nbsp; Download all (.zip)</button>`}
-            ${!isCollection && out.preview === 'text' ? `<button class="cpdf-btn-ghost" id="conv-copy" type="button">Copy text</button>` : ''}
-            <div class="cpdf-result-row">
-              <button class="cpdf-btn-ghost" id="conv-again" type="button">Convert another file</button>
-              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="conv-back" type="button">Change format</button>
-            </div>
-          </div>
-        </div>`;
+      // Smart tool clicks
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const tid = item.dataset.toolId;
+          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool(tid, true);
+          }
+        });
+      });
 
       if (isCollection) {
-        container.querySelector('#conv-zip').onclick = async () => {
+        container.querySelector('#conv-zip')?.addEventListener('click', async () => {
           const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
           const map = {};
           for (const f of out.files) map[f.name] = new Uint8Array(await f.blob.arrayBuffer());
@@ -8231,18 +8321,30 @@
           const u = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
           const a = document.createElement('a'); a.href = u; a.download = U.baseName(file.name) + '-files.zip'; a.click();
           setTimeout(() => URL.revokeObjectURL(u), 4000);
-        };
+        });
       }
+
       const copy = container.querySelector('#conv-copy');
-      if (copy) copy.onclick = async () => {
-        try { await navigator.clipboard.writeText(out.text || ''); copy.textContent = 'Copied ✓'; setTimeout(() => { copy.textContent = 'Copy text'; }, 1400); } catch { }
-      };
-      container.querySelector('#conv-again').onclick = () => {
-        if (url) URL.revokeObjectURL(url); file = null; family = null; formatId = null; renderUpload();
-      };
-      container.querySelector('#conv-back').onclick = () => {
-        if (url) URL.revokeObjectURL(url); renderConfigure();
-      };
+      if (copy) {
+        copy.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(out.text || '');
+            copy.textContent = 'Copied ✓';
+            setTimeout(() => { copy.textContent = 'Copy text'; }, 1400);
+          } catch {}
+        });
+      }
+
+      container.querySelector('#conv-again')?.addEventListener('click', () => {
+        if (url) URL.revokeObjectURL(url);
+        file = null; family = null; formatId = null;
+        renderUpload();
+      });
+
+      container.querySelector('#conv-back')?.addEventListener('click', () => {
+        if (url) URL.revokeObjectURL(url);
+        renderConfigure();
+      });
     }
 
     renderUpload();

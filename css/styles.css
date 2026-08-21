@@ -29779,3 +29779,260 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   font-weight: 500;
   text-align: center;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Convert Tool — Pro Result Studio (2-Column Split & Smart Next Steps)
+═══════════════════════════════════════════════════════════════════════════ */
+.conv-result-studio {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 36px;
+  width: 100%;
+  max-width: 860px;
+  margin: auto;
+  padding: 10px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* LEFT: Document Illustration Preview */
+.conv-result-preview-col {
+  flex: 1 1 300px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+.conv-doc-illustration {
+  width: 140px;
+  height: 175px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  margin-bottom: 12px;
+}
+
+.conv-doc-lines {
+  padding: 20px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conv-doc-line {
+  height: 10px;
+  background: #BAE6FD;
+  border-radius: 2px;
+  width: 100%;
+}
+
+.conv-doc-banner {
+  background: #2563EB;
+  color: #FFFFFF;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  padding: 9px 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.conv-result-name-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  text-align: center;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* RIGHT: Action & Smart Steps Column */
+.conv-result-action-col {
+  flex: 1 1 380px;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.conv-result-done-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.conv-result-done-badge {
+  width: 26px;
+  height: 26px;
+  background: #16A34A;
+  color: #FFFFFF;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.conv-result-done-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+}
+
+.conv-result-filename-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-result-btn-download {
+  background: #2563EB;
+  color: #FFFFFF;
+  border: 1px solid #2563EB;
+  border-radius: 4px;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.conv-result-btn-download:hover {
+  background: #1D4ED8;
+}
+
+.conv-result-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.conv-result-btn-secondary {
+  flex: 1;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: #334155;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.12s ease;
+}
+
+.conv-result-btn-secondary:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+/* Smart Tip Card */
+.conv-smart-tip-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-left: 3px solid #8B5CF6;
+  border-radius: 4px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conv-smart-tip-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.conv-smart-tip-desc {
+  font-size: 11.5px;
+  color: #64748B;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.conv-smart-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conv-smart-tool-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E293B;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-decoration: none;
+}
+
+.conv-smart-tool-item:hover {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #2563EB;
+}
+
+.conv-smart-tool-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.conv-smart-tool-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
