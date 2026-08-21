@@ -1783,116 +1783,159 @@
 
     /* ── Step 2: Configure ──────────────────────────── */
     function renderConfigure() {
-      container.innerHTML = toolHeader() + `
-        <div class="cpdf-body">
-          <div class="cpdf-body-scroll">
-            <div class="mpdf-list-head">
-              <p class="cpdf-section-label">Files to compress <span class="mpdf-count">${files.length} file${files.length===1?'':'s'} · ${_bytes(totalBytes())}</span></p>
-              <button class="cpdf-btn-ghost mpdf-add-btn" id="cpdf-add" type="button">${ICONS.add}&nbsp; Add files</button>
-              <input id="cpdf-add-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>
-            </div>
+      const activeFile = files[0];
+      const fam = familyOf(activeFile) || 'pdf';
+      const famLabel = (FAMILY_META[fam] && FAMILY_META[fam].label) || 'PDF';
+      const p = PRESETS[preset] || PRESETS.balanced;
 
-            <ul class="mpdf-list" id="cpdf-list" role="list">
-              ${files.map((f, idx) => `
-                <li class="mpdf-item" data-idx="${idx}">
-                  <span class="cpdf-file-ico">${FAMILY_META[familyOf(f)].icon}</span>
-                  <div class="cpdf-file-text">
-                    <span class="cpdf-fname" title="${_esc(f.name)}">${_esc(f.name)}</span>
-                    <span class="cpdf-fsize">${FAMILY_META[familyOf(f)].label} &nbsp;·&nbsp; ${_bytes(f.size)}</span>
-                  </div>
-                  <div class="mpdf-item-actions">
-                    <button type="button" class="mpdf-icon-btn mpdf-icon-btn--danger" data-act="rm" data-idx="${idx}" title="Remove">${ICONS.trash}</button>
-                  </div>
-                </li>`).join('')}
-            </ul>
+      const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
+      </svg>`;
 
-            ${files.length > 1 ? `
-            <div class="cpdf-section">
-              <p class="cpdf-section-label">Output</p>
-              <div class="cpdf-output-cards" role="radiogroup" aria-label="Output format">
-                <button class="cpdf-level cpdf-output-card${output==='zip'?' cpdf-level--on':''}" data-output="zip" type="button" role="radio" aria-checked="${output==='zip'}">
-                  <div class="cpdf-level-icon">${ICONS.zipIco}</div>
-                  <div class="cpdf-level-body">
-                    <div class="cpdf-level-row"><span class="cpdf-level-name">Save as ZIP</span></div>
-                    <span class="cpdf-level-desc">One archive with every compressed file</span>
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center" style="padding: 20px 0; overflow-y: auto;">
+          <div class="conv-studio-wrapper">
+            <div class="conv-studio-stage-row">
+              
+              <!-- LEFT: Loaded File Card / Drop Zone with Live Preview -->
+              <div class="conv-studio-file-card" id="comp-studio-file-card" title="Click or drop file to change">
+                <div class="conv-studio-thumb-container" id="comp-studio-thumb-box">
+                  <div class="conv-studio-badge">
+                    ${badgeSvg}
                   </div>
-                  <span class="cpdf-level-chk">${ICONS.check}</span>
-                </button>
-                <button class="cpdf-level cpdf-output-card${output==='individual'?' cpdf-level--on':''}" data-output="individual" type="button" role="radio" aria-checked="${output==='individual'}">
-                  <div class="cpdf-level-icon">${ICONS.dlIco}</div>
-                  <div class="cpdf-level-body">
-                    <div class="cpdf-level-row"><span class="cpdf-level-name">Download individually</span></div>
-                    <span class="cpdf-level-desc">Each file downloadable on its own</span>
-                  </div>
-                  <span class="cpdf-level-chk">${ICONS.check}</span>
+                </div>
+                <strong class="conv-studio-title" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</strong>
+                <span class="conv-studio-meta">${_bytes(totalBytes())} &middot; ${files.length > 1 ? `${files.length} files` : famLabel}</span>
+                <div class="conv-studio-actions">
+                  <button type="button" class="conv-studio-btn-ghost" id="comp-change-btn">Change &times;</button>
+                  <button type="button" class="conv-studio-btn-add" id="comp-add-btn">+ Add files</button>
+                </div>
+                <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
+              </div>
+
+              <!-- CENTER: Action Group -->
+              <div class="conv-studio-action-group">
+                <button type="button" class="conv-studio-btn-convert" id="comp-run">
+                  <span>Compress (${p.label}) →</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                  </svg>
                 </button>
               </div>
-            </div>` : ''}
 
-            <div class="cpdf-section">
-              <p class="cpdf-section-label">Compression quality</p>
-              <div class="cpdf-levels" role="radiogroup">
-                ${Object.entries(PRESETS).map(([key, p]) => `
-                  <button class="cpdf-level${key===preset?' cpdf-level--on':''}"
-                    data-key="${key}" type="button"
-                    role="radio" aria-checked="${key===preset}">
-                    <div class="cpdf-level-icon">${p.icon}</div>
-                    <div class="cpdf-level-body">
-                      <div class="cpdf-level-row">
-                        <span class="cpdf-level-name">${p.label}</span>
-                        <span class="cpdf-level-est">${p.est}</span>
-                      </div>
-                      <span class="cpdf-level-desc">${p.desc}</span>
-                      <span class="cpdf-level-note">${p.note}</span>
+              <!-- RIGHT: Golden Yellow Compression Presets Box -->
+              <div class="conv-studio-format-box">
+                <div class="conv-studio-format-header ${isPresetMenuOpen ? '' : 'is-collapsed'}" id="comp-preset-trigger">
+                  <div class="conv-studio-format-header-left">
+                    <span class="conv-studio-format-tag">${p.label.toUpperCase()}</span>
+                    <span class="conv-studio-format-subtitle">${p.est}</span>
+                  </div>
+                  <span class="conv-studio-format-arrow">▾</span>
+                </div>
+
+                <div class="conv-studio-select-menu" id="comp-preset-menu" ${isPresetMenuOpen ? '' : 'hidden'}>
+                  <div class="conv-studio-menu-group-label">COMPRESSION LEVEL</div>
+                  ${Object.entries(PRESETS).map(([key, item]) => `
+                    <div class="conv-studio-menu-item ${key === preset ? 'active' : ''}" data-pkey="${key}">
+                      <span>${item.label} (${item.est})</span>
+                      ${key === preset ? '<span style="color:#7C3AED; font-weight:800;">✓</span>' : ''}
                     </div>
-                    <span class="cpdf-level-chk">${ICONS.check}</span>
-                  </button>`).join('')}
+                  `).join('')}
+
+                  ${files.length > 1 ? `
+                    <div class="conv-studio-menu-group-label" style="margin-top: 6px;">OUTPUT FORMAT</div>
+                    <div class="conv-studio-menu-item ${output === 'zip' ? 'active' : ''}" data-output="zip">
+                      <span>Save as ZIP archive</span>
+                      ${output === 'zip' ? '<span style="color:#7C3AED; font-weight:800;">✓</span>' : ''}
+                    </div>
+                    <div class="conv-studio-menu-item ${output === 'individual' ? 'active' : ''}" data-output="individual">
+                      <span>Download individually</span>
+                      ${output === 'individual' ? '<span style="color:#7C3AED; font-weight:800;">✓</span>' : ''}
+                    </div>
+                  ` : ''}
+                </div>
               </div>
+
             </div>
+
+            <p class="conv-studio-bottom-hint">🔒 100% private. Files are compressed locally in your browser.</p>
           </div>
+        </div>
+      `;
 
-          <div class="cpdf-footer">
-            <p class="cpdf-privacy-note">${ICONS.shield} Processing is entirely local — your files are never transmitted</p>
-            <button class="cpdf-btn-primary" id="cpdf-run" type="button">
-              ${ICONS.compress}&nbsp; Compress ${files.length} file${files.length===1?'':'s'}
-            </button>
-          </div>
-        </div>`;
+      // Live thumbnail rendering
+      if (typeof generateFileThumbnail === 'function') {
+        generateFileThumbnail(activeFile, fam).then((thumbUrl) => {
+          if (!thumbUrl) return;
+          const thumbBox = container.querySelector('#comp-studio-thumb-box');
+          if (thumbBox) {
+            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
+          }
+        }).catch(() => {});
+      }
 
-      const addBtn  = container.querySelector('#cpdf-add');
-      const addInp  = container.querySelector('#cpdf-add-inp');
-      addBtn.onclick = () => addInp.click();
-      addInp.onchange = () => { addFiles(addInp.files); addInp.value = ''; };
+      // Wire change / add files
+      const card = container.querySelector('#comp-studio-file-card');
+      const replaceInp = container.querySelector('#comp-replace-input');
+      const changeBtn = container.querySelector('#comp-change-btn');
+      const addBtn = container.querySelector('#comp-add-btn');
 
-      container.querySelectorAll('.mpdf-icon-btn').forEach(btn => {
-        btn.onclick = () => {
-          const idx = +btn.dataset.idx;
-          files.splice(idx, 1);
-          if (!files.length) renderUpload();
-          else renderConfigure();
-        };
+      changeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        files = [];
+        renderUpload();
       });
 
-      container.querySelectorAll('.cpdf-output-card').forEach(btn => {
-        btn.onclick = () => {
-          output = btn.dataset.output;
-          container.querySelectorAll('.cpdf-output-card').forEach(b => {
-            b.classList.toggle('cpdf-level--on', b.dataset.output === output);
-            b.setAttribute('aria-checked', String(b.dataset.output === output));
-          });
-        };
+      addBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        replaceInp?.click();
       });
 
-      container.querySelectorAll('.cpdf-level[data-key]').forEach(btn => {
-        btn.onclick = () => {
-          preset = btn.dataset.key;
-          container.querySelectorAll('.cpdf-level[data-key]').forEach(b => {
-            b.classList.toggle('cpdf-level--on', b.dataset.key === preset);
-            b.setAttribute('aria-checked', String(b.dataset.key === preset));
-          });
-        };
+      card?.addEventListener('click', (e) => {
+        if (!e.target.closest('button')) replaceInp?.click();
       });
-      container.querySelector('#cpdf-run').onclick = () => runCompress();
+
+      replaceInp?.addEventListener('change', () => {
+        if (replaceInp.files && replaceInp.files.length) {
+          addFiles(replaceInp.files);
+        }
+      });
+
+      // Drag & Drop on file card
+      card?.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('cpdf-dz--over'); });
+      card?.addEventListener('dragleave', () => { card.classList.remove('cpdf-dz--over'); });
+      card?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('cpdf-dz--over');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          addFiles(e.dataTransfer.files);
+        }
+      });
+
+      // Toggle preset dropdown menu
+      const trigger = container.querySelector('#comp-preset-trigger');
+      const menu = container.querySelector('#comp-preset-menu');
+      trigger?.addEventListener('click', () => {
+        isPresetMenuOpen = !isPresetMenuOpen;
+        if (menu) menu.hidden = !isPresetMenuOpen;
+        trigger.classList.toggle('is-collapsed', !isPresetMenuOpen);
+      });
+
+      container.querySelectorAll('.conv-studio-menu-item[data-pkey]').forEach(item => {
+        item.addEventListener('click', () => {
+          preset = item.dataset.pkey;
+          renderConfigure();
+        });
+      });
+
+      container.querySelectorAll('.conv-studio-menu-item[data-output]').forEach(item => {
+        item.addEventListener('click', () => {
+          output = item.dataset.output;
+          renderConfigure();
+        });
+      });
+
+      container.querySelector('#comp-run')?.addEventListener('click', () => runCompress());
     }
 
     /* ── Step 3: Processing ─────────────────────────── */
@@ -1987,22 +2030,49 @@
       if (family === 'archive' || family === 'ebook' || family === 'office') {
         const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
         const raw = new Uint8Array(await file.arrayBuffer());
-        if (family === 'archive' && /\\.(gz|tgz)$/i.test(file.name)) {
-          const gz = fflate.gzipSync(fflate.gunzipSync(raw), { level: 9 });
-          return { blob: new Blob([gz], { type: 'application/gzip' }), filename: file.name, mime: 'application/gzip', preview: 'download' };
+        if (family === 'archive' && /\.(gz|tgz)$/i.test(file.name)) {
+          const gunzipped = fflate.gunzipSync(raw);
+          const recompressed = fflate.gzipSync(gunzipped, { level: 9 });
+          return { blob: new Blob([recompressed], { type: 'application/gzip' }), filename: file.name, mime: 'application/gzip' };
         }
-        const entries = fflate.unzipSync(raw);
-        // EPUB spec: the mimetype entry must stay stored (uncompressed).
-        if (family === 'ebook' && entries['mimetype']) entries['mimetype'] = [entries['mimetype'], { level: 0 }];
-        const out = fflate.zipSync(entries, { level: 9 });
-        const mime = family === 'ebook' ? 'application/epub+zip' : (file.type || 'application/octet-stream');
-        return { blob: new Blob([out], { type: mime }), filename: file.name, mime, preview: 'download' };
+        try {
+          const unzipped = fflate.unzipSync(raw);
+          const rezipped = fflate.zipSync(unzipped, { level: 9 });
+          return { blob: new Blob([rezipped], { type: file.type || 'application/zip' }), filename: file.name, mime: file.type || 'application/zip' };
+        } catch {
+          const comp = fflate.deflateSync(raw, { level: 9 });
+          return { blob: new Blob([comp], { type: 'application/octet-stream' }), filename: file.name + '.compressed', mime: 'application/octet-stream' };
+        }
       }
-      const engine = await tool.engine();
-      return tool.run({ file, inputs: { quality: p.quality, scale: p.scale }, engine, onProgress });
+      const pdfjs = await U.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => window.pdfjsLib);
+      const PDFLib = await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
+      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
+      }
+      const buf = await file.arrayBuffer();
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
+      const numPages = doc.numPages;
+      const outPdf = await PDFLib.PDFDocument.create();
+
+      for (let i = 1; i <= numPages; i++) {
+        onProgress((i - 1) / numPages, `Rendering page ${i}/${numPages}…`);
+        const page = await doc.getPage(i);
+        const vp = page.getViewport({ scale: p.scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = vp.width; canvas.height = vp.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        const jpgData = canvas.toDataURL('image/jpeg', p.quality / 100);
+        const jpgBytes = await fetch(jpgData).then(r => r.arrayBuffer());
+        const img = await outPdf.embedJpg(jpgBytes);
+        const origVp = page.getViewport({ scale: 1 });
+        const outPage = outPdf.addPage([origVp.width, origVp.height]);
+        outPage.drawImage(img, { x: 0, y: 0, width: origVp.width, height: origVp.height });
+      }
+      onProgress(1, 'Assembling compressed PDF…');
+      const bytes = await outPdf.save();
+      return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: U.baseName(file.name) + '-compressed.pdf', mime: 'application/pdf', preview: 'pdf' };
     }
 
-    /* Build a ZIP of the compressed outputs (fflate). */
     async function makeZip(results) {
       const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
       const map = {};
@@ -2015,103 +2085,172 @@
       const oTot   = results.reduce((s, r) => s + r.file.size, 0);
       const cTot   = results.reduce((s, r) => s + r.result.blob.size, 0);
       const saved  = oTot - cTot;
-      const redPct = Math.round((1 - cTot / oTot) * 100);
+      const redPct = Math.max(0, Math.round((1 - cTot / oTot) * 100));
       const win    = cTot < oTot;
-      const barW   = win ? Math.round((cTot / oTot) * 100) : 100;
-      const next   = preset==='maximum' ? 'balanced' : 'maximum';
-      const nextLbl= preset==='maximum' ? 'Balanced'  : 'Maximum';
+      const barW   = win ? Math.max(10, Math.round((cTot / oTot) * 100)) : 100;
       const single = results.length === 1;
       const urls   = results.map(r => URL.createObjectURL(r.result.blob));
+      const firstRes = results[0];
+      const outName = single ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
+      const nextPresetLabel = preset === 'maximum' ? 'Balanced' : 'Maximum';
+      const nextPresetKey = preset === 'maximum' ? 'balanced' : 'maximum';
 
-      /* Individual mode: show per-file download rows. ZIP mode: primary = the archive. */
-      const rows = results.map((r, i) => {
-        const f = r.file, res = r.result;
-        const w = res.blob.size < f.size;
-        const p = Math.round((1 - res.blob.size / f.size) * 100);
-        return `
-          <li class="mpdf-item cpdf-out-item">
-            <span class="cpdf-file-ico">${FAMILY_META[r.family].icon}</span>
-            <div class="cpdf-file-text">
-              <span class="cpdf-fname" title="${_esc(res.filename)}">${_esc(res.filename)}</span>
-              <span class="cpdf-fsize">${_bytes(f.size)} → ${_bytes(res.blob.size)}${w ? ` &nbsp;·&nbsp; ${p}% smaller` : ' &nbsp;·&nbsp; no gain'}</span>
-            </div>
-            <a class="mpdf-icon-btn mpdf-icon-btn--dl" href="${urls[i]}" download="${_esc(res.filename)}" title="Download ${_esc(res.filename)}">${ICONS.download}</a>
-          </li>`;
-      }).join('');
+      // Smart Suggestions based on family
+      let smartTip = 'Did you know you can edit, sign, and organize PDFs directly in FileKit?';
+      let smartTools = [
+        { id: 'pdf-sign', name: 'Sign Document' },
+        { id: 'pdf-edit-text', name: 'Edit Text' }
+      ];
 
-      const buildZipLink = async () => {
-        const zip = await makeZip(results);
-        return { url: URL.createObjectURL(zip), name: 'filekit-compressed.zip' };
-      };
+      const fam = firstRes.family;
+      if (fam === 'pdf') {
+        smartTip = 'Need to sign, convert, or organize your compressed PDF? Check out:';
+        smartTools = [
+          { id: 'pdf-sign', name: 'Sign PDF' },
+          { id: 'pdf-convert', name: 'Convert PDF' }
+        ];
+      } else if (fam === 'image') {
+        smartTip = 'Enhance or crop your compressed image with these tools:';
+        smartTools = [
+          { id: 'bg-remover', name: 'Remove Background' },
+          { id: 'image-crop', name: 'Crop & Resize' }
+        ];
+      } else if (fam === 'video' || fam === 'audio') {
+        smartTip = 'Edit or convert your media files locally:';
+        smartTools = [
+          { id: 'audio-trim', name: 'Trim Audio' },
+          { id: 'video-convert', name: 'Convert Video' }
+        ];
+      }
 
-      container.innerHTML = toolHeader() + `
-        <div class="cpdf-body">
-          <div class="cpdf-body-scroll">
-            <div class="cpdf-status-bar ${win ? 'cpdf-status-bar--ok' : 'cpdf-status-bar--warn'}">
-              <span class="cpdf-status-ico">${win ? ICONS.success : ICONS.warn}</span>
-              <div>
-                <strong>${win ? `Compressed ${results.length} file${single?'':'s'} successfully` : 'Files already optimised'}</strong>
-                <span>${win ? `Saved ${_bytes(saved)} total &nbsp;·&nbsp; ${redPct}% smaller` : 'Try the Maximum preset for further reduction'}</span>
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden;">
+          <div class="conv-result-studio">
+            
+            <!-- LEFT: Output Preview & Savings Visualizer -->
+            <div class="conv-result-preview-col" id="comp-result-preview-box">
+              <div class="conv-doc-illustration">
+                <div class="conv-doc-lines">
+                  <div class="conv-doc-line"></div>
+                  <div class="conv-doc-line"></div>
+                  <div class="conv-doc-line" style="width: 70%;"></div>
+                </div>
+                <div class="conv-doc-banner" style="background: ${win ? '#16A34A' : '#111827'};">
+                  ${win ? `-${redPct}% SMALLER` : 'COMPRESSED'}
+                </div>
+              </div>
+              <span class="conv-result-name-sub" title="${_esc(outName)}">${_esc(outName)}</span>
+              <span style="font-size:12px;font-weight:700;color:#0F172A;margin-top:4px;">
+                ${_bytes(oTot)} &rarr; ${_bytes(cTot)}
+              </span>
+              <span style="font-size:11px;color:${win ? '#16A34A' : '#64748B'};font-weight:600;margin-top:2px;">
+                ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Already optimal size'}
+              </span>
+
+              <!-- Comparison bar -->
+              <div style="width: 100%; max-width: 180px; height: 6px; background: #E2E8F0; border-radius: 3px; margin-top: 8px; overflow: hidden;">
+                <div style="width: ${barW}%; height: 100%; background: ${win ? '#16A34A' : '#64748B'}; border-radius: 3px;"></div>
               </div>
             </div>
 
-            <div class="cpdf-compare">
-              <div class="cpdf-compare-col">
-                <span class="cpdf-compare-lbl">Original</span>
-                <span class="cpdf-compare-sz">${_bytes(oTot)}</span>
-                <div class="cpdf-bar-wrap"><div class="cpdf-bar cpdf-bar--orig" style="width:100%"></div></div>
-                <span class="cpdf-compare-name">${results.length} file${single?'':'s'}</span>
+            <!-- RIGHT: Actions & Smart Tips -->
+            <div class="conv-result-action-col">
+              
+              <div class="conv-result-done-header">
+                <div class="conv-result-done-badge">✓</div>
+                <h3 class="conv-result-done-title">Done</h3>
               </div>
-              <div class="cpdf-compare-sep">${ICONS.arrow}</div>
-              <div class="cpdf-compare-col">
-                <span class="cpdf-compare-lbl">Compressed</span>
-                <span class="cpdf-compare-sz${win ? ' cpdf-compare-sz--win' : ''}">${_bytes(cTot)}</span>
-                <div class="cpdf-bar-wrap"><div class="cpdf-bar cpdf-bar--comp" style="width:${barW}%"></div></div>
-                <span class="cpdf-compare-name">${redPct}% smaller</span>
+              <p class="conv-result-filename-title" title="${_esc(outName)}">
+                ${win ? `Compressed ${results.length} file${single ? '' : 's'} · ${redPct}% smaller` : 'Compression complete'}
+              </p>
+
+              <!-- Main Download Button -->
+              ${single ? `
+                <a class="conv-result-btn-download" href="${urls[0]}" download="${_esc(outName)}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download Compressed File</span>
+                </a>
+              ` : `
+                <button class="conv-result-btn-download" id="comp-zip-dl" type="button">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download all as ZIP</span>
+                </button>
+              `}
+
+              <!-- Secondary Actions -->
+              <div class="conv-result-btn-row">
+                <button type="button" class="conv-result-btn-secondary" id="comp-again">
+                  <span>+ Compress more</span>
+                </button>
+                <button type="button" class="conv-result-btn-secondary" id="comp-retry">
+                  <span>Try ${nextPresetLabel}</span>
+                </button>
               </div>
-              ${win ? `<div class="cpdf-compare-badge"><span class="cpdf-badge-pct">${redPct}%</span><span class="cpdf-badge-lbl">smaller</span></div>` : ''}
+
+              <!-- Smart Tip Card with Authentic Bespoke SVG Icons -->
+              <div class="conv-smart-tip-card">
+                <div class="conv-smart-tip-header">
+                  <span>Smart tip! 💡</span>
+                </div>
+                <p class="conv-smart-tip-desc">${smartTip}</p>
+                <div class="conv-smart-tools-list">
+                  ${smartTools.map(st => {
+                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
+                    return `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon">${iconSvg}</span>
+                          <span>${st.name}</span>
+                        </div>
+                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
             </div>
 
-            <div class="cpdf-section">
-              <p class="cpdf-section-label">Output files</p>
-              <ul class="mpdf-list" role="list">${rows}</ul>
-            </div>
           </div>
+        </div>
+      `;
 
-          <div class="cpdf-footer">
-            <a class="cpdf-btn-primary" id="cpdf-dl-primary" href="#" download="filekit-compressed.zip" style="text-decoration:none">
-              ${ICONS.download}&nbsp; ${single ? 'Download file' : output === 'zip' ? 'Download ZIP' : 'Download all as ZIP'}
-            </a>
-            <div class="cpdf-result-row">
-              <button class="cpdf-btn-ghost" id="cpdf-again" type="button">Compress more files</button>
-              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="cpdf-retry" type="button">Try ${nextLbl} preset</button>
-            </div>
-          </div>
-        </div>`;
-
-      /* Wire the primary download (single file downloads directly; otherwise ZIP). */
-      const primary = container.querySelector('#cpdf-dl-primary');
-      let primaryUrl = null;
-      if (single) {
-        primaryUrl = urls[0];
-        primary.href = primaryUrl;
-        primary.setAttribute('download', results[0].result.filename);
-      } else {
-        buildZipLink().then(({ url, name }) => {
-          primaryUrl = url;
-          primary.href = url;
-          primary.setAttribute('download', name);
+      // Multi-file ZIP download
+      if (!single) {
+        container.querySelector('#comp-zip-dl')?.addEventListener('click', async () => {
+          const zip = await makeZip(results);
+          const u = URL.createObjectURL(zip);
+          const a = document.createElement('a');
+          a.href = u;
+          a.download = outName;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(u), 4000);
         });
       }
 
-      container.querySelector('#cpdf-again').onclick = () => {
-        urls.forEach(u => URL.revokeObjectURL(u)); if (primaryUrl) URL.revokeObjectURL(primaryUrl);
-        files = []; preset = 'balanced'; output = 'zip'; renderUpload();
-      };
-      container.querySelector('#cpdf-retry').onclick = () => {
-        urls.forEach(u => URL.revokeObjectURL(u)); if (primaryUrl) URL.revokeObjectURL(primaryUrl);
-        preset = next; renderConfigure();
-      };
+      // Smart tool clicks with instant file pass-through!
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const tid = item.dataset.toolId;
+          const targetBlob = firstRes.result.blob;
+          const targetFile = targetBlob ? new File([targetBlob], outName, { type: targetBlob.type || 'application/pdf' }) : files[0];
+          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool(tid, true, targetFile ? [targetFile] : null);
+          }
+        });
+      });
+
+      container.querySelector('#comp-again')?.addEventListener('click', () => {
+        urls.forEach(u => URL.revokeObjectURL(u));
+        files = []; preset = 'balanced'; output = 'zip';
+        renderUpload();
+      });
+
+      container.querySelector('#comp-retry')?.addEventListener('click', () => {
+        urls.forEach(u => URL.revokeObjectURL(u));
+        preset = nextPresetKey;
+        renderConfigure();
+      });
     }
 
     /* ── Error ──────────────────────────────────────── */
