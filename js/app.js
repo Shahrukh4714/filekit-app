@@ -5464,17 +5464,22 @@
   initFaqAccordion();
 
   // ── Featured Showcase Card Direct Tool Launcher ──
+  window.openToolById = function(toolId, files = null) {
+    if (!toolId) return;
+    if (typeof openTool === 'function') {
+      openTool(toolId, true, files);
+    } else if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+      window.FF.app.openTool(toolId, true, files);
+    }
+  };
+
   function initFeaturedShowcase() {
     const cards = document.querySelectorAll('.fk-feat-card');
     cards.forEach(card => {
       card.addEventListener('click', (e) => {
         const toolId = card.getAttribute('data-tool-id');
-        if (toolId && typeof window.openToolById === 'function') {
+        if (toolId) {
           window.openToolById(toolId);
-        } else if (toolId) {
-          // Fallback: trigger workspace switch
-          const homeBtn = document.getElementById('see-all-button') || document.querySelector('.header-cta');
-          if (homeBtn) homeBtn.click();
         }
       });
     });

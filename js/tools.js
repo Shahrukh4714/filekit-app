@@ -1786,6 +1786,18 @@
       renderConfigure();
     }
 
+    // Check if pendingFiles exist at mount time
+    const pending = window.FF && window.FF.app && window.FF.app.pendingFiles;
+    if (pending && pending.length) {
+      const arr = Array.from(pending).filter(f => f && f.size <= MAX_BYTES);
+      if (arr.length) {
+        window.FF.app.pendingFiles = null;
+        files = arr;
+        renderConfigure();
+        return;
+      }
+    }
+
     /* ── Step 1: Upload ─────────────────────────────── */
     function renderUpload() {
       container.innerHTML = toolHeader() + `
