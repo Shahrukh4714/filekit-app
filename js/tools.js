@@ -8195,30 +8195,30 @@
       const fmtKey = (t.out || '').toLowerCase();
       const bannerBg = bannerColorMap[fmtKey] || '#2563EB';
 
-      // Suggestions
+      // Suggestions with authentic bespoke icons
       let smartTip = 'Did you know you can edit and organize PDFs directly in FileKit?';
       let smartTools = [
-        { id: 'pdf-compress', name: 'Compress PDF', icon: '🗜️', bg: '#EF4444' },
-        { id: 'pdf-edit-text', name: 'Edit Text', icon: 'T', bg: '#06B6D4' }
+        { id: 'pdf-compress', name: 'Compress PDF' },
+        { id: 'pdf-edit-text', name: 'Edit Text' }
       ];
 
       if (/docx|word|odt/i.test(fmtKey)) {
         smartTip = 'Did you know you can edit text in PDFs directly without converting to Word? Check out:';
         smartTools = [
-          { id: 'pdf-edit-text', name: 'Edit Text', icon: 'T', bg: '#06B6D4' },
-          { id: 'pdf-sign', name: 'Sign Document', icon: '✍️', bg: '#8B5CF6' }
+          { id: 'pdf-edit-text', name: 'Edit Text' },
+          { id: 'pdf-sign', name: 'Sign Document' }
         ];
       } else if (/png|jpg|jpeg|webp|gif|avif/i.test(fmtKey)) {
         smartTip = 'Enhance or crop your converted image with these tools:';
         smartTools = [
-          { id: 'bg-remover', name: 'Remove Background', icon: '🪄', bg: '#8B5CF6' },
-          { id: 'image-crop', name: 'Crop & Resize', icon: '✂️', bg: '#F59E0B' }
+          { id: 'bg-remover', name: 'Remove Background' },
+          { id: 'image-crop', name: 'Crop & Resize' }
         ];
       } else if (/xlsx|csv/i.test(fmtKey)) {
         smartTip = 'Spreadsheet ready! You can also convert to PDF or inspect data:';
         smartTools = [
-          { id: 'excel-to-pdf', name: 'Excel to PDF', icon: '📄', bg: '#10B981' },
-          { id: 'csv-to-excel', name: 'Excel & CSV Studio', icon: '📊', bg: '#059669' }
+          { id: 'excel-to-pdf', name: 'Excel to PDF' },
+          { id: 'csv-to-excel', name: 'Excel & CSV Studio' }
         ];
       }
 
@@ -8227,9 +8227,9 @@
           <div class="conv-result-studio">
             
             <!-- LEFT: Output Preview -->
-            <div class="conv-result-preview-col">
+            <div class="conv-result-preview-col" id="conv-result-preview-box">
               ${out.preview === 'image' && out.blob ? `
-                <img src="${url}" alt="Converted Preview" style="max-width:180px;max-height:190px;object-fit:contain;border-radius:4px;border:1px solid #CBD5E1;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.04);" />
+                <img src="${url}" alt="Converted Preview" style="max-width:180px;max-height:190px;object-fit:contain;border-radius:4px;border:1px solid #CBD5E1;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03);" />
               ` : `
                 <div class="conv-doc-illustration">
                   <div class="conv-doc-lines">
@@ -8277,22 +8277,25 @@
                 ${!isCollection && out.preview === 'text' ? `<button type="button" class="conv-result-btn-secondary" id="conv-copy">Copy text</button>` : ''}
               </div>
 
-              <!-- Smart Tip Card -->
+              <!-- Smart Tip Card with Authentic Bespoke SVG Icons -->
               <div class="conv-smart-tip-card">
                 <div class="conv-smart-tip-header">
                   <span>Smart tip! 💡</span>
                 </div>
                 <p class="conv-smart-tip-desc">${smartTip}</p>
                 <div class="conv-smart-tools-list">
-                  ${smartTools.map(st => `
-                    <div class="conv-smart-tool-item" data-tool-id="${st.id}">
-                      <div class="conv-smart-tool-left">
-                        <span class="conv-smart-tool-icon" style="background: ${st.bg};">${st.icon}</span>
-                        <span>${st.name}</span>
+                  ${smartTools.map(st => {
+                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
+                    return `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon">${iconSvg}</span>
+                          <span>${st.name}</span>
+                        </div>
+                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
                       </div>
-                      <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
-                    </div>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </div>
               </div>
 
@@ -8302,12 +8305,18 @@
         </div>
       `;
 
-      // Smart tool clicks
+      // Smart tool clicks with instant file pass-through!
       container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
         item.addEventListener('click', () => {
           const tid = item.dataset.toolId;
+          let targetFile = null;
+          if (out.blob) {
+            targetFile = new File([out.blob], out.filename || outName, { type: out.blob.type || 'application/octet-stream' });
+          } else if (file) {
+            targetFile = file;
+          }
           if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
-            window.FF.app.openTool(tid, true);
+            window.FF.app.openTool(tid, true, targetFile ? [targetFile] : null);
           }
         });
       });

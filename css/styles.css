@@ -30032,14 +30032,18 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
 }
 
 .conv-smart-tool-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  background: #F1F5F9;
-  color: #0F172A;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.conv-smart-tool-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
 }

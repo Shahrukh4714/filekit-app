@@ -1582,6 +1582,13 @@
       </svg>`;
     }
 
+    window.FF.semanticSvg = semanticSvg;
+    window.FF.getToolIconSvg = function(toolOrId) {
+      if (!toolOrId) return '';
+      let tool = typeof toolOrId === 'string' ? (FF.registry?.get(toolOrId) || { id: toolOrId, name: toolOrId, category: 'PDF' }) : toolOrId;
+      return semanticSvg(tool);
+    };
+
     const iconFor = (tool, extra = '') => {
       const span = document.createElement('span');
       span.className = `card-icon custom-icon semantic-action-icon ${extra}`;
@@ -3176,7 +3183,11 @@
     /* ═══════════════════════════════════════════════════════════════════════
        2. APP WORKSPACE TOOL (Desktop World — Siderail, Dashboard & Workstation)
        ═══════════════════════════════════════════════════════════════════════ */
-    function openWorkspaceTool(id) {
+    function openWorkspaceTool(id, initialFiles = null) {
+      if (initialFiles) {
+        if (!window.FF.app) window.FF.app = {};
+        window.FF.app.pendingFiles = Array.isArray(initialFiles) ? initialFiles : [initialFiles];
+      }
       let tool = FF.registry.get(id);
       if (!tool) {
         const premiumOnly = {
@@ -3319,13 +3330,24 @@
           window.FF.app.pendingFiles = null;
           const _inject = (n) => {
             if (n <= 0) return;
-            const dz = _appStg.querySelector('.cpdf-dropzone, .ilovepdf-landing, .scan-initial-dropzone, .dz, .drop-hero-box');
-            if (!dz) { setTimeout(() => _inject(n - 1), 60); return; }
+            const dz = _appStg.querySelector('.cpdf-dropzone, .ilovepdf-landing, .scan-initial-dropzone, .dz, .drop-hero-box, .conv-dz, .med-dz, .img-dz, .arc-dz, .organize-dropzone, .sign-dropzone, .compress-dropzone, [data-dropzone]');
+            const fileInput = _appStg.querySelector('input[type="file"]');
+            if (!dz && !fileInput) { setTimeout(() => _inject(n - 1), 40); return; }
+            
             const dt = new DataTransfer();
             _pending.forEach(f => { try { dt.items.add(f); } catch (err) {} });
-            dz.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+            
+            if (fileInput) {
+              try {
+                fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+              } catch (err) {}
+            }
+            if (dz) {
+              dz.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+            }
           };
-          setTimeout(() => _inject(30), 40);
+          setTimeout(() => _inject(40), 40);
         }
       }
 
@@ -3337,9 +3359,13 @@
     }
 
     /* Universal router dispatcher */
-    function openTool(id, fromWorkspace = false) {
-      if (fromWorkspace || (window._navFromAppWorkspace === true)) {
-        openWorkspaceTool(id);
+    function openTool(id, fromWorkspace = false, initialFiles = null) {
+      if (initialFiles) {
+        if (!window.FF.app) window.FF.app = {};
+        window.FF.app.pendingFiles = Array.isArray(initialFiles) ? initialFiles : [initialFiles];
+      }
+      if (fromWorkspace || (window._navFromAppWorkspace === true) || initialFiles) {
+        openWorkspaceTool(id, initialFiles);
       } else {
         openSeoToolPage(id);
       }
