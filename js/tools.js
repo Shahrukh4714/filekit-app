@@ -1887,9 +1887,14 @@
       const famLabel = (FAMILY_META[fam] && FAMILY_META[fam].label) || 'PDF';
       const p = PRESETS[preset] || PRESETS.balanced;
 
-      const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" width="48" height="48" style="color:#94A3B8;">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
-      </svg>`;
+      const badgeColors = { pdf: '#E11D48', image: '#2563EB', video: '#7C3AED', audio: '#059669', archive: '#D97706', office: '#2563EB', ebook: '#8B5CF6' };
+      const badgeColor = badgeColors[fam] || '#E11D48';
+
+      const tierSvgs = {
+        maximum: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+        balanced: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>`,
+        light: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M12 21 7.5 9 12 3l4.5 6L12 21z"/></svg>`
+      };
 
       container.innerHTML = `
         <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow-y: auto;">
@@ -1900,7 +1905,18 @@
               <!-- LEFT: File Preview Card -->
               <div class="comp-preview-card" id="comp-studio-file-card" title="Click or drop file to change">
                 <div class="comp-thumb-box" id="comp-studio-thumb-box">
-                  ${badgeSvg}
+                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #F8FAFC;">
+                    <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 92px; height: 120px;">
+                      <rect x="14" y="10" width="72" height="96" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+                      <path d="M60 10v18a2 2 0 0 0 2 2h24" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+                      <rect x="24" y="44" width="52" height="4" rx="2" fill="#E2E8F0"/>
+                      <rect x="24" y="54" width="52" height="4" rx="2" fill="#F1F5F9"/>
+                      <rect x="24" y="64" width="38" height="4" rx="2" fill="#F1F5F9"/>
+                      <rect x="24" y="74" width="46" height="4" rx="2" fill="#F1F5F9"/>
+                      <rect x="22" y="22" width="30" height="14" rx="3" fill="${badgeColor}"/>
+                      <text x="37" y="32" fill="#FFFFFF" font-size="7.5" font-weight="800" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">${famLabel.toUpperCase()}</text>
+                    </svg>
+                  </div>
                 </div>
                 
                 <div class="comp-file-info">
@@ -1909,8 +1925,14 @@
                 </div>
 
                 <div class="comp-file-actions">
-                  <button type="button" class="comp-btn-action" id="comp-change-btn">🔄 Replace</button>
-                  <button type="button" class="comp-btn-action" id="comp-add-btn">+ Add files</button>
+                  <button type="button" class="comp-btn-action comp-btn-action-icon" id="comp-change-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    <span>Replace</span>
+                  </button>
+                  <button type="button" class="comp-btn-action comp-btn-action-icon" id="comp-add-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>Add files</span>
+                  </button>
                 </div>
                 <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
               </div>
@@ -1926,7 +1948,9 @@
                   ${Object.entries(PRESETS).map(([key, item]) => `
                     <div class="comp-tier-item ${key === preset ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${key === preset}">
                       <div class="comp-tier-left">
-                        <div class="comp-tier-radio"></div>
+                        <div class="comp-tier-icon-wrap comp-icon--${key}">
+                          ${tierSvgs[key] || ''}
+                        </div>
                         <div class="comp-tier-details">
                           <div class="comp-tier-title-row">
                             <span class="comp-tier-name">${item.label}</span>
@@ -1935,7 +1959,10 @@
                           <span class="comp-tier-desc">${item.desc}</span>
                         </div>
                       </div>
-                      <span class="comp-tier-badge">${item.est}</span>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="comp-tier-badge">${item.est}</span>
+                        <div class="comp-tier-radio"></div>
+                      </div>
                     </div>
                   `).join('')}
 
