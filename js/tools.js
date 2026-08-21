@@ -1650,9 +1650,9 @@
 
   /* ─── Compression presets ────────────────────────────── */
   const PRESETS = {
-    maximum: { label:'Maximum',  icon:ICONS.lvlMax, desc:'Smallest possible file size',          note:'Ideal for archival. Lower sharpness.',   est:'~70% smaller', quality:32,  scale:'1',   audioBr:'96k',  videoBr:'500k' },
-    balanced:{ label:'Balanced', icon:ICONS.lvlMid, desc:'Good compression with readable quality',note:'Recommended for sharing and storage.',   est:'~50% smaller', quality:60,  scale:'1.5', audioBr:'128k', videoBr:'750k' },
-    light:   { label:'Light',    icon:ICONS.lvlLow, desc:'Preserves sharpness and fine detail',  note:'Best for print or high-precision files.', est:'~20% smaller', quality:84,  scale:'2',   audioBr:'192k', videoBr:'1M'   },
+    maximum: { label:'Extreme Compression', short:'Extreme', icon:ICONS.lvlMax, desc:'Smallest file size · Ideal for email & archiving', note:'Smallest possible file size', est:'~75% smaller', quality:32, scale:'1', audioBr:'96k', videoBr:'500k' },
+    balanced:{ label:'Recommended Compression', short:'Recommended', isRec: true, icon:ICONS.lvlMid, desc:'Good quality, smart compression', note:'Recommended for sharing and storage', est:'~50% smaller', quality:60, scale:'1.5', audioBr:'128k', videoBr:'750k' },
+    light:   { label:'Less Compression', short:'High Quality', icon:ICONS.lvlLow, desc:'High visual fidelity · Minimal compression', note:'Best for high-precision documents', est:'~20% smaller', quality:84, scale:'2', audioBr:'192k', videoBr:'1M' },
   };
 
   /* ─── Supported compressible formats ────────────────── */
@@ -1878,82 +1878,92 @@
 
     /* ── Step 2: Configure ──────────────────────────── */
     function renderConfigure() {
+      if (!files || !files.length) {
+        renderUpload();
+        return;
+      }
       const activeFile = files[0];
       const fam = familyOf(activeFile) || 'pdf';
       const famLabel = (FAMILY_META[fam] && FAMILY_META[fam].label) || 'PDF';
       const p = PRESETS[preset] || PRESETS.balanced;
 
-      const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+      const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" width="48" height="48" style="color:#94A3B8;">
         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
       </svg>`;
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 20px 0; overflow-y: auto;">
-          <div class="conv-studio-wrapper">
-            <div class="conv-studio-stage-row">
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow-y: auto;">
+          <div class="comp-studio-wrapper">
+            
+            <div class="comp-studio-deck">
               
-              <!-- LEFT: Loaded File Card / Drop Zone with Live Preview -->
-              <div class="conv-studio-file-card" id="comp-studio-file-card" title="Click or drop file to change">
-                <div class="conv-studio-thumb-container" id="comp-studio-thumb-box">
-                  <div class="conv-studio-badge">
-                    ${badgeSvg}
-                  </div>
+              <!-- LEFT: File Preview Card -->
+              <div class="comp-preview-card" id="comp-studio-file-card" title="Click or drop file to change">
+                <div class="comp-thumb-box" id="comp-studio-thumb-box">
+                  ${badgeSvg}
                 </div>
-                <strong class="conv-studio-title" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</strong>
-                <span class="conv-studio-meta">${_bytes(totalBytes())} &middot; ${files.length > 1 ? `${files.length} files` : famLabel}</span>
-                <div class="conv-studio-actions">
-                  <button type="button" class="conv-studio-btn-ghost" id="comp-change-btn">Change &times;</button>
-                  <button type="button" class="conv-studio-btn-add" id="comp-add-btn">+ Add files</button>
+                
+                <div class="comp-file-info">
+                  <span class="comp-file-name" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
+                  <span class="comp-file-meta">${_bytes(totalBytes())} &middot; ${files.length > 1 ? `${files.length} files` : famLabel}</span>
+                </div>
+
+                <div class="comp-file-actions">
+                  <button type="button" class="comp-btn-action" id="comp-change-btn">🔄 Replace</button>
+                  <button type="button" class="comp-btn-action" id="comp-add-btn">+ Add files</button>
                 </div>
                 <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
               </div>
 
-              <!-- CENTER: Action Group -->
-              <div class="conv-studio-action-group">
-                <button type="button" class="conv-studio-btn-convert" id="comp-run">
-                  <span>Compress (${p.label}) →</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
-                  </svg>
-                </button>
-              </div>
-
-              <!-- RIGHT: Golden Yellow Compression Presets Box -->
-              <div class="conv-studio-format-box">
-                <div class="conv-studio-format-header ${isPresetMenuOpen ? '' : 'is-collapsed'}" id="comp-preset-trigger">
-                  <div class="conv-studio-format-header-left">
-                    <span class="conv-studio-format-tag">${p.label.toUpperCase()}</span>
-                    <span class="conv-studio-format-subtitle">${p.est}</span>
-                  </div>
-                  <span class="conv-studio-format-arrow">▾</span>
+              <!-- RIGHT: Compression Tiers & Primary Action Deck -->
+              <div class="comp-control-deck">
+                <div class="comp-deck-header">
+                  <h3 class="comp-deck-title">Choose Compression Level</h3>
+                  <p class="comp-deck-subtitle">Select the compression level that best balances file size and quality</p>
                 </div>
 
-                <div class="conv-studio-select-menu" id="comp-preset-menu" ${isPresetMenuOpen ? '' : 'hidden'}>
-                  <div class="conv-studio-menu-group-label">COMPRESSION LEVEL</div>
+                <div class="comp-tiers-group" role="radiogroup" aria-label="Compression levels">
                   ${Object.entries(PRESETS).map(([key, item]) => `
-                    <div class="conv-studio-menu-item ${key === preset ? 'active' : ''}" data-pkey="${key}">
-                      <span>${item.label} (${item.est})</span>
-                      ${key === preset ? '<span style="color:#7C3AED; font-weight:800;">✓</span>' : ''}
+                    <div class="comp-tier-item ${key === preset ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${key === preset}">
+                      <div class="comp-tier-left">
+                        <div class="comp-tier-radio"></div>
+                        <div class="comp-tier-details">
+                          <div class="comp-tier-title-row">
+                            <span class="comp-tier-name">${item.label}</span>
+                            ${item.isRec ? '<span class="comp-rec-badge">RECOMMENDED</span>' : ''}
+                          </div>
+                          <span class="comp-tier-desc">${item.desc}</span>
+                        </div>
+                      </div>
+                      <span class="comp-tier-badge">${item.est}</span>
                     </div>
                   `).join('')}
 
                   ${files.length > 1 ? `
-                    <div class="conv-studio-menu-group-label" style="margin-top: 6px;">OUTPUT FORMAT</div>
-                    <div class="conv-studio-menu-item ${output === 'zip' ? 'active' : ''}" data-output="zip">
-                      <span>Save as ZIP archive</span>
-                      ${output === 'zip' ? '<span style="color:#7C3AED; font-weight:800;">✓</span>' : ''}
-                    </div>
-                    <div class="conv-studio-menu-item ${output === 'individual' ? 'active' : ''}" data-output="individual">
-                      <span>Download individually</span>
-                      ${output === 'individual' ? '<span style="color:#7C3AED; font-weight:800;">✓</span>' : ''}
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding:8px 12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px;">
+                      <span style="font-size:12px; font-weight:600; color:#334155;">Multi-file output:</span>
+                      <div style="display:flex; gap:6px;">
+                        <button type="button" class="comp-btn-action ${output === 'zip' ? 'is-selected' : ''}" data-output="zip" style="${output === 'zip' ? 'background:#111827; color:#fff; border-color:#111827;' : ''}">Save ZIP</button>
+                        <button type="button" class="comp-btn-action ${output === 'individual' ? 'is-selected' : ''}" data-output="individual" style="${output === 'individual' ? 'background:#111827; color:#fff; border-color:#111827;' : ''}">Individual</button>
+                      </div>
                     </div>
                   ` : ''}
                 </div>
+
+                <div>
+                  <button type="button" class="comp-btn-primary" id="comp-run">
+                    <span>Compress ${files.length > 1 ? `${files.length} Files` : famLabel} (${p.short || p.label})</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                    </svg>
+                  </button>
+                  <p class="comp-privacy-caption" style="margin-top: 8px;">🔒 100% private · Files are compressed locally in your browser</p>
+                </div>
+
               </div>
 
             </div>
 
-            <p class="conv-studio-bottom-hint">🔒 100% private. Files are compressed locally in your browser.</p>
           </div>
         </div>
       `;
@@ -1964,7 +1974,7 @@
           if (!thumbUrl) return;
           const thumbBox = container.querySelector('#comp-studio-thumb-box');
           if (thumbBox) {
-            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
+            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="comp-thumb-img"/>`;
           }
         }).catch(() => {});
       }
@@ -2007,23 +2017,16 @@
         }
       });
 
-      // Toggle preset dropdown menu
-      const trigger = container.querySelector('#comp-preset-trigger');
-      const menu = container.querySelector('#comp-preset-menu');
-      trigger?.addEventListener('click', () => {
-        isPresetMenuOpen = !isPresetMenuOpen;
-        if (menu) menu.hidden = !isPresetMenuOpen;
-        trigger.classList.toggle('is-collapsed', !isPresetMenuOpen);
-      });
-
-      container.querySelectorAll('.conv-studio-menu-item[data-pkey]').forEach(item => {
+      // Tier item clicks
+      container.querySelectorAll('.comp-tier-item[data-pkey]').forEach(item => {
         item.addEventListener('click', () => {
           preset = item.dataset.pkey;
           renderConfigure();
         });
       });
 
-      container.querySelectorAll('.conv-studio-menu-item[data-output]').forEach(item => {
+      // Output toggle clicks
+      container.querySelectorAll('button[data-output]').forEach(item => {
         item.addEventListener('click', () => {
           output = item.dataset.output;
           renderConfigure();
@@ -2187,7 +2190,7 @@
       const urls   = results.map(r => URL.createObjectURL(r.result.blob));
       const firstRes = results[0];
       const outName = single ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
-      const nextPresetLabel = preset === 'maximum' ? 'Balanced' : 'Maximum';
+      const nextPresetLabel = preset === 'maximum' ? 'Recommended' : 'Extreme';
       const nextPresetKey = preset === 'maximum' ? 'balanced' : 'maximum';
 
       // Smart Suggestions based on family
