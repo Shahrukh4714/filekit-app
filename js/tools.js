@@ -1768,6 +1768,7 @@
     let files  = [];
     let preset = 'balanced';
     let output = 'zip'; // 'zip' | 'individual'
+    let isPresetMenuOpen = true;
 
     const MAX_BYTES = 200 * 1024 * 1024;
     const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
