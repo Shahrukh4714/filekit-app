@@ -7860,6 +7860,61 @@
     let isSettingsOpen = false;
     let isMenuOpen = true;
 
+    async function generateFileThumbnail(f, fam) {
+      if (!f) return null;
+      if (fam === 'image' || (f.type && f.type.startsWith('image/'))) {
+        if (/image\/(png|jpeg|jpg|webp|gif|svg\+xml|bmp|avif)/i.test(f.type) || /\.(png|jpe?g|webp|gif|svg|bmp|avif)$/i.test(f.name)) {
+          return URL.createObjectURL(f);
+        }
+      }
+      if (fam === 'pdf' || f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+        try {
+          const pdfjs = await window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => window.pdfjsLib);
+          if (pdfjs) {
+            if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+              pdfjs.GlobalWorkerOptions.workerSrc = new URL('vendor/pdfjs.worker.min.js', window.location.href).href;
+            }
+            const buf = await f.arrayBuffer();
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
+            const page = await doc.getPage(1);
+            const vp = page.getViewport({ scale: 0.35 });
+            const canvas = document.createElement('canvas');
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            return canvas.toDataURL('image/jpeg', 0.85);
+          }
+        } catch (e) {
+          console.warn('PDF thumbnail preview error:', e);
+        }
+      }
+      if (fam === 'video' || (f.type && f.type.startsWith('video/'))) {
+        try {
+          return await new Promise((resolve) => {
+            const v = document.createElement('video');
+            v.preload = 'metadata';
+            v.muted = true;
+            v.playsInline = true;
+            const u = URL.createObjectURL(f);
+            v.src = u;
+            v.onloadeddata = () => { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
+            v.onseeked = () => {
+              const c = document.createElement('canvas');
+              c.width = Math.min(160, v.videoWidth || 160);
+              c.height = ((v.videoHeight || 90) / (v.videoWidth || 160)) * c.width;
+              c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+              URL.revokeObjectURL(u);
+              resolve(c.toDataURL('image/jpeg', 0.8));
+            };
+            v.onerror = () => { URL.revokeObjectURL(u); resolve(null); };
+            setTimeout(() => { URL.revokeObjectURL(u); resolve(null); }, 2500);
+          });
+        } catch (e) {}
+      }
+      return null;
+    }
+
     function renderConfigure() {
       const t = target();
       const famLabel = FAMILIES[family].label;
@@ -7878,10 +7933,12 @@
           <div class="conv-studio-wrapper">
             <div class="conv-studio-stage-row">
               
-              <!-- LEFT: Loaded File Card / Drop Zone -->
+              <!-- LEFT: Loaded File Card / Drop Zone with Live Preview -->
               <div class="conv-studio-file-card" id="conv-studio-file-card" title="Click or drop file to change">
-                <div class="conv-studio-badge">
-                  ${badgeSvg}
+                <div class="conv-studio-thumb-container" id="conv-studio-thumb-box">
+                  <div class="conv-studio-badge">
+                    ${badgeSvg}
+                  </div>
                 </div>
                 <strong class="conv-studio-title" title="${_esc(file.name)}">${_esc(file.name)}</strong>
                 <span class="conv-studio-meta">${_bytes(file.size)} &middot; ${famLabel}</span>
@@ -7955,6 +8012,15 @@
             </div>
           </div>
         </div>`;
+
+      // Asynchronously render live file thumbnail (PDF page 1, image, or video)
+      generateFileThumbnail(file, family).then((thumbUrl) => {
+        if (!thumbUrl) return;
+        const thumbBox = container.querySelector('#conv-studio-thumb-box');
+        if (thumbBox) {
+          thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
+        }
+      });
 
       // Event Listeners
       const fileCard = container.querySelector('#conv-studio-file-card');
