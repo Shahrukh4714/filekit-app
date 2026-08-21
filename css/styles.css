@@ -29440,3 +29440,311 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   font-size: 13.5px !important;
   line-height: 1.5 !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Convert Tool — Full-Bleed Flat Studio After-Upload Layout (Homepage Parity)
+═══════════════════════════════════════════════════════════════════════════ */
+.conv-studio-wrapper {
+  width: 100%;
+  max-width: 900px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+}
+
+.conv-studio-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* LEFT: Loaded File / Drop Zone */
+.conv-studio-file-card {
+  width: 220px;
+  height: 200px;
+  border: 2px dashed #CBD5E1;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.16s ease;
+  user-select: none;
+  box-sizing: border-box;
+  position: relative;
+  cursor: pointer;
+}
+
+.conv-studio-file-card:hover,
+.conv-studio-file-card.cpdf-dz--over {
+  border-color: #7C3AED;
+  background: #FAF8FF;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
+}
+
+.conv-studio-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #F5F3FF;
+  border: 1px solid #EDE9FE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  color: #7C3AED;
+}
+
+.conv-studio-badge svg {
+  width: 22px;
+  height: 22px;
+}
+
+.conv-studio-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0 0 2px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-studio-meta {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748B;
+  margin-bottom: 10px;
+}
+
+.conv-studio-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conv-studio-btn-ghost {
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: #475569;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.conv-studio-btn-ghost:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.conv-studio-btn-add {
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  color: #2563EB;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.conv-studio-btn-add:hover {
+  background: #DBEAFE;
+}
+
+/* CENTER: Action Group */
+.conv-studio-action-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.conv-studio-btn-convert {
+  background: #1A1714;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 999px;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 12px 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(26, 23, 20, 0.25);
+  transition: all 0.15s ease;
+}
+
+.conv-studio-btn-convert:hover {
+  background: #000000;
+  box-shadow: 0 6px 20px rgba(26, 23, 20, 0.35);
+  transform: translateY(-1px);
+}
+
+.conv-studio-btn-convert:active {
+  transform: translateY(0);
+}
+
+.conv-studio-btn-convert svg {
+  color: #C4B5FD;
+}
+
+.conv-studio-btn-gear {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  color: #1E293B;
+  transition: all 0.15s ease;
+}
+
+.conv-studio-btn-gear:hover,
+.conv-studio-btn-gear.active {
+  background: #F8FAFC;
+  border-color: #94A3B8;
+  color: #7C3AED;
+}
+
+/* RIGHT: Golden Yellow Format Dropdown Box */
+.conv-studio-format-box {
+  position: relative;
+  width: 175px;
+}
+
+.conv-studio-select-trigger {
+  background: #F6D860;
+  color: #1A1714;
+  border: none;
+  border-radius: 10px 10px 0 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.conv-studio-select-trigger.is-collapsed {
+  border-radius: 10px;
+}
+
+.conv-studio-cursor-blink {
+  font-weight: 300;
+  margin-right: 2px;
+  opacity: 0.8;
+  animation: htcBlink 1.2s infinite;
+}
+
+.conv-studio-selected-val {
+  flex: 1;
+  text-align: left;
+  letter-spacing: 0.02em;
+}
+
+.conv-studio-select-menu {
+  background: #FDE047;
+  border-radius: 0 0 10px 10px;
+  padding: 4px 0 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.conv-studio-menu-header {
+  font-size: 10px;
+  font-weight: 800;
+  color: #854D0E;
+  padding: 4px 14px 2px;
+  letter-spacing: 0.06em;
+}
+
+.conv-studio-menu-item {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A1714;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.conv-studio-menu-item:hover,
+.conv-studio-menu-item.active {
+  background: #FACC15;
+}
+
+/* Settings Drawer */
+.conv-studio-settings-drawer {
+  width: 100%;
+  max-width: 600px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.conv-studio-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.conv-studio-settings-header strong {
+  font-size: 13.5px;
+  color: #0F172A;
+}
+
+.conv-studio-settings-header span {
+  font-size: 12px;
+  color: #64748B;
+}
+
+.conv-studio-settings-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conv-studio-bottom-hint {
+  font-size: 12.5px;
+  color: #64748B;
+  font-weight: 500;
+  text-align: center;
+}

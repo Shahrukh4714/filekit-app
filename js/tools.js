@@ -7857,6 +7857,9 @@
       });
     }
 
+    let isSettingsOpen = false;
+    let isMenuOpen = true;
+
     function renderConfigure() {
       const t = target();
       const famLabel = FAMILIES[family].label;
@@ -7865,55 +7868,146 @@
       const fields = cfgFields();
       cfg = {};
       for (const f of fields) cfg[f.key] = (t.inputs && t.inputs[f.key] !== undefined) ? t.inputs[f.key] : (f.default !== undefined ? f.default : '');
+
+      const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
+      </svg>`;
+
       container.innerHTML = `
-        <div class="cpdf-body">
-          <div class="cpdf-body-scroll conv-form">
-            <div class="conv-file-card">
-              <span class="conv-file-badge">${famLabel.toUpperCase().slice(0, 4)}</span>
-              <div class="conv-file-meta">
-                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
-                <span>${_bytes(file.size)} &nbsp;·&nbsp; ${famLabel}</span>
+        <div class="cpdf-body cpdf-body--center" style="padding: 20px 0; overflow-y: auto;">
+          <div class="conv-studio-wrapper">
+            <div class="conv-studio-stage-row">
+              
+              <!-- LEFT: Loaded File Card / Drop Zone -->
+              <div class="conv-studio-file-card" id="conv-studio-file-card" title="Click or drop file to change">
+                <div class="conv-studio-badge">
+                  ${badgeSvg}
+                </div>
+                <strong class="conv-studio-title" title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                <span class="conv-studio-meta">${_bytes(file.size)} &middot; ${famLabel}</span>
+                <div class="conv-studio-actions">
+                  <button type="button" class="conv-studio-btn-ghost" id="conv-change-btn">Change &times;</button>
+                  <button type="button" class="conv-studio-btn-add" id="conv-replace-btn">+ Replace</button>
+                </div>
+                <input id="conv-replace-input" type="file" accept="${ACCEPT}" hidden>
               </div>
-              <button class="cpdf-btn-ghost" id="conv-change" type="button">${I.change}&nbsp; Change file</button>
+
+              <!-- CENTER: Action Group -->
+              <div class="conv-studio-action-group">
+                <button type="button" class="conv-studio-btn-convert" id="conv-run">
+                  <span>Convert to ${t.out}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                  </svg>
+                </button>
+                ${fields.length > 0 ? `
+                <button type="button" class="conv-studio-btn-gear ${isSettingsOpen ? 'active' : ''}" id="conv-gear-btn" title="Conversion Settings">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+                  </svg>
+                </button>` : ''}
+              </div>
+
+              <!-- RIGHT: Golden Yellow Format Dropdown Box -->
+              <div class="conv-studio-format-box">
+                <button type="button" class="conv-studio-select-trigger ${isMenuOpen ? '' : 'is-collapsed'}" id="conv-format-trigger">
+                  <span class="conv-studio-cursor-blink">|</span>
+                  <span class="conv-studio-selected-val">${t.out || t.label}</span>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                  </svg>
+                </button>
+
+                <div class="conv-studio-select-menu" id="conv-format-menu" ${isMenuOpen ? '' : 'hidden'}>
+                  ${groupsShown.map(g => {
+                    const items = list.filter((x) => x.g === g);
+                    return `
+                      <div class="conv-studio-menu-header">${g.toUpperCase()}</div>
+                      ${items.map(item => `
+                        <div class="conv-studio-menu-item ${item.id === formatId ? 'active' : ''}" data-fid="${item.id}">
+                          <span>${item.out || item.label}</span>
+                          ${item.id === formatId ? `<span class="conv-check-icon">✓</span>` : ''}
+                        </div>
+                      `).join('')}
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
             </div>
 
-            <div class="conv-grid">
-              <div class="conv-col">
-                <div class="conv-panel">
-                  <label class="conv-label" for="conv-format">Convert to</label>
-                  <div class="conv-select-wrap">
-                    <select id="conv-format" class="conv-select" aria-label="Convert to">
-                      ${groupsShown.map(g => {
-                        const items = list.filter((x) => x.g === g);
-                        return `<optgroup label="${g}">${items.map(item =>
-                          `<option value="${item.id}" ${item.id === formatId ? 'selected' : ''}>${item.label} — ${item.desc}</option>`
-                        ).join('')}</optgroup>`;
-                      }).join('')}
-                    </select>
-                  </div>
-                </div>
-
+            <!-- Optional Slide-Down Settings Drawer -->
+            ${fields.length > 0 && isSettingsOpen ? `
+            <div class="conv-studio-settings-drawer">
+              <div class="conv-studio-settings-header">
+                <strong>⚙️ ${t.out} Options</strong>
+                <span>${_esc(t.desc)}</span>
+              </div>
+              <div class="conv-studio-settings-fields">
                 ${fields.map((f) => fieldPanel(f)).join('')}
               </div>
+            </div>` : ''}
 
-              <div class="conv-panel conv-options">
-                <p class="conv-label">Conversion</p>
-                <p class="conv-about">${_esc(t.desc)}</p>
-                <p class="conv-privacy">${I.shield} Processed locally — your file never leaves this device.</p>
-              </div>
+            <!-- Bottom Hint -->
+            <div class="conv-studio-bottom-hint">
+              <span>Select the output format and click <strong style="color: #0F172A;">Convert</strong> &nbsp;&middot;&nbsp; 100% Local &amp; Private</span>
             </div>
-          </div>
-
-          <div class="cpdf-footer conv-actions">
-            <button class="cpdf-btn-primary" id="conv-run" type="button">${I.convert}&nbsp; Convert to ${t.out}</button>
           </div>
         </div>`;
 
-      container.querySelector('#conv-change').onclick = () => { file = null; family = null; formatId = null; renderUpload(); };
-      container.querySelector('#conv-format').onchange = (e) => {
-        formatId = e.target.value;
+      // Event Listeners
+      const fileCard = container.querySelector('#conv-studio-file-card');
+      const replaceInp = container.querySelector('#conv-replace-input');
+      
+      container.querySelector('#conv-change-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        file = null; family = null; formatId = null; renderUpload();
+      });
+
+      container.querySelector('#conv-replace-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        replaceInp.click();
+      });
+
+      fileCard?.addEventListener('click', () => replaceInp.click());
+      replaceInp?.addEventListener('change', () => {
+        if (replaceInp.files && replaceInp.files[0]) pickFile(replaceInp.files[0]);
+      });
+
+      fileCard?.addEventListener('dragover', (e) => { e.preventDefault(); fileCard.classList.add('cpdf-dz--over'); });
+      fileCard?.addEventListener('dragleave', () => fileCard.classList.remove('cpdf-dz--over'));
+      fileCard?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileCard.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0];
+        if (f) pickFile(f);
+      });
+
+      // Format menu toggle & select
+      const trigger = container.querySelector('#conv-format-trigger');
+      const menu = container.querySelector('#conv-format-menu');
+      trigger?.addEventListener('click', () => {
+        isMenuOpen = !isMenuOpen;
+        if (menu) menu.hidden = !isMenuOpen;
+        trigger.classList.toggle('is-collapsed', !isMenuOpen);
+      });
+
+      container.querySelectorAll('.conv-studio-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+          formatId = item.dataset.fid;
+          renderConfigure();
+        });
+      });
+
+      // Gear settings toggle
+      const gearBtn = container.querySelector('#conv-gear-btn');
+      gearBtn?.addEventListener('click', () => {
+        isSettingsOpen = !isSettingsOpen;
         renderConfigure();
-      };
+      });
+
+      // Wire fields
       for (const f of fields) {
         const el = container.querySelector(`[data-cfg="${f.key}"]`);
         if (!el) continue;
@@ -7926,7 +8020,8 @@
         };
         el.addEventListener((f.type === 'range' || f.type === 'number' || f.type === 'text') ? 'input' : 'change', commit);
       }
-      container.querySelector('#conv-run').onclick = () => runConvert();
+
+      container.querySelector('#conv-run')?.addEventListener('click', () => runConvert());
     }
 
     function renderProcessing() {
