@@ -1677,9 +1677,84 @@
     office:  { label: 'Office',   icon: ICONS.arcSm, title: 'Repacking your document',  btn: 'Repack document',  mime: 'application/octet-stream' },
   };
   const familyOf = (f) => {
-    const e = (f.name.split('.').pop() || '').toLowerCase();
-    return Object.keys(COMPRESS_EXTS).find((k) => COMPRESS_EXTS[k].includes(e)) || null;
+    if (!f) return null;
+    const name = f.name || '';
+    const e = (name.split('.').pop() || '').toLowerCase();
+    const mime = f.type || '';
+    for (const [fam, exts] of Object.entries(COMPRESS_EXTS)) {
+      if (exts.includes(e)) return fam;
+    }
+    if (/pdf/i.test(mime) || /\.pdf$/i.test(name)) return 'pdf';
+    if (/^image\//i.test(mime)) return 'image';
+    if (/^video\//i.test(mime)) return 'video';
+    if (/^audio\//i.test(mime)) return 'audio';
+    if (/zip|tar|gzip|archive/i.test(mime)) return 'archive';
+    if (/epub|mobi/i.test(mime)) return 'ebook';
+    if (/word|sheet|presentation|document/i.test(mime)) return 'office';
+    return 'pdf';
   };
+
+  async function generateFileThumbnail(f, fam) {
+    if (!f) return null;
+    // 1. Images (instant object URL)
+    if (fam === 'image' || (f.type && f.type.startsWith('image/')) || /\.(png|jpe?g|webp|gif|svg|bmp|avif|ico)$/i.test(f.name)) {
+      try {
+        return URL.createObjectURL(f);
+      } catch (e) {}
+    }
+    // 2. PDFs (render Page 1 using PDF.js)
+    if (fam === 'pdf' || f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+      try {
+        const pdfjs = await window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
+          .then(() => {
+            if (window.pdfjsLib) {
+              window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
+              return window.pdfjsLib;
+            }
+            return null;
+          });
+        if (pdfjs) {
+          const buf = await f.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
+          const page = await doc.getPage(1);
+          const vp = page.getViewport({ scale: 0.35 });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(vp.width));
+          canvas.height = Math.max(1, Math.round(vp.height));
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport: vp }).promise;
+          return canvas.toDataURL('image/jpeg', 0.85);
+        }
+      } catch (e) {
+        console.warn('PDF thumbnail preview error:', e);
+      }
+    }
+    // 3. Videos (frame capture)
+    if (fam === 'video' || (f.type && f.type.startsWith('video/')) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(f.name)) {
+      try {
+        return await new Promise((resolve) => {
+          const v = document.createElement('video');
+          v.preload = 'metadata';
+          v.muted = true;
+          v.playsInline = true;
+          const u = URL.createObjectURL(f);
+          v.src = u;
+          v.onloadeddata = () => { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
+          v.onseeked = () => {
+            const c = document.createElement('canvas');
+            c.width = Math.min(160, v.videoWidth || 160);
+            c.height = ((v.videoHeight || 90) / (v.videoWidth || 160)) * c.width;
+            c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(u);
+            resolve(c.toDataURL('image/jpeg', 0.8));
+          };
+          v.onerror = () => { URL.revokeObjectURL(u); resolve(null); };
+          setTimeout(() => { URL.revokeObjectURL(u); resolve(null); }, 2500);
+        });
+      } catch (e) {}
+    }
+    return null;
+  }
 
   /* ─── Persistent tool header ────────────────────────── */
   const toolHeader = () => '';
@@ -1687,7 +1762,7 @@
   /* ─── Mount ─────────────────────────────────────────── */
   function mountCompressPDF(container, tool) {
     container.innerHTML = '';
-    container.classList.add('cpdf-root');
+    container.classList.add('cpdf-root', 'conv-root');
 
     /** @type {File[]} */
     let files  = [];
@@ -1696,6 +1771,20 @@
 
     const MAX_BYTES = 200 * 1024 * 1024;
     const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
+
+    function addFiles(fileList) {
+      if (!fileList || !fileList.length) return;
+      const rawArr = Array.from(fileList);
+      const arr = rawArr.filter(f => f && f.size <= MAX_BYTES);
+      if (!arr.length) {
+        if (window.FF && window.FF.util && typeof window.FF.util.toast === 'function') {
+          window.FF.util.toast('Please select a file up to 200 MB.', 'warn');
+        }
+        return;
+      }
+      files = files.concat(arr);
+      renderConfigure();
+    }
 
     /* ── Step 1: Upload ─────────────────────────────── */
     function renderUpload() {
@@ -1763,7 +1852,7 @@
 
       const dz  = container.querySelector('#cpdf-dz');
       const inp = container.querySelector('#cpdf-inp');
-      inp.onchange = () => addFiles(inp.files);
+      inp.onchange = () => { addFiles(inp.files); inp.value = ''; };
       dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
       dz.addEventListener('dragleave', ()  => dz.classList.remove('cpdf-dz--over'));
       dz.addEventListener('drop', e => {
@@ -1772,13 +1861,6 @@
       });
       dz.addEventListener('click',   e => { if (!e.target.closest('label')) inp.click(); });
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
-    }
-
-    function addFiles(fileList) {
-      const arr = [...(fileList || [])].filter(f => familyOf(f) && f.size <= MAX_BYTES);
-      if (!arr.length) { window.FF.util.toast('Please select a PDF, image, video, audio, archive, or document file (up to 200 MB).', 'warn'); return; }
-      files = files.concat(arr);
-      renderConfigure();
     }
 
     /* ── Step 2: Configure ──────────────────────────── */
@@ -7999,67 +8081,6 @@
     let isSettingsOpen = false;
     let isMenuOpen = true;
 
-    async function generateFileThumbnail(f, fam) {
-      if (!f) return null;
-      // 1. Images (instant object URL)
-      if (fam === 'image' || (f.type && f.type.startsWith('image/')) || /\.(png|jpe?g|webp|gif|svg|bmp|avif|ico)$/i.test(f.name)) {
-        try {
-          return URL.createObjectURL(f);
-        } catch (e) {}
-      }
-      // 2. PDFs (render Page 1 using PDF.js)
-      if (fam === 'pdf' || f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
-        try {
-          const pdfjs = await window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
-            .then(() => {
-              if (window.pdfjsLib) {
-                window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
-                return window.pdfjsLib;
-              }
-              return null;
-            });
-          if (pdfjs) {
-            const buf = await f.arrayBuffer();
-            const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
-            const page = await doc.getPage(1);
-            const vp = page.getViewport({ scale: 0.35 });
-            const canvas = document.createElement('canvas');
-            canvas.width = Math.max(1, Math.round(vp.width));
-            canvas.height = Math.max(1, Math.round(vp.height));
-            const ctx = canvas.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            return canvas.toDataURL('image/jpeg', 0.85);
-          }
-        } catch (e) {
-          console.warn('PDF thumbnail preview error:', e);
-        }
-      }
-      // 3. Videos (frame capture)
-      if (fam === 'video' || (f.type && f.type.startsWith('video/')) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(f.name)) {
-        try {
-          return await new Promise((resolve) => {
-            const v = document.createElement('video');
-            v.preload = 'metadata';
-            v.muted = true;
-            v.playsInline = true;
-            const u = URL.createObjectURL(f);
-            v.src = u;
-            v.onloadeddata = () => { v.currentTime = Math.min(1, (v.duration || 2) / 2); };
-            v.onseeked = () => {
-              const c = document.createElement('canvas');
-              c.width = Math.min(160, v.videoWidth || 160);
-              c.height = ((v.videoHeight || 90) / (v.videoWidth || 160)) * c.width;
-              c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-              URL.revokeObjectURL(u);
-              resolve(c.toDataURL('image/jpeg', 0.8));
-            };
-            v.onerror = () => { URL.revokeObjectURL(u); resolve(null); };
-            setTimeout(() => { URL.revokeObjectURL(u); resolve(null); }, 2500);
-          });
-        } catch (e) {}
-      }
-      return null;
-    }
 
     function renderConfigure() {
       const t = target();
