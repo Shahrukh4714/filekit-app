@@ -7862,25 +7862,31 @@
 
     async function generateFileThumbnail(f, fam) {
       if (!f) return null;
-      if (fam === 'image' || (f.type && f.type.startsWith('image/'))) {
-        if (/image\/(png|jpeg|jpg|webp|gif|svg\+xml|bmp|avif)/i.test(f.type) || /\.(png|jpe?g|webp|gif|svg|bmp|avif)$/i.test(f.name)) {
+      // 1. Images (instant object URL)
+      if (fam === 'image' || (f.type && f.type.startsWith('image/')) || /\.(png|jpe?g|webp|gif|svg|bmp|avif|ico)$/i.test(f.name)) {
+        try {
           return URL.createObjectURL(f);
-        }
+        } catch (e) {}
       }
+      // 2. PDFs (render Page 1 using PDF.js)
       if (fam === 'pdf' || f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
         try {
-          const pdfjs = await window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => window.pdfjsLib);
+          const pdfjs = await window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
+            .then(() => {
+              if (window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
+                return window.pdfjsLib;
+              }
+              return null;
+            });
           if (pdfjs) {
-            if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-              pdfjs.GlobalWorkerOptions.workerSrc = new URL('vendor/pdfjs.worker.min.js', window.location.href).href;
-            }
             const buf = await f.arrayBuffer();
             const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
             const page = await doc.getPage(1);
             const vp = page.getViewport({ scale: 0.35 });
             const canvas = document.createElement('canvas');
-            canvas.width = vp.width;
-            canvas.height = vp.height;
+            canvas.width = Math.max(1, Math.round(vp.width));
+            canvas.height = Math.max(1, Math.round(vp.height));
             const ctx = canvas.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             return canvas.toDataURL('image/jpeg', 0.85);
@@ -7889,7 +7895,8 @@
           console.warn('PDF thumbnail preview error:', e);
         }
       }
-      if (fam === 'video' || (f.type && f.type.startsWith('video/'))) {
+      // 3. Videos (frame capture)
+      if (fam === 'video' || (f.type && f.type.startsWith('video/')) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(f.name)) {
         try {
           return await new Promise((resolve) => {
             const v = document.createElement('video');
