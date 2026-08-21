@@ -29443,11 +29443,32 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Convert Tool — Full-Bleed Flat Studio After-Upload Layout (Homepage Parity)
+   Convert Tool — Full-Bleed Flat Studio (Sharp Geometry & No Scrollbars)
 ═══════════════════════════════════════════════════════════════════════════ */
+#app-workspace-tool-view,
+#app-tool-stage,
+.cpdf-body,
+.conv-root,
+.conv-studio-wrapper,
+.conv-studio-select-menu {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+#app-workspace-tool-view::-webkit-scrollbar,
+#app-tool-stage::-webkit-scrollbar,
+.cpdf-body::-webkit-scrollbar,
+.conv-root::-webkit-scrollbar,
+.conv-studio-wrapper::-webkit-scrollbar,
+.conv-studio-select-menu::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .conv-studio-wrapper {
   width: 100%;
-  max-width: 900px;
+  max-width: 860px;
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -29456,6 +29477,7 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   gap: 20px;
   box-sizing: border-box;
   padding: 10px 16px;
+  overflow: hidden;
 }
 
 .conv-studio-stage-row {
@@ -29467,12 +29489,12 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   box-sizing: border-box;
 }
 
-/* LEFT: Loaded File / Drop Zone */
+/* LEFT: Loaded File Card / Drop Zone (Sharp 4px) */
 .conv-studio-file-card {
   width: 220px;
-  height: 200px;
-  border: 2px dashed #CBD5E1;
-  border-radius: 14px;
+  height: 190px;
+  border: 1px dashed #CBD5E1;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29480,8 +29502,7 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   padding: 16px;
   text-align: center;
   background: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-  transition: all 0.16s ease;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
   user-select: none;
   box-sizing: border-box;
   position: relative;
@@ -29492,13 +29513,12 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
 .conv-studio-file-card.cpdf-dz--over {
   border-color: #7C3AED;
   background: #FAF8FF;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
 }
 
 .conv-studio-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
   background: #F5F3FF;
   border: 1px solid #EDE9FE;
   display: flex;
@@ -29541,12 +29561,12 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   background: #F1F5F9;
   border: 1px solid #E2E8F0;
   color: #475569;
-  border-radius: 6px;
+  border-radius: 3px;
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: background-color 0.12s ease;
 }
 
 .conv-studio-btn-ghost:hover {
@@ -29558,51 +29578,44 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   background: #EFF6FF;
   border: 1px solid #DBEAFE;
   color: #2563EB;
-  border-radius: 6px;
+  border-radius: 3px;
   padding: 3px 8px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: background-color 0.12s ease;
 }
 
 .conv-studio-btn-add:hover {
   background: #DBEAFE;
 }
 
-/* CENTER: Action Group */
+/* CENTER: Action Group (Sharp 4px) */
 .conv-studio-action-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 0 0 auto;
 }
 
 .conv-studio-btn-convert {
-  background: #1A1714;
+  background: #111827;
   color: #FFFFFF;
-  border: none;
-  border-radius: 999px;
+  border: 1px solid #111827;
+  border-radius: 4px;
   font-family: 'Poppins', 'Inter', sans-serif;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 12px 26px;
+  padding: 11px 22px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(26, 23, 20, 0.25);
-  transition: all 0.15s ease;
+  transition: background-color 0.12s ease;
 }
 
 .conv-studio-btn-convert:hover {
   background: #000000;
-  box-shadow: 0 6px 20px rgba(26, 23, 20, 0.35);
-  transform: translateY(-1px);
-}
-
-.conv-studio-btn-convert:active {
-  transform: translateY(0);
 }
 
 .conv-studio-btn-convert svg {
@@ -29611,17 +29624,16 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
 
 .conv-studio-btn-gear {
   background: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
-  border-radius: 10px;
-  width: 44px;
-  height: 44px;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   color: #1E293B;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
 }
 
 .conv-studio-btn-gear:hover,
@@ -29631,7 +29643,7 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   color: #7C3AED;
 }
 
-/* RIGHT: Golden Yellow Format Dropdown Box */
+/* RIGHT: Golden Yellow Format Dropdown Box (Sharp 4px) */
 .conv-studio-format-box {
   position: relative;
   width: 175px;
@@ -29641,7 +29653,7 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   background: #F6D860;
   color: #1A1714;
   border: none;
-  border-radius: 10px 10px 0 0;
+  border-radius: 4px 4px 0 0;
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
   font-weight: 800;
@@ -29649,14 +29661,13 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 100%;
   cursor: pointer;
   box-sizing: border-box;
 }
 
 .conv-studio-select-trigger.is-collapsed {
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .conv-studio-cursor-blink {
@@ -29674,12 +29685,12 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
 
 .conv-studio-select-menu {
   background: #FDE047;
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 4px 4px;
   padding: 4px 0 6px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   max-height: 180px;
   overflow-y: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .conv-studio-menu-header {
@@ -29699,7 +29710,7 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: background 0.1s ease;
+  transition: background 0.08s ease;
 }
 
 .conv-studio-menu-item:hover,
@@ -29707,15 +29718,14 @@ body #app-view #app-tool-stage .drop-hero-box:hover {
   background: #FACC15;
 }
 
-/* Settings Drawer */
+/* Settings Drawer (Sharp 4px) */
 .conv-studio-settings-drawer {
   width: 100%;
   max-width: 600px;
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 16px 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
 }
 
