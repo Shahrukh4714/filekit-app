@@ -30675,3 +30675,56 @@ body #app-view #app-file-dropzone:hover {
   min-width: max-content !important;
   padding: 0 18px !important;
 }
+
+
+/* ── Perfect Geometry & Truncation Fixes ── */
+.app-workspace-tool-view .org-thumbs {
+  width: 290px !important;
+  min-width: 290px !important;
+  max-width: 290px !important;
+}
+.app-workspace-tool-view .org-fname {
+  max-width: 175px !important;
+}
+.app-workspace-tool-view .org-top {
+  padding: 0 16px !important;
+}
+.app-workspace-tool-view .org-top-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  padding-right: 4px !important;
+}
+.app-workspace-tool-view .org-finish {
+  white-space: nowrap !important;
+  min-width: max-content !important;
+  padding: 0 16px !important;
+  flex-shrink: 0 !important;
+  font-size: 13px !important;
+}
+.app-workspace-tool-view .org-fcard--add {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 12px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: #FAF5FF !important;
+  border: 1.5px dashed #C4B5FD !important;
+  border-radius: 6px !important;
+}
+.app-workspace-tool-view .org-fcard--add .org-fadd-label {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #7C3AED !important;
+  white-space: nowrap !important;
+}
+.app-workspace-tool-view .org-fcard--add .org-fsub {
+  display: none !important;
+}

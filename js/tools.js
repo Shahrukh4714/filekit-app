@@ -14633,7 +14633,7 @@ trailer<</Root 1 0 R>>`;
         if (fam === 'audio' || fam === 'video') return `Split (${splitEvery} parts)`;
         if (fam === 'pdf') {
           const parts = Math.max(1, Math.ceil(pageCount / Math.max(1, splitEvery)));
-          return parts === 1 ? 'Split PDF (1 part)' : `Split (${parts} parts)`;
+          return parts === 1 ? 'Split (1 part)' : `Split (${parts} parts)`;
         }
         return `Split ${files.length} images`;
       }
@@ -14995,8 +14995,7 @@ trailer<</Root 1 0 R>>`;
           ${cards}
           <button type="button" class="org-fcard org-fcard--add" id="org-fadd" title="Add more files">
             <span class="org-fadd-ico">${ICONS.add}</span>
-            <span class="org-fname">Add more</span>
-            <span class="org-fsub">PDF · Images · Audio · Video</span>
+            <span class="org-fadd-label">Add more files</span>
           </button>
         </div>
         ${batchPill}
@@ -15147,13 +15146,17 @@ trailer<</Root 1 0 R>>`;
         }
         if (fam === 'pdf') {
           const parts = Math.max(1, Math.ceil(pageCount / Math.max(1, splitEvery)));
+          const chipsMarkup = [1, 2, 5, 10].map(n => {
+            const isOver = pageCount > 0 && n > pageCount;
+            return `<button type="button" class="org-chip${splitEvery === n ? ' org-chip--on' : ''}" data-every="${n}" ${isOver ? 'disabled style="opacity:0.35;cursor:not-allowed;" title="Document only has ' + pageCount + ' ' + (pageCount === 1 ? 'page' : 'pages') + '"' : ''}>${n} ${n === 1 ? 'page' : 'pages'}</button>`;
+          }).join('');
           return `${bigPreviewMarkup()}<div class="cpdf-section">
             <p class="cpdf-section-label">Split into parts of</p>
             <div class="org-chips" role="radiogroup">
-              ${[1, 2, 5, 10].map(n => `<button type="button" class="org-chip${splitEvery === n ? ' org-chip--on' : ''}" data-every="${n}">${n} page${n === 1 ? '' : 's'}</button>`).join('')}
-              <input class="org-chip-input" id="org-every" type="number" min="1" max="${pageCount}" value="${splitEvery}" aria-label="Pages per part">
+              ${chipsMarkup}
+              <input class="org-chip-input" id="org-every" type="number" min="1" max="${pageCount || 100}" value="${splitEvery}" aria-label="Pages per part">
             </div>
-            <p class="org-mode-note">${pageCount} page${pageCount === 1 ? '' : 's'} → <b>${parts} part${parts === 1 ? '' : 's'}</b>, downloaded as a ZIP.</p>
+            <p class="org-mode-note">${pageCount} ${pageCount === 1 ? 'page' : 'pages'} → <b>${parts} ${parts === 1 ? 'part' : 'parts'}</b>, downloaded as a ZIP.</p>
           </div>`;
         }
         return `${bigPreviewMarkup()}<div class="cpdf-section">
