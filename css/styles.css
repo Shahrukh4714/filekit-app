@@ -30377,3 +30377,220 @@ body #app-view #app-file-dropzone:hover {
   border-radius: 50% !important;
   background: #059669 !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5m. Organize Flawless Studio Geometry & Physical Sheet Framing
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Top header view toggle button: never wrap text */
+.app-workspace-tool-view .org-view-toggle {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 14px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  color: #334155 !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
+}
+.app-workspace-tool-view .org-view-toggle span {
+  white-space: nowrap !important;
+  display: inline-block !important;
+}
+.app-workspace-tool-view .org-view-toggle:hover {
+  background: #EEF2F7 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+
+/* Right Stage Container: Structured vertical flow */
+.app-workspace-tool-view .org-shell .org-main,
+.app-workspace-tool-view .org-main {
+  flex: 1 1 auto !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  padding: 16px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+  background: #F8FAFC !important;
+}
+
+/* Inspector Card: White, contained, elevated */
+.app-workspace-tool-view .org-shell .org-big,
+.app-workspace-tool-view .org-big {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  margin-bottom: 0 !important;
+}
+.app-workspace-tool-view .org-shell .org-big-head,
+.app-workspace-tool-view .org-big-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 14px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  flex-shrink: 0 !important;
+}
+.app-workspace-tool-view .org-shell .org-big-stage,
+.app-workspace-tool-view .org-big-stage {
+  height: 220px !important;
+  min-height: 220px !important;
+  max-height: 220px !important;
+  background: #F8FAFC !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+/* Physical Document Sheet Canvas Framing */
+.app-workspace-tool-view .org-shell .org-big-stage canvas,
+.app-workspace-tool-view .org-shell .org-big-stage img,
+.app-workspace-tool-view .org-big-stage canvas,
+.app-workspace-tool-view .org-big-stage img {
+  max-height: 196px !important;
+  max-width: 90% !important;
+  object-fit: contain !important;
+  border-radius: 4px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  display: block !important;
+  margin: 0 auto !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Action / Configuration Cards below preview */
+.app-workspace-tool-view .org-shell .cpdf-section,
+.app-workspace-tool-view .cpdf-section {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 16px 18px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+.app-workspace-tool-view .org-shell .cpdf-section-label,
+.app-workspace-tool-view .cpdf-section-label {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+.app-workspace-tool-view .org-shell .org-chips,
+.app-workspace-tool-view .org-chips {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin: 0 !important;
+}
+.app-workspace-tool-view .org-shell .org-chip,
+.app-workspace-tool-view .org-chip {
+  height: 34px !important;
+  padding: 0 14px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  color: #334155 !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.app-workspace-tool-view .org-shell .org-chip:hover,
+.app-workspace-tool-view .org-chip:hover {
+  background: #EEF2F7 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+.app-workspace-tool-view .org-shell .org-chip--on,
+.app-workspace-tool-view .org-chip--on {
+  background: #7C3AED !important;
+  border-color: #7C3AED !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(124, 58, 237, 0.3) !important;
+}
+.app-workspace-tool-view .org-shell .org-chip-input,
+.app-workspace-tool-view .org-chip-input {
+  height: 34px !important;
+  width: 70px !important;
+  padding: 0 8px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+.app-workspace-tool-view .org-shell .org-seg-btn,
+.app-workspace-tool-view .org-seg-btn {
+  height: 34px !important;
+  padding: 0 18px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  color: #334155 !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.app-workspace-tool-view .org-shell .org-seg-btn--on,
+.app-workspace-tool-view .org-seg-btn--on {
+  background: #7C3AED !important;
+  border-color: #7C3AED !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+.app-workspace-tool-view .org-shell .org-mode-note,
+.app-workspace-tool-view .org-mode-note {
+  font-size: 12px !important;
+  color: #64748B !important;
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+.app-workspace-tool-view .org-shell .org-mode-note b,
+.app-workspace-tool-view .org-mode-note b {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}

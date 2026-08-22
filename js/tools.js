@@ -14794,10 +14794,10 @@ trailer<</Root 1 0 R>>`;
       return `
         <div class="org-big">
           <div class="org-big-head">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-              <span class="org-big-title">Inspector</span>
-              <span class="org-big-file" title="${_esc(f.name)}">${_esc(f.name)}</span>
-              <span class="org-big-sub">${sub}</span>
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto;">
+              <span style="font-size:10px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;background:#FAF5FF;color:#7C3AED;border:1px solid #E9D5FF;border-radius:4px;padding:2px 6px;flex-shrink:0;">INSPECTOR</span>
+              <span style="font-size:13px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;" title="${_esc(f.name)}">${_esc(f.name)}</span>
+              <span style="font-size:11.5px;font-weight:500;color:#64748B;white-space:nowrap;">${sub}</span>
             </div>
             <div class="org-zoom-ctrls">
               <button type="button" class="org-zoom-btn" id="org-zoom-out" title="Zoom out">−</button>
