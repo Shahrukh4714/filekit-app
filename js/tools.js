@@ -15511,7 +15511,7 @@ trailer<</Root 1 0 R>>`;
       if (sub) sub.textContent = `Stage ${stageNum} of 3: ${stageText}`;
     }
 
-    /* ── Step 5: Interactive Result Studio with Flipbook & In-Memory Handoff ── */
+    /* ── Step 5: Pro 2-Column Result Studio with Flipbook & Smart Next Steps ── */
     async function renderResult(res) {
       exitBleed();
       const isPdf = res.name.endsWith('.pdf');
@@ -15521,51 +15521,101 @@ trailer<</Root 1 0 R>>`;
       let curPage = 1;
       let flipDoc = null;
 
+      // Smart next step tools
+      const smartTools = isPdf ? [
+        { id: 'compress', name: 'Compress PDF' },
+        { id: 'pdf-sign', name: 'Sign PDF' },
+        { id: 'pdf-to-word', name: 'Convert to Word' },
+        { id: 'pdf-protect', name: 'Protect PDF' }
+      ] : [
+        { id: 'compress', name: 'Compress Files' },
+        { id: 'convert', name: 'Convert Format' }
+      ];
+
       container.innerHTML = `
-        <div class="conv-result-card" style="max-width:680px;margin:32px auto;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:32px;box-shadow:0 8px 30px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;">
-          <div style="width:48px;height:48px;border-radius:50%;background:#ECFDF5;color:#059669;display:flex;align-items:center;justify-content:center;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div>
-            <h2 style="font-family:'Poppins',sans-serif;font-size:20px;font-weight:700;color:#0F172A;margin:0 0 4px;">Organization Complete!</h2>
-            <p style="font-size:13px;color:#64748B;margin:0;">Your files have been processed and packaged locally.</p>
-          </div>
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden; width: 100%;">
+          <div class="conv-result-studio">
+            
+            <!-- LEFT: Output Document Preview & Interactive Flipbook -->
+            <div class="conv-result-preview-col" id="org-result-preview-box">
+              <div id="org-flip-stage" style="width: 100%; height: 170px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 8px;">
+                <div class="conv-doc-illustration" style="margin-bottom:0;">
+                  <div class="conv-doc-lines">
+                    <div class="conv-doc-line"></div>
+                    <div class="conv-doc-line"></div>
+                    <div class="conv-doc-line" style="width: 70%;"></div>
+                  </div>
+                  <div class="conv-doc-banner" style="background: #1A1714;">
+                    ${isZip ? 'ZIP ARCHIVE' : 'ORGANIZED'}
+                  </div>
+                </div>
+              </div>
 
-          <div style="width:100%;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;">
-            <div id="org-flip-stage" style="width:100%;max-height:220px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-              <span style="font-size:12px;color:#94A3B8;">Loading interactive preview…</span>
+              ${isPdf ? `
+              <div class="org-flip-nav" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; width: 100%;">
+                <button type="button" class="conv-result-btn-secondary" id="org-flip-prev" disabled style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">‹ Prev</button>
+                <span id="org-flip-status" style="font-size: 11.5px; font-weight: 700; color: #334155; min-width: 65px; text-align: center; white-space: nowrap !important;">Page 1</span>
+                <button type="button" class="conv-result-btn-secondary" id="org-flip-next" style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">Next ›</button>
+              </div>` : ''}
+
+              <span class="conv-result-name-sub" title="${_esc(res.name)}" style="margin-top: 4px;">${_esc(res.name)}</span>
+              <span style="font-size: 12px; font-weight: 700; color: #0F172A; margin-top: 2px;">${outSize}</span>
+              <div class="org-receipt-badge" style="margin-top: 6px; font-size: 10.5px; padding: 2px 8px;">${ICONS.shield} 100% Local Sandbox</div>
             </div>
-            ${isPdf ? `
-            <div class="org-flip-nav">
-              <button type="button" class="org-flip-btn" id="org-flip-prev" disabled>‹ Prev</button>
-              <span id="org-flip-status" style="font-size:12px;font-weight:700;color:#334155;">Page 1</span>
-              <button type="button" class="org-flip-btn" id="org-flip-next">Next ›</button>
-            </div>` : ''}
-          </div>
 
-          <div style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;flex-wrap:wrap;">
-            <button class="cpdf-btn-primary" id="org-dl" type="button" style="height:44px;padding:0 24px;background:#7C3AED;color:#FFFFFF;border:none;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
-              ${ICONS.download}<span>Download ${res.name} (${outSize})</span>
-            </button>
-            ${isPdf ? `
-            <button class="cpdf-btn-ghost" id="org-view-tab" type="button" style="height:44px;padding:0 18px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;color:#334155;display:inline-flex;align-items:center;gap:6px;">
-              ${ICONS.openTab}<span>Open in Tab</span>
-            </button>` : ''}
-            <button class="cpdf-btn-ghost" id="org-restart" type="button" style="height:44px;padding:0 16px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;color:#334155;">
-              Organize More
-            </button>
-          </div>
+            <!-- RIGHT: Actions & Smart Next Steps Column -->
+            <div class="conv-result-action-col">
+              
+              <div class="conv-result-done-header">
+                <div class="conv-result-done-badge">✓</div>
+                <h3 class="conv-result-done-title">Done</h3>
+              </div>
+              <p class="conv-result-filename-title" title="${_esc(res.name)}">
+                ${mode === 'split' ? 'Document split into parts successfully' : mode === 'rotate' ? 'Page rotation applied successfully' : mode === 'delete' ? 'Pages removed successfully' : 'Organization complete'}
+              </p>
 
-          <div style="width:100%;border-top:1px solid #F1F5F9;padding-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;">
-            <span style="font-size:11px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:#94A3B8;">Zero-Latency Workflow Handoff:</span>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="org-chip" id="org-handoff-compress" style="height:32px;font-size:12px;">🗜️ Compress PDF</button>
-              <button type="button" class="org-chip" id="org-handoff-sign" style="height:32px;font-size:12px;">✍️ Sign PDF</button>
-              <button type="button" class="org-chip" id="org-handoff-convert" style="height:32px;font-size:12px;">🔄 Convert PDF</button>
+              <!-- Main Download Button: Obsidian Black -->
+              <button class="conv-result-btn-download" id="org-dl" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download ${res.name} (${outSize})</span>
+              </button>
+
+              <!-- Secondary Actions -->
+              <div class="conv-result-btn-row">
+                <button type="button" class="conv-result-btn-secondary" id="org-restart">
+                  <span>+ Organize more</span>
+                </button>
+                ${isPdf ? `
+                <button type="button" class="conv-result-btn-secondary" id="org-view-tab">
+                  <span>↗ Open in tab</span>
+                </button>` : ''}
+              </div>
+
+              <!-- Smart Next Steps Card with Authentic SVG Icons -->
+              <div class="conv-smart-tip-card">
+                <div class="conv-smart-tip-header">
+                  <span>Smart tip! 💡</span>
+                </div>
+                <p class="conv-smart-tip-desc">Next step with this file:</p>
+                <div class="conv-smart-tools-list">
+                  ${smartTools.map(st => {
+                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
+                    return `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon">${iconSvg}</span>
+                          <span>${st.name}</span>
+                        </div>
+                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
             </div>
-          </div>
 
-          <div class="org-receipt-badge">${ICONS.shield} 100% In-Memory Sandbox · 0 B Network Activity</div>
+          </div>
         </div>`;
 
       // Wire Download & Tab
@@ -15582,20 +15632,17 @@ trailer<</Root 1 0 R>>`;
       if (restartBtn) restartBtn.onclick = () => { resetState(); renderUpload(); };
 
       // Wire In-Memory Workflow Handoff
-      const handoff = (toolId) => {
-        const fileObj = new File([res.blob], res.name, { type: res.blob.type });
-        if (typeof window.openTool === 'function') {
-          window.openTool(toolId, true, [fileObj]);
-        } else {
-          U.downloadBlob(res.blob, res.name);
-        }
-      };
-      const hCompress = container.querySelector('#org-handoff-compress');
-      if (hCompress) hCompress.onclick = () => handoff('compress');
-      const hSign = container.querySelector('#org-handoff-sign');
-      if (hSign) hSign.onclick = () => handoff('sign');
-      const hConvert = container.querySelector('#org-handoff-convert');
-      if (hConvert) hConvert.onclick = () => handoff('convert');
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const tid = item.dataset.toolId;
+          const targetFile = new File([res.blob], res.name, { type: res.blob.type || 'application/pdf' });
+          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool(tid, true, [targetFile]);
+          } else if (typeof window.openTool === 'function') {
+            window.openTool(tid, true, [targetFile]);
+          }
+        });
+      });
 
       // Wire Flipbook Navigation
       if (isPdf) {
@@ -15615,10 +15662,11 @@ trailer<</Root 1 0 R>>`;
             if (nextBtn) nextBtn.disabled = curPage >= pageTotal;
 
             const page = await flipDoc.getPage(curPage);
-            const c = await renderPage(pdfjs, page, 0.7);
-            c.style.maxHeight = '190px';
-            c.style.borderRadius = '4px';
-            c.style.boxShadow = '0 4px 14px rgba(0,0,0,0.12)';
+            const c = await renderPage(pdfjs, page, 0.6);
+            c.style.maxHeight = '160px';
+            c.style.maxWidth = '100%';
+            c.style.borderRadius = '3px';
+            c.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
             if (stage) {
               stage.innerHTML = '';
               stage.append(c);
@@ -15632,7 +15680,7 @@ trailer<</Root 1 0 R>>`;
 
           updateFlipPage(1);
         } catch (e) {
-          console.warn('[Organize] Flipbook render error:', e);
+          console.warn('[Organize] flipbook preview error:', e);
         }
       }
     }
