@@ -3363,6 +3363,7 @@
               try {
                 fileInput.files = dt.files;
                 fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                if (typeof fileInput.onchange === 'function') fileInput.onchange();
               } catch (err) {}
             }
             if (dz) {

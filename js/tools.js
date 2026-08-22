@@ -1908,7 +1908,7 @@
       const curEst = estMap[preset] || estMap.balanced;
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 24px 0; overflow: hidden; width: 100%;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden; width: 100%;">
           <div class="comp-pro-workstation">
             
             <!-- LEFT: Clean Borderless Document Canvas Stage -->
@@ -2263,7 +2263,7 @@
       }
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden; width: 100%;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden; width: 100%;">
           <div class="conv-result-studio">
             
             <!-- LEFT: Real Output Document Preview & Savings Visualizer -->
@@ -3974,62 +3974,46 @@
       if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
 
       container.innerHTML = `
-        <div class="etxt-top">
-          <div class="etxt-top-left">
-            <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 28))}</span>
-            <span class="etxt-meta">${pageCount} pages · ${_bytes(file.size)}</span>
-            <span class="etxt-local">${I.shield} Local canvas</span>
+        <div class="etxt-unified-toolbar">
+          <div class="etxt-toolbar-file-pill">
+            <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 20))}</span>
+            <span class="etxt-meta">${pageCount} pgs</span>
           </div>
-          <div class="etxt-top-right">
+
+          <div class="etxt-toolbar-center-tools">
+            <div class="etxt-tool-group">
+              ${toolBtn('select', I.select, '', toolMode==='select')}
+              ${toolBtn('pan', I.hand, '', toolMode==='pan')}
+            </div>
+            <span class="etxt-tool-sep"></span>
+            <div class="etxt-tool-group">
+              ${toolBtn('edit-text', I.text, 'Text', toolMode==='edit-text')}
+              ${toolBtn('type', I.type, '', toolMode==='type')}
+              ${toolBtn('draw', I.pen, '', toolMode==='draw')}
+              ${toolBtn('highlight', I.highlight, '', toolMode==='highlight')}
+              ${toolBtn('shape', I.shape, '', toolMode==='shape')}
+              ${toolBtn('image', I.image, '', toolMode==='image')}
+            </div>
+            <span class="etxt-tool-sep"></span>
+            <div class="etxt-tool-group">
+              ${toolBtn('crop', I.crop, '', toolMode==='crop')}
+              ${toolBtn('watermark', I.watermark, '', toolMode==='watermark')}
+            </div>
+            <span class="etxt-tool-sep"></span>
+            <div class="etxt-tool-group">
+              <button type="button" class="etxt-tool" id="etxt-undo" title="Undo">${I.undo}</button>
+              <button type="button" class="etxt-tool" id="etxt-redo" title="Redo">${I.redo}</button>
+              <button type="button" class="etxt-tool" id="etxt-zoom-out" title="Zoom out">−</button>
+              <span class="etxt-zoom-label">${zoom}%</span>
+              <button type="button" class="etxt-tool" id="etxt-zoom-in" title="Zoom in">+</button>
+            </div>
+          </div>
+
+          <div class="etxt-toolbar-right-actions">
             ${imgSrc ? `<button type="button" class="etxt-btn-secondary" id="etxt-download-png">${I.image} PNG</button>` : ''}
             <button type="button" class="etxt-btn-secondary" id="etxt-download">${I.dl} ${imgSrc ? 'PDF' : 'Download'}</button>
-            ${isWordDoc ? `<button type="button" class="etxt-btn-ghost" id="etxt-find-replace">${I.find} Find & replace</button>` : ''}
             <button type="button" class="etxt-btn-ghost" id="etxt-sign" title="Sign this PDF">${I.sign} Sign</button>
-            <button type="button" class="etxt-btn-ghost" id="etxt-share">${I.share} Share</button>
             <button type="button" class="etxt-btn-finish" id="etxt-finish">Finish ${I.arrow}</button>
-          </div>
-        </div>
-
-        <div class="etxt-toolbar">
-          <div class="etxt-tool-group">
-            ${toolBtn('select', I.select, '', toolMode==='select')}
-            ${toolBtn('pan', I.hand, '', toolMode==='pan')}
-          </div>
-          <span class="etxt-tool-sep"></span>
-          <div class="etxt-tool-group">
-            ${toolBtn('edit-text', I.text, 'Text', toolMode==='edit-text')}
-            ${toolBtn('type', I.type, '', toolMode==='type')}
-            ${toolBtn('draw', I.pen, '', toolMode==='draw')}
-            ${toolBtn('highlight', I.highlight, '', toolMode==='highlight')}
-            ${toolBtn('underline', I.underline, '', toolMode==='underline')}
-            ${toolBtn('strike', I.strike, '', toolMode==='strike')}
-            ${toolBtn('squiggle', I.squiggle, '', toolMode==='squiggle')}
-            ${toolBtn('shape', I.shape, '', toolMode==='shape')}
-            ${toolBtn('image', I.image, '', toolMode==='image')}
-            ${toolBtn('stamp', I.stamp, '', toolMode==='stamp')}
-            ${toolBtn('link', I.link, '', toolMode==='link')}
-          </div>
-          ${imgSrc ? `<span class="etxt-tool-sep"></span>
-          <div class="etxt-tool-group etxt-photo-group">
-            ${toolBtn('img-bg', I.bg, '', toolMode==='img-bg')}
-            ${toolBtn('img-blur', I.blur, '', toolMode==='img-blur')}
-            ${toolBtn('img-filter', I.filter, '', toolMode==='img-filter')}
-            ${toolBtn('img-adjust', I.adjust, '', toolMode==='img-adjust')}
-            ${toolBtn('img-effect', I.effect, '', toolMode==='img-effect')}
-          </div>` : ''}
-          <span class="etxt-tool-sep"></span>
-          <div class="etxt-tool-group">
-            ${toolBtn('crop', I.crop, '', toolMode==='crop')}
-            ${toolBtn('watermark', I.watermark, '', toolMode==='watermark')}
-            ${toolBtn('pagenum', I.pagenum, '', toolMode==='pagenum')}
-            ${!imgSrc ? toolBtn('form-fill', I.form, '', toolMode==='form-fill') : ''}
-          </div>
-          <div class="etxt-tool-group">
-            <button type="button" class="etxt-tool" id="etxt-undo" title="Undo">${I.undo}</button>
-            <button type="button" class="etxt-tool" id="etxt-redo" title="Redo">${I.redo}</button>
-            <button type="button" class="etxt-tool" id="etxt-zoom-out" title="Zoom out">−</button>
-            <span class="etxt-zoom-label">${zoom}%</span>
-            <button type="button" class="etxt-tool" id="etxt-zoom-in" title="Zoom in">+</button>
           </div>
         </div>
 
@@ -4147,7 +4131,8 @@
         imgCv.addEventListener('pointermove', (e) => { if (!painting || toolMode !== 'img-blur') return; const p = toImg(e); blurDraftAt(p.x, p.y); renderImgPreview(); });
         imgCv.addEventListener('pointerup', () => { painting = false; });
       }
-      container.querySelector('#etxt-download').onclick = finishExport;
+      const dlBtn = container.querySelector('#etxt-download');
+      if (dlBtn) dlBtn.onclick = finishExport;
       container.querySelector('#etxt-download-png')?.addEventListener('click', () => {
         if (!imgSrc) return;
         const base = (file?.name || 'image.png').replace(/\.[^.]+$/, '') + '.png';
@@ -4160,16 +4145,23 @@
           setTimeout(() => URL.revokeObjectURL(a.href), 2000);
         }, 'image/png');
       });
-      container.querySelector('#etxt-finish').onclick = finishExport;
-      container.querySelector('#etxt-sign').onclick = async () => {
-        const f = await exportForSign();
-        if (!f) return;
-        window.__ffSharedFile = f;
-        window.FF.app.openTool('pdf-sign');
-      };
-      container.querySelector('#etxt-share').onclick = () => {
-        window.FF.util.toast('Direct sharing link will be enabled in cloud export. All files process locally!', 'info');
-      };
+      const finBtn = container.querySelector('#etxt-finish');
+      if (finBtn) finBtn.onclick = finishExport;
+      const signBtn = container.querySelector('#etxt-sign');
+      if (signBtn) {
+        signBtn.onclick = async () => {
+          const f = await exportForSign();
+          if (!f) return;
+          window.__ffSharedFile = f;
+          window.FF.app.openTool('pdf-sign', true);
+        };
+      }
+      const shareBtn = container.querySelector('#etxt-share');
+      if (shareBtn) {
+        shareBtn.onclick = () => {
+          window.FF.util.toast('Direct sharing link will be enabled in cloud export. All files process locally!', 'info');
+        };
+      }
 
       // re-attach cached canvases (thumbs + current page) and render anything missing
       wireCachedCanvases();
@@ -6891,16 +6883,29 @@
       const savedList = savedSigs.slice().reverse();
 
       container.innerHTML = `
-        <div class="sign-top">
-          <div class="sign-top-left">
-            <span class="sign-file" title="${_esc(file.name)}">${_esc(shortName(file.name))}</span>
-            <span class="sign-pill" title="${signers.length > 1 ? signers.map(s => _esc(s.name) + ': ' + marks.filter(m => m.signer === s.id).length).join(' · ') : ''}">${marks.length} mark${marks.length === 1 ? '' : 's'}${signers.length > 1 ? ' · ' + signers.filter(s => marks.some(m => m.signer === s.id)).length + ' signed' : ''}</span>
-            <span class="sign-local">${I.shield} Private signing</span>
+        <div class="sign-unified-toolbar">
+          <div class="sign-toolbar-file-pill">
+            <span class="sign-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 20))}</span>
+            <span class="sign-pill">${marks.length} mark${marks.length === 1 ? '' : 's'}</span>
           </div>
-          <div class="sign-top-right">
+
+          <div class="sign-toolbar-center-tools">
+            <span class="sign-pager">
+              <button type="button" id="sign-prev" ${page <= 1 ? 'disabled' : ''}>${I.chevL}</button>
+              <span><b>${page}</b> / ${pageCount}</span>
+              <button type="button" id="sign-next" ${page >= pageCount ? 'disabled' : ''}>${I.chevR}</button>
+            </span>
+            <span class="sign-canvas-zoom">
+              <button type="button" id="sign-zout" title="Zoom out">−</button>
+              <b id="sign-zlbl">${zoom}%</b>
+              <button type="button" id="sign-zin" title="Zoom in">+</button>
+            </span>
+            <button type="button" class="sign-cert-toggle${certify ? ' is-on' : ''}" id="sign-cert" title="Add visible certification line">${I.cert} Certify${certify ? ' on' : ' off'}</button>
             <button type="button" class="sign-top-icon" id="sign-undo" title="Undo (Ctrl+Z)" ${history.length ? '' : 'disabled'}>${I.undo}</button>
             <button type="button" class="sign-top-icon" id="sign-redo" title="Redo (Ctrl+Y)" ${redoStack.length ? '' : 'disabled'}>${I.redo}</button>
-            <span class="sign-top-vdiv" aria-hidden="true"></span>
+          </div>
+
+          <div class="sign-toolbar-right-actions">
             <button type="button" class="sign-btn-ghost" id="sign-edit" title="Edit this PDF's text">${I.edit} Edit text</button>
             <button type="button" class="sign-btn-ghost" id="sign-clear" ${marks.length ? '' : 'disabled'}>Clear marks</button>
             <button type="button" class="sign-btn-finish" id="sign-finish">Apply & finish ${I.arrow}</button>
@@ -8203,7 +8208,7 @@
       </svg>`;
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 20px 0; overflow-y: auto;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow-y: auto;">
           <div class="conv-studio-wrapper">
             <div class="conv-studio-stage-row">
               
@@ -8501,7 +8506,7 @@
       }
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden;">
           <div class="conv-result-studio">
             
             <!-- LEFT: Output Preview -->
@@ -15618,7 +15623,7 @@ trailer<</Root 1 0 R>>`;
       ];
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden; width: 100%;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden; width: 100%;">
           <div class="conv-result-studio">
             
             <!-- LEFT: Real Output Document Preview & Flipbook -->

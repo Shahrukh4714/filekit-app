@@ -32669,3 +32669,120 @@ button#org-dl:hover,
 #app-tool-stage:has(.cpdf-root) {
   padding: 0 !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5w. Universal Studio Toolbars (Edit Text, Sign, Convert, Compress)
+═══════════════════════════════════════════════════════════════════════════ */
+.etxt-unified-toolbar,
+.sign-unified-toolbar {
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  padding: 0 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-toolbar-file-pill,
+.sign-toolbar-file-pill {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-toolbar-file-pill .etxt-file,
+.sign-toolbar-file-pill .sign-file {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  max-width: 140px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.etxt-toolbar-file-pill .etxt-meta,
+.sign-toolbar-file-pill .sign-pill {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  white-space: nowrap !important;
+}
+
+.etxt-toolbar-center-tools,
+.sign-toolbar-center-tools {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 1 !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.etxt-toolbar-right-actions,
+.sign-toolbar-right-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-shell .etxt-top,
+.etxt-shell .etxt-toolbar {
+  display: none !important;
+}
+
+.sign-shell .sign-top,
+.sign-shell .sign-canvas-tools {
+  display: none !important;
+}
+
+.sign-shell .sign-unified-toolbar .sign-pager,
+.sign-shell .sign-unified-toolbar .sign-canvas-zoom {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: #F1F5F9 !important;
+  padding: 2px 6px !important;
+  border-radius: 5px !important;
+  font-size: 12px !important;
+}
+
+.sign-shell .sign-unified-toolbar .sign-cert-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  border: 1px solid #CBD5E1 !important;
+  background: #F8FAFC !important;
+  cursor: pointer !important;
+}
+
+.sign-shell .sign-unified-toolbar .sign-cert-toggle.is-on {
+  background: #ECFDF5 !important;
+  color: #059669 !important;
+  border-color: #A7F3D0 !important;
+}
+
+.conv-studio-wrapper {
+  margin: 10px auto !important;
+}
+
+.comp-pro-workstation {
+  margin: 10px auto !important;
+}
