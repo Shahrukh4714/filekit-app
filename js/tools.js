@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (FileKit Original Signature Full-Bleed Studio) ── */
+    /* ── Step 2: Configure (FileKit Signature White/Yellow/Black/Lavender Full-Bleed Studio) ── */
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1932,7 +1932,7 @@
               </div>
             </div>
 
-            <!-- Right: FileKit Signature Studio Control Panel -->
+            <!-- Right: FileKit Signature Studio Control Panel (White / Yellow / Black / Lavender) -->
             <div class="fk-studio-panel">
               <div class="fk-studio-header">
                 <div class="fk-studio-icon-tile fk-studio-icon-tile--compress">
@@ -1944,7 +1944,7 @@
                   <h2 class="fk-studio-title">Compress PDF</h2>
                   <span class="fk-studio-badge-local">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    Client-Side Engine · Private
+                    Client-Side Engine · 100% Private
                   </span>
                 </div>
               </div>
@@ -1979,7 +1979,7 @@
                 </div>
               </div>
 
-              <!-- FileKit Live Estimated Size Widget -->
+              <!-- FileKit Live Estimated Size Widget with Yellow Highlight Tag -->
               <div class="fk-studio-savings-widget">
                 <div class="fk-studio-savings-head">
                   <span>Estimated Output</span>
@@ -1994,7 +1994,7 @@
                 </div>
               </div>
 
-              <!-- Primary Action CTA Button -->
+              <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="fk-studio-cta" id="comp-studio-run">
                 <span>Compress PDF</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
