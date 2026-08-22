@@ -15002,7 +15002,7 @@ trailer<</Root 1 0 R>>`;
                   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span>Filmstrip</span>` : 
                   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Contact Sheet</span>`}
               </button>
-              <button class="cpdf-btn-primary org-finish" id="org-run" type="button">${modeBtnLabel()}</button>
+              <button class="org-finish" id="org-run" type="button">${modeBtnLabel()}</button>
             </div>
           </div>
           <div class="org-toolbar2">

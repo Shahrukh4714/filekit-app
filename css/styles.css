@@ -31194,3 +31194,105 @@ body #app-view #app-file-dropzone:hover {
   min-height: 180px !important;
   max-height: 180px !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5o. FileKit Obsidian Black & Amber Gold Brand Integration
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fix Primary Header CTA Button: Obsidian Black #1A1714 */
+.app-workspace-tool-view .org-finish,
+#app-tool-stage .org-finish,
+.org-finish {
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 20px !important;
+  background: #1A1714 !important;
+  border: 1px solid #1A1714 !important;
+  color: #FFFFFF !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+}
+.app-workspace-tool-view .org-finish:hover:not(:disabled),
+#app-tool-stage .org-finish:hover:not(:disabled),
+.org-finish:hover:not(:disabled) {
+  background: #000000 !important;
+  border-color: #000000 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+.app-workspace-tool-view .org-finish:disabled,
+#app-tool-stage .org-finish:disabled,
+.org-finish:disabled {
+  background: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
+  color: #94A3B8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* Part Badge: Warm Gold / Amber Accent */
+.app-workspace-tool-view .org-pg-part-tag {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
+  border: 1px solid #FDE68A !important;
+  border-radius: 4px !important;
+  padding: 1px 6px !important;
+}
+
+/* Active Mode Tab Accent Bar */
+.app-workspace-tool-view .org-tool.is-on {
+  background: #1A1714 !important;
+  color: #FFFFFF !important;
+  border-color: #1A1714 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+.app-workspace-tool-view .org-tool.is-on svg {
+  color: #F59E0B !important;
+  stroke: #F59E0B !important;
+}
+
+/* Mini Chip Active State */
+.app-workspace-tool-view .org-mini-chip.is-on {
+  background: #1A1714 !important;
+  border-color: #1A1714 !important;
+  color: #FBBF24 !important;
+  font-weight: 800 !important;
+}
+
+/* Scissors Cut Marker Highlights */
+.app-workspace-tool-view .org-cut-divider.is-cut .org-cut-btn {
+  background: #1A1714 !important;
+  color: #F59E0B !important;
+  border-color: #1A1714 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+.app-workspace-tool-view .org-cut-divider.is-cut .org-cut-line {
+  border-left-color: #F59E0B !important;
+  border-left-style: solid !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* In-Situ Page Rotate Button Hover */
+.app-workspace-tool-view .org-page-rot-btn:hover {
+  background: #1A1714 !important;
+  color: #F59E0B !important;
+  border-color: #1A1714 !important;
+}
