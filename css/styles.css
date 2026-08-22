@@ -31356,3 +31356,34 @@ body #app-view #app-file-dropzone:hover {
   width: 22px !important;
   height: 22px !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5r. Emerald Green Download CTA Button in Pro Result Studio
+═══════════════════════════════════════════════════════════════════════════ */
+.app-workspace-tool-view .conv-result-btn-download,
+.conv-result-btn-download,
+#org-dl.conv-result-btn-download {
+  background: #16A34A !important;
+  color: #FFFFFF !important;
+  border: 1px solid #16A34A !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;
+  transition: all 0.15s ease !important;
+}
+
+.app-workspace-tool-view .conv-result-btn-download:hover,
+.conv-result-btn-download:hover,
+#org-dl.conv-result-btn-download:hover {
+  background: #15803D !important;
+  border-color: #15803D !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35) !important;
+}
+
+.app-workspace-tool-view .conv-result-btn-download svg,
+.conv-result-btn-download svg,
+#org-dl svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
