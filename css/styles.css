@@ -32796,9 +32796,10 @@ button#org-dl:hover,
 
 
 
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   5y. FileKit Authentic Signature Studio Workspace (White / Yellow / Black / Lavender)
-   Zero Hover Jitter · No Scrollbar Overflow · Grounded Desktop Experience
+   5y. FileKit Studio Workspace (Expanded Width + Sharp Modern Border Radius)
+   Zero Hover Jitter · Sharp Geometric Aesthetic · Generous Whitespace
 ═══════════════════════════════════════════════════════════════════════════ */
 
 #app-workspace-tool-view #app-tool-stage,
@@ -32834,7 +32835,7 @@ button#org-dl:hover,
 
 .fk-studio-workstation {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 370px !important;
+  grid-template-columns: minmax(0, 1fr) 460px !important;
   width: 100% !important;
   height: 100% !important;
   max-width: 100% !important;
@@ -32849,18 +32850,18 @@ button#org-dl:hover,
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 24px !important;
+  padding: 32px !important;
   background: #F4F6F9 !important;
   position: relative !important;
   overflow: hidden !important;
   border-radius: 0 !important;
 }
 
-/* Document Sheet with Grounded Depth */
+/* Document Sheet with Grounded Depth and Sharp Corners */
 .fk-studio-paper-wrap {
   background: #FFFFFF !important;
-  border-radius: 6px !important;
-  box-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+  border-radius: 2px !important;
+  box-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -32883,18 +32884,18 @@ button#org-dl:hover,
   max-height: calc(100vh - 210px) !important;
   width: auto !important;
   height: auto !important;
-  border-radius: 6px !important;
+  border-radius: 2px !important;
 }
 
-/* Floating Stage Bottom Pill */
+/* Floating Stage Bottom Pill with Sharp Corners */
 .fk-studio-stage-pill {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
-  border-radius: 999px !important;
+  border-radius: 4px !important;
   padding: 6px 14px !important;
   font-size: 12.5px !important;
 }
@@ -32902,7 +32903,7 @@ button#org-dl:hover,
 .fk-studio-pill-file {
   font-weight: 700 !important;
   color: #0F172A !important;
-  max-width: 220px !important;
+  max-width: 240px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -32923,7 +32924,7 @@ button#org-dl:hover,
   color: #7C3AED !important;
   background: #EDE9FE !important;
   border: 1px solid #DDD6FE !important;
-  border-radius: 999px !important;
+  border-radius: 2px !important;
   cursor: pointer !important;
   transition: background 0.15s ease !important;
   margin-left: 4px !important;
@@ -32935,15 +32936,15 @@ button#org-dl:hover,
   transform: none !important;
 }
 
-/* Right Studio Control Panel (Clean White Surface, NO Scrollbar) */
+/* Right Studio Control Panel (Expanded 460px with generous whitespace) */
 .fk-studio-panel {
   background: #FFFFFF !important;
   border-left: 1px solid #E2E8F0 !important;
-  padding: 28px 24px !important;
+  padding: 36px 32px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
-  gap: 16px !important;
+  gap: 18px !important;
   box-sizing: border-box !important;
   height: 100% !important;
   overflow: hidden !important;
@@ -32957,39 +32958,39 @@ button#org-dl:hover,
 }
 
 .fk-studio-title {
-  font-size: 20px !important;
+  font-size: 22px !important;
   font-weight: 800 !important;
   color: #0F172A !important;
-  letter-spacing: -0.02em !important;
+  letter-spacing: -0.025em !important;
   margin: 0 !important;
 }
 
 .fk-studio-subtitle {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   color: #64748B !important;
   margin: 0 !important;
 }
 
-/* Hero Side-by-Side Comparison (Exact Homepage DNA) */
+/* Hero Side-by-Side Comparison (Sharp Corners) */
 .fk-comp-compare {
   display: grid !important;
-  grid-template-columns: 1fr 32px 1fr !important;
+  grid-template-columns: 1fr 36px 1fr !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
   width: 100% !important;
 }
 
 .fk-comp-card {
-  border: 1px solid #E2E8F0 !important;
+  border: 1.5px solid #E2E8F0 !important;
   background: #FFFFFF !important;
-  border-radius: 10px !important;
-  padding: 10px 12px !important;
+  border-radius: 4px !important;
+  padding: 12px 14px !important;
   text-align: center !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 3px !important;
+  gap: 4px !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
 }
 
@@ -33001,7 +33002,7 @@ button#org-dl:hover,
 .fk-comp-tag {
   font-size: 9.5px !important;
   font-weight: 800 !important;
-  letter-spacing: 0.05em !important;
+  letter-spacing: 0.06em !important;
   color: #64748B !important;
 }
 
@@ -33010,7 +33011,7 @@ button#org-dl:hover,
 }
 
 .fk-comp-size {
-  font-size: 15px !important;
+  font-size: 17px !important;
   font-weight: 800 !important;
   color: #1E293B !important;
 }
@@ -33020,18 +33021,18 @@ button#org-dl:hover,
 }
 
 .fk-comp-savings {
-  font-size: 10px !important;
+  font-size: 10.5px !important;
   font-weight: 800 !important;
   color: #1A1714 !important;
   background: #F6D860 !important;
-  padding: 2px 7px !important;
-  border-radius: 999px !important;
+  padding: 2px 8px !important;
+  border-radius: 2px !important;
 }
 
 .fk-comp-arrow {
-  width: 30px !important;
-  height: 30px !important;
-  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 4px !important;
   background: #EDE9FE !important;
   color: #7C3AED !important;
   display: flex !important;
@@ -33040,21 +33041,21 @@ button#org-dl:hover,
   margin: 0 auto !important;
 }
 
-/* FileKit Compression Deck */
+/* FileKit Compression Option Cards (Sharp Corners) */
 .fk-studio-deck {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 10px !important;
 }
 
 .fk-studio-card {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 10px 12px !important;
+  padding: 12px 16px !important;
   background: #FFFFFF !important;
   border: 1.5px solid #E2E8F0 !important;
-  border-radius: 10px !important;
+  border-radius: 4px !important;
   cursor: pointer !important;
   transition: border-color 0.15s ease, background 0.15s ease !important;
   user-select: none !important;
@@ -33076,13 +33077,14 @@ button#org-dl:hover,
 .fk-studio-card-left {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
 }
 
+/* Geometric Square Radio / Checkbox */
 .fk-studio-radio {
   width: 16px !important;
   height: 16px !important;
-  border-radius: 50% !important;
+  border-radius: 3px !important;
   border: 1.5px solid #CBD5E1 !important;
   background: #FFFFFF !important;
   display: flex !important;
@@ -33093,13 +33095,14 @@ button#org-dl:hover,
 
 .fk-studio-card.is-active .fk-studio-radio {
   border-color: #7C3AED !important;
+  background: #7C3AED !important;
 }
 
 .fk-studio-radio-dot {
-  width: 8px !important;
-  height: 8px !important;
-  border-radius: 50% !important;
-  background: #7C3AED !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 1px !important;
+  background: #FFFFFF !important;
   display: none !important;
 }
 
@@ -33110,40 +33113,40 @@ button#org-dl:hover,
 .fk-studio-card-info {
   display: flex !important;
   flex-direction: column !important;
-  gap: 1px !important;
+  gap: 2px !important;
 }
 
 .fk-studio-card-name {
-  font-size: 13.5px !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
   color: #0F172A !important;
 }
 
 .fk-studio-card-desc {
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   color: #64748B !important;
 }
 
 .fk-studio-pill-save {
-  font-size: 10.5px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   color: #854D0E !important;
   background: #FEF08A !important;
   border: 1px solid #FDE047 !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
+  padding: 2px 7px !important;
+  border-radius: 2px !important;
   flex-shrink: 0 !important;
 }
 
-/* FileKit Signature Obsidian CTA */
+/* FileKit Signature Obsidian CTA (Sharp Corners) */
 .fk-studio-cta {
   width: 100% !important;
-  height: 46px !important;
+  height: 48px !important;
   background: #18181B !important;
   color: #FFFFFF !important;
   border: none !important;
-  border-radius: 10px !important;
-  font-size: 14px !important;
+  border-radius: 4px !important;
+  font-size: 14.5px !important;
   font-weight: 700 !important;
   display: flex !important;
   align-items: center !important;
@@ -33165,7 +33168,7 @@ button#org-dl:hover,
   align-items: center !important;
   justify-content: center !important;
   gap: 5px !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   font-weight: 500 !important;
   color: #64748B !important;
   text-align: center !important;
