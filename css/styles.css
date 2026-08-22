@@ -28159,8 +28159,7 @@ body:has(#app-view:not([hidden])) footer,
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   OPTION B: CLEAN WHITE WORKSPACE DROP BOX WITH SOLID DARK CTA BUTTON
-   (Collapse Header Space & Dead-Center Viewport Alignment)
+   APP WORKSPACE: VIEWPORT CENTERING, STRUCTURE & SCOPED DROPZONE
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* Lock viewport & body in App Workspace */
@@ -28227,22 +28226,10 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active {
   overflow: hidden !important;
 }
 
-/* Container */
+/* Workspace Stage Root Container */
 #app-tool-stage,
-#app-tool-stage.cpdf-root,
-#app-tool-stage.doc-root,
-#app-tool-stage.conv-root,
-#app-tool-stage.aud-root,
-#app-tool-stage.vid-root,
-#app-tool-stage.img-root,
-#app-tool-stage.sign-root,
-#app-tool-stage.etxt-root,
-#app-tool-stage.spdf-shell,
-#app-tool-stage.org-shell,
-#app-tool-stage.scan-shell,
 #app-tool-stage.app-stage-container,
-.app-workspace-tool-view #app-tool-stage,
-body #app-view .cpdf-root {
+.app-workspace-tool-view #app-tool-stage {
   max-width: none !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -28260,14 +28247,20 @@ body #app-view .cpdf-root {
   overflow: hidden !important;
 }
 
-/* Hard-collapse all internal tool headers in app workspace */
-body #app-view .cpdf-hdr,
-body #app-view .conv-hdr,
-body #app-view .doc-hdr,
+/* Scoped Header Suppression (Only hides duplicate top tool headers, not inner component headers) */
 body #app-view header.cpdf-hdr,
-#app-tool-stage header.cpdf-hdr,
-#app-tool-stage .cpdf-hdr,
-#app-tool-stage > .cpdf-hdr {
+body #app-view header.conv-hdr,
+body #app-view header.doc-hdr,
+body #app-view header.aud-hdr,
+body #app-view header.vid-hdr,
+body #app-view header.img-hdr,
+body #app-view header.spdf-hdr,
+body #app-view header.org-hdr,
+body #app-view header.etxt-hdr,
+body #app-view header.sign-hdr,
+body #app-view #app-tool-stage > header.cpdf-hdr,
+body #app-view #app-tool-stage > header.conv-hdr,
+body #app-view #app-tool-stage > header.doc-hdr {
   display: none !important;
   height: 0 !important;
   min-height: 0 !important;
@@ -28275,16 +28268,17 @@ body #app-view header.cpdf-hdr,
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
+  visibility: hidden !important;
   overflow: hidden !important;
 }
 
-/* Dashed Drop Box — Exact 100% Height & True Center Alignment */
-body #app-view #app-tool-stage .cpdf-dropzone,
-body #app-view #app-tool-stage .drop-hero-box,
-body #app-view #app-tool-stage .stage-dropzone,
-body #app-view #app-tool-stage [class*="-dropzone"],
-#app-tool-stage .cpdf-dropzone,
-#app-tool-stage .drop-hero-box {
+/* Initial Workspace Upload Dropzone (Targeted strictly to upload boxes, never after-upload cards) */
+body #app-view #app-tool-stage > .cpdf-dropzone,
+body #app-view #app-tool-stage > .drop-hero-box,
+body #app-view #app-tool-stage #conv-dz,
+body #app-view #app-tool-stage #cpdf-dz,
+body #app-view #app-tool-stage > .stage-dropzone,
+body #app-view #app-file-dropzone {
   background: #FFFFFF !important;
   border: 1.5px dashed #CBD5E1 !important;
   border-radius: 8px !important;
@@ -28308,8 +28302,11 @@ body #app-view #app-tool-stage [class*="-dropzone"],
   transition: border-color 0.15s ease, background 0.15s ease !important;
 }
 
-body #app-view #app-tool-stage .cpdf-dropzone:hover,
-body #app-view #app-tool-stage .drop-hero-box:hover {
+body #app-view #app-tool-stage > .cpdf-dropzone:hover,
+body #app-view #app-tool-stage > .drop-hero-box:hover,
+body #app-view #app-tool-stage #conv-dz:hover,
+body #app-view #app-tool-stage #cpdf-dz:hover,
+body #app-view #app-file-dropzone:hover {
   transform: none !important;
   border-color: #94A3B8 !important;
   background: #FAFAFC !important;
