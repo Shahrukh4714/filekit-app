@@ -1765,6 +1765,15 @@
     container.innerHTML = '';
     container.classList.add('cpdf-root', 'conv-root');
 
+    const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
+      .then(() => {
+        if (window.pdfjsLib) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
+          return window.pdfjsLib;
+        }
+        return null;
+      });
+
     /** @type {File[]} */
     let files  = [];
     let preset = 'balanced';
@@ -2249,32 +2258,47 @@
         ];
       }
 
+      let pageTotal = 1;
+      let curPage = 1;
+      let flipDoc = null;
+
+      // Expanded Smart Next Steps
+      if (fam === 'pdf') {
+        smartTip = 'What would you like to do next with your compressed PDF?';
+        smartTools = [
+          { id: 'organize', name: 'Organize & Split' },
+          { id: 'pdf-sign', name: 'Sign Document' },
+          { id: 'pdf-to-word', name: 'Convert to Word' },
+          { id: 'pdf-protect', name: 'Protect PDF' }
+        ];
+      }
+
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden; width: 100%;">
           <div class="conv-result-studio">
             
-            <!-- LEFT: Output Preview & Savings Visualizer -->
+            <!-- LEFT: Real Output Document Preview & Savings Visualizer -->
             <div class="conv-result-preview-col" id="comp-result-preview-box">
-              <div class="conv-doc-illustration">
-                <div class="conv-doc-lines">
-                  <div class="conv-doc-line"></div>
-                  <div class="conv-doc-line"></div>
-                  <div class="conv-doc-line" style="width: 70%;"></div>
-                </div>
-                <div class="conv-doc-banner" style="background: ${win ? '#16A34A' : '#111827'};">
-                  ${win ? `-${redPct}% SMALLER` : 'COMPRESSED'}
-                </div>
+              <div id="comp-flip-stage" style="width: 100%; height: 165px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 6px;">
+                <div class="org-tile-ph" style="font-size:12px;color:#94A3B8;">Rendering document preview…</div>
               </div>
-              <span class="conv-result-name-sub" title="${_esc(outName)}">${_esc(outName)}</span>
-              <span style="font-size:12px;font-weight:700;color:#0F172A;margin-top:4px;">
+
+              <div class="org-flip-nav" id="comp-flip-nav-box" style="display: none; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; width: 100%;">
+                <button type="button" class="conv-result-btn-secondary" id="comp-flip-prev" disabled style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">‹ Prev</button>
+                <span id="comp-flip-status" style="font-size: 11.5px; font-weight: 700; color: #334155; min-width: 75px; text-align: center; white-space: nowrap !important;">Page 1</span>
+                <button type="button" class="conv-result-btn-secondary" id="comp-flip-next" style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">Next ›</button>
+              </div>
+
+              <span class="conv-result-name-sub" title="${_esc(outName)}" style="margin-top: 2px;">${_esc(outName)}</span>
+              <span style="font-size:12px;font-weight:700;color:#0F172A;margin-top:2px;">
                 ${_bytes(oTot)} &rarr; ${_bytes(cTot)}
               </span>
-              <span style="font-size:11px;color:${win ? '#16A34A' : '#64748B'};font-weight:600;margin-top:2px;">
+              <span style="font-size:11px;color:${win ? '#16A34A' : '#64748B'};font-weight:600;margin-top:1px;">
                 ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Already optimal size'}
               </span>
 
               <!-- Comparison bar -->
-              <div style="width: 100%; max-width: 180px; height: 6px; background: #E2E8F0; border-radius: 3px; margin-top: 8px; overflow: hidden;">
+              <div style="width: 100%; max-width: 180px; height: 6px; background: #E2E8F0; border-radius: 3px; margin-top: 6px; overflow: hidden;">
                 <div style="width: ${barW}%; height: 100%; background: ${win ? '#16A34A' : '#64748B'}; border-radius: 3px;"></div>
               </div>
             </div>
@@ -2290,16 +2314,16 @@
                 ${win ? `Compressed ${results.length} file${single ? '' : 's'} · ${redPct}% smaller` : 'Compression complete'}
               </p>
 
-              <!-- Main Download Button -->
+              <!-- Main Download Button: Vibrant Emerald Green -->
               ${single ? `
-                <a class="conv-result-btn-download" href="${urls[0]}" download="${_esc(outName)}">
+                <a class="conv-result-btn-download" href="${urls[0]}" download="${_esc(outName)}" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download Compressed File</span>
+                  <span>Download ${_esc(outName)} (${_bytes(cTot)})</span>
                 </a>
               ` : `
-                <button class="conv-result-btn-download" id="comp-zip-dl" type="button">
+                <button class="conv-result-btn-download" id="comp-zip-dl" type="button" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download all as ZIP</span>
+                  <span>Download all as ZIP (${_bytes(cTot)})</span>
                 </button>
               `}
 
@@ -2340,6 +2364,63 @@
           </div>
         </div>
       `;
+
+      // ── Real Output Preview Engine in Compress Result Studio ──
+      const stage = container.querySelector('#comp-flip-stage');
+      const navBox = container.querySelector('#comp-flip-nav-box');
+      const status = container.querySelector('#comp-flip-status');
+      const prevBtn = container.querySelector('#comp-flip-prev');
+      const nextBtn = container.querySelector('#comp-flip-next');
+
+      if (single && results[0]?.result?.blob) {
+        const resBlob = results[0].result.blob;
+        if (fam === 'pdf') {
+          (async () => {
+            try {
+              const pdfjs = await loadJs();
+              flipDoc = await pdfjs.getDocument({ data: new Uint8Array(await resBlob.arrayBuffer()) }).promise;
+              pageTotal = flipDoc.numPages;
+
+              const updateFlipPage = async (p) => {
+                curPage = p;
+                if (status) status.textContent = `Page ${curPage} of ${pageTotal}`;
+                if (prevBtn) prevBtn.disabled = curPage <= 1;
+                if (nextBtn) nextBtn.disabled = curPage >= pageTotal;
+
+                const page = await flipDoc.getPage(curPage);
+                const vp = page.getViewport({ scale: 0.75 });
+                const c = document.createElement('canvas');
+                c.width = Math.max(1, Math.round(vp.width));
+                c.height = Math.max(1, Math.round(vp.height));
+                const ctx = c.getContext('2d');
+                await page.render({ canvasContext: ctx, viewport: vp }).promise;
+                c.style.maxHeight = '155px';
+                c.style.maxWidth = '100%';
+                c.style.borderRadius = '4px';
+                c.style.border = '1px solid #CBD5E1';
+                c.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.12)';
+                if (stage) {
+                  stage.innerHTML = '';
+                  stage.append(c);
+                }
+              };
+
+              if (pageTotal > 1 && navBox) navBox.style.display = 'flex';
+              if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateFlipPage(curPage - 1); };
+              if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateFlipPage(curPage + 1); };
+
+              await updateFlipPage(1);
+            } catch (e) {
+              console.warn('[Compress] PDF flipbook error:', e);
+            }
+          })();
+        } else if (fam === 'image') {
+          const u = URL.createObjectURL(resBlob);
+          if (stage) {
+            stage.innerHTML = `<img src="${u}" style="max-height:155px;max-width:100%;border-radius:4px;border:1px solid #CBD5E1;box-shadow:0 4px 12px rgba(15,23,42,0.12);object-fit:contain;">`;
+          }
+        }
+      }
 
       // Multi-file ZIP download
       if (!single) {
