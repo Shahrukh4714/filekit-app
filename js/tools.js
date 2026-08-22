@@ -2184,17 +2184,108 @@
       });
     }
 
-    /* ── Step 3: Processing ─────────────────────────── */
+    /* ── Step 3: Processing (Unified Workstation Layout) ── */
     function renderProcessing() {
+      const isBatch = files.length > 1;
+      const activeFile = files[0];
+      const fam = familyOf(activeFile);
+      const totalOriginalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
+
       container.innerHTML = `
-        <div class="cpdf-prog-wrap" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 120px);padding:32px;text-align:center;">
-          <div class="cpdf-prog-spin-box" style="width:48px;height:48px;border:3px solid #E2E8F0;border-top-color:#7C3AED;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:18px;"></div>
-          <h3 id="cpdf-prog-msg" style="font-size:18px;font-weight:700;color:#111827;margin:0 0 12px;">Compressing your files…</h3>
-          <div style="width:100%;max-width:320px;height:6px;background:#E2E8F0;border-radius:999px;overflow:hidden;margin-bottom:8px;">
-            <div id="cpdf-prog-fill" style="width:0%;height:100%;background:#7C3AED;transition:width 0.2s ease;"></div>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Live Processing Stage -->
+            <div class="cpdf-benchmark-stage">
+              ${!isBatch ? `
+                <div class="cpdf-benchmark-paper cpdf-benchmark-paper--processing" id="comp-proc-thumb-box">
+                  <div style="padding: 60px 40px; color: #94A3B8;">Preparing document…</div>
+                </div>
+                <div class="cpdf-benchmark-fileinfo-row">
+                  <span class="cpdf-benchmark-fileinfo-text">${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
+                </div>
+              ` : `
+                <div class="cpdf-multi-stage-carousel">
+                  ${files.map((f, idx) => `
+                    <div class="cpdf-multi-paper-card cpdf-multi-paper-card--processing" data-idx="${idx}">
+                      <div class="cpdf-multi-paper-thumb" id="comp-proc-thumb-${idx}">
+                        <span class="cpdf-multi-paper-ext">${(f.name.split('.').pop() || 'FILE').toUpperCase()}</span>
+                      </div>
+                      <div class="cpdf-multi-paper-caption">
+                        <span class="cpdf-multi-paper-name">${_esc(f.name)}</span>
+                        <span class="cpdf-multi-paper-size">${_bytes(f.size)}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="cpdf-benchmark-fileinfo-row">
+                  <span class="cpdf-benchmark-fileinfo-text">${files.length} files · ${_bytes(totalOriginalBytes)}</span>
+                </div>
+              `}
+            </div>
+
+            <!-- Right Panel: Processing Progress Studio -->
+            <div class="cpdf-benchmark-panel">
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon cpdf-benchmark-icon--spin">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+                  </svg>
+                </div>
+                <h2 class="cpdf-benchmark-title">Compressing…</h2>
+              </div>
+
+              <!-- Processing Box -->
+              <div class="cpdf-benchmark-proc-box">
+                <div class="cpdf-benchmark-proc-head">
+                  <span class="cpdf-benchmark-proc-status" id="cpdf-prog-msg">Optimizing file streams…</span>
+                  <span class="cpdf-benchmark-proc-pct" id="cpdf-prog-pct">0%</span>
+                </div>
+                <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-bar cpdf-benchmark-bar--purple" id="cpdf-prog-fill" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <!-- Privacy Assurance Card -->
+              <div class="cpdf-benchmark-privacy-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>100% Client-Side Engine · Processed in memory</span>
+              </div>
+
+              <!-- Inactive CTA during processing -->
+              <button type="button" class="cpdf-benchmark-cta" disabled style="opacity: 0.7; cursor: wait;">
+                <span>Compressing…</span>
+              </button>
+            </div>
           </div>
-          <span id="cpdf-prog-pct" style="font-size:13px;font-weight:700;color:#64748B;">0%</span>
-        </div>`;
+        </div>
+      `;
+
+      // Render thumbnail on stage during processing
+      if (!isBatch) {
+        (async () => {
+          const tb = container.querySelector('#comp-proc-thumb-box');
+          if (!tb) return;
+          if (fam === 'pdf') {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp = page.getViewport({ scale: 0.85 });
+              const c = document.createElement('canvas');
+              c.width = Math.max(1, Math.round(vp.width));
+              c.height = Math.max(1, Math.round(vp.height));
+              const ctx = c.getContext('2d');
+              await page.render({ canvasContext: ctx, viewport: vp }).promise;
+              c.style.display = 'block';
+              c.style.maxWidth = '100%';
+              c.style.maxHeight = 'calc(100vh - 220px)';
+              c.style.borderRadius = '4px';
+              tb.innerHTML = '';
+              tb.append(c);
+            } catch (e) {}
+          }
+        })();
+      }
     }
 
     async function runCompress() {
@@ -2221,8 +2312,8 @@
             onProgress((i + sub) / files.length, text || `Compressing ${i + 1}/${files.length} — ${f.name}`));
           results.push({ file: f, family: fam, result: res });
         }
-        onProgress(1, 'Done');
-        await new Promise(r => setTimeout(r, 350));
+        onProgress(1, 'Complete!');
+        await new Promise(r => setTimeout(r, 400));
         renderResult(results);
       } catch(err) { 
         console.error('[Compress Engine Error]', err);
@@ -2374,47 +2465,97 @@
       return new Blob([fflate.zipSync(map, { level: 6 })], { type: 'application/zip' });
     }
 
-    /* ── Step 4: Result ─────────────────────────────── */
+    /* ── Step 4: Result (Unified Workstation Layout) ── */
     function renderResult(results) {
       const oTot   = results.reduce((s, r) => s + (r.file ? r.file.size : 0), 0);
       const cTot   = results.reduce((s, r) => s + (r.result && r.result.blob ? r.result.blob.size : 0), 0);
       const saved  = Math.max(0, oTot - cTot);
       const redPct = oTot > 0 ? Math.max(0, Math.round((1 - cTot / oTot) * 100)) : 0;
       const win    = cTot < oTot;
-      const single = results.length === 1;
+      const isBatch = results.length > 1;
       const urls   = results.map(r => URL.createObjectURL(r.result.blob));
       const firstRes = results[0];
-      const outName = single ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
+      const outName = !isBatch ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
 
       container.innerHTML = `
-        <div class="cpdf-result-body">
-          <div class="cpdf-result-card">
-            <div class="cpdf-result-badge">✓</div>
-            <h2 class="cpdf-result-title">Compression Complete</h2>
-            <p class="cpdf-result-summary">
-              ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'All files compressed successfully'}
-            </p>
-            <div class="cpdf-result-metrics">
-              <span>${_bytes(oTot)}</span>
-              <span class="cpdf-result-arrow">&rarr;</span>
-              <strong class="cpdf-result-csize">${_bytes(cTot)}</strong>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Output Document Preview -->
+            <div class="cpdf-benchmark-stage">
+              ${!isBatch ? `
+                <div class="cpdf-benchmark-paper" id="comp-result-thumb-box">
+                  <div style="padding: 60px 40px; color: #94A3B8;">Loading compressed document…</div>
+                </div>
+                <div class="cpdf-benchmark-fileinfo-row">
+                  <span class="cpdf-benchmark-fileinfo-text">${_esc(outName)} (${_bytes(cTot)})</span>
+                  <a href="${urls[0]}" download="${_esc(outName)}" class="cpdf-benchmark-btn-add" style="text-decoration:none;">
+                    <span>⬇ Download</span>
+                  </a>
+                </div>
+              ` : `
+                <div class="cpdf-multi-stage-carousel">
+                  ${results.map((r, idx) => `
+                    <div class="cpdf-multi-paper-card" data-idx="${idx}">
+                      <div class="cpdf-multi-paper-thumb" id="comp-res-thumb-${idx}">
+                        <span class="cpdf-multi-paper-ext">${(r.result.filename.split('.').pop() || 'FILE').toUpperCase()}</span>
+                      </div>
+                      <div class="cpdf-multi-paper-caption">
+                        <span class="cpdf-multi-paper-name" title="${_esc(r.result.filename)}">${_esc(r.result.filename)}</span>
+                        <span class="cpdf-multi-paper-size" style="color:#16A34A;font-weight:700;">${_bytes(r.result.blob.size)}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="cpdf-benchmark-fileinfo-row">
+                  <span class="cpdf-benchmark-fileinfo-text">${results.length} files compressed · Total ${_bytes(cTot)}</span>
+                </div>
+              `}
             </div>
 
-            <!-- Download Section -->
-            ${single ? `
-              <a class="cpdf-result-cta-dl" href="${urls[0]}" download="${_esc(outName)}">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>Download Compressed File</span>
-              </a>
-            ` : `
-              <div class="cpdf-batch-dl-group">
-                <button type="button" class="cpdf-result-cta-dl" id="comp-zip-dl-btn">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <!-- Right Panel: Result Studio & Download Actions -->
+            <div class="cpdf-benchmark-panel">
+              <!-- Top Header: Green Check Badge -->
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+                <h2 class="cpdf-benchmark-title">Compression Complete</h2>
+              </div>
+
+              <!-- Hero Reduction Metrics Card -->
+              <div class="cpdf-benchmark-est-box">
+                <div class="cpdf-benchmark-est-title">${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Optimized successfully'}</div>
+                <div class="cpdf-benchmark-est-metrics">
+                  <strong class="cpdf-benchmark-est-new">${_bytes(cTot)}</strong>
+                  <del class="cpdf-benchmark-est-old">${_bytes(oTot)}</del>
+                  <span class="cpdf-benchmark-est-pct">${win ? `(-${redPct}% Saved)` : 'Optimal'}</span>
+                </div>
+                <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-bar" style="width: ${win ? Math.max(15, Math.round((cTot / oTot) * 100)) : 100}%;"></div>
+                </div>
+              </div>
+
+              <!-- Primary Action CTA Button (Obsidian Black) -->
+              ${!isBatch ? `
+                <a href="${urls[0]}" download="${_esc(outName)}" class="cpdf-benchmark-cta" style="text-decoration:none;">
+                  <span>Download Compressed File</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </a>
+              ` : `
+                <button type="button" class="cpdf-benchmark-cta" id="comp-zip-dl-btn">
                   <span>Download All as ZIP (${_bytes(cTot)})</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
                 </button>
 
+                <!-- Batch Individual Download List -->
                 <div class="cpdf-batch-indiv-list">
-                  <span class="cpdf-batch-indiv-head">Download individually:</span>
+                  <span class="cpdf-batch-indiv-head">Or download individually:</span>
                   <div class="cpdf-batch-indiv-grid">
                     ${results.map((r, idx) => `
                       <div class="cpdf-batch-indiv-item">
@@ -2426,15 +2567,46 @@
                     `).join('')}
                   </div>
                 </div>
-              </div>
-            `}
+              `}
 
-            <button type="button" class="cpdf-result-btn-again" id="comp-again-trigger">
-              + Compress more files
-            </button>
+              <!-- Secondary Actions Row -->
+              <button type="button" class="cpdf-result-btn-secondary-full" id="comp-again-trigger">
+                + Compress another file
+              </button>
+            </div>
           </div>
         </div>
       `;
+
+      // Render thumbnail on stage in result view
+      if (!isBatch) {
+        (async () => {
+          const tb = container.querySelector('#comp-result-thumb-box');
+          if (!tb) return;
+          const fam = firstRes.family;
+          if (fam === 'pdf') {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await firstRes.result.blob.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp = page.getViewport({ scale: 0.85 });
+              const c = document.createElement('canvas');
+              c.width = Math.max(1, Math.round(vp.width));
+              c.height = Math.max(1, Math.round(vp.height));
+              const ctx = c.getContext('2d');
+              await page.render({ canvasContext: ctx, viewport: vp }).promise;
+              c.style.display = 'block';
+              c.style.maxWidth = '100%';
+              c.style.maxHeight = 'calc(100vh - 220px)';
+              c.style.borderRadius = '4px';
+              tb.innerHTML = '';
+              tb.append(c);
+            } catch (e) {}
+          } else if (fam === 'image') {
+            tb.innerHTML = `<img src="${urls[0]}" alt="" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;" />`;
+          }
+        })();
+      }
 
       // Wire ZIP download
       const zipBtn = container.querySelector('#comp-zip-dl-btn');
@@ -2454,7 +2626,7 @@
             console.error('ZIP creation error:', e);
           } finally {
             zipBtn.disabled = false;
-            zipBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download All as ZIP (${_bytes(cTot)})</span>`;
+            zipBtn.innerHTML = `<span>Download All as ZIP (${_bytes(cTot)})</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
           }
         };
       }
@@ -2465,6 +2637,8 @@
         renderUpload();
       });
     }
+
+
 
     function renderError(msg) {
       container.innerHTML = toolHeader() + `

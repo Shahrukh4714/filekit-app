@@ -33440,3 +33440,76 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   border-color: #FCA5A5 !important;
   color: #EF4444 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Processing & Result Studio Styles
+═══════════════════════════════════════════════════════════════════════════ */
+.cpdf-benchmark-icon--spin svg {
+  animation: spin 1s linear infinite !important;
+}
+
+.cpdf-benchmark-paper--processing {
+  opacity: 0.85 !important;
+}
+
+.cpdf-benchmark-proc-box {
+  background: #FAF8FF !important;
+  border: 1px solid #E9D5FF !important;
+  border-radius: 6px !important;
+  padding: 12px 14px !important;
+}
+
+.cpdf-benchmark-proc-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
+}
+
+.cpdf-benchmark-proc-status {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #581C87 !important;
+}
+
+.cpdf-benchmark-proc-pct {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #7C3AED !important;
+}
+
+.cpdf-benchmark-bar--purple {
+  background: #7C3AED !important;
+}
+
+.cpdf-benchmark-privacy-box {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.cpdf-result-btn-secondary-full {
+  width: 100% !important;
+  height: 38px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  margin-top: 4px !important;
+  transition: background 0.15s ease !important;
+}
+
+.cpdf-result-btn-secondary-full:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
