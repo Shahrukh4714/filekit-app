@@ -32798,8 +32798,10 @@ button#org-dl:hover,
 
 
 
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   5y. Exact Gold Standard Pixel-Perfect Compress Studio Workstation
+   5y. FileKit Refined Designer Studio Workstation (White / Lavender / Black / Yellow)
+   Grounded Stability · 6px Radius · Zero Scrollbar · Intentional Brand Restraint
 ═══════════════════════════════════════════════════════════════════════════ */
 
 #app-workspace-tool-view #app-tool-stage,
@@ -32811,7 +32813,7 @@ button#org-dl:hover,
   max-width: 100% !important;
   width: 100% !important;
   height: calc(100vh - 60px) !important;
-  background: #EEF3FA !important;
+  background: #EEF2F6 !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
@@ -32834,7 +32836,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   justify-content: stretch !important;
   padding: 0 !important;
   margin: 0 !important;
-  background: #EEF3FA !important;
+  background: #EEF2F6 !important;
   border: none !important;
   border-radius: 0 !important;
   overflow: hidden !important;
@@ -32851,14 +32853,14 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   overflow: hidden !important;
 }
 
-/* Left Canvas Stage: Soft Powder Blue / Periwinkle Canvas */
+/* Left Canvas Stage: Calm Cool Neutral Stage */
 .cpdf-benchmark-stage {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 32px !important;
-  background: #EEF3FA !important;
+  background: #EEF2F6 !important;
   position: relative !important;
   overflow: hidden !important;
 }
@@ -32867,7 +32869,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 .cpdf-benchmark-paper {
   background: #FFFFFF !important;
   border-radius: 4px !important;
-  box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+  box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -32882,7 +32884,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 .cpdf-benchmark-fileinfo {
   font-size: 13.5px !important;
   font-weight: 600 !important;
-  color: #5B6B82 !important;
+  color: #64748B !important;
   text-align: center !important;
 }
 
@@ -32922,7 +32924,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 .cpdf-benchmark-title {
   font-size: 22px !important;
   font-weight: 700 !important;
-  color: #1E293B !important;
+  color: #111827 !important;
   letter-spacing: -0.02em !important;
   margin: 0 !important;
 }
@@ -32947,10 +32949,10 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   transform: none !important;
 }
 
-/* Active State: Soft Blue Tint & Blue Border */
+/* Active State: FileKit Signature Lavender Accent */
 .cpdf-benchmark-card.is-active {
-  border: 1.5px solid #0066FF !important;
-  background: #F5F9FF !important;
+  border: 1.5px solid #7C3AED !important;
+  background: #FAF8FF !important;
   transform: none !important;
 }
 
@@ -32969,8 +32971,8 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-card.is-active .cpdf-benchmark-radio {
-  border-color: #0066FF !important;
-  background: #0066FF !important;
+  border-color: #7C3AED !important;
+  background: #7C3AED !important;
 }
 
 .cpdf-benchmark-radio-dot {
@@ -32988,7 +32990,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 .cpdf-benchmark-card-label {
   font-size: 15px !important;
   font-weight: 700 !important;
-  color: #1E293B !important;
+  color: #111827 !important;
   flex: 1 !important;
 }
 
@@ -32996,19 +32998,6 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  margin-left: auto !important;
-}
-
-.cpdf-benchmark-crown {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 50% !important;
-  background: #FBBF24 !important;
-  color: #78350F !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 11px !important;
   margin-left: auto !important;
 }
 
@@ -33055,9 +33044,13 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-est-pct {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #6B7280 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #854D0E !important;
+  background: #FEF08A !important;
+  border: 1px solid #FDE047 !important;
+  padding: 1px 7px !important;
+  border-radius: 4px !important;
 }
 
 .cpdf-benchmark-track {
@@ -33075,11 +33068,11 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   transition: width 0.2s ease !important;
 }
 
-/* Royal Blue CTA Button */
+/* FileKit Signature Obsidian Black CTA Button */
 .cpdf-benchmark-cta {
   width: 100% !important;
   height: 46px !important;
-  background: #0066FF !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 6px !important;
@@ -33090,13 +33083,13 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   justify-content: center !important;
   gap: 8px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.20) !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 27, 0.18) !important;
   transition: background 0.15s ease !important;
   transform: none !important;
   margin-top: 4px !important;
 }
 
 .cpdf-benchmark-cta:hover {
-  background: #0052CC !important;
+  background: #27272A !important;
   transform: none !important;
 }

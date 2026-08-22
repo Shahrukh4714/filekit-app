@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (Pixel-Perfect Gold Benchmark Workstation) ── */
+    /* ── Step 2: Configure (FileKit Refined Designer Workstation) ── */
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1912,12 +1912,12 @@
       const estBytes = Math.max(1000, Math.round(originalBytes * currentEst.factor));
       const estNewFormatted = `~${_bytes(estBytes)}`;
       const estOldFormatted = _bytes(originalBytes);
-      const estPctFormatted = `(${currentEst.pct})`;
+      const estPctFormatted = `(${currentEst.pct} Saved)`;
 
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Soft Powder Canvas with Centered Document -->
+            <!-- Left Stage: Calm Neutral Canvas with Centered Document -->
             <div class="cpdf-benchmark-stage">
               <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
                 <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
@@ -1947,16 +1947,15 @@
                 <span class="cpdf-benchmark-card-label">Basic</span>
               </div>
 
-              <!-- Option 2: Moderate -->
+              <!-- Option 2: Moderate (No Crown) -->
               <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
                 <div class="cpdf-benchmark-radio">
                   <div class="cpdf-benchmark-radio-dot"></div>
                 </div>
                 <span class="cpdf-benchmark-card-label">Moderate</span>
-                <span class="cpdf-benchmark-crown" title="Pro Feature">👑</span>
               </div>
 
-              <!-- Option 3: Strong -->
+              <!-- Option 3: Strong (No Crown, Clean Smallest Badge) -->
               <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
                 <div class="cpdf-benchmark-radio">
                   <div class="cpdf-benchmark-radio-dot"></div>
@@ -1964,7 +1963,6 @@
                 <span class="cpdf-benchmark-card-label">Strong</span>
                 <div class="cpdf-benchmark-card-right">
                   <span class="cpdf-benchmark-pill-smallest">Smallest</span>
-                  <span class="cpdf-benchmark-crown" title="Pro Feature">👑</span>
                 </div>
               </div>
 
@@ -1981,7 +1979,7 @@
                 </div>
               </div>
 
-              <!-- Primary Action CTA Button (Royal Blue) -->
+              <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="cpdf-benchmark-cta" id="comp-studio-run">
                 <span>Compress</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -2045,7 +2043,7 @@
           const barEl = container.querySelector('#comp-est-bar');
           
           if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
-          if (pctEl) pctEl.textContent = `(${est.pct})`;
+          if (pctEl) pctEl.textContent = `(${est.pct} Saved)`;
           if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
         };
       });
