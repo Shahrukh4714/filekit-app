@@ -14630,10 +14630,12 @@ trailer<</Root 1 0 R>>`;
       if (mode === 'merge') return `Merge ${files.length} file${files.length === 1 ? '' : 's'}`;
       if (mode === 'split') {
         const fam = familyOf(files[0]);
-        if (fam === 'audio' || fam === 'video') return `Split into ${splitEvery} part${splitEvery === 1 ? '' : 's'}`;
-        return fam === 'pdf'
-          ? `Split into parts of ${splitEvery}`
-          : `Split ${files.length} image${files.length === 1 ? '' : 's'}`;
+        if (fam === 'audio' || fam === 'video') return `Split (${splitEvery} parts)`;
+        if (fam === 'pdf') {
+          const parts = Math.max(1, Math.ceil(pageCount / Math.max(1, splitEvery)));
+          return parts === 1 ? 'Split PDF (1 part)' : `Split (${parts} parts)`;
+        }
+        return `Split ${files.length} images`;
       }
       if (mode === 'rotate') return `Rotate ${deg}°`;
       if (mode === 'reorder') return 'Reorder chapters';
@@ -14642,7 +14644,6 @@ trailer<</Root 1 0 R>>`;
         const total = fam0 === 'archive' ? entries.length : fam0 === 'ebook' ? chapters.length : pageCount;
         const word = fam0 === 'archive' ? 'entry' : fam0 === 'ebook' ? 'chapter' : 'page';
         if (mode === 'delete') {
-          // archives/e-books: clicked entries are removed · pdf/images: clicked pages are kept
           const removed = (fam0 === 'archive' || fam0 === 'ebook') ? picked.size : Math.max(0, total - picked.size);
           return removed ? `Delete ${removed} ${_pl(word, removed)}` : `Delete ${_pl(word, 2)}`;
         }
@@ -14775,7 +14776,10 @@ trailer<</Root 1 0 R>>`;
 
     const fileLabel = () => files.length === 1 ? _esc(files[0].name) : `${files.length} files`;
     const metaLabel = () => {
-      if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCounts[0]) return `${pageCounts[0]} pages · ${_bytes(files[0].size)}`;
+      if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCounts[0]) {
+        const p = pageCounts[0];
+        return `${p} ${p === 1 ? 'page' : 'pages'} · ${_bytes(files[0].size)}`;
+      }
       return `${_bytes(totalBytes())}`;
     };
 
@@ -14789,14 +14793,15 @@ trailer<</Root 1 0 R>>`;
       const dur = durations[i] ? fmtDur(durations[i]) : '';
       const famWord = fam === 'audio' ? 'Audio' : fam === 'video' ? 'Video' : fam === 'archive' ? 'Archive' : fam === 'ebook' ? 'E-Book' : 'Image';
       const sub = fam === 'pdf'
-        ? `${pageCounts[i] ? `${pageCounts[i]} page${pageCounts[i] === 1 ? '' : 's'}` : 'PDF'} · ${_bytes(f.size)}`
+        ? `${pageCounts[i] ? `${pageCounts[i]} ${pageCounts[i] === 1 ? 'page' : 'pages'}` : 'PDF'} · ${_bytes(f.size)}`
         : `${famWord}${dur ? ` · ${dur}` : ''} · ${_bytes(f.size)}`;
       return `
         <div class="org-big">
           <div class="org-big-head">
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto;">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;">
               <span style="font-size:10px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;background:#FAF5FF;color:#7C3AED;border:1px solid #E9D5FF;border-radius:4px;padding:2px 6px;flex-shrink:0;">INSPECTOR</span>
               <span style="font-size:13px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;" title="${_esc(f.name)}">${_esc(f.name)}</span>
+              <span style="color:#CBD5E1;margin:0 2px;">·</span>
               <span style="font-size:11.5px;font-weight:500;color:#64748B;white-space:nowrap;">${sub}</span>
             </div>
             <div class="org-zoom-ctrls">
@@ -14806,7 +14811,13 @@ trailer<</Root 1 0 R>>`;
               <button type="button" class="org-zoom-btn org-zoom-btn--fit" id="org-zoom-fit" title="Fit to stage">Fit</button>
             </div>
           </div>
-          <div class="org-big-stage" id="org-big-stage" data-idx="${i}"><span class="org-tile-ph">${i + 1}</span></div>
+          <div class="org-big-stage" id="org-big-stage" data-idx="${i}">
+            <span class="org-tile-ph">${i + 1}</span>
+            <div class="org-stage-hover-actions">
+              <button type="button" class="org-stage-rot-btn" id="org-stage-rot-ccw" title="Rotate preview left 90°">⟲ 90°</button>
+              <button type="button" class="org-stage-rot-btn" id="org-stage-rot-cw" title="Rotate preview right 90°">⟳ 90°</button>
+            </div>
+          </div>
         </div>`;
     }
 
@@ -14925,6 +14936,12 @@ trailer<</Root 1 0 R>>`;
           applyZoom();
         };
       }
+
+      // Wire stage hover quick rotate
+      const stageCcw = container.querySelector('#org-stage-rot-ccw');
+      const stageCw = container.querySelector('#org-stage-rot-cw');
+      if (stageCcw) stageCcw.onclick = () => quickRotate(-90);
+      if (stageCw) stageCw.onclick = () => quickRotate(90);
     }
 
     /* Quick-action group for the toolbar (right side) */
@@ -14932,7 +14949,7 @@ trailer<</Root 1 0 R>>`;
       const n = selected.size;
       return `
         <button type="button" class="org-tool org-tool--icon" id="org-add-files" title="Add files">${ICONS.add}<span>Add</span></button>
-        <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left">${ICONS.rotate}</button>
+        <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left" style="transform:scaleX(-1);">${ICONS.rotate}</button>
         <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
         <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files" ${n ? '' : 'disabled'}>${ICONS.trash}</button>`;
     }
