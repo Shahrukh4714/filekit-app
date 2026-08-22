@@ -14544,87 +14544,96 @@ trailer<</Root 1 0 R>>`;
 
   /* ─── Mount ─────────────────────────────────────────── */
   function mountOrganize(container, tool) {
-    tool = tool || { id: 'organize', category: 'PDF', name: 'Organize' };
-    container.innerHTML = '';
-    container.classList.add('cpdf-root', 'org-root');
+    const PDF_MIME = 'application/pdf';
+    const ACCEPT = '.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.mp3,.wav,.flac,.aac,.ogg,.m4a,.mp4,.webm,.mov,.zip,.7z,.tar,.gz,.bz2,.epub';
+    const ARC_BROWSE = ['.zip', '.tar', '.gz', '.bz2'];
+
+    const ICONS = {
+      merge: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+      split: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>',
+      rotate: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>',
+      reorder: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>',
+      delete: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
+      extract: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>',
+      add: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+      trash: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+      shield: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      x: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
+      openTab: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>'
+    };
+
+    const MODES = [
+      { id: 'merge', label: 'Merge', icon: 'merge', desc: 'Combine multiple files into one document' },
+      { id: 'split', label: 'Split', icon: 'split', desc: 'Break into smaller parts or single pages' },
+      { id: 'rotate', label: 'Rotate', icon: 'rotate', desc: 'Turn pages by 90°, 180°, or 270°' },
+      { id: 'delete', label: 'Delete', icon: 'delete', desc: 'Remove specific unwanted pages' },
+      { id: 'extract', label: 'Extract', icon: 'extract', desc: 'Pull out selected pages into a new file' },
+      { id: 'reorder', label: 'Reorder', icon: 'reorder', desc: 'Rearrange e-book chapters' }
+    ];
+    const MODE_MAP = Object.fromEntries(MODES.map(m => [m.id, m]));
+
     container.classList.remove('org-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-root');
-    const enterBleed = () => container.classList.add('org-shell');   // after-upload flow fills the canvas
-    const exitBleed  = () => container.classList.remove('org-shell'); // upload drop box stays in the card
+    const enterBleed = () => container.classList.add('org-shell');
+    const exitBleed  = () => container.classList.remove('org-shell');
 
     /** @type {File[]} */ let files = [];
     let mode = 'merge';
     let deg = 90;
     let splitEvery = 1;
-    let mergeOut = 'auto';      // audio merge/split: 'auto' | 'mp3' | 'wav' (auto keeps lossless containers)
-    let mergeBr = '192k';       // audio mp3 bitrate
-    let mergeQ = 'medium';      // video merge/split: 'high' | 'medium' | 'low'
+    let customCuts = new Set();  // custom cut boundaries in split mode
+    let pageRotations = new Map(); // pageIdx -> angle
+    let extractSeparate = false; // extract: separate PDFs vs combined
+    let mergeOut = 'auto';
+    let mergeBr = '192k';
+    let mergeQ = 'medium';
     const picked = new Set();   // delete: removed indices · extract: kept indices
-    const selected = new Set(); // file-card selection (quick actions)
-    let viewMode = 'filmstrip'; // 'filmstrip' | 'grid'
-    let zoomLevel = 100;        // 50, 75, 100, 125, 150, or 'fit'
+    const selected = new Set(); // file-card selection
+    let viewMode = 'grid';      // default: expansive interactive tactile grid ('grid' | 'filmstrip')
+    let zoomLevel = 100;
     let pageCount = 0;
     let thumbs = [];            // page-grid canvases (single-PDF modes)
-    let fileThumbs = [];        // one canvas per file (pdf) / null (image)
-    let pageCounts = [];        // per-file page counts (pdf only)
-    let waveforms = [];         // { canvas, duration } per file (audio only)
-    let filmstrips = [];        // { canvas, duration } per file (video split timeline)
-    let durations = [];         // seconds per file (audio/video)
-    let entries = [];           // { name, size } archive entry list (files[0])
-    let chapters = [];          // { id, title } epub chapter list (files[0])
-    let ebookMeta = null;       // { title, author } epub metadata (files[0])
-    let filesPrepared = false;  // file thumbs + page info built
-    let preparing = false;      // a prepareFiles() pass is already running
-    let urls = [];              // object URLs for image thumbs
-    let dragIdx = -1;           // html5 drag reorder
-    let previewIdx = 0;         // file shown in the big preview
-    const bigCache = new Map(); // lazily rendered large page-1 canvases
+    let fileThumbs = [];        // one canvas per file (pdf)
+    let pageCounts = [];        // per-file page counts
+    let durations = [];
+    let entries = [];
+    let chapters = [];
+    let ebookMeta = null;
+    let filesPrepared = false;
+    let preparing = false;
+    let urls = [];
+    let dragIdx = -1;
+    let previewIdx = 0;
+    const bigCache = new Map();
     const MAX_BYTES = 200 * 1024 * 1024;
     const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
-    const famIcon = () => {
-      const fam = files.length && familyOf(files[0]);
-      return fam === 'image' ? ICONS.imgSm : fam === 'audio' ? ICONS.audSm : fam === 'video' ? ICONS.vidSm : fam === 'archive' ? ICONS.arcSm : fam === 'ebook' ? ICONS.ebkSm : ICONS.pdfSm;
-    };
-    const famLabel = () => {
-      const fams = [...new Set(files.map(familyOf))];
-      if (fams.includes('pdf') && fams.includes('image')) return 'PDF + images';
-      if (fams.includes('audio') && fams.includes('video')) return 'Audio + video';
-      if (fams.includes('pdf') && (fams.includes('audio') || fams.includes('video'))) return 'PDF + media';
-      if (fams.includes('archive')) return fams.length === 1 ? 'Archive' : 'Archives + more';
-      if (fams.includes('ebook')) return fams.length === 1 ? 'E-Book' : 'E-Books + more';
-      if (fams.includes('audio')) return 'Audio';
-      if (fams.includes('video')) return 'Video';
-      return fams.includes('image') ? 'Images' : 'PDF';
-    };
-    /* Formats that support each action — only these are offered */
+
     function availableModes() {
       const fams = [...new Set(files.map(familyOf))];
-      if (fams.length > 1) return ['merge'];                       // mixed families → merge only
+      if (fams.length > 1) return ['merge'];
       const fam = fams[0];
       if (fam === 'pdf') {
         if (files.length === 1) return ['split', 'rotate', 'delete', 'extract'];
         return ['merge'];
       }
-      if (fam === 'audio') {
-        return files.length === 1 ? ['split'] : ['merge'];
-      }
-      if (fam === 'video') {
-        if (files.length === 1) return ['split', 'rotate'];
-        return ['merge'];
-      }
-      if (fam === 'archive') {
-        if (files.length === 1) return ARC_BROWSE.includes(extOf(files[0])) ? ['extract', 'delete'] : ['extract'];
-        return ['merge'];
-      }
-      if (fam === 'ebook') {
-        if (files.length === 1) return ['reorder', 'delete', 'extract'];
-        return ['extract'];
-      }
-      // images
+      if (fam === 'audio') return files.length === 1 ? ['split'] : ['merge'];
+      if (fam === 'video') return files.length === 1 ? ['split', 'rotate'] : ['merge'];
+      if (fam === 'archive') return files.length === 1 ? (ARC_BROWSE.includes(extOf(files[0])) ? ['extract', 'delete'] : ['extract']) : ['merge'];
+      if (fam === 'ebook') return files.length === 1 ? ['reorder', 'delete', 'extract'] : ['extract'];
       if (files.length === 1) return ['rotate'];
       return ['merge', 'split', 'rotate', 'delete', 'extract'];
     }
     const modes = () => availableModes();
     const _pl = (w, n) => n === 1 ? w : (w === 'entry' ? 'entries' : w + 's');
+
+    function syncSplitCuts() {
+      customCuts.clear();
+      if (pageCount <= 1 || splitEvery <= 0) return;
+      for (let p = splitEvery; p < pageCount; p += splitEvery) {
+        customCuts.add(p);
+      }
+    }
+
     const modeBtnLabel = () => {
       const m = MODE_MAP[mode];
       if (mode === 'merge') return `Merge ${files.length} file${files.length === 1 ? '' : 's'}`;
@@ -14632,19 +14641,19 @@ trailer<</Root 1 0 R>>`;
         const fam = familyOf(files[0]);
         if (fam === 'audio' || fam === 'video') return `Split (${splitEvery} parts)`;
         if (fam === 'pdf') {
-          const parts = Math.max(1, Math.ceil(pageCount / Math.max(1, splitEvery)));
+          const parts = customCuts.size + 1;
           return parts === 1 ? 'Split (1 part)' : `Split (${parts} parts)`;
         }
         return `Split ${files.length} images`;
       }
-      if (mode === 'rotate') return `Rotate ${deg}°`;
+      if (mode === 'rotate') return `Rotate pages`;
       if (mode === 'reorder') return 'Reorder chapters';
       if (mode === 'delete' || mode === 'extract') {
         const fam0 = familyOf(files[0]);
         const total = fam0 === 'archive' ? entries.length : fam0 === 'ebook' ? chapters.length : pageCount;
         const word = fam0 === 'archive' ? 'entry' : fam0 === 'ebook' ? 'chapter' : 'page';
         if (mode === 'delete') {
-          const removed = (fam0 === 'archive' || fam0 === 'ebook') ? picked.size : Math.max(0, total - picked.size);
+          const removed = picked.size;
           return removed ? `Delete ${removed} ${_pl(word, removed)}` : `Delete ${_pl(word, 2)}`;
         }
         const n = picked.size;
@@ -14655,18 +14664,19 @@ trailer<</Root 1 0 R>>`;
 
     function clearUrls() { urls.forEach(u => URL.revokeObjectURL(u)); urls = []; }
     function resetState() {
-      picked.clear(); selected.clear(); pageCount = 0; thumbs = [];
-      fileThumbs = []; pageCounts = []; waveforms = []; filmstrips = []; durations = [];
+      picked.clear(); selected.clear(); pageRotations.clear(); customCuts.clear();
+      pageCount = 0; thumbs = []; fileThumbs = []; pageCounts = []; durations = [];
       entries = []; chapters = []; ebookMeta = null;
       filesPrepared = false; preparing = false; dragIdx = -1;
       previewIdx = 0; bigCache.clear();
       clearUrls();
       mode = modes()[0] || 'merge';
+      syncSplitCuts();
     }
 
     /* ── Step 1: Upload ─────────────────────────────── */
     function renderUpload() {
-      exitBleed();   // the drop box keeps the floating card
+      exitBleed();
       clearUrls();
       container.innerHTML = `
         <div class="cpdf-dropzone drop-hero-box" id="org-dz" tabindex="0" role="button" aria-label="Upload files to organize">
@@ -14698,33 +14708,22 @@ trailer<</Root 1 0 R>>`;
                   <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
                 </g>
                 <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
               </svg>
             </div>
-
             <div class="drop-action-group">
               <label for="org-inp" class="select-files-main-btn">
                 <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 <span>Select files</span>
               </label>
-              <label for="org-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
             </div>
-
-            <p class="drop-sub-text">Add <strong>PDFs</strong>, <strong>Images</strong>, or <strong>Archives</strong> to merge, split, or rearrange</p>
-
+            <p class="drop-sub-text">Add <strong>PDFs</strong>, <strong>Images</strong>, or <strong>Media</strong> to merge, split, rotate, or delete pages</p>
             <div class="supported-formats-row">
               <span class="fmt-label">Supported formats:</span>
               <span class="fmt-badge fmt-pdf">PDF</span>
               <span class="fmt-badge fmt-png">PNG</span>
               <span class="fmt-badge fmt-jpg">JPG</span>
               <span class="fmt-badge fmt-doc">ZIP</span>
-              <span class="fmt-badge fmt-xls">7Z</span>
-              <span class="fmt-badge fmt-ppt">TAR</span>
+              <span class="fmt-badge fmt-xls">EPUB</span>
             </div>
           </div>
           <input id="org-inp" type="file" accept="${ACCEPT}" multiple hidden>
@@ -14739,18 +14738,62 @@ trailer<</Root 1 0 R>>`;
         if (e.dataTransfer?.files?.length) acceptFiles([...e.dataTransfer.files]);
       });
       dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
-      dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') inp.click(); });
     }
 
     function acceptFiles(arr) {
       const ok = arr.filter(f => familyOf(f) && f.size <= MAX_BYTES);
-      if (!ok.length) { window.FF.util.toast('Please choose a PDF, image, audio, or video file (up to 200 MB each).', 'warn'); return; }
+      if (!ok.length) { window.FF.util.toast('Please choose a valid file (up to 200 MB).', 'warn'); return; }
       files = files.concat(ok);
       resetState();
       renderConfigure();
     }
 
-    /* ── Step 2: Configure ──────────────────────────── */
+    /* ── Sub-Toolbar Inline Mode Controls ── */
+    function inlineControlsMarkup() {
+      const fam = familyOf(files[0]);
+      if (mode === 'split' && fam === 'pdf') {
+        return `
+          <div class="org-inline-ctrls">
+            <span class="org-ctrl-label">Split after every</span>
+            <div class="org-stepper">
+              <button type="button" class="org-step-btn" id="org-step-dec">−</button>
+              <span class="org-step-val" id="org-step-val">${splitEvery}</span>
+              <button type="button" class="org-step-btn" id="org-step-inc">+</button>
+            </div>
+            <span class="org-ctrl-label">page${splitEvery === 1 ? '' : 's'}</span>
+            <div class="org-mini-chips">
+              ${[1, 2, 5, 10].map(n => `<button type="button" class="org-mini-chip${splitEvery === n ? ' is-on' : ''}" data-every="${n}" ${pageCount > 0 && n > pageCount ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''}>${n}</button>`).join('')}
+            </div>
+          </div>`;
+      }
+      if (mode === 'rotate' && fam === 'pdf') {
+        return `
+          <div class="org-inline-ctrls">
+            <span class="org-ctrl-label">Rotate all:</span>
+            <button type="button" class="org-mini-btn" id="org-rot-all-ccw" title="Rotate all 90° left">⟲ -90°</button>
+            <button type="button" class="org-mini-btn" id="org-rot-all-cw" title="Rotate all 90° right">⟳ +90°</button>
+            <button type="button" class="org-mini-btn" id="org-rot-all-180" title="Rotate all 180°">180°</button>
+          </div>`;
+      }
+      if (mode === 'delete') {
+        return `
+          <div class="org-inline-ctrls">
+            <span class="org-del-count-badge">${picked.size} page${picked.size === 1 ? '' : 's'} to delete</span>
+            ${picked.size ? `<button type="button" class="org-mini-btn org-mini-btn--ghost" id="org-del-undo-all">Undo all</button>` : ''}
+          </div>`;
+      }
+      if (mode === 'extract' && fam === 'pdf') {
+        return `
+          <div class="org-inline-ctrls">
+            <span class="org-ctrl-label" style="color:#7C3AED;font-weight:700;">${picked.size} page${picked.size === 1 ? '' : 's'} selected</span>
+            <button type="button" class="org-mini-btn ${extractSeparate ? 'is-on' : ''}" id="org-toggle-sep" title="Extract as individual PDF files inside a ZIP">
+              ${extractSeparate ? '✓ Separate PDFs' : 'Single Combined PDF'}
+            </button>
+          </div>`;
+      }
+      return '';
+    }
+
     function pickerMarkup() {
       const avail = modes();
       return `
@@ -14765,15 +14808,16 @@ trailer<</Root 1 0 R>>`;
         </div>`;
     }
 
-    /* File management toolbar + thumbnail cards (Smallpdf-style organizer) */
-    function showFileGrid() {
-      if (mode === 'merge' || mode === 'split' || mode === 'rotate') return true;
-      const fam = familyOf(files[0]);
-      if (fam === 'archive' || fam === 'ebook') return false;   // entry/chapter list is the surface
-      // delete/extract: images ARE the pages, so the page grid is the file surface
-      return fam === 'pdf';
+    function quickActionsMarkup() {
+      const n = selected.size;
+      return `
+        <button type="button" class="org-tool org-tool--icon" id="org-add-files" title="Add files">${ICONS.add}<span>Add</span></button>
+        <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left" style="transform:scaleX(-1);">${ICONS.rotate}</button>
+        <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
+        <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files" ${n ? '' : 'disabled'}>${ICONS.trash}</button>`;
     }
 
+    /* ── Step 2: Configure Workspace ── */
     const fileLabel = () => files.length === 1 ? _esc(files[0].name) : `${files.length} files`;
     const metaLabel = () => {
       if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCounts[0]) {
@@ -14783,42 +14827,300 @@ trailer<</Root 1 0 R>>`;
       return `${_bytes(totalBytes())}`;
     };
 
-    /* Large page preview (merge / split / rotate) */
-    function showBigPreview() { return mode === 'merge' || mode === 'split' || mode === 'rotate'; }
+    /* Expansive Tactile Canvas Grid */
+    function fullCanvasGridMarkup() {
+      const fam = familyOf(files[0]);
 
-    function bigPreviewMarkup() {
-      const i = Math.max(0, Math.min(previewIdx, files.length - 1));
-      const f = files[i];
-      const fam = familyOf(f);
-      const dur = durations[i] ? fmtDur(durations[i]) : '';
-      const famWord = fam === 'audio' ? 'Audio' : fam === 'video' ? 'Video' : fam === 'archive' ? 'Archive' : fam === 'ebook' ? 'E-Book' : 'Image';
-      const sub = fam === 'pdf'
-        ? `${pageCounts[i] ? `${pageCounts[i]} ${pageCounts[i] === 1 ? 'page' : 'pages'}` : 'PDF'} · ${_bytes(f.size)}`
-        : `${famWord}${dur ? ` · ${dur}` : ''} · ${_bytes(f.size)}`;
+      // 1. Merge Mode: Render Document Stack Cards with Inter-File Plus buttons
+      if (mode === 'merge') {
+        const cards = [];
+        files.forEach((f, i) => {
+          const fFam = familyOf(f);
+          const pCount = pageCounts[i] || 1;
+          const sub = fFam === 'pdf' ? `${pCount} ${pCount === 1 ? 'page' : 'pages'}` : _bytes(f.size);
+          cards.push(`
+            <div class="org-deck-card ${pCount > 1 ? 'org-deck-card--multi' : ''}" data-i="${i}" draggable="true">
+              <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''} style="position:absolute;top:8px;left:8px;z-index:3;">
+              <button type="button" class="org-fx" data-i="${i}" title="Remove file" style="position:absolute;top:8px;right:8px;z-index:3;">${ICONS.x}</button>
+              <div class="org-pg-thumb" id="org-deck-thumb-${i}"><span class="org-tile-ph">${i + 1}</span></div>
+              <div class="org-pg-meta">
+                <span class="org-fname" title="${_esc(f.name)}" style="max-width:100px;font-size:11.5px;">${_esc(f.name)}</span>
+                <span style="font-size:10.5px;color:#64748B;">${sub}</span>
+              </div>
+            </div>`);
+
+          if (i < files.length - 1) {
+            cards.push(`<button type="button" class="org-insert-btn" data-after="${i}" title="Insert file here">+</button>`);
+          }
+        });
+
+        cards.push(`
+          <div class="org-drop-card-end" id="org-end-drop" title="Add more files">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add PDF, images, or media</span>
+          </div>`);
+
+        return `<div class="org-canvas-grid">${cards.join('')}</div>`;
+      }
+
+      // 2. Single-PDF Exploded Page Modes (Split, Rotate, Delete, Extract)
+      if (fam === 'pdf' && pageCount > 0) {
+        let currentPart = 1;
+        const pageTiles = [];
+
+        for (let p = 1; p <= pageCount; p++) {
+          const pgIdx = p - 1;
+          const isDeleted = picked.has(pgIdx) && mode === 'delete';
+          const isExtracted = picked.has(pgIdx) && mode === 'extract';
+          const rotAngle = pageRotations.get(pgIdx) || 0;
+
+          // In-situ Center Button
+          let centerBtn = '';
+          if (mode === 'rotate') {
+            centerBtn = `
+              <button type="button" class="org-page-center-btn org-page-rot-btn" data-pg="${pgIdx}" title="Rotate page 90°">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </button>`;
+          } else if (mode === 'delete') {
+            centerBtn = `
+              <button type="button" class="org-page-center-btn org-page-del-btn" data-pg="${pgIdx}" title="${isDeleted ? 'Restore page' : 'Delete page'}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>`;
+          }
+
+          const partBadge = mode === 'split' ? `<span class="org-pg-part-tag">Part ${currentPart}</span>` : '';
+
+          pageTiles.push(`
+            <div class="org-pg-tile ${isDeleted ? 'is-deleted' : ''} ${isExtracted ? 'is-selected' : ''}" data-pg="${pgIdx}">
+              ${mode === 'extract' ? `<input type="checkbox" class="org-extract-chk" data-pg="${pgIdx}" ${isExtracted ? 'checked' : ''} style="position:absolute;top:8px;left:8px;z-index:3;">` : ''}
+              <div class="org-pg-thumb" id="org-pg-thumb-${pgIdx}">
+                <span class="org-tile-ph">${p}</span>
+                ${centerBtn}
+              </div>
+              <div class="org-pg-meta">
+                <span class="org-pg-num">Page ${p}</span>
+                ${partBadge}
+              </div>
+            </div>`);
+
+          // Inter-page Perforation Cut-Line with Scissors (in Split Mode)
+          if (mode === 'split' && p < pageCount) {
+            const isCut = customCuts.has(p);
+            if (isCut) currentPart++;
+            pageTiles.push(`
+              <div class="org-cut-divider ${isCut ? 'is-cut' : ''}" data-boundary="${p}" title="${isCut ? 'Cut point (Part split) — click to join' : 'Click to split here'}">
+                <div class="org-cut-line"></div>
+                <button type="button" class="org-cut-btn" data-boundary="${p}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+                </button>
+              </div>`);
+          }
+        }
+
+        return `<div class="org-canvas-grid">${pageTiles.join('')}</div>`;
+      }
+
+      // Fallback for non-PDF or loading
+      return `<div class="org-canvas-grid"><div class="org-tile-ph" style="padding:40px;">Rendering document canvas…</div></div>`;
+    }
+
+    /* Loupe Inspector Filmstrip View */
+    function filmstripViewMarkup() {
+      const cards = files.map((f, i) => {
+        const fam = familyOf(f);
+        const sub = fam === 'pdf' ? `${pageCounts[i] ? `${pageCounts[i]} pgs` : 'PDF'} · ${_bytes(f.size)}` : _bytes(f.size);
+        return `
+          <div class="org-fcard ${i === previewIdx ? 'org-fcard--view' : ''}" data-i="${i}">
+            <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''}>
+            <button type="button" class="org-fx" data-i="${i}" title="Remove file">${ICONS.x}</button>
+            <div class="org-fthumb" id="org-fthumb-${i}"><span class="org-tile-ph">${i + 1}</span></div>
+            <div class="org-fmeta">
+              <span class="org-fname" title="${_esc(f.name)}">${_esc(f.name)}</span>
+              <span class="org-fsub">${sub}</span>
+            </div>
+          </div>`;
+      }).join('');
+
       return `
-        <div class="org-big">
-          <div class="org-big-head">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;">
-              <span style="font-size:10px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;background:#FAF5FF;color:#7C3AED;border:1px solid #E9D5FF;border-radius:4px;padding:2px 6px;flex-shrink:0;">INSPECTOR</span>
-              <span style="font-size:13px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;" title="${_esc(f.name)}">${_esc(f.name)}</span>
-              <span style="color:#CBD5E1;margin:0 2px;">·</span>
-              <span style="font-size:11.5px;font-weight:500;color:#64748B;white-space:nowrap;">${sub}</span>
+        <div class="org-body">
+          <aside class="org-thumbs">
+            <div class="org-thumbs-head">
+              <label class="org-sel"><input type="checkbox" id="org-selall"><span>Select all</span></label>
+              <span class="org-thumbs-count">${files.length}</span>
             </div>
-            <div class="org-zoom-ctrls">
-              <button type="button" class="org-zoom-btn" id="org-zoom-out" title="Zoom out">−</button>
-              <span class="org-zoom-label" id="org-zoom-val">${zoomLevel === 'fit' ? 'Fit' : `${zoomLevel}%`}</span>
-              <button type="button" class="org-zoom-btn" id="org-zoom-in" title="Zoom in">+</button>
-              <button type="button" class="org-zoom-btn org-zoom-btn--fit" id="org-zoom-fit" title="Fit to stage">Fit</button>
+            <div class="org-thumbs-list">${cards}</div>
+            <button type="button" class="org-fcard org-fcard--add" id="org-fadd" title="Add more files">
+              <span class="org-fadd-ico">${ICONS.add}</span>
+              <span class="org-fadd-label">Add more files</span>
+            </button>
+          </aside>
+          <main class="org-main">
+            <div class="org-big">
+              <div class="org-big-head">
+                <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;">
+                  <span style="font-size:10px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;background:#FAF5FF;color:#7C3AED;border:1px solid #E9D5FF;border-radius:4px;padding:2px 6px;flex-shrink:0;">INSPECTOR</span>
+                  <span style="font-size:13px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;" title="${_esc(files[previewIdx].name)}">${_esc(files[previewIdx].name)}</span>
+                  <span style="color:#CBD5E1;margin:0 2px;">·</span>
+                  <span style="font-size:11.5px;font-weight:500;color:#64748B;white-space:nowrap;">${_bytes(files[previewIdx].size)}</span>
+                </div>
+                <div class="org-zoom-ctrls">
+                  <button type="button" class="org-zoom-btn" id="org-zoom-out" title="Zoom out">−</button>
+                  <span class="org-zoom-label" id="org-zoom-val">${zoomLevel === 'fit' ? 'Fit' : `${zoomLevel}%`}</span>
+                  <button type="button" class="org-zoom-btn" id="org-zoom-in" title="Zoom in">+</button>
+                  <button type="button" class="org-zoom-btn org-zoom-btn--fit" id="org-zoom-fit" title="Fit to stage">Fit</button>
+                </div>
+              </div>
+              <div class="org-big-stage" id="org-big-stage" data-idx="${previewIdx}">
+                <span class="org-tile-ph">${previewIdx + 1}</span>
+                <div class="org-stage-hover-actions">
+                  <button type="button" class="org-stage-rot-btn" id="org-stage-rot-ccw" title="Rotate preview left 90°">⟲ 90°</button>
+                  <button type="button" class="org-stage-rot-btn" id="org-stage-rot-cw" title="Rotate preview right 90°">⟳ 90°</button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="org-big-stage" id="org-big-stage" data-idx="${i}">
-            <span class="org-tile-ph">${i + 1}</span>
-            <div class="org-stage-hover-actions">
-              <button type="button" class="org-stage-rot-btn" id="org-stage-rot-ccw" title="Rotate preview left 90°">⟲ 90°</button>
-              <button type="button" class="org-stage-rot-btn" id="org-stage-rot-cw" title="Rotate preview right 90°">⟳ 90°</button>
-            </div>
-          </div>
+          </main>
         </div>`;
+    }
+
+    function flowShellMarkup(mainHtml) {
+      return `
+        <div class="cpdf-body org-flow">
+          <div class="org-top">
+            <div class="org-top-left">
+              <span class="org-file" title="${fileLabel()}">${fileLabel()}</span>
+              <span class="org-meta">${metaLabel()}</span>
+              <span class="org-local">${ICONS.shield} Local only</span>
+            </div>
+            <div class="org-top-right">
+              <button type="button" class="org-view-toggle" id="org-view-toggle" title="${viewMode === 'grid' ? 'Switch to Filmstrip Loupe View' : 'Switch to Full Lightbox Grid'}">
+                ${viewMode === 'grid' ? 
+                  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span>Filmstrip</span>` : 
+                  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Contact Sheet</span>`}
+              </button>
+              <button class="cpdf-btn-primary org-finish" id="org-run" type="button">${modeBtnLabel()}</button>
+            </div>
+          </div>
+          <div class="org-toolbar2">
+            <div class="org-tool-group">
+              ${pickerMarkup()}
+              ${inlineControlsMarkup()}
+            </div>
+            <div class="org-tool-group org-tool-group--right">
+              ${quickActionsMarkup()}
+            </div>
+          </div>
+          ${mainHtml}
+          <footer class="org-slim-foot">${ICONS.shield} Processing is 100% private in-browser sandbox · 0 B network requests</footer>
+          <input id="org-add-inp" type="file" accept="${ACCEPT}" multiple hidden>
+        </div>`;
+    }
+
+    async function prepareFiles() {
+      if (filesPrepared || preparing) return;
+      preparing = true;
+      fileThumbs = []; pageCounts = []; durations = [];
+      const pdfs = files.filter(f => familyOf(f) === 'pdf');
+      let pdfjs = null;
+      if (pdfs.length) pdfjs = await loadJs();
+      
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const fam = familyOf(f);
+        if (fam === 'pdf') {
+          try {
+            const doc = await pdfjs.getDocument({ data: await bytesU8(f) }).promise;
+            pageCounts[i] = doc.numPages;
+            if (i === 0 && files.length === 1) {
+              pageCount = doc.numPages;
+              syncSplitCuts();
+            }
+            const page = await doc.getPage(1);
+            const c = await renderPage(pdfjs, page, 0.45);
+            fileThumbs[i] = c;
+            try { doc.destroy(); } catch { /* noop */ }
+          } catch (err) {
+            console.warn('[Organize] read pdf', f.name, err);
+            pageCounts[i] = 1; fileThumbs[i] = null;
+          }
+        } else if (fam === 'image') {
+          urls[i] = URL.createObjectURL(f);
+          fileThumbs[i] = null;
+          if (files.length === 1) pageCount = 1;
+        }
+      }
+
+      // If single PDF, generate all page thumbnail canvases for interactive grid
+      if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCount > 0) {
+        thumbs = [];
+        try {
+          const doc = await pdfjs.getDocument({ data: await bytesU8(files[0]) }).promise;
+          for (let p = 1; p <= pageCount; p++) {
+            const pg = await doc.getPage(p);
+            const c = await renderPage(pdfjs, pg, 0.4);
+            thumbs.push(c);
+          }
+          try { doc.destroy(); } catch { /* noop */ }
+        } catch (e) {
+          console.warn('[Organize] read all pages', e);
+        }
+      }
+
+      filesPrepared = true;
+      preparing = false;
+      renderConfigure();
+    }
+
+    function wireCardThumbs() {
+      // 1. Mount single-pdf page thumbs
+      if (thumbs.length) {
+        thumbs.forEach((c, pgIdx) => {
+          const host = container.querySelector(`#org-pg-thumb-${pgIdx}`);
+          if (host && c) {
+            const clone = document.createElement('canvas');
+            clone.width = c.width; clone.height = c.height;
+            clone.getContext('2d').drawImage(c, 0, 0);
+            const rot = pageRotations.get(pgIdx) || 0;
+            if (rot) clone.style.transform = `rotate(${rot}deg)`;
+            const centerBtn = host.querySelector('.org-page-center-btn');
+            host.innerHTML = '';
+            host.append(clone);
+            if (centerBtn) host.append(centerBtn);
+          }
+        });
+      }
+
+      // 2. Mount merge deck thumbs
+      if (fileThumbs.length) {
+        fileThumbs.forEach((c, i) => {
+          const host = container.querySelector(`#org-deck-thumb-${i}`) || container.querySelector(`#org-fthumb-${i}`);
+          if (host && c) {
+            const clone = document.createElement('canvas');
+            clone.width = c.width; clone.height = c.height;
+            clone.getContext('2d').drawImage(c, 0, 0);
+            host.innerHTML = '';
+            host.append(clone);
+          }
+        });
+      }
+
+      // 3. Mount big preview in filmstrip mode
+      if (viewMode === 'filmstrip') {
+        const stage = container.querySelector('#org-big-stage');
+        if (stage && files[previewIdx] && familyOf(files[previewIdx]) === 'pdf') {
+          getBigThumb(previewIdx).then(c => {
+            if (!c || !stage) return;
+            const clone = document.createElement('canvas');
+            clone.width = c.width; clone.height = c.height;
+            clone.getContext('2d').drawImage(c, 0, 0);
+            const rot = pageRotations.get(0) || 0;
+            if (rot) clone.style.transform = `rotate(${rot}deg)`;
+            const hover = stage.querySelector('.org-stage-hover-actions');
+            stage.innerHTML = '';
+            stage.append(clone);
+            if (hover) stage.append(hover);
+          });
+        }
+      }
     }
 
     async function getBigThumb(i) {
@@ -14834,1680 +15136,504 @@ trailer<</Root 1 0 R>>`;
       return c;
     }
 
-    function addSplitMarks(wrap) {
-      const parts = Math.max(2, Math.min(splitEvery, 20));
-      const marks = document.createElement('div');
-      marks.className = 'org-split-marks';
-      for (let p = 1; p < parts; p++) {
-        const line = document.createElement('div');
-        line.className = 'org-split-line';
-        line.style.left = (p / parts) * 100 + '%';
-        line.dataset.label = `${p}/${parts}`;
-        marks.append(line);
-      }
-      wrap.append(marks);
-    }
-
-    function applyZoom() {
-      const stage = container.querySelector('#org-big-stage');
-      const label = container.querySelector('#org-zoom-val');
-      if (label) label.textContent = zoomLevel === 'fit' ? 'Fit' : `${zoomLevel}%`;
-      if (!stage) return;
-      const target = stage.querySelector('canvas, img');
-      if (target) {
-        if (zoomLevel === 'fit') {
-          target.style.maxWidth = '100%';
-          target.style.maxHeight = '330px';
-          target.style.width = 'auto';
-          target.style.height = 'auto';
-          target.style.transform = 'none';
-        } else {
-          const scale = zoomLevel / 100;
-          target.style.maxWidth = 'none';
-          target.style.maxHeight = 'none';
-          target.style.transform = `scale(${scale})`;
-          target.style.transformOrigin = 'center center';
-        }
-      }
-    }
-
-    function wireBigPreview() {
-      const stage = container.querySelector('#org-big-stage');
-      if (!stage) return;
-      const i = +stage.dataset.idx || 0;
-      const f = files[i];
-      stage.textContent = '';
-      if (f && familyOf(f) === 'pdf') {
-        getBigThumb(i).then(c => { 
-          if (c && container.contains(stage) && stage.dataset.idx === String(i)) { 
-            stage.textContent = ''; 
-            stage.append(c); 
-            applyZoom();
-          } 
-        });
-      } else if (f && familyOf(f) === 'image' && urls[i]) {
-        const im = document.createElement('img');
-        im.src = urls[i]; im.alt = '';
-        stage.append(im);
-        applyZoom();
-      } else if (f && familyOf(f) === 'video') {
-        if (mode === 'split' && filmstrips[i]) {
-          const wrap = document.createElement('div');
-          wrap.className = 'org-wave org-wave--film';
-          wrap.append(filmstrips[i].canvas);
-          stage.append(wrap);
-          addSplitMarks(wrap);
-        } else if (fileThumbs[i]) {
-          stage.append(cloneWave({ canvas: fileThumbs[i] }));
-        } else {
-          stage.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
-        }
-      } else if (f && familyOf(f) === 'audio' && waveforms[i]) {
-        const wrap = document.createElement('div');
-        wrap.className = 'org-wave';
-        wrap.append(waveforms[i].canvas);
-        stage.append(wrap);
-        if (mode === 'split') addSplitMarks(wrap);
-      } else {
-        stage.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
-      }
-
-      // Wire zoom controls
-      const zoomOut = container.querySelector('#org-zoom-out');
-      const zoomIn = container.querySelector('#org-zoom-in');
-      const zoomFit = container.querySelector('#org-zoom-fit');
-      if (zoomOut) {
-        zoomOut.onclick = () => {
-          if (zoomLevel === 'fit') zoomLevel = 100;
-          zoomLevel = Math.max(50, zoomLevel - 25);
-          applyZoom();
-        };
-      }
-      if (zoomIn) {
-        zoomIn.onclick = () => {
-          if (zoomLevel === 'fit') zoomLevel = 100;
-          zoomLevel = Math.min(200, zoomLevel + 25);
-          applyZoom();
-        };
-      }
-      if (zoomFit) {
-        zoomFit.onclick = () => {
-          zoomLevel = 'fit';
-          applyZoom();
-        };
-      }
-
-      // Wire stage hover quick rotate
-      const stageCcw = container.querySelector('#org-stage-rot-ccw');
-      const stageCw = container.querySelector('#org-stage-rot-cw');
-      if (stageCcw) stageCcw.onclick = () => quickRotate(-90);
-      if (stageCw) stageCw.onclick = () => quickRotate(90);
-    }
-
-    /* Quick-action group for the toolbar (right side) */
-    function quickActionsMarkup() {
-      const n = selected.size;
-      return `
-        <button type="button" class="org-tool org-tool--icon" id="org-add-files" title="Add files">${ICONS.add}<span>Add</span></button>
-        <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left" style="transform:scaleX(-1);">${ICONS.rotate}</button>
-        <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
-        <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files" ${n ? '' : 'disabled'}>${ICONS.trash}</button>`;
-    }
-
-    /* Thumbnail strip (left column of the body, like Edit's page rail) */
-    function thumbsMarkup() {
-      const draggable = mode === 'merge';
-      const cards = files.map((f, i) => {
-        const fam = familyOf(f);
-        const dur = durations[i] ? fmtDur(durations[i]) : '';
-        const famWord = fam === 'audio' ? 'Audio' : fam === 'video' ? 'Video' : fam === 'archive' ? 'Archive' : fam === 'ebook' ? 'E-Book' : 'Image';
-        const sub = fam === 'pdf'
-          ? `${pageCounts[i] ? `${pageCounts[i]} page${pageCounts[i] === 1 ? '' : 's'}` : 'PDF'} · ${_bytes(f.size)}`
-          : `${famWord}${dur ? ` · ${dur}` : ''} · ${_bytes(f.size)}`;
-        return `
-          <article class="org-fcard${selected.has(i) ? ' org-fcard--sel' : ''}${showBigPreview() && i === previewIdx ? ' org-fcard--view' : ''}" data-i="${i}" draggable="${draggable}" ${draggable ? 'title="Drag to reorder"' : ''}>
-            <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''} aria-label="Select ${_esc(f.name)}">
-            <button type="button" class="org-fx" data-i="${i}" title="Remove file">${ICONS.x}</button>
-            <div class="org-fthumb"><span class="org-tile-ph">${i + 1}</span></div>
-            <div class="org-fmeta">
-              <span class="org-fname" title="${_esc(f.name)}">${_esc(f.name)}</span>
-              <span class="org-fsub">${sub}</span>
-            </div>
-          </article>`;
-      }).join('');
-
-      const batchPill = selected.size >= 2 ? `
-        <div class="org-batch-pill" id="org-batch-pill">
-          <span class="org-batch-count">${selected.size} selected</span>
-          <div class="org-batch-actions">
-            <button type="button" class="org-batch-btn" id="org-batch-rot" title="Rotate selected 90°">${ICONS.rotate}<span>Rotate</span></button>
-            <button type="button" class="org-batch-btn" id="org-batch-inv" title="Invert selection">⇅<span>Invert</span></button>
-            <button type="button" class="org-batch-btn org-batch-btn--danger" id="org-batch-del" title="Remove selected">${ICONS.trash}<span>Delete</span></button>
-          </div>
-        </div>` : '';
-
-      return `
-        <div class="org-thumbs-head">
-          <label class="org-sel"><input type="checkbox" id="org-selall" ${files.length && selected.size === files.length ? 'checked' : ''}><span>Select all</span></label>
-          <span class="org-thumbs-count">${files.length}</span>
-        </div>
-        <div class="org-files">
-          ${cards}
-          <button type="button" class="org-fcard org-fcard--add" id="org-fadd" title="Add more files">
-            <span class="org-fadd-ico">${ICONS.add}</span>
-            <span class="org-fadd-label">Add more files</span>
-          </button>
-        </div>
-        ${batchPill}
-        <input id="org-add-inp" type="file" accept="${ACCEPT}" multiple hidden>`;
-    }
-
-    function contactSheetMarkup() {
-      const cards = files.map((f, i) => {
-        const fam = familyOf(f);
-        const sub = fam === 'pdf'
-          ? `${pageCounts[i] ? `${pageCounts[i]} pgs` : 'PDF'} · ${_bytes(f.size)}`
-          : `${_bytes(f.size)}`;
-        return `
-          <div class="org-contact-card${selected.has(i) ? ' is-selected' : ''}" data-i="${i}">
-            <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''} style="position:absolute;top:8px;left:8px;z-index:2;">
-            <button type="button" class="org-fx" data-i="${i}" title="Remove file" style="position:absolute;top:8px;right:8px;z-index:2;">${ICONS.x}</button>
-            <div class="org-contact-thumb" id="org-c-thumb-${i}"><span class="org-tile-ph">${i + 1}</span></div>
-            <div class="org-contact-meta">
-              <span style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(f.name)}">${_esc(f.name)}</span>
-              <span style="color:#64748B;font-size:10.5px;">${sub}</span>
-            </div>
-          </div>`;
-      }).join('');
-
-      return `
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:12px;">
-          <label class="org-sel"><input type="checkbox" id="org-selall" ${files.length && selected.size === files.length ? 'checked' : ''}><span>Select all (${files.length} items)</span></label>
-          <span style="font-size:12px;font-weight:600;color:#64748B;">Contact Sheet Lightbox</span>
-        </div>
-        <div class="org-contact-grid">${cards}</div>`;
-    }
-
-    function wireContactThumbs() {
-      files.forEach((f, i) => {
-        const thumb = container.querySelector(`#org-c-thumb-${i}`);
-        if (!thumb) return;
-        thumb.textContent = '';
-        if (fileThumbs[i]) {
-          const c = document.createElement('canvas');
-          c.width = fileThumbs[i].width; c.height = fileThumbs[i].height;
-          c.getContext('2d').drawImage(fileThumbs[i], 0, 0);
-          thumb.append(c);
-        } else if (urls[i]) {
-          const im = document.createElement('img');
-          im.src = urls[i]; im.alt = '';
-          thumb.append(im);
-        } else {
-          thumb.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
-        }
-      });
-    }
-
-    function pageGridMarkup(removeMode) {
-      const note = removeMode
-        ? `<p class="org-mode-note">Click pages to <b>remove</b> them — everything else stays in the file.</p>`
-        : `<p class="org-mode-note">Click pages to <b>keep</b> — everything else is dropped from the output.</p>`;
-      const tiles = [];
-      for (let i = 0; i < pageCount; i++) {
-        const on = picked.has(i);
-        const cls = removeMode ? (on ? '' : ' org-tile--off') : (on ? ' org-tile--on' : '');
-        const badge = removeMode ? (on ? '' : '✕') : (on ? '✓' : '');
-        tiles.push(`
-          <button type="button" class="org-tile${cls}" data-i="${i}" aria-pressed="${on}">
-            <span class="org-tile-thumb"><span class="org-tile-ph">${i + 1}</span></span>
-            <span class="org-tile-num">${i + 1}</span>
-            <span class="org-tile-badge">${badge}</span>
-          </button>`);
-      }
-      const capped = pageCount > 24 ? `<p class="org-mode-note">Showing first 24 of ${pageCount} pages.</p>` : '';
-      return `<div class="cpdf-section">
-        <p class="cpdf-section-label">${removeMode ? 'Pages to delete' : 'Select pages to keep'} <span class="mpdf-count">${picked.size} selected</span></p>
-        ${note}
-        <div class="org-page-grid">${tiles.join('')}</div>
-        ${capped}
-      </div>`;
-    }
-
-    function modeConfigMarkup() {
-      const fam = familyOf(files[0]);
-      if (mode === 'merge') {
-        const mixed = new Set(files.map(familyOf)).size > 1;
-        const audioOnly = !mixed && fam === 'audio';
-        const videoOnly = !mixed && fam === 'video';
-        return `${bigPreviewMarkup()}
-        <div class="cpdf-section">
-          <p class="cpdf-section-label">Merge order</p>
-          <p class="org-mode-note">Drag the cards in the left rail to set the order — files combine top to bottom. ${mixed ? 'Images become pages inside the merged PDF.' : fam === 'image' ? 'Each image becomes one page of the merged PDF.' : 'All pages are joined into one document.'}</p>
-        </div>
-        ${audioOnly ? `
-        <div class="cpdf-section">
-          <p class="cpdf-section-label">Output format</p>
-          <div class="org-chips" role="radiogroup">
-            ${[['auto', 'Same as files'], ['mp3', 'MP3'], ['wav', 'WAV (lossless)']].map(([v, l]) =>
-              `<button type="button" class="org-chip${mergeOut === v ? ' org-chip--on' : ''}" data-mout="${v}">${l}</button>`).join('')}
-          </div>
-          ${mergeOut === 'mp3' ? `
-          <div class="org-seg" style="margin-top:12px" role="radiogroup">
-            ${['96k', '128k', '192k', '256k', '320k'].map(b =>
-              `<button type="button" class="org-seg-btn${mergeBr === b ? ' org-seg-btn--on' : ''}" data-mbr="${b}">${b}</button>`).join('')}
-          </div>` : ''}
-          <p class="org-mode-note">Merged into <b>${mergeOut === 'wav' ? 'lossless WAV' : mergeOut === 'mp3' ? `MP3 @ ${mergeBr}` : 'the same format as your first file — WAV / FLAC stay lossless, compressed formats re-encode to MP3'}</b>.</p>
-        </div>` : ''}
-        ${videoOnly ? `
-        <div class="cpdf-section">
-          <p class="cpdf-section-label">Quality</p>
-          <div class="org-seg" role="radiogroup">
-            ${[['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, l]) =>
-              `<button type="button" class="org-seg-btn${mergeQ === v ? ' org-seg-btn--on' : ''}" data-mq="${v}">${l}</button>`).join('')}
-          </div>
-          <p class="org-mode-note">Exported as <b>MP4 (H.264 + AAC)</b> — High ≈ CRF 16 · Medium ≈ CRF 20 · Low ≈ CRF 26.</p>
-        </div>` : ''}`;
-      }
-      if (mode === 'split') {
-        if (fam === 'audio' || fam === 'video') {
-          const mediaWord = fam === 'audio' ? 'audio' : 'video';
-          const audioOnly = fam === 'audio';
-          return `${bigPreviewMarkup()}
-          <div class="cpdf-section">
-            <p class="cpdf-section-label">Split into</p>
-            <div class="org-chips" role="radiogroup">
-              ${[2, 3, 5, 10].map(n => `<button type="button" class="org-chip${splitEvery === n ? ' org-chip--on' : ''}" data-every="${n}">${n} part${n === 1 ? '' : 's'}</button>`).join('')}
-              <input class="org-chip-input" id="org-every" type="number" min="2" max="20" value="${splitEvery}" aria-label="Number of parts">
-            </div>
-            <p class="org-mode-note">Splits the ${mediaWord} into <b>${splitEvery} equal-length part${splitEvery === 1 ? '' : 's'}</b>, downloaded as a ZIP.</p>
-          </div>
-          ${audioOnly ? `
-          <div class="cpdf-section">
-            <p class="cpdf-section-label">Output format</p>
-            <div class="org-chips" role="radiogroup">
-              ${[['auto', 'Same as file'], ['mp3', 'MP3'], ['wav', 'WAV (lossless)']].map(([v, l]) =>
-                `<button type="button" class="org-chip${mergeOut === v ? ' org-chip--on' : ''}" data-mout="${v}">${l}</button>`).join('')}
-            </div>
-            ${mergeOut === 'mp3' ? `
-            <div class="org-seg" style="margin-top:12px" role="radiogroup">
-              ${['96k', '128k', '192k', '256k', '320k'].map(b =>
-                `<button type="button" class="org-seg-btn${mergeBr === b ? ' org-seg-btn--on' : ''}" data-mbr="${b}">${b}</button>`).join('')}
-            </div>` : ''}
-            <p class="org-mode-note">Parts are <b>${mergeOut === 'wav' ? 'lossless WAV' : mergeOut === 'mp3' ? `MP3 @ ${mergeBr}` : 'kept in the same format as your file (WAV / FLAC stay lossless)'}</b>.</p>
-          </div>` : `
-          <div class="cpdf-section">
-            <p class="cpdf-section-label">Quality</p>
-            <div class="org-seg" role="radiogroup">
-              ${[['high', 'High'], ['medium', 'Medium'], ['low', 'Low']].map(([v, l]) =>
-                `<button type="button" class="org-seg-btn${mergeQ === v ? ' org-seg-btn--on' : ''}" data-mq="${v}">${l}</button>`).join('')}
-            </div>
-            <p class="org-mode-note">Parts are exported as <b>MP4 (H.264 + AAC)</b>.</p>
-          </div>`}`;
-        }
-        if (fam === 'pdf') {
-          const parts = Math.max(1, Math.ceil(pageCount / Math.max(1, splitEvery)));
-          const chipsMarkup = [1, 2, 5, 10].map(n => {
-            const isOver = pageCount > 0 && n > pageCount;
-            return `<button type="button" class="org-chip${splitEvery === n ? ' org-chip--on' : ''}" data-every="${n}" ${isOver ? 'disabled style="opacity:0.35;cursor:not-allowed;" title="Document only has ' + pageCount + ' ' + (pageCount === 1 ? 'page' : 'pages') + '"' : ''}>${n} ${n === 1 ? 'page' : 'pages'}</button>`;
-          }).join('');
-          return `${bigPreviewMarkup()}<div class="cpdf-section">
-            <p class="cpdf-section-label">Split into parts of</p>
-            <div class="org-chips" role="radiogroup">
-              ${chipsMarkup}
-              <input class="org-chip-input" id="org-every" type="number" min="1" max="${pageCount || 100}" value="${splitEvery}" aria-label="Pages per part">
-            </div>
-            <p class="org-mode-note">${pageCount} ${pageCount === 1 ? 'page' : 'pages'} → <b>${parts} ${parts === 1 ? 'part' : 'parts'}</b>, downloaded as a ZIP.</p>
-          </div>`;
-        }
-        return `${bigPreviewMarkup()}<div class="cpdf-section">
-          <p class="cpdf-section-label">Split images</p>
-          <p class="org-mode-note">Each of the ${files.length} image${files.length === 1 ? '' : 's'} becomes its own file, downloaded together as a ZIP.</p>
-        </div>`;
-      }
-      if (mode === 'rotate') {
-        return `${bigPreviewMarkup()}<div class="cpdf-section">
-          <p class="cpdf-section-label">Rotate by</p>
-          <div class="org-seg" role="radiogroup">
-            ${[90, 180, 270].map(d => `<button type="button" class="org-seg-btn${deg === d ? ' org-seg-btn--on' : ''}" data-deg="${d}">${d}°</button>`).join('')}
-          </div>
-          <p class="org-mode-note">Rotates every page of ${files.length === 1 ? `<b>${_esc(files[0].name)}</b>` : `all ${files.length} files`} clockwise.</p>
-        </div>`;
-      }
-      if (fam === 'archive') {
-        if (mode === 'merge') return `${bigPreviewMarkup()}<div class="cpdf-section">
-          <p class="cpdf-section-label">Combine archives</p>
-          <p class="org-mode-note">Entries from all ${files.length} archives are merged into one ZIP (duplicate names are auto-renamed).</p>
-        </div>`;
-        if (mode === 'delete') return entryListMarkup(true);
-        if (mode === 'extract') return entryListMarkup(false);
-      }
-      if (fam === 'ebook') {
-        if (mode === 'reorder') return chapterListMarkup(false, true);
-        if (mode === 'delete') return chapterListMarkup(true, false);
-        if (mode === 'extract') return chapterListMarkup(false, false);
-        return '';
-      }
-      if (mode === 'delete') return pageGridMarkup(true);
-      if (mode === 'extract') return pageGridMarkup(false);
-      return '';
-    }
-
-    const FT_COLOR = { txt:'#64748B', pdf:'#E5252A', json:'#B45309', svg:'#DB2777', png:'#0891B2', jpg:'#EA580C', jpeg:'#EA580C', gif:'#7C3AED', webp:'#0F766E', md:'#4F46E5', html:'#C2410C', htm:'#C2410C', xml:'#0F766E', yaml:'#A16207', yml:'#A16207', zip:'#7C3AED', gz:'#7C3AED', tar:'#7C3AED', csv:'#0369A1', docx:'#2563EB', doc:'#2563EB', xlsx:'#15803D', pptx:'#C2410C', epub:'#DB2777', mp3:'#0F766E', wav:'#0F766E', mp4:'#9333EA', css:'#2563EB', js:'#A16207', ts:'#2563EB' };
-    const ftBadge = (name) => {
-      const ext = (name.split('.').pop() || '').toLowerCase();
-      const c = FT_COLOR[ext] || '#64748B';
-      return `<span class="org-file-type" style="--ft:${c}">${_esc(ext.slice(0, 4) || '·')}</span>`;
-    };
-    let treeOpen = new Set();
-    function entryTree() {
-      const groups = new Map();
-      const out = [];
-      entries.slice(0, 60).forEach((e, i) => {
-        const slash = e.name.indexOf('/');
-        if (slash > 0) {
-          const folder = e.name.slice(0, slash);
-          if (!groups.has(folder)) { groups.set(folder, []); out.push({ type: 'folder', name: folder, ids: groups.get(folder) }); }
-          groups.get(folder).push(i);
-        } else out.push({ type: 'file', i });
-      });
-      return out;
-    }
-    function entryListMarkup(removeMode) {
-      const note = removeMode
-        ? '<p class="org-mode-note">Click entries to <b>remove</b> them — everything else is kept in the repacked archive.</p>'
-        : '<p class="org-mode-note">Click entries to <b>keep</b> — everything else is dropped from the output.</p>';
-      const folderIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" stroke="#B45309" stroke-width="1.4"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2h9A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>`;
-      const rows = entryTree().map((node) => {
-        if (node.type === 'folder') {
-          const open = treeOpen.has(node.name);
-          const all = node.ids.every((id) => picked.has(id));
-          const some = node.ids.some((id) => picked.has(id));
-          const children = node.ids.map((i) => {
-            const e = entries[i]; const on = picked.has(i);
-            const cls = removeMode ? (on ? ' org-entry--off' : '') : (on ? ' org-entry--on' : '');
-            const badge = removeMode ? (on ? '✕' : '') : (on ? '✓' : '');
-            return `<button type="button" class="org-entry org-entry--tree${cls}" data-i="${i}" aria-pressed="${on}">
-              ${ftBadge(e.name)}
-              <span class="org-entry-name" title="${_esc(e.name)}">${_esc(e.name.slice(node.name.length + 1))}</span>
-              <span class="org-entry-size">${_bytes(e.size)}</span>
-              <span class="org-tile-badge">${badge}</span>
-            </button>`;
-          }).join('');
-          return `<div class="org-tree-folder" data-folder="${_esc(node.name)}">
-              <span class="org-tree-chev${open ? ' org-tree-chev--open' : ''}">▸</span>
-              ${folderIco}
-              <span class="org-tree-folder-name">${_esc(node.name)}</span>
-              <span class="org-tree-folder-count">${node.ids.length} file${node.ids.length === 1 ? '' : 's'}</span>
-              <button type="button" class="org-tree-folder-toggle">${all ? 'Deselect' : 'Select'}</button>
-            </div>
-            <div class="org-tree-children${open ? '' : ' org-tree-children--closed'}">${children}</div>`;
-        }
-        const e = entries[node.i]; const on = picked.has(node.i);
-        const cls = removeMode ? (on ? ' org-entry--off' : '') : (on ? ' org-entry--on' : '');
-        const badge = removeMode ? (on ? '✕' : '') : (on ? '✓' : '');
-        return `<button type="button" class="org-entry org-entry--tree${cls}" data-i="${node.i}" aria-pressed="${on}">
-          ${ftBadge(e.name)}
-          <span class="org-entry-name" title="${_esc(e.name)}">${_esc(e.name)}</span>
-          <span class="org-entry-size">${_bytes(e.size)}</span>
-          <span class="org-tile-badge">${badge}</span>
-        </button>`;
-      }).join('');
-      const allOn = entries.slice(0, 60).length > 0 && entries.slice(0, 60).every((_, i) => picked.has(i));
-      const capped = entries.length > 60 ? `<p class="org-mode-note">Showing first 60 of ${entries.length} entries.</p>` : '';
-      return `<div class="cpdf-section">
-        <p class="cpdf-section-label">${removeMode ? 'Entries to remove' : 'Select entries to keep'} <span class="mpdf-count">${picked.size} of ${entries.length} selected</span></p>
-        ${note}
-        <div class="org-tree-actions">
-          <button type="button" class="org-tree-all">${allOn ? 'Deselect all' : 'Select all'}</button>
-          <span class="org-tree-dot">·</span>
-          <button type="button" class="org-tree-none">Clear</button>
-        </div>
-        <div class="org-tree">${rows}</div>
-        ${capped}
-      </div>`;
-    }
-
-    const BOOK_GRADS = ['linear-gradient(135deg,#DB2777,#7C3AED)', 'linear-gradient(135deg,#2563EB,#4F46E5)', 'linear-gradient(135deg,#EA580C,#DB2777)', 'linear-gradient(135deg,#0F766E,#2563EB)', 'linear-gradient(135deg,#9333EA,#DB2777)', 'linear-gradient(135deg,#B45309,#DB2777)'];
-    const bookGrad = (title) => { let h = 0; for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return BOOK_GRADS[h % BOOK_GRADS.length]; };
-    function bookCardMarkup() {
-      const title = (ebookMeta && ebookMeta.title) || 'Untitled';
-      const author = (ebookMeta && ebookMeta.author) || 'Unknown author';
-      return `<div class="org-book">
-        <div class="org-book-cover" style="background:${bookGrad(title)}">
-          <span class="org-book-initial">${_esc(title.trim().charAt(0).toUpperCase() || 'B')}</span>
-        </div>
-        <div class="org-book-meta">
-          <p class="org-book-title" title="${_esc(title)}">${_esc(title)}</p>
-          <p class="org-book-author">${_esc(author)}</p>
-          <p class="org-book-sub">${chapters.length} chapter${chapters.length === 1 ? '' : 's'} · ${_bytes(files[0].size)}</p>
-        </div>
-      </div>`;
-    }
-
-    function chapterListMarkup(removeMode, reorderMode) {
-      const note = reorderMode
-        ? '<p class="org-mode-note">Drag chapters to reorder them — the EPUB is rebuilt in your new sequence.</p>'
-        : removeMode
-          ? '<p class="org-mode-note">Click chapters to <b>remove</b> them from the book.</p>'
-          : '<p class="org-mode-note">Click chapters to <b>extract</b> into a new book.</p>';
-      const items = chapters.map((c, i) => {
-        const on = picked.has(i);
-        const cls = reorderMode ? '' : removeMode ? (on ? ' org-chap--off' : '') : (on ? ' org-chap--on' : '');
-        const badge = reorderMode ? '<span class="org-chap-drag">⋮⋮</span>' : removeMode ? (on ? '✕' : '') : (on ? '✓' : '');
-        return `<div class="org-chap${cls}" data-i="${i}" draggable="${reorderMode}">
-          <span class="org-chap-num">${String(i + 1).padStart(2, '0')}</span>
-          <span class="org-chap-title" title="${_esc(c.title || c.id)}">${_esc(c.title || c.id)}</span>
-          <span class="org-tile-badge">${badge}</span>
-        </div>`;
-      }).join('');
-      return `<div class="cpdf-section">
-        ${bookCardMarkup()}
-        <p class="cpdf-section-label">${reorderMode ? 'Chapter sequence' : removeMode ? 'Chapters to delete' : 'Chapters to keep'} <span class="mpdf-count">${chapters.length} chapters</span></p>
-        ${note}
-        <div class="org-chap-list">${items}</div>
-      </div>`;
-    }
-
-    /* ── Render pipeline (asynchronous file inspection) ── */
-    function needsPageInfo() {
-      const fam = familyOf(files[0]);
-      if (fam === 'pdf' || fam === 'image') return true;
-      if (fam === 'audio' || fam === 'video') return true;
-      if (fam === 'archive' || fam === 'ebook') return true;
-      return false;
-    }
-
-    async function prepareFiles() {
-      fileThumbs = []; pageCounts = []; waveforms = []; filmstrips = []; durations = [];
-      entries = []; chapters = []; ebookMeta = null;
-      clearUrls();
-      const pdfs = files.filter(f => familyOf(f) === 'pdf');
-      let pdfjs = null;
-      if (pdfs.length) pdfjs = await loadJs();
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i]; const fam = familyOf(f);
-        if (fam === 'pdf') {
-          try {
-            const doc = await pdfjs.getDocument({ data: await bytesU8(f) }).promise;
-            pageCounts[i] = doc.numPages;
-            if (i === 0 && files.length === 1) pageCount = doc.numPages;
-            const page = await doc.getPage(1);
-            const c = await renderPage(pdfjs, page, 0.45);
-            fileThumbs[i] = c;
-            try { doc.destroy(); } catch { /* noop */ }
-          } catch (err) {
-            console.warn('[Organize] read pdf', f.name, err);
-            pageCounts[i] = 1; fileThumbs[i] = null;
-          }
-        } else if (fam === 'image') {
-          urls[i] = URL.createObjectURL(f);
-          fileThumbs[i] = null;
-          if (files.length === 1) pageCount = 1;
-        } else if (fam === 'audio') {
-          try {
-            const buf = await f.arrayBuffer();
-            const actx = new (window.AudioContext || window.webkitAudioContext)();
-            const abuf = await actx.decodeAudioData(buf);
-            durations[i] = abuf.duration;
-            waveforms[i] = { canvas: renderWaveformCanvas(abuf), duration: abuf.duration };
-            try { actx.close(); } catch { /* noop */ }
-          } catch (err) {
-            console.warn('[Organize] audio wave', f.name, err);
-            durations[i] = 0; waveforms[i] = null;
-          }
-        } else if (fam === 'video') {
-          try {
-            const dur = await probeDuration(f);
-            durations[i] = dur;
-            fileThumbs[i] = await grabFrame(f, 0.5);
-            if (files.length === 1) filmstrips[0] = { canvas: await renderFilmstripCanvas(f, dur, 6), duration: dur };
-          } catch (err) {
-            console.warn('[Organize] video frame', f.name, err);
-            durations[i] = 0; fileThumbs[i] = null;
-          }
-        } else if (fam === 'archive' && i === 0) {
-          try {
-            const info = await readArchive(f);
-            entries = Object.entries(info.map).map(([name, data]) => ({ name, size: data.length }));
-          } catch (err) {
-            console.warn('[Organize] read archive', f.name, err);
-            entries = [];
-          }
-        } else if (fam === 'ebook' && i === 0) {
-          try {
-            const F = await loadFf();
-            const ep = parseEpub(F, await bytesU8(f));
-            ebookMeta = ep.meta || null;
-            chapters = ep.spine.map((id, j) => {
-              const it = ep.items[id];
-              return { id, title: it ? it.title || `Chapter ${j + 1}` : `Chapter ${j + 1}` };
-            });
-          } catch (err) {
-            console.warn('[Organize] read epub', f.name, err);
-            chapters = [];
-          }
-        }
-      }
-    }
-
-    async function grabFrame(file, atSec) {
-      return new Promise((res) => {
-        const url = URL.createObjectURL(file);
-        const v = document.createElement('video');
-        v.preload = 'auto'; v.muted = true;
-        v.onloadedmetadata = () => { v.currentTime = Math.min(atSec, Math.max(0, v.duration - 0.1)); };
-        v.onseeked = () => {
-          const c = document.createElement('canvas');
-          c.width = 120; c.height = Math.max(60, Math.round((v.videoHeight / v.videoWidth) * 120));
-          c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-          URL.revokeObjectURL(url);
-          res(c);
-        };
-        v.onerror = () => { URL.revokeObjectURL(url); res(null); };
-        v.src = url;
-      });
-    }
-
-    async function renderFilmstripCanvas(file, dur, count) {
-      const c = document.createElement('canvas');
-      c.width = 480; c.height = 70;
-      const ctx = c.getContext('2d');
-      const step = dur / count;
-      const url = URL.createObjectURL(file);
-      const v = document.createElement('video');
-      v.preload = 'auto'; v.muted = true;
-      const w = 480 / count;
-      await new Promise(r => { v.onloadedmetadata = r; v.src = url; });
-      for (let i = 0; i < count; i++) {
-        v.currentTime = (i + 0.5) * step;
-        await new Promise(r => { v.onseeked = r; });
-        ctx.drawImage(v, i * w, 0, w, 70);
-      }
-      URL.revokeObjectURL(url);
-      return c;
-    }
-
-    function renderWaveformCanvas(abuf) {
-      const c = document.createElement('canvas');
-      c.width = 480; c.height = 70;
-      const ctx = c.getContext('2d');
-      const data = abuf.getChannelData(0);
-      const step = Math.ceil(data.length / c.width);
-      const amp = c.height / 2;
-      ctx.fillStyle = '#FAF5FF';
-      ctx.fillRect(0, 0, c.width, c.height);
-      ctx.fillStyle = '#7C3AED';
-      for (let i = 0; i < c.width; i++) {
-        let min = 1.0, max = -1.0;
-        for (let j = 0; j < step; j++) {
-          const datum = data[(i * step) + j];
-          if (datum < min) min = datum;
-          if (datum > max) max = datum;
-        }
-        ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
-      }
-      return c;
-    }
-
-    function cloneWave(w) {
-      if (!w || !w.canvas) return document.createElement('canvas');
-      const c = document.createElement('canvas');
-      c.width = w.canvas.width; c.height = w.canvas.height;
-      c.getContext('2d').drawImage(w.canvas, 0, 0);
-      return c;
-    }
-
-    function wireCardThumbs() {
-      container.querySelectorAll('.org-fcard:not(.org-fcard--add)').forEach((card, i) => {
-        const thumb = card.querySelector('.org-fthumb');
-        thumb.textContent = '';
-        if (fileThumbs[i]) thumb.append(fileThumbs[i]);
-        else if (urls[i]) {
-          const im = document.createElement('img');
-          im.src = urls[i];
-          im.alt = '';
-          thumb.append(im);
-        } else if (waveforms[i]) {
-          thumb.append(cloneWave(waveforms[i]));
-        } else {
-          thumb.innerHTML = `<span class="org-tile-ph">${i + 1}</span>`;
-        }
-      });
-    }
-
-    function wireFiles() {
-      /* Select all */
-      const selAll = container.querySelector('#org-selall');
-      if (selAll) selAll.onchange = () => {
-        selected.clear();
-        if (selAll.checked) files.forEach((_, i) => selected.add(i));
-        renderConfigure();
-      };
-      /* Card checkboxes */
-      container.querySelectorAll('.org-fchk').forEach(chk => {
-        chk.onchange = () => {
-          const i = +chk.dataset.i;
-          selected.has(i) ? selected.delete(i) : selected.add(i);
+    function wireEvents() {
+      // 1. View Switcher (Grid vs Filmstrip)
+      const viewToggle = container.querySelector('#org-view-toggle');
+      if (viewToggle) {
+        viewToggle.onclick = () => {
+          viewMode = viewMode === 'grid' ? 'filmstrip' : 'grid';
           renderConfigure();
         };
-      });
-      /* Click a card body to preview that file in the big panel */
-      if (showBigPreview()) {
-        container.querySelectorAll('.org-fcard:not(.org-fcard--add)').forEach(card => {
-          card.addEventListener('click', e => {
-            if (e.target.closest('.org-fchk') || e.target.closest('.org-fx')) return;
-            const i = +card.dataset.i;
-            if (i === previewIdx) return;
-            previewIdx = i;
-            container.querySelectorAll('.org-fcard--view').forEach(c => c.classList.remove('org-fcard--view'));
-            card.classList.add('org-fcard--view');
-            wireBigPreview();
-          });
-        });
       }
-      /* Remove single file (×) */
-      container.querySelectorAll('.org-fx').forEach(btn => {
+
+      // 2. Mode Picker
+      container.querySelectorAll('.org-tool[data-mode]').forEach(btn => {
         btn.onclick = () => {
-          files.splice(+btn.dataset.i, 1);
-          if (!files.length) { renderUpload(); return; }
-          resetState();
+          const m = btn.dataset.mode;
+          if (m === mode) return;
+          mode = m;
+          syncSplitCuts();
           renderConfigure();
         };
       });
-      /* Add files (toolbar + empty slot) */
+
+      // 3. Stepper & Split Controls
+      const decBtn = container.querySelector('#org-step-dec');
+      const incBtn = container.querySelector('#org-step-inc');
+      if (decBtn) {
+        decBtn.onclick = () => {
+          if (splitEvery > 1) {
+            splitEvery--;
+            syncSplitCuts();
+            renderConfigure();
+          }
+        };
+      }
+      if (incBtn) {
+        incBtn.onclick = () => {
+          if (splitEvery < pageCount) {
+            splitEvery++;
+            syncSplitCuts();
+            renderConfigure();
+          }
+        };
+      }
+      container.querySelectorAll('.org-mini-chip[data-every]').forEach(chip => {
+        chip.onclick = () => {
+          splitEvery = +chip.dataset.every;
+          syncSplitCuts();
+          renderConfigure();
+        };
+      });
+
+      // 4. Interactive Scissors Cut-Lines
+      container.querySelectorAll('.org-cut-divider').forEach(div => {
+        div.onclick = (e) => {
+          const b = +div.dataset.boundary;
+          if (customCuts.has(b)) {
+            customCuts.delete(b);
+          } else {
+            customCuts.add(b);
+          }
+          renderConfigure();
+        };
+      });
+
+      // 5. In-Situ Rotate Center Buttons
+      container.querySelectorAll('.org-page-rot-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const pg = +btn.dataset.pg;
+          const current = pageRotations.get(pg) || 0;
+          pageRotations.set(pg, (current + 90) % 360);
+          wireCardThumbs();
+        };
+      });
+
+      // 6. Rotate All Buttons in Toolbar
+      const rotAllCcw = container.querySelector('#org-rot-all-ccw');
+      const rotAllCw = container.querySelector('#org-rot-all-cw');
+      const rotAll180 = container.querySelector('#org-rot-all-180');
+      if (rotAllCcw) {
+        rotAllCcw.onclick = () => {
+          for (let p = 0; p < pageCount; p++) pageRotations.set(p, ((pageRotations.get(p) || 0) + 270) % 360);
+          wireCardThumbs();
+        };
+      }
+      if (rotAllCw) {
+        rotAllCw.onclick = () => {
+          for (let p = 0; p < pageCount; p++) pageRotations.set(p, ((pageRotations.get(p) || 0) + 90) % 360);
+          wireCardThumbs();
+        };
+      }
+      if (rotAll180) {
+        rotAll180.onclick = () => {
+          for (let p = 0; p < pageCount; p++) pageRotations.set(p, ((pageRotations.get(p) || 0) + 180) % 360);
+          wireCardThumbs();
+        };
+      }
+
+      // 7. In-Situ Delete Page Center Buttons
+      container.querySelectorAll('.org-page-del-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const pg = +btn.dataset.pg;
+          picked.has(pg) ? picked.delete(pg) : picked.add(pg);
+          renderConfigure();
+        };
+      });
+      const delUndoAll = container.querySelector('#org-del-undo-all');
+      if (delUndoAll) {
+        delUndoAll.onclick = () => {
+          picked.clear();
+          renderConfigure();
+        };
+      }
+
+      // 8. Extract Page Checkboxes & Tile Click
+      container.querySelectorAll('.org-pg-tile').forEach(tile => {
+        tile.onclick = (e) => {
+          if (mode === 'extract') {
+            const pg = +tile.dataset.pg;
+            picked.has(pg) ? picked.delete(pg) : picked.add(pg);
+            renderConfigure();
+          }
+        };
+      });
+      const togSep = container.querySelector('#org-toggle-sep');
+      if (togSep) {
+        togSep.onclick = () => {
+          extractSeparate = !extractSeparate;
+          renderConfigure();
+        };
+      }
+
+      // 9. Add Files Pickers
       const addInp = container.querySelector('#org-add-inp');
       const openPicker = () => addInp && addInp.click();
       const addBtn = container.querySelector('#org-add-files');
       if (addBtn) addBtn.onclick = openPicker;
       const fadd = container.querySelector('#org-fadd');
       if (fadd) fadd.onclick = openPicker;
+      const endDrop = container.querySelector('#org-end-drop');
+      if (endDrop) endDrop.onclick = openPicker;
       if (addInp) addInp.onchange = () => { const arr = [...(addInp.files || [])]; addInp.value = ''; if (arr.length) acceptFiles(arr); };
-      /* Remove selected */
-      const rmSel = container.querySelector('#org-remove-sel');
-      if (rmSel) rmSel.onclick = () => {
-        files = files.filter((_, i) => !selected.has(i));
-        if (!files.length) { renderUpload(); return; }
-        resetState();
-        renderConfigure();
-      };
-      /* Quick rotate in place (Smallpdf-style) */
-      const rotCcw = container.querySelector('#org-rot-ccw');
-      const rotCw = container.querySelector('#org-rot-cw');
-      if (rotCcw) rotCcw.onclick = () => quickRotate(-90);
-      if (rotCw) rotCw.onclick = () => quickRotate(90);
 
-      /* Batch Action Pill buttons */
-      const batchRot = container.querySelector('#org-batch-rot');
-      if (batchRot) batchRot.onclick = () => quickRotate(90);
-      const batchInv = container.querySelector('#org-batch-inv');
-      if (batchInv) batchInv.onclick = () => {
-        const inv = new Set();
-        files.forEach((_, i) => { if (!selected.has(i)) inv.add(i); });
-        selected.clear();
-        inv.forEach(i => selected.add(i));
-        renderConfigure();
-      };
-      const batchDel = container.querySelector('#org-batch-del');
-      if (batchDel) batchDel.onclick = () => {
-        files = files.filter((_, i) => !selected.has(i));
-        if (!files.length) { renderUpload(); return; }
-        resetState();
-        renderConfigure();
-      };
-
-      /* Drag reorder (merge only) */
-      container.querySelectorAll('.org-fcard[draggable="true"]').forEach(card => {
-        card.addEventListener('dragstart', e => {
-          dragIdx = +card.dataset.i;
-          e.dataTransfer.effectAllowed = 'move';
-          card.classList.add('org-fcard--drag');
-        });
-        card.addEventListener('dragend', () => {
-          dragIdx = -1;
-          card.classList.remove('org-fcard--drag');
-        });
-        card.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-        card.addEventListener('drop', e => {
-          e.preventDefault();
-          const to = +card.dataset.i;
-          if (dragIdx < 0 || dragIdx === to) return;
-          const [moved] = files.splice(dragIdx, 1);
-          files.splice(to, 0, moved);
-          dragIdx = -1;
-          renderConfigure();
-        });
+      // 10. Inter-File Insertion Buttons in Merge Mode
+      container.querySelectorAll('.org-insert-btn').forEach(btn => {
+        btn.onclick = () => {
+          const afterIdx = +btn.dataset.after;
+          const tempInp = document.createElement('input');
+          tempInp.type = 'file'; tempInp.accept = ACCEPT; tempInp.multiple = true;
+          tempInp.onchange = () => {
+            const arr = [...(tempInp.files || [])];
+            if (arr.length) {
+              files.splice(afterIdx + 1, 0, ...arr);
+              resetState();
+              renderConfigure();
+            }
+          };
+          tempInp.click();
+        };
       });
-    }
 
-    /* Rotate the selected files (or all) by ±90° in place and re-thumbnail. */
-    async function quickRotate(dir) {
-      const targets = selected.size ? files.filter((_, i) => selected.has(i)) : files;
-      if (!targets.length) return;
-      if (new Set(targets.map(familyOf)).size > 1) { window.FF.util.toast('Select files of one type to rotate.', 'warn'); return; }
-      if (familyOf(targets[0]) === 'audio') { window.FF.util.toast('Audio has no rotation — use the Split tab to break it into parts.', 'info'); return; }
-      if (familyOf(targets[0]) === 'video') { window.FF.util.toast('Rotate video from the Rotate tab instead.', 'info'); return; }
-      renderPageLoading('Rotating…');
-      try {
-        for (const f of targets) {
-          const idx = files.indexOf(f);
-          if (familyOf(f) === 'pdf') {
-            const L = await loadLib();
-            const doc = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
-            doc.getPages().forEach(pg => pg.setRotation(L.degrees((pg.getRotation().angle + dir + 360) % 360)));
-            const blob = new Blob([await doc.save()], { type: PDF_MIME });
-            files[idx] = new File([blob], U.baseName(f.name) + '-rotated.pdf', { type: PDF_MIME });
-          } else {
-            const r = await rotateImgFile(f, dir);
-            files[idx] = new File([r.blob], r.filename, { type: r.blob.type });
-          }
-        }
-      } catch (err) {
-        console.error('[Organize] quick rotate', err);
-        window.FF.util.toast('Could not rotate those files: ' + (err.message || 'Unknown error'), 'error');
-      }
-      const keepMode = mode;
-      resetState();
-      mode = modes().includes(keepMode) ? keepMode : modes()[0];
-      renderConfigure();
-    }
-
-    function renderPageLoading(msg = 'Reading your files…') {
-      enterBleed();
-      const thumbs = showFileGrid() ? `<aside class="org-thumbs">${thumbsMarkup()}</aside>` : '';
-      container.innerHTML = flowShellMarkup(`
-        <div class="org-body">
-          ${thumbs}
-          <main class="org-main">
-            <div class="org-loading">
-              <div class="cpdf-spinner" aria-hidden="true"><div class="cpdf-spin-outer"></div><div class="cpdf-spin-inner">${ICONS[MODE_MAP[mode].icon]}</div></div>
-              <p class="cpdf-proc-sub">${msg}</p>
-            </div>
-          </main>
-        </div>
-        <footer class="org-slim-foot">${ICONS.shield} Processing is entirely local — your files are never transmitted</footer>`, true);
-      wirePicker();
-      wireFiles();
-      wireCardThumbs();
-      wireBigPreview();
-    }
-
-    function flowShellMarkup(mainHtml, runDisabled) {
-      return `
-        <div class="cpdf-body org-flow">
-          <div class="org-top">
-            <div class="org-top-left">
-              <span class="org-file" title="${fileLabel()}">${fileLabel()}</span>
-              <span class="org-meta">${metaLabel()}</span>
-              <span class="org-local">${ICONS.shield} Local only</span>
-            </div>
-            <div class="org-top-right">
-              <button type="button" class="org-view-toggle" id="org-view-toggle" title="${viewMode === 'grid' ? 'Switch to Filmstrip View' : 'Switch to Contact Sheet Grid View'}">
-                ${viewMode === 'grid' ? 
-                  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span>Filmstrip</span>` : 
-                  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Contact Sheet</span>`}
-              </button>
-              <button class="cpdf-btn-primary org-finish" id="org-run" type="button" ${runDisabled ? 'disabled' : ''}>${modeBtnLabel()}</button>
-            </div>
-          </div>
-          <div class="org-toolbar2">
-            <div class="org-tool-group">${pickerMarkup()}</div>
-            <div class="org-tool-group org-tool-group--right">${quickActionsMarkup()}</div>
-          </div>
-          ${mainHtml}
-        </div>`;
+      // 11. Run Action Button
+      const runBtn = container.querySelector('#org-run');
+      if (runBtn) runBtn.onclick = () => runAction();
     }
 
     function renderConfigure() {
+      if (!files.length) { renderUpload(); return; }
       enterBleed();
-      if (!filesPrepared || (needsPageInfo() && pageCount === 0)) {
-        if (!preparing) {
-          preparing = true;
-          renderPageLoading();
-          prepareFiles()
-            .catch(err => { console.error('[Organize] prepare', err); preparing = false; })
-            .then(() => {
-              if (!files.length) return;
-              preparing = false;
-              filesPrepared = true;
-              if (mode === 'delete' && picked.size === 0 && pageCount) for (let i = 0; i < pageCount; i++) picked.add(i);
-              renderConfigure();
-            });
-        }
+      if (!filesPrepared && !preparing) {
+        prepareFiles();
         return;
       }
-      const fam0 = familyOf(files[0]);
-      const listTotal = fam0 === 'archive' ? entries.length : fam0 === 'ebook' ? chapters.length : 0;
-      let runDisabled = false;
-      if (listTotal && (mode === 'delete' || mode === 'extract')) {
-        runDisabled = mode === 'delete' ? (picked.size === 0 || picked.size >= listTotal) : picked.size === 0;
-      } else {
-        runDisabled = (mode === 'delete' && picked.size >= pageCount) || (mode === 'extract' && picked.size === 0);
-      }
 
-      if (viewMode === 'grid' && showFileGrid()) {
-        container.innerHTML = flowShellMarkup(`
-          <div class="org-body org-body--grid">
-            ${contactSheetMarkup()}
-          </div>
-          <footer class="org-slim-foot">${ICONS.shield} Processing is entirely local — your files are never transmitted</footer>`, runDisabled);
-        wireContactThumbs();
-      } else {
-        const thumbs = showFileGrid() ? `<aside class="org-thumbs">${thumbsMarkup()}</aside>` : '';
-        container.innerHTML = flowShellMarkup(`
-          <div class="org-body">
-            ${thumbs}
-            <main class="org-main">${modeConfigMarkup()}</main>
-          </div>
-          <footer class="org-slim-foot">${ICONS.shield} Processing is entirely local — your files are never transmitted</footer>`, runDisabled);
-        wireCardThumbs();
-        wireBigPreview();
-      }
+      const mainHtml = viewMode === 'grid' 
+        ? `<div class="org-body--full">${fullCanvasGridMarkup()}</div>`
+        : filmstripViewMarkup();
 
-      wirePicker();
-      wireFiles();
-      wireTiles();
-
-      // Wire View Switcher
-      const viewToggle = container.querySelector('#org-view-toggle');
-      if (viewToggle) {
-        viewToggle.onclick = () => {
-          viewMode = viewMode === 'filmstrip' ? 'grid' : 'filmstrip';
-          renderConfigure();
-        };
-      }
-
-      const runBtn = container.querySelector('#org-run');
-      if (runBtn) runBtn.onclick = () => runFlow();
-
-      /* Split chips + custom input */
-      container.querySelectorAll('.org-chip').forEach(chip => {
-        chip.onclick = () => { splitEvery = +chip.dataset.every; renderConfigure(); };
-      });
-      const every = container.querySelector('#org-every');
-      if (every) every.onchange = () => {
-        const isMedia = fam0 === 'audio' || fam0 === 'video';
-        const max = isMedia ? 20 : pageCount;
-        const v = isMedia ? Math.max(2, Math.min(+every.value || 2, max)) : Math.max(1, Math.min(+every.value || 1, max));
-        splitEvery = v; every.value = v; renderConfigure();
-      };
-
-      /* Rotate segmented */
-      container.querySelectorAll('.org-seg-btn').forEach(btn => {
-        btn.onclick = () => { deg = +btn.dataset.deg; renderConfigure(); };
-      });
-
-      /* Audio merge/split output chips + bitrate, video merge/split quality */
-      container.querySelectorAll('[data-mout]').forEach(chip => {
-        chip.onclick = () => { mergeOut = chip.dataset.mout; renderConfigure(); };
-      });
-      container.querySelectorAll('[data-mbr]').forEach(chip => {
-        chip.onclick = () => { mergeBr = chip.dataset.mbr; renderConfigure(); };
-      });
-      container.querySelectorAll('[data-mq]').forEach(chip => {
-        chip.onclick = () => { mergeQ = chip.dataset.mq; renderConfigure(); };
-      });
-
-      /* Page tiles (PDF/Image extract & delete) */
-      container.querySelectorAll('.org-tile').forEach(tile => {
-        tile.onclick = () => {
-          const i = +tile.dataset.i;
-          picked.has(i) ? picked.delete(i) : picked.add(i);
-          renderConfigure();
-        };
-      });
-
-      /* Archive file tree rows */
-      container.querySelectorAll('.org-entry').forEach(row => {
-        row.onclick = () => {
-          const i = +row.dataset.i;
-          picked.has(i) ? picked.delete(i) : picked.add(i);
-          renderConfigure();
-        };
-      });
-      container.querySelectorAll('.org-tree-folder').forEach(fEl => {
-        fEl.onclick = e => {
-          if (e.target.closest('.org-tree-folder-toggle')) return;
-          const name = fEl.dataset.folder;
-          treeOpen.has(name) ? treeOpen.delete(name) : treeOpen.add(name);
-          renderConfigure();
-        };
-      });
-      container.querySelectorAll('.org-tree-folder-toggle').forEach(btn => {
-        btn.onclick = e => {
-          e.stopPropagation();
-          const folder = btn.closest('.org-tree-folder').dataset.folder;
-          const node = entryTree().find(n => n.type === 'folder' && n.name === folder);
-          if (!node) return;
-          const all = node.ids.every(id => picked.has(id));
-          node.ids.forEach(id => { all ? picked.delete(id) : picked.add(id); });
-          renderConfigure();
-        };
-      });
-      const tAll = container.querySelector('.org-tree-all');
-      if (tAll) tAll.onclick = () => {
-        const allOn = entries.slice(0, 60).every((_, i) => picked.has(i));
-        entries.slice(0, 60).forEach((_, i) => { allOn ? picked.delete(i) : picked.add(i); });
-        renderConfigure();
-      };
-      const tNone = container.querySelector('.org-tree-none');
-      if (tNone) tNone.onclick = () => { picked.clear(); renderConfigure(); };
-
-      /* EPUB chapter reorder (HTML5 drag) */
-      if (mode === 'reorder') {
-        container.querySelectorAll('.org-chap[draggable="true"]').forEach(row => {
-          row.addEventListener('dragstart', () => { dragIdx = +row.dataset.i; row.classList.add('org-chap--drag'); });
-          row.addEventListener('dragend', () => { dragIdx = -1; row.classList.remove('org-chap--drag'); });
-          row.addEventListener('dragover', e => { e.preventDefault(); });
-          row.addEventListener('drop', e => {
-            e.preventDefault();
-            const to = +row.dataset.i;
-            if (dragIdx < 0 || dragIdx === to) return;
-            const [moved] = chapters.splice(dragIdx, 1);
-            chapters.splice(to, 0, moved);
-            dragIdx = -1;
-            renderConfigure();
-          });
-        });
-      } else {
-        container.querySelectorAll('.org-chap').forEach(row => {
-          row.onclick = () => {
-            const i = +row.dataset.i;
-            picked.has(i) ? picked.delete(i) : picked.add(i);
-            renderConfigure();
-          };
-        });
-      }
+      container.innerHTML = flowShellMarkup(mainHtml);
+      wireEvents();
+      wireCardThumbs();
     }
 
-    function wirePicker() {
-      container.querySelectorAll('.org-mode-picker .org-tool').forEach(btn => {
-        btn.onclick = () => {
-          const m = btn.dataset.mode;
-          if (!modes().includes(m)) return;
-          mode = m;
-          picked.clear();
-          if (mode === 'delete' && pageCount) for (let i = 0; i < pageCount; i++) picked.add(i);
-          renderConfigure();
-        };
-      });
-    }
-
-    function wireTiles() {
-      if (!thumbs.length || !showBigPreview()) return;
-      container.querySelectorAll('.org-tile-thumb').forEach((thumb, i) => {
-        if (thumbs[i]) {
-          thumb.textContent = '';
-          const c = document.createElement('canvas');
-          c.width = thumbs[i].width; c.height = thumbs[i].height;
-          c.getContext('2d').drawImage(thumbs[i], 0, 0);
-          thumb.append(c);
-        }
-      });
-    }
-
-    /* ── Step 3: Processing ─────────────────────────── */
-    function renderProcessing(stage = 1, totalStages = 3, stageDesc = 'Initializing local WASM engine…', pctVal = 0, byteProcessed = 0) {
-      enterBleed();
-      const fam = files.length ? familyOf(files[0]) : 'pdf';
-      const engineName = fam === 'video' || fam === 'audio' ? 'ffmpeg WASM' : fam === 'pdf' ? 'pdf-lib & pdf.js (Local)' : 'fflate WebWorker';
-      
-      container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center org-proc-body">
-          <!-- Ghost Assembler Silhouette Animation -->
-          <div class="org-ghost-assembler" aria-hidden="true">
-            <div class="org-ghost-sheet org-ghost-sheet--1"></div>
-            <div class="org-ghost-sheet org-ghost-sheet--2"></div>
-            <div class="org-ghost-sheet org-ghost-sheet--3"></div>
-            <div class="org-ghost-core">${ICONS[MODE_MAP[mode]?.icon || 'pdfSm']}</div>
-          </div>
-          
-          <div class="org-proc-head">
-            <h3 class="org-proc-title">${MODE_MAP[mode]?.label || 'Process'}ing ${files.length} ${files.length === 1 ? 'file' : 'files'}…</h3>
-            <p class="org-proc-sub" id="org-prog-msg">${stageDesc}</p>
-          </div>
-
-          <!-- Progressive Track -->
-          <div class="org-prog-card">
-            <div class="cpdf-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pctVal}" id="org-prog-track">
-              <div class="cpdf-prog-fill" id="org-prog-fill" style="width: ${pctVal}%;"></div>
-            </div>
-            <div class="org-prog-stats">
-              <span class="org-prog-stage" id="org-prog-stage">Stage ${stage} of ${totalStages}</span>
-              <span class="org-prog-pct" id="org-prog-pct">${pctVal}%</span>
-            </div>
-          </div>
-
-          <!-- Telemetry & Privacy Sandbox Receipt -->
-          <div class="org-telemetry-box">
-            <div class="org-tele-item">
-              <span class="org-tele-dot"></span>
-              <span class="org-tele-txt" id="org-tele-bytes">${_bytes(byteProcessed || totalBytes())} processed</span>
-            </div>
-            <span class="org-tele-sep">·</span>
-            <div class="org-tele-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span class="org-tele-txt">100% Client-Side (${engineName})</span>
-            </div>
-            <span class="org-tele-sep">·</span>
-            <div class="org-tele-item">
-              <span class="org-tele-txt" style="color:#059669;font-weight:600;">0 B network activity</span>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    async function runFlow() {
-      renderProcessing(1, 3, 'Preparing execution environment…', 5, 0);
-      const msg = container.querySelector('#org-prog-msg');
-      const fill = container.querySelector('#org-prog-fill');
-      const pct = container.querySelector('#org-prog-pct');
-      const stageEl = container.querySelector('#org-prog-stage');
-      const bytesEl = container.querySelector('#org-tele-bytes');
-
-      const onProgress = (frac, text) => {
-        const f = Math.max(0, Math.min(1, frac));
-        const p = Math.round(f * 100);
-        const stageNum = p < 35 ? 1 : p < 75 ? 2 : 3;
-        if (fill) fill.style.width = `${p}%`;
-        if (pct) pct.textContent = `${p}%`;
-        if (msg && text) msg.textContent = text;
-        if (stageEl) stageEl.textContent = `Stage ${stageNum} of 3`;
-        if (bytesEl) bytesEl.textContent = `${_bytes(Math.round(totalBytes() * f))} processed`;
-      };
+    /* ── Step 3: Hardware Processing & Execution ── */
+    async function runAction() {
+      renderProcessing();
       try {
-        const res = await runMode(onProgress);
-        renderResult(res);
-      } catch (err) {
-        console.error('[Organize]', err);
-        renderError(err.message || 'Something went wrong while processing.');
-      }
-    }
+        const fam = familyOf(files[0]);
+        let resBlob = null;
+        let resName = '';
 
-    /* ── Media engines (ffmpeg): merge / split / rotate ── */
-    function mediaEngine() {
-      const FFm = window.FF && window.FF.media;
-      if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
-      return FFm;
-    }
-    function probeDuration(blob) {
-      return new Promise((res, rej) => {
-        const url = URL.createObjectURL(blob);
-        const el = document.createElement(String(blob.type || '').startsWith('video') ? 'video' : 'audio');
-        el.preload = 'metadata';
-        el.onloadedmetadata = () => { const d = el.duration; URL.revokeObjectURL(url); res(Number.isFinite(d) && d > 0 ? d : 0); };
-        el.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Could not read the media duration.')); };
-        el.src = url;
-      });
-    }
-    function audioOutCodec(first) {
-      const firstExt = extOf(first);
-      if (mergeOut === 'wav') return { ext: 'wav', codec: ['-c:a', 'pcm_s16le'] };
-      if (mergeOut === 'mp3') return { ext: 'mp3', codec: ['-c:a', 'libmp3lame', '-b:a', mergeBr] };
-      if (firstExt === 'wav') return { ext: 'wav', codec: ['-c:a', 'pcm_s16le'] };
-      if (firstExt === 'flac') return { ext: 'flac', codec: ['-c:a', 'flac'] };
-      if (firstExt === 'aiff' || firstExt === 'aif') return { ext: 'aiff', codec: ['-c:a', 'pcm_s16be'] };
-      return { ext: 'mp3', codec: ['-c:a', 'libmp3lame', '-b:a', mergeBr] };
-    }
-    function videoOutCodec() {
-      const crf = mergeQ === 'high' ? '16' : mergeQ === 'low' ? '26' : '20';
-      return { ext: 'mp4', codec: ['-c:v', 'libx264', '-preset', 'fast', '-crf', crf, '-c:a', 'aac', '-b:a', '128k'] };
-    }
-    async function mergeMedia(list, onProgress) {
-      const FFm = mediaEngine();
-      const isVid = familyOf(list[0]) === 'video';
-      const { ext, codec } = isVid ? videoOutCodec() : audioOutCodec(list[0]);
-      const enc = new TextEncoder();
-      const inputs = list.map((f, i) => [`in${i}.` + (extOf(f) || 'bin'), f]);
-      const listTxt = 'file ' + inputs.map(([n]) => `'${n}'`).join('\nfile ') + '\n';
-      inputs.push(['list.txt', new File([enc.encode(listTxt)], 'list.txt', { type: 'text/plain' })]);
-      const args = ['-f', 'concat', '-safe', '0', '-i', 'list.txt', ...codec, 'output.' + ext];
-      const data = await FFm.run({ inputs, args, out: 'output.' + ext, onProgress });
-      const mime = isVid ? 'video/mp4' : ext === 'wav' ? 'audio/wav' : ext === 'flac' ? 'audio/flac' : ext === 'aiff' ? 'audio/aiff' : 'audio/mpeg';
-      return { blob: new Blob([data.buffer || data], { type: mime }), filename: 'merged.' + ext, mime, preview: isVid ? 'video' : 'audio' };
-    }
-    async function splitMedia(file, parts, onProgress) {
-      const FFm = mediaEngine();
-      const isVid = familyOf(file) === 'video';
-      const { ext, codec } = isVid ? videoOutCodec() : audioOutCodec(file);
-      const dur = await probeDuration(file);
-      if (!dur) throw new Error('Could not determine the media duration.');
-      const len = dur / parts;
-      const base = U.baseName(file.name);
-      const F = await loadFf();
-      const map = {};
-      for (let i = 0; i < parts; i++) {
-        onProgress(i / parts, `Encoding part ${i + 1}/${parts}`);
-        const outName = `part-${i + 1}.${ext}`;
-        const args = ['-ss', String(i * len), '-i', ('input.' + (extOf(file) || 'bin')), '-t', String(len), ...codec, outName];
-        const data = await FFm.run({ inputs: [['input.' + (extOf(file) || 'bin'), file]], args, out: outName, onProgress });
-        map[`${base}-part-${i + 1}.${ext}`] = new Uint8Array(data.buffer || data);
-      }
-      onProgress(0.98, 'Building ZIP…');
-      return { ...(await zipBlobs(F, map)), filename: `${base}-parts.zip`, preview: 'zip' };
-    }
-    async function rotateVideo(file, deg, onProgress) {
-      const FFm = mediaEngine();
-      const t = ((+deg % 360) + 360) % 360;
-      const tr = t === 90 ? 'transpose=1' : t === 270 ? 'transpose=2' : t === 180 ? 'transpose=1,transpose=1' : null;
-      if (!tr) throw new Error('Rotation must be 90, 180, or 270 degrees.');
-      const args = ['-i', 'input.' + (extOf(file) || 'bin'), '-vf', tr, '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-c:a', 'aac', 'rotated.mp4'];
-      const data = await FFm.run({ inputs: [['input.' + (extOf(file) || 'bin'), file]], args, out: 'rotated.mp4', onProgress });
-      return { blob: new Blob([data.buffer || data], { type: 'video/mp4' }), filename: `${U.baseName(file.name)}-rotated-${t}.mp4`, mime: 'video/mp4', preview: 'video' };
-    }
-
-    async function runMode(onProgress) {
-      const fam = familyOf(files[0]);
-      if (fam === 'archive') {
-        const F = await loadFf();
-        if (mode === 'merge') {
-          const map = {};
-          for (let i = 0; i < files.length; i++) {
-            onProgress(i / files.length, `Reading ${i + 1}/${files.length}…`);
-            const info = await readArchive(files[i]);
-            for (const [n, d] of Object.entries(info.map)) {
-              let name = n, k = 2;
-              while (map[name] !== undefined) name = n.replace(/(\.[^.]+)?$/, `-${k++}$1`);
-              map[name] = d;
-            }
-          }
-          onProgress(0.95, 'Building ZIP…');
-          return { ...(await zipBlobs(F, map)), filename: 'combined.zip', preview: 'zip' };
-        }
-        const info = await readArchive(files[0]);
-        const list = Object.entries(info.map);
-        if (mode === 'extract') {
-          const sel = list.filter((_, i) => picked.has(i));
-          if (sel.length === 1) {
-            onProgress(1, 'Done');
-            const [n, d] = sel[0];
-            return { blob: new Blob([d]), filename: n.split('/').pop() || n, mime: 'application/octet-stream', preview: 'download' };
-          }
-          const map = {};
-          for (const [n, d] of sel) map[n.split('/').pop() || n] = d;
-          onProgress(0.9, 'Building ZIP…');
-          return { ...(await zipBlobs(F, map)), filename: U.baseName(files[0].name) + '-extracted.zip', preview: 'zip' };
-        }
-        const kept = list.filter((_, i) => !picked.has(i));
-        if (!kept.length) throw new Error('Cannot remove every entry.');
-        if (info.kind === 'tar') {
-          onProgress(0.8, 'Repacking TAR.GZ…');
-          const gz = F.gzipSync(tarCreate(kept), { level: 6 });
-          onProgress(1, 'Done');
-          return { blob: new Blob([gz], { type: 'application/gzip' }), filename: U.baseName(files[0].name) + '-edited.tar.gz', mime: 'application/gzip', preview: 'download' };
-        }
-        const map = {};
-        for (const [n, d] of kept) map[n] = d;
-        onProgress(0.9, 'Repacking ZIP…');
-        return { ...(await zipBlobs(F, map)), filename: U.baseName(files[0].name) + '-edited.zip', preview: 'zip' };
-      }
-      if (fam === 'ebook') {
-        const F = await loadFf();
-        if (mode === 'extract' && files.length > 1) {
-          const map = {};
-          for (let i = 0; i < files.length; i++) {
-            onProgress(i / files.length, `Reading ${i + 1}/${files.length}…`);
-            const ep = parseEpub(F, await bytesU8(files[i]));
-            ep.spine.forEach((id, j) => {
-              const it = ep.items[id]; if (!it) return;
-              map[`${U.baseName(files[i].name)}-chapter-${String(j + 1).padStart(2, '0')}.html`] = TENC.encode(epubRead(ep, it.href));
-            });
-          }
-          onProgress(0.95, 'Building ZIP…');
-          return { ...(await zipBlobs(F, map)), filename: 'chapters.zip', preview: 'zip' };
-        }
-        const order = chapters.map((c) => c.id);
-        const removed = new Set();
-        if (mode === 'delete') chapters.forEach((c, i) => { if (picked.has(i)) removed.add(c.id); });
-        if (mode === 'extract') chapters.forEach((c, i) => { if (!picked.has(i)) removed.add(c.id); });
-        if (removed.size >= order.length) throw new Error('Cannot remove every chapter.');
-        onProgress(0.5, 'Rebuilding EPUB…');
-        const out = await epubRebuild(F, files[0], order, removed);
-        onProgress(1, 'Done');
-        return out;
-      }
-      if (mode === 'merge') {
-        if (fam === 'audio' || fam === 'video') {
-          onProgress(0.15, `Merging ${files.length} ${fam} files…`);
-          const res = await mergeMedia(files, onProgress);
-          onProgress(1, 'Done');
-          return res;
-        }
-        onProgress(0.05, 'Preparing PDF engine…');
-        const L = await loadLib();
-        const out = await L.PDFDocument.create();
-        for (let i = 0; i < files.length; i++) {
-          onProgress(i / files.length, `Merging ${i + 1}/${files.length} — ${files[i].name}`);
-          const f = files[i];
-          if (familyOf(f) === 'pdf') {
-            const src = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
-            const pages = await out.copyPages(src, src.getPageIndices());
-            pages.forEach(p => out.addPage(p));
-          } else {
-            const png = await imgToPngBlob(f);
-            const img = await out.embedPng(await bytesU8(png));
-            const page = out.addPage([img.width, img.height]);
-            page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-          }
-        }
-        onProgress(1, 'Finalizing output…');
-        return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: 'merged.pdf', mime: PDF_MIME, preview: 'pdf' };
-      }
-      if (mode === 'split') {
-        if (fam === 'audio' || fam === 'video') {
-          return splitMedia(files[0], Math.max(2, Math.min(splitEvery, 20)), onProgress);
-        }
-        const F = await loadFf();
-        const map = {};
-        if (fam === 'pdf') {
-          onProgress(0.1, 'Loading pages…');
+        // 1. Split PDF
+        if (mode === 'split' && fam === 'pdf') {
+          updateProgress(30, 2, 'Parsing document structure & cut boundaries');
           const L = await loadLib();
-          const src = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          const total = src.getPageCount();
-          const every = Math.max(1, Math.min(splitEvery, total));
-          const parts = Math.ceil(total / every);
-          for (let p = 0; p < parts; p++) {
-            onProgress(p / parts, `Splitting part ${p + 1}/${parts}`);
-            const d = await L.PDFDocument.create();
-            const idx = [];
-            for (let k = p * every; k < Math.min((p + 1) * every, total); k++) idx.push(k);
-            const pages = await d.copyPages(src, idx);
-            pages.forEach(pg => d.addPage(pg));
-            const label = parts > 1 ? `-part-${p + 1}` : '';
-            map[U.baseName(files[0].name) + label + '.pdf'] = new Uint8Array(await d.save());
+          const origDoc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          const totalPg = origDoc.getPageCount();
+          const cuts = [...customCuts].sort((a, b) => a - b);
+          const ranges = [];
+          let start = 0;
+          cuts.forEach(c => {
+            if (c > start && c < totalPg) {
+              ranges.push({ start, end: c - 1 });
+              start = c;
+            }
+          });
+          ranges.push({ start, end: totalPg - 1 });
+
+          updateProgress(65, 2, `Extracting ${ranges.length} parts`);
+          const fflate = await loadZip();
+          const zipFiles = {};
+
+          for (let idx = 0; idx < ranges.length; idx++) {
+            const r = ranges[idx];
+            const partDoc = await L.PDFDocument.create();
+            const pageIndices = [];
+            for (let p = r.start; p <= r.end; p++) pageIndices.push(p);
+            const copied = await partDoc.copyPages(origDoc, pageIndices);
+            copied.forEach((cp, i) => {
+              const origIdx = r.start + i;
+              const rot = pageRotations.get(origIdx) || 0;
+              if (rot) cp.setRotation(L.degrees((cp.getRotation().angle + rot + 360) % 360));
+              partDoc.addPage(cp);
+            });
+            const bytes = await partDoc.save();
+            const partName = `${U.baseName(files[0].name)}_part_${idx + 1}.pdf`;
+            zipFiles[partName] = new Uint8Array(bytes);
           }
-        } else {
-          for (let i = 0; i < files.length; i++) {
-            onProgress(i / files.length, `Preparing ${i + 1}/${files.length}`);
-            map[files[i].name] = new Uint8Array(await files[i].arrayBuffer());
-          }
+
+          updateProgress(90, 3, 'Compiling ZIP archive');
+          const zipBytes = fflate.zipSync(zipFiles);
+          resBlob = new Blob([zipBytes], { type: 'application/zip' });
+          resName = `${U.baseName(files[0].name)}_split.zip`;
         }
-        onProgress(1, 'Building ZIP…');
-        const name = fam === 'pdf' ? U.baseName(files[0].name) + '-parts.zip' : 'split-images.zip';
-        return { ...(await zipBlobs(F, map)), filename: name, preview: 'zip' };
-      }
-      if (mode === 'rotate') {
-        if (fam === 'video') {
-          onProgress(0.15, 'Rotating video…');
-          const res = await rotateVideo(files[0], deg, onProgress);
-          onProgress(1, 'Done');
-          return res;
-        }
-        if (fam === 'pdf') {
-          onProgress(0.2, 'Rotating pages…');
+
+        // 2. Rotate PDF
+        else if (mode === 'rotate' && fam === 'pdf') {
+          updateProgress(45, 2, 'Applying vector rotations');
           const L = await loadLib();
           const doc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          doc.getPages().forEach(pg => pg.setRotation(L.degrees((pg.getRotation().angle + deg) % 360)));
-          onProgress(1, 'Done');
-          return { blob: new Blob([await doc.save()], { type: PDF_MIME }), filename: U.baseName(files[0].name) + '-rotated.pdf', mime: PDF_MIME, preview: 'pdf' };
+          doc.getPages().forEach((pg, i) => {
+            const rot = pageRotations.get(i) || 0;
+            if (rot) pg.setRotation(L.degrees((pg.getRotation().angle + rot + 360) % 360));
+          });
+          updateProgress(85, 3, 'Compiling output stream');
+          const bytes = await doc.save();
+          resBlob = new Blob([bytes], { type: PDF_MIME });
+          resName = `${U.baseName(files[0].name)}_rotated.pdf`;
         }
-        const results = [];
-        for (let i = 0; i < files.length; i++) {
-          onProgress(i / files.length, `Rotating ${i + 1}/${files.length}`);
-          results.push(await rotateImgFile(files[i], deg));
-        }
-        if (results.length === 1) {
-          onProgress(1, 'Done');
-          const r = results[0];
-          return { blob: r.blob, filename: r.filename, mime: r.blob.type, preview: 'image' };
-        }
-        const F = await loadFf();
-        const map = {};
-        for (const r of results) map[r.filename] = new Uint8Array(await r.blob.arrayBuffer());
-        onProgress(1, 'Building ZIP…');
-        return { ...(await zipBlobs(F, map)), filename: 'rotated-images.zip', preview: 'zip' };
-      }
-      if (mode === 'delete') {
-        if (fam === 'pdf') {
-          onProgress(0.15, 'Removing pages…');
+
+        // 3. Delete Pages from PDF
+        else if (mode === 'delete' && fam === 'pdf') {
+          updateProgress(45, 2, 'Pruning unwanted pages');
           const L = await loadLib();
-          const src = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          const keep = [];
-          for (let i = 0; i < src.getPageCount(); i++) if (picked.has(i)) keep.push(i);
-          const out = await L.PDFDocument.create();
-          const pages = await out.copyPages(src, keep);
-          pages.forEach(p => out.addPage(p));
-          onProgress(1, 'Done');
-          return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: U.baseName(files[0].name) + '-reduced.pdf', mime: PDF_MIME, preview: 'pdf' };
+          const origDoc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          const newDoc = await L.PDFDocument.create();
+          const keepIndices = [];
+          for (let p = 0; p < origDoc.getPageCount(); p++) {
+            if (!picked.has(p)) keepIndices.push(p);
+          }
+          if (!keepIndices.length) throw new Error('Cannot delete all pages — at least 1 page must remain.');
+          const copied = await newDoc.copyPages(origDoc, keepIndices);
+          copied.forEach(cp => newDoc.addPage(cp));
+          updateProgress(85, 3, 'Compiling output stream');
+          const bytes = await newDoc.save();
+          resBlob = new Blob([bytes], { type: PDF_MIME });
+          resName = `${U.baseName(files[0].name)}_deleted.pdf`;
         }
-        const kept = files.filter((_, i) => picked.has(i));
-        if (kept.length === 1) {
-          onProgress(1, 'Done');
-          return { blob: kept[0], filename: kept[0].name, mime: kept[0].type, preview: 'image' };
-        }
-        onProgress(0.8, 'Building ZIP…');
-        return { ...(await zipFiles(kept, 'kept-images.zip')), preview: 'zip' };
-      }
-      if (mode === 'extract') {
-        if (fam === 'pdf') {
-          onProgress(0.15, 'Extracting pages…');
+
+        // 4. Extract Pages from PDF
+        else if (mode === 'extract' && fam === 'pdf') {
+          updateProgress(45, 2, 'Extracting selected pages');
           const L = await loadLib();
-          const src = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          const idx = [...picked].sort((a, b) => a - b);
-          const out = await L.PDFDocument.create();
-          const pages = await out.copyPages(src, idx);
-          pages.forEach(p => out.addPage(p));
-          onProgress(1, 'Done');
-          return { blob: new Blob([await out.save()], { type: PDF_MIME }), filename: U.baseName(files[0].name) + '-extract.pdf', mime: PDF_MIME, preview: 'pdf' };
+          const origDoc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
+          const extractIndices = [...picked].sort((a, b) => a - b);
+          if (!extractIndices.length) throw new Error('Please select at least 1 page to extract.');
+
+          if (extractSeparate) {
+            const fflate = await loadZip();
+            const zipFiles = {};
+            for (const idx of extractIndices) {
+              const singleDoc = await L.PDFDocument.create();
+              const [cp] = await singleDoc.copyPages(origDoc, [idx]);
+              singleDoc.addPage(cp);
+              const bytes = await singleDoc.save();
+              zipFiles[`page_${idx + 1}.pdf`] = new Uint8Array(bytes);
+            }
+            const zipBytes = fflate.zipSync(zipFiles);
+            resBlob = new Blob([zipBytes], { type: 'application/zip' });
+            resName = `${U.baseName(files[0].name)}_extracted.zip`;
+          } else {
+            const combinedDoc = await L.PDFDocument.create();
+            const copied = await combinedDoc.copyPages(origDoc, extractIndices);
+            copied.forEach(cp => combinedDoc.addPage(cp));
+            const bytes = await combinedDoc.save();
+            resBlob = new Blob([bytes], { type: PDF_MIME });
+            resName = `${U.baseName(files[0].name)}_extracted.pdf`;
+          }
         }
-        const kept = files.filter((_, i) => picked.has(i));
-        if (kept.length === 1) {
-          onProgress(1, 'Done');
-          return { blob: kept[0], filename: kept[0].name, mime: kept[0].type, preview: 'image' };
+
+        // 5. Merge Files (Default)
+        else {
+          updateProgress(40, 2, `Merging ${files.length} documents`);
+          const L = await loadLib();
+          const mergedDoc = await L.PDFDocument.create();
+          for (const f of files) {
+            if (familyOf(f) === 'pdf') {
+              const doc = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
+              const copied = await mergedDoc.copyPages(doc, doc.getPageIndices());
+              copied.forEach(p => mergedDoc.addPage(p));
+            } else if (familyOf(f) === 'image') {
+              const imgBytes = await bytesU8(f);
+              const img = f.type === 'image/png' ? await mergedDoc.embedPng(imgBytes) : await mergedDoc.embedJpg(imgBytes);
+              const page = mergedDoc.addPage([img.width, img.height]);
+              page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+            }
+          }
+          updateProgress(85, 3, 'Compiling output stream');
+          const bytes = await mergedDoc.save();
+          resBlob = new Blob([bytes], { type: PDF_MIME });
+          resName = `merged_${files.length}_files.pdf`;
         }
-        onProgress(0.8, 'Building ZIP…');
-        return { ...(await zipFiles(kept, 'extracted-images.zip')), preview: 'zip' };
+
+        updateProgress(100, 3, 'Finalizing output');
+        renderResult({ blob: resBlob, name: resName });
+      } catch (err) {
+        console.error('[Organize] Action Error:', err);
+        window.FF.util.toast('Action failed: ' + (err.message || 'Unknown error'), 'error');
+        renderConfigure();
       }
-      throw new Error('Unknown action.');
     }
 
-    /* ── Step 4: Result Studio ──────────────────────── */
-    const doneTitle = () => {
-      if (mode === 'merge') return 'Merged!';
-      if (mode === 'split') return 'Split!';
-      if (mode === 'rotate') return 'Rotated!';
-      if (mode === 'delete') return 'Done!';
-      return 'Extracted!';
-    };
-    const doneSub = () => {
-      const fam0 = familyOf(files[0]);
-      const unit = fam0 === 'archive' ? 'entry' : fam0 === 'ebook' ? 'chapter' : 'page';
-      if (mode === 'merge') return `Combined ${files.length} file${files.length === 1 ? '' : 's'} locally`;
-      if (mode === 'split') {
-        const n = fam0 === 'pdf' ? Math.ceil(pageCount / splitEvery) : (fam0 === 'audio' || fam0 === 'video' ? Math.max(2, Math.min(splitEvery, 20)) : files.length);
-        return `Split into ${n} part${n === 1 ? '' : 's'} locally`;
-      }
-      if (mode === 'rotate') return `Rotated ${deg}° locally`;
-      if (mode === 'delete') {
-        const removed = (fam0 === 'archive' || fam0 === 'ebook') ? picked.size : Math.max(0, pageCount - picked.size);
-        return `Removed ${removed} ${_pl(unit, removed)} locally`;
-      }
-      if (mode === 'reorder') return 'Rewrote the spine in your new order locally';
-      const n = picked.size;
-      return `Kept ${n} ${_pl(unit, n)} locally`;
-    };
-
-    function renderResult(res) {
-      enterBleed();
-      clearUrls();
-      const tagC = res.preview === 'zip' ? '#7C3AED' : res.preview === 'pdf' ? '#E5252A' : res.preview === 'image' ? '#EA580C' : res.preview === 'audio' ? '#2563EB' : res.preview === 'video' ? '#9333EA' : '#7C3AED';
-      const tag = res.preview === 'pdf' ? 'PDF' : res.preview === 'zip' ? 'ZIP' : res.preview === 'audio' ? 'AUD' : res.preview === 'video' ? 'VID' : 'IMG';
-      
-      const fam0 = familyOf(files[0]);
-      let smartTip = 'Continue your workflow with these tools:';
-      let smartTools = [
-        { id: 'pdf-compress', name: 'Compress File' },
-        { id: 'pdf-convert', name: 'Convert File' }
-      ];
-
-      if (res.preview === 'pdf') {
-        smartTip = 'Need to compress, sign, or convert your organized PDF?';
-        smartTools = [
-          { id: 'pdf-compress', name: 'Compress PDF' },
-          { id: 'pdf-sign', name: 'Sign PDF' },
-          { id: 'pdf-convert', name: 'Convert PDF' }
-        ];
-      } else if (res.preview === 'image' || fam0 === 'image') {
-        smartTip = 'Compress or convert your images:';
-        smartTools = [
-          { id: 'image-compress', name: 'Compress Images' },
-          { id: 'image-convert', name: 'Convert Images' }
-        ];
-      } else if (res.preview === 'audio' || fam0 === 'audio') {
-        smartTip = 'Edit or convert your audio files:';
-        smartTools = [
-          { id: 'audio-convert', name: 'Convert Audio' },
-          { id: 'audio-normalize', name: 'Normalize Audio' }
-        ];
-      } else if (res.preview === 'video' || fam0 === 'video') {
-        smartTip = 'Compress or convert your video files:';
-        smartTools = [
-          { id: 'video-convert', name: 'Convert Video' },
-          { id: 'video-compress', name: 'Compress Video' }
-        ];
-      }
-
-      const isPdf = res.preview === 'pdf';
-
+    /* ── Step 4: Hardware Processing Screen ── */
+    function renderProcessing() {
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden;">
-          <div class="conv-result-studio">
-            
-            <!-- LEFT: Output Preview & Interactive Flipbook -->
-            <div class="conv-result-preview-col" id="org-result-preview-box">
-              <div class="conv-preview" id="org-preview" style="margin: 0 auto; width: 140px; height: 180px;">
-                <canvas class="conv-preview-canvas" id="org-preview-canvas" hidden style="max-height: 180px;"></canvas>
-                <div class="conv-preview-fallback" id="org-preview-fallback" style="--c:${tagC}">${tag}</div>
-                <span class="conv-preview-tag" style="--c:${tagC}">${tag}</span>
-              </div>
-              
-              ${isPdf ? `
-              <div class="org-flip-nav">
-                <button type="button" class="org-flip-btn" id="org-flip-prev" disabled title="Previous page">‹</button>
-                <span class="org-flip-indicator" id="org-flip-page">Page 1 of 1</span>
-                <button type="button" class="org-flip-btn" id="org-flip-next" disabled title="Next page">›</button>
-              </div>` : ''}
-
-              <span class="conv-result-name-sub" title="${_esc(res.filename)}" style="margin-top: 10px;">${_esc(res.filename)}</span>
-              <span style="font-size:12px;font-weight:700;color:#0F172A;margin-top:4px;">
-                ${_bytes(res.blob.size)} &middot; ${tag}
-              </span>
-              <div class="org-receipt-badge">
-                <span class="org-receipt-dot"></span>
-                <span>100% In-Memory Sandbox</span>
-              </div>
+        <div class="org-proc-body">
+          <div class="org-prog-card">
+            <div class="org-ghost-assembler">
+              <div class="org-ghost-sheet org-ghost-sheet--1"></div>
+              <div class="org-ghost-sheet org-ghost-sheet--2"></div>
+              <div class="org-ghost-sheet org-ghost-sheet--3"></div>
             </div>
-
-            <!-- RIGHT: Actions & Smart Tips -->
-            <div class="conv-result-action-col">
-              
-              <div class="conv-result-done-header">
-                <div class="conv-result-done-badge" style="background:#7C3AED;">✓</div>
-                <h3 class="conv-result-done-title">${doneTitle()}</h3>
-              </div>
-              <p class="conv-result-done-desc">${doneSub()}</p>
-
-              <div class="conv-result-buttons-group">
-                <a class="conv-result-btn-download" id="org-dl" href="#" download="${_esc(res.filename)}" style="background:#7C3AED; border-color:#7C3AED; color:#FFFFFF;">
-                  <span>Download ${_esc(res.filename)}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-                  </svg>
-                </a>
-                
-                <div class="conv-result-secondary-row">
-                  <button type="button" class="conv-result-btn-secondary" id="org-open-tab" title="Open in browser tab">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
-                    <span>Open in Tab</span>
-                  </button>
-                  <button type="button" class="conv-result-btn-secondary" id="org-again">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    <span>Organize more</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Contextual Smart Tool Card with Direct Handoff -->
-              <div class="conv-smart-tip-card">
-                <div class="conv-smart-tip-header">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                  <span>Instant Next Steps (Direct In-Memory Handoff)</span>
-                </div>
-                <p class="conv-smart-tip-desc">${smartTip}</p>
-                <div class="conv-smart-tools-list">
-                  ${smartTools.map(t => {
-                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') 
-                      ? window.FF.getToolIconSvg(t.id) 
-                      : `<div style="width:28px;height:28px;background:#FAF5FF;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#7C3AED;font-size:12px;font-weight:700;">${tag}</div>`;
-                    return `
-                      <a href="#app/tool/${t.id}" class="conv-smart-tool-item" data-tool-id="${t.id}">
-                        <div class="conv-smart-tool-left">
-                          <div class="conv-smart-tool-icon">${iconSvg}</div>
-                          <span>${t.name}</span>
-                        </div>
-                        <span style="font-size:11px;color:#7C3AED;font-weight:700;">Open &rarr;</span>
-                      </a>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-
+            <h3 class="org-proc-title" id="org-proc-title">Processing your documents…</h3>
+            <p class="org-proc-sub" id="org-proc-sub">Stage 1 of 3: Initializing local PDF engine</p>
+            <div class="cpdf-prog-track" style="width:100%;height:6px;background:#E2E8F0;border-radius:3px;overflow:hidden;margin:16px 0;">
+              <div id="org-proc-bar" style="width:15%;height:100%;background:#7C3AED;transition:width 0.25s ease;"></div>
             </div>
-
+            <div class="org-telemetry-box">
+              <span id="org-proc-pct" style="font-weight:700;color:#0F172A;">15%</span>
+              <span>·</span>
+              <span>${_bytes(totalBytes())} processed</span>
+              <span>·</span>
+              <span style="color:#059669;font-weight:600;">0 B network activity</span>
+            </div>
           </div>
         </div>`;
-
-      const url = URL.createObjectURL(res.blob);
-      const dl = container.querySelector('#org-dl');
-      dl.href = url;
-      dl.setAttribute('download', res.filename);
-      container.querySelector('#org-again').onclick = () => { URL.revokeObjectURL(url); files = []; renderUpload(); };
-      
-      const openTab = container.querySelector('#org-open-tab');
-      if (openTab) {
-        openTab.onclick = () => {
-          window.open(url, '_blank');
-        };
-      }
-
-      // Wire smart tool pass-through
-      container.querySelectorAll('.conv-smart-tool-item[data-tool-id]').forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.preventDefault();
-          const toolId = item.dataset.toolId;
-          const outputFile = new File([res.blob], res.filename, { type: res.mime || res.blob.type });
-          if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
-            window.FF.app.openTool(toolId, true, [outputFile]);
-          } else if (typeof openWorkspaceTool === 'function') {
-            openWorkspaceTool(toolId, [outputFile]);
-          }
-        });
-      });
-
-      // Render preview or Interactive Flipbook for PDF
-      if (isPdf) {
-        wireResultFlipbook(res);
-      } else {
-        paintPreview(res);
-      }
     }
 
-    async function wireResultFlipbook(res) {
-      const fallback = container.querySelector('#org-preview-fallback');
-      const canvas = container.querySelector('#org-preview-canvas');
-      const prevBtn = container.querySelector('#org-flip-prev');
-      const nextBtn = container.querySelector('#org-flip-next');
-      const pageIndicator = container.querySelector('#org-flip-page');
-      
-      let currPage = 1;
-      let totalPages = 1;
-      let doc = null;
-      const cache = new Map();
-
-      try {
-        const pdfjs = await loadJs();
-        doc = await pdfjs.getDocument({ data: await bytesU8(res.blob) }).promise;
-        totalPages = doc.numPages;
-        if (pageIndicator) pageIndicator.textContent = `Page 1 of ${totalPages}`;
-        
-        const renderFlipPage = async (num) => {
-          if (pageIndicator) pageIndicator.textContent = `Page ${num} of ${totalPages}`;
-          if (prevBtn) prevBtn.disabled = num <= 1;
-          if (nextBtn) nextBtn.disabled = num >= totalPages;
-
-          if (cache.has(num)) {
-            const cached = cache.get(num);
-            canvas.width = cached.width; canvas.height = cached.height;
-            canvas.getContext('2d').drawImage(cached, 0, 0);
-            canvas.hidden = false;
-            if (fallback) fallback.hidden = true;
-            return;
-          }
-
-          const page = await doc.getPage(num);
-          const vp = page.getViewport({ scale: 1.5 });
-          canvas.width = vp.width; canvas.height = vp.height;
-          await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-          canvas.hidden = false;
-          if (fallback) fallback.hidden = true;
-
-          // cache offscreen
-          const off = document.createElement('canvas');
-          off.width = vp.width; off.height = vp.height;
-          off.getContext('2d').drawImage(canvas, 0, 0);
-          cache.set(num, off);
-        };
-
-        await renderFlipPage(1);
-
-        if (prevBtn) {
-          prevBtn.onclick = () => {
-            if (currPage > 1) { currPage--; renderFlipPage(currPage); }
-          };
-        }
-        if (nextBtn) {
-          nextBtn.onclick = () => {
-            if (currPage < totalPages) { currPage++; renderFlipPage(currPage); }
-          };
-        }
-      } catch (err) {
-        console.warn('[Organize] flipbook render error', err);
-        paintPreview(res);
-      }
+    function updateProgress(pct, stageNum, stageText) {
+      const bar = container.querySelector('#org-proc-bar');
+      const pctEl = container.querySelector('#org-proc-pct');
+      const sub = container.querySelector('#org-proc-sub');
+      if (bar) bar.style.width = `${pct}%`;
+      if (pctEl) pctEl.textContent = `${pct}%`;
+      if (sub) sub.textContent = `Stage ${stageNum} of 3: ${stageText}`;
     }
 
-    async function paintPreview(res) {
-      const fallback = container.querySelector('#org-preview-fallback');
-      const canvas = container.querySelector('#org-preview-canvas');
-      try {
-        if (res.preview === 'pdf') {
-          const pdfjs = await loadJs();
-          const doc = await pdfjs.getDocument({ data: await bytesU8(res.blob) }).promise;
-          const page = await doc.getPage(1);
-          const vp = page.getViewport({ scale: 1.6 });
-          canvas.width = vp.width; canvas.height = vp.height;
-          await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-          try { doc.destroy(); } catch { /* noop */ }
-          canvas.hidden = false;
-          fallback.hidden = true;
-        } else if (res.preview === 'image') {
-          const img = await loadImg(res.blob);
-          const vpW = 150, vpH = Math.round((img.height / img.width) * vpW);
-          canvas.width = vpW; canvas.height = vpH;
-          canvas.getContext('2d').drawImage(img, 0, 0, vpW, vpH);
-          canvas.hidden = false;
-          fallback.hidden = true;
-        } else if (res.preview === 'audio' || res.preview === 'video') {
-          const url = URL.createObjectURL(res.blob);
-          const media = document.createElement(res.preview === 'video' ? 'video' : 'audio');
-          media.src = url; media.controls = true; media.preload = 'metadata';
-          media.style.maxWidth = '100%'; media.style.maxHeight = '160px'; media.style.borderRadius = '10px';
-          fallback.textContent = ''; fallback.style.background = 'transparent'; fallback.style.border = 'none';
-          fallback.append(media);
-        }
-      } catch (err) {
-        console.warn('[Organize] preview fallback', err);
-      }
-    }
+    /* ── Step 5: Interactive Result Studio with Flipbook & In-Memory Handoff ── */
+    async function renderResult(res) {
+      exitBleed();
+      const isPdf = res.name.endsWith('.pdf');
+      const isZip = res.name.endsWith('.zip');
+      const outSize = _bytes(res.blob.size);
+      let pageTotal = 1;
+      let curPage = 1;
+      let flipDoc = null;
 
-    function renderError(msg) {
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center">
-          <span class="cpdf-err-ico">${ICONS.trash}</span>
-          <p class="cpdf-proc-title" style="color:#DC2626">Processing failed</p>
-          <p class="cpdf-proc-sub">${_esc(msg)}</p>
-          <button class="cpdf-btn-primary" id="org-errback" type="button" style="max-width:200px">Try again</button>
+        <div class="conv-result-card" style="max-width:680px;margin:32px auto;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:32px;box-shadow:0 8px 30px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:#ECFDF5;color:#059669;display:flex;align-items:center;justify-content:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <h2 style="font-family:'Poppins',sans-serif;font-size:20px;font-weight:700;color:#0F172A;margin:0 0 4px;">Organization Complete!</h2>
+            <p style="font-size:13px;color:#64748B;margin:0;">Your files have been processed and packaged locally.</p>
+          </div>
+
+          <div style="width:100%;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <div id="org-flip-stage" style="width:100%;max-height:220px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <span style="font-size:12px;color:#94A3B8;">Loading interactive preview…</span>
+            </div>
+            ${isPdf ? `
+            <div class="org-flip-nav">
+              <button type="button" class="org-flip-btn" id="org-flip-prev" disabled>‹ Prev</button>
+              <span id="org-flip-status" style="font-size:12px;font-weight:700;color:#334155;">Page 1</span>
+              <button type="button" class="org-flip-btn" id="org-flip-next">Next ›</button>
+            </div>` : ''}
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;flex-wrap:wrap;">
+            <button class="cpdf-btn-primary" id="org-dl" type="button" style="height:44px;padding:0 24px;background:#7C3AED;color:#FFFFFF;border:none;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+              ${ICONS.download}<span>Download ${res.name} (${outSize})</span>
+            </button>
+            ${isPdf ? `
+            <button class="cpdf-btn-ghost" id="org-view-tab" type="button" style="height:44px;padding:0 18px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;color:#334155;display:inline-flex;align-items:center;gap:6px;">
+              ${ICONS.openTab}<span>Open in Tab</span>
+            </button>` : ''}
+            <button class="cpdf-btn-ghost" id="org-restart" type="button" style="height:44px;padding:0 16px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;color:#334155;">
+              Organize More
+            </button>
+          </div>
+
+          <div style="width:100%;border-top:1px solid #F1F5F9;padding-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;">
+            <span style="font-size:11px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:#94A3B8;">Zero-Latency Workflow Handoff:</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="org-chip" id="org-handoff-compress" style="height:32px;font-size:12px;">🗜️ Compress PDF</button>
+              <button type="button" class="org-chip" id="org-handoff-sign" style="height:32px;font-size:12px;">✍️ Sign PDF</button>
+              <button type="button" class="org-chip" id="org-handoff-convert" style="height:32px;font-size:12px;">🔄 Convert PDF</button>
+            </div>
+          </div>
+
+          <div class="org-receipt-badge">${ICONS.shield} 100% In-Memory Sandbox · 0 B Network Activity</div>
         </div>`;
-      container.querySelector('#org-errback').onclick = () => renderConfigure();
+
+      // Wire Download & Tab
+      const dlBtn = container.querySelector('#org-dl');
+      if (dlBtn) dlBtn.onclick = () => U.downloadBlob(res.blob, res.name);
+
+      const tabBtn = container.querySelector('#org-view-tab');
+      if (tabBtn) tabBtn.onclick = () => {
+        const u = URL.createObjectURL(res.blob);
+        window.open(u, '_blank');
+      };
+
+      const restartBtn = container.querySelector('#org-restart');
+      if (restartBtn) restartBtn.onclick = () => { resetState(); renderUpload(); };
+
+      // Wire In-Memory Workflow Handoff
+      const handoff = (toolId) => {
+        const fileObj = new File([res.blob], res.name, { type: res.blob.type });
+        if (typeof window.openTool === 'function') {
+          window.openTool(toolId, true, [fileObj]);
+        } else {
+          U.downloadBlob(res.blob, res.name);
+        }
+      };
+      const hCompress = container.querySelector('#org-handoff-compress');
+      if (hCompress) hCompress.onclick = () => handoff('compress');
+      const hSign = container.querySelector('#org-handoff-sign');
+      if (hSign) hSign.onclick = () => handoff('sign');
+      const hConvert = container.querySelector('#org-handoff-convert');
+      if (hConvert) hConvert.onclick = () => handoff('convert');
+
+      // Wire Flipbook Navigation
+      if (isPdf) {
+        try {
+          const pdfjs = await loadJs();
+          flipDoc = await pdfjs.getDocument({ data: await bytesU8(res.blob) }).promise;
+          pageTotal = flipDoc.numPages;
+
+          const updateFlipPage = async (p) => {
+            curPage = p;
+            const stage = container.querySelector('#org-flip-stage');
+            const status = container.querySelector('#org-flip-status');
+            const prevBtn = container.querySelector('#org-flip-prev');
+            const nextBtn = container.querySelector('#org-flip-next');
+            if (status) status.textContent = `Page ${curPage} of ${pageTotal}`;
+            if (prevBtn) prevBtn.disabled = curPage <= 1;
+            if (nextBtn) nextBtn.disabled = curPage >= pageTotal;
+
+            const page = await flipDoc.getPage(curPage);
+            const c = await renderPage(pdfjs, page, 0.7);
+            c.style.maxHeight = '190px';
+            c.style.borderRadius = '4px';
+            c.style.boxShadow = '0 4px 14px rgba(0,0,0,0.12)';
+            if (stage) {
+              stage.innerHTML = '';
+              stage.append(c);
+            }
+          };
+
+          const prevBtn = container.querySelector('#org-flip-prev');
+          const nextBtn = container.querySelector('#org-flip-next');
+          if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateFlipPage(curPage - 1); };
+          if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateFlipPage(curPage + 1); };
+
+          updateFlipPage(1);
+        } catch (e) {
+          console.warn('[Organize] Flipbook render error:', e);
+        }
+      }
     }
 
-    // Check if pendingFiles exist at mount time
-    const pending = window.FF && window.FF.app && window.FF.app.pendingFiles;
-    if (pending && Array.isArray(pending) && pending.length > 0) {
-      const initial = pending.slice();
+    // Auto-mount pending files or initial dropzone
+    if (window.FF?.app?.pendingFiles?.length) {
+      const arr = window.FF.app.pendingFiles;
       window.FF.app.pendingFiles = null;
-      setTimeout(() => {
-        acceptFiles(initial);
-      }, 10);
+      acceptFiles(arr);
     } else {
       renderUpload();
     }
