@@ -31167,3 +31167,30 @@ body #app-view #app-file-dropzone:hover {
   transform: translate(6px, 6px) !important;
   z-index: -2 !important;
 }
+
+
+/* ── Final Header Breathing Room & Drop Card Alignment ── */
+.app-workspace-tool-view .org-top {
+  padding: 0 14px !important;
+}
+.app-workspace-tool-view .org-top-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  padding-right: 12px !important;
+}
+.app-workspace-tool-view .org-finish {
+  white-space: nowrap !important;
+  min-width: max-content !important;
+  padding: 0 18px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+}
+.app-workspace-tool-view .org-drop-card-end {
+  height: 180px !important;
+  min-height: 180px !important;
+  max-height: 180px !important;
+}
