@@ -1898,117 +1898,98 @@
       const p = PRESETS[preset] || PRESETS.balanced;
       const totBytes = totalBytes();
 
-      const badgeColors = { pdf: '#E11D48', image: '#2563EB', video: '#7C3AED', audio: '#059669', archive: '#D97706', office: '#2563EB', ebook: '#8B5CF6' };
-      const badgeColor = badgeColors[fam] || '#E11D48';
-
-      // Dynamic size estimates for maximum user trust
+      // Dynamic size estimates for live widget
       const estMap = {
-        maximum: { pct: '~75% smaller', estSize: _bytes(Math.max(500, Math.round(totBytes * 0.25))), ratio: '0.25' },
-        balanced: { pct: '~50% smaller', estSize: _bytes(Math.max(1000, Math.round(totBytes * 0.50))), ratio: '0.50' },
-        light: { pct: '~20% smaller', estSize: _bytes(Math.max(1500, Math.round(totBytes * 0.80))), ratio: '0.80' }
+        maximum: { label: 'Strong', desc: 'Smallest file size · Ideal for email & upload', pct: '-75%', estBytes: Math.max(500, Math.round(totBytes * 0.25)), barW: 25 },
+        balanced: { label: 'Basic (Recommended)', desc: 'Smart compression · Good quality balance', pct: '-50%', estBytes: Math.max(1000, Math.round(totBytes * 0.50)), barW: 50 },
+        light: { label: 'Low', desc: 'Maximum visual fidelity · Minimal compression', pct: '-20%', estBytes: Math.max(1500, Math.round(totBytes * 0.80)), barW: 80 }
       };
 
-      const tierSvgs = {
-        maximum: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
-        balanced: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>`,
-        light: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M12 21 7.5 9 12 3l4.5 6L12 21z"/></svg>`
-      };
+      const curEst = estMap[preset] || estMap.balanced;
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow-y: auto;">
-          <div class="comp-studio-wrapper">
+        <div class="cpdf-body cpdf-body--center" style="padding: 12px 0; overflow: hidden; width: 100%;">
+          <div class="comp-pro-workstation">
             
-            <div class="comp-studio-deck">
-              
-              <!-- LEFT: Physical Document Paper Card -->
-              <div class="comp-preview-card" id="comp-studio-file-card" title="Click or drop file to change">
-                <div class="comp-thumb-box" id="comp-studio-thumb-box">
-                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #FFFFFF;">
-                    <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 92px; height: 120px;">
-                      <rect x="14" y="10" width="72" height="96" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
-                      <path d="M60 10v18a2 2 0 0 0 2 2h24" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
-                      <rect x="24" y="44" width="52" height="4" rx="2" fill="#E2E8F0"/>
-                      <rect x="24" y="54" width="52" height="4" rx="2" fill="#F1F5F9"/>
-                      <rect x="24" y="64" width="38" height="4" rx="2" fill="#F1F5F9"/>
-                      <rect x="24" y="74" width="46" height="4" rx="2" fill="#F1F5F9"/>
-                      <rect x="22" y="22" width="30" height="14" rx="3" fill="${badgeColor}"/>
-                      <text x="37" y="32" fill="#FFFFFF" font-size="7.5" font-weight="800" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">${famLabel.toUpperCase()}</text>
-                    </svg>
-                  </div>
+            <!-- LEFT: Clean Document Canvas Stage -->
+            <div class="comp-pro-stage">
+              <div class="comp-pro-paper-wrapper" id="comp-studio-thumb-box">
+                <div class="comp-pro-paper-placeholder">
+                  <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 104px;">
+                    <rect x="14" y="10" width="72" height="96" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+                    <path d="M60 10v18a2 2 0 0 0 2 2h24" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+                    <rect x="24" y="44" width="52" height="4" rx="2" fill="#E2E8F0"/>
+                    <rect x="24" y="54" width="52" height="4" rx="2" fill="#F1F5F9"/>
+                    <rect x="24" y="64" width="38" height="4" rx="2" fill="#F1F5F9"/>
+                    <rect x="24" y="74" width="46" height="4" rx="2" fill="#F1F5F9"/>
+                    <rect x="22" y="22" width="30" height="14" rx="3" fill="#DC2626"/>
+                    <text x="37" y="32" fill="#FFFFFF" font-size="7.5" font-weight="800" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">${famLabel.toUpperCase()}</text>
+                  </svg>
                 </div>
-                
-                <div class="comp-file-info">
-                  <span class="comp-file-name" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
-                  <span class="comp-file-meta">${_bytes(totBytes)} &middot; ${files.length > 1 ? `${files.length} files` : famLabel}</span>
-                </div>
-
-                <div class="comp-file-actions">
-                  <button type="button" class="comp-btn-action comp-btn-action-icon" id="comp-change-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    <span>Replace</span>
-                  </button>
-                  <button type="button" class="comp-btn-action comp-btn-action-icon" id="comp-add-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                    <span>Add files</span>
-                  </button>
-                </div>
-                <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
               </div>
 
-              <!-- RIGHT: Compression Tiers & Primary Action Deck -->
-              <div class="comp-control-deck">
-                <div class="comp-deck-header">
-                  <h3 class="comp-deck-title">Choose Compression Level</h3>
-                  <p class="comp-deck-subtitle">Select the compression level that best balances file size and quality</p>
-                </div>
+              <div class="comp-pro-stage-meta">
+                <span class="comp-pro-stage-filename" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
+                <span class="comp-pro-stage-filesize">(${_bytes(totBytes)}${files.length > 1 ? ` · ${files.length} files` : ''})</span>
+                <button type="button" class="comp-pro-replace-link" id="comp-change-btn">⟲ Replace</button>
+              </div>
+              <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
+            </div>
 
-                <div class="comp-tiers-group" role="radiogroup" aria-label="Compression levels">
-                  ${Object.entries(PRESETS).map(([key, item]) => {
-                    const estInfo = estMap[key] || { pct: item.est, estSize: '' };
-                    return `
-                    <div class="comp-tier-item ${key === preset ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${key === preset}">
-                      <div class="comp-tier-left">
-                        <div class="comp-tier-icon-wrap comp-icon--${key}">
-                          ${tierSvgs[key] || ''}
-                        </div>
-                        <div class="comp-tier-details">
-                          <div class="comp-tier-title-row">
-                            <span class="comp-tier-name">${item.label}</span>
-                            ${item.isRec ? '<span class="comp-rec-badge">RECOMMENDED</span>' : ''}
-                          </div>
-                          <span class="comp-tier-desc">${item.desc}</span>
-                        </div>
+            <!-- RIGHT: Control Island -->
+            <div class="comp-pro-panel">
+              
+              <div class="comp-pro-panel-header">
+                <div class="comp-pro-panel-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+                </div>
+                <h3 class="comp-pro-panel-title">Compress</h3>
+              </div>
+
+              <!-- Options List -->
+              <div class="comp-pro-options-group" role="radiogroup" aria-label="Compression modes">
+                ${Object.entries(PRESETS).map(([key, item]) => {
+                  const info = estMap[key] || { label: item.label, desc: item.desc };
+                  const isSel = key === preset;
+                  return `
+                    <div class="comp-pro-option-row ${isSel ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${isSel}">
+                      <div class="comp-pro-option-radio">
+                        <div class="comp-pro-radio-dot"></div>
                       </div>
-                      <div class="comp-tier-right-col">
-                        <span class="comp-tier-badge">${estInfo.pct}</span>
-                        <span class="comp-tier-est-size">~${estInfo.estSize}</span>
-                        <div class="comp-tier-radio"></div>
+                      <div class="comp-pro-option-content">
+                        <div class="comp-pro-option-head">
+                          <span class="comp-pro-option-name">${info.label}</span>
+                          ${key === 'maximum' ? '<span class="comp-pro-badge-green">Smallest</span>' : ''}
+                        </div>
+                        <span class="comp-pro-option-sub">${info.desc}</span>
                       </div>
                     </div>
                   `;
-                  }).join('')}
+                }).join('')}
+              </div>
 
-                  ${files.length > 1 ? `
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding:8px 12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px;">
-                      <span style="font-size:12px; font-weight:600; color:#334155;">Multi-file output:</span>
-                      <div style="display:flex; gap:6px;">
-                        <button type="button" class="comp-btn-action ${output === 'zip' ? 'is-selected' : ''}" data-output="zip" style="${output === 'zip' ? 'background:#111827; color:#fff; border-color:#111827;' : ''}">Save ZIP</button>
-                        <button type="button" class="comp-btn-action ${output === 'individual' ? 'is-selected' : ''}" data-output="individual" style="${output === 'individual' ? 'background:#111827; color:#fff; border-color:#111827;' : ''}">Individual</button>
-                      </div>
-                    </div>
-                  ` : ''}
+              <!-- Live Estimated Size Widget -->
+              <div class="comp-pro-est-widget">
+                <div class="comp-pro-est-header">
+                  <span class="comp-pro-est-title">Estimated new file size</span>
                 </div>
-
-                <div>
-                  <button type="button" class="comp-btn-primary" id="comp-run">
-                    <span>Compress ${files.length > 1 ? `${files.length} Files` : famLabel} &middot; Est. ~${(estMap[preset] || estMap.balanced).estSize}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
-                    </svg>
-                  </button>
-                  <p class="comp-privacy-caption" style="margin-top: 8px;">🔒 100% private · Files are compressed locally in your browser</p>
+                <div class="comp-pro-est-metrics">
+                  <span class="comp-pro-est-new">~${_bytes(curEst.estBytes)}</span>
+                  <span class="comp-pro-est-old">${_bytes(totBytes)}</span>
+                  <span class="comp-pro-est-pct">(${curEst.pct})</span>
                 </div>
+                <div class="comp-pro-est-bar-track">
+                  <div class="comp-pro-est-bar-fill" style="width: ${curEst.barW}%;"></div>
+                </div>
+              </div>
 
+              <!-- CTA Run Button -->
+              <div>
+                <button type="button" class="comp-btn-primary" id="comp-run">
+                  <span>Compress ${famLabel}</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+                <p class="comp-privacy-caption" style="margin-top: 8px; text-align: center;">🔒 100% Free &amp; Private · Locally compressed in your browser</p>
               </div>
 
             </div>
@@ -2017,33 +1998,27 @@
         </div>
       `;
 
-      // Live thumbnail rendering with physical paper frame
+      // Live thumbnail rendering with clean physical paper framing
       const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
       if (typeof getThumb === 'function') {
         getThumb(activeFile, fam).then((thumbUrl) => {
           if (!thumbUrl) return;
           const thumbBox = container.querySelector('#comp-studio-thumb-box');
           if (thumbBox) {
-            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="comp-thumb-img"/>`;
+            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="comp-pro-paper-img"/>`;
           }
         }).catch(() => {});
       }
 
       // Wire change / add files
-      const card = container.querySelector('#comp-studio-file-card');
       const replaceInp = container.querySelector('#comp-replace-input');
       const changeBtn = container.querySelector('#comp-change-btn');
-      const addBtn = container.querySelector('#comp-add-btn');
 
       if (replaceInp) {
         replaceInp.onchange = () => {
           if (replaceInp.files && replaceInp.files.length) {
-            if (replaceInp.dataset.mode === 'add') {
-              addFiles(replaceInp.files);
-            } else {
-              files = [];
-              addFiles(replaceInp.files);
-            }
+            files = Array.from(replaceInp.files);
+            renderConfigure();
           }
           replaceInp.value = '';
         };
@@ -2051,32 +2026,13 @@
 
       changeBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (replaceInp) {
-          replaceInp.dataset.mode = 'replace';
-          replaceInp.click();
-        }
-      });
-
-      addBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (replaceInp) {
-          replaceInp.dataset.mode = 'add';
-          replaceInp.click();
-        }
+        if (replaceInp) replaceInp.click();
       });
 
       // Wire Preset Selection
-      container.querySelectorAll('.comp-tier-item').forEach(item => {
+      container.querySelectorAll('.comp-pro-option-row').forEach(item => {
         item.addEventListener('click', () => {
           preset = item.dataset.pkey;
-          renderConfigure();
-        });
-      });
-
-      // Wire Multi-file Output Buttons
-      container.querySelectorAll('[data-output]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          output = btn.dataset.output;
           renderConfigure();
         });
       });
