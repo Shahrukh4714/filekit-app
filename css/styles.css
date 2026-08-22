@@ -33513,3 +33513,33 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   background: #F1F5F9 !important;
   color: #0F172A !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Result Stage Stepper Styles
+═══════════════════════════════════════════════════════════════════════════ */
+.cpdf-res-nav-btn {
+  width: 22px !important;
+  height: 22px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+}
+
+.cpdf-res-nav-btn:hover {
+  background: #E2E8F0 !important;
+}
+
+.cpdf-res-step-badge {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+}
