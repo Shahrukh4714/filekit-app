@@ -14839,16 +14839,13 @@ trailer<</Root 1 0 R>>`;
       if (mode === 'split' && fam === 'pdf') {
         return `
           <div class="org-inline-ctrls">
-            <span class="org-ctrl-label">Split after every</span>
+            <span class="org-ctrl-label">Every</span>
             <div class="org-stepper">
               <button type="button" class="org-step-btn" id="org-step-dec">−</button>
               <span class="org-step-val" id="org-step-val">${splitEvery}</span>
               <button type="button" class="org-step-btn" id="org-step-inc">+</button>
             </div>
             <span class="org-ctrl-label">page${splitEvery === 1 ? '' : 's'}</span>
-            <div class="org-mini-chips">
-              ${[1, 2, 5, 10].map(n => `<button type="button" class="org-mini-chip${splitEvery === n ? ' is-on' : ''}" data-every="${n}" ${pageCount > 0 && n > pageCount ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''}>${n}</button>`).join('')}
-            </div>
           </div>`;
       }
       if (mode === 'rotate' && fam === 'pdf') {
@@ -14895,11 +14892,14 @@ trailer<</Root 1 0 R>>`;
 
     function quickActionsMarkup() {
       const n = selected.size;
+      if (mode !== 'merge' && n === 0) return '';
       return `
         <button type="button" class="org-tool org-tool--icon" id="org-add-files" title="Add files">${ICONS.add}<span>Add</span></button>
-        <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left" style="transform:scaleX(-1);">${ICONS.rotate}</button>
-        <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
-        <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files" ${n ? '' : 'disabled'}>${ICONS.trash}</button>`;
+        ${n > 0 ? `
+          <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left" style="transform:scaleX(-1);">${ICONS.rotate}</button>
+          <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
+          <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files">${ICONS.trash}</button>
+        ` : ''}`;
     }
 
     /* ── Step 2: Configure Workspace ── */
@@ -15074,29 +15074,31 @@ trailer<</Root 1 0 R>>`;
 
     function flowShellMarkup(mainHtml) {
       return `
-        <div class="cpdf-body org-flow">
-          <div class="org-top">
-            <div class="org-top-left">
+        <div class="cpdf-body org-flow" style="padding-top: 0 !important;">
+          <div class="org-unified-toolbar">
+            <!-- Left: Compact File Pill -->
+            <div class="org-toolbar-file-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               <span class="org-file" title="${fileLabel()}">${fileLabel()}</span>
               <span class="org-meta">${metaLabel()}</span>
-              <span class="org-local">${ICONS.shield} Local only</span>
+              <span class="org-local-pill">Local only</span>
             </div>
-            <div class="org-top-right">
+
+            <!-- Center: Mode Tools & Active Controls -->
+            <div class="org-toolbar-center-tools">
+              ${pickerMarkup()}
+              ${inlineControlsMarkup()}
+            </div>
+
+            <!-- Right: Quick Actions + View Toggle + Run CTA -->
+            <div class="org-toolbar-right-actions">
+              ${quickActionsMarkup()}
               <button type="button" class="org-view-toggle" id="org-view-toggle" title="${viewMode === 'grid' ? 'Switch to Filmstrip Loupe View' : 'Switch to Full Lightbox Grid'}">
                 ${viewMode === 'grid' ? 
                   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span>Filmstrip</span>` : 
                   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Contact Sheet</span>`}
               </button>
               <button class="org-finish" id="org-run" type="button">${modeBtnLabel()}</button>
-            </div>
-          </div>
-          <div class="org-toolbar2">
-            <div class="org-tool-group">
-              ${pickerMarkup()}
-              ${inlineControlsMarkup()}
-            </div>
-            <div class="org-tool-group org-tool-group--right">
-              ${quickActionsMarkup()}
             </div>
           </div>
           ${mainHtml}
