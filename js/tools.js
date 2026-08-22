@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (True Gold-Standard Clean Smallpdf Benchmark) ── */
+    /* ── Step 2: Configure (FileKit Original Signature Full-Bleed Studio) ── */
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1897,13 +1897,14 @@
         stageEl.style.maxWidth = '100%';
         stageEl.style.margin = '0';
       }
+      
       const activeFile = files[0];
       const fam = familyOf(activeFile);
       
       const estMap = {
-        balanced: { label: 'Basic', pct: '-50%', factor: 0.50, isPro: false },
-        light: { label: 'Moderate', pct: '-20%', factor: 0.80, isPro: true },
-        maximum: { label: 'Strong', pct: '-75%', factor: 0.25, isPro: true }
+        balanced: { label: 'Basic Compression', saveText: 'Save ~50%', pct: '-50%', factor: 0.50 },
+        light: { label: 'Moderate Compression', saveText: 'Save ~20%', pct: '-20%', factor: 0.80 },
+        maximum: { label: 'Strong Compression', saveText: 'Save ~75%', pct: '-75%', factor: 0.25 }
       };
       
       const currentEst = estMap[selectedTier] || estMap.balanced;
@@ -1914,76 +1915,97 @@
       const estPctFormatted = `(${currentEst.pct})`;
 
       container.innerHTML = `
-        <div class="comp-clean-body">
-          <div class="comp-clean-workstation">
-            <!-- Left: Soft Tinted Stage with Clean Floating Document -->
-            <div class="comp-clean-stage">
-              <div class="comp-clean-paper-wrap" id="comp-studio-thumb-box">
-                <div class="comp-clean-thumb-ph" style="padding: 60px 40px; color: #94A3B8;">Loading preview…</div>
+        <div class="fk-studio-body">
+          <div class="fk-studio-workstation">
+            <!-- Left: Architectural Canvas Stage with Subtle Dot Grid -->
+            <div class="fk-studio-stage">
+              <div class="fk-studio-paper-wrap" id="comp-studio-thumb-box">
+                <div class="fk-studio-thumb-ph" style="padding: 60px 40px; color: #94A3B8;">Loading preview…</div>
               </div>
-              <div class="comp-clean-file-info">
-                <span class="comp-clean-filename" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
-                <span class="comp-clean-filesize">(${_bytes(activeFile.size)})</span>
+              <div class="fk-studio-stage-pill">
+                <span class="fk-studio-pill-file" title="${_esc(activeFile.name)}">📄 ${_esc(activeFile.name)}</span>
+                <span class="fk-studio-pill-meta">· ${_bytes(activeFile.size)}</span>
+                <button type="button" class="fk-studio-pill-replace" id="comp-replace-trigger" title="Change file">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>Replace</span>
+                </button>
               </div>
             </div>
 
-            <!-- Right: Smallpdf Gold Standard White Panel -->
-            <div class="comp-clean-panel">
-              <div class="comp-clean-header">
-                <div class="comp-clean-icon">
+            <!-- Right: FileKit Signature Studio Control Panel -->
+            <div class="fk-studio-panel">
+              <div class="fk-studio-header">
+                <div class="fk-studio-icon-tile fk-studio-icon-tile--compress">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
                   </svg>
                 </div>
-                <h2 class="comp-clean-title">Compress</h2>
+                <div class="fk-studio-header-titles">
+                  <h2 class="fk-studio-title">Compress PDF</h2>
+                  <span class="fk-studio-badge-local">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Client-Side Engine · Private
+                  </span>
+                </div>
               </div>
 
-              <!-- 3 Clean Radio Option Rows -->
-              <div class="comp-clean-tiers-deck">
+              <!-- FileKit Signature Option Cards -->
+              <div class="fk-studio-deck">
                 <!-- Option 1: Basic -->
-                <div class="comp-clean-option ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
-                  <div class="comp-clean-radio"><div class="comp-clean-radio-dot"></div></div>
-                  <span class="comp-clean-opt-name">Basic</span>
+                <div class="fk-studio-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
+                  <div class="fk-studio-radio"><div class="fk-studio-radio-dot"></div></div>
+                  <div class="fk-studio-card-content">
+                    <span class="fk-studio-card-name">Basic Compression</span>
+                  </div>
+                  <span class="fk-studio-pill-save">Save ~50%</span>
                 </div>
 
                 <!-- Option 2: Moderate -->
-                <div class="comp-clean-option ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
-                  <div class="comp-clean-radio"><div class="comp-clean-radio-dot"></div></div>
-                  <span class="comp-clean-opt-name">Moderate</span>
-                  <span class="comp-pro-crown-badge">👑</span>
+                <div class="fk-studio-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
+                  <div class="fk-studio-radio"><div class="fk-studio-radio-dot"></div></div>
+                  <div class="fk-studio-card-content">
+                    <span class="fk-studio-card-name">Moderate</span>
+                  </div>
+                  <span class="fk-studio-pill-save">Save ~20%</span>
                 </div>
 
                 <!-- Option 3: Strong -->
-                <div class="comp-clean-option ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
-                  <div class="comp-clean-radio"><div class="comp-clean-radio-dot"></div></div>
-                  <span class="comp-clean-opt-name">Strong</span>
-                  <div class="comp-opt-right-badges">
-                    <span class="comp-clean-pill-smallest">Smallest</span>
-                    <span class="comp-pro-crown-badge">👑</span>
+                <div class="fk-studio-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
+                  <div class="fk-studio-radio"><div class="fk-studio-radio-dot"></div></div>
+                  <div class="fk-studio-card-content">
+                    <span class="fk-studio-card-name">Strong Compression</span>
                   </div>
+                  <span class="fk-studio-pill-save">Save ~75%</span>
                 </div>
               </div>
 
-              <!-- Estimated New File Size Live Widget -->
-              <div class="comp-clean-est-widget">
-                <div class="comp-clean-est-label">Estimated new file size</div>
-                <div class="comp-clean-est-metrics">
-                  <strong class="comp-clean-new-size" id="comp-est-new-size">${estNewFormatted}</strong>
-                  <del class="comp-clean-old-size" id="comp-est-old-size">${estOldFormatted}</del>
-                  <span class="comp-clean-percent" id="comp-est-pct">${estPctFormatted}</span>
+              <!-- FileKit Live Estimated Size Widget -->
+              <div class="fk-studio-savings-widget">
+                <div class="fk-studio-savings-head">
+                  <span>Estimated Output</span>
+                  <span class="fk-studio-save-badge" id="comp-est-pct">${estPctFormatted}</span>
                 </div>
-                <div class="comp-clean-progress-track">
-                  <div class="comp-clean-progress-fill" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
+                <div class="fk-studio-savings-numbers">
+                  <strong class="fk-studio-size-new" id="comp-est-new-size">${estNewFormatted}</strong>
+                  <del class="fk-studio-size-old" id="comp-est-old-size">${estOldFormatted}</del>
+                </div>
+                <div class="fk-studio-track">
+                  <div class="fk-studio-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
                 </div>
               </div>
 
               <!-- Primary Action CTA Button -->
-              <button type="button" class="comp-clean-cta-btn" id="comp-studio-run">
-                <span>Compress</span>
+              <button type="button" class="fk-studio-cta" id="comp-studio-run">
+                <span>Compress PDF</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
               </button>
+
+              <div class="fk-studio-security-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>No files sent to server · 100% in-browser processing</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2004,7 +2026,7 @@
             c.height = Math.max(1, Math.round(vp.height));
             const ctx = c.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            c.className = 'comp-pro-paper-img';
+            c.className = 'fk-studio-paper-img';
             thumbBox.innerHTML = '';
             thumbBox.append(c);
           } catch (e) {
@@ -2014,16 +2036,16 @@
           const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
           if (typeof getThumb === 'function') {
             getThumb(activeFile, fam).then((u) => {
-              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" class="comp-pro-paper-img"/>`;
+              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" class="fk-studio-paper-img"/>`;
             }).catch(() => {});
           }
         }
       })();
 
       // Wire Tier Selection
-      container.querySelectorAll('.comp-clean-option').forEach(row => {
+      container.querySelectorAll('.fk-studio-card').forEach(row => {
         row.onclick = () => {
-          container.querySelectorAll('.comp-clean-option').forEach(r => r.classList.remove('is-active'));
+          container.querySelectorAll('.fk-studio-card').forEach(r => r.classList.remove('is-active'));
           row.classList.add('is-active');
           selectedTier = row.dataset.tier || 'balanced';
           preset = selectedTier === 'maximum' ? 'strong' : selectedTier === 'light' ? 'light' : 'balanced';
@@ -2036,10 +2058,24 @@
           const barEl = container.querySelector('#comp-est-bar');
           
           if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
-          if (pctEl) pctEl.textContent = `(${est.pct})`;
+          if (pctEl) pctEl.textContent = `${est.pct}`;
           if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
         };
       });
+
+      // Wire Replace File Trigger
+      const replaceTrigger = container.querySelector('#comp-replace-trigger');
+      const replaceInp = container.querySelector('#cpdf-replace-inp');
+      if (replaceTrigger && replaceInp) {
+        replaceTrigger.onclick = () => replaceInp.click();
+        replaceInp.onchange = () => {
+          if (replaceInp.files && replaceInp.files.length) {
+            files = Array.from(replaceInp.files);
+            renderConfigure();
+          }
+          replaceInp.value = '';
+        };
+      }
 
       // Wire Run Action
       container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
