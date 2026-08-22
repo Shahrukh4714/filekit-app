@@ -3183,7 +3183,29 @@
     /* ═══════════════════════════════════════════════════════════════════════
        2. APP WORKSPACE TOOL (Desktop World — Siderail, Dashboard & Workstation)
        ═══════════════════════════════════════════════════════════════════════ */
+    const TOOL_ALIAS_MAP = {
+      'compress': 'pdf-compress',
+      'compress-pdf': 'pdf-compress',
+      'convert': 'pdf-convert',
+      'convert-pdf': 'pdf-convert',
+      'organize': 'organize',
+      'edit': 'pdf-edit-text',
+      'edit-text': 'pdf-edit-text',
+      'pdf-edit': 'pdf-edit-text',
+      'sign': 'pdf-sign',
+      'sign-pdf': 'pdf-sign',
+      'protect': 'pdf-protect',
+      'protect-pdf': 'pdf-protect',
+      'crop': 'image-crop',
+      'crop-image': 'image-crop',
+      'bg-remover': 'image-crop',
+      'word': 'pdf-to-word',
+      'excel': 'pdf-to-excel',
+      'ppt': 'pdf-to-ppt'
+    };
+
     function openWorkspaceTool(id, initialFiles = null) {
+      id = TOOL_ALIAS_MAP[id] || id;
       if (initialFiles) {
         if (!window.FF.app) window.FF.app = {};
         window.FF.app.pendingFiles = Array.isArray(initialFiles) ? initialFiles : [initialFiles];

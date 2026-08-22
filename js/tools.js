@@ -8523,8 +8523,15 @@
           } else if (file) {
             targetFile = file;
           }
-          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
-            window.FF.app.openTool(tid, true, targetFile ? [targetFile] : null);
+          const filesArr = targetFile ? [targetFile] : null;
+          if (tid) {
+            if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+              window.FF.app.openTool(tid, true, filesArr);
+            } else if (typeof window.openToolById === 'function') {
+              window.openToolById(tid, filesArr);
+            } else if (typeof window.openTool === 'function') {
+              window.openTool(tid, true, filesArr);
+            }
           }
         });
       });
@@ -15529,13 +15536,13 @@ trailer<</Root 1 0 R>>`;
 
       // Smart next step tools
       const smartTools = isPdf ? [
-        { id: 'compress', name: 'Compress PDF' },
+        { id: 'pdf-compress', name: 'Compress PDF' },
         { id: 'pdf-sign', name: 'Sign PDF' },
         { id: 'pdf-to-word', name: 'Convert to Word' },
         { id: 'pdf-protect', name: 'Protect PDF' }
       ] : [
-        { id: 'compress', name: 'Compress Files' },
-        { id: 'convert', name: 'Convert Format' }
+        { id: 'image-compress', name: 'Compress Files' },
+        { id: 'image-convert', name: 'Convert Format' }
       ];
 
       container.innerHTML = `
