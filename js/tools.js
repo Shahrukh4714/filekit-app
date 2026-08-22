@@ -1896,9 +1896,17 @@
       const fam = familyOf(activeFile) || 'pdf';
       const famLabel = (FAMILY_META[fam] && FAMILY_META[fam].label) || 'PDF';
       const p = PRESETS[preset] || PRESETS.balanced;
+      const totBytes = totalBytes();
 
       const badgeColors = { pdf: '#E11D48', image: '#2563EB', video: '#7C3AED', audio: '#059669', archive: '#D97706', office: '#2563EB', ebook: '#8B5CF6' };
       const badgeColor = badgeColors[fam] || '#E11D48';
+
+      // Dynamic size estimates for maximum user trust
+      const estMap = {
+        maximum: { pct: '~75% smaller', estSize: _bytes(Math.max(500, Math.round(totBytes * 0.25))), ratio: '0.25' },
+        balanced: { pct: '~50% smaller', estSize: _bytes(Math.max(1000, Math.round(totBytes * 0.50))), ratio: '0.50' },
+        light: { pct: '~20% smaller', estSize: _bytes(Math.max(1500, Math.round(totBytes * 0.80))), ratio: '0.80' }
+      };
 
       const tierSvgs = {
         maximum: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
@@ -1912,10 +1920,10 @@
             
             <div class="comp-studio-deck">
               
-              <!-- LEFT: File Preview Card -->
+              <!-- LEFT: Physical Document Paper Card -->
               <div class="comp-preview-card" id="comp-studio-file-card" title="Click or drop file to change">
                 <div class="comp-thumb-box" id="comp-studio-thumb-box">
-                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #F8FAFC;">
+                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #FFFFFF;">
                     <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 92px; height: 120px;">
                       <rect x="14" y="10" width="72" height="96" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
                       <path d="M60 10v18a2 2 0 0 0 2 2h24" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
@@ -1931,7 +1939,7 @@
                 
                 <div class="comp-file-info">
                   <span class="comp-file-name" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
-                  <span class="comp-file-meta">${_bytes(totalBytes())} &middot; ${files.length > 1 ? `${files.length} files` : famLabel}</span>
+                  <span class="comp-file-meta">${_bytes(totBytes)} &middot; ${files.length > 1 ? `${files.length} files` : famLabel}</span>
                 </div>
 
                 <div class="comp-file-actions">
@@ -1955,7 +1963,9 @@
                 </div>
 
                 <div class="comp-tiers-group" role="radiogroup" aria-label="Compression levels">
-                  ${Object.entries(PRESETS).map(([key, item]) => `
+                  ${Object.entries(PRESETS).map(([key, item]) => {
+                    const estInfo = estMap[key] || { pct: item.est, estSize: '' };
+                    return `
                     <div class="comp-tier-item ${key === preset ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${key === preset}">
                       <div class="comp-tier-left">
                         <div class="comp-tier-icon-wrap comp-icon--${key}">
@@ -1969,12 +1979,14 @@
                           <span class="comp-tier-desc">${item.desc}</span>
                         </div>
                       </div>
-                      <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="comp-tier-badge">${item.est}</span>
+                      <div class="comp-tier-right-col">
+                        <span class="comp-tier-badge">${estInfo.pct}</span>
+                        <span class="comp-tier-est-size">~${estInfo.estSize}</span>
                         <div class="comp-tier-radio"></div>
                       </div>
                     </div>
-                  `).join('')}
+                  `;
+                  }).join('')}
 
                   ${files.length > 1 ? `
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding:8px 12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px;">
@@ -1989,7 +2001,7 @@
 
                 <div>
                   <button type="button" class="comp-btn-primary" id="comp-run">
-                    <span>Compress ${files.length > 1 ? `${files.length} Files` : famLabel} (${p.short || p.label})</span>
+                    <span>Compress ${files.length > 1 ? `${files.length} Files` : famLabel} &middot; Est. ~${(estMap[preset] || estMap.balanced).estSize}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
                     </svg>
@@ -2005,9 +2017,10 @@
         </div>
       `;
 
-      // Live thumbnail rendering
-      if (typeof generateFileThumbnail === 'function') {
-        generateFileThumbnail(activeFile, fam).then((thumbUrl) => {
+      // Live thumbnail rendering with physical paper frame
+      const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
+      if (typeof getThumb === 'function') {
+        getThumb(activeFile, fam).then((thumbUrl) => {
           if (!thumbUrl) return;
           const thumbBox = container.querySelector('#comp-studio-thumb-box');
           if (thumbBox) {
@@ -2022,55 +2035,56 @@
       const changeBtn = container.querySelector('#comp-change-btn');
       const addBtn = container.querySelector('#comp-add-btn');
 
+      if (replaceInp) {
+        replaceInp.onchange = () => {
+          if (replaceInp.files && replaceInp.files.length) {
+            if (replaceInp.dataset.mode === 'add') {
+              addFiles(replaceInp.files);
+            } else {
+              files = [];
+              addFiles(replaceInp.files);
+            }
+          }
+          replaceInp.value = '';
+        };
+      }
+
       changeBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        files = [];
-        renderUpload();
+        if (replaceInp) {
+          replaceInp.dataset.mode = 'replace';
+          replaceInp.click();
+        }
       });
 
       addBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        replaceInp?.click();
-      });
-
-      card?.addEventListener('click', (e) => {
-        if (!e.target.closest('button')) replaceInp?.click();
-      });
-
-      replaceInp?.addEventListener('change', () => {
-        if (replaceInp.files && replaceInp.files.length) {
-          addFiles(replaceInp.files);
+        if (replaceInp) {
+          replaceInp.dataset.mode = 'add';
+          replaceInp.click();
         }
       });
 
-      // Drag & Drop on file card
-      card?.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('cpdf-dz--over'); });
-      card?.addEventListener('dragleave', () => { card.classList.remove('cpdf-dz--over'); });
-      card?.addEventListener('drop', (e) => {
-        e.preventDefault();
-        card.classList.remove('cpdf-dz--over');
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-          addFiles(e.dataTransfer.files);
-        }
-      });
-
-      // Tier item clicks
-      container.querySelectorAll('.comp-tier-item[data-pkey]').forEach(item => {
+      // Wire Preset Selection
+      container.querySelectorAll('.comp-tier-item').forEach(item => {
         item.addEventListener('click', () => {
           preset = item.dataset.pkey;
           renderConfigure();
         });
       });
 
-      // Output toggle clicks
-      container.querySelectorAll('button[data-output]').forEach(item => {
-        item.addEventListener('click', () => {
-          output = item.dataset.output;
+      // Wire Multi-file Output Buttons
+      container.querySelectorAll('[data-output]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          output = btn.dataset.output;
           renderConfigure();
         });
       });
 
-      container.querySelector('#comp-run')?.addEventListener('click', () => runCompress());
+      // Wire Run Action
+      container.querySelector('#comp-run')?.addEventListener('click', () => {
+        runCompress();
+      });
     }
 
     /* ── Step 3: Processing ─────────────────────────── */
