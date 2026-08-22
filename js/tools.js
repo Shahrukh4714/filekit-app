@@ -1777,6 +1777,7 @@
     /** @type {File[]} */
     let files  = [];
     let preset = 'balanced';
+    let selectedTier = 'balanced';
     let output = 'zip'; // 'zip' | 'individual'
     let isPresetMenuOpen = true;
 
@@ -1886,117 +1887,107 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure ──────────────────────────── */
+    /* ── Step 2: Configure (True Gold-Standard Clean Smallpdf Benchmark) ── */
     function renderConfigure() {
-      if (!files || !files.length) {
-        renderUpload();
-        return;
+      container.classList.add('cpdf-root');
+      container.classList.remove('spdf-shell');
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
       }
       const activeFile = files[0];
-      const fam = familyOf(activeFile) || 'pdf';
-      const famLabel = (FAMILY_META[fam] && FAMILY_META[fam].label) || 'PDF';
-      const p = PRESETS[preset] || PRESETS.balanced;
-      const totBytes = totalBytes();
-
-      // Precise dynamic estimates
+      const fam = familyOf(activeFile);
+      
       const estMap = {
-        maximum: { label: 'Strong', badge: '<span class="comp-pro-badge-green">Smallest</span>', desc: 'Smallest file size · Ideal for email & upload', pct: '-75%', estBytes: Math.max(500, Math.round(totBytes * 0.25)), barW: 25 },
-        balanced: { label: 'Basic', badge: '<span class="comp-pro-badge-amber">Recommended</span>', desc: 'Smart compression · Good quality balance', pct: '-50%', estBytes: Math.max(1000, Math.round(totBytes * 0.50)), barW: 50 },
-        light: { label: 'Low', badge: '<span class="comp-pro-badge-slate">High Quality</span>', desc: 'Maximum visual fidelity · Minimal compression', pct: '-20%', estBytes: Math.max(1500, Math.round(totBytes * 0.80)), barW: 80 }
+        balanced: { label: 'Basic', pct: '-50%', factor: 0.50, isPro: false },
+        light: { label: 'Moderate', pct: '-20%', factor: 0.80, isPro: true },
+        maximum: { label: 'Strong', pct: '-75%', factor: 0.25, isPro: true }
       };
-
-      const curEst = estMap[preset] || estMap.balanced;
+      
+      const currentEst = estMap[selectedTier] || estMap.balanced;
+      const originalBytes = activeFile.size;
+      const estBytes = Math.max(1000, Math.round(originalBytes * currentEst.factor));
+      const estNewFormatted = `~${_bytes(estBytes)}`;
+      const estOldFormatted = _bytes(originalBytes);
+      const estPctFormatted = `(${currentEst.pct})`;
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden; width: 100%;">
-          <div class="comp-pro-workstation">
-            
-            <!-- LEFT: Clean Borderless Document Canvas Stage -->
-            <div class="comp-pro-stage">
-              <div class="comp-pro-paper-wrapper" id="comp-studio-thumb-box">
-                <div class="comp-pro-paper-placeholder">
-                  <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 80px; height: 104px;">
-                    <rect x="14" y="10" width="72" height="96" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
-                    <path d="M60 10v18a2 2 0 0 0 2 2h24" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
-                    <rect x="24" y="44" width="52" height="4" rx="2" fill="#E2E8F0"/>
-                    <rect x="24" y="54" width="52" height="4" rx="2" fill="#F1F5F9"/>
-                    <rect x="24" y="64" width="38" height="4" rx="2" fill="#F1F5F9"/>
-                    <rect x="24" y="74" width="46" height="4" rx="2" fill="#F1F5F9"/>
-                    <rect x="22" y="22" width="30" height="14" rx="3" fill="#DC2626"/>
-                    <text x="37" y="32" fill="#FFFFFF" font-size="7.5" font-weight="800" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">${famLabel.toUpperCase()}</text>
+        <div class="comp-clean-body">
+          <div class="comp-clean-workstation">
+            <!-- Left: Soft Tinted Stage with Clean Floating Document -->
+            <div class="comp-clean-stage">
+              <div class="comp-clean-paper-wrap" id="comp-studio-thumb-box">
+                <div class="comp-clean-thumb-ph" style="padding: 60px 40px; color: #94A3B8;">Loading preview…</div>
+              </div>
+              <div class="comp-clean-file-info">
+                <span class="comp-clean-filename" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
+                <span class="comp-clean-filesize">(${_bytes(activeFile.size)})</span>
+              </div>
+            </div>
+
+            <!-- Right: Smallpdf Gold Standard White Panel -->
+            <div class="comp-clean-panel">
+              <div class="comp-clean-header">
+                <div class="comp-clean-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
                   </svg>
                 </div>
+                <h2 class="comp-clean-title">Compress</h2>
               </div>
 
-              <div class="comp-pro-stage-meta">
-                <span class="comp-pro-stage-filename" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
-                <span class="comp-pro-stage-filesize">(${_bytes(totBytes)}${files.length > 1 ? ` · ${files.length} files` : ''})</span>
-                <button type="button" class="comp-pro-replace-btn" id="comp-change-btn">⟲ Replace</button>
+              <!-- 3 Clean Radio Option Rows -->
+              <div class="comp-clean-tiers-deck">
+                <!-- Option 1: Basic -->
+                <div class="comp-clean-option ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
+                  <div class="comp-clean-radio"><div class="comp-clean-radio-dot"></div></div>
+                  <span class="comp-clean-opt-name">Basic</span>
+                </div>
+
+                <!-- Option 2: Moderate -->
+                <div class="comp-clean-option ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
+                  <div class="comp-clean-radio"><div class="comp-clean-radio-dot"></div></div>
+                  <span class="comp-clean-opt-name">Moderate</span>
+                  <span class="comp-pro-crown-badge">👑</span>
+                </div>
+
+                <!-- Option 3: Strong -->
+                <div class="comp-clean-option ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
+                  <div class="comp-clean-radio"><div class="comp-clean-radio-dot"></div></div>
+                  <span class="comp-clean-opt-name">Strong</span>
+                  <div class="comp-opt-right-badges">
+                    <span class="comp-clean-pill-smallest">Smallest</span>
+                    <span class="comp-pro-crown-badge">👑</span>
+                  </div>
+                </div>
               </div>
-              <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
+
+              <!-- Estimated New File Size Live Widget -->
+              <div class="comp-clean-est-widget">
+                <div class="comp-clean-est-label">Estimated new file size</div>
+                <div class="comp-clean-est-metrics">
+                  <strong class="comp-clean-new-size" id="comp-est-new-size">${estNewFormatted}</strong>
+                  <del class="comp-clean-old-size" id="comp-est-old-size">${estOldFormatted}</del>
+                  <span class="comp-clean-percent" id="comp-est-pct">${estPctFormatted}</span>
+                </div>
+                <div class="comp-clean-progress-track">
+                  <div class="comp-clean-progress-fill" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
+                </div>
+              </div>
+
+              <!-- Primary Action CTA Button -->
+              <button type="button" class="comp-clean-cta-btn" id="comp-studio-run">
+                <span>Compress</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
             </div>
-
-            <!-- RIGHT: Control Panel -->
-            <div class="comp-pro-panel">
-              
-              <div class="comp-pro-panel-header">
-                <div class="comp-pro-panel-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
-                </div>
-                <h3 class="comp-pro-panel-title">Compress</h3>
-              </div>
-
-              <!-- Options List -->
-              <div class="comp-pro-options-group" role="radiogroup" aria-label="Compression modes">
-                ${Object.entries(PRESETS).map(([key, item]) => {
-                  const info = estMap[key] || { label: item.label, badge: '', desc: item.desc };
-                  const isSel = key === preset;
-                  return `
-                    <div class="comp-pro-option-row ${isSel ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${isSel}">
-                      <div class="comp-pro-option-left">
-                        <div class="comp-pro-option-radio">
-                          <div class="comp-pro-radio-dot"></div>
-                        </div>
-                        <div class="comp-pro-option-info">
-                          <span class="comp-pro-option-name">${info.label}</span>
-                          <span class="comp-pro-option-sub">${info.desc}</span>
-                        </div>
-                      </div>
-                      ${info.badge || ''}
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-
-              <!-- Live Estimated Size Widget -->
-              <div class="comp-pro-est-widget">
-                <div class="comp-pro-est-header">
-                  <span class="comp-pro-est-title">Estimated new file size</span>
-                </div>
-                <div class="comp-pro-est-metrics">
-                  <span class="comp-pro-est-new">~${_bytes(curEst.estBytes)}</span>
-                  <span class="comp-pro-est-old">${_bytes(totBytes)}</span>
-                  <span class="comp-pro-est-pct">(${curEst.pct})</span>
-                </div>
-                <div class="comp-pro-est-bar-track">
-                  <div class="comp-pro-est-bar-fill" style="width: ${curEst.barW}%;"></div>
-                </div>
-              </div>
-
-              <!-- CTA Run Button -->
-              <div>
-                <button type="button" class="comp-btn-primary" id="comp-run">
-                  <span>Compress ${famLabel}</span>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </button>
-                <p class="comp-privacy-caption" style="margin-top: 10px; text-align: center; font-size: 11.5px; color: #64748B;">🔒 100% Free &amp; Private · Locally compressed in your browser</p>
-              </div>
-
-            </div>
-
           </div>
         </div>
-      `;
+        <input id="cpdf-replace-inp" type="file" accept="${ACCEPT_STR}" hidden>`;
 
       // Direct high-DPI document rendering
       (async () => {
@@ -2029,35 +2020,29 @@
         }
       })();
 
-      // Wire change / add files
-      const replaceInp = container.querySelector('#comp-replace-input');
-      const changeBtn = container.querySelector('#comp-change-btn');
-
-      if (replaceInp) {
-        replaceInp.onchange = () => {
-          if (replaceInp.files && replaceInp.files.length) {
-            files = Array.from(replaceInp.files);
-            renderConfigure();
-          }
-          replaceInp.value = '';
+      // Wire Tier Selection
+      container.querySelectorAll('.comp-clean-option').forEach(row => {
+        row.onclick = () => {
+          container.querySelectorAll('.comp-clean-option').forEach(r => r.classList.remove('is-active'));
+          row.classList.add('is-active');
+          selectedTier = row.dataset.tier || 'balanced';
+          preset = selectedTier === 'maximum' ? 'strong' : selectedTier === 'light' ? 'light' : 'balanced';
+          
+          const est = estMap[selectedTier] || estMap.balanced;
+          const newBytes = Math.max(1000, Math.round(originalBytes * est.factor));
+          
+          const newSizeEl = container.querySelector('#comp-est-new-size');
+          const pctEl = container.querySelector('#comp-est-pct');
+          const barEl = container.querySelector('#comp-est-bar');
+          
+          if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
+          if (pctEl) pctEl.textContent = `(${est.pct})`;
+          if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
         };
-      }
-
-      changeBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (replaceInp) replaceInp.click();
-      });
-
-      // Wire Preset Selection
-      container.querySelectorAll('.comp-pro-option-row').forEach(item => {
-        item.addEventListener('click', () => {
-          preset = item.dataset.pkey;
-          renderConfigure();
-        });
       });
 
       // Wire Run Action
-      container.querySelector('#comp-run')?.addEventListener('click', () => {
+      container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
         runCompress();
       });
     }
