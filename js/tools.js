@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (Adjusted Multi-File Stage + Universal Format Engine) ── */
+    /* ── Step 2: Configure (Unified Stage Preview for Single & Multi Files) ── */
     let customTargetKB = 200;
     let customUnit = 'KB'; // 'KB' | 'MB'
 
@@ -1929,49 +1929,40 @@
 
       const fileInfoText = !isBatch 
         ? `${_esc(activeFile.name)} (${_bytes(activeFile.size)})`
-        : `${files.length} Files Selected · ${_bytes(totalOriginalBytes)}`;
+        : `${files.length} files selected · ${_bytes(totalOriginalBytes)}`;
 
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Adjusted for Single or Multi-File Preview -->
-            <div class="cpdf-benchmark-stage ${isBatch ? 'cpdf-stage-multi' : ''}">
+            <!-- Left Stage: Unified Calm Canvas with Floating Document Sheets -->
+            <div class="cpdf-benchmark-stage">
               ${!isBatch ? `
                 <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
                   <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
                 </div>
-                <div class="cpdf-benchmark-fileinfo-row">
-                  <span class="cpdf-benchmark-fileinfo-text">${fileInfoText}</span>
-                  <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger" title="Add more files">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                    <span>Add Files</span>
-                  </button>
-                </div>
               ` : `
-                <div class="cpdf-multi-preview-container">
-                  <div class="cpdf-multi-stage-header">
-                    <span class="cpdf-multi-stage-title">${files.length} Files · Total ${_bytes(totalOriginalBytes)}</span>
-                    <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                      <span>Add More</span>
-                    </button>
-                  </div>
-                  <div class="cpdf-multi-stage-grid">
-                    ${files.map((f, idx) => `
-                      <div class="cpdf-multi-file-card" data-idx="${idx}">
-                        <div class="cpdf-multi-card-thumb" id="comp-thumb-${idx}">
-                          <span class="cpdf-multi-card-ext">${(f.name.split('.').pop() || 'FILE').toUpperCase()}</span>
-                        </div>
-                        <div class="cpdf-multi-card-info">
-                          <div class="cpdf-multi-card-name" title="${_esc(f.name)}">${_esc(f.name)}</div>
-                          <div class="cpdf-multi-card-size">${_bytes(f.size)}</div>
-                        </div>
-                        <button type="button" class="cpdf-multi-card-del" data-idx="${idx}" title="Remove file">✕</button>
+                <div class="cpdf-multi-stage-carousel">
+                  ${files.map((f, idx) => `
+                    <div class="cpdf-multi-paper-card" data-idx="${idx}">
+                      <div class="cpdf-multi-paper-thumb" id="comp-thumb-${idx}">
+                        <span class="cpdf-multi-paper-ext">${(f.name.split('.').pop() || 'FILE').toUpperCase()}</span>
                       </div>
-                    `).join('')}
-                  </div>
+                      <div class="cpdf-multi-paper-caption">
+                        <span class="cpdf-multi-paper-name" title="${_esc(f.name)}">${_esc(f.name)}</span>
+                        <span class="cpdf-multi-paper-size">${_bytes(f.size)}</span>
+                      </div>
+                      <button type="button" class="cpdf-multi-paper-del" data-idx="${idx}" title="Remove file">✕</button>
+                    </div>
+                  `).join('')}
                 </div>
               `}
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text">${fileInfoText}</span>
+                <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger" title="Add more files">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Add Files</span>
+                </button>
+              </div>
             </div>
 
             <!-- Right Panel: Studio Panel with Options -->
@@ -2095,24 +2086,24 @@
           }
         })();
       } else {
-        // Multi-file thumbnails
+        // Multi-file floating paper sheets
         files.forEach(async (f, idx) => {
           const tb = container.querySelector(`#comp-thumb-${idx}`);
           if (!tb) return;
           const fam = familyOf(f);
           if (fam === 'image') {
             const u = URL.createObjectURL(f);
-            tb.innerHTML = `<img src="${u}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" />`;
+            tb.innerHTML = `<img src="${u}" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:2px;" />`;
           } else if (fam === 'pdf') {
             try {
               const pdfjs = await loadJs();
               const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
               const page = await doc.getPage(1);
-              const vp = page.getViewport({ scale: 0.3 });
+              const vp = page.getViewport({ scale: 0.35 });
               const c = document.createElement('canvas');
               c.width = vp.width; c.height = vp.height;
               await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-              c.style.width = '100%'; c.style.height = '100%'; c.style.objectFit = 'cover'; c.style.borderRadius = '4px';
+              c.style.maxWidth = '100%'; c.style.maxHeight = '100%'; c.style.objectFit = 'contain'; c.style.borderRadius = '2px';
               tb.innerHTML = '';
               tb.append(c);
             } catch (e) {}
@@ -2172,7 +2163,7 @@
       }
 
       // Wire Multi-card delete
-      container.querySelectorAll('.cpdf-multi-card-del').forEach(btn => {
+      container.querySelectorAll('.cpdf-multi-paper-del').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = parseInt(btn.dataset.idx, 10);

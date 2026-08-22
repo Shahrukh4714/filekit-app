@@ -33340,104 +33340,91 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Multi-File Stage Preview Styles
+   Unified Multi-Paper Stage Preview Styles
 ═══════════════════════════════════════════════════════════════════════════ */
-.cpdf-multi-preview-container {
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  max-width: 640px !important;
-  max-height: calc(100vh - 180px) !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 8px !important;
-  padding: 16px 20px !important;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06) !important;
-}
-
-.cpdf-multi-stage-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 14px !important;
-  padding-bottom: 10px !important;
-  border-bottom: 1px solid #F1F5F9 !important;
-}
-
-.cpdf-multi-stage-title {
-  font-size: 14.5px !important;
-  font-weight: 700 !important;
-  color: #0F172A !important;
-}
-
-.cpdf-multi-stage-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
-  gap: 12px !important;
-  overflow-y: auto !important;
-  max-height: calc(100vh - 270px) !important;
-  padding: 2px !important;
-}
-
-.cpdf-multi-file-card {
-  display: flex !important;
-  flex-direction: column !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  padding: 10px !important;
-  position: relative !important;
-}
-
-.cpdf-multi-card-thumb {
-  height: 90px !important;
-  background: #EEF2F6 !important;
-  border-radius: 4px !important;
+.cpdf-multi-stage-carousel {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-bottom: 8px !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 680px !important;
+  max-height: calc(100vh - 210px) !important;
+  overflow-y: auto !important;
+  margin-bottom: 16px !important;
+  padding: 8px !important;
+}
+
+.cpdf-multi-paper-card {
+  background: #FFFFFF !important;
+  border-radius: 4px !important;
+  box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px !important;
+  width: 160px !important;
+  height: 200px !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+.cpdf-multi-paper-thumb {
+  width: 100% !important;
+  height: 135px !important;
+  background: #F8FAFC !important;
+  border-radius: 3px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   overflow: hidden !important;
 }
 
-.cpdf-multi-card-ext {
-  font-size: 12px !important;
+.cpdf-multi-paper-ext {
+  font-size: 13px !important;
   font-weight: 800 !important;
   color: #7C3AED !important;
   background: #EDE9FE !important;
-  padding: 3px 8px !important;
+  padding: 4px 10px !important;
   border-radius: 4px !important;
   letter-spacing: 0.05em !important;
 }
 
-.cpdf-multi-card-info {
+.cpdf-multi-paper-caption {
+  width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  align-items: center !important;
+  gap: 1px !important;
+  margin-top: 6px !important;
 }
 
-.cpdf-multi-card-name {
-  font-size: 12.5px !important;
+.cpdf-multi-paper-name {
+  font-size: 11.5px !important;
   font-weight: 600 !important;
   color: #1E293B !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  max-width: 135px !important;
+  text-align: center !important;
 }
 
-.cpdf-multi-card-size {
-  font-size: 11px !important;
+.cpdf-multi-paper-size {
+  font-size: 10.5px !important;
   color: #64748B !important;
 }
 
-.cpdf-multi-card-del {
+.cpdf-multi-paper-del {
   position: absolute !important;
-  top: 6px !important;
-  right: 6px !important;
+  top: 4px !important;
+  right: 4px !important;
   width: 20px !important;
   height: 20px !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #CBD5E1 !important;
   color: #64748B !important;
   font-size: 11px !important;
@@ -33445,9 +33432,10 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
 }
 
-.cpdf-multi-card-del:hover {
+.cpdf-multi-paper-del:hover {
   background: #FEE2E2 !important;
   border-color: #FCA5A5 !important;
   color: #EF4444 !important;
