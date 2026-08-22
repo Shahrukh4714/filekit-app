@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (FileKit Refined Workstation + Custom Target + Batch Support) ── */
+    /* ── Step 2: Configure (Clean Stage + Compact Right Panel + Exact Target) ── */
     let customTargetKB = 200;
     let customUnit = 'KB'; // 'KB' | 'MB'
 
@@ -1928,42 +1928,28 @@
       const estOldFormatted = _bytes(totalOriginalBytes);
       const estPctFormatted = `(${currentEst.pct} Saved)`;
 
+      const fileInfoText = !isBatch 
+        ? `${_esc(activeFile.name)} (${_bytes(activeFile.size)})`
+        : `${_esc(activeFile.name)} (+${files.length - 1} more file${files.length > 2 ? 's' : ''} · ${_bytes(totalOriginalBytes)})`;
+
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Single File Preview or Batch Grid -->
+            <!-- Left Stage: Always Clean Centered Document Stage -->
             <div class="cpdf-benchmark-stage">
-              ${!isBatch ? `
-                <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
-                  <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
-                </div>
-                <div class="cpdf-benchmark-fileinfo">
-                  <span>${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
-                </div>
-              ` : `
-                <div class="cpdf-batch-stage-header">
-                  <span class="cpdf-batch-title">Batch Queue (${files.length} files · ${_bytes(totalOriginalBytes)})</span>
-                  <button type="button" class="cpdf-batch-add-btn" id="comp-add-more-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                    <span>Add Files</span>
-                  </button>
-                </div>
-                <div class="cpdf-batch-grid">
-                  ${files.map((f, idx) => `
-                    <div class="cpdf-batch-card" data-idx="${idx}">
-                      <div class="cpdf-batch-card-icon">📄</div>
-                      <div class="cpdf-batch-card-info">
-                        <div class="cpdf-batch-card-name" title="${_esc(f.name)}">${_esc(f.name)}</div>
-                        <div class="cpdf-batch-card-size">${_bytes(f.size)}</div>
-                      </div>
-                      <button type="button" class="cpdf-batch-card-remove" data-idx="${idx}" title="Remove file">✕</button>
-                    </div>
-                  `).join('')}
-                </div>
-              `}
+              <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
+                <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
+              </div>
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text">${fileInfoText}</span>
+                <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger" title="Add more files">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Add Files</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Right Panel: Studio Panel with Presets + Exact Target Size Input -->
+            <!-- Right Panel: Compact, Non-Squeezed Studio Panel -->
             <div class="cpdf-benchmark-panel">
               <!-- Top Header -->
               <div class="cpdf-benchmark-header">
@@ -2021,7 +2007,7 @@
                 ` : ''}
               </div>
 
-              <!-- Estimated New File Size Box -->
+              <!-- Compact Estimated New File Size Box -->
               <div class="cpdf-benchmark-est-box">
                 <div class="cpdf-benchmark-est-title">${isBatch ? 'Total estimated output' : 'Estimated new file size'}</div>
                 <div class="cpdf-benchmark-est-metrics">
@@ -2046,43 +2032,41 @@
         </div>
         <input id="cpdf-add-more-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>`;
 
-      // Single file high-DPI document rendering
-      if (!isBatch) {
-        (async () => {
-          const thumbBox = container.querySelector('#comp-studio-thumb-box');
-          if (!thumbBox) return;
-          if (fam === 'pdf') {
-            try {
-              const pdfjs = await loadJs();
-              const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
-              const page = await doc.getPage(1);
-              const vp = page.getViewport({ scale: 0.85 });
-              const c = document.createElement('canvas');
-              c.width = Math.max(1, Math.round(vp.width));
-              c.height = Math.max(1, Math.round(vp.height));
-              const ctx = c.getContext('2d');
-              await page.render({ canvasContext: ctx, viewport: vp }).promise;
-              c.style.display = 'block';
-              c.style.maxWidth = '100%';
-              c.style.maxHeight = 'calc(100vh - 210px)';
-              c.style.width = 'auto';
-              c.style.height = 'auto';
-              c.style.borderRadius = '4px';
-              thumbBox.innerHTML = '';
-              thumbBox.append(c);
-            } catch (e) {
-              console.warn('[Compress] stage render error:', e);
-            }
-          } else {
-            const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
-            if (typeof getThumb === 'function') {
-              getThumb(activeFile, fam).then((u) => {
-                if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;"/>`;
-              }).catch(() => {});
-            }
+      // High-DPI document rendering
+      (async () => {
+        const thumbBox = container.querySelector('#comp-studio-thumb-box');
+        if (!thumbBox) return;
+        if (fam === 'pdf') {
+          try {
+            const pdfjs = await loadJs();
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
+            const page = await doc.getPage(1);
+            const vp = page.getViewport({ scale: 0.85 });
+            const c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(vp.width));
+            c.height = Math.max(1, Math.round(vp.height));
+            const ctx = c.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            c.style.display = 'block';
+            c.style.maxWidth = '100%';
+            c.style.maxHeight = 'calc(100vh - 220px)';
+            c.style.width = 'auto';
+            c.style.height = 'auto';
+            c.style.borderRadius = '4px';
+            thumbBox.innerHTML = '';
+            thumbBox.append(c);
+          } catch (e) {
+            console.warn('[Compress] stage render error:', e);
           }
-        })();
-      }
+        } else {
+          const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
+          if (typeof getThumb === 'function') {
+            getThumb(activeFile, fam).then((u) => {
+              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;"/>`;
+            }).catch(() => {});
+          }
+        }
+      })();
 
       // Wire Tier Selection
       container.querySelectorAll('.cpdf-benchmark-card').forEach(row => {
@@ -2123,10 +2107,10 @@
       }
 
       // Wire Batch Add More Trigger
-      const addMoreBtn = container.querySelector('#comp-add-more-btn');
+      const addMoreTrigger = container.querySelector('#comp-add-more-trigger');
       const addMoreInp = container.querySelector('#cpdf-add-more-inp');
-      if (addMoreBtn && addMoreInp) {
-        addMoreBtn.onclick = () => addMoreInp.click();
+      if (addMoreTrigger && addMoreInp) {
+        addMoreTrigger.onclick = () => addMoreInp.click();
         addMoreInp.onchange = () => {
           if (addMoreInp.files && addMoreInp.files.length) {
             addFiles(addMoreInp.files);
@@ -2134,22 +2118,6 @@
           addMoreInp.value = '';
         };
       }
-
-      // Wire Batch Remove Item
-      container.querySelectorAll('.cpdf-batch-card-remove').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const idx = parseInt(btn.dataset.idx, 10);
-          if (!isNaN(idx) && idx >= 0 && idx < files.length) {
-            files.splice(idx, 1);
-            if (files.length === 0) {
-              renderUpload();
-            } else {
-              renderConfigure();
-            }
-          }
-        };
-      });
 
       // Wire Run Action
       container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
@@ -2326,245 +2294,90 @@
       const saved  = oTot - cTot;
       const redPct = Math.max(0, Math.round((1 - cTot / oTot) * 100));
       const win    = cTot < oTot;
-      const barW   = win ? Math.max(10, Math.round((cTot / oTot) * 100)) : 100;
       const single = results.length === 1;
       const urls   = results.map(r => URL.createObjectURL(r.result.blob));
       const firstRes = results[0];
       const outName = single ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
-      const nextPresetLabel = preset === 'maximum' ? 'Recommended' : 'Extreme';
-      const nextPresetKey = preset === 'maximum' ? 'balanced' : 'maximum';
-
-      // Smart Suggestions based on family
-      let smartTip = 'Did you know you can edit, sign, and organize PDFs directly in FileKit?';
-      let smartTools = [
-        { id: 'pdf-sign', name: 'Sign Document' },
-        { id: 'pdf-edit-text', name: 'Edit Text' }
-      ];
-
-      const fam = firstRes.family;
-      if (fam === 'pdf') {
-        smartTip = 'Need to sign, convert, or organize your compressed PDF? Check out:';
-        smartTools = [
-          { id: 'pdf-sign', name: 'Sign PDF' },
-          { id: 'pdf-convert', name: 'Convert PDF' }
-        ];
-      } else if (fam === 'image') {
-        smartTip = 'Enhance or crop your compressed image with these tools:';
-        smartTools = [
-          { id: 'bg-remover', name: 'Remove Background' },
-          { id: 'image-crop', name: 'Crop & Resize' }
-        ];
-      } else if (fam === 'video' || fam === 'audio') {
-        smartTip = 'Edit or convert your media files locally:';
-        smartTools = [
-          { id: 'audio-trim', name: 'Trim Audio' },
-          { id: 'video-convert', name: 'Convert Video' }
-        ];
-      }
-
-      let pageTotal = 1;
-      let curPage = 1;
-      let flipDoc = null;
-
-      // Expanded Smart Next Steps
-      if (fam === 'pdf') {
-        smartTip = 'What would you like to do next with your compressed PDF?';
-        smartTools = [
-          { id: 'organize', name: 'Organize & Split' },
-          { id: 'pdf-sign', name: 'Sign Document' },
-          { id: 'pdf-to-word', name: 'Convert to Word' },
-          { id: 'pdf-protect', name: 'Protect PDF' }
-        ];
-      }
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden; width: 100%;">
-          <div class="conv-result-studio">
-            
-            <!-- LEFT: Real Output Document Preview & Savings Visualizer -->
-            <div class="conv-result-preview-col" id="comp-result-preview-box">
-              <div id="comp-flip-stage" style="width: 100%; height: 165px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 6px;">
-                <div class="org-tile-ph" style="font-size:12px;color:#94A3B8;">Rendering document preview…</div>
-              </div>
-
-              <div class="org-flip-nav" id="comp-flip-nav-box" style="display: none; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; width: 100%;">
-                <button type="button" class="conv-result-btn-secondary" id="comp-flip-prev" disabled style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">‹ Prev</button>
-                <span id="comp-flip-status" style="font-size: 11.5px; font-weight: 700; color: #334155; min-width: 75px; text-align: center; white-space: nowrap !important;">Page 1</span>
-                <button type="button" class="conv-result-btn-secondary" id="comp-flip-next" style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">Next ›</button>
-              </div>
-
-              <span class="conv-result-name-sub" title="${_esc(outName)}" style="margin-top: 2px;">${_esc(outName)}</span>
-              <span style="font-size:12px;font-weight:700;color:#0F172A;margin-top:2px;">
-                ${_bytes(oTot)} &rarr; ${_bytes(cTot)}
-              </span>
-              <span style="font-size:11px;color:${win ? '#16A34A' : '#64748B'};font-weight:600;margin-top:1px;">
-                ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Already optimal size'}
-              </span>
-
-              <!-- Comparison bar -->
-              <div style="width: 100%; max-width: 180px; height: 6px; background: #E2E8F0; border-radius: 3px; margin-top: 6px; overflow: hidden;">
-                <div style="width: ${barW}%; height: 100%; background: ${win ? '#16A34A' : '#64748B'}; border-radius: 3px;"></div>
-              </div>
+        <div class="cpdf-result-body">
+          <div class="cpdf-result-card">
+            <div class="cpdf-result-badge">✓</div>
+            <h2 class="cpdf-result-title">Compression Complete</h2>
+            <p class="cpdf-result-summary">
+              ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Files compressed successfully'}
+            </p>
+            <div class="cpdf-result-metrics">
+              <span>${_bytes(oTot)}</span>
+              <span class="cpdf-result-arrow">&rarr;</span>
+              <strong class="cpdf-result-csize">${_bytes(cTot)}</strong>
             </div>
 
-            <!-- RIGHT: Actions & Smart Tips -->
-            <div class="conv-result-action-col">
-              
-              <div class="conv-result-done-header">
-                <div class="conv-result-done-badge">✓</div>
-                <h3 class="conv-result-done-title">Done</h3>
-              </div>
-              <p class="conv-result-filename-title" title="${_esc(outName)}">
-                ${win ? `Compressed ${results.length} file${single ? '' : 's'} · ${redPct}% smaller` : 'Compression complete'}
-              </p>
-
-              <!-- Main Download Button: Vibrant Emerald Green -->
-              ${single ? `
-                <a class="conv-result-btn-download" href="${urls[0]}" download="${_esc(outName)}" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download ${_esc(outName)} (${_bytes(cTot)})</span>
-                </a>
-              ` : `
-                <button class="conv-result-btn-download" id="comp-zip-dl" type="button" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download all as ZIP (${_bytes(cTot)})</span>
+            <!-- Download Buttons -->
+            ${single ? `
+              <a class="cpdf-result-cta-dl" href="${urls[0]}" download="${_esc(outName)}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download Compressed PDF</span>
+              </a>
+            ` : `
+              <div class="cpdf-batch-dl-group">
+                <button type="button" class="cpdf-result-cta-dl" id="comp-zip-dl-btn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download All as ZIP (${_bytes(cTot)})</span>
                 </button>
-              `}
 
-              <!-- Secondary Actions -->
-              <div class="conv-result-btn-row">
-                <button type="button" class="conv-result-btn-secondary" id="comp-again">
-                  <span>+ Compress more</span>
-                </button>
-                <button type="button" class="conv-result-btn-secondary" id="comp-retry">
-                  <span>Try ${nextPresetLabel}</span>
-                </button>
-              </div>
-
-              <!-- Smart Tip Card with Authentic Bespoke SVG Icons -->
-              <div class="conv-smart-tip-card">
-                <div class="conv-smart-tip-header">
-                  <span>Smart tip! 💡</span>
-                </div>
-                <p class="conv-smart-tip-desc">${smartTip}</p>
-                <div class="conv-smart-tools-list">
-                  ${smartTools.map(st => {
-                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
-                    return `
-                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
-                        <div class="conv-smart-tool-left">
-                          <span class="conv-smart-tool-icon">${iconSvg}</span>
-                          <span>${st.name}</span>
-                        </div>
-                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                <div class="cpdf-batch-indiv-list">
+                  <span class="cpdf-batch-indiv-head">Download individually:</span>
+                  <div class="cpdf-batch-indiv-grid">
+                    ${results.map((r, idx) => `
+                      <div class="cpdf-batch-indiv-item">
+                        <span class="cpdf-batch-indiv-name" title="${_esc(r.result.filename)}">📄 ${_esc(r.result.filename)}</span>
+                        <a href="${urls[idx]}" download="${_esc(r.result.filename)}" class="cpdf-batch-indiv-btn">
+                          ⬇ ${_bytes(r.result.blob.size)}
+                        </a>
                       </div>
-                    `;
-                  }).join('')}
+                    `).join('')}
+                  </div>
                 </div>
               </div>
+            `}
 
-            </div>
-
+            <button type="button" class="cpdf-result-btn-again" id="comp-again-trigger">
+              + Compress more files
+            </button>
           </div>
         </div>
       `;
 
-      // ── Real Output Preview Engine in Compress Result Studio ──
-      const stage = container.querySelector('#comp-flip-stage');
-      const navBox = container.querySelector('#comp-flip-nav-box');
-      const status = container.querySelector('#comp-flip-status');
-      const prevBtn = container.querySelector('#comp-flip-prev');
-      const nextBtn = container.querySelector('#comp-flip-next');
-
-      if (single && results[0]?.result?.blob) {
-        const resBlob = results[0].result.blob;
-        if (fam === 'pdf') {
-          (async () => {
-            try {
-              const pdfjs = await loadJs();
-              flipDoc = await pdfjs.getDocument({ data: new Uint8Array(await resBlob.arrayBuffer()) }).promise;
-              pageTotal = flipDoc.numPages;
-
-              const updateFlipPage = async (p) => {
-                curPage = p;
-                if (status) status.textContent = `Page ${curPage} of ${pageTotal}`;
-                if (prevBtn) prevBtn.disabled = curPage <= 1;
-                if (nextBtn) nextBtn.disabled = curPage >= pageTotal;
-
-                const page = await flipDoc.getPage(curPage);
-                const vp = page.getViewport({ scale: 0.75 });
-                const c = document.createElement('canvas');
-                c.width = Math.max(1, Math.round(vp.width));
-                c.height = Math.max(1, Math.round(vp.height));
-                const ctx = c.getContext('2d');
-                await page.render({ canvasContext: ctx, viewport: vp }).promise;
-                c.style.maxHeight = '155px';
-                c.style.maxWidth = '100%';
-                c.style.borderRadius = '4px';
-                c.style.border = '1px solid #CBD5E1';
-                c.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.12)';
-                if (stage) {
-                  stage.innerHTML = '';
-                  stage.append(c);
-                }
-              };
-
-              if (pageTotal > 1 && navBox) navBox.style.display = 'flex';
-              if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateFlipPage(curPage - 1); };
-              if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateFlipPage(curPage + 1); };
-
-              await updateFlipPage(1);
-            } catch (e) {
-              console.warn('[Compress] PDF flipbook error:', e);
-            }
-          })();
-        } else if (fam === 'image') {
-          const u = URL.createObjectURL(resBlob);
-          if (stage) {
-            stage.innerHTML = `<img src="${u}" style="max-height:155px;max-width:100%;border-radius:4px;border:1px solid #CBD5E1;box-shadow:0 4px 12px rgba(15,23,42,0.12);object-fit:contain;">`;
+      // Wire ZIP download
+      const zipBtn = container.querySelector('#comp-zip-dl-btn');
+      if (zipBtn) {
+        zipBtn.onclick = async () => {
+          zipBtn.disabled = true;
+          zipBtn.innerHTML = '<span>Creating ZIP…</span>';
+          try {
+            const zipBlob = await makeZip(results);
+            const zipUrl = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = zipUrl;
+            a.download = `${U.baseName(files[0].name)}-compressed.zip`;
+            a.click();
+            URL.revokeObjectURL(zipUrl);
+          } catch(e) {
+            console.error('ZIP creation error:', e);
+          } finally {
+            zipBtn.disabled = false;
+            zipBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download All as ZIP (${_bytes(cTot)})</span>`;
           }
-        }
+        };
       }
 
-      // Multi-file ZIP download
-      if (!single) {
-        container.querySelector('#comp-zip-dl')?.addEventListener('click', async () => {
-          const zip = await makeZip(results);
-          const u = URL.createObjectURL(zip);
-          const a = document.createElement('a');
-          a.href = u;
-          a.download = outName;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(u), 4000);
-        });
-      }
-
-      // Smart tool clicks with instant file pass-through!
-      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const tid = item.dataset.toolId;
-          const targetBlob = firstRes.result.blob;
-          const targetFile = targetBlob ? new File([targetBlob], outName, { type: targetBlob.type || 'application/pdf' }) : files[0];
-          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
-            window.FF.app.openTool(tid, true, targetFile ? [targetFile] : null);
-          }
-        });
-      });
-
-      container.querySelector('#comp-again')?.addEventListener('click', () => {
-        urls.forEach(u => URL.revokeObjectURL(u));
-        files = []; preset = 'balanced'; output = 'zip';
+      // Wire Compress Again
+      container.querySelector('#comp-again-trigger')?.addEventListener('click', () => {
+        files = [];
         renderUpload();
       });
-
-      container.querySelector('#comp-retry')?.addEventListener('click', () => {
-        urls.forEach(u => URL.revokeObjectURL(u));
-        preset = nextPresetKey;
-        renderConfigure();
-      });
     }
-
-    /* ── Error ──────────────────────────────────────── */
     function renderError(msg) {
       container.innerHTML = toolHeader() + `
         <div class="cpdf-body cpdf-body--center">

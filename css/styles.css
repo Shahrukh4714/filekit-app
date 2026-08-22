@@ -32799,15 +32799,17 @@ button#org-dl:hover,
 
 
 
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   5y. FileKit Refined Designer Studio Workstation (White / Lavender / Black / Yellow)
-   Grounded Stability · 6px Radius · Zero Scrollbar · Intentional Brand Restraint
+   5y. FileKit Studio Workstation (Compact Estimation + Clean Stage + Non-Squeezed CTA)
 ═══════════════════════════════════════════════════════════════════════════ */
 
 #app-workspace-tool-view #app-tool-stage,
 #app-tool-stage.app-stage-container,
 .app-stage-container:has(.cpdf-benchmark-body),
-#app-tool-stage:has(.cpdf-benchmark-body) {
+#app-tool-stage:has(.cpdf-benchmark-body),
+.app-stage-container:has(.cpdf-result-body),
+#app-tool-stage:has(.cpdf-result-body) {
   padding: 0 !important;
   margin: 0 !important;
   max-width: 100% !important;
@@ -32822,7 +32824,10 @@ button#org-dl:hover,
 
 body #app-view #app-canvas.app-canvas:has(.cpdf-benchmark-body),
 body #app-view .app-canvas.ff-tool-active:has(.cpdf-benchmark-body),
-html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-body) {
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-body),
+body #app-view #app-canvas.app-canvas:has(.cpdf-result-body),
+body #app-view .app-canvas.ff-tool-active:has(.cpdf-result-body),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body) {
   padding: 0 !important;
   margin: 0 !important;
 }
@@ -32859,13 +32864,13 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 32px !important;
+  padding: 24px !important;
   background: #EEF2F6 !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
-/* Centered White Document Sheet with Natural Paper Drop Shadow */
+/* Centered White Document Sheet */
 .cpdf-benchmark-paper {
   background: #FFFFFF !important;
   border-radius: 4px !important;
@@ -32874,29 +32879,57 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   align-items: center !important;
   justify-content: center !important;
   padding: 0 !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 16px !important;
   max-width: 480px !important;
   max-height: calc(100vh - 210px) !important;
   overflow: hidden !important;
   transform: none !important;
 }
 
-.cpdf-benchmark-fileinfo {
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
-  color: #64748B !important;
-  text-align: center !important;
+.cpdf-benchmark-fileinfo-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 5px 12px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
 }
 
-/* Right Studio Panel: Pure White Surface */
+.cpdf-benchmark-fileinfo-text {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.cpdf-benchmark-btn-add {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: #EDE9FE !important;
+  border: 1px solid #DDD6FE !important;
+  border-radius: 3px !important;
+  padding: 2px 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #7C3AED !important;
+  cursor: pointer !important;
+}
+
+.cpdf-benchmark-btn-add:hover {
+  background: #DDD6FE !important;
+}
+
+/* Right Studio Panel: Compact and Spacious */
 .cpdf-benchmark-panel {
   background: #FFFFFF !important;
   border-left: 1px solid #E5EAF2 !important;
-  padding: 36px 32px !important;
+  padding: 28px 28px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  gap: 16px !important;
+  gap: 10px !important;
   box-sizing: border-box !important;
   height: 100% !important;
   overflow: hidden !important;
@@ -32906,14 +32939,14 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 .cpdf-benchmark-header {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
-  margin-bottom: 8px !important;
+  gap: 10px !important;
+  margin-bottom: 2px !important;
 }
 
 .cpdf-benchmark-icon {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 6px !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 5px !important;
   background: #FF4747 !important;
   display: flex !important;
   align-items: center !important;
@@ -32922,7 +32955,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-title {
-  font-size: 22px !important;
+  font-size: 20px !important;
   font-weight: 700 !important;
   color: #111827 !important;
   letter-spacing: -0.02em !important;
@@ -32933,7 +32966,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 .cpdf-benchmark-card {
   display: flex !important;
   align-items: center !important;
-  padding: 14px 18px !important;
+  padding: 10px 14px !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 6px !important;
@@ -32949,7 +32982,6 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   transform: none !important;
 }
 
-/* Active State: FileKit Signature Lavender Accent */
 .cpdf-benchmark-card.is-active {
   border: 1.5px solid #7C3AED !important;
   background: #FAF8FF !important;
@@ -32958,15 +32990,15 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 
 /* Radio Button */
 .cpdf-benchmark-radio {
-  width: 18px !important;
-  height: 18px !important;
+  width: 16px !important;
+  height: 16px !important;
   border-radius: 50% !important;
   border: 1.5px solid #CBD5E1 !important;
   background: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-right: 14px !important;
+  margin-right: 12px !important;
   flex-shrink: 0 !important;
 }
 
@@ -32976,8 +33008,8 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-radio-dot {
-  width: 8px !important;
-  height: 8px !important;
+  width: 6px !important;
+  height: 6px !important;
   border-radius: 50% !important;
   background: #FFFFFF !important;
   display: none !important;
@@ -32988,7 +33020,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-card-label {
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
   color: #111827 !important;
   flex: 1 !important;
@@ -33002,34 +33034,84 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-pill-smallest {
-  font-size: 11px !important;
+  font-size: 10.5px !important;
   font-weight: 700 !important;
   color: #166534 !important;
   background: #DCFCE7 !important;
-  padding: 3px 8px !important;
+  padding: 2px 7px !important;
   border-radius: 999px !important;
 }
 
-/* Estimated New File Size Box */
+/* Exact Target Size Row */
+.cpdf-benchmark-card--target {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 6px !important;
+}
+
+.cpdf-target-row-top {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.cpdf-target-input-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-left: 28px !important;
+}
+
+.cpdf-target-inp {
+  width: 80px !important;
+  height: 28px !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  outline: none !important;
+}
+
+.cpdf-target-inp:focus {
+  border-color: #7C3AED !important;
+}
+
+.cpdf-target-unit-sel {
+  height: 28px !important;
+  background: #F8FAFC !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 4px !important;
+  padding: 0 6px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #374151 !important;
+  outline: none !important;
+  cursor: pointer !important;
+}
+
+/* COMPACT Estimated New File Size Box */
 .cpdf-benchmark-est-box {
   background: #EEFAF3 !important;
   border-radius: 6px !important;
-  padding: 14px 18px !important;
-  margin-top: 4px !important;
+  padding: 10px 14px !important;
+  margin-top: 2px !important;
 }
 
 .cpdf-benchmark-est-title {
-  font-size: 13px !important;
-  font-weight: 500 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
   color: #4B5563 !important;
-  margin-bottom: 6px !important;
+  margin-bottom: 4px !important;
 }
 
 .cpdf-benchmark-est-metrics {
   display: flex !important;
   align-items: baseline !important;
   gap: 8px !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 6px !important;
 }
 
 .cpdf-benchmark-est-new {
@@ -33039,23 +33121,23 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 }
 
 .cpdf-benchmark-est-old {
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   color: #6B7280 !important;
 }
 
 .cpdf-benchmark-est-pct {
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   color: #854D0E !important;
   background: #FEF08A !important;
   border: 1px solid #FDE047 !important;
-  padding: 1px 7px !important;
-  border-radius: 4px !important;
+  padding: 1px 6px !important;
+  border-radius: 3px !important;
 }
 
 .cpdf-benchmark-track {
   width: 100% !important;
-  height: 6px !important;
+  height: 5px !important;
   background: #DCFCE7 !important;
   border-radius: 999px !important;
   overflow: hidden !important;
@@ -33071,12 +33153,12 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
 /* FileKit Signature Obsidian Black CTA Button */
 .cpdf-benchmark-cta {
   width: 100% !important;
-  height: 46px !important;
+  height: 44px !important;
   background: #18181B !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 6px !important;
-  font-size: 15px !important;
+  font-size: 14.5px !important;
   font-weight: 700 !important;
   display: flex !important;
   align-items: center !important;
@@ -33094,152 +33176,165 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-benchmark-bo
   transform: none !important;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Target Size & Batch Queue Styles
-═══════════════════════════════════════════════════════════════════════════ */
-.cpdf-benchmark-card--target {
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 8px !important;
-}
-
-.cpdf-target-row-top {
-  display: flex !important;
-  align-items: center !important;
+/* Result Screen Styles */
+.cpdf-result-body {
   width: 100% !important;
-}
-
-.cpdf-target-input-wrap {
+  height: calc(100vh - 60px) !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  padding-left: 32px !important;
-  margin-top: 4px !important;
+  justify-content: center !important;
+  background: #EEF2F6 !important;
+  padding: 24px !important;
 }
 
-.cpdf-target-inp {
-  width: 90px !important;
-  height: 32px !important;
+.cpdf-result-card {
   background: #FFFFFF !important;
-  border: 1.5px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  padding: 4px 8px !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 36px 40px !important;
+  max-width: 520px !important;
+  width: 100% !important;
+  text-align: center !important;
+  box-shadow: 0 16px 36px -12px rgba(15, 23, 42, 0.10) !important;
+}
+
+.cpdf-result-badge {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: #DCFCE7 !important;
+  color: #16A34A !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 12px !important;
+}
+
+.cpdf-result-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
   color: #111827 !important;
-  outline: none !important;
+  margin: 0 0 6px !important;
 }
 
-.cpdf-target-inp:focus {
-  border-color: #7C3AED !important;
+.cpdf-result-summary {
+  font-size: 14px !important;
+  color: #16A34A !important;
+  font-weight: 600 !important;
+  margin: 0 0 14px !important;
 }
 
-.cpdf-target-unit-sel {
-  height: 32px !important;
+.cpdf-result-metrics {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
   background: #F8FAFC !important;
-  border: 1.5px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  padding: 0 8px !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: #374151 !important;
-  outline: none !important;
-  cursor: pointer !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  padding: 6px 16px !important;
+  font-size: 14px !important;
+  color: #64748B !important;
+  margin-bottom: 24px !important;
 }
 
-/* Batch Stage Queue */
-.cpdf-batch-stage-header {
+.cpdf-result-csize {
+  color: #111827 !important;
+  font-size: 16px !important;
+}
+
+.cpdf-result-cta-dl {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  height: 46px !important;
+  background: #16A34A !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25) !important;
+  transition: background 0.15s ease !important;
+}
+
+.cpdf-result-cta-dl:hover {
+  background: #15803D !important;
+}
+
+.cpdf-batch-indiv-list {
+  margin-top: 18px !important;
+  text-align: left !important;
+  border-top: 1px solid #F1F5F9 !important;
+  padding-top: 14px !important;
+}
+
+.cpdf-batch-indiv-head {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+}
+
+.cpdf-batch-indiv-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  max-height: 160px !important;
+  overflow-y: auto !important;
+}
+
+.cpdf-batch-indiv-item {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  width: 100% !important;
-  max-width: 680px !important;
-  margin-bottom: 16px !important;
-}
-
-.cpdf-batch-title {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: #1E293B !important;
-}
-
-.cpdf-batch-add-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 6px 12px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
+  padding: 6px 10px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 4px !important;
   font-size: 12.5px !important;
-  font-weight: 600 !important;
-  color: #374151 !important;
-  cursor: pointer !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-.cpdf-batch-add-btn:hover {
-  background: #F8FAFC !important;
-  border-color: #94A3B8 !important;
-}
-
-.cpdf-batch-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-  gap: 12px !important;
-  width: 100% !important;
-  max-width: 680px !important;
-  max-height: calc(100vh - 200px) !important;
-  overflow-y: auto !important;
-  padding: 4px !important;
-}
-
-.cpdf-batch-card {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 10px 12px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
-  position: relative !important;
-}
-
-.cpdf-batch-card-icon {
-  font-size: 20px !important;
-}
-
-.cpdf-batch-card-info {
-  flex: 1 !important;
-  min-width: 0 !important;
-}
-
-.cpdf-batch-card-name {
-  font-size: 13px !important;
+.cpdf-batch-indiv-name {
   font-weight: 600 !important;
   color: #1E293B !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  max-width: 260px !important;
 }
 
-.cpdf-batch-card-size {
+.cpdf-batch-indiv-btn {
   font-size: 11.5px !important;
-  color: #64748B !important;
+  font-weight: 700 !important;
+  color: #7C3AED !important;
+  background: #EDE9FE !important;
+  padding: 2px 8px !important;
+  border-radius: 3px !important;
+  text-decoration: none !important;
 }
 
-.cpdf-batch-card-remove {
+.cpdf-batch-indiv-btn:hover {
+  background: #DDD6FE !important;
+}
+
+.cpdf-result-btn-again {
+  display: inline-block !important;
+  margin-top: 18px !important;
   background: transparent !important;
   border: none !important;
-  color: #94A3B8 !important;
   font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
   cursor: pointer !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
 }
 
-.cpdf-batch-card-remove:hover {
-  background: #FEE2E2 !important;
-  color: #EF4444 !important;
+.cpdf-result-btn-again:hover {
+  color: #0F172A !important;
 }
