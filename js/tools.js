@@ -14256,6 +14256,7 @@ trailer<</Root 1 0 R>>`;
   const loadLib = () => U.loadScript(...V.lib).then(() => window.PDFLib);
   const loadJs  = () => U.loadScript(...V.js).then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
   const loadFf  = () => U.loadScript(...V.ff).then(() => window.fflate);
+  const loadZip = loadFf;
 
   const _esc   = s => String(s ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14676,6 +14677,8 @@ trailer<</Root 1 0 R>>`;
 
     /* ── Step 1: Upload ─────────────────────────────── */
     function renderUpload() {
+      files = [];
+      resetState();
       exitBleed();
       clearUrls();
       container.innerHTML = `
@@ -14730,7 +14733,7 @@ trailer<</Root 1 0 R>>`;
         </div>`;
       const dz = container.querySelector('#org-dz');
       const inp = container.querySelector('#org-inp');
-      inp.onchange = () => { const arr = [...(inp.files || [])]; if (arr.length) acceptFiles(arr); };
+      inp.onchange = () => { const arr = [...(inp.files || [])]; inp.value = ''; if (arr.length) acceptFiles(arr); };
       dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
       dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
       dz.addEventListener('drop', e => {
@@ -14743,7 +14746,7 @@ trailer<</Root 1 0 R>>`;
     function acceptFiles(arr) {
       const ok = arr.filter(f => familyOf(f) && f.size <= MAX_BYTES);
       if (!ok.length) { window.FF.util.toast('Please choose a valid file (up to 200 MB).', 'warn'); return; }
-      files = files.concat(ok);
+      files = files.length ? files.concat(ok) : ok;
       resetState();
       renderConfigure();
     }
