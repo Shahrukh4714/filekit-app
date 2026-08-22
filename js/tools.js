@@ -15575,7 +15575,7 @@ trailer<</Root 1 0 R>>`;
               </p>
 
               <!-- Main Download Button: Obsidian Black -->
-              <button class="conv-result-btn-download" id="org-dl" type="button">
+              <button class="conv-result-btn-download" id="org-dl" type="button" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span>Download ${res.name} (${outSize})</span>
               </button>
