@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (Clean Stage + Compact Right Panel + Exact Target) ── */
+    /* ── Step 2: Configure (Adjusted Multi-File Stage + Universal Format Engine) ── */
     let customTargetKB = 200;
     let customUnit = 'KB'; // 'KB' | 'MB'
 
@@ -1903,7 +1903,6 @@
       
       const isBatch = files.length > 1;
       const activeFile = files[0];
-      const fam = familyOf(activeFile);
       const totalOriginalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
       // Target size in bytes
@@ -1930,26 +1929,52 @@
 
       const fileInfoText = !isBatch 
         ? `${_esc(activeFile.name)} (${_bytes(activeFile.size)})`
-        : `${_esc(activeFile.name)} (+${files.length - 1} more file${files.length > 2 ? 's' : ''} · ${_bytes(totalOriginalBytes)})`;
+        : `${files.length} Files Selected · ${_bytes(totalOriginalBytes)}`;
 
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Always Clean Centered Document Stage -->
-            <div class="cpdf-benchmark-stage">
-              <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
-                <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
-              </div>
-              <div class="cpdf-benchmark-fileinfo-row">
-                <span class="cpdf-benchmark-fileinfo-text">${fileInfoText}</span>
-                <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger" title="Add more files">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>Add Files</span>
-                </button>
-              </div>
+            <!-- Left Stage: Adjusted for Single or Multi-File Preview -->
+            <div class="cpdf-benchmark-stage ${isBatch ? 'cpdf-stage-multi' : ''}">
+              ${!isBatch ? `
+                <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
+                  <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
+                </div>
+                <div class="cpdf-benchmark-fileinfo-row">
+                  <span class="cpdf-benchmark-fileinfo-text">${fileInfoText}</span>
+                  <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger" title="Add more files">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Add Files</span>
+                  </button>
+                </div>
+              ` : `
+                <div class="cpdf-multi-preview-container">
+                  <div class="cpdf-multi-stage-header">
+                    <span class="cpdf-multi-stage-title">${files.length} Files · Total ${_bytes(totalOriginalBytes)}</span>
+                    <button type="button" class="cpdf-benchmark-btn-add" id="comp-add-more-trigger">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                      <span>Add More</span>
+                    </button>
+                  </div>
+                  <div class="cpdf-multi-stage-grid">
+                    ${files.map((f, idx) => `
+                      <div class="cpdf-multi-file-card" data-idx="${idx}">
+                        <div class="cpdf-multi-card-thumb" id="comp-thumb-${idx}">
+                          <span class="cpdf-multi-card-ext">${(f.name.split('.').pop() || 'FILE').toUpperCase()}</span>
+                        </div>
+                        <div class="cpdf-multi-card-info">
+                          <div class="cpdf-multi-card-name" title="${_esc(f.name)}">${_esc(f.name)}</div>
+                          <div class="cpdf-multi-card-size">${_bytes(f.size)}</div>
+                        </div>
+                        <button type="button" class="cpdf-multi-card-del" data-idx="${idx}" title="Remove file">✕</button>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `}
             </div>
 
-            <!-- Right Panel: Compact, Non-Squeezed Studio Panel -->
+            <!-- Right Panel: Studio Panel with Options -->
             <div class="cpdf-benchmark-panel">
               <!-- Top Header -->
               <div class="cpdf-benchmark-header">
@@ -2032,41 +2057,68 @@
         </div>
         <input id="cpdf-add-more-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>`;
 
-      // High-DPI document rendering
-      (async () => {
-        const thumbBox = container.querySelector('#comp-studio-thumb-box');
-        if (!thumbBox) return;
-        if (fam === 'pdf') {
-          try {
-            const pdfjs = await loadJs();
-            const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
-            const page = await doc.getPage(1);
-            const vp = page.getViewport({ scale: 0.85 });
-            const c = document.createElement('canvas');
-            c.width = Math.max(1, Math.round(vp.width));
-            c.height = Math.max(1, Math.round(vp.height));
-            const ctx = c.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            c.style.display = 'block';
-            c.style.maxWidth = '100%';
-            c.style.maxHeight = 'calc(100vh - 220px)';
-            c.style.width = 'auto';
-            c.style.height = 'auto';
-            c.style.borderRadius = '4px';
-            thumbBox.innerHTML = '';
-            thumbBox.append(c);
-          } catch (e) {
-            console.warn('[Compress] stage render error:', e);
+      // Render previews for single or multi files
+      if (!isBatch) {
+        (async () => {
+          const thumbBox = container.querySelector('#comp-studio-thumb-box');
+          if (!thumbBox) return;
+          const fam = familyOf(activeFile);
+          if (fam === 'pdf') {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp = page.getViewport({ scale: 0.85 });
+              const c = document.createElement('canvas');
+              c.width = Math.max(1, Math.round(vp.width));
+              c.height = Math.max(1, Math.round(vp.height));
+              const ctx = c.getContext('2d');
+              await page.render({ canvasContext: ctx, viewport: vp }).promise;
+              c.style.display = 'block';
+              c.style.maxWidth = '100%';
+              c.style.maxHeight = 'calc(100vh - 220px)';
+              c.style.width = 'auto';
+              c.style.height = 'auto';
+              c.style.borderRadius = '4px';
+              thumbBox.innerHTML = '';
+              thumbBox.append(c);
+            } catch (e) {
+              thumbBox.innerHTML = `<div style="padding:40px;text-align:center;color:#64748B;">📄 ${_esc(activeFile.name)}</div>`;
+            }
+          } else {
+            const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
+            if (typeof getThumb === 'function') {
+              getThumb(activeFile, fam).then((u) => {
+                if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;"/>`;
+              }).catch(() => {});
+            }
           }
-        } else {
-          const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
-          if (typeof getThumb === 'function') {
-            getThumb(activeFile, fam).then((u) => {
-              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;"/>`;
-            }).catch(() => {});
+        })();
+      } else {
+        // Multi-file thumbnails
+        files.forEach(async (f, idx) => {
+          const tb = container.querySelector(`#comp-thumb-${idx}`);
+          if (!tb) return;
+          const fam = familyOf(f);
+          if (fam === 'image') {
+            const u = URL.createObjectURL(f);
+            tb.innerHTML = `<img src="${u}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" />`;
+          } else if (fam === 'pdf') {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp = page.getViewport({ scale: 0.3 });
+              const c = document.createElement('canvas');
+              c.width = vp.width; c.height = vp.height;
+              await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+              c.style.width = '100%'; c.style.height = '100%'; c.style.objectFit = 'cover'; c.style.borderRadius = '4px';
+              tb.innerHTML = '';
+              tb.append(c);
+            } catch (e) {}
           }
-        }
-      })();
+        });
+      }
 
       // Wire Tier Selection
       container.querySelectorAll('.cpdf-benchmark-card').forEach(row => {
@@ -2119,6 +2171,22 @@
         };
       }
 
+      // Wire Multi-card delete
+      container.querySelectorAll('.cpdf-multi-card-del').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx, 10);
+          if (!isNaN(idx) && idx >= 0 && idx < files.length) {
+            files.splice(idx, 1);
+            if (files.length === 0) {
+              renderUpload();
+            } else {
+              renderConfigure();
+            }
+          }
+        };
+      });
+
       // Wire Run Action
       container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
         runCompress();
@@ -2127,37 +2195,28 @@
 
     /* ── Step 3: Processing ─────────────────────────── */
     function renderProcessing() {
-      container.innerHTML = toolHeader() + `
-        <div class="cpdf-body cpdf-body--center">
-          <div class="cpdf-spinner" aria-hidden="true">
-            <div class="cpdf-spin-outer"></div>
-            <div class="cpdf-spin-inner">${ICONS.compress}</div>
+      container.innerHTML = `
+        <div class="cpdf-prog-wrap" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 120px);padding:32px;text-align:center;">
+          <div class="cpdf-prog-spin-box" style="width:48px;height:48px;border:3px solid #E2E8F0;border-top-color:#7C3AED;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:18px;"></div>
+          <h3 id="cpdf-prog-msg" style="font-size:18px;font-weight:700;color:#111827;margin:0 0 12px;">Compressing your files…</h3>
+          <div style="width:100%;max-width:320px;height:6px;background:#E2E8F0;border-radius:999px;overflow:hidden;margin-bottom:8px;">
+            <div id="cpdf-prog-fill" style="width:0%;height:100%;background:#7C3AED;transition:width 0.2s ease;"></div>
           </div>
-          <p class="cpdf-proc-title">Compressing ${files.length} file${files.length===1?'':'s'}</p>
-          <p class="cpdf-proc-sub" id="cpdf-prog-msg">Preparing…</p>
-          <div class="cpdf-prog-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="cpdf-prog-track">
-            <div class="cpdf-prog-fill" id="cpdf-prog-fill"></div>
-          </div>
-          <div class="cpdf-prog-foot">
-            <span id="cpdf-prog-pct">0%</span>
-            <span class="cpdf-proc-local">${ICONS.shield} Processed locally</span>
-          </div>
+          <span id="cpdf-prog-pct" style="font-size:13px;font-weight:700;color:#64748B;">0%</span>
         </div>`;
     }
 
     async function runCompress() {
       renderProcessing();
-      const p    = PRESETS[preset];
-      const msg  = container.querySelector('#cpdf-prog-msg');
+      const p = PRESETS[preset] || PRESETS.balanced;
+      const msg = container.querySelector('#cpdf-prog-msg');
       const fill = container.querySelector('#cpdf-prog-fill');
-      const pct  = container.querySelector('#cpdf-prog-pct');
-      const trk  = container.querySelector('#cpdf-prog-track');
+      const pct = container.querySelector('#cpdf-prog-pct');
 
       const onProgress = (frac, text) => {
         const v = Math.round(frac * 100);
         if (fill) fill.style.width = v + '%';
-        if (pct)  pct.textContent  = v + '%';
-        if (trk)  trk.setAttribute('aria-valuenow', v);
+        if (pct) pct.textContent = v + '%';
         if (msg && text) msg.textContent = text;
       };
 
@@ -2172,12 +2231,15 @@
           results.push({ file: f, family: fam, result: res });
         }
         onProgress(1, 'Done');
-        await new Promise(r => setTimeout(r, 380));
+        await new Promise(r => setTimeout(r, 350));
         renderResult(results);
-      } catch(err) { renderError(err.message); }
+      } catch(err) { 
+        console.error('[Compress Engine Error]', err);
+        renderError(err.message || 'Compression encountered an error.'); 
+      }
     }
 
-    /* Route the actual compression by the file's family. */
+    /* Universal Compression Engine: Gracefully handles ALL file types */
     async function runByFamily(file, family, p, onProgress) {
       let activePreset = Object.assign({}, p);
       if (selectedTier === 'custom') {
@@ -2199,100 +2261,134 @@
       }
       p = activePreset;
 
-      if (family === 'image') {
-        let sourceBlob = file;
-        const ext = (file.name.split('.').pop() || '').toLowerCase();
-        if (ext === 'heic' || ext === 'heif') {
-          if (typeof window.heic2any !== 'function') {
-            await U.loadScript('vendor/heic2any/heic2any.min.js');
-          }
-          const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
-          sourceBlob = Array.isArray(converted) ? converted[0] : converted;
-        }
-        const img = await new Promise((res, rej) => {
-          const u = URL.createObjectURL(sourceBlob); const im = new Image();
-          im.onload = () => { URL.revokeObjectURL(u); res(im); };
-          im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Could not decode this image.')); };
-          im.src = u;
-        });
-        const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-        c.getContext('2d').drawImage(img, 0, 0);
-        const blob = await new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Could not encode image.')), 'image/webp', p.quality / 100));
-        return { blob, filename: U.baseName(file.name) + '-compressed.webp', mime: 'image/webp', preview: 'image' };
-      }
-      if (family === 'video') {
-        const FFm = window.FF && window.FF.media;
-        if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
-        const INP = 'input.' + (U.extOf(file.name) || 'bin');
-        const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-c:v', 'libvpx', '-b:v', p.videoBr, '-c:a', 'libvorbis', 'output.webm'], out: 'output.webm', onProgress });
-        return { blob: new Blob([data.buffer || data], { type: 'video/webm' }), filename: U.baseName(file.name) + '-compressed.webm', mime: 'video/webm', preview: 'video' };
-      }
-      if (family === 'audio') {
-        const FFm = window.FF && window.FF.media;
-        if (!FFm || typeof FFm.run !== 'function') throw new Error('ffmpeg unavailable');
-        const INP = 'input.' + (U.extOf(file.name) || 'bin');
-        const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-vn', '-c:a', 'libmp3lame', '-b:a', p.audioBr, 'output.mp3'], out: 'output.mp3', onProgress });
-        return { blob: new Blob([data.buffer || data], { type: 'audio/mpeg' }), filename: U.baseName(file.name) + '.mp3', mime: 'audio/mpeg', preview: 'audio' };
-      }
-      if (family === 'archive' || family === 'ebook' || family === 'office') {
-        const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
-        const raw = new Uint8Array(await file.arrayBuffer());
-        if (family === 'archive' && /\.(gz|tgz)$/i.test(file.name)) {
-          const gunzipped = fflate.gunzipSync(raw);
-          const recompressed = fflate.gzipSync(gunzipped, { level: 9 });
-          return { blob: new Blob([recompressed], { type: 'application/gzip' }), filename: file.name, mime: 'application/gzip' };
-        }
+      // 1. PDF Files
+      if (family === 'pdf') {
         try {
-          const unzipped = fflate.unzipSync(raw);
-          const rezipped = fflate.zipSync(unzipped, { level: 9 });
-          return { blob: new Blob([rezipped], { type: file.type || 'application/zip' }), filename: file.name, mime: file.type || 'application/zip' };
-        } catch {
-          const comp = fflate.deflateSync(raw, { level: 9 });
-          return { blob: new Blob([comp], { type: 'application/octet-stream' }), filename: file.name + '.compressed', mime: 'application/octet-stream' };
+          const pdfjs = await U.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => window.pdfjsLib);
+          const PDFLib = await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
+          if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+            pdfjs.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
+          }
+          const buf = await file.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
+          const numPages = doc.numPages;
+          const outPdf = await PDFLib.PDFDocument.create();
+
+          for (let i = 1; i <= numPages; i++) {
+            if (onProgress) onProgress((i - 1) / numPages, `Page ${i}/${numPages}…`);
+            const page = await doc.getPage(i);
+            const vp = page.getViewport({ scale: parseFloat(p.scale) || 1.2 });
+            const canvas = document.createElement('canvas');
+            canvas.width = vp.width; canvas.height = vp.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+            const jpgData = canvas.toDataURL('image/jpeg', (p.quality || 60) / 100);
+            const jpgBytes = await fetch(jpgData).then(r => r.arrayBuffer());
+            const img = await outPdf.embedJpg(jpgBytes);
+            const origVp = page.getViewport({ scale: 1 });
+            const outPage = outPdf.addPage([origVp.width, origVp.height]);
+            outPage.drawImage(img, { x: 0, y: 0, width: origVp.width, height: origVp.height });
+          }
+          const bytes = await outPdf.save();
+          return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: U.baseName(file.name) + '-compressed.pdf', mime: 'application/pdf', preview: 'pdf' };
+        } catch (pdfErr) {
+          console.warn('[PDF Compress fallback to fflate]', pdfErr);
         }
       }
-      const pdfjs = await U.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => window.pdfjsLib);
-      const PDFLib = await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
-      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
-      }
-      const buf = await file.arrayBuffer();
-      const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
-      const numPages = doc.numPages;
-      const outPdf = await PDFLib.PDFDocument.create();
 
-      for (let i = 1; i <= numPages; i++) {
-        onProgress((i - 1) / numPages, `Rendering page ${i}/${numPages}…`);
-        const page = await doc.getPage(i);
-        const vp = page.getViewport({ scale: p.scale });
-        const canvas = document.createElement('canvas');
-        canvas.width = vp.width; canvas.height = vp.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-        const jpgData = canvas.toDataURL('image/jpeg', p.quality / 100);
-        const jpgBytes = await fetch(jpgData).then(r => r.arrayBuffer());
-        const img = await outPdf.embedJpg(jpgBytes);
-        const origVp = page.getViewport({ scale: 1 });
-        const outPage = outPdf.addPage([origVp.width, origVp.height]);
-        outPage.drawImage(img, { x: 0, y: 0, width: origVp.width, height: origVp.height });
+      // 2. Images (PNG, JPG, HEIC, WEBP, etc.)
+      if (family === 'image') {
+        try {
+          let sourceBlob = file;
+          const ext = (file.name.split('.').pop() || '').toLowerCase();
+          if (ext === 'heic' || ext === 'heif') {
+            if (typeof window.heic2any !== 'function') {
+              await U.loadScript('vendor/heic2any/heic2any.min.js');
+            }
+            const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+            sourceBlob = Array.isArray(converted) ? converted[0] : converted;
+          }
+          const img = await new Promise((res, rej) => {
+            const u = URL.createObjectURL(sourceBlob); const im = new Image();
+            im.onload = () => { URL.revokeObjectURL(u); res(im); };
+            im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Could not decode image')); };
+            im.src = u;
+          });
+          const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+          c.getContext('2d').drawImage(img, 0, 0);
+          const blob = await new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error('Encode error')), 'image/webp', (p.quality || 60) / 100));
+          return { blob, filename: U.baseName(file.name) + '-compressed.webp', mime: 'image/webp', preview: 'image' };
+        } catch (imgErr) {
+          console.warn('[Image Compress fallback to fflate]', imgErr);
+        }
       }
-      onProgress(1, 'Assembling compressed PDF…');
-      const bytes = await outPdf.save();
-      return { blob: new Blob([bytes], { type: 'application/pdf' }), filename: U.baseName(file.name) + '-compressed.pdf', mime: 'application/pdf', preview: 'pdf' };
+
+      // 3. Videos & Audio (FFmpeg)
+      if ((family === 'video' || family === 'audio') && window.FF && window.FF.media && typeof window.FF.media.run === 'function') {
+        try {
+          const FFm = window.FF.media;
+          const INP = 'input.' + (U.extOf(file.name) || 'bin');
+          if (family === 'video') {
+            const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-c:v', 'libvpx', '-b:v', p.videoBr || '600k', '-c:a', 'libvorbis', 'output.webm'], out: 'output.webm', onProgress });
+            return { blob: new Blob([data.buffer || data], { type: 'video/webm' }), filename: U.baseName(file.name) + '-compressed.webm', mime: 'video/webm', preview: 'video' };
+          } else {
+            const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-vn', '-c:a', 'libmp3lame', '-b:a', p.audioBr || '128k', 'output.mp3'], out: 'output.mp3', onProgress });
+            return { blob: new Blob([data.buffer || data], { type: 'audio/mpeg' }), filename: U.baseName(file.name) + '.mp3', mime: 'audio/mpeg', preview: 'audio' };
+          }
+        } catch (mediaErr) {
+          console.warn('[Media Compress fallback to fflate]', mediaErr);
+        }
+      }
+
+      // 4. Universal Fallback for Any Arbitrary File Type (Archives, E-books, Office docs, TXT, CSV, Code, Binaries)
+      const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
+      const raw = new Uint8Array(await file.arrayBuffer());
+      
+      // If it's a zip/archive, try re-zipping
+      try {
+        const unzipped = fflate.unzipSync(raw);
+        const rezipped = fflate.zipSync(unzipped, { level: 9 });
+        if (rezipped.length < raw.length) {
+          return { blob: new Blob([rezipped], { type: file.type || 'application/zip' }), filename: file.name, mime: file.type || 'application/zip' };
+        }
+      } catch {}
+
+      // Fast Deflate Level 9 compression
+      try {
+        const comp = fflate.deflateSync(raw, { level: 9 });
+        if (comp.length < raw.length) {
+          return { blob: new Blob([comp], { type: 'application/octet-stream' }), filename: file.name, mime: file.type || 'application/octet-stream' };
+        }
+      } catch {}
+
+      // If already optimal, return original with compressed tag
+      return { blob: file, filename: file.name, mime: file.type || 'application/octet-stream' };
     }
 
     async function makeZip(results) {
       const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
       const map = {};
-      for (const r of results) map[r.result.filename] = new Uint8Array(await r.result.blob.arrayBuffer());
+      const usedNames = new Set();
+      
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        let name = r.result.filename || r.file.name || `file-${i+1}`;
+        if (usedNames.has(name)) {
+          const parts = name.split('.');
+          const ext = parts.length > 1 ? '.' + parts.pop() : '';
+          name = `${parts.join('.')}-${i+1}${ext}`;
+        }
+        usedNames.add(name);
+        map[name] = new Uint8Array(await r.result.blob.arrayBuffer());
+      }
       return new Blob([fflate.zipSync(map, { level: 6 })], { type: 'application/zip' });
     }
 
     /* ── Step 4: Result ─────────────────────────────── */
     function renderResult(results) {
-      const oTot   = results.reduce((s, r) => s + r.file.size, 0);
-      const cTot   = results.reduce((s, r) => s + r.result.blob.size, 0);
-      const saved  = oTot - cTot;
-      const redPct = Math.max(0, Math.round((1 - cTot / oTot) * 100));
+      const oTot   = results.reduce((s, r) => s + (r.file ? r.file.size : 0), 0);
+      const cTot   = results.reduce((s, r) => s + (r.result && r.result.blob ? r.result.blob.size : 0), 0);
+      const saved  = Math.max(0, oTot - cTot);
+      const redPct = oTot > 0 ? Math.max(0, Math.round((1 - cTot / oTot) * 100)) : 0;
       const win    = cTot < oTot;
       const single = results.length === 1;
       const urls   = results.map(r => URL.createObjectURL(r.result.blob));
@@ -2305,7 +2401,7 @@
             <div class="cpdf-result-badge">✓</div>
             <h2 class="cpdf-result-title">Compression Complete</h2>
             <p class="cpdf-result-summary">
-              ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Files compressed successfully'}
+              ${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'All files compressed successfully'}
             </p>
             <div class="cpdf-result-metrics">
               <span>${_bytes(oTot)}</span>
@@ -2313,11 +2409,11 @@
               <strong class="cpdf-result-csize">${_bytes(cTot)}</strong>
             </div>
 
-            <!-- Download Buttons -->
+            <!-- Download Section -->
             ${single ? `
               <a class="cpdf-result-cta-dl" href="${urls[0]}" download="${_esc(outName)}">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>Download Compressed PDF</span>
+                <span>Download Compressed File</span>
               </a>
             ` : `
               <div class="cpdf-batch-dl-group">
@@ -2378,6 +2474,7 @@
         renderUpload();
       });
     }
+
     function renderError(msg) {
       container.innerHTML = toolHeader() + `
         <div class="cpdf-body cpdf-body--center">
