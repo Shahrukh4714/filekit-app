@@ -1695,6 +1695,7 @@
   };
 
   async function generateFileThumbnail(f, fam) {
+    if (window.FF) window.FF.generateFileThumbnail = generateFileThumbnail;
     if (!f) return null;
     // 1. Images (instant object URL)
     if (fam === 'image' || (f.type && f.type.startsWith('image/')) || /\.(png|jpe?g|webp|gif|svg|bmp|avif|ico)$/i.test(f.name)) {
@@ -1717,7 +1718,7 @@
           const buf = await f.arrayBuffer();
           const doc = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
           const page = await doc.getPage(1);
-          const vp = page.getViewport({ scale: 0.35 });
+          const vp = page.getViewport({ scale: 0.85 });
           const canvas = document.createElement('canvas');
           canvas.width = Math.max(1, Math.round(vp.width));
           canvas.height = Math.max(1, Math.round(vp.height));
@@ -8143,7 +8144,7 @@
           <div class="conv-studio-wrapper">
             <div class="conv-studio-stage-row">
               
-              <!-- LEFT: Loaded File Card / Drop Zone with Live Preview -->
+              <!-- LEFT: Loaded Physical File Card with Live Preview -->
               <div class="conv-studio-file-card" id="conv-studio-file-card" title="Click or drop file to change">
                 <div class="conv-studio-thumb-container" id="conv-studio-thumb-box">
                   <div class="conv-studio-badge">
@@ -8153,8 +8154,7 @@
                 <strong class="conv-studio-title" title="${_esc(file.name)}">${_esc(file.name)}</strong>
                 <span class="conv-studio-meta">${_bytes(file.size)} &middot; ${famLabel}</span>
                 <div class="conv-studio-actions">
-                  <button type="button" class="conv-studio-btn-ghost" id="conv-change-btn">Change &times;</button>
-                  <button type="button" class="conv-studio-btn-add" id="conv-replace-btn">+ Replace</button>
+                  <button type="button" class="conv-studio-btn-add" id="conv-replace-btn">⟲ Replace file</button>
                 </div>
                 <input id="conv-replace-input" type="file" accept="${ACCEPT}" hidden>
               </div>
@@ -8191,12 +8191,14 @@
                     const items = list.filter((x) => x.g === g);
                     return `
                       <div class="conv-studio-menu-header">${g.toUpperCase()}</div>
-                      ${items.map(item => `
+                      ${items.map(item => {
+                        const displayLabel = item.label !== item.out && item.out ? `${item.label} (${item.out})` : (item.label || item.out);
+                        return `
                         <div class="conv-studio-menu-item ${item.id === formatId ? 'active' : ''}" data-fid="${item.id}">
-                          <span>${item.out || item.label}</span>
+                          <span>${_esc(displayLabel)}</span>
                           ${item.id === formatId ? `<span class="conv-check-icon">✓</span>` : ''}
-                        </div>
-                      `).join('')}
+                        </div>`;
+                      }).join('')}
                     `;
                   }).join('')}
                 </div>
@@ -8224,13 +8226,16 @@
         </div>`;
 
       // Asynchronously render live file thumbnail (PDF page 1, image, or video)
-      generateFileThumbnail(file, family).then((thumbUrl) => {
-        if (!thumbUrl) return;
-        const thumbBox = container.querySelector('#conv-studio-thumb-box');
-        if (thumbBox) {
-          thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
-        }
-      });
+      const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
+      if (typeof getThumb === 'function') {
+        getThumb(file, family).then((thumbUrl) => {
+          if (!thumbUrl) return;
+          const thumbBox = container.querySelector('#conv-studio-thumb-box');
+          if (thumbBox) {
+            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
+          }
+        }).catch(() => {});
+      }
 
       // Event Listeners
       const fileCard = container.querySelector('#conv-studio-file-card');
@@ -8460,7 +8465,7 @@
               ${!isCollection && out.blob ? `
                 <a class="conv-result-btn-download" href="${url}" download="${_esc(out.filename || outName)}">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download</span>
+                  <span>Download ${_esc(out.filename || outName)} (${sizeLine})</span>
                 </a>
               ` : `
                 <button class="conv-result-btn-download" id="conv-zip" type="button">
