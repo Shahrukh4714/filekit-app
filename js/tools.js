@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (FileKit Original High-Craft Studio Workstation) ── */
+    /* ── Step 2: Configure (FileKit Authentic Signature Studio) ── */
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1903,24 +1903,21 @@
       
       const estMap = {
         balanced: { 
-          title: 'Smart Balance', 
-          tag: 'Save ~50%', 
-          desc: 'Optimizes DPI & font streams while preserving crisp text clarity', 
-          pct: '-50%', 
+          title: 'Balanced', 
+          desc: 'Preserves crisp text & graphics', 
+          tag: '-50% Saved', 
           factor: 0.50 
         },
         maximum: { 
-          title: 'Strong Shrink', 
-          tag: 'Save ~75%', 
-          desc: 'Maximum compression for emails, messaging & strict portal limits', 
-          pct: '-75%', 
+          title: 'High Compression', 
+          desc: 'Smallest file for email & web', 
+          tag: '-75% Saved', 
           factor: 0.25 
         },
         light: { 
-          title: 'Preserve Quality', 
-          tag: 'Save ~20%', 
-          desc: 'Cleans metadata & unused objects with zero visual fidelity loss', 
-          pct: '-20%', 
+          title: 'Lossless', 
+          desc: 'Cleans metadata & streams', 
+          tag: '-20% Saved', 
           factor: 0.80 
         }
       };
@@ -1928,19 +1925,16 @@
       const currentEst = estMap[selectedTier] || estMap.balanced;
       const originalBytes = activeFile.size;
       const estBytes = Math.max(1000, Math.round(originalBytes * currentEst.factor));
-      const savedBytes = Math.max(0, originalBytes - estBytes);
       const estNewFormatted = `~${_bytes(estBytes)}`;
       const estOldFormatted = _bytes(originalBytes);
-      const savedFormatted = _bytes(savedBytes);
-      const estPctFormatted = `${currentEst.pct}`;
 
       container.innerHTML = `
         <div class="fk-studio-body">
           <div class="fk-studio-workstation">
-            <!-- Left: Architectural Canvas Stage with Subtle Dot Grid -->
+            <!-- Left: Document Preview Stage (Calm, Clean Slate Canvas) -->
             <div class="fk-studio-stage">
               <div class="fk-studio-paper-wrap" id="comp-studio-thumb-box">
-                <div class="fk-studio-thumb-ph" style="padding: 60px 40px; color: #94A3B8;">Loading preview…</div>
+                <div class="fk-studio-thumb-ph" style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
               </div>
               <div class="fk-studio-stage-pill">
                 <span class="fk-studio-pill-file" title="${_esc(activeFile.name)}">📄 ${_esc(activeFile.name)}</span>
@@ -1952,65 +1946,54 @@
               </div>
             </div>
 
-            <!-- Right: FileKit Original High-Craft Studio Inspector -->
+            <!-- Right: FileKit Authentic Studio Inspector (Matches Homepage System) -->
             <div class="fk-studio-panel">
+              <!-- Header -->
               <div class="fk-studio-header">
-                <div class="fk-studio-icon-tile fk-studio-icon-tile--compress">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
-                  </svg>
+                <h2 class="fk-studio-title">Compress PDF</h2>
+                <p class="fk-studio-subtitle">Select compression level to optimize file size</p>
+              </div>
+
+              <!-- Hero Comparison Overview (FileKit Homepage Signature) -->
+              <div class="fk-comp-compare">
+                <div class="fk-comp-card original">
+                  <span class="fk-comp-tag">ORIGINAL</span>
+                  <span class="fk-comp-size">${estOldFormatted}</span>
                 </div>
-                <div class="fk-studio-header-titles">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <h2 class="fk-studio-title">Compress PDF</h2>
-                    <span class="fk-studio-badge-tag">Offline</span>
-                  </div>
-                  <span class="fk-studio-badge-local">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    Client-Side Engine · 100% Private
-                  </span>
+                <div class="fk-comp-arrow">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </div>
+                <div class="fk-comp-card optimized">
+                  <span class="fk-comp-tag green">OPTIMIZED</span>
+                  <span class="fk-comp-size green" id="comp-est-new-size">${estNewFormatted}</span>
+                  <span class="fk-comp-savings" id="comp-est-savings-tag">${currentEst.tag}</span>
                 </div>
               </div>
 
-              <!-- 3 FileKit Crafted Engine Cards -->
+              <!-- Compression Options Deck -->
               <div class="fk-studio-deck">
                 ${['balanced', 'maximum', 'light'].map(t => {
                   const item = estMap[t];
                   const isSel = (t === selectedTier);
                   return `
                     <div class="fk-studio-card ${isSel ? 'is-active' : ''}" data-tier="${t}">
-                      <div class="fk-studio-radio">
-                        <div class="fk-studio-radio-dot"></div>
-                      </div>
-                      <div class="fk-studio-card-content">
-                        <div class="fk-studio-card-top-row">
-                          <span class="fk-studio-card-name">${item.title}</span>
-                          <span class="fk-studio-pill-save">${item.tag}</span>
+                      <div class="fk-studio-card-left">
+                        <div class="fk-studio-radio">
+                          <div class="fk-studio-radio-dot"></div>
                         </div>
-                        <div class="fk-studio-card-desc">${item.desc}</div>
+                        <div class="fk-studio-card-info">
+                          <div class="fk-studio-card-name">${item.title}</div>
+                          <div class="fk-studio-card-desc">${item.desc}</div>
+                        </div>
                       </div>
+                      <span class="fk-studio-pill-save">${item.tag.replace(' Saved', '')}</span>
                     </div>`;
                 }).join('')}
               </div>
 
-              <!-- FileKit Live Reduction Visualizer Card -->
-              <div class="fk-studio-savings-widget">
-                <div class="fk-studio-savings-head">
-                  <span>ESTIMATED OUTPUT</span>
-                  <span class="fk-studio-save-badge" id="comp-est-pct">${estPctFormatted}</span>
-                </div>
-                <div class="fk-studio-savings-numbers">
-                  <strong class="fk-studio-size-new" id="comp-est-new-size">${estNewFormatted}</strong>
-                  <del class="fk-studio-size-old" id="comp-est-old-size">${estOldFormatted}</del>
-                </div>
-                <div class="fk-studio-track">
-                  <div class="fk-studio-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
-                </div>
-              </div>
-
               <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="fk-studio-cta" id="comp-studio-run">
-                <span id="comp-cta-text">Compress PDF · Save ~${savedFormatted}</span>
+                <span>Compress PDF</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -2018,7 +2001,7 @@
 
               <div class="fk-studio-security-row">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span>No files sent to server · 100% in-browser processing</span>
+                <span>Client-Side Engine · 100% In-Browser</span>
               </div>
             </div>
           </div>
@@ -2066,17 +2049,12 @@
           
           const est = estMap[selectedTier] || estMap.balanced;
           const newBytes = Math.max(1000, Math.round(originalBytes * est.factor));
-          const diffBytes = Math.max(0, originalBytes - newBytes);
           
           const newSizeEl = container.querySelector('#comp-est-new-size');
-          const pctEl = container.querySelector('#comp-est-pct');
-          const barEl = container.querySelector('#comp-est-bar');
-          const ctaText = container.querySelector('#comp-cta-text');
+          const saveTagEl = container.querySelector('#comp-est-savings-tag');
           
           if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
-          if (pctEl) pctEl.textContent = `${est.pct}`;
-          if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
-          if (ctaText) ctaText.textContent = `Compress PDF · Save ~${_bytes(diffBytes)}`;
+          if (saveTagEl) saveTagEl.textContent = est.tag;
         };
       });
 
