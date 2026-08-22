@@ -15040,7 +15040,7 @@ trailer<</Root 1 0 R>>`;
               syncSplitCuts();
             }
             const page = await doc.getPage(1);
-            const c = await renderPage(pdfjs, page, 0.45);
+            const c = await renderPage(pdfjs, page, 0.85);
             fileThumbs[i] = c;
             try { doc.destroy(); } catch { /* noop */ }
           } catch (err) {
@@ -15061,7 +15061,7 @@ trailer<</Root 1 0 R>>`;
           const doc = await pdfjs.getDocument({ data: await bytesU8(files[0]) }).promise;
           for (let p = 1; p <= pageCount; p++) {
             const pg = await doc.getPage(p);
-            const c = await renderPage(pdfjs, pg, 0.4);
+            const c = await renderPage(pdfjs, pg, 0.85);
             thumbs.push(c);
           }
           try { doc.destroy(); } catch { /* noop */ }

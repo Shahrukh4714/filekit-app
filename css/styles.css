@@ -31296,3 +31296,63 @@ body #app-view #app-file-dropzone:hover {
   color: #F59E0B !important;
   border-color: #1A1714 !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5p. High-Quality Large Page Previews (195px width × 240px stage)
+═══════════════════════════════════════════════════════════════════════════ */
+.app-workspace-tool-view .org-pg-tile,
+.app-workspace-tool-view .org-deck-card {
+  width: 195px !important;
+  padding: 10px !important;
+  gap: 8px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.app-workspace-tool-view .org-pg-thumb {
+  width: 100% !important;
+  height: 245px !important;
+  border-radius: 6px !important;
+  background: #F8FAFC !important;
+}
+
+.app-workspace-tool-view .org-pg-thumb canvas,
+.app-workspace-tool-view .org-pg-thumb img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
+}
+
+.app-workspace-tool-view .org-cut-divider {
+  width: 28px !important;
+  height: 265px !important;
+}
+
+.app-workspace-tool-view .org-cut-btn {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.app-workspace-tool-view .org-cut-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.app-workspace-tool-view .org-drop-card-end {
+  width: 195px !important;
+  height: 285px !important;
+  min-height: 285px !important;
+  max-height: 285px !important;
+}
+
+.app-workspace-tool-view .org-page-center-btn {
+  width: 46px !important;
+  height: 46px !important;
+}
+
+.app-workspace-tool-view .org-page-center-btn svg {
+  width: 22px !important;
+  height: 22px !important;
+}
