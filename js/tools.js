@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (FileKit Signature White/Yellow/Black/Lavender Full-Bleed Studio) ── */
+    /* ── Step 2: Configure (FileKit Original High-Craft Studio Workstation) ── */
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1902,17 +1902,37 @@
       const fam = familyOf(activeFile);
       
       const estMap = {
-        balanced: { label: 'Basic Compression', saveText: 'Save ~50%', pct: '-50%', factor: 0.50 },
-        light: { label: 'Moderate Compression', saveText: 'Save ~20%', pct: '-20%', factor: 0.80 },
-        maximum: { label: 'Strong Compression', saveText: 'Save ~75%', pct: '-75%', factor: 0.25 }
+        balanced: { 
+          title: 'Smart Balance', 
+          tag: 'Save ~50%', 
+          desc: 'Optimizes DPI & font streams while preserving crisp text clarity', 
+          pct: '-50%', 
+          factor: 0.50 
+        },
+        maximum: { 
+          title: 'Strong Shrink', 
+          tag: 'Save ~75%', 
+          desc: 'Maximum compression for emails, messaging & strict portal limits', 
+          pct: '-75%', 
+          factor: 0.25 
+        },
+        light: { 
+          title: 'Preserve Quality', 
+          tag: 'Save ~20%', 
+          desc: 'Cleans metadata & unused objects with zero visual fidelity loss', 
+          pct: '-20%', 
+          factor: 0.80 
+        }
       };
       
       const currentEst = estMap[selectedTier] || estMap.balanced;
       const originalBytes = activeFile.size;
       const estBytes = Math.max(1000, Math.round(originalBytes * currentEst.factor));
+      const savedBytes = Math.max(0, originalBytes - estBytes);
       const estNewFormatted = `~${_bytes(estBytes)}`;
       const estOldFormatted = _bytes(originalBytes);
-      const estPctFormatted = `(${currentEst.pct})`;
+      const savedFormatted = _bytes(savedBytes);
+      const estPctFormatted = `${currentEst.pct}`;
 
       container.innerHTML = `
         <div class="fk-studio-body">
@@ -1932,7 +1952,7 @@
               </div>
             </div>
 
-            <!-- Right: FileKit Signature Studio Control Panel (White / Yellow / Black / Lavender) -->
+            <!-- Right: FileKit Original High-Craft Studio Inspector -->
             <div class="fk-studio-panel">
               <div class="fk-studio-header">
                 <div class="fk-studio-icon-tile fk-studio-icon-tile--compress">
@@ -1941,7 +1961,10 @@
                   </svg>
                 </div>
                 <div class="fk-studio-header-titles">
-                  <h2 class="fk-studio-title">Compress PDF</h2>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h2 class="fk-studio-title">Compress PDF</h2>
+                    <span class="fk-studio-badge-tag">Offline</span>
+                  </div>
                   <span class="fk-studio-badge-local">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Client-Side Engine · 100% Private
@@ -1949,40 +1972,31 @@
                 </div>
               </div>
 
-              <!-- FileKit Signature Option Cards -->
+              <!-- 3 FileKit Crafted Engine Cards -->
               <div class="fk-studio-deck">
-                <!-- Option 1: Basic -->
-                <div class="fk-studio-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
-                  <div class="fk-studio-radio"><div class="fk-studio-radio-dot"></div></div>
-                  <div class="fk-studio-card-content">
-                    <span class="fk-studio-card-name">Basic Compression</span>
-                  </div>
-                  <span class="fk-studio-pill-save">Save ~50%</span>
-                </div>
-
-                <!-- Option 2: Moderate -->
-                <div class="fk-studio-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
-                  <div class="fk-studio-radio"><div class="fk-studio-radio-dot"></div></div>
-                  <div class="fk-studio-card-content">
-                    <span class="fk-studio-card-name">Moderate</span>
-                  </div>
-                  <span class="fk-studio-pill-save">Save ~20%</span>
-                </div>
-
-                <!-- Option 3: Strong -->
-                <div class="fk-studio-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
-                  <div class="fk-studio-radio"><div class="fk-studio-radio-dot"></div></div>
-                  <div class="fk-studio-card-content">
-                    <span class="fk-studio-card-name">Strong Compression</span>
-                  </div>
-                  <span class="fk-studio-pill-save">Save ~75%</span>
-                </div>
+                ${['balanced', 'maximum', 'light'].map(t => {
+                  const item = estMap[t];
+                  const isSel = (t === selectedTier);
+                  return `
+                    <div class="fk-studio-card ${isSel ? 'is-active' : ''}" data-tier="${t}">
+                      <div class="fk-studio-radio">
+                        <div class="fk-studio-radio-dot"></div>
+                      </div>
+                      <div class="fk-studio-card-content">
+                        <div class="fk-studio-card-top-row">
+                          <span class="fk-studio-card-name">${item.title}</span>
+                          <span class="fk-studio-pill-save">${item.tag}</span>
+                        </div>
+                        <div class="fk-studio-card-desc">${item.desc}</div>
+                      </div>
+                    </div>`;
+                }).join('')}
               </div>
 
-              <!-- FileKit Live Estimated Size Widget with Yellow Highlight Tag -->
+              <!-- FileKit Live Reduction Visualizer Card -->
               <div class="fk-studio-savings-widget">
                 <div class="fk-studio-savings-head">
-                  <span>Estimated Output</span>
+                  <span>ESTIMATED OUTPUT</span>
                   <span class="fk-studio-save-badge" id="comp-est-pct">${estPctFormatted}</span>
                 </div>
                 <div class="fk-studio-savings-numbers">
@@ -1996,7 +2010,7 @@
 
               <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="fk-studio-cta" id="comp-studio-run">
-                <span>Compress PDF</span>
+                <span id="comp-cta-text">Compress PDF · Save ~${savedFormatted}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -2052,14 +2066,17 @@
           
           const est = estMap[selectedTier] || estMap.balanced;
           const newBytes = Math.max(1000, Math.round(originalBytes * est.factor));
+          const diffBytes = Math.max(0, originalBytes - newBytes);
           
           const newSizeEl = container.querySelector('#comp-est-new-size');
           const pctEl = container.querySelector('#comp-est-pct');
           const barEl = container.querySelector('#comp-est-bar');
+          const ctaText = container.querySelector('#comp-cta-text');
           
           if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
           if (pctEl) pctEl.textContent = `${est.pct}`;
           if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
+          if (ctaText) ctaText.textContent = `Compress PDF · Save ~${_bytes(diffBytes)}`;
         };
       });
 
