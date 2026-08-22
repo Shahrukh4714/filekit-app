@@ -20417,846 +20417,403 @@ body #app-view .drop-hero-box,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   5i. Organize — mode picker, page grid, split chips, white primary footer
-   Same dark-card grammar as Compress/Convert: 6px radii, #111B2E surfaces.
+   5k. Organize Full-Bleed Studio Deck (Flush Layout, Symmetric Alignment)
+   Clean 2-pane studio: 
+   - Flush top header under workspace topbar
+   - Flush sub-toolbar with mode tabs & quick actions
+   - Left file rail (270px) + centered main preview stage
+   - Slim local status footer
+   - Zero-scroll overflow containment
 ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Mode picker — five action cards in a row */
-.app-workspace-tool-view .org-mode-picker {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-}
-.app-workspace-tool-view .org-mode-btn {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: 6px !important;
-  padding: 10px 12px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 6px !important;
-  color: #FFFFFF !important;
-  cursor: pointer !important;
-  text-align: left !important;
-  font: inherit !important;
-  transition: border-color 140ms, background 140ms !important;
-}
-.app-workspace-tool-view .org-mode-btn:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.32) !important; }
-.app-workspace-tool-view .org-mode-btn:disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
-.app-workspace-tool-view .org-mode-btn--on {
-  border-color: #7C3AED !important;
-  background: rgba(124, 58, 237, 0.16) !important;
-}
-.app-workspace-tool-view .org-mode-ico { color: rgba(255, 255, 255, 0.55) !important; line-height: 0 !important; }
-.app-workspace-tool-view .org-mode-btn--on .org-mode-ico { color: #A78BFA !important; }
-.app-workspace-tool-view .org-mode-lbl { font-size: 12.5px !important; font-weight: 700 !important; }
-.app-workspace-tool-view .org-mode-desc { font-size: 10.5px !important; color: rgba(255, 255, 255, 0.5) !important; line-height: 1.3 !important; }
-@media (max-width: 860px) {
-  .app-workspace-tool-view .org-mode-picker { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-}
-
-/* Mode notes + loading state */
-.app-workspace-tool-view .org-mode-note {
-  margin: 0 0 10px !important;
-  font-size: 12px !important;
-  color: rgba(255, 255, 255, 0.6) !important;
-  line-height: 1.5 !important;
-}
-.app-workspace-tool-view .org-mode-note b { color: rgba(255, 255, 255, 0.9) !important; font-weight: 700 !important; }
-.app-workspace-tool-view .org-loading {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 26px 0 18px !important;
-}
-
-/* Page grid tiles */
-.app-workspace-tool-view .org-page-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)) !important;
-  gap: 8px !important;
-}
-.app-workspace-tool-view .org-tile {
-  position: relative !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 7px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 6px !important;
-  color: #FFFFFF !important;
-  cursor: pointer !important;
-  font: inherit !important;
-  transition: border-color 140ms, background 140ms !important;
-}
-.app-workspace-tool-view .org-tile:hover { border-color: rgba(255, 255, 255, 0.32) !important; }
-.app-workspace-tool-view .org-tile--on {
-  border-color: #7C3AED !important;
-  background: rgba(124, 58, 237, 0.16) !important;
-}
-.app-workspace-tool-view .org-tile--off {
-  border-color: rgba(220, 38, 38, 0.55) !important;
-  background: rgba(220, 38, 38, 0.12) !important;
-  opacity: 0.7 !important;
-}
-.app-workspace-tool-view .org-tile-thumb {
-  width: 100% !important;
-  height: 76px !important;
-  border-radius: 4px !important;
-  overflow: hidden !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-.app-workspace-tool-view .org-tile-thumb canvas,
-.app-workspace-tool-view .org-tile-thumb img { max-width: 100% !important; max-height: 100% !important; display: block !important; }
-.app-workspace-tool-view .org-tile-ph {
-  font-size: 15px !important;
-  font-weight: 800 !important;
-  color: rgba(255, 255, 255, 0.35) !important;
-}
-.app-workspace-tool-view .org-tile-num { font-size: 11px !important; font-weight: 700 !important; color: rgba(255, 255, 255, 0.7) !important; }
-.app-workspace-tool-view .org-tile-badge {
-  position: absolute !important;
-  top: 4px !important;
-  right: 4px !important;
-  width: 18px !important;
-  height: 18px !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 10px !important;
-  line-height: 1 !important;
-  background: rgba(255, 255, 255, 0.14) !important;
-  color: #fff !important;
-}
-.app-workspace-tool-view .org-tile--on .org-tile-badge { background: #7C3AED !important; }
-.app-workspace-tool-view .org-tile--off .org-tile-badge { background: #DC2626 !important; }
-
-/* Split chips + custom input */
-.app-workspace-tool-view .org-chips {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  flex-wrap: wrap !important;
-  margin-bottom: 10px !important;
-}
-.app-workspace-tool-view .org-chip {
-  height: 36px !important;
-  padding: 0 16px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.85) !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-}
-.app-workspace-tool-view .org-chip:hover { border-color: rgba(255, 255, 255, 0.4) !important; }
-.app-workspace-tool-view .org-chip--on {
-  border-color: #7C3AED !important;
-  background: rgba(124, 58, 237, 0.2) !important;
-  color: #C4B5FD !important;
-}
-.app-workspace-tool-view .org-chip-input {
-  width: 74px !important;
-  height: 36px !important;
-  padding: 0 10px !important;
-  background: #1A1714 !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 6px !important;
-  color: #FFFFFF !important;
-  font: inherit !important;
-  font-size: 13px !important;
-  text-align: center !important;
-}
-.app-workspace-tool-view .org-chip-input:focus { border-color: #7C3AED !important; outline: none !important; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18) !important; }
-
-/* Rotate segmented control */
-.app-workspace-tool-view .org-seg {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  max-width: 320px !important;
-  margin-bottom: 10px !important;
-}
-.app-workspace-tool-view .org-seg-btn {
-  height: 40px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.85) !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-}
-.app-workspace-tool-view .org-seg-btn:hover { border-color: rgba(255, 255, 255, 0.4) !important; }
-.app-workspace-tool-view .org-seg-btn--on {
-  border-color: #7C3AED !important;
-  background: rgba(124, 58, 237, 0.2) !important;
-  color: #C4B5FD !important;
-}
-
-/* Organize primary CTA — white on the dark card, like Compress/Convert */
-.app-workspace-tool-view .org-footer .cpdf-btn-primary {
-  background: #FFFFFF !important;
-  border-color: #FFFFFF !important;
-  color: #1A1714 !important;
-}
-.app-workspace-tool-view .org-footer .cpdf-btn-primary svg {
-  color: #1A1714 !important;
-  stroke: #1A1714 !important;
-  fill: currentColor !important;
-}
-.app-workspace-tool-view .org-footer .cpdf-btn-primary:hover {
-  background: #F3F4F6 !important;
-  border-color: #F3F4F6 !important;
-}
-.app-workspace-tool-view .org-footer .cpdf-btn-primary:disabled {
-  background: rgba(255, 255, 255, 0.22) !important;
-  border-color: transparent !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-  cursor: not-allowed !important;
-}
-.app-workspace-tool-view .org-footer .cpdf-btn-primary:disabled svg {
-  color: rgba(255, 255, 255, 0.4) !important;
-  stroke: rgba(255, 255, 255, 0.4) !important;
-}
-
-/* 5j. Organize file organizer — toolbar + thumbnail cards (Smallpdf-style) */
-
-/* Toolbar row */
-.app-workspace-tool-view .org-toolbar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 6px !important;
-  padding: 8px 12px !important;
-}
-.app-workspace-tool-view .org-sel {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 7px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.85) !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-}
-.app-workspace-tool-view .org-sel input {
-  width: 15px !important;
-  height: 15px !important;
-  accent-color: #7C3AED !important;
-  cursor: pointer !important;
+/* Workspace Tool View & Shell Container */
+.app-workspace-tool-view:has(.org-shell),
+.app-stage-container:has(.org-shell),
+#app-tool-stage:has(.org-shell),
+#app-tool-stage.org-shell {
+  padding: 0 !important;
   margin: 0 !important;
-}
-.app-workspace-tool-view .org-toolbar-count {
-  font-size: 12px !important;
-  color: rgba(255, 255, 255, 0.55) !important;
-  white-space: nowrap !important;
-}
-.app-workspace-tool-view .org-toolbar-sp { flex: 1 1 auto !important; }
-.app-workspace-tool-view .org-quick {
-  width: 34px !important;
-  height: 34px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.75) !important;
-  cursor: pointer !important;
-  transition: background 140ms, border-color 140ms !important;
-}
-.app-workspace-tool-view .org-quick:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12) !important; color: #fff !important; border-color: rgba(255, 255, 255, 0.3) !important; }
-.app-workspace-tool-view .org-quick:disabled { opacity: 0.35 !important; cursor: not-allowed !important; }
-.app-workspace-tool-view .org-quick--danger:hover:not(:disabled) { background: rgba(220, 38, 38, 0.16) !important; border-color: rgba(248, 113, 113, 0.5) !important; color: #F87171 !important; }
-.app-workspace-tool-view #org-rot-ccw svg { transform: scaleX(-1) !important; }
-.app-workspace-tool-view .org-add-btn { height: 34px !important; padding: 0 14px !important; border-radius: 6px !important; }
-@media (max-width: 620px) {
-  .app-workspace-tool-view .org-toolbar { flex-wrap: wrap !important; gap: 8px !important; }
-  .app-workspace-tool-view .org-toolbar-count { order: 3 !important; width: 100% !important; }
-}
-
-/* File cards grid */
-.app-workspace-tool-view .org-files {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-  gap: 10px !important;
-}
-.app-workspace-tool-view .org-fcard {
-  position: relative !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  padding: 9px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 6px !important;
-  text-align: left !important;
-  transition: border-color 140ms, background 140ms, box-shadow 140ms !important;
-}
-.app-workspace-tool-view .org-fcard:hover { border-color: rgba(255, 255, 255, 0.32) !important; }
-.app-workspace-tool-view .org-fcard--sel {
-  border-color: #7C3AED !important;
-  background: rgba(124, 58, 237, 0.14) !important;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
-}
-.app-workspace-tool-view .org-fcard--drag { opacity: 0.45 !important; border-style: dashed !important; }
-.app-workspace-tool-view .org-fchk {
-  position: absolute !important;
-  top: 8px !important;
-  left: 8px !important;
-  width: 15px !important;
-  height: 15px !important;
-  accent-color: #7C3AED !important;
-  cursor: pointer !important;
-  margin: 0 !important;
-  z-index: 2 !important;
-}
-.app-workspace-tool-view .org-fx {
-  position: absolute !important;
-  top: 6px !important;
-  right: 6px !important;
-  width: 24px !important;
-  height: 24px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: rgba(0, 0, 0, 0.65) !important;
-  border: none !important;
-  border-radius: 5px !important;
-  color: rgba(255, 255, 255, 0.75) !important;
-  cursor: pointer !important;
-  z-index: 2 !important;
-  opacity: 0 !important;
-  transition: opacity 140ms, background 140ms !important;
-}
-.app-workspace-tool-view .org-fcard:hover .org-fx,
-.app-workspace-tool-view .org-fcard:focus-within .org-fx { opacity: 1 !important; }
-.app-workspace-tool-view .org-fx:hover { background: rgba(220, 38, 38, 0.85) !important; color: #fff !important; }
-.app-workspace-tool-view .org-fthumb {
   width: 100% !important;
-  height: 132px !important;
-  border-radius: 4px !important;
-  overflow: hidden !important;
-  background: rgba(255, 255, 255, 0.07) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-.app-workspace-tool-view .org-fthumb canvas,
-.app-workspace-tool-view .org-fthumb img { max-width: 100% !important; max-height: 100% !important; display: block !important; }
-.app-workspace-tool-view .org-fmeta { min-width: 0 !important; }
-.app-workspace-tool-view .org-fname {
-  display: block !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
-  color: #FFFFFF !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-.app-workspace-tool-view .org-fsub {
-  display: block !important;
-  margin-top: 2px !important;
-  font-size: 11px !important;
-  color: rgba(255, 255, 255, 0.5) !important;
-}
-
-/* Empty add-more slot */
-.app-workspace-tool-view .org-fcard--add {
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  min-height: 150px !important;
-  background: rgba(0, 0, 0, 0.55) !important;
-  border: 1.5px dashed rgba(255, 255, 255, 0.28) !important;
-  color: #fff !important;
-  cursor: pointer !important;
-  font: inherit !important;
-  text-align: center !important;
-}
-.app-workspace-tool-view .org-fcard--add:hover {
-  border-color: #7C3AED !important;
-  background: rgba(124, 58, 237, 0.12) !important;
-}
-.app-workspace-tool-view .org-fadd-ico {
-  width: 34px !important;
-  height: 34px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-.app-workspace-tool-view .org-fcard--add:hover .org-fadd-ico { background: #7C3AED !important; color: #fff !important; }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   5k. Organize Edit-style flow — top action bar + tool toolbar + body rail
-   Structure mirrors the Edit Text post-upload workspace, in the dark theme.
-═══════════════════════════════════════════════════════════════════════════ */
-
-/* The flow is one stacked column filling the card (no gaps between bars) */
-.app-workspace-tool-view .org-flow {
-  gap: 0 !important;
   height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: #F8FAFC !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-/* ── Top action bar ─────────────────────────────────── */
+/* Upload Dropzone (when in upload idle state) */
+.app-workspace-tool-view .org-root > .cpdf-dropzone,
+.app-workspace-tool-view .org-shell > .cpdf-dropzone {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Flow Deck */
+.app-workspace-tool-view .org-flow {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: #F8FAFC !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* ── 1. Top Action Header ────────────────────────────── */
 .app-workspace-tool-view .org-top {
+  width: 100% !important;
+  height: 54px !important;
+  min-height: 54px !important;
+  max-height: 54px !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  border-radius: 0 !important;
+  padding: 0 24px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 12px !important;
-  padding: 10px 16px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 6px !important;
-  flex: 0 0 auto !important;
-  min-width: 0 !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
 }
-.app-workspace-tool-view .org-top-left,
-.app-workspace-tool-view .org-top-right {
+.app-workspace-tool-view .org-top-left {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   min-width: 0 !important;
 }
-.app-workspace-tool-view .org-top-right { flex: 0 0 auto !important; margin-left: auto !important; }
 .app-workspace-tool-view .org-file {
   font-weight: 700 !important;
-  font-size: 13.5px !important;
-  color: #FFFFFF !important;
-  max-width: 220px !important;
+  font-size: 14px !important;
+  color: #0F172A !important;
+  max-width: 320px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
-.app-workspace-tool-view .org-meta { color: rgba(255, 255, 255, 0.5) !important; font-size: 12px !important; white-space: nowrap !important; }
+.app-workspace-tool-view .org-meta {
+  color: #64748B !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}
 .app-workspace-tool-view .org-local {
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
   font-size: 11.5px !important;
   font-weight: 600 !important;
-  color: #6EE7B7 !important;
-  background: rgba(16, 185, 129, 0.14) !important;
-  border: 1px solid rgba(52, 211, 153, 0.3) !important;
-  border-radius: 6px !important;
-  padding: 3px 10px !important;
+  color: #059669 !important;
+  background: #ECFDF5 !important;
+  border: 1px solid #A7F3D0 !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
   white-space: nowrap !important;
 }
-.app-workspace-tool-view .org-top .org-finish {
-  width: auto !important;
-  min-width: 150px !important;
-  height: 38px !important;
-  min-height: 38px !important;
+.app-workspace-tool-view .org-top-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+}
+.app-workspace-tool-view .org-finish {
+  background: #7C3AED !important;
+  border: 1px solid #7C3AED !important;
+  color: #FFFFFF !important;
+  border-radius: 6px !important;
+  height: 36px !important;
+  min-height: 36px !important;
   padding: 0 20px !important;
-  background: #FFFFFF !important;
-  border-color: #FFFFFF !important;
-  color: #1A1714 !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
 }
-.app-workspace-tool-view .org-top .org-finish svg {
-  color: #1A1714 !important;
-  stroke: #1A1714 !important;
-  fill: currentColor !important;
+.app-workspace-tool-view .org-finish:hover:not(:disabled) {
+  background: #6D28D9 !important;
+  border-color: #6D28D9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
 }
-.app-workspace-tool-view .org-top .org-finish:hover {
-  background: #F3F4F6 !important;
-  border-color: #F3F4F6 !important;
-}
-.app-workspace-tool-view .org-top .org-finish:disabled {
-  background: rgba(255, 255, 255, 0.22) !important;
-  border-color: transparent !important;
-  color: rgba(255, 255, 255, 0.4) !important;
+.app-workspace-tool-view .org-finish:disabled {
+  background: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
+  color: #94A3B8 !important;
   cursor: not-allowed !important;
-}
-.app-workspace-tool-view .org-top .org-finish:disabled svg {
-  color: rgba(255, 255, 255, 0.4) !important;
-  stroke: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
 }
 
-/* ── Tool toolbar (modes + quick actions) ───────────── */
+/* ── 2. Sub-Toolbar (Modes & Quick Actions) ──────────── */
 .app-workspace-tool-view .org-toolbar2 {
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  border-radius: 0 !important;
+  padding: 0 24px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 10px !important;
-  padding: 8px 12px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 6px !important;
-  flex: 0 0 auto !important;
-  overflow-x: auto !important;
-  scrollbar-width: none !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
 }
-.app-workspace-tool-view .org-toolbar2::-webkit-scrollbar { display: none !important; }
 .app-workspace-tool-view .org-tool-group {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  flex: 0 0 auto !important;
 }
-.app-workspace-tool-view .org-tool-group--right { margin-left: auto !important; }
 .app-workspace-tool-view .org-mode-picker {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  grid-template-columns: none !important;
-}
-.app-workspace-tool-view .org-tool {
-  height: 34px !important;
-  min-width: 34px !important;
-  padding: 0 12px !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
   display: inline-flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 7px !important;
-  cursor: pointer !important;
-  font: inherit !important;
+  gap: 6px !important;
+}
+.app-workspace-tool-view .org-tool {
+  height: 32px !important;
+  padding: 0 12px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  color: #475569 !important;
   font-size: 12.5px !important;
-  font-weight: 700 !important;
-  white-space: nowrap !important;
-  transition: background 140ms, border-color 140ms, color 140ms !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
 }
-.app-workspace-tool-view .org-tool svg { width: 15px !important; height: 15px !important; flex: 0 0 auto !important; }
-.app-workspace-tool-view .org-tool:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; border-color: rgba(255, 255, 255, 0.32) !important; }
+.app-workspace-tool-view .org-tool svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+.app-workspace-tool-view .org-tool:hover:not(:disabled) {
+  background: #F1F5F9 !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
 .app-workspace-tool-view .org-tool.is-on {
-  background: rgba(124, 58, 237, 0.2) !important;
-  color: #C4B5FD !important;
-  border-color: #7C3AED !important;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
-}
-.app-workspace-tool-view .org-tool:disabled { opacity: 0.35 !important; cursor: not-allowed !important; }
-.app-workspace-tool-view .org-tool--icon { padding: 0 9px !important; min-width: 34px !important; }
-.app-workspace-tool-view .org-tool--icon#org-rot-ccw svg { transform: scaleX(-1) !important; }
-.app-workspace-tool-view .org-tool--danger:hover:not(:disabled) {
-  background: rgba(220, 38, 38, 0.16) !important;
-  border-color: rgba(248, 113, 113, 0.5) !important;
-  color: #F87171 !important;
-}
-
-/* ── Body: thumb rail + config main ──────────────────── */
-.app-workspace-tool-view .org-body {
-  display: grid !important;
-  grid-template-columns: 236px minmax(0, 1fr) !important;
-  gap: 12px !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  padding-top: 12px !important;
-}
-.app-workspace-tool-view .org-thumbs {
-  overflow: auto !important;
-  scrollbar-width: thin !important;
-  padding: 10px !important;
-  background: #111B2E !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 6px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
-  min-height: 0 !important;
-}
-.app-workspace-tool-view .org-thumbs-head {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  flex: 0 0 auto !important;
-}
-.app-workspace-tool-view .org-thumbs-count {
-  font-size: 11px !important;
+  background: #FAF5FF !important;
+  border-color: #C4B5FD !important;
+  color: #7C3AED !important;
   font-weight: 700 !important;
-  color: rgba(255, 255, 255, 0.45) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-radius: 6px !important;
-  padding: 2px 8px !important;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12) !important;
 }
-.app-workspace-tool-view .org-thumbs .org-files {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  min-height: 0 !important;
-}
-.app-workspace-tool-view .org-thumbs .org-fcard {
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 7px !important;
-}
-.app-workspace-tool-view .org-thumbs .org-fcard--add {
-  flex-direction: column !important;
-  min-height: 86px !important;
-  justify-content: center !important;
-  gap: 5px !important;
-}
-.app-workspace-tool-view .org-thumbs .org-fmeta { flex: 1 1 auto !important; min-width: 0 !important; }
-.app-workspace-tool-view .org-thumbs .org-fname { font-size: 12px !important; }
-
-/* Config main area */
-.app-workspace-tool-view .org-main {
-  overflow: auto !important;
-  scrollbar-width: thin !important;
-  min-height: 0 !important;
-  padding: 4px 2px 4px 0 !important;
-}
-.app-workspace-tool-view .org-main .cpdf-section { margin-bottom: 4px !important; }
-
-/* Slim privacy footer */
-.app-workspace-tool-view .org-slim-foot {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 7px !important;
-  padding: 10px 0 2px !important;
-  font-size: 12px !important;
-  color: rgba(255, 255, 255, 0.45) !important;
-  flex: 0 0 auto !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
-  margin-top: 12px !important;
-}
-
-/* Responsive: rail stacks above the config on narrow widths */
-@media (max-width: 900px) {
-  .app-workspace-tool-view .org-body {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  .app-workspace-tool-view .org-thumbs {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    flex-direction: row !important;
-    align-items: stretch !important;
-  }
-  .app-workspace-tool-view .org-thumbs .org-files {
-    flex-direction: row !important;
-  }
-  .app-workspace-tool-view .org-thumbs .org-fcard { width: 190px !important; flex: 0 0 190px !important; }
-  .app-workspace-tool-view .org-thumbs .org-fcard--add { width: 140px !important; flex: 0 0 140px !important; }
-  .app-workspace-tool-view .org-top { flex-wrap: wrap !important; }
-  .app-workspace-tool-view .org-top-left { flex-wrap: wrap !important; }
-  .app-workspace-tool-view .org-top .org-finish { min-width: 0 !important; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   5l. Organize full-bleed — the workspace fills the whole canvas below the
-   topbar (no floating card, no grey gutters), like the Edit/split shells.
-═══════════════════════════════════════════════════════════════════════════ */
-/* Full-bleed studio shell: remove canvas, wrapper, and stage padding */
-body #app-view #app-canvas.app-canvas:has(.org-shell),
-body #app-view #app-canvas.app-canvas.ff-tool-active:has(.org-shell),
-body #app-view .app-canvas:has(.org-shell),
-#app-workspace-tool-view:has(.org-shell),
-.app-stage-container:has(.org-shell),
-#app-tool-stage:has(.org-shell) {
-  padding: 0 !important;
-  margin: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  overflow: hidden !important;
-  background: #EEF2F7 !important;
-}
-
-#app-workspace-tool-view:has(.etxt-shell),
-#app-workspace-tool-view:has(.sign-shell) {
-  padding: 0 !important;
-  background: #EEF2F7 !important;
-  overflow: hidden !important;
-}
-
-.app-workspace-tool-view .org-shell.cpdf-root,
-.app-workspace-tool-view .org-shell {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-  background: #EEF2F7 !important;
-}
-
-/* Upload dropzone fills the full-bleed canvas and centers */
-.app-workspace-tool-view .org-shell > .cpdf-dropzone {
-  flex: 1 1 auto !important;
-  align-self: stretch !important;
-  margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* Configure flow fills the canvas edge to edge flush with topbar, rail and bottom */
-.app-workspace-tool-view .org-shell .org-flow {
-  height: 100% !important;
-  max-height: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  flex: 1 1 auto !important;
-}
-.app-workspace-tool-view .org-shell .org-top {
-  border-radius: 0 !important;
-  border-left: 0 !important;
-  border-right: 0 !important;
-  padding: 10px 22px !important;
-  margin: 0 !important;
-  flex-shrink: 0 !important;
-}
-.app-workspace-tool-view .org-shell .org-toolbar2 {
-  border-radius: 0 !important;
-  border-left: 0 !important;
-  border-right: 0 !important;
-  padding: 8px 22px !important;
-  margin: 0 !important;
-  flex-shrink: 0 !important;
-}
-.app-workspace-tool-view .org-shell .org-body {
-  padding: 0 !important;
-  margin: 0 !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  display: flex !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
-.app-workspace-tool-view .org-shell .org-thumbs {
-  height: 100% !important;
-  overflow-y: auto !important;
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
-}
-.app-workspace-tool-view .org-shell .org-main {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  padding: 16px 24px !important;
-  box-sizing: border-box !important;
-}
-.app-workspace-tool-view .org-shell .org-slim-foot {
-  padding: 8px 22px !important;
-  margin: 0 !important;
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
-}
-@media (max-width: 900px) {
-  .app-workspace-tool-view .org-shell .org-top,
-  .app-workspace-tool-view .org-shell .org-toolbar2 { padding-left: 14px !important; padding-right: 14px !important; }
-  .app-workspace-tool-view .org-shell .org-main { padding: 12px 14px !important; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   5m. Organize after-upload — LIGHT theme (mirrors the Edit tool shell)
-   The post-drop states leave the dark card and take the Edit look: white
-   action bars, light canvas, purple primary, sharp 4px corners, original SVGs.
-   Scoped to .org-shell so the dark upload drop box is untouched.
-═══════════════════════════════════════════════════════════════════════════ */
-/* Canvas behind the flow turns light, matching Edit's body */
-#app-workspace-tool-view:has(.org-shell) { background: #EEF2F7 !important; }
-.app-stage-container:has(.org-shell) { background: #EEF2F7 !important; }
-.app-workspace-tool-view .org-shell { background: #EEF2F7 !important; }
-
-/* ── Top action bar (white, hairline bottom) ─────────── */
-.app-workspace-tool-view .org-shell .org-top {
-  background: #FFFFFF !important;
-  border: 0 !important;
-  border-bottom: 1px solid #E5E7EB !important;
-  border-radius: 0 !important;
-  padding: 10px 22px !important;
-}
-.app-workspace-tool-view .org-shell .org-file { color: #1A1714 !important; font-size: 14px !important; }
-.app-workspace-tool-view .org-shell .org-meta { color: #94A3B8 !important; }
-.app-workspace-tool-view .org-shell .org-local {
-  color: #059669 !important;
-  background: #ECFDF5 !important;
-  border: 0 !important;
-  border-radius: 4px !important;
-}
-/* Finish — purple like Edit's primary, sharp corner */
-.app-workspace-tool-view .org-shell .org-top .org-finish {
-  background: #7C3AED !important;
-  border-color: #7C3AED !important;
-  color: #FFFFFF !important;
-  border-radius: 4px !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  box-shadow: none !important;
-}
-.app-workspace-tool-view .org-shell .org-top .org-finish svg {
-  color: #FFFFFF !important;
-  stroke: #FFFFFF !important;
-  fill: currentColor !important;
-}
-.app-workspace-tool-view .org-shell .org-top .org-finish:hover { background: #6D28D9 !important; border-color: #6D28D9 !important; }
-.app-workspace-tool-view .org-shell .org-top .org-finish:disabled {
-  background: #EDE9FE !important;
-  border-color: #EDE9FE !important;
-  color: #A78BFA !important;
+.app-workspace-tool-view .org-tool:disabled {
+  opacity: 0.4 !important;
   cursor: not-allowed !important;
 }
-.app-workspace-tool-view .org-shell .org-top .org-finish:disabled svg { color: #A78BFA !important; stroke: #A78BFA !important; }
-
-/* ── Tool toolbar (white, hairline bottom, sharp tools) ─ */
-.app-workspace-tool-view .org-shell .org-toolbar2 {
-  background: #FFFFFF !important;
-  border: 0 !important;
-  border-bottom: 1px solid #E5E7EB !important;
-  border-radius: 0 !important;
-  padding: 8px 22px !important;
+.app-workspace-tool-view .org-tool--icon {
+  padding: 0 10px !important;
+  min-width: 32px !important;
 }
-.app-workspace-tool-view .org-shell .org-tool {
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 4px !important;
-  color: #475569 !important;
-  height: 36px !important;
-}
-.app-workspace-tool-view .org-shell .org-tool:hover:not(:disabled) {
-  background: #F8FAFC !important;
-  color: #1A1714 !important;
-  border-color: #CBD5E1 !important;
-}
-.app-workspace-tool-view .org-shell .org-tool.is-on {
-  background: #EAF1FF !important;
-  color: #7C3AED !important;
-  border-color: #BFDBFE !important;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08) !important;
-}
-.app-workspace-tool-view .org-shell .org-tool--danger:hover:not(:disabled) {
+.app-workspace-tool-view .org-tool--danger:hover:not(:disabled) {
   background: #FEF2F2 !important;
   border-color: #FECACA !important;
   color: #DC2626 !important;
 }
 
-/* ── Body: light rail + light config main ────────────── */
-.app-workspace-tool-view .org-shell .org-body { gap: 0 !important; padding: 0 22px !important; }
-.app-workspace-tool-view .org-shell .org-thumbs {
+/* ── 3. Main Body Studio Deck ────────────────────────── */
+.app-workspace-tool-view .org-body {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
   background: #F8FAFC !important;
-  border: 0 !important;
-  border-right: 1px solid #E5E7EB !important;
+}
+
+/* Left Thumbnail Strip */
+.app-workspace-tool-view .org-thumbs {
+  width: 270px !important;
+  min-width: 270px !important;
+  max-width: 270px !important;
+  height: 100% !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-right: 1px solid #E2E8F0 !important;
+  border-radius: 0 !important;
+  padding: 16px 14px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+}
+.app-workspace-tool-view .org-thumbs-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  flex-shrink: 0 !important;
+}
+.app-workspace-tool-view .org-sel {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+}
+.app-workspace-tool-view .org-sel input {
+  accent-color: #7C3AED !important;
+}
+.app-workspace-tool-view .org-thumbs-count {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+  background: #F1F5F9 !important;
+  border-radius: 10px !important;
+  padding: 2px 8px !important;
+}
+.app-workspace-tool-view .org-files {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+.app-workspace-tool-view .org-fcard {
+  background: #FFFFFF !important;
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+.app-workspace-tool-view .org-fcard:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+.app-workspace-tool-view .org-fcard--sel,
+.app-workspace-tool-view .org-fcard--view {
+  border-color: #7C3AED !important;
+  background: #FAF5FF !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15) !important;
+}
+.app-workspace-tool-view .org-fchk {
+  accent-color: #7C3AED !important;
+}
+.app-workspace-tool-view .org-fx {
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #64748B !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+}
+.app-workspace-tool-view .org-fx:hover {
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #FFFFFF !important;
+}
+.app-workspace-tool-view .org-fthumb {
+  width: 52px !important;
+  height: 68px !important;
+  min-width: 52px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+.app-workspace-tool-view .org-fthumb canvas,
+.app-workspace-tool-view .org-fthumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+.app-workspace-tool-view .org-fmeta {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+.app-workspace-tool-view .org-fname {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.app-workspace-tool-view .org-fsub {
+  font-size: 11px !important;
+  color: #64748B !important;
+  font-weight: 500 !important;
+}
+.app-workspace-tool-view .org-fcard--add {
+  background: #FAF5FF !important;
+  border: 1.5px dashed #C4B5FD !important;
+  border-radius: 8px !important;
+  padding: 14px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  gap: 4px !important;
+  transition: all 0.15s ease !important;
+}
+.app-workspace-tool-view .org-fcard--add:hover {
+  background: #F5EEFD !important;
+  border-color: #7C3AED !important;
+}
+.app-workspace-tool-view .org-fadd-ico {
+  color: #7C3AED !important;
+}
+
+/* Right Stage / Config Canvas */
+.app-workspace-tool-view .org-main {
   border-radius: 0 !important;
   padding: 14px 12px !important;
 }
@@ -28245,7 +27802,7 @@ body #app-view .app-main-content {
   flex: 1 1 auto !important;
 }
 
-/* Symmetrical 24px/32px padding around the canvas */
+/* Symmetrical 24px/32px padding around canvas for standard tools, zero padding for studio shells */
 body #app-view #app-canvas.app-canvas,
 body #app-view .app-canvas.ff-tool-active,
 html body #app-view #app-canvas.app-canvas.ff-tool-active {
@@ -28257,6 +27814,25 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active {
   flex-direction: column !important;
   overflow: hidden !important;
   flex: 1 1 auto !important;
+}
+
+body #app-view #app-canvas.app-canvas:has(.org-shell),
+body #app-view #app-canvas.app-canvas:has(.spdf-shell),
+body #app-view #app-canvas.app-canvas:has(.sign-shell),
+body #app-view #app-canvas.app-canvas:has(.scan-shell),
+body #app-view #app-canvas.app-canvas:has(.etxt-shell),
+body #app-view .app-canvas.ff-tool-active:has(.org-shell),
+body #app-view .app-canvas.ff-tool-active:has(.spdf-shell),
+body #app-view .app-canvas.ff-tool-active:has(.sign-shell),
+body #app-view .app-canvas.ff-tool-active:has(.scan-shell),
+body #app-view .app-canvas.ff-tool-active:has(.etxt-shell),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.org-shell),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.spdf-shell),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.sign-shell),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.scan-shell),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.etxt-shell) {
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 #app-workspace-tool-view.app-workspace-tool-view:not([hidden]) {
