@@ -31356,3 +31356,46 @@ body #app-view #app-file-dropzone:hover {
   width: 22px !important;
   height: 22px !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5q. High-Visibility Keyboard Focus Rings & Accessibility (WCAG 2.1 AA)
+═══════════════════════════════════════════════════════════════════════════ */
+.app-workspace-tool-view .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.app-workspace-tool-view :focus-visible {
+  outline: 2px solid #7C3AED !important;
+  outline-offset: 2px !important;
+}
+
+.app-workspace-tool-view .org-pg-tile:focus-visible {
+  outline: 2.5px solid #1A1714 !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 5px rgba(26, 23, 20, 0.15), 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.app-workspace-tool-view .org-cut-divider:focus-visible {
+  outline: 2px solid #F59E0B !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+}
+
+.app-workspace-tool-view .org-finish:focus-visible {
+  outline: 2px solid #F59E0B !important;
+  outline-offset: 3px !important;
+}
+
+.app-workspace-tool-view .org-tool:focus-visible {
+  outline: 2px solid #7C3AED !important;
+  outline-offset: 1px !important;
+}

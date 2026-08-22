@@ -14753,16 +14753,16 @@ trailer<</Root 1 0 R>>`;
       const fam = familyOf(files[0]);
       if (mode === 'split' && fam === 'pdf') {
         return `
-          <div class="org-inline-ctrls">
-            <span class="org-ctrl-label">Split after every</span>
+          <div class="org-inline-ctrls" role="group" aria-label="Split page settings">
+            <span class="org-ctrl-label" id="org-split-label">Split after every</span>
             <div class="org-stepper">
-              <button type="button" class="org-step-btn" id="org-step-dec">−</button>
-              <span class="org-step-val" id="org-step-val">${splitEvery}</span>
-              <button type="button" class="org-step-btn" id="org-step-inc">+</button>
+              <button type="button" class="org-step-btn" id="org-step-dec" aria-label="Decrease pages per split part">−</button>
+              <span class="org-step-val" id="org-step-val" aria-live="polite">${splitEvery}</span>
+              <button type="button" class="org-step-btn" id="org-step-inc" aria-label="Increase pages per split part">+</button>
             </div>
             <span class="org-ctrl-label">page${splitEvery === 1 ? '' : 's'}</span>
-            <div class="org-mini-chips">
-              ${[1, 2, 5, 10].map(n => `<button type="button" class="org-mini-chip${splitEvery === n ? ' is-on' : ''}" data-every="${n}" ${pageCount > 0 && n > pageCount ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''}>${n}</button>`).join('')}
+            <div class="org-mini-chips" role="radiogroup" aria-label="Quick preset pages per part">
+              ${[1, 2, 5, 10].map(n => `<button type="button" class="org-mini-chip${splitEvery === n ? ' is-on' : ''}" data-every="${n}" aria-label="Split every ${n} page${n === 1 ? '' : 's'}" ${pageCount > 0 && n > pageCount ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''}>${n}</button>`).join('')}
             </div>
           </div>`;
       }
@@ -14878,21 +14878,23 @@ trailer<</Root 1 0 R>>`;
           let centerBtn = '';
           if (mode === 'rotate') {
             centerBtn = `
-              <button type="button" class="org-page-center-btn org-page-rot-btn" data-pg="${pgIdx}" title="Rotate page 90°">
+              <button type="button" class="org-page-center-btn org-page-rot-btn" data-pg="${pgIdx}" aria-label="Rotate page ${p} 90 degrees clockwise" title="Rotate page 90°">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
               </button>`;
           } else if (mode === 'delete') {
             centerBtn = `
-              <button type="button" class="org-page-center-btn org-page-del-btn" data-pg="${pgIdx}" title="${isDeleted ? 'Restore page' : 'Delete page'}">
+              <button type="button" class="org-page-center-btn org-page-del-btn" data-pg="${pgIdx}" aria-label="${isDeleted ? 'Restore page ' + p : 'Delete page ' + p}" title="${isDeleted ? 'Restore page' : 'Delete page'}">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
               </button>`;
           }
 
-          const partBadge = mode === 'split' ? `<span class="org-pg-part-tag">Part ${currentPart}</span>` : '';
+          const partBadge = mode === 'split' ? `<span class="org-pg-part-tag" aria-label="Part ${currentPart}">Part ${currentPart}</span>` : '';
+          const a11yRole = mode === 'extract' ? 'checkbox' : 'button';
+          const a11yLabel = `Page ${p}${isDeleted ? ' (marked for deletion)' : ''}${isExtracted ? ' (selected for extraction)' : ''}`;
 
           pageTiles.push(`
-            <div class="org-pg-tile ${isDeleted ? 'is-deleted' : ''} ${isExtracted ? 'is-selected' : ''}" data-pg="${pgIdx}">
-              ${mode === 'extract' ? `<input type="checkbox" class="org-extract-chk" data-pg="${pgIdx}" ${isExtracted ? 'checked' : ''} style="position:absolute;top:8px;left:8px;z-index:3;">` : ''}
+            <div class="org-pg-tile ${isDeleted ? 'is-deleted' : ''} ${isExtracted ? 'is-selected' : ''}" data-pg="${pgIdx}" tabindex="0" role="${a11yRole}" ${mode === 'extract' ? `aria-checked="${isExtracted}"` : ''} aria-label="${a11yLabel}">
+              ${mode === 'extract' ? `<input type="checkbox" class="org-extract-chk" data-pg="${pgIdx}" ${isExtracted ? 'checked' : ''} aria-label="Select page ${p}" style="position:absolute;top:8px;left:8px;z-index:3;">` : ''}
               <div class="org-pg-thumb" id="org-pg-thumb-${pgIdx}">
                 <span class="org-tile-ph">${p}</span>
                 ${centerBtn}
@@ -14908,9 +14910,9 @@ trailer<</Root 1 0 R>>`;
             const isCut = customCuts.has(p);
             if (isCut) currentPart++;
             pageTiles.push(`
-              <div class="org-cut-divider ${isCut ? 'is-cut' : ''}" data-boundary="${p}" title="${isCut ? 'Cut point (Part split) — click to join' : 'Click to split here'}">
+              <div class="org-cut-divider ${isCut ? 'is-cut' : ''}" data-boundary="${p}" role="button" tabindex="0" aria-label="${isCut ? 'Split cut active after page ' + p + ' — click to join' : 'Add split cut after page ' + p}" title="${isCut ? 'Cut point (Part split) — click to join' : 'Click to split here'}">
                 <div class="org-cut-line"></div>
-                <button type="button" class="org-cut-btn" data-boundary="${p}">
+                <button type="button" class="org-cut-btn" data-boundary="${p}" aria-label="${isCut ? 'Remove cut after page ' + p : 'Cut after page ' + p}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
                 </button>
               </div>`);
@@ -15255,12 +15257,54 @@ trailer<</Root 1 0 R>>`;
         };
       }
 
-      // 8. Extract Page Checkboxes & Tile Click
+      // Announce to screen readers
+      const announceA11y = (msg) => {
+        const live = container.querySelector('#org-a11y-live');
+        if (live) live.textContent = msg;
+      };
+
+      // 8. Keyboard navigation & Tile Interaction
       container.querySelectorAll('.org-pg-tile').forEach(tile => {
-        tile.onclick = (e) => {
+        const handleTileAction = () => {
+          const pg = +tile.dataset.pg;
           if (mode === 'extract') {
-            const pg = +tile.dataset.pg;
             picked.has(pg) ? picked.delete(pg) : picked.add(pg);
+            announceA11y(`Page ${pg + 1} ${picked.has(pg) ? 'selected' : 'deselected'}`);
+            renderConfigure();
+          } else if (mode === 'delete') {
+            picked.has(pg) ? picked.delete(pg) : picked.add(pg);
+            announceA11y(`Page ${pg + 1} ${picked.has(pg) ? 'marked for deletion' : 'restored'}`);
+            renderConfigure();
+          } else if (mode === 'rotate') {
+            const cur = pageRotations.get(pg) || 0;
+            pageRotations.set(pg, (cur + 90) % 360);
+            announceA11y(`Page ${pg + 1} rotated to ${(cur + 90) % 360} degrees`);
+            wireCardThumbs();
+          }
+        };
+
+        tile.onclick = (e) => {
+          if (!e.target.closest('.org-page-center-btn') && !e.target.closest('.org-extract-chk')) {
+            handleTileAction();
+          }
+        };
+
+        tile.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleTileAction();
+          }
+        };
+      });
+
+      // Keyboard support for cut dividers
+      container.querySelectorAll('.org-cut-divider').forEach(div => {
+        div.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const b = +div.dataset.boundary;
+            if (customCuts.has(b)) customCuts.delete(b); else customCuts.add(b);
+            announceA11y(`Split cut ${customCuts.has(b) ? 'added' : 'removed'} after page ${b}`);
             renderConfigure();
           }
         };
