@@ -1887,7 +1887,10 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (FileKit Refined Designer Workstation) ── */
+    /* ── Step 2: Configure (FileKit Refined Workstation + Custom Target + Batch Support) ── */
+    let customTargetKB = 200;
+    let customUnit = 'KB'; // 'KB' | 'MB'
+
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1898,36 +1901,69 @@
         stageEl.style.margin = '0';
       }
       
+      const isBatch = files.length > 1;
       const activeFile = files[0];
       const fam = familyOf(activeFile);
+      const totalOriginalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
+
+      // Target size in bytes
+      const targetBytes = (customUnit === 'MB' ? customTargetKB * 1024 * 1024 : customTargetKB * 1024);
       
       const estMap = {
         balanced: { label: 'Basic', pct: '-50%', factor: 0.50 },
         light: { label: 'Moderate', pct: '-20%', factor: 0.80 },
-        maximum: { label: 'Strong', pct: '-75%', factor: 0.25 }
+        maximum: { label: 'Strong', pct: '-75%', factor: 0.25 },
+        custom: { 
+          label: 'Target Size', 
+          pct: totalOriginalBytes > 0 ? `${Math.round((Math.min(targetBytes, totalOriginalBytes) / totalOriginalBytes - 1) * 100)}%` : '-50%', 
+          factor: totalOriginalBytes > 0 ? Math.min(0.95, Math.max(0.1, targetBytes / totalOriginalBytes)) : 0.50 
+        }
       };
       
       const currentEst = estMap[selectedTier] || estMap.balanced;
-      const originalBytes = activeFile.size;
-      const estBytes = Math.max(1000, Math.round(originalBytes * currentEst.factor));
+      const estBytes = selectedTier === 'custom' 
+        ? Math.min(totalOriginalBytes, Math.max(1000, targetBytes))
+        : Math.max(1000, Math.round(totalOriginalBytes * currentEst.factor));
       const estNewFormatted = `~${_bytes(estBytes)}`;
-      const estOldFormatted = _bytes(originalBytes);
+      const estOldFormatted = _bytes(totalOriginalBytes);
       const estPctFormatted = `(${currentEst.pct} Saved)`;
 
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Calm Neutral Canvas with Centered Document -->
+            <!-- Left Stage: Single File Preview or Batch Grid -->
             <div class="cpdf-benchmark-stage">
-              <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
-                <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
-              </div>
-              <div class="cpdf-benchmark-fileinfo">
-                <span>${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
-              </div>
+              ${!isBatch ? `
+                <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
+                  <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
+                </div>
+                <div class="cpdf-benchmark-fileinfo">
+                  <span>${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
+                </div>
+              ` : `
+                <div class="cpdf-batch-stage-header">
+                  <span class="cpdf-batch-title">Batch Queue (${files.length} files · ${_bytes(totalOriginalBytes)})</span>
+                  <button type="button" class="cpdf-batch-add-btn" id="comp-add-more-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Add Files</span>
+                  </button>
+                </div>
+                <div class="cpdf-batch-grid">
+                  ${files.map((f, idx) => `
+                    <div class="cpdf-batch-card" data-idx="${idx}">
+                      <div class="cpdf-batch-card-icon">📄</div>
+                      <div class="cpdf-batch-card-info">
+                        <div class="cpdf-batch-card-name" title="${_esc(f.name)}">${_esc(f.name)}</div>
+                        <div class="cpdf-batch-card-size">${_bytes(f.size)}</div>
+                      </div>
+                      <button type="button" class="cpdf-batch-card-remove" data-idx="${idx}" title="Remove file">✕</button>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
             </div>
 
-            <!-- Right Panel: Pure White Studio Panel -->
+            <!-- Right Panel: Studio Panel with Presets + Exact Target Size Input -->
             <div class="cpdf-benchmark-panel">
               <!-- Top Header -->
               <div class="cpdf-benchmark-header">
@@ -1936,7 +1972,7 @@
                     <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
                   </svg>
                 </div>
-                <h2 class="cpdf-benchmark-title">Compress</h2>
+                <h2 class="cpdf-benchmark-title">${isBatch ? `Compress ${files.length} Files` : 'Compress'}</h2>
               </div>
 
               <!-- Option 1: Basic -->
@@ -1947,7 +1983,7 @@
                 <span class="cpdf-benchmark-card-label">Basic</span>
               </div>
 
-              <!-- Option 2: Moderate (No Crown) -->
+              <!-- Option 2: Moderate -->
               <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
                 <div class="cpdf-benchmark-radio">
                   <div class="cpdf-benchmark-radio-dot"></div>
@@ -1955,7 +1991,7 @@
                 <span class="cpdf-benchmark-card-label">Moderate</span>
               </div>
 
-              <!-- Option 3: Strong (No Crown, Clean Smallest Badge) -->
+              <!-- Option 3: Strong -->
               <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
                 <div class="cpdf-benchmark-radio">
                   <div class="cpdf-benchmark-radio-dot"></div>
@@ -1966,9 +2002,28 @@
                 </div>
               </div>
 
+              <!-- Option 4: Exact Target Size Mode -->
+              <div class="cpdf-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom">
+                <div class="cpdf-target-row-top">
+                  <div class="cpdf-benchmark-radio">
+                    <div class="cpdf-benchmark-radio-dot"></div>
+                  </div>
+                  <span class="cpdf-benchmark-card-label">Exact Target Size</span>
+                </div>
+                ${selectedTier === 'custom' ? `
+                  <div class="cpdf-target-input-wrap">
+                    <input type="number" min="1" max="9999" id="cpdf-target-val-inp" class="cpdf-target-inp" value="${customTargetKB}" />
+                    <select id="cpdf-target-unit-sel" class="cpdf-target-unit-sel">
+                      <option value="KB" ${customUnit === 'KB' ? 'selected' : ''}>KB</option>
+                      <option value="MB" ${customUnit === 'MB' ? 'selected' : ''}>MB</option>
+                    </select>
+                  </div>
+                ` : ''}
+              </div>
+
               <!-- Estimated New File Size Box -->
               <div class="cpdf-benchmark-est-box">
-                <div class="cpdf-benchmark-est-title">Estimated new file size</div>
+                <div class="cpdf-benchmark-est-title">${isBatch ? 'Total estimated output' : 'Estimated new file size'}</div>
                 <div class="cpdf-benchmark-est-metrics">
                   <strong class="cpdf-benchmark-est-new" id="comp-est-new-size">${estNewFormatted}</strong>
                   <del class="cpdf-benchmark-est-old" id="comp-est-old-size">${estOldFormatted}</del>
@@ -1981,7 +2036,7 @@
 
               <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="cpdf-benchmark-cta" id="comp-studio-run">
-                <span>Compress</span>
+                <span>${isBatch ? `Compress ${files.length} Files` : 'Compress'}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -1989,62 +2044,110 @@
             </div>
           </div>
         </div>
-        <input id="cpdf-replace-inp" type="file" accept="${ACCEPT_STR}" hidden>`;
+        <input id="cpdf-add-more-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>`;
 
-      // Direct high-DPI document rendering
-      (async () => {
-        const thumbBox = container.querySelector('#comp-studio-thumb-box');
-        if (!thumbBox) return;
-        if (fam === 'pdf') {
-          try {
-            const pdfjs = await loadJs();
-            const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
-            const page = await doc.getPage(1);
-            const vp = page.getViewport({ scale: 0.85 });
-            const c = document.createElement('canvas');
-            c.width = Math.max(1, Math.round(vp.width));
-            c.height = Math.max(1, Math.round(vp.height));
-            const ctx = c.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            c.style.display = 'block';
-            c.style.maxWidth = '100%';
-            c.style.maxHeight = 'calc(100vh - 210px)';
-            c.style.width = 'auto';
-            c.style.height = 'auto';
-            c.style.borderRadius = '4px';
-            thumbBox.innerHTML = '';
-            thumbBox.append(c);
-          } catch (e) {
-            console.warn('[Compress] stage render error:', e);
+      // Single file high-DPI document rendering
+      if (!isBatch) {
+        (async () => {
+          const thumbBox = container.querySelector('#comp-studio-thumb-box');
+          if (!thumbBox) return;
+          if (fam === 'pdf') {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp = page.getViewport({ scale: 0.85 });
+              const c = document.createElement('canvas');
+              c.width = Math.max(1, Math.round(vp.width));
+              c.height = Math.max(1, Math.round(vp.height));
+              const ctx = c.getContext('2d');
+              await page.render({ canvasContext: ctx, viewport: vp }).promise;
+              c.style.display = 'block';
+              c.style.maxWidth = '100%';
+              c.style.maxHeight = 'calc(100vh - 210px)';
+              c.style.width = 'auto';
+              c.style.height = 'auto';
+              c.style.borderRadius = '4px';
+              thumbBox.innerHTML = '';
+              thumbBox.append(c);
+            } catch (e) {
+              console.warn('[Compress] stage render error:', e);
+            }
+          } else {
+            const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
+            if (typeof getThumb === 'function') {
+              getThumb(activeFile, fam).then((u) => {
+                if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;"/>`;
+              }).catch(() => {});
+            }
           }
-        } else {
-          const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
-          if (typeof getThumb === 'function') {
-            getThumb(activeFile, fam).then((u) => {
-              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;"/>`;
-            }).catch(() => {});
-          }
-        }
-      })();
+        })();
+      }
 
       // Wire Tier Selection
       container.querySelectorAll('.cpdf-benchmark-card').forEach(row => {
-        row.onclick = () => {
-          container.querySelectorAll('.cpdf-benchmark-card').forEach(r => r.classList.remove('is-active'));
-          row.classList.add('is-active');
-          selectedTier = row.dataset.tier || 'balanced';
-          preset = selectedTier === 'maximum' ? 'strong' : selectedTier === 'light' ? 'light' : 'balanced';
-          
-          const est = estMap[selectedTier] || estMap.balanced;
-          const newBytes = Math.max(1000, Math.round(originalBytes * est.factor));
+        row.onclick = (e) => {
+          if (e.target.closest('.cpdf-target-input-wrap')) return;
+          const tier = row.dataset.tier || 'balanced';
+          selectedTier = tier;
+          preset = selectedTier === 'maximum' ? 'strong' : selectedTier === 'light' ? 'light' : selectedTier === 'custom' ? 'custom' : 'balanced';
+          renderConfigure();
+        };
+      });
+
+      // Wire Custom Target Size Inputs
+      const targetInp = container.querySelector('#cpdf-target-val-inp');
+      const unitSel = container.querySelector('#cpdf-target-unit-sel');
+      if (targetInp) {
+        targetInp.oninput = () => {
+          const val = parseFloat(targetInp.value) || 100;
+          customTargetKB = val;
+          const tBytes = (customUnit === 'MB' ? customTargetKB * 1024 * 1024 : customTargetKB * 1024);
+          const estB = Math.min(totalOriginalBytes, Math.max(1000, tBytes));
+          const pct = totalOriginalBytes > 0 ? `${Math.round((estB / totalOriginalBytes - 1) * 100)}%` : '-50%';
           
           const newSizeEl = container.querySelector('#comp-est-new-size');
           const pctEl = container.querySelector('#comp-est-pct');
           const barEl = container.querySelector('#comp-est-bar');
           
-          if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
-          if (pctEl) pctEl.textContent = `(${est.pct} Saved)`;
-          if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
+          if (newSizeEl) newSizeEl.textContent = `~${_bytes(estB)}`;
+          if (pctEl) pctEl.textContent = `(${pct} Saved)`;
+          if (barEl) barEl.style.width = `${Math.round(Math.min(1, estB / totalOriginalBytes) * 100)}%`;
+        };
+      }
+      if (unitSel) {
+        unitSel.onchange = () => {
+          customUnit = unitSel.value;
+          if (targetInp) targetInp.dispatchEvent(new Event('input'));
+        };
+      }
+
+      // Wire Batch Add More Trigger
+      const addMoreBtn = container.querySelector('#comp-add-more-btn');
+      const addMoreInp = container.querySelector('#cpdf-add-more-inp');
+      if (addMoreBtn && addMoreInp) {
+        addMoreBtn.onclick = () => addMoreInp.click();
+        addMoreInp.onchange = () => {
+          if (addMoreInp.files && addMoreInp.files.length) {
+            addFiles(addMoreInp.files);
+          }
+          addMoreInp.value = '';
+        };
+      }
+
+      // Wire Batch Remove Item
+      container.querySelectorAll('.cpdf-batch-card-remove').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx, 10);
+          if (!isNaN(idx) && idx >= 0 && idx < files.length) {
+            files.splice(idx, 1);
+            if (files.length === 0) {
+              renderUpload();
+            } else {
+              renderConfigure();
+            }
+          }
         };
       });
 
@@ -2108,6 +2211,26 @@
 
     /* Route the actual compression by the file's family. */
     async function runByFamily(file, family, p, onProgress) {
+      let activePreset = Object.assign({}, p);
+      if (selectedTier === 'custom') {
+        const tBytes = (customUnit === 'MB' ? customTargetKB * 1024 * 1024 : customTargetKB * 1024);
+        const ratio = file.size > 0 ? (tBytes / file.size) : 0.5;
+        if (ratio <= 0.25) {
+          activePreset.quality = 28;
+          activePreset.scale = 0.9;
+        } else if (ratio <= 0.50) {
+          activePreset.quality = 48;
+          activePreset.scale = 1.1;
+        } else if (ratio <= 0.75) {
+          activePreset.quality = 68;
+          activePreset.scale = 1.4;
+        } else {
+          activePreset.quality = 82;
+          activePreset.scale = 1.8;
+        }
+      }
+      p = activePreset;
+
       if (family === 'image') {
         let sourceBlob = file;
         const ext = (file.name.split('.').pop() || '').toLowerCase();
