@@ -7999,31 +7999,24 @@
       });
     }
 
-    function fieldPanel(f) {
+    function compactFieldPanel(f) {
       const v = cfg[f.key];
-      const label = `<label class="conv-label" for="cfg-${f.key}">${_esc(f.label || f.key)}</label>`;
-      const help = f.help ? `<p class="conv-help">${_esc(f.help)}</p>` : '';
+      const label = `<span class="conv-compact-label">${_esc(f.label || f.key)}</span>`;
       if (f.type === 'select') {
         const opts = (f.options || []).map((o) => {
           const ov = (typeof o === 'object' && o !== null) ? (o.value ?? '') : String(o);
           const ol = (typeof o === 'object' && o !== null) ? (o.label ?? ov) : String(o);
           return `<option value="${_esc(ov)}" ${String(v) === String(ov) ? 'selected' : ''}>${_esc(ol)}</option>`;
         }).join('');
-        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><div class="conv-select-wrap"><select id="cfg-${f.key}" class="conv-select" data-cfg="${f.key}">${opts}</select></div>${help}</div>`;
+        return `<div class="conv-compact-item">${label}<select id="cfg-${f.key}" class="conv-compact-select" data-cfg="${f.key}">${opts}</select></div>`;
       }
       if (f.type === 'range') {
-        return `<div class="conv-panel"><div class="conv-field-head">${label}<span class="conv-range-val" id="cfg-${f.key}-val">${_esc(String(v))}</span></div><div class="conv-quality"><input id="cfg-${f.key}" type="range" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step ?? 1}" value="${_esc(String(v))}" data-cfg="${f.key}"></div>${help}</div>`;
+        return `<div class="conv-compact-item">${label}<input id="cfg-${f.key}" type="range" class="conv-compact-range" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step ?? 1}" value="${_esc(String(v))}" data-cfg="${f.key}"><span class="conv-compact-range-val" id="cfg-${f.key}-val">${_esc(String(v))}</span></div>`;
       }
       if (f.type === 'number') {
-        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><input id="cfg-${f.key}" type="number" class="conv-number" min="${f.min ?? ''}" max="${f.max ?? ''}" step="${f.step ?? 'any'}" value="${_esc(String(v))}" data-cfg="${f.key}">${help}</div>`;
+        return `<div class="conv-compact-item">${label}<input id="cfg-${f.key}" type="number" class="conv-compact-number" min="${f.min ?? ''}" max="${f.max ?? ''}" step="${f.step ?? 'any'}" value="${_esc(String(v))}" data-cfg="${f.key}"></div>`;
       }
-      if (f.type === 'color') {
-        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><input id="cfg-${f.key}" type="color" class="conv-color" value="${_esc(String(v))}" data-cfg="${f.key}">${help}</div>`;
-      }
-      if (f.type === 'textarea') {
-        return `<div class="conv-panel"><div class="conv-field-head">${label}</div><textarea id="cfg-${f.key}" class="conv-textarea" rows="3" data-cfg="${f.key}">${_esc(String(v))}</textarea>${help}</div>`;
-      }
-      return `<div class="conv-panel"><div class="conv-field-head">${label}</div><input id="cfg-${f.key}" type="text" class="conv-text" value="${_esc(String(v))}" data-cfg="${f.key}">${help}</div>`;
+      return `<div class="conv-compact-item">${label}<input id="cfg-${f.key}" type="text" class="conv-compact-text" value="${_esc(String(v))}" data-cfg="${f.key}"></div>`;
     }
 
     function showErr(msg) {
@@ -8206,15 +8199,18 @@
 
             </div>
 
-            <!-- Optional Slide-Down Settings Drawer -->
+            <!-- Compact Inline Options Bar -->
             ${fields.length > 0 && isSettingsOpen ? `
-            <div class="conv-studio-settings-drawer">
-              <div class="conv-studio-settings-header">
-                <strong>⚙️ ${t.out} Options</strong>
-                <span>${_esc(t.desc)}</span>
-              </div>
-              <div class="conv-studio-settings-fields">
-                ${fields.map((f) => fieldPanel(f)).join('')}
+            <div class="conv-studio-compact-settings">
+              <div class="conv-compact-settings-row">
+                <div class="conv-compact-settings-title">
+                  <span style="font-size: 13px;">⚙️</span>
+                  <span style="font-weight: 700; color: #0F172A; font-size: 12px;">${t.out || 'Format'} Options:</span>
+                </div>
+                <div class="conv-compact-fields-row">
+                  ${fields.map((f) => compactFieldPanel(f)).join('')}
+                </div>
+                <button type="button" class="conv-compact-close-btn" id="conv-settings-close" title="Close Options">&times;</button>
               </div>
             </div>` : ''}
 
@@ -8281,10 +8277,14 @@
         });
       });
 
-      // Gear settings toggle
+      // Gear settings toggle & close
       const gearBtn = container.querySelector('#conv-gear-btn');
       gearBtn?.addEventListener('click', () => {
         isSettingsOpen = !isSettingsOpen;
+        renderConfigure();
+      });
+      container.querySelector('#conv-settings-close')?.addEventListener('click', () => {
+        isSettingsOpen = false;
         renderConfigure();
       });
 
