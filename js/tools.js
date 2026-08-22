@@ -15511,7 +15511,7 @@ trailer<</Root 1 0 R>>`;
       if (sub) sub.textContent = `Stage ${stageNum} of 3: ${stageText}`;
     }
 
-    /* ── Step 5: Pro 2-Column Result Studio with Flipbook & Smart Next Steps ── */
+    /* ── Step 5: Pro 2-Column Result Studio with Real Document Previews ── */
     async function renderResult(res) {
       exitBleed();
       const isPdf = res.name.endsWith('.pdf');
@@ -15520,6 +15520,7 @@ trailer<</Root 1 0 R>>`;
       let pageTotal = 1;
       let curPage = 1;
       let flipDoc = null;
+      let zipParts = []; // For split ZIPs: array of { name, u8 }
 
       // Smart next step tools
       const smartTools = isPdf ? [
@@ -15536,27 +15537,17 @@ trailer<</Root 1 0 R>>`;
         <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden; width: 100%;">
           <div class="conv-result-studio">
             
-            <!-- LEFT: Output Document Preview & Interactive Flipbook -->
+            <!-- LEFT: Real Output Document Preview & Flipbook -->
             <div class="conv-result-preview-col" id="org-result-preview-box">
-              <div id="org-flip-stage" style="width: 100%; height: 170px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 8px;">
-                <div class="conv-doc-illustration" style="margin-bottom:0;">
-                  <div class="conv-doc-lines">
-                    <div class="conv-doc-line"></div>
-                    <div class="conv-doc-line"></div>
-                    <div class="conv-doc-line" style="width: 70%;"></div>
-                  </div>
-                  <div class="conv-doc-banner" style="background: #1A1714;">
-                    ${isZip ? 'ZIP ARCHIVE' : 'ORGANIZED'}
-                  </div>
-                </div>
+              <div id="org-flip-stage" style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 8px;">
+                <div class="org-tile-ph" style="font-size:12px;color:#94A3B8;">Rendering document preview…</div>
               </div>
 
-              ${isPdf ? `
-              <div class="org-flip-nav" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; width: 100%;">
+              <div class="org-flip-nav" id="org-flip-nav-box" style="display: none; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; width: 100%;">
                 <button type="button" class="conv-result-btn-secondary" id="org-flip-prev" disabled style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">‹ Prev</button>
-                <span id="org-flip-status" style="font-size: 11.5px; font-weight: 700; color: #334155; min-width: 65px; text-align: center; white-space: nowrap !important;">Page 1</span>
+                <span id="org-flip-status" style="font-size: 11.5px; font-weight: 700; color: #334155; min-width: 75px; text-align: center; white-space: nowrap !important;">Page 1</span>
                 <button type="button" class="conv-result-btn-secondary" id="org-flip-next" style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">Next ›</button>
-              </div>` : ''}
+              </div>
 
               <span class="conv-result-name-sub" title="${_esc(res.name)}" style="margin-top: 4px;">${_esc(res.name)}</span>
               <span style="font-size: 12px; font-weight: 700; color: #0F172A; margin-top: 2px;">${outSize}</span>
@@ -15574,7 +15565,7 @@ trailer<</Root 1 0 R>>`;
                 ${mode === 'split' ? 'Document split into parts successfully' : mode === 'rotate' ? 'Page rotation applied successfully' : mode === 'delete' ? 'Pages removed successfully' : 'Organization complete'}
               </p>
 
-              <!-- Main Download Button: Obsidian Black -->
+              <!-- Main Download Button: Guaranteed Vibrant Emerald Green -->
               <button class="conv-result-btn-download" id="org-dl" type="button" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span>Download ${res.name} (${outSize})</span>
@@ -15644,7 +15635,14 @@ trailer<</Root 1 0 R>>`;
         });
       });
 
-      // Wire Flipbook Navigation
+      // ── Real Output Preview Engine (PDFs, Split ZIP parts, or Images) ──
+      const stage = container.querySelector('#org-flip-stage');
+      const navBox = container.querySelector('#org-flip-nav-box');
+      const status = container.querySelector('#org-flip-status');
+      const prevBtn = container.querySelector('#org-flip-prev');
+      const nextBtn = container.querySelector('#org-flip-next');
+
+      // Case A: PDF output (Rotate, Delete, Merge, Extract single)
       if (isPdf) {
         try {
           const pdfjs = await loadJs();
@@ -15653,34 +15651,82 @@ trailer<</Root 1 0 R>>`;
 
           const updateFlipPage = async (p) => {
             curPage = p;
-            const stage = container.querySelector('#org-flip-stage');
-            const status = container.querySelector('#org-flip-status');
-            const prevBtn = container.querySelector('#org-flip-prev');
-            const nextBtn = container.querySelector('#org-flip-next');
             if (status) status.textContent = `Page ${curPage} of ${pageTotal}`;
             if (prevBtn) prevBtn.disabled = curPage <= 1;
             if (nextBtn) nextBtn.disabled = curPage >= pageTotal;
 
             const page = await flipDoc.getPage(curPage);
-            const c = await renderPage(pdfjs, page, 0.6);
-            c.style.maxHeight = '160px';
+            const c = await renderPage(pdfjs, page, 0.75);
+            c.style.maxHeight = '165px';
             c.style.maxWidth = '100%';
-            c.style.borderRadius = '3px';
-            c.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+            c.style.borderRadius = '4px';
+            c.style.border = '1px solid #CBD5E1';
+            c.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.12)';
             if (stage) {
               stage.innerHTML = '';
               stage.append(c);
             }
           };
 
-          const prevBtn = container.querySelector('#org-flip-prev');
-          const nextBtn = container.querySelector('#org-flip-next');
+          if (pageTotal > 1 && navBox) navBox.style.display = 'flex';
           if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateFlipPage(curPage - 1); };
           if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateFlipPage(curPage + 1); };
 
-          updateFlipPage(1);
+          await updateFlipPage(1);
         } catch (e) {
-          console.warn('[Organize] flipbook preview error:', e);
+          console.warn('[Organize] PDF preview error:', e);
+        }
+      }
+
+      // Case B: ZIP output (Split PDF parts or Separate Extracted PDFs)
+      else if (isZip) {
+        try {
+          const fflate = await loadZip();
+          const unzipped = fflate.unzipSync(new Uint8Array(await res.blob.arrayBuffer()));
+          const partNames = Object.keys(unzipped).filter(k => k.endsWith('.pdf'));
+          
+          if (partNames.length) {
+            zipParts = partNames.map(k => ({ name: k, u8: unzipped[k] }));
+            pageTotal = zipParts.length;
+            const pdfjs = await loadJs();
+
+            const updateZipPart = async (idx) => {
+              curPage = idx + 1;
+              if (status) status.textContent = `Part ${curPage} of ${pageTotal}`;
+              if (prevBtn) prevBtn.disabled = curPage <= 1;
+              if (nextBtn) nextBtn.disabled = curPage >= pageTotal;
+
+              const partDoc = await pdfjs.getDocument({ data: zipParts[idx].u8 }).promise;
+              const page = await partDoc.getPage(1);
+              const c = await renderPage(pdfjs, page, 0.75);
+              c.style.maxHeight = '165px';
+              c.style.maxWidth = '100%';
+              c.style.borderRadius = '4px';
+              c.style.border = '1px solid #CBD5E1';
+              c.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.12)';
+              if (stage) {
+                stage.innerHTML = '';
+                stage.append(c);
+              }
+              try { partDoc.destroy(); } catch {}
+            };
+
+            if (pageTotal > 1 && navBox) navBox.style.display = 'flex';
+            if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateZipPart(curPage - 2); };
+            if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateZipPart(curPage); };
+
+            await updateZipPart(0);
+          }
+        } catch (e) {
+          console.warn('[Organize] ZIP preview error:', e);
+        }
+      }
+
+      // Case C: Single Image output
+      else if (familyOf(files[0]) === 'image') {
+        const u = URL.createObjectURL(res.blob);
+        if (stage) {
+          stage.innerHTML = `<img src="${u}" style="max-height:165px;max-width:100%;border-radius:4px;border:1px solid #CBD5E1;box-shadow:0 4px 12px rgba(15,23,42,0.12);object-fit:contain;">`;
         }
       }
     }
