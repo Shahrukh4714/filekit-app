@@ -1887,7 +1887,7 @@
       dz.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') inp.click(); });
     }
 
-    /* ── Step 2: Configure (FileKit Authentic Signature Studio) ── */
+    /* ── Step 2: Configure (Pixel-Perfect Gold Benchmark Workstation) ── */
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -1902,24 +1902,9 @@
       const fam = familyOf(activeFile);
       
       const estMap = {
-        balanced: { 
-          title: 'Balanced', 
-          desc: 'Preserves crisp text & graphics', 
-          tag: '-50% Saved', 
-          factor: 0.50 
-        },
-        maximum: { 
-          title: 'High Compression', 
-          desc: 'Smallest file for email & web', 
-          tag: '-75% Saved', 
-          factor: 0.25 
-        },
-        light: { 
-          title: 'Lossless', 
-          desc: 'Cleans metadata & streams', 
-          tag: '-20% Saved', 
-          factor: 0.80 
-        }
+        balanced: { label: 'Basic', pct: '-50%', factor: 0.50 },
+        light: { label: 'Moderate', pct: '-20%', factor: 0.80 },
+        maximum: { label: 'Strong', pct: '-75%', factor: 0.25 }
       };
       
       const currentEst = estMap[selectedTier] || estMap.balanced;
@@ -1927,82 +1912,82 @@
       const estBytes = Math.max(1000, Math.round(originalBytes * currentEst.factor));
       const estNewFormatted = `~${_bytes(estBytes)}`;
       const estOldFormatted = _bytes(originalBytes);
+      const estPctFormatted = `(${currentEst.pct})`;
 
       container.innerHTML = `
-        <div class="fk-studio-body">
-          <div class="fk-studio-workstation">
-            <!-- Left: Document Preview Stage (Calm, Clean Slate Canvas) -->
-            <div class="fk-studio-stage">
-              <div class="fk-studio-paper-wrap" id="comp-studio-thumb-box">
-                <div class="fk-studio-thumb-ph" style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Soft Powder Canvas with Centered Document -->
+            <div class="cpdf-benchmark-stage">
+              <div class="cpdf-benchmark-paper" id="comp-studio-thumb-box">
+                <div style="padding: 60px 40px; color: #94A3B8;">Loading document preview…</div>
               </div>
-              <div class="fk-studio-stage-pill">
-                <span class="fk-studio-pill-file" title="${_esc(activeFile.name)}">📄 ${_esc(activeFile.name)}</span>
-                <span class="fk-studio-pill-meta">· ${_bytes(activeFile.size)}</span>
-                <button type="button" class="fk-studio-pill-replace" id="comp-replace-trigger" title="Change file">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                  <span>Replace</span>
-                </button>
+              <div class="cpdf-benchmark-fileinfo">
+                <span>${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
               </div>
             </div>
 
-            <!-- Right: FileKit Authentic Studio Inspector (Matches Homepage System) -->
-            <div class="fk-studio-panel">
-              <!-- Header -->
-              <div class="fk-studio-header">
-                <h2 class="fk-studio-title">Compress PDF</h2>
-                <p class="fk-studio-subtitle">Select compression level to optimize file size</p>
+            <!-- Right Panel: Pure White Studio Panel -->
+            <div class="cpdf-benchmark-panel">
+              <!-- Top Header -->
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
+                  </svg>
+                </div>
+                <h2 class="cpdf-benchmark-title">Compress</h2>
               </div>
 
-              <!-- Hero Comparison Overview (FileKit Homepage Signature) -->
-              <div class="fk-comp-compare">
-                <div class="fk-comp-card original">
-                  <span class="fk-comp-tag">ORIGINAL</span>
-                  <span class="fk-comp-size">${estOldFormatted}</span>
+              <!-- Option 1: Basic -->
+              <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
+                <div class="cpdf-benchmark-radio">
+                  <div class="cpdf-benchmark-radio-dot"></div>
                 </div>
-                <div class="fk-comp-arrow">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <span class="cpdf-benchmark-card-label">Basic</span>
+              </div>
+
+              <!-- Option 2: Moderate -->
+              <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
+                <div class="cpdf-benchmark-radio">
+                  <div class="cpdf-benchmark-radio-dot"></div>
                 </div>
-                <div class="fk-comp-card optimized">
-                  <span class="fk-comp-tag green">OPTIMIZED</span>
-                  <span class="fk-comp-size green" id="comp-est-new-size">${estNewFormatted}</span>
-                  <span class="fk-comp-savings" id="comp-est-savings-tag">${currentEst.tag}</span>
+                <span class="cpdf-benchmark-card-label">Moderate</span>
+                <span class="cpdf-benchmark-crown" title="Pro Feature">👑</span>
+              </div>
+
+              <!-- Option 3: Strong -->
+              <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
+                <div class="cpdf-benchmark-radio">
+                  <div class="cpdf-benchmark-radio-dot"></div>
+                </div>
+                <span class="cpdf-benchmark-card-label">Strong</span>
+                <div class="cpdf-benchmark-card-right">
+                  <span class="cpdf-benchmark-pill-smallest">Smallest</span>
+                  <span class="cpdf-benchmark-crown" title="Pro Feature">👑</span>
                 </div>
               </div>
 
-              <!-- Compression Options Deck -->
-              <div class="fk-studio-deck">
-                ${['balanced', 'maximum', 'light'].map(t => {
-                  const item = estMap[t];
-                  const isSel = (t === selectedTier);
-                  return `
-                    <div class="fk-studio-card ${isSel ? 'is-active' : ''}" data-tier="${t}">
-                      <div class="fk-studio-card-left">
-                        <div class="fk-studio-radio">
-                          <div class="fk-studio-radio-dot"></div>
-                        </div>
-                        <div class="fk-studio-card-info">
-                          <div class="fk-studio-card-name">${item.title}</div>
-                          <div class="fk-studio-card-desc">${item.desc}</div>
-                        </div>
-                      </div>
-                      <span class="fk-studio-pill-save">${item.tag.replace(' Saved', '')}</span>
-                    </div>`;
-                }).join('')}
+              <!-- Estimated New File Size Box -->
+              <div class="cpdf-benchmark-est-box">
+                <div class="cpdf-benchmark-est-title">Estimated new file size</div>
+                <div class="cpdf-benchmark-est-metrics">
+                  <strong class="cpdf-benchmark-est-new" id="comp-est-new-size">${estNewFormatted}</strong>
+                  <del class="cpdf-benchmark-est-old" id="comp-est-old-size">${estOldFormatted}</del>
+                  <span class="cpdf-benchmark-est-pct" id="comp-est-pct">${estPctFormatted}</span>
+                </div>
+                <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
+                </div>
               </div>
 
-              <!-- Primary Action CTA Button (Obsidian Black) -->
-              <button type="button" class="fk-studio-cta" id="comp-studio-run">
-                <span>Compress PDF</span>
+              <!-- Primary Action CTA Button (Royal Blue) -->
+              <button type="button" class="cpdf-benchmark-cta" id="comp-studio-run">
+                <span>Compress</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
               </button>
-
-              <div class="fk-studio-security-row">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span>Client-Side Engine · 100% In-Browser</span>
-              </div>
             </div>
           </div>
         </div>
@@ -2023,7 +2008,12 @@
             c.height = Math.max(1, Math.round(vp.height));
             const ctx = c.getContext('2d');
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            c.className = 'fk-studio-paper-img';
+            c.style.display = 'block';
+            c.style.maxWidth = '100%';
+            c.style.maxHeight = 'calc(100vh - 210px)';
+            c.style.width = 'auto';
+            c.style.height = 'auto';
+            c.style.borderRadius = '4px';
             thumbBox.innerHTML = '';
             thumbBox.append(c);
           } catch (e) {
@@ -2033,16 +2023,16 @@
           const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
           if (typeof getThumb === 'function') {
             getThumb(activeFile, fam).then((u) => {
-              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" class="fk-studio-paper-img"/>`;
+              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;"/>`;
             }).catch(() => {});
           }
         }
       })();
 
       // Wire Tier Selection
-      container.querySelectorAll('.fk-studio-card').forEach(row => {
+      container.querySelectorAll('.cpdf-benchmark-card').forEach(row => {
         row.onclick = () => {
-          container.querySelectorAll('.fk-studio-card').forEach(r => r.classList.remove('is-active'));
+          container.querySelectorAll('.cpdf-benchmark-card').forEach(r => r.classList.remove('is-active'));
           row.classList.add('is-active');
           selectedTier = row.dataset.tier || 'balanced';
           preset = selectedTier === 'maximum' ? 'strong' : selectedTier === 'light' ? 'light' : 'balanced';
@@ -2051,26 +2041,14 @@
           const newBytes = Math.max(1000, Math.round(originalBytes * est.factor));
           
           const newSizeEl = container.querySelector('#comp-est-new-size');
-          const saveTagEl = container.querySelector('#comp-est-savings-tag');
+          const pctEl = container.querySelector('#comp-est-pct');
+          const barEl = container.querySelector('#comp-est-bar');
           
           if (newSizeEl) newSizeEl.textContent = `~${_bytes(newBytes)}`;
-          if (saveTagEl) saveTagEl.textContent = est.tag;
+          if (pctEl) pctEl.textContent = `(${est.pct})`;
+          if (barEl) barEl.style.width = `${Math.round(est.factor * 100)}%`;
         };
       });
-
-      // Wire Replace File Trigger
-      const replaceTrigger = container.querySelector('#comp-replace-trigger');
-      const replaceInp = container.querySelector('#cpdf-replace-inp');
-      if (replaceTrigger && replaceInp) {
-        replaceTrigger.onclick = () => replaceInp.click();
-        replaceInp.onchange = () => {
-          if (replaceInp.files && replaceInp.files.length) {
-            files = Array.from(replaceInp.files);
-            renderConfigure();
-          }
-          replaceInp.value = '';
-        };
-      }
 
       // Wire Run Action
       container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
