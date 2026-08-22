@@ -1898,20 +1898,20 @@
       const p = PRESETS[preset] || PRESETS.balanced;
       const totBytes = totalBytes();
 
-      // Dynamic size estimates for live widget
+      // Precise dynamic estimates
       const estMap = {
-        maximum: { label: 'Strong', desc: 'Smallest file size · Ideal for email & upload', pct: '-75%', estBytes: Math.max(500, Math.round(totBytes * 0.25)), barW: 25 },
-        balanced: { label: 'Basic (Recommended)', desc: 'Smart compression · Good quality balance', pct: '-50%', estBytes: Math.max(1000, Math.round(totBytes * 0.50)), barW: 50 },
-        light: { label: 'Low', desc: 'Maximum visual fidelity · Minimal compression', pct: '-20%', estBytes: Math.max(1500, Math.round(totBytes * 0.80)), barW: 80 }
+        maximum: { label: 'Strong', badge: '<span class="comp-pro-badge-green">Smallest</span>', desc: 'Smallest file size · Ideal for email & upload', pct: '-75%', estBytes: Math.max(500, Math.round(totBytes * 0.25)), barW: 25 },
+        balanced: { label: 'Basic', badge: '<span class="comp-pro-badge-amber">Recommended</span>', desc: 'Smart compression · Good quality balance', pct: '-50%', estBytes: Math.max(1000, Math.round(totBytes * 0.50)), barW: 50 },
+        light: { label: 'Low', badge: '<span class="comp-pro-badge-slate">High Quality</span>', desc: 'Maximum visual fidelity · Minimal compression', pct: '-20%', estBytes: Math.max(1500, Math.round(totBytes * 0.80)), barW: 80 }
       };
 
       const curEst = estMap[preset] || estMap.balanced;
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 12px 0; overflow: hidden; width: 100%;">
+        <div class="cpdf-body cpdf-body--center" style="padding: 24px 0; overflow: hidden; width: 100%;">
           <div class="comp-pro-workstation">
             
-            <!-- LEFT: Clean Document Canvas Stage -->
+            <!-- LEFT: Clean Borderless Document Canvas Stage -->
             <div class="comp-pro-stage">
               <div class="comp-pro-paper-wrapper" id="comp-studio-thumb-box">
                 <div class="comp-pro-paper-placeholder">
@@ -1931,12 +1931,12 @@
               <div class="comp-pro-stage-meta">
                 <span class="comp-pro-stage-filename" title="${_esc(activeFile.name)}">${_esc(activeFile.name)}</span>
                 <span class="comp-pro-stage-filesize">(${_bytes(totBytes)}${files.length > 1 ? ` · ${files.length} files` : ''})</span>
-                <button type="button" class="comp-pro-replace-link" id="comp-change-btn">⟲ Replace</button>
+                <button type="button" class="comp-pro-replace-btn" id="comp-change-btn">⟲ Replace</button>
               </div>
               <input id="comp-replace-input" type="file" accept="${ACCEPT_STR}" multiple hidden>
             </div>
 
-            <!-- RIGHT: Control Island -->
+            <!-- RIGHT: Control Panel -->
             <div class="comp-pro-panel">
               
               <div class="comp-pro-panel-header">
@@ -1949,20 +1949,20 @@
               <!-- Options List -->
               <div class="comp-pro-options-group" role="radiogroup" aria-label="Compression modes">
                 ${Object.entries(PRESETS).map(([key, item]) => {
-                  const info = estMap[key] || { label: item.label, desc: item.desc };
+                  const info = estMap[key] || { label: item.label, badge: '', desc: item.desc };
                   const isSel = key === preset;
                   return `
                     <div class="comp-pro-option-row ${isSel ? 'is-selected' : ''}" data-pkey="${key}" role="radio" aria-checked="${isSel}">
-                      <div class="comp-pro-option-radio">
-                        <div class="comp-pro-radio-dot"></div>
-                      </div>
-                      <div class="comp-pro-option-content">
-                        <div class="comp-pro-option-head">
-                          <span class="comp-pro-option-name">${info.label}</span>
-                          ${key === 'maximum' ? '<span class="comp-pro-badge-green">Smallest</span>' : ''}
+                      <div class="comp-pro-option-left">
+                        <div class="comp-pro-option-radio">
+                          <div class="comp-pro-radio-dot"></div>
                         </div>
-                        <span class="comp-pro-option-sub">${info.desc}</span>
+                        <div class="comp-pro-option-info">
+                          <span class="comp-pro-option-name">${info.label}</span>
+                          <span class="comp-pro-option-sub">${info.desc}</span>
+                        </div>
                       </div>
+                      ${info.badge || ''}
                     </div>
                   `;
                 }).join('')}
@@ -1989,7 +1989,7 @@
                   <span>Compress ${famLabel}</span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
-                <p class="comp-privacy-caption" style="margin-top: 8px; text-align: center;">🔒 100% Free &amp; Private · Locally compressed in your browser</p>
+                <p class="comp-privacy-caption" style="margin-top: 10px; text-align: center; font-size: 11.5px; color: #64748B;">🔒 100% Free &amp; Private · Locally compressed in your browser</p>
               </div>
 
             </div>
@@ -1998,17 +1998,36 @@
         </div>
       `;
 
-      // Live thumbnail rendering with clean physical paper framing
-      const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
-      if (typeof getThumb === 'function') {
-        getThumb(activeFile, fam).then((thumbUrl) => {
-          if (!thumbUrl) return;
-          const thumbBox = container.querySelector('#comp-studio-thumb-box');
-          if (thumbBox) {
-            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="comp-pro-paper-img"/>`;
+      // Direct high-DPI document rendering
+      (async () => {
+        const thumbBox = container.querySelector('#comp-studio-thumb-box');
+        if (!thumbBox) return;
+        if (fam === 'pdf') {
+          try {
+            const pdfjs = await loadJs();
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
+            const page = await doc.getPage(1);
+            const vp = page.getViewport({ scale: 0.85 });
+            const c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(vp.width));
+            c.height = Math.max(1, Math.round(vp.height));
+            const ctx = c.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            c.className = 'comp-pro-paper-img';
+            thumbBox.innerHTML = '';
+            thumbBox.append(c);
+          } catch (e) {
+            console.warn('[Compress] stage render error:', e);
           }
-        }).catch(() => {});
-      }
+        } else {
+          const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
+          if (typeof getThumb === 'function') {
+            getThumb(activeFile, fam).then((u) => {
+              if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" class="comp-pro-paper-img"/>`;
+            }).catch(() => {});
+          }
+        }
+      })();
 
       // Wire change / add files
       const replaceInp = container.querySelector('#comp-replace-input');
