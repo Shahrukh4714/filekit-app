@@ -21058,66 +21058,114 @@ body #app-view .drop-hero-box,
    5l. Organize full-bleed — the workspace fills the whole canvas below the
    topbar (no floating card, no grey gutters), like the Edit/split shells.
 ═══════════════════════════════════════════════════════════════════════════ */
-#app-workspace-tool-view:has(.org-shell) {
+/* Full-bleed studio shell: remove canvas, wrapper, and stage padding */
+body #app-view #app-canvas.app-canvas:has(.org-shell),
+body #app-view #app-canvas.app-canvas.ff-tool-active:has(.org-shell),
+body #app-view .app-canvas:has(.org-shell),
+#app-workspace-tool-view:has(.org-shell),
+.app-stage-container:has(.org-shell),
+#app-tool-stage:has(.org-shell) {
   padding: 0 !important;
-  background: #1A1714 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
   overflow: hidden !important;
+  background: #EEF2F7 !important;
 }
+
 #app-workspace-tool-view:has(.etxt-shell),
 #app-workspace-tool-view:has(.sign-shell) {
   padding: 0 !important;
   background: #EEF2F7 !important;
   overflow: hidden !important;
 }
-.app-stage-container:has(.org-shell) {
-  padding: 0 !important;
-  align-items: stretch !important;
-  overflow: hidden !important;
-}
-.app-workspace-tool-view .org-shell.cpdf-root {
+
+.app-workspace-tool-view .org-shell.cpdf-root,
+.app-workspace-tool-view .org-shell {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
   padding: 0 !important;
   height: 100% !important;
+  max-height: 100% !important;
   overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #EEF2F7 !important;
 }
 
 /* Upload dropzone fills the full-bleed canvas and centers */
 .app-workspace-tool-view .org-shell > .cpdf-dropzone {
   flex: 1 1 auto !important;
   align-self: stretch !important;
-  margin: 18px !important;
+  margin: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
 
-/* Configure flow fills the canvas edge to edge */
+/* Configure flow fills the canvas edge to edge flush with topbar, rail and bottom */
 .app-workspace-tool-view .org-shell .org-flow {
   height: 100% !important;
+  max-height: 100% !important;
   padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  flex: 1 1 auto !important;
 }
-.app-workspace-tool-view .org-shell .org-top,
+.app-workspace-tool-view .org-shell .org-top {
+  border-radius: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  padding: 10px 22px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
 .app-workspace-tool-view .org-shell .org-toolbar2 {
   border-radius: 0 !important;
   border-left: 0 !important;
   border-right: 0 !important;
-  padding-left: 20px !important;
-  padding-right: 20px !important;
+  padding: 8px 22px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
 }
 .app-workspace-tool-view .org-shell .org-body {
-  padding: 14px 20px 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+.app-workspace-tool-view .org-shell .org-thumbs {
+  height: 100% !important;
+  overflow-y: auto !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+.app-workspace-tool-view .org-shell .org-main {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  padding: 16px 24px !important;
+  box-sizing: border-box !important;
 }
 .app-workspace-tool-view .org-shell .org-slim-foot {
-  padding-left: 20px !important;
-  padding-right: 20px !important;
+  padding: 8px 22px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 @media (max-width: 900px) {
   .app-workspace-tool-view .org-shell .org-top,
   .app-workspace-tool-view .org-shell .org-toolbar2 { padding-left: 14px !important; padding-right: 14px !important; }
-  .app-workspace-tool-view .org-shell .org-body { padding: 12px 14px 0 !important; }
-  .app-workspace-tool-view .org-shell > .cpdf-dropzone { margin: 12px !important; }
+  .app-workspace-tool-view .org-shell .org-main { padding: 12px 14px !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

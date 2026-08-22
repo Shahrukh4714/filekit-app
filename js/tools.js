@@ -15990,37 +15990,133 @@ trailer<</Root 1 0 R>>`;
       clearUrls();
       const tagC = res.preview === 'zip' ? '#7C3AED' : res.preview === 'pdf' ? '#E5252A' : res.preview === 'image' ? '#EA580C' : res.preview === 'audio' ? '#2563EB' : res.preview === 'video' ? '#9333EA' : '#7C3AED';
       const tag = res.preview === 'pdf' ? 'PDF' : res.preview === 'zip' ? 'ZIP' : res.preview === 'audio' ? 'AUD' : res.preview === 'video' ? 'VID' : 'IMG';
+      
+      const fam0 = familyOf(files[0]);
+      let smartTip = 'Continue your workflow with these tools:';
+      let smartTools = [
+        { id: 'pdf-compress', name: 'Compress File' },
+        { id: 'pdf-convert', name: 'Convert File' }
+      ];
+
+      if (res.preview === 'pdf') {
+        smartTip = 'Need to compress, sign, or convert your organized PDF?';
+        smartTools = [
+          { id: 'pdf-compress', name: 'Compress PDF' },
+          { id: 'pdf-sign', name: 'Sign PDF' },
+          { id: 'pdf-convert', name: 'Convert PDF' }
+        ];
+      } else if (res.preview === 'image' || fam0 === 'image') {
+        smartTip = 'Compress or convert your images:';
+        smartTools = [
+          { id: 'image-compress', name: 'Compress Images' },
+          { id: 'image-convert', name: 'Convert Images' }
+        ];
+      } else if (res.preview === 'audio' || fam0 === 'audio') {
+        smartTip = 'Edit or convert your audio files:';
+        smartTools = [
+          { id: 'audio-convert', name: 'Convert Audio' },
+          { id: 'audio-normalize', name: 'Normalize Audio' }
+        ];
+      } else if (res.preview === 'video' || fam0 === 'video') {
+        smartTip = 'Compress or convert your video files:';
+        smartTools = [
+          { id: 'video-convert', name: 'Convert Video' },
+          { id: 'video-compress', name: 'Compress Video' }
+        ];
+      }
+
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center conv-result-body">
-          <div class="cpdf-body-scroll conv-result-scroll">
-            <div class="conv-done-badge">${ICONS.check}</div>
-            <div>
-              <p class="conv-done-title">${doneTitle()}</p>
-              <p class="conv-done-sub">${doneSub()}</p>
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow: hidden;">
+          <div class="conv-result-studio">
+            
+            <!-- LEFT: Output Preview Visualizer -->
+            <div class="conv-result-preview-col" id="org-result-preview-box">
+              <div class="conv-preview" id="org-preview" style="margin: 0 auto; width: 140px; height: 180px;">
+                <canvas class="conv-preview-canvas" id="org-preview-canvas" hidden style="max-height: 180px;"></canvas>
+                <div class="conv-preview-fallback" id="org-preview-fallback" style="--c:${tagC}">${tag}</div>
+                <span class="conv-preview-tag" style="--c:${tagC}">${tag}</span>
+              </div>
+              <span class="conv-result-name-sub" title="${_esc(res.filename)}" style="margin-top: 10px;">${_esc(res.filename)}</span>
+              <span style="font-size:12px;font-weight:700;color:#0F172A;margin-top:4px;">
+                ${_bytes(res.blob.size)} &middot; ${tag}
+              </span>
             </div>
-            <div class="conv-preview" id="org-preview">
-              <canvas class="conv-preview-canvas" id="org-preview-canvas" hidden></canvas>
-              <div class="conv-preview-fallback" id="org-preview-fallback" style="--c:${tagC}">${tag}</div>
-              <span class="conv-preview-tag" style="--c:${tagC}">${tag}</span>
-              <span class="conv-preview-spark conv-preview-spark--1">✦</span>
-              <span class="conv-preview-spark conv-preview-spark--2">✦</span>
-              <span class="conv-preview-spark conv-preview-spark--3">✦</span>
+
+            <!-- RIGHT: Actions & Smart Tips -->
+            <div class="conv-result-action-col">
+              
+              <div class="conv-result-done-header">
+                <div class="conv-result-done-badge" style="background:#7C3AED;">✓</div>
+                <h3 class="conv-result-done-title">${doneTitle()}</h3>
+              </div>
+              <p class="conv-result-done-desc">${doneSub()}</p>
+
+              <div class="conv-result-buttons-group">
+                <a class="conv-result-btn-download" id="org-dl" href="#" download="${_esc(res.filename)}" style="background:#7C3AED; border-color:#7C3AED; color:#FFFFFF;">
+                  <span>Download ${_esc(res.filename)}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                  </svg>
+                </a>
+                
+                <div class="conv-result-secondary-row">
+                  <button type="button" class="conv-result-btn-secondary" id="org-again">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    <span>Organize more files</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Contextual Smart Tool Card -->
+              <div class="conv-smart-tip-card">
+                <div class="conv-smart-tip-header">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                  <span>Smart Suggestions</span>
+                </div>
+                <p class="conv-smart-tip-desc">${smartTip}</p>
+                <div class="conv-smart-tools-list">
+                  ${smartTools.map(t => {
+                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') 
+                      ? window.FF.getToolIconSvg(t.id) 
+                      : `<div style="width:28px;height:28px;background:#FAF5FF;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#7C3AED;font-size:12px;font-weight:700;">${tag}</div>`;
+                    return `
+                      <a href="#app/tool/${t.id}" class="conv-smart-tool-item" data-tool-id="${t.id}">
+                        <div class="conv-smart-tool-left">
+                          <div class="conv-smart-tool-icon">${iconSvg}</div>
+                          <span>${t.name}</span>
+                        </div>
+                        <span style="font-size:11px;color:#7C3AED;font-weight:700;">Open &rarr;</span>
+                      </a>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
             </div>
-            <div class="conv-out-meta">
-              <strong id="org-out-name">${_esc(res.filename)}</strong>
-              <span id="org-out-size">${_bytes(res.blob.size)}</span>
-            </div>
-            <div class="conv-result-actions">
-              <a class="cpdf-btn-primary" id="org-dl" href="#" download="${_esc(res.filename)}" style="text-decoration:none">${ICONS.download}&nbsp; Download ${_esc(res.filename)}</a>
-              <button class="cpdf-btn-ghost" id="org-again" type="button">Start over</button>
-            </div>
+
           </div>
         </div>`;
+
       const url = URL.createObjectURL(res.blob);
       const dl = container.querySelector('#org-dl');
       dl.href = url;
       dl.setAttribute('download', res.filename);
       container.querySelector('#org-again').onclick = () => { URL.revokeObjectURL(url); files = []; renderUpload(); };
+
+      // Wire smart tool pass-through
+      container.querySelectorAll('.conv-smart-tool-item[data-tool-id]').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const toolId = item.dataset.toolId;
+          const outputFile = new File([res.blob], res.filename, { type: res.mime || res.blob.type });
+          if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool(toolId, true, [outputFile]);
+          } else if (typeof openWorkspaceTool === 'function') {
+            openWorkspaceTool(toolId, [outputFile]);
+          }
+        });
+      });
+
       paintPreview(res);
     }
 
