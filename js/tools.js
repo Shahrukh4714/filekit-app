@@ -4294,12 +4294,12 @@
 
           <div class="etxt-toolbar-center-tools">
             <div class="etxt-tool-group">
-              <button type="button" class="etxt-tool${toolMode==='select'?' is-on':''}" data-tool="select" title="Select & Move">${I.select}<span>Select</span></button>
-              <button type="button" class="etxt-tool${toolMode==='pan'?' is-on':''}" data-tool="pan" title="Pan Canvas">${I.hand}<span>Pan</span></button>
+              <button type="button" class="etxt-tool${toolMode==='select'?' is-on':''}" data-tool="select" title="Select & Move">${I.select}</button>
+              <button type="button" class="etxt-tool${toolMode==='pan'?' is-on':''}" data-tool="pan" title="Pan Canvas">${I.hand}</button>
             </div>
             <span class="etxt-tool-sep"></span>
             <div class="etxt-tool-group">
-              <button type="button" class="etxt-tool${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing Text">${I.text}<span>Edit Text</span></button>
+              <button type="button" class="etxt-tool${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing Text">${I.text}<span>Text</span></button>
               <button type="button" class="etxt-tool${toolMode==='type'?' is-on':''}" data-tool="type" title="Add Text Box">${I.type}<span>Type</span></button>
               <button type="button" class="etxt-tool${toolMode==='draw'?' is-on':''}" data-tool="draw" title="Draw / Pen">${I.pen}<span>Draw</span></button>
               <button type="button" class="etxt-tool${toolMode==='highlight'?' is-on':''}" data-tool="highlight" title="Highlighter">${I.highlight}<span>Highlight</span></button>
@@ -4308,7 +4308,7 @@
               <button type="button" class="etxt-tool${toolMode==='image'?' is-on':''}" data-tool="image" title="Insert Image">${I.image}<span>Image</span></button>
               <button type="button" class="etxt-tool${toolMode==='stamp'?' is-on':''}" data-tool="stamp" title="Stamps (Approved, Confidential, etc.)">💮 <span>Stamp</span></button>
               <button type="button" class="etxt-tool${toolMode==='note'?' is-on':''}" data-tool="note" title="Sticky Note / Comment">💬 <span>Note</span></button>
-              <button type="button" class="etxt-tool" id="etxt-find-replace" title="Find and replace text in PDF">🔍 <span>Find</span></button>
+              <button type="button" class="etxt-tool" id="etxt-find-replace" title="Find and replace text in PDF">🔍</button>
             </div>
             <span class="etxt-tool-sep"></span>
             <div class="etxt-tool-group">
@@ -4362,7 +4362,7 @@
           </aside>
 
           <main class="etxt-canvas-wrap" id="etxt-canvas-wrap">
-            <div id="etxt-scanned-banner" class="etxt-scanned-toast" style="display:none;">
+            <div id="etxt-scanned-banner" class="etxt-scanned-toast is-hidden" hidden>
               <span class="etxt-scanned-icon">💡</span>
               <span class="etxt-scanned-msg">Scanned / image-only PDF detected. Use <strong>Type Tool [T]</strong> to add or overlay text.</span>
               <button type="button" id="etxt-switch-type" class="etxt-scanned-btn">Switch to Type Tool</button>
@@ -4448,6 +4448,35 @@
       if (addInp) addInp.onchange = e => {
         const f = e.target.files?.[0]; if (f) pickFile(f);
       };
+      const scanDis = container.querySelector('#etxt-scanned-dismiss');
+      if (scanDis) {
+        scanDis.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scannedBannerDismissed = true;
+          const b = container.querySelector('#etxt-scanned-banner');
+          if (b) {
+            b.hidden = true;
+            b.classList.add('is-hidden');
+            b.style.setProperty('display', 'none', 'important');
+          }
+        };
+      }
+      const scanSw = container.querySelector('#etxt-switch-type');
+      if (scanSw) {
+        scanSw.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scannedBannerDismissed = true;
+          const b = container.querySelector('#etxt-scanned-banner');
+          if (b) {
+            b.hidden = true;
+            b.classList.add('is-hidden');
+            b.style.setProperty('display', 'none', 'important');
+          }
+          activateTool('type');
+        };
+      }
       const closeBtn = container.querySelector('#etxt-close');
       if (closeBtn) closeBtn.onclick = () => {
         commitEditor();

@@ -35074,22 +35074,27 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
 
 /* Floating Scanned Notice */
 .etxt-scanned-toast {
-  position: absolute !important;
-  top: 14px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  z-index: 60 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  background: #FEF08A !important;
-  border: 1px solid #FACC15 !important;
-  border-radius: 8px !important;
-  padding: 6px 14px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  color: #713F12 !important;
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #FEF08A;
+  border: 1.5px solid #FACC15;
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  font-weight: 600;
+  color: #713F12;
+}
+
+.etxt-scanned-toast[hidden],
+.etxt-scanned-toast.is-hidden {
+  display: none !important;
 }
 
 .etxt-scanned-btn {
@@ -35256,4 +35261,295 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   border-color: #DC2626 !important;
   color: #DC2626 !important;
   background: #FEF2F2 !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   Bespoke Responsive Toolbar Layout (No Overflow / Zero Clipping)
+═══════════════════════════════════════════════════════════════════ */
+
+.etxt-unified-toolbar {
+  height: 48px !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  z-index: 50 !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+
+.etxt-unified-toolbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.etxt-toolbar-file-pill {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  padding: 3px 7px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  max-width: 170px !important;
+}
+
+.etxt-toolbar-file-pill .etxt-file {
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100px !important;
+}
+
+.etxt-toolbar-center-tools {
+  flex-shrink: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 2px 3px !important;
+  overflow: visible !important;
+}
+
+.etxt-tool-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+}
+
+.etxt-tool-sep {
+  width: 1px !important;
+  height: 16px !important;
+  background: #CBD5E1 !important;
+  margin: 0 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-tool {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  padding: 3px 6px !important;
+  height: 28px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.etxt-tool:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-tool.is-on {
+  background: #FFFFFF !important;
+  color: #7C3AED !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12) !important;
+  font-weight: 700 !important;
+}
+
+.etxt-toolbar-right-actions {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-left: auto !important;
+}
+
+.etxt-finish-btn {
+  white-space: nowrap !important;
+  padding: 6px 12px !important;
+  font-size: 11.5px !important;
+}
+
+/* Floating Dismissible Scanned Toast */
+.etxt-scanned-toast {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #FEF08A;
+  border: 1.5px solid #FACC15;
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  font-weight: 600;
+  color: #713F12;
+}
+
+.etxt-scanned-toast[hidden],
+.etxt-scanned-toast.is-hidden {
+  display: none !important;
+}
+
+.etxt-scanned-close {
+  width: 22px !important;
+  height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #713F12 !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease !important;
+}
+
+.etxt-scanned-close:hover {
+  background: rgba(0, 0, 0, 0.18) !important;
+}
+
+@media (max-width: 1280px) {
+  .etxt-tool span {
+    display: none !important;
+  }
+  .etxt-tool {
+    padding: 3px 6px !important;
+    min-width: 28px !important;
+  }
+  .etxt-tool.is-on span {
+    display: inline !important;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   Bespoke Gold Standard Workstation Layout
+═══════════════════════════════════════════════════════════════════ */
+
+.etxt-unified-toolbar {
+  height: 48px !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 14px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  z-index: 50 !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+.etxt-toolbar-file-pill {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  max-width: 170px !important;
+}
+
+.etxt-toolbar-file-pill .etxt-file {
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 90px !important;
+}
+
+.etxt-toolbar-center-tools {
+  flex-shrink: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 2px 4px !important;
+  overflow: visible !important;
+}
+
+.etxt-tool-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+.etxt-tool-sep {
+  width: 1px !important;
+  height: 16px !important;
+  background: #CBD5E1 !important;
+  margin: 0 3px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-tool {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  padding: 3px 6px !important;
+  height: 28px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.etxt-tool:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-tool.is-on {
+  background: #FFFFFF !important;
+  color: #7C3AED !important;
+  border-color: #DDD6FE !important;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12) !important;
+  font-weight: 700 !important;
+}
+
+.etxt-toolbar-right-actions {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.etxt-finish-btn {
+  white-space: nowrap !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
 }
