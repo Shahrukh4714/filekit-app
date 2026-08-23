@@ -3843,6 +3843,10 @@
   };
 
   const I = {
+redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6" stroke-width="3"/></svg>`,
+    note: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+    dup: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`,
+    find: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15.5 15.5L21 21"/></svg>`,
     /* ── Original hand-drawn icon set (no stock paths) ── */
     /* edit: pencil resting on a sheet */
     edit: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3.5l5.5 5.5L8 21.5H2.5V16L15 3.5z"/><path d="M12.5 6l5.5 5.5"/></svg>`,
@@ -4107,7 +4111,7 @@
       return c;
     }
 
-    function shortName(n, max = 22) {
+    function shortName(n, max = 28) {
       const s = String(n || 'document.pdf');
       if (s.length <= max) return s;
       const ext = s.includes('.') ? s.slice(s.lastIndexOf('.')) : '';
