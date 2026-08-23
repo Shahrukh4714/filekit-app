@@ -21079,10 +21079,12 @@ body #app-view .drop-hero-box,
 .etxt-add-page { border-radius: 4px !important; }
 /* Big page canvas + rendering placeholder */
 .etxt-page canvas {
-  width: min(660px, 74vw) !important;
+  width: auto !important;
+  max-width: 100% !important;
+  max-height: calc(100vh - 170px) !important;
   height: auto !important;
   display: block !important;
-  border-radius: 3px !important;
+  border-radius: 4px !important;
 }
 .etxt-page-ph {
   display: flex !important;
@@ -33546,7 +33548,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   5z. FileKit Edit Tool (Organize Gold Standard + Compress Palette)
+   5z. FileKit Edit Tool (Organize Gold Standard + Flaws Fully Corrected)
 ═══════════════════════════════════════════════════════════════════════════ */
 
 .etxt-shell {
@@ -33559,6 +33561,397 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   overflow: hidden !important;
 }
 
+/* Top Unified Toolbar */
+.etxt-unified-toolbar {
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E5EAF2 !important;
+  padding: 0 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+}
+
+/* File pill on left */
+.etxt-toolbar-file-pill {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-toolbar-file-pill .etxt-file {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  max-width: 140px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.etxt-toolbar-file-pill .etxt-meta {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #7C3AED !important;
+  background: #EDE9FE !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+}
+
+/* Center Tool Switcher Capsule */
+.etxt-toolbar-center-tools {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  padding: 2px 4px !important;
+  scrollbar-width: none !important;
+  overflow-x: auto !important;
+}
+
+.etxt-toolbar-center-tools::-webkit-scrollbar {
+  display: none !important;
+}
+
+.etxt-tool {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 3px 7px !important;
+  height: 26px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+}
+
+.etxt-tool.is-on {
+  background: #FFFFFF !important;
+  color: #7C3AED !important;
+  border-color: #7C3AED !important;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.12) !important;
+  font-weight: 700 !important;
+}
+
+.etxt-zoom-capsule {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 4px !important;
+  padding: 1px 2px !important;
+}
+
+.etxt-zoom-btn {
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+}
+
+.etxt-zoom-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  min-width: 38px !important;
+  text-align: center !important;
+}
+
+/* Right Actions (Obsidian Black Export CTA + Clean Close) */
+.etxt-toolbar-right-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-btn-finish {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 0 14px !important;
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 4px rgba(24, 24, 27, 0.20) !important;
+  white-space: nowrap !important;
+}
+
+.etxt-btn-finish:hover {
+  background: #27272A !important;
+}
+
+.etxt-btn-ghost {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 32px !important;
+  padding: 0 10px !important;
+  background: #EDE9FE !important;
+  border: 1px solid #DDD6FE !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #7C3AED !important;
+  cursor: pointer !important;
+}
+
+.etxt-btn-icon-close {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  color: #64748B !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+}
+
+.etxt-btn-icon-close:hover {
+  background: #FEE2E2 !important;
+  color: #EF4444 !important;
+  border-color: #FCA5A5 !important;
+}
+
+/* Sub-bar / Option bar */
+.etxt-optbar {
+  width: 100% !important;
+  height: 38px !important;
+  background: #FAF8FF !important;
+  border-bottom: 1px solid #EDE9FE !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+}
+
+/* Editor Main Body: Left Pages Strip + Canvas Stage */
+.etxt-body {
+  display: grid !important;
+  grid-template-columns: 160px minmax(0, 1fr) !important;
+  width: 100% !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Left Pages Drawer with Sleek Scrollbar */
+.etxt-thumbs {
+  background: #FFFFFF !important;
+  border-right: 1px solid #E5EAF2 !important;
+  padding: 12px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-thumbs::-webkit-scrollbar,
+.etxt-canvas-wrap::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.etxt-thumbs::-webkit-scrollbar-thumb,
+.etxt-canvas-wrap::-webkit-scrollbar-thumb {
+  background: #CBD5E1 !important;
+  border-radius: 999px !important;
+}
+
+.etxt-thumb {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 6px !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+.etxt-thumb:hover {
+  border-color: #CBD5E1 !important;
+}
+
+.etxt-thumb.is-on {
+  border-color: #7C3AED !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18) !important;
+}
+
+.etxt-thumb canvas {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 2px !important;
+}
+
+.etxt-thumb-num {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+}
+
+.etxt-thumb.is-on .etxt-thumb-num {
+  color: #7C3AED !important;
+}
+
+.etxt-add-page {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 8px !important;
+  background: #F8FAFC !important;
+  border: 1px dashed #CBD5E1 !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+}
+
+.etxt-add-page:hover {
+  background: #EDE9FE !important;
+  border-color: #7C3AED !important;
+  color: #7C3AED !important;
+}
+
+/* Main Canvas Stage (Calm Neutral Stage with NO flex negative scroll space) */
+.etxt-canvas-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  background: #EEF2F6 !important;
+  padding: 24px 24px 60px !important;
+  position: relative !important;
+  overflow: auto !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Scanned Document Notice Pill */
+.etxt-scanned-banner {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #FEF08A !important;
+  border: 1px solid #FDE047 !important;
+  border-radius: 6px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #713F12 !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+}
+
+.etxt-canvas {
+  transition: transform 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 20px !important;
+}
+
+.etxt-page {
+  background: #FFFFFF !important;
+  border-radius: 4px !important;
+  box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 auto !important;
+}
+
+.etxt-page canvas {
+  width: auto !important;
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  border-radius: 4px !important;
+}
+
+/* Pager for multi-page docs: placed below document with high contrast */
+.etxt-pager {
+  position: sticky !important;
+  bottom: 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 4px 12px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+  z-index: 10 !important;
+}
+
+.etxt-pager button {
+  background: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 3px !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-weight: 700 !important;
+  color: #1E293B !important;
+}
+
+.etxt-pager button:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+.etxt-pager span {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
 /* Top Unified Toolbar */
 .etxt-unified-toolbar {
   width: 100% !important;

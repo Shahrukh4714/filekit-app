@@ -324,7 +324,7 @@
     async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const font = await doc.embedFont(PDFLib.StandardFonts.HelveticaOblique); const pg = doc.getPages().at(-1); const label = `${inputs.name}  —  ${new Date().toISOString().slice(0, 10)}`; pg.drawText(label, { x: 40, y: 40, size: 14, font, color: PDFLib.rgb(0.1, 0.1, 0.5) }); return pdfOut(await doc.save(), U.baseName(file.name) + '-signed.pdf'); } });
 
   
-  R({ id: 'pdf-edit-text', category: 'PDF', name: 'Edit Text',
+  R({ id: 'pdf-edit-text', category: 'PDF', name: 'Edit PDF',
     description: 'Edit and annotate PDF text in a private canvas.',
     accepts: ['pdf'], maxBytes: 200e6, engine: loadLib,
     async run({ file }) {
@@ -4188,16 +4188,24 @@
               </label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to edit or annotate</p>
+            <p class="drop-sub-text">Add <strong>PDF</strong>, <strong>DOCX</strong>, or <strong>Images</strong> to edit text, annotate, or draw</p>
 
             <div class="supported-formats-row">
               <span class="fmt-label">Supported formats:</span>
               <span class="fmt-badge fmt-pdf">PDF</span>
+              <span class="fmt-badge fmt-png">PNG</span>
+              <span class="fmt-badge fmt-jpg">JPG</span>
+              <span class="fmt-badge fmt-doc">DOCX</span>
+              <span class="fmt-badge fmt-xls">EPUB</span>
             </div>
           </div>
-          <input id="etxt-inp" type="file" accept="application/pdf,.pdf" hidden>
+          <input id="etxt-inp" type="file" accept="application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.docx,.odt,.rtf,.txt,.epub,.md" hidden>
         </div>`;
-      // Carry a file over from the Sign workspace when the user picks "Edit text".
+      // Carry a file over from pendingFiles or Sign workspace
+      if (window.FF && window.FF.app && Array.isArray(window.FF.app.pendingFiles) && window.FF.app.pendingFiles.length) {
+        const pending = window.FF.app.pendingFiles.shift();
+        if (pending) { pickFile(pending); return; }
+      }
       if (window.__ffSharedFile) {
         const shared = window.__ffSharedFile;
         window.__ffSharedFile = null;
@@ -4233,43 +4241,40 @@
         <div class="etxt-unified-toolbar">
           <div class="etxt-toolbar-file-pill">
             <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 20))}</span>
-            <span class="etxt-meta">${pageCount} pgs</span>
+            <span class="etxt-meta">${pageCount} ${pageCount === 1 ? "page" : "pages"}</span>
           </div>
 
           <div class="etxt-toolbar-center-tools">
             <div class="etxt-tool-group">
-              ${toolBtn('select', I.select, '', toolMode==='select')}
-              ${toolBtn('pan', I.hand, '', toolMode==='pan')}
+              <button type="button" class="etxt-tool${toolMode==='select'?' is-on':''}" data-tool="select" title="Select & Move">${I.select}<span>Select</span></button>
+              <button type="button" class="etxt-tool${toolMode==='pan'?' is-on':''}" data-tool="pan" title="Pan Canvas">${I.hand}<span>Pan</span></button>
             </div>
             <span class="etxt-tool-sep"></span>
             <div class="etxt-tool-group">
-              ${toolBtn('edit-text', I.text, 'Text', toolMode==='edit-text')}
-              ${toolBtn('type', I.type, '', toolMode==='type')}
-              ${toolBtn('draw', I.pen, '', toolMode==='draw')}
-              ${toolBtn('highlight', I.highlight, '', toolMode==='highlight')}
-              ${toolBtn('shape', I.shape, '', toolMode==='shape')}
-              ${toolBtn('image', I.image, '', toolMode==='image')}
-            </div>
-            <span class="etxt-tool-sep"></span>
-            <div class="etxt-tool-group">
-              ${toolBtn('crop', I.crop, '', toolMode==='crop')}
-              ${toolBtn('watermark', I.watermark, '', toolMode==='watermark')}
+              <button type="button" class="etxt-tool${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing Text">${I.text}<span>Edit Text</span></button>
+              <button type="button" class="etxt-tool${toolMode==='type'?' is-on':''}" data-tool="type" title="Add Text Box">${I.type}<span>Type</span></button>
+              <button type="button" class="etxt-tool${toolMode==='draw'?' is-on':''}" data-tool="draw" title="Draw / Pen">${I.pen}<span>Draw</span></button>
+              <button type="button" class="etxt-tool${toolMode==='highlight'?' is-on':''}" data-tool="highlight" title="Highlighter">${I.highlight}<span>Highlight</span></button>
+              <button type="button" class="etxt-tool${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes">${I.shape}<span>Shape</span></button>
+              <button type="button" class="etxt-tool${toolMode==='image'?' is-on':''}" data-tool="image" title="Insert Image / Stamp">${I.image}<span>Image</span></button>
             </div>
             <span class="etxt-tool-sep"></span>
             <div class="etxt-tool-group">
               <button type="button" class="etxt-tool" id="etxt-undo" title="Undo">${I.undo}</button>
               <button type="button" class="etxt-tool" id="etxt-redo" title="Redo">${I.redo}</button>
-              <button type="button" class="etxt-tool" id="etxt-zoom-out" title="Zoom out">−</button>
-              <span class="etxt-zoom-label">${zoom}%</span>
-              <button type="button" class="etxt-tool" id="etxt-zoom-in" title="Zoom in">+</button>
+              <div class="etxt-zoom-capsule">
+                <button type="button" class="etxt-zoom-btn" id="etxt-zoom-out" title="Zoom out">−</button>
+                <span class="etxt-zoom-label">${zoom}%</span>
+                <button type="button" class="etxt-zoom-btn" id="etxt-zoom-in" title="Zoom in">+</button>
+              </div>
             </div>
           </div>
 
           <div class="etxt-toolbar-right-actions">
             ${imgSrc ? `<button type="button" class="etxt-btn-secondary" id="etxt-download-png">${I.image} PNG</button>` : ''}
-            <button type="button" class="etxt-btn-secondary" id="etxt-download">${I.dl} ${imgSrc ? 'PDF' : 'Download'}</button>
             <button type="button" class="etxt-btn-ghost" id="etxt-sign" title="Sign this PDF">${I.sign} Sign</button>
-            <button type="button" class="etxt-btn-finish" id="etxt-finish">Finish ${I.arrow}</button>
+            <button type="button" class="etxt-btn-finish" id="etxt-finish">Export PDF ${I.arrow}</button>
+            <button type="button" class="etxt-btn-icon-close" id="etxt-close" title="Close document">✕</button>
           </div>
         </div>
 
@@ -4289,28 +4294,30 @@
             <input id="etxt-add-inp" type="file" accept=".pdf,application/pdf" hidden>
           </aside>
 
-          <main class="etxt-canvas-wrap">
+          <main class="etxt-canvas-wrap" id="etxt-canvas-wrap">
+            <div id="etxt-scanned-banner" class="etxt-scanned-banner" style="display:none;">
+              <span>💡 Scanned document detected. Use <strong>Type [T]</strong> to add or overlay text on this page.</span>
+              <button type="button" id="etxt-switch-type" class="etxt-btn-mini" style="background:#7C3AED;color:#fff;border:none;margin-left:8px;padding:2px 8px;border-radius:3px;cursor:pointer;">Switch to Type Tool</button>
+            </div>
             <div class="etxt-canvas" style="transform: scale(${zoom/100})">
-            <div class="etxt-page">
-              ${pages[page - 1]?.full ? '<canvas class="etxt-full-canvas"></canvas>' : `<span class="etxt-page-ph" id="etxt-page-ph">Rendering page ${page}…</span>`}
-              <div class="etxt-text-layer" aria-hidden="true"></div>
-              <div class="etxt-annot-layer" aria-hidden="false"></div>
-              <div class="etxt-crop-layer" id="etxt-crop-layer" hidden></div>
-              ${imgSrc ? '<canvas class="etxt-img-preview" id="etxt-img-preview" hidden></canvas>' : ''}
+              <div class="etxt-page">
+                ${pages[page - 1]?.full ? '<canvas class="etxt-full-canvas"></canvas>' : `<span class="etxt-page-ph" id="etxt-page-ph">Rendering page ${page}…</span>`}
+                <div class="etxt-text-layer" aria-hidden="true"></div>
+                <div class="etxt-annot-layer" aria-hidden="false"></div>
+                <div class="etxt-crop-layer" id="etxt-crop-layer" hidden></div>
+                ${imgSrc ? '<canvas class="etxt-img-preview" id="etxt-img-preview" hidden></canvas>' : ''}
+              </div>
             </div>
-            </div>
+            ${pageCount > 1 ? `
             <div class="etxt-pager">
               <button type="button" id="etxt-prev" ${page<=1?'disabled':''}>${I.chevL}</button>
               <span><b>${page}</b> / ${pageCount}</span>
               <button type="button" id="etxt-next" ${page>=pageCount?'disabled':''}>${I.chevR}</button>
-            </div>
+            </div>` : ''}
           </main>
         </div>
 
-        <div class="etxt-foot">
-          <span>${I.shield} ${edits.length + annotCount()} edit${edits.length + annotCount() === 1 ? '' : 's'} · everything stays on this device</span>
-          <button type="button" class="etxt-link" id="etxt-close">Close file</button>
-        </div>
+        
 
         <div class="etxt-dialog-backdrop" id="etxt-dlg-backdrop" hidden></div>
         <div class="etxt-dialog" id="etxt-dlg" hidden></div>`;
@@ -4420,6 +4427,8 @@
       }
 
       // re-attach cached canvases (thumbs + current page) and render anything missing
+      const wrapEl = container.querySelector('.etxt-canvas-wrap');
+      if (wrapEl) wrapEl.scrollTop = 0;
       wireCachedCanvases();
       renderFullPage();
       attachTextHits();
@@ -4451,11 +4460,17 @@
       try {
         const base = await pdfDoc.getPage(page);
         const baseVp = base.getViewport({ scale: 1 });
-        const c = await renderPageAt(i, 660 / baseVp.width);
+        const availH = Math.max(480, (window.innerHeight || 768) - 160);
+        const fitScaleH = availH / baseVp.height;
+        const fitScaleW = 660 / baseVp.width;
+        const finalScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const c = await renderPageAt(i, finalScale);
         if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
         pages[i].full = c;
         const ph = container.querySelector('#etxt-page-ph');
         if (ph) ph.replaceWith(c);
+        const wrapEl = container.querySelector('.etxt-canvas-wrap');
+        if (wrapEl) wrapEl.scrollTop = 0;
       } catch (err) { console.warn('[Edit] page render', err); }
     }
 
@@ -4507,8 +4522,14 @@
         const R = pageRatio();
         if (R <= 0) return;
         layer.innerHTML = '';
-        for (const item of txt.items) {
-          if (!item.str || !item.str.trim()) continue;
+        const meaningfulItems = txt.items.filter(item => item.str && item.str.trim());
+        const scanBanner = container.querySelector('#etxt-scanned-banner');
+        if (scanBanner) {
+          scanBanner.style.display = meaningfulItems.length === 0 ? 'inline-flex' : 'none';
+          const switchBtn = scanBanner.querySelector('#etxt-switch-type');
+          if (switchBtn) switchBtn.onclick = () => activateTool('type');
+        }
+        for (const item of meaningfulItems) {
           const h = (item.height || 12) * 1.2;
           const w = Math.max(8, item.width * R + 4);
           const x = item.transform[4] * R;
@@ -4523,6 +4544,8 @@
           layer.append(btn);
         }
         for (const e of edits) if (e.pageIdx === page - 1) renderCommittedBox(e);
+        const wrapEl = container.querySelector('.etxt-canvas-wrap');
+        if (wrapEl) wrapEl.scrollTop = 0;
       } catch (err) { console.warn('[Edit] text hits', err); }
     }
 
@@ -5221,7 +5244,9 @@
       const bar = container.querySelector('#etxt-optbar');
       if (!bar) return;
       let html = '';
-      if (toolMode === 'draw') {
+      if (toolMode === 'edit-text') {
+        html = `<span class="etxt-opt-label">Edit Text</span><span class="etxt-opt-hint" style="color:#64748B;font-size:12px;font-weight:600;">Click any text line on the page to edit directly</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-photo-chip" id="etxt-find-replace">🔍 Find & Replace</button>`;
+      } else if (toolMode === 'draw') {
         html = `<span class="etxt-opt-label">Ink</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.color === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
       } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
         const label = toolMode === 'highlight' ? 'Marker' : toolMode === 'underline' ? 'Underline' : toolMode === 'strike' ? 'Strikethrough' : 'Squiggle';
@@ -7926,17 +7951,24 @@ async function paintResultPreview(blob) {
 
     async function renderFullPage() {
       const myDoc = docToken;
+      const myToken = ++renderToken;
       const i = page - 1;
       if (!pdfDoc || !pages[i] || pages[i].full) return;
       try {
         const base = await pdfDoc.getPage(page);
         const baseVp = base.getViewport({ scale: 1 });
-        const c = await renderPageAt(i, 560 / baseVp.width);
-        if (myDoc !== docToken || !pages[i]) return;
+        const availH = Math.max(480, (window.innerHeight || 768) - 160);
+        const fitScaleH = availH / baseVp.height;
+        const fitScaleW = 660 / baseVp.width;
+        const finalScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const c = await renderPageAt(i, finalScale);
+        if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
         pages[i].full = c;
-        const ph = container.querySelector('#sign-page-ph');
+        const ph = container.querySelector('#etxt-page-ph');
         if (ph) ph.replaceWith(c);
-      } catch (err) { console.warn('[Sign] page render', err); }
+        const wrapEl = container.querySelector('.etxt-canvas-wrap');
+        if (wrapEl) wrapEl.scrollTop = 0;
+      } catch (err) { console.warn('[Edit] page render', err); }
     }
 
     function wireAsyncRenders() {

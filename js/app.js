@@ -2943,7 +2943,7 @@
       let tool = FF.registry.get(id);
       if (!tool) {
         const premiumOnly = {
-          'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit Text', category: 'PDF', description: 'Edit PDF text' },
+          'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit PDF', category: 'PDF', description: 'Edit and annotate PDF documents' },
           'pdf-sign': { id: 'pdf-sign', name: 'Sign', category: 'PDF', description: 'Sign PDF' },
           'pdf-convert': { id: 'pdf-convert', name: 'Convert', category: 'PDF', description: 'Convert PDF' },
           'pdf-flatten': { id: 'pdf-flatten', name: 'Flatten', category: 'PDF', description: 'Flatten PDF annotations and forms' },
@@ -3213,7 +3213,7 @@
       let tool = FF.registry.get(id);
       if (!tool) {
         const premiumOnly = {
-          'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit Text', category: 'PDF', description: 'Edit PDF text' },
+          'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit PDF', category: 'PDF', description: 'Edit and annotate PDF documents' },
           'pdf-sign': { id: 'pdf-sign', name: 'Sign', category: 'PDF', description: 'Sign PDF' },
           'pdf-convert': { id: 'pdf-convert', name: 'Convert', category: 'PDF', description: 'Convert PDF' },
           'pdf-flatten': { id: 'pdf-flatten', name: 'Flatten', category: 'PDF', description: 'Flatten PDF annotations and forms' },
