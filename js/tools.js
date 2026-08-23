@@ -4366,8 +4366,8 @@
       container.querySelectorAll('.etxt-tool[data-tool]').forEach(btn => {
         btn.onclick = () => activateTool(btn.dataset.tool);
       });
-      container.querySelector('#etxt-undo').onclick = () => { commitEditor(); undo(); };
-      container.querySelector('#etxt-redo').onclick = () => { commitEditor(); redo(); };
+      container.querySelector('#etxt-undo')?.addEventListener('click', () => { commitEditor(); undo(); });
+      container.querySelector('#etxt-redo')?.addEventListener('click', () => { commitEditor(); redo(); });
       const imageInp = document.createElement('input');
       imageInp.type = 'file';
       imageInp.id = 'etxt-image-inp';
@@ -4405,15 +4405,22 @@
       container.querySelectorAll('.etxt-thumb').forEach(btn => {
         btn.onclick = () => { commitEditor(); page = Number(btn.dataset.page); renderEditor(); };
       });
-      container.querySelector('#etxt-prev').onclick = () => { commitEditor(); if (page > 1) { page--; renderEditor(); } };
-      container.querySelector('#etxt-next').onclick = () => { commitEditor(); if (page < pageCount) { page++; renderEditor(); } };
-      container.querySelector('#etxt-zoom-in').onclick = () => { commitEditor(); zoom = Math.min(160, zoom + 10); renderEditor(); };
-      container.querySelector('#etxt-zoom-out').onclick = () => { commitEditor(); zoom = Math.max(70, zoom - 10); renderEditor(); };
-      container.querySelector('#etxt-add').onclick = () => container.querySelector('#etxt-add-inp').click();
-      container.querySelector('#etxt-add-inp').onchange = e => {
+      const prevBtn = container.querySelector('#etxt-prev');
+      if (prevBtn) prevBtn.onclick = () => { commitEditor(); if (page > 1) { page--; renderEditor(); } };
+      const nextBtn = container.querySelector('#etxt-next');
+      if (nextBtn) nextBtn.onclick = () => { commitEditor(); if (page < pageCount) { page++; renderEditor(); } };
+      const zoomIn = container.querySelector('#etxt-zoom-in');
+      if (zoomIn) zoomIn.onclick = () => { commitEditor(); zoom = Math.min(160, zoom + 10); renderEditor(); };
+      const zoomOut = container.querySelector('#etxt-zoom-out');
+      if (zoomOut) zoomOut.onclick = () => { commitEditor(); zoom = Math.max(70, zoom - 10); renderEditor(); };
+      const addBtn = container.querySelector('#etxt-add');
+      if (addBtn) addBtn.onclick = () => container.querySelector('#etxt-add-inp')?.click();
+      const addInp = container.querySelector('#etxt-add-inp');
+      if (addInp) addInp.onchange = e => {
         const f = e.target.files?.[0]; if (f) pickFile(f);
       };
-      container.querySelector('#etxt-close').onclick = () => {
+      const closeBtn = container.querySelector('#etxt-close');
+      if (closeBtn) closeBtn.onclick = () => {
         commitEditor();
         file = null; pages = []; edits = []; pdfDoc = null;
         const stage = container.closest('.app-stage-container');
