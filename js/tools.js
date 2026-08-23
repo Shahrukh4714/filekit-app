@@ -4288,53 +4288,43 @@
       container.innerHTML = `
         <div class="etxt-unified-toolbar">
           <div class="etxt-toolbar-file-pill">
-            <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 20))}</span>
+            <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 18))}</span>
             <span class="etxt-meta">${pageCount} ${pageCount === 1 ? "page" : "pages"}</span>
           </div>
 
-          <div class="etxt-toolbar-center-tools">
-            <div class="etxt-tool-group">
-              <button type="button" class="etxt-tool${toolMode==='select'?' is-on':''}" data-tool="select" title="Select & Move">${I.select}</button>
-              <button type="button" class="etxt-tool${toolMode==='pan'?' is-on':''}" data-tool="pan" title="Pan Canvas">${I.hand}</button>
-            </div>
-            <span class="etxt-tool-sep"></span>
-            <div class="etxt-tool-group">
-              <button type="button" class="etxt-tool${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing Text">${I.text}<span>Text</span></button>
-              <button type="button" class="etxt-tool${toolMode==='type'?' is-on':''}" data-tool="type" title="Add Text Box">${I.type}<span>Type</span></button>
-              <button type="button" class="etxt-tool${toolMode==='draw'?' is-on':''}" data-tool="draw" title="Draw / Pen">${I.pen}<span>Draw</span></button>
-              <button type="button" class="etxt-tool${toolMode==='highlight'?' is-on':''}" data-tool="highlight" title="Highlighter">${I.highlight}<span>Highlight</span></button>
-              <button type="button" class="etxt-tool${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes">${I.shape}<span>Shape</span></button>
-              <button type="button" class="etxt-tool${toolMode==='redact'?' is-on':''}" data-tool="redact" title="Redact / Whiteout Sensitive Text">⬛ <span>Redact</span></button>
-              <button type="button" class="etxt-tool${toolMode==='image'?' is-on':''}" data-tool="image" title="Insert Image">${I.image}<span>Image</span></button>
-              <button type="button" class="etxt-tool${toolMode==='stamp'?' is-on':''}" data-tool="stamp" title="Stamps (Approved, Confidential, etc.)">💮 <span>Stamp</span></button>
-              <button type="button" class="etxt-tool${toolMode==='note'?' is-on':''}" data-tool="note" title="Sticky Note / Comment">💬 <span>Note</span></button>
-              <button type="button" class="etxt-tool" id="etxt-find-replace" title="Find and replace text in PDF">🔍</button>
-            </div>
-            <span class="etxt-tool-sep"></span>
-            <div class="etxt-tool-group">
-              <button type="button" class="etxt-tool" id="etxt-undo" title="Undo">${I.undo}</button>
-              <button type="button" class="etxt-tool" id="etxt-redo" title="Redo">${I.redo}</button>
-              <div class="etxt-zoom-capsule">
-                <button type="button" class="etxt-zoom-btn" id="etxt-zoom-out" title="Zoom out">−</button>
-                <select class="etxt-zoom-select" id="etxt-zoom-select" title="Zoom level">
-                  <option value="50"${zoom===50?' selected':''}>50%</option>
-                  <option value="75"${zoom===75?' selected':''}>75%</option>
-                  <option value="100"${zoom===100?' selected':''}>100%</option>
-                  <option value="125"${zoom===125?' selected':''}>125%</option>
-                  <option value="150"${zoom===150?' selected':''}>150%</option>
-                  <option value="200"${zoom===200?' selected':''}>200%</option>
-                </select>
-                <button type="button" class="etxt-zoom-btn" id="etxt-zoom-in" title="Zoom in">+</button>
-                <button type="button" class="etxt-zoom-btn etxt-fit-btn" id="etxt-zoom-fit" title="Fit to Page">Fit</button>
-              </div>
+          <div class="etxt-toolbar-tools">
+            <button type="button" class="etxt-tool-btn${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing PDF Text">${I.text}<span>Edit Text</span></button>
+            <button type="button" class="etxt-tool-btn${toolMode==='type'?' is-on':''}" data-tool="type" title="Add New Text Box">${I.type}<span>Add Text</span></button>
+            <button type="button" class="etxt-tool-btn${toolMode==='draw'||toolMode==='highlight'?' is-on':''}" data-tool="draw" title="Draw & Highlight">${I.pen}<span>Draw</span></button>
+            <button type="button" class="etxt-tool-btn${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes (Rectangle, Circle, Line, Arrow)">${I.shape}<span>Shapes</span></button>
+            <button type="button" class="etxt-tool-btn${toolMode==='redact'?' is-on':''}" data-tool="redact" title="Permanently Blackout or Whiteout Sensitive Info">${I.redact}<span>Redact</span></button>
+            <button type="button" class="etxt-tool-btn${toolMode==='image'||toolMode==='stamp'||toolMode==='note'?' is-on':''}" data-tool="image" title="Insert Image, Stamps & Comments">${I.image}<span>Insert</span></button>
+            
+            <span class="etxt-vsep"></span>
+            <button type="button" class="etxt-icon-btn" id="etxt-find-replace" title="Find in Document">${I.find}</button>
+            <button type="button" class="etxt-icon-btn" id="etxt-undo" title="Undo">${I.undo}</button>
+            <button type="button" class="etxt-icon-btn" id="etxt-redo" title="Redo">${I.redo}</button>
+            <span class="etxt-vsep"></span>
+
+            <div class="etxt-zoom-pill">
+              <button type="button" class="etxt-zoom-step" id="etxt-zoom-out" title="Zoom out">−</button>
+              <select class="etxt-zoom-select" id="etxt-zoom-select" title="Zoom level">
+                <option value="50"${zoom===50?' selected':''}>50%</option>
+                <option value="75"${zoom===75?' selected':''}>75%</option>
+                <option value="100"${zoom===100?' selected':''}>100%</option>
+                <option value="125"${zoom===125?' selected':''}>125%</option>
+                <option value="150"${zoom===150?' selected':''}>150%</option>
+                <option value="200"${zoom===200?' selected':''}>200%</option>
+              </select>
+              <button type="button" class="etxt-zoom-step" id="etxt-zoom-in" title="Zoom in">+</button>
             </div>
           </div>
 
-          <div class="etxt-toolbar-right-actions">
-            ${imgSrc ? `<button type="button" class="etxt-btn-secondary" id="etxt-download-png">${I.image} PNG</button>` : ''}
-            <button type="button" class="etxt-btn-ghost" id="etxt-sign" title="Sign this PDF">${I.sign} Sign</button>
-            <button type="button" class="etxt-btn-finish" id="etxt-finish">Export PDF ${I.arrow}</button>
-            <button type="button" class="etxt-btn-icon-close" id="etxt-close" title="Close document">✕</button>
+          <div class="etxt-toolbar-right">
+            ${imgSrc ? `<button type="button" class="etxt-sign-btn" id="etxt-download-png">${I.image} PNG</button>` : ''}
+            <button type="button" class="etxt-sign-btn" id="etxt-sign" title="Sign this PDF">${I.sign} Sign</button>
+            <button type="button" class="etxt-export-btn" id="etxt-finish">Export PDF ${I.arrow}</button>
+            <button type="button" class="etxt-close-btn" id="etxt-close" title="Close document">✕</button>
           </div>
         </div>
 
@@ -4392,7 +4382,7 @@
         <div class="etxt-dialog" id="etxt-dlg" hidden></div>`;
 
       // tools
-      container.querySelectorAll('.etxt-tool[data-tool]').forEach(btn => {
+      container.querySelectorAll('.etxt-tool-btn[data-tool], .etxt-tool[data-tool]').forEach(btn => {
         btn.onclick = () => activateTool(btn.dataset.tool);
       });
       container.querySelector('#etxt-undo')?.addEventListener('click', () => { commitEditor(); undo(); });
@@ -5470,53 +5460,71 @@
       const bar = container.querySelector('#etxt-optbar');
       if (!bar) return;
       let html = '';
-      if (toolMode === 'edit-text' || toolMode === 'select' || toolMode === 'pan') {
-        html = '';
+      if (toolMode === 'draw' || toolMode === 'highlight') {
+        html = `<span class="etxt-opt-label">Mode</span>
+          <button type="button" class="etxt-photo-chip${toolMode==='draw'?' is-on':''}" id="etxt-sub-draw">${I.pen} Pen</button>
+          <button type="button" class="etxt-photo-chip${toolMode==='highlight'?' is-on':''}" id="etxt-sub-hl">${I.highlight} Highlighter</button>
+          <span class="etxt-opt-sep"></span>
+          <span class="etxt-opt-label">Color</span>
+          ${(toolMode==='highlight' ? HL_COLORS : COLOR_SWATCHES).map(c => `<button type="button" class="etxt-swatch${(toolMode==='highlight'?toolOpts.hlColor:toolOpts.color) === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+          <span class="etxt-opt-sep"></span>
+          <span class="etxt-opt-label">Stroke</span>
+          ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}`;
+      } else if (toolMode === 'shape') {
+        html = `<span class="etxt-opt-label">Shape</span>
+          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect">${I.rect || 'Rect'}</button>
+          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse">${I.ellipse || 'Circle'}</button>
+          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line">${I.line || 'Line'}</button>
+          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow">${I.arr || 'Arrow'}</button>
+          <span class="etxt-opt-sep"></span>
+          ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.shapeColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+          <span class="etxt-opt-sep"></span>
+          ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.shapeStroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}`;
       } else if (toolMode === 'redact') {
-        html = `<span class="etxt-opt-label">Redact</span>
+        html = `<span class="etxt-opt-label">Redaction Type</span>
           <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#000000'?' is-on':''}" data-rc="#000000">⬛ Blackout</button>
           <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#FFFFFF'?' is-on':''}" data-rc="#FFFFFF">⬜ Whiteout</button>
           <span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-hint" style="color:#64748B;">Drag a box over confidential text or graphics to permanently redact</span>`;
-      } else if (toolMode === 'stamp') {
-        const STAMPS = ['APPROVED', 'CONFIDENTIAL', 'DRAFT', 'FINAL', 'PAID', 'VOID', 'VERIFIED'];
-        html = `<span class="etxt-opt-label">Stamps</span>${STAMPS.map(s => `<button type="button" class="etxt-photo-chip etxt-stamp-btn" data-stamp="${s}">${s}</button>`).join('')}`;
-      } else if (toolMode === 'note') {
-        html = `<span class="etxt-opt-label">Sticky Note</span><span class="etxt-opt-hint" style="color:#64748B;">Click anywhere on the page to drop a comment</span>`;
-      } else if (toolMode === 'draw') {
-        html = `<span class="etxt-opt-label">Ink</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.color === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
-      } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
-        const label = toolMode === 'highlight' ? 'Marker' : toolMode === 'underline' ? 'Underline' : toolMode === 'strike' ? 'Strikethrough' : 'Squiggle';
-        html = `<span class="etxt-opt-label">${label}</span>${HL_COLORS.map(c => `<button type="button" class="etxt-swatch${toolOpts.hlColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}`;
-      } else if (toolMode === 'shape') {
-        html = `<span class="etxt-opt-label">Shape</span><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect">${I.rect}</button><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse">${I.ellipse}</button><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line">${I.line}</button><button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow">${I.arr}</button><span class="etxt-opt-sep"></span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.shapeColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.shapeStroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
+          <span class="etxt-opt-hint" style="color:#64748B;">Drag over sensitive areas to redact permanently</span>`;
       } else if (toolMode === 'type') {
-        html = `<span class="etxt-opt-label">Text</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.textColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span><button type="button" class="etxt-size-btn" data-d="-2">A−</button><span class="etxt-opt-size">${toolOpts.textSize}</span><button type="button" class="etxt-size-btn" data-d="2">A+</button>`;
-      } else if (toolMode === 'crop' && cropBox) {
-        html = `<span class="etxt-opt-label">Crop</span><span class="etxt-crop-meta">${Math.round(cropBox.w)} × ${Math.round(cropBox.h)} pt · applies to all pages</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-crop-apply" id="etxt-crop-apply">Apply crop</button><button type="button" class="etxt-btn-mini" id="etxt-crop-clear">Clear</button>`;
-      } else if (toolMode === 'img-bg') {
-        const o = imgOpts.bg;
-        html = `<button type="button" class="etxt-photo-chip etxt-ai-chip" id="etxt-ai-bg">✨ AI remove</button><span class="etxt-ai-status" id="etxt-ai-status">${aiStatus}</span><span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-label">Tolerance</span><input type="range" class="etxt-opt-range" data-img="bg.tol" min="4" max="120" value="${o.tol}"><span class="etxt-opt-val">${o.tol}</span>
+        html = `<span class="etxt-opt-label">Text Color</span>
+          ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.textColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
           <span class="etxt-opt-sep"></span>
-          <label class="etxt-opt-check"><input type="checkbox" data-img="bg.recolorOn" ${o.recolorOn ? 'checked' : ''}> Replace instead of erase</label>
-          <input type="color" class="etxt-opt-color" data-img="bg.recolor" value="${o.recolor}" title="Background colour">
+          <span class="etxt-opt-label">Size</span>
+          <button type="button" class="etxt-size-btn" data-d="-2">A−</button>
+          <span class="etxt-opt-size">${toolOpts.textSize}pt</span>
+          <button type="button" class="etxt-size-btn" data-d="2">A+</button>`;
+      } else if (toolMode === 'image' || toolMode === 'stamp' || toolMode === 'note') {
+        const STAMPS = ['APPROVED', 'CONFIDENTIAL', 'DRAFT', 'PAID', 'VOID'];
+        html = `<span class="etxt-opt-label">Insert</span>
+          <button type="button" class="etxt-photo-chip" id="etxt-pick-img-btn">${I.image} Upload Image</button>
+          <button type="button" class="etxt-photo-chip" id="etxt-add-note-btn">${I.note} Add Note</button>
           <span class="etxt-opt-sep"></span>
-          <button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
-      } else if (toolMode === 'img-blur') {
-        html = `<span class="etxt-opt-label">Brush</span><input type="range" class="etxt-opt-range" data-img="brush.size" min="14" max="120" value="${imgBrush.size}"><span class="etxt-opt-val">${imgBrush.size}px</span><span class="etxt-opt-sep"></span><span class="etxt-opt-hint">Drag over the image to blur regions</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
-      } else if (toolMode === 'img-filter') {
-        const o = imgOpts.filt;
-        html = `${FILTERS.map(f => `<button type="button" class="etxt-photo-chip${o.id === f[0] ? ' is-on' : ''}" data-f="${f[0]}">${f[1]}</button>`).join('')}<span class="etxt-opt-sep"></span><span class="etxt-opt-label">Amount</span><input type="range" class="etxt-opt-range" data-img="filt.amount" min="10" max="100" value="${o.amount}"><span class="etxt-opt-val">${o.amount}%</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
-      } else if (toolMode === 'img-adjust') {
-        const o = imgOpts.adj;
-        const row = (k, label) => `<span class="etxt-opt-label">${label}</span><input type="range" class="etxt-opt-range" data-img="adj.${k}" min="-50" max="50" value="${o[k]}"><span class="etxt-opt-val">${o[k] > 0 ? '+' : ''}${o[k]}</span>`;
-        html = `<button type="button" class="etxt-photo-chip" id="etxt-auto-enhance">✨ Auto-enhance</button><span class="etxt-opt-sep"></span>` + row('b', 'Brightness') + row('c', 'Contrast') + row('s', 'Saturation') + row('w', 'Warmth') + `<span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
-      } else if (toolMode === 'img-effect') {
-        const o = imgOpts.eff;
-        const row = (k, label, max) => `<span class="etxt-opt-label">${label}</span><input type="range" class="etxt-opt-range" data-img="eff.${k}" min="0" max="${max}" value="${o[k]}"><span class="etxt-opt-val">${o[k]}</span>`;
-        html = `${DUOTONES.map(d => `<button type="button" class="etxt-photo-chip${o.duotone === d[0] ? ' is-on' : ''}" data-duo="${d[0]}">${d[1]}</button>`).join('')}<span class="etxt-opt-sep"></span>${row('round', 'Round corners', 50)}${row('border', 'Border', 24)}${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${o.borderColor === c ? ' is-on' : ''}" data-bc="${c}" style="background:${c}"></button>`).join('')}${row('shadow', 'Shadow', 30)}<span class="etxt-opt-sep"></span><button type="button" class="etxt-btn-mini etxt-photo-apply">Apply</button><button type="button" class="etxt-btn-mini etxt-photo-reset">Reset</button>`;
+          <span class="etxt-opt-label">Stamps:</span>
+          ${STAMPS.map(s => `<button type="button" class="etxt-photo-chip etxt-stamp-btn" data-stamp="${s}">${s}</button>`).join('')}`;
       }
+
+      if (html) {
+        bar.innerHTML = html;
+        bar.hidden = false;
+        bar.classList.remove('is-hidden');
+      } else {
+        bar.hidden = true;
+        bar.classList.add('is-hidden');
+        bar.innerHTML = '';
+      }
+
+      const subDraw = bar.querySelector('#etxt-sub-draw');
+      if (subDraw) subDraw.onclick = () => activateTool('draw');
+      const subHl = bar.querySelector('#etxt-sub-hl');
+      if (subHl) subHl.onclick = () => activateTool('highlight');
+      const pickImg = bar.querySelector('#etxt-pick-img-btn');
+      if (pickImg) pickImg.onclick = () => {
+        dragType = { x: curPageW / 2 - 100, y: curPageH / 2 - 75 };
+        container.querySelector('#etxt-image-inp')?.click();
+      };
+      const addNote = bar.querySelector('#etxt-add-note-btn');
+      if (addNote) addNote.onclick = () => activateTool('note');
       if (html) {
         bar.innerHTML = html;
         bar.hidden = false;
