@@ -35147,3 +35147,113 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   opacity: 0.35 !important;
   cursor: not-allowed !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   Category Leader Tool Styling (Zoom Presets, Stamps, Page Actions)
+═══════════════════════════════════════════════════════════════════ */
+
+.etxt-zoom-select {
+  background: transparent !important;
+  border: none !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  cursor: pointer !important;
+  outline: none !important;
+  padding: 1px 2px !important;
+}
+
+.etxt-fit-btn {
+  font-size: 10.5px !important;
+  padding: 1px 4px !important;
+  color: #64748B !important;
+}
+
+.etxt-thumb-card {
+  position: relative !important;
+  width: 100% !important;
+  background: #F8FAFC !important;
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+.etxt-thumb-card:hover {
+  border-color: #CBD5E1 !important;
+}
+
+.etxt-thumb-card:hover .etxt-thumb-actions {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.etxt-thumb-card.is-on {
+  border-color: #7C3AED !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.20), 0 2px 6px rgba(124, 58, 237, 0.12) !important;
+}
+
+.etxt-thumb-card .etxt-thumb {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.etxt-thumb-actions {
+  position: absolute !important;
+  top: 4px !important;
+  right: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  background: rgba(15, 23, 42, 0.82) !important;
+  backdrop-filter: blur(4px) !important;
+  border-radius: 4px !important;
+  padding: 2px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease !important;
+  z-index: 5 !important;
+}
+
+.etxt-thumb-act {
+  background: transparent !important;
+  border: none !important;
+  font-size: 10px !important;
+  cursor: pointer !important;
+  padding: 2px 3px !important;
+  border-radius: 2px !important;
+  color: #FFFFFF !important;
+  line-height: 1 !important;
+}
+
+.etxt-thumb-act:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+.etxt-thumb-del:hover {
+  background: #EF4444 !important;
+}
+
+/* Rubber Stamp Styling */
+.etxt-stamp-btn {
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  border-radius: 4px !important;
+  padding: 3px 8px !important;
+}
+
+.etxt-stamp-btn[data-stamp="APPROVED"],
+.etxt-stamp-btn[data-stamp="VERIFIED"] {
+  border-color: #059669 !important;
+  color: #059669 !important;
+  background: #ECFDF5 !important;
+}
+
+.etxt-stamp-btn[data-stamp="CONFIDENTIAL"],
+.etxt-stamp-btn[data-stamp="VOID"] {
+  border-color: #DC2626 !important;
+  color: #DC2626 !important;
+  background: #FEF2F2 !important;
+}

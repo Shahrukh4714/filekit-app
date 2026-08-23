@@ -4001,6 +4001,7 @@
     let aiStatus = '';         // AI background-remover status text
     let sheetMode = null;      // spreadsheet editor state { wb, aoa, name, index }
     let isWordDoc = false;     // docx/odt/rtf sources can find-and-replace
+    let scannedBannerDismissed = false; // user dismissed scanned notice
     let formFilled = false;    // a form was written into the current PDF
 
     const loadLib = () => {
@@ -4088,11 +4089,21 @@
 
     async function renderPageAt(i, scale) {
       const pageProxy = await pdfDoc.getPage(i + 1);
-      const vp = pageProxy.getViewport({ scale });
+      const dpr = Math.max(2, window.devicePixelRatio || 1);
+      const vp = pageProxy.getViewport({ scale: scale });
       const c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(vp.width));
-      c.height = Math.max(1, Math.round(vp.height));
-      await pageProxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      c.width = Math.max(1, Math.round(vp.width * dpr));
+      c.height = Math.max(1, Math.round(vp.height * dpr));
+      c.style.width = Math.round(vp.width) + 'px';
+      c.style.height = Math.round(vp.height) + 'px';
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      await pageProxy.render({
+        canvasContext: ctx,
+        viewport: vp,
+        transform: [dpr, 0, 0, dpr, 0, 0]
+      }).promise;
       return c;
     }
 
@@ -4293,7 +4304,10 @@
               <button type="button" class="etxt-tool${toolMode==='draw'?' is-on':''}" data-tool="draw" title="Draw / Pen">${I.pen}<span>Draw</span></button>
               <button type="button" class="etxt-tool${toolMode==='highlight'?' is-on':''}" data-tool="highlight" title="Highlighter">${I.highlight}<span>Highlight</span></button>
               <button type="button" class="etxt-tool${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes">${I.shape}<span>Shape</span></button>
-              <button type="button" class="etxt-tool${toolMode==='image'?' is-on':''}" data-tool="image" title="Insert Image / Stamp">${I.image}<span>Image</span></button>
+              <button type="button" class="etxt-tool${toolMode==='redact'?' is-on':''}" data-tool="redact" title="Redact / Whiteout Sensitive Text">⬛ <span>Redact</span></button>
+              <button type="button" class="etxt-tool${toolMode==='image'?' is-on':''}" data-tool="image" title="Insert Image">${I.image}<span>Image</span></button>
+              <button type="button" class="etxt-tool${toolMode==='stamp'?' is-on':''}" data-tool="stamp" title="Stamps (Approved, Confidential, etc.)">💮 <span>Stamp</span></button>
+              <button type="button" class="etxt-tool${toolMode==='note'?' is-on':''}" data-tool="note" title="Sticky Note / Comment">💬 <span>Note</span></button>
               <button type="button" class="etxt-tool" id="etxt-find-replace" title="Find and replace text in PDF">🔍 <span>Find</span></button>
             </div>
             <span class="etxt-tool-sep"></span>
@@ -4302,8 +4316,16 @@
               <button type="button" class="etxt-tool" id="etxt-redo" title="Redo">${I.redo}</button>
               <div class="etxt-zoom-capsule">
                 <button type="button" class="etxt-zoom-btn" id="etxt-zoom-out" title="Zoom out">−</button>
-                <span class="etxt-zoom-label">${zoom}%</span>
+                <select class="etxt-zoom-select" id="etxt-zoom-select" title="Zoom level">
+                  <option value="50"${zoom===50?' selected':''}>50%</option>
+                  <option value="75"${zoom===75?' selected':''}>75%</option>
+                  <option value="100"${zoom===100?' selected':''}>100%</option>
+                  <option value="125"${zoom===125?' selected':''}>125%</option>
+                  <option value="150"${zoom===150?' selected':''}>150%</option>
+                  <option value="200"${zoom===200?' selected':''}>200%</option>
+                </select>
                 <button type="button" class="etxt-zoom-btn" id="etxt-zoom-in" title="Zoom in">+</button>
+                <button type="button" class="etxt-zoom-btn etxt-fit-btn" id="etxt-zoom-fit" title="Fit to Page">Fit</button>
               </div>
             </div>
           </div>
@@ -4321,10 +4343,17 @@
         <div class="etxt-body">
           <aside class="etxt-thumbs" aria-label="Pages">
             ${pages.map((pg, i) => `
-              <button type="button" class="etxt-thumb${i+1===page?' is-on':''}" data-page="${i+1}">
-                ${pg.thumb ? '' : `<span class="etxt-thumb-ph">${i + 1}</span>`}
-                <span class="etxt-thumb-num">${i + 1}</span>
-              </button>`).join('')}
+              <div class="etxt-thumb-card${i+1===page?' is-on':''}" data-page="${i+1}">
+                <button type="button" class="etxt-thumb" data-page="${i+1}">
+                  ${pg.thumb ? '' : `<span class="etxt-thumb-ph">${i + 1}</span>`}
+                  <span class="etxt-thumb-num">${i + 1}</span>
+                </button>
+                <div class="etxt-thumb-actions">
+                  <button type="button" class="etxt-thumb-act" data-act="rot" data-p="${i+1}" title="Rotate Page 90°">🔄</button>
+                  ${pages.length > 1 ? `<button type="button" class="etxt-thumb-act etxt-thumb-del" data-act="del" data-p="${i+1}" title="Delete Page">🗑️</button>` : ''}
+                  <button type="button" class="etxt-thumb-act" data-act="dup" data-p="${i+1}" title="Duplicate Page">📋</button>
+                </div>
+              </div>`).join('')}
             <button type="button" class="etxt-add-page" id="etxt-add" title="Add file">
               ${I.plus}
               <span>Add file</span>
@@ -4441,6 +4470,100 @@
         imgCv.addEventListener('pointermove', (e) => { if (!painting || toolMode !== 'img-blur') return; const p = toImg(e); blurDraftAt(p.x, p.y); renderImgPreview(); });
         imgCv.addEventListener('pointerup', () => { painting = false; });
       }
+      // Page Actions in Left Drawer
+      container.querySelectorAll('.etxt-thumb-act').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const act = btn.dataset.act;
+          const pIdx = Number(btn.dataset.p) - 1;
+          if (act === 'rot') {
+            try {
+              const L = await loadLib();
+              const doc = await L.PDFDocument.load(await (currentPdf || file).arrayBuffer(), { ignoreEncryption: true });
+              const pg = doc.getPage(pIdx);
+              pg.setRotation(L.degrees((pg.getRotation().angle + 90) % 360));
+              const savedBytes = await doc.save();
+              currentPdf = new File([savedBytes], file.name, { type: 'application/pdf' });
+              const pdfjs = await loadJs();
+              pdfDoc = await pdfjs.getDocument({ data: savedBytes }).promise;
+              pages[pIdx].thumb = null;
+              pages[pIdx].full = null;
+              renderEditor();
+            } catch (err) {
+              console.warn('[Edit] rotate page error:', err);
+            }
+          } else if (act === 'del') {
+            if (pages.length <= 1) return;
+            try {
+              const L = await loadLib();
+              const doc = await L.PDFDocument.load(await (currentPdf || file).arrayBuffer(), { ignoreEncryption: true });
+              doc.removePage(pIdx);
+              const savedBytes = await doc.save();
+              currentPdf = new File([savedBytes], file.name, { type: 'application/pdf' });
+              const pdfjs = await loadJs();
+              pdfDoc = await pdfjs.getDocument({ data: savedBytes }).promise;
+              pages.splice(pIdx, 1);
+              pageCount = pdfDoc.numPages;
+              if (page > pageCount) page = pageCount;
+              renderEditor();
+            } catch (err) {
+              console.warn('[Edit] delete page error:', err);
+            }
+          } else if (act === 'dup') {
+            try {
+              const L = await loadLib();
+              const doc = await L.PDFDocument.load(await (currentPdf || file).arrayBuffer(), { ignoreEncryption: true });
+              const [copied] = await doc.copyPages(doc, [pIdx]);
+              doc.insertPage(pIdx + 1, copied);
+              const savedBytes = await doc.save();
+              currentPdf = new File([savedBytes], file.name, { type: 'application/pdf' });
+              const pdfjs = await loadJs();
+              pdfDoc = await pdfjs.getDocument({ data: savedBytes }).promise;
+              pages.splice(pIdx + 1, 0, { thumb: null, full: null });
+              pageCount = pdfDoc.numPages;
+              page = pIdx + 2;
+              renderEditor();
+            } catch (err) {
+              console.warn('[Edit] duplicate page error:', err);
+            }
+          }
+        };
+      });
+
+      // Zoom Select & Fit
+      const zoomSel = container.querySelector('#etxt-zoom-select');
+      if (zoomSel) {
+        zoomSel.onchange = () => {
+          commitEditor();
+          zoom = Number(zoomSel.value) || 100;
+          renderEditor();
+        };
+      }
+      const zoomFit = container.querySelector('#etxt-zoom-fit');
+      if (zoomFit) {
+        zoomFit.onclick = () => {
+          commitEditor();
+          zoom = 100;
+          renderEditor();
+        };
+      }
+
+      // Ctrl + Wheel smooth zoom
+      const canvasWrap = container.querySelector('.etxt-canvas-wrap');
+      if (canvasWrap) {
+        canvasWrap.onwheel = (e) => {
+          if (e.ctrlKey) {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 10 : -10;
+            const newZoom = Math.max(50, Math.min(200, zoom + delta));
+            if (newZoom !== zoom) {
+              commitEditor();
+              zoom = newZoom;
+              renderEditor();
+            }
+          }
+        };
+      }
       const dlBtn = container.querySelector('#etxt-download');
       if (dlBtn) dlBtn.onclick = finishExport;
       container.querySelector('#etxt-download-png')?.addEventListener('click', () => {
@@ -4504,21 +4627,33 @@
       const myDoc = docToken;
       const myToken = ++renderToken;
       const i = page - 1;
-      if (!pdfDoc || !pages[i] || pages[i].full) return;
+      if (!pdfDoc || !pages[i]) return;
       try {
         const base = await pdfDoc.getPage(page);
         const baseVp = base.getViewport({ scale: 1 });
-        const availH = Math.max(480, (window.innerHeight || 768) - 160);
+        curPageW = baseVp.width;
+        curPageH = baseVp.height;
+        
+        // Calculate fit scale based on viewport and zoom level
+        const availH = Math.max(500, (window.innerHeight || 768) - 150);
         const fitScaleH = availH / baseVp.height;
-        const fitScaleW = 660 / baseVp.width;
-        const finalScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const fitScaleW = 680 / baseVp.width;
+        const baseScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const finalScale = baseScale * (zoom / 100);
+        pageScale = finalScale;
+
         const c = await renderPageAt(i, finalScale);
         if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
         pages[i].full = c;
-        const ph = container.querySelector('#etxt-page-ph');
+        c.className = 'etxt-full-canvas';
+        const ph = container.querySelector('#etxt-page-ph') || container.querySelector('.etxt-full-canvas');
         if (ph) ph.replaceWith(c);
-        const wrapEl = container.querySelector('.etxt-canvas-wrap');
-        if (wrapEl) wrapEl.scrollTop = 0;
+        
+        const pageEl = container.querySelector('.etxt-page');
+        if (pageEl) {
+          pageEl.style.width = Math.round(baseVp.width * finalScale) + 'px';
+          pageEl.style.height = Math.round(baseVp.height * finalScale) + 'px';
+        }
       } catch (err) { console.warn('[Edit] page render', err); }
     }
 
@@ -5308,6 +5443,17 @@
       let html = '';
       if (toolMode === 'edit-text' || toolMode === 'select' || toolMode === 'pan') {
         html = '';
+      } else if (toolMode === 'redact') {
+        html = `<span class="etxt-opt-label">Redact</span>
+          <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#000000'?' is-on':''}" data-rc="#000000">⬛ Blackout</button>
+          <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#FFFFFF'?' is-on':''}" data-rc="#FFFFFF">⬜ Whiteout</button>
+          <span class="etxt-opt-sep"></span>
+          <span class="etxt-opt-hint" style="color:#64748B;">Drag a box over confidential text or graphics to permanently redact</span>`;
+      } else if (toolMode === 'stamp') {
+        const STAMPS = ['APPROVED', 'CONFIDENTIAL', 'DRAFT', 'FINAL', 'PAID', 'VOID', 'VERIFIED'];
+        html = `<span class="etxt-opt-label">Stamps</span>${STAMPS.map(s => `<button type="button" class="etxt-photo-chip etxt-stamp-btn" data-stamp="${s}">${s}</button>`).join('')}`;
+      } else if (toolMode === 'note') {
+        html = `<span class="etxt-opt-label">Sticky Note</span><span class="etxt-opt-hint" style="color:#64748B;">Click anywhere on the page to drop a comment</span>`;
       } else if (toolMode === 'draw') {
         html = `<span class="etxt-opt-label">Ink</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.color === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
       } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
@@ -5349,6 +5495,25 @@
         bar.hidden = true;
         bar.innerHTML = '';
       }
+      bar.querySelectorAll('[data-rc]').forEach(b => {
+        b.onclick = () => { toolOpts.redactColor = b.dataset.rc; renderOptbar(); };
+      });
+      bar.querySelectorAll('[data-stamp]').forEach(b => {
+        b.onclick = () => {
+          const text = b.dataset.stamp;
+          pushUndo();
+          addAnnot({
+            type: 'stamp-text',
+            text: text,
+            x: curPageW / 2 - 80,
+            y: curPageH / 2 - 25,
+            w: 160,
+            h: 50,
+            color: text === 'APPROVED' || text === 'VERIFIED' ? '#059669' : (text === 'CONFIDENTIAL' || text === 'VOID' ? '#DC2626' : '#2563EB')
+          });
+          renderAnnots();
+        };
+      });
       bar.querySelectorAll('.etxt-swatch').forEach(b => {
         b.onclick = () => {
           if (toolMode === 'draw') toolOpts.color = b.dataset.c;
@@ -7004,12 +7169,22 @@ async function paintResultPreview(blob) {
       .then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
 
     async function renderPageAt(i, scale) {
-      const proxy = await pdfDoc.getPage(i + 1);
-      const vp = proxy.getViewport({ scale });
+      const pageProxy = await pdfDoc.getPage(i + 1);
+      const dpr = Math.max(2, window.devicePixelRatio || 1);
+      const vp = pageProxy.getViewport({ scale: scale });
       const c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(vp.width));
-      c.height = Math.max(1, Math.round(vp.height));
-      await proxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      c.width = Math.max(1, Math.round(vp.width * dpr));
+      c.height = Math.max(1, Math.round(vp.height * dpr));
+      c.style.width = Math.round(vp.width) + 'px';
+      c.style.height = Math.round(vp.height) + 'px';
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      await pageProxy.render({
+        canvasContext: ctx,
+        viewport: vp,
+        transform: [dpr, 0, 0, dpr, 0, 0]
+      }).promise;
       return c;
     }
 
@@ -8021,21 +8196,33 @@ async function paintResultPreview(blob) {
       const myDoc = docToken;
       const myToken = ++renderToken;
       const i = page - 1;
-      if (!pdfDoc || !pages[i] || pages[i].full) return;
+      if (!pdfDoc || !pages[i]) return;
       try {
         const base = await pdfDoc.getPage(page);
         const baseVp = base.getViewport({ scale: 1 });
-        const availH = Math.max(480, (window.innerHeight || 768) - 160);
+        curPageW = baseVp.width;
+        curPageH = baseVp.height;
+        
+        // Calculate fit scale based on viewport and zoom level
+        const availH = Math.max(500, (window.innerHeight || 768) - 150);
         const fitScaleH = availH / baseVp.height;
-        const fitScaleW = 660 / baseVp.width;
-        const finalScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const fitScaleW = 680 / baseVp.width;
+        const baseScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const finalScale = baseScale * (zoom / 100);
+        pageScale = finalScale;
+
         const c = await renderPageAt(i, finalScale);
         if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
         pages[i].full = c;
-        const ph = container.querySelector('#etxt-page-ph');
+        c.className = 'etxt-full-canvas';
+        const ph = container.querySelector('#etxt-page-ph') || container.querySelector('.etxt-full-canvas');
         if (ph) ph.replaceWith(c);
-        const wrapEl = container.querySelector('.etxt-canvas-wrap');
-        if (wrapEl) wrapEl.scrollTop = 0;
+        
+        const pageEl = container.querySelector('.etxt-page');
+        if (pageEl) {
+          pageEl.style.width = Math.round(baseVp.width * finalScale) + 'px';
+          pageEl.style.height = Math.round(baseVp.height * finalScale) + 'px';
+        }
       } catch (err) { console.warn('[Edit] page render', err); }
     }
 
