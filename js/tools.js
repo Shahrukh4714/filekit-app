@@ -6632,45 +6632,116 @@
       container.classList.add('cpdf-root');
       container.classList.remove('etxt-shell');
       const stage = container.closest('.app-stage-container');
-      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = '0'; }
+
+      // Smart Suggestions based on edit result
+      let smartTip = 'What would you like to do next with your edited document?';
+      let smartTools = [
+        { id: 'pdf-sign', name: 'Sign Document' },
+        { id: 'pdf-compress', name: 'Compress PDF' },
+        { id: 'organize', name: 'Organize & Split' }
+      ];
+
       container.innerHTML = `
-        <header class="cpdf-hdr">
-          <div class="cpdf-hdr-icon">${I.edit}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Edit Text</h2>
-            <p class="cpdf-hdr-sub">Your edited file is ready</p>
-          </div>
-        </header>
-        <div class="cpdf-body">
-          <div class="cpdf-body-scroll">
-            <div class="cpdf-status-bar ${warn ? '' : 'cpdf-status-bar--ok'}">
-              <div>
-                <strong>${warn ? 'Export finished with a note' : 'Export ready'}</strong>
-                <span>${warn ? _esc(warn) : `${count} edit${count === 1 ? '' : 's'} applied · written locally`}</span>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Output Document Preview -->
+            <div class="cpdf-benchmark-stage">
+              <div class="cpdf-benchmark-paper" id="etxt-result-thumb-box">
+                <canvas id="etxt-result-canvas" class="etxt-result-canvas" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;"></canvas>
+              </div>
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text">${_esc(name)} (${_bytes(blob.size)})</span>
+                <a href="${url}" download="${_esc(name)}" class="cpdf-benchmark-btn-add" style="text-decoration:none;">
+                  <span>⬇ Download</span>
+                </a>
               </div>
             </div>
-            <div class="cpdf-file-bar">
-              <div class="cpdf-file-text" style="padding-left:4px">
-                <span class="cpdf-fname">${_esc(name)}</span>
-                <span class="cpdf-fsize">${_bytes(blob.size)} · from ${_esc(file?.name || '')}</span>
+
+            <!-- Right Panel: Result Studio & Download Actions -->
+            <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important; gap: 8px !important;">
+              <!-- Top Header: Green Check Badge -->
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+                <h2 class="cpdf-benchmark-title">Edit Complete</h2>
               </div>
-              <canvas id="etxt-result-canvas" class="etxt-result-canvas" width="120" height="155" title="Page 1 preview"></canvas>
+
+              <!-- Hero Summary Metrics Card -->
+              <div class="cpdf-benchmark-est-box">
+                <div class="cpdf-benchmark-est-title">${warn ? _esc(warn) : 'Changes saved successfully'}</div>
+                <div class="cpdf-benchmark-est-metrics">
+                  <strong class="cpdf-benchmark-est-new">${_bytes(blob.size)}</strong>
+                  <span class="cpdf-benchmark-est-pct">${count} edit${count === 1 ? '' : 's'} applied</span>
+                </div>
+                <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-bar" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <!-- Primary Action CTA Button (Obsidian Black) -->
+              <a href="${url}" download="${_esc(name)}" class="cpdf-benchmark-cta" style="text-decoration:none;margin-top:2px;">
+                <span>Download Edited PDF</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </a>
+
+              <!-- Smart Tip Card with Bespoke Tool Links -->
+              <div class="conv-smart-tip-card" style="margin-top: 4px;">
+                <div class="conv-smart-tip-header">
+                  <span>Smart tip! 💡</span>
+                </div>
+                <p class="conv-smart-tip-desc">${smartTip}</p>
+                <div class="conv-smart-tools-list">
+                  ${smartTools.map(st => {
+                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
+                    return `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon">${iconSvg}</span>
+                          <span>${st.name}</span>
+                        </div>
+                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <!-- Secondary Actions Row -->
+              <div style="display:flex;gap:8px;width:100%;margin-top:4px;">
+                <button type="button" class="cpdf-result-btn-secondary-full" id="etxt-back" style="flex:1;">
+                  Back to Editor
+                </button>
+                <button type="button" class="cpdf-result-btn-secondary-full" id="etxt-new" style="flex:1;">
+                  + Edit Another File
+                </button>
+              </div>
             </div>
           </div>
-          <div class="cpdf-footer">
-            <a class="cpdf-btn-primary" href="${url}" download="${_esc(name)}" style="text-decoration:none">${I.dl}&nbsp; Download ${_esc(name)}</a>
-            <div class="cpdf-result-row">
-              <button class="cpdf-btn-ghost" id="etxt-back" type="button">Back to editor</button>
-              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="etxt-new" type="button">Edit another file</button>
-            </div>
-          </div>
-        </div>`;
+        </div>
+      `;
+
       container.querySelector('#etxt-back').onclick = () => { URL.revokeObjectURL(url); renderEditor(); };
       container.querySelector('#etxt-new').onclick = () => { URL.revokeObjectURL(url); file=null; currentPdf=null; pages=[]; edits=[]; pdfDoc=null; renderUpload(); };
+
+      // Wire Smart Tool Clicks
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.onclick = () => {
+          const tid = item.dataset.toolId;
+          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool(tid);
+          }
+        };
+      });
+
       paintResultPreview(blob);
     }
-
-    async function paintResultPreview(blob) {
+async function paintResultPreview(blob) {
       const canvas = container.querySelector('#etxt-result-canvas');
       try {
         const pdfjs = await loadJs();
