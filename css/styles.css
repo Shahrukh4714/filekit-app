@@ -34682,3 +34682,32 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   color: #EF4444 !important;
   cursor: pointer !important;
 }
+
+
+/* Sunlit Yellow Accent Pill in Toolbar */
+.etxt-yellow-pill {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #713F12 !important;
+  background: #FEF08A !important;
+  border: 1px solid #FDE047 !important;
+  padding: 1.5px 6px !important;
+  border-radius: 3px !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Scanned Document Alert in Sunlit Yellow */
+.etxt-scanned-banner {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #FEF08A !important;
+  border: 1.5px solid #FACC15 !important;
+  border-radius: 6px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #713F12 !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.20) !important;
+}

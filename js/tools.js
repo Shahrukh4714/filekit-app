@@ -4003,10 +4003,14 @@
     let isWordDoc = false;     // docx/odt/rtf sources can find-and-replace
     let formFilled = false;    // a form was written into the current PDF
 
-    const loadLib = () => window.FF.util.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI')
-      .then(() => window.PDFLib);
-    const loadFfE = () => window.FF.util.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT')
-      .then(() => window.fflate);
+    const loadLib = () => {
+      if (window.PDFLib) return Promise.resolve(window.PDFLib);
+      return window.FF.util.loadScript('vendor/pdf-lib.min.js').then(() => window.PDFLib);
+    };
+    const loadFfE = () => {
+      if (window.fflate) return Promise.resolve(window.fflate);
+      return window.FF.util.loadScript('vendor/fflate.js').then(() => window.fflate);
+    };
 
     const isPdf = f => {
       const n = (f?.name || '').toLowerCase();
@@ -4018,9 +4022,7 @@
     const extOf = f => String(f?.name || '').split('.').pop().toLowerCase();
     const canEdit = f => isPdf(f) || IMG_EXT.includes(extOf(f)) || /^image\//.test(f?.type || '') || extOf(f) in DOC_TO_TOOL;
 
-    /* Bring any editable file into the canvas: PDFs load as-is, everything
-       else is converted to a PDF first (images via pdf-lib, documents via
-       the real registered engines), so every page tool works on it. */
+    /* Bring any editable file into the canvas */
     async function toEditablePdf(f) {
       if (isPdf(f)) return f;
       const ext = extOf(f);
@@ -4030,7 +4032,6 @@
         const bytes = await (await f.arrayBuffer());
         let img;
         if (ext === 'webp' || !(/png|jpe?g/.test(ext)) ) {
-          // webp/other images: draw to canvas, export PNG, embed
           const url = URL.createObjectURL(f);
           const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Could not decode this image.')); i.src = url; });
           URL.revokeObjectURL(url);
@@ -4053,8 +4054,16 @@
       return res.blob;
     }
 
-    const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
-      .then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+    const loadJs = () => {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        return Promise.resolve(window.pdfjsLib);
+      }
+      return window.FF.util.loadScript('vendor/pdfjs.min.js').then(() => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        return window.pdfjsLib;
+      });
+    };
 
     async function renderPageAt(i, scale) {
       const pageProxy = await pdfDoc.getPage(i + 1);
@@ -4113,9 +4122,11 @@
         pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
         docToken++;
         renderEditor();
-        wireAsyncRenders();
       } catch (err) {
-        console.error('[Edit] load PDF', err);
+        console.error('[Edit] load PDF error:', err);
+        if (window.FF && window.FF.util && window.FF.util.toast) {
+          window.FF.util.toast('Could not open file: ' + (err.message || 'unknown error'), 'error');
+        }
         renderUpload();
       }
     }
@@ -6700,7 +6711,7 @@
                 <div class="cpdf-benchmark-est-title">${warn ? _esc(warn) : 'Changes saved successfully'}</div>
                 <div class="cpdf-benchmark-est-metrics">
                   <strong class="cpdf-benchmark-est-new">${_bytes(blob.size)}</strong>
-                  <span class="cpdf-benchmark-est-pct">${count} edit${count === 1 ? '' : 's'} applied</span>
+                  <span class="cpdf-benchmark-est-pct" style="background:#FEF08A;color:#713F12;border:1px solid #FDE047;border-radius:4px;padding:2px 8px;font-weight:700;">${count} edit${count === 1 ? "" : "s"} applied</span>
                 </div>
                 <div class="cpdf-benchmark-track">
                   <div class="cpdf-benchmark-bar" style="width: 100%;"></div>
@@ -14401,10 +14412,19 @@ trailer<</Root 1 0 R>>`;
 
   const PREMIUM = {
     'pdf-compress': () => window.__ffMountCompress,
+    'compress':     () => window.__ffMountCompress,
     'pdf-merge':    () => window.__ffMountMerge,
+    'merge':        () => window.__ffMountMerge,
     'pdf-split':    () => window.__ffMountSplit,
+    'split':        () => window.__ffMountSplit,
     'pdf-edit-text': () => window.__ffMountEditText,
+    'edit-pdf':     () => window.__ffMountEditText,
+    'edit-text':    () => window.__ffMountEditText,
+    'pdf-edit':     () => window.__ffMountEditText,
+    'edit':         () => window.__ffMountEditText,
     'pdf-sign':     () => window.__ffMountSign,
+    'sign':         () => window.__ffMountSign,
+    'organize':     () => window.__ffMountOrganize,
     'pdf-flatten':  () => window.__ffMountFlatten,
     'pdf-protect':  () => window.__ffMountProtect,
     'pdf-unlock':   () => window.__ffMountProtect,
