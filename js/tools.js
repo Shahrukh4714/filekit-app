@@ -4026,29 +4026,50 @@
     async function toEditablePdf(f) {
       if (isPdf(f)) return f;
       const ext = extOf(f);
-      if (IMG_EXT.includes(ext) || /^image\//.test(f.type || '')) {
+      if (IMG_EXT.includes(ext) || /^image\//.test(f.type || '') || ext === 'heic' || ext === 'heif') {
         const L = await loadLib();
         const doc = await L.PDFDocument.create();
-        const bytes = await (await f.arrayBuffer());
-        let img;
-        if (ext === 'webp' || !(/png|jpe?g/.test(ext)) ) {
-          const url = URL.createObjectURL(f);
-          const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Could not decode this image.')); i.src = url; });
-          URL.revokeObjectURL(url);
-          const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
-          c.getContext('2d').drawImage(im, 0, 0);
-          const png = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('Could not encode image.')), 'image/png'));
-          img = await doc.embedPng(await png.arrayBuffer());
-        } else {
-          img = /png/i.test(f.type) || ext === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+        
+        let imageBlob = f;
+        if (ext === 'heic' || ext === 'heif') {
+          try {
+            await window.FF.util.loadScript('vendor/heic2any/heic2any.min.js');
+            if (window.heic2any) {
+              imageBlob = await window.heic2any({ blob: f, toType: 'image/jpeg', quality: 0.92 });
+              if (Array.isArray(imageBlob)) imageBlob = imageBlob[0];
+            }
+          } catch (heicErr) {
+            console.warn('[Edit] HEIC convert error, fallback to canvas:', heicErr);
+          }
         }
+
+        const url = URL.createObjectURL(imageBlob);
+        const im = await new Promise((res, rej) => {
+          const i = new Image();
+          i.onload = () => res(i);
+          i.onerror = () => rej(new Error('Could not decode this image format.'));
+          i.src = url;
+        });
+        URL.revokeObjectURL(url);
+
+        const c = document.createElement('canvas');
+        c.width = im.width;
+        c.height = im.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(im, 0, 0);
+
+        const pngBlob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('Failed to encode image to PNG.')), 'image/png'));
+        const imgBytes = await pngBlob.arrayBuffer();
+        const img = await doc.embedPng(imgBytes);
+
         const pg = doc.addPage([img.width, img.height]);
         pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
         return new Blob([await doc.save()], { type: 'application/pdf' });
       }
+
       const toolId = DOC_TO_TOOL[ext];
       const tool = toolId && window.FF && window.FF.registry && window.FF.registry.get(toolId);
-      if (!tool) throw new Error('Could not convert this file for editing.');
+      if (!tool) throw new Error('Unsupported format for editing.');
       const res = await tool.run({ file: f, inputs: {}, engine: typeof tool.engine === 'function' ? await tool.engine() : undefined });
       if (!res || !res.blob) throw new Error('Conversion produced no file.');
       return res.blob;
@@ -4117,7 +4138,12 @@
         currentPdf = pdfBlob;
         const data = new Uint8Array(await pdfBlob.arrayBuffer());
         if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
-        pdfDoc = await pdfjs.getDocument({ data }).promise;
+        pdfDoc = await pdfjs.getDocument({
+          data,
+          cMapUrl: 'vendor/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: 'vendor/standard_fonts/'
+        }).promise;
         pageCount = pdfDoc.numPages;
         pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
         docToken++;
@@ -4268,6 +4294,7 @@
               <button type="button" class="etxt-tool${toolMode==='highlight'?' is-on':''}" data-tool="highlight" title="Highlighter">${I.highlight}<span>Highlight</span></button>
               <button type="button" class="etxt-tool${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes">${I.shape}<span>Shape</span></button>
               <button type="button" class="etxt-tool${toolMode==='image'?' is-on':''}" data-tool="image" title="Insert Image / Stamp">${I.image}<span>Image</span></button>
+              <button type="button" class="etxt-tool" id="etxt-find-replace" title="Find and replace text in PDF">🔍 <span>Find</span></button>
             </div>
             <span class="etxt-tool-sep"></span>
             <div class="etxt-tool-group">
@@ -4306,9 +4333,11 @@
           </aside>
 
           <main class="etxt-canvas-wrap" id="etxt-canvas-wrap">
-            <div id="etxt-scanned-banner" class="etxt-scanned-banner" style="display:none;">
-              <span>💡 Scanned document detected. Use <strong>Type [T]</strong> to add or overlay text on this page.</span>
-              <button type="button" id="etxt-switch-type" class="etxt-btn-mini" style="background:#7C3AED;color:#fff;border:none;margin-left:8px;padding:2px 8px;border-radius:3px;cursor:pointer;">Switch to Type Tool</button>
+            <div id="etxt-scanned-banner" class="etxt-scanned-toast" style="display:none;">
+              <span class="etxt-scanned-icon">💡</span>
+              <span class="etxt-scanned-msg">Scanned / image-only PDF detected. Use <strong>Type Tool [T]</strong> to add or overlay text.</span>
+              <button type="button" id="etxt-switch-type" class="etxt-scanned-btn">Switch to Type Tool</button>
+              <button type="button" id="etxt-scanned-dismiss" class="etxt-scanned-close" aria-label="Dismiss">✕</button>
             </div>
             <div class="etxt-canvas" style="transform: scale(${zoom/100})">
               <div class="etxt-page">
@@ -4441,6 +4470,7 @@
       const wrapEl = container.querySelector('.etxt-canvas-wrap');
       if (wrapEl) wrapEl.scrollTop = 0;
       wireCachedCanvases();
+      renderThumbsAsync();
       renderFullPage();
       attachTextHits();
       renderOptbar();
@@ -4485,20 +4515,34 @@
       } catch (err) { console.warn('[Edit] page render', err); }
     }
 
-    function wireAsyncRenders() {
-      const myDoc = docToken;
-      const myToken = renderToken;
+    function renderThumbsAsync() {
+      if (!pdfDoc) return;
       pages.forEach((pg, i) => {
-        if (pg.thumb) return;
-        renderPageAt(i, 0.28).then(c => {
-          if (myDoc !== docToken || !pages[i]) return;
-          pages[i].thumb = c;
+        if (pg.thumb) {
           const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
-          const ph = btn && btn.querySelector('.etxt-thumb-ph');
-          if (ph) ph.replaceWith(c);
-        }).catch(() => { /* thumbnails are non-critical */ });
+          if (btn && !btn.querySelector('canvas')) {
+            const num = btn.querySelector('.etxt-thumb-num');
+            if (num) btn.insertBefore(pg.thumb, num);
+            else btn.appendChild(pg.thumb);
+          }
+          return;
+        }
+        renderPageAt(i, 0.25).then(c => {
+          if (!pages[i]) return;
+          pages[i].thumb = c;
+          c.className = 'etxt-thumb-canvas';
+          const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
+          if (btn) {
+            const ph = btn.querySelector('.etxt-thumb-ph');
+            if (ph) ph.remove();
+            const num = btn.querySelector('.etxt-thumb-num');
+            if (num) btn.insertBefore(c, num);
+            else btn.appendChild(c);
+          }
+        }).catch(err => {
+          console.warn('[Edit] thumb render error page', i + 1, err);
+        });
       });
-      renderFullPage();
     }
 
     /* ═══════════════════════════════════════════════════════════════════
@@ -5255,8 +5299,8 @@
       const bar = container.querySelector('#etxt-optbar');
       if (!bar) return;
       let html = '';
-      if (toolMode === 'edit-text') {
-        html = `<span class="etxt-opt-label">Edit Text</span><span class="etxt-opt-hint" style="color:#64748B;font-size:12px;font-weight:600;">Click any text line on the page to edit directly</span><span class="etxt-opt-sep"></span><button type="button" class="etxt-photo-chip" id="etxt-find-replace">🔍 Find & Replace</button>`;
+      if (toolMode === 'edit-text' || toolMode === 'select' || toolMode === 'pan') {
+        html = '';
       } else if (toolMode === 'draw') {
         html = `<span class="etxt-opt-label">Ink</span>${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.color === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}<span class="etxt-opt-sep"></span>${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}</button>`).join('')}`;
       } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
@@ -7041,7 +7085,12 @@ async function paintResultPreview(blob) {
         const pdfjs = await loadJs();
         const data = new Uint8Array(await f.arrayBuffer());
         if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
-        pdfDoc = await pdfjs.getDocument({ data }).promise;
+        pdfDoc = await pdfjs.getDocument({
+          data,
+          cMapUrl: 'vendor/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: 'vendor/standard_fonts/'
+        }).promise;
         pageCount = pdfDoc.numPages;
         const first = await pdfDoc.getPage(1);
         const vp = first.getViewport({ scale: 1 });
@@ -7863,6 +7912,7 @@ async function paintResultPreview(blob) {
       }
 
       wireCachedCanvases();
+      renderThumbsAsync();
       renderFullPage();
     }
 
@@ -7982,19 +8032,34 @@ async function paintResultPreview(blob) {
       } catch (err) { console.warn('[Edit] page render', err); }
     }
 
-    function wireAsyncRenders() {
-      const myDoc = docToken;
+    function renderThumbsAsync() {
+      if (!pdfDoc) return;
       pages.forEach((pg, i) => {
-        if (pg.thumb) return;
-        renderPageAt(i, 0.22).then(c => {
-          if (myDoc !== docToken || !pages[i]) return;
+        if (pg.thumb) {
+          const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
+          if (btn && !btn.querySelector('canvas')) {
+            const num = btn.querySelector('.etxt-thumb-num');
+            if (num) btn.insertBefore(pg.thumb, num);
+            else btn.appendChild(pg.thumb);
+          }
+          return;
+        }
+        renderPageAt(i, 0.25).then(c => {
+          if (!pages[i]) return;
           pages[i].thumb = c;
-          const btn = container.querySelector(`.sign-thumb[data-page="${i + 1}"]`);
-          const ph = btn && btn.querySelector('.sign-thumb-ph');
-          if (ph) ph.replaceWith(c);
-        }).catch(() => { /* thumbnails are non-critical */ });
+          c.className = 'etxt-thumb-canvas';
+          const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
+          if (btn) {
+            const ph = btn.querySelector('.etxt-thumb-ph');
+            if (ph) ph.remove();
+            const num = btn.querySelector('.etxt-thumb-num');
+            if (num) btn.insertBefore(c, num);
+            else btn.appendChild(c);
+          }
+        }).catch(err => {
+          console.warn('[Edit] thumb render error page', i + 1, err);
+        });
       });
-      renderFullPage();
     }
 
     function rgbOf(hex) {
