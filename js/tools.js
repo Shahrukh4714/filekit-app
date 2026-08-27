@@ -3856,8 +3856,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     select: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5l13 6-6 1.9-3.6 5.3L5 3.5z"/><path d="M14.5 16.5l2.5 3"/></svg>`,
     /* hand: open palm with three raised fingers */
     hand: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 11.5V6.8a1.4 1.4 0 012.8 0v4.7"/><path d="M10.3 10.3V5.2a1.4 1.4 0 012.8 0v5.1"/><path d="M13.1 10.8V7a1.4 1.4 0 012.8 0v7a5.6 5.6 0 01-11.2 0v-3"/></svg>`,
-    /* text: I-beam cursor with caps */
-    text: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4v16M15 4v16"/><path d="M7.5 4h3M7.5 20h3M13.5 4h3M13.5 20h3"/></svg>`,
+    /* text: edit pencil / text document */
+    text: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
     /* type: typewriter T with baseline */
     type: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7V4.5h13V7"/><path d="M9.5 19.5h5"/><path d="M12 4.5v15"/><path d="M12 11.5v3"/></svg>`,
     /* pen: pencil with a straight lead */
@@ -3900,8 +3900,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v10m0 0l-3.5-3.5M12 13.5l3.5-3.5"/><path d="M4.5 16.5v2A1.5 1.5 0 006 20h12a1.5 1.5 0 001.5-1.5v-2"/></svg>`,
     /* share: three nodes linked by lines */
     share: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 13.2l7.4 4.3M15.7 6.5L8.3 10.8"/></svg>`,
+        /* close x icon */
+    x: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
+    /* info icon */
+    info: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
     /* arrow: single chevron-headed arrow */
-    arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h14m0 0l-5-5m5 5l-5 5"/></svg>`,
+    arrow: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
     /* plus: crisp cross */
     plus: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg>`,
     /* trash: rounded bin with lid and slats */
@@ -3960,6 +3964,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
   }
 
   function mountEditText(container, tool) {
+    const toast = (msg, type = 'info') => {
+      try { if (window.FF?.util?.toast) window.FF.util.toast(msg, type); else console.log(msg); } catch { /* noop */ }
+    };
     container.innerHTML = '';
     container.classList.add('cpdf-root');
     container.classList.remove('spdf-shell', 'etxt-shell');
@@ -3968,8 +3975,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let currentPdf = null;     // the PDF actually loaded (original for .pdf, converted for images/documents)
     let pageCount = 0;
     let page = 1;
+    let selectedPages = new Set(); // multi-page batch selection (1-based indices)
+    let isThumbsCollapsed = false; // slide-out collapsible pages panel state
     let toolMode = 'edit-text'; // select | pan | edit-text | type | draw | highlight | shape | image | stamp | crop
-    let zoom = 100;
+    let zoom = 170;
     let pages = [];            // per-page { thumb, full } canvas cache (real renders)
     let pdfDoc = null;         // live pdf.js document
     let renderToken = 0;       // invalidates in-flight full-page renders on re-render
@@ -4007,6 +4016,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let isWordDoc = false;     // docx/odt/rtf sources can find-and-replace
     let scannedBannerDismissed = false; // user dismissed scanned notice
     let formFilled = false;    // a form was written into the current PDF
+    let pointerCleanup = null; // pointer event listeners cleanup callback
+    let lastCommitTime = 0;    // timestamp of last text edit commit
+    let currentHits = [];      // active text hit boxes on current page
+    let editingAnnot = null;   // active annotation being edited
 
     const loadLib = () => {
       if (window.PDFLib) return Promise.resolve(window.PDFLib);
@@ -4289,108 +4302,273 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const stage = container.closest('.app-stage-container') || document.getElementById('app-tool-stage');
       if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
 
+      // Update global topbar with active document info badge
+      const globalTopbar = document.querySelector('.topbar');
+      if (globalTopbar) {
+        let docInfo = globalTopbar.querySelector('#topbar-doc-info');
+        if (!docInfo) {
+          docInfo = document.createElement('div');
+          docInfo.id = 'topbar-doc-info';
+          docInfo.className = 'topbar-doc-info';
+          const brand = globalTopbar.querySelector('.brand');
+          if (brand && brand.nextSibling) {
+            globalTopbar.insertBefore(docInfo, brand.nextSibling);
+          } else {
+            globalTopbar.prepend(docInfo);
+          }
+        }
+        docInfo.innerHTML = `
+          <svg class="topbar-doc-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="topbar-doc-title" title="${_esc(file.name)}">${_esc(file.name)}</span>
+          <span class="topbar-doc-pages">· ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}</span>
+        `;
+        docInfo.style.display = 'inline-flex';
+      }
+
       container.innerHTML = `
         <div class="etxt-unified-toolbar">
-          <div class="etxt-toolbar-file-pill">
-            <span class="etxt-file" title="${_esc(file.name)}">${_esc(shortName(file.name, 18))}</span>
-            <span class="etxt-meta">${pageCount} ${pageCount === 1 ? "page" : "pages"}</span>
-          </div>
-
-          <div class="etxt-toolbar-tools">
-            <button type="button" class="etxt-tool-btn${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing PDF Text">${I.text}<span>Edit Text</span></button>
-            <button type="button" class="etxt-tool-btn${toolMode==='type'?' is-on':''}" data-tool="type" title="Add New Text Box">${I.type}<span>Add Text</span></button>
-            <button type="button" class="etxt-tool-btn${toolMode==='draw'||toolMode==='highlight'?' is-on':''}" data-tool="draw" title="Draw & Highlight">${I.pen}<span>Draw</span></button>
-            <button type="button" class="etxt-tool-btn${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes (Rectangle, Circle, Line, Arrow)">${I.shape}<span>Shapes</span></button>
-            <button type="button" class="etxt-tool-btn${toolMode==='redact'?' is-on':''}" data-tool="redact" title="Permanently Blackout or Whiteout Sensitive Info">${I.redact}<span>Redact</span></button>
-            <button type="button" class="etxt-tool-btn${toolMode==='image'||toolMode==='stamp'||toolMode==='note'?' is-on':''}" data-tool="image" title="Insert Image, Stamps & Comments">${I.image}<span>Insert</span></button>
+          <div class="etxt-toolbar-center">
+            <div class="etxt-tool-group" role="tablist" aria-label="PDF Tools">
+              <button type="button" class="etxt-tool-btn${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Edit Existing Text [E]">${I.text}<span>Edit Text</span></button>
+              <button type="button" class="etxt-tool-btn${toolMode==='type'?' is-on':''}" data-tool="type" title="Add Text Box [T]">${I.type}<span>Add Text</span></button>
+              <button type="button" class="etxt-tool-btn${toolMode==='draw'||toolMode==='highlight'?' is-on':''}" data-tool="draw" title="Draw & Highlight [P]">${I.pen}<span>Draw</span></button>
+              <button type="button" class="etxt-tool-btn${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes [S]">${I.shape}<span>Shapes</span></button>
+              <button type="button" class="etxt-tool-btn${toolMode==='redact'?' is-on':''}" data-tool="redact" title="Redact PII [R]">${I.redact}<span>Redact</span></button>
+              <button type="button" class="etxt-tool-btn${toolMode==='image'||toolMode==='stamp'||toolMode==='note'?' is-on':''}" data-tool="image" title="Insert Images & Stamps [I]">${I.image}<span>Insert</span></button>
+              <button type="button" class="etxt-tool-btn" data-tool="watermark" title="Add Watermark"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>Watermark</span></button>
+              <button type="button" class="etxt-tool-btn" data-tool="pagenum" title="Add Page Numbers"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg><span>Page #</span></button>
+              <button type="button" class="etxt-tool-btn" data-tool="form-fill" title="Fill PDF Forms"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Form Fill</span></button>
+              <button type="button" class="etxt-tool-btn${toolMode==='crop'?' is-on':''}" data-tool="crop" title="Crop Page Margins"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span>Crop</span></button>
+            </div>
             
             <span class="etxt-vsep"></span>
-            <button type="button" class="etxt-icon-btn" id="etxt-find-replace" title="Find in Document">${I.find}</button>
-            <button type="button" class="etxt-icon-btn" id="etxt-undo" title="Undo">${I.undo}</button>
-            <button type="button" class="etxt-icon-btn" id="etxt-redo" title="Redo">${I.redo}</button>
-            <span class="etxt-vsep"></span>
 
-            <div class="etxt-zoom-pill">
-              <button type="button" class="etxt-zoom-step" id="etxt-zoom-out" title="Zoom out">−</button>
-              <select class="etxt-zoom-select" id="etxt-zoom-select" title="Zoom level">
-                <option value="50"${zoom===50?' selected':''}>50%</option>
-                <option value="75"${zoom===75?' selected':''}>75%</option>
-                <option value="100"${zoom===100?' selected':''}>100%</option>
-                <option value="125"${zoom===125?' selected':''}>125%</option>
-                <option value="150"${zoom===150?' selected':''}>150%</option>
-                <option value="200"${zoom===200?' selected':''}>200%</option>
-              </select>
-              <button type="button" class="etxt-zoom-step" id="etxt-zoom-in" title="Zoom in">+</button>
+            <div class="etxt-util-group">
+              <button type="button" class="etxt-icon-btn" id="etxt-find-replace" title="Find in Document">${I.find}</button>
+              <button type="button" class="etxt-icon-btn" id="etxt-undo" title="Undo">${I.undo}</button>
+              <button type="button" class="etxt-icon-btn" id="etxt-redo" title="Redo">${I.redo}</button>
             </div>
           </div>
 
           <div class="etxt-toolbar-right">
             ${imgSrc ? `<button type="button" class="etxt-sign-btn" id="etxt-download-png">${I.image} PNG</button>` : ''}
-            <button type="button" class="etxt-sign-btn" id="etxt-sign" title="Sign this PDF">${I.sign} Sign</button>
-            <button type="button" class="etxt-export-btn" id="etxt-finish">Export PDF ${I.arrow}</button>
-            <button type="button" class="etxt-close-btn" id="etxt-close" title="Close document">✕</button>
+            <button type="button" class="etxt-sign-btn" id="etxt-sign" title="Sign this PDF">${I.sign} <span>Sign</span></button>
+            <button type="button" class="etxt-export-btn" id="etxt-finish"><span>Export PDF</span> ${I.arrow}</button>
+            <button type="button" class="etxt-close-btn" id="etxt-close" title="Close document">${I.x}</button>
           </div>
         </div>
 
-        <div class="etxt-optbar" id="etxt-optbar" hidden></div>
+        <div class="etxt-body" id="etxt-body">
+          <!-- Fixed Left Floating Tool Dock + Anchored Flyout Popover -->
+          <div class="etxt-floating-dock-wrap">
+            <nav class="etxt-floating-dock" aria-label="Quick Tools">
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='edit-text'?' is-on':''}" data-tool="edit-text" title="Select & Edit Text [E]">${I.text}</button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='type'?' is-on':''}" data-tool="type" title="Add Text Box [T]">${I.type}</button>
+              <span class="etxt-dock-sep"></span>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='draw'||toolMode==='highlight'?' is-on':''}" data-tool="draw" title="Draw & Pen [P]">${I.pen}</button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='shape'?' is-on':''}" data-tool="shape" title="Insert Shapes [S]">${I.shape}</button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='image'||toolMode==='stamp'||toolMode==='note'?' is-on':''}" data-tool="image" title="Insert Images & Stamps">${I.image}</button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='sign'?' is-on':''}" data-tool="sign" title="Sign Document">${I.sign}</button>
+              <span class="etxt-dock-sep"></span>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='redact'?' is-on':''}" data-tool="redact" title="Redact PII [R]">${I.redact}</button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='watermark'?' is-on':''}" data-tool="watermark" title="Add Watermark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='pagenum'?' is-on':''}" data-tool="pagenum" title="Page Numbers"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></button>
+              <button type="button" class="etxt-floating-dock-btn${toolMode==='crop'?' is-on':''}" data-tool="crop" title="Crop Margins [C]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg></button>
+            </nav>
+            <div class="etxt-dock-flyout" id="etxt-dock-flyout" hidden></div>
+          </div>
 
-        <div class="etxt-body">
-          <aside class="etxt-thumbs" aria-label="Pages">
-            ${pages.map((pg, i) => `
-              <div class="etxt-thumb-card${i+1===page?' is-on':''}" data-page="${i+1}">
-                <button type="button" class="etxt-thumb" data-page="${i+1}">
-                  ${pg.thumb ? '' : `<span class="etxt-thumb-ph">${i + 1}</span>`}
-                  <span class="etxt-thumb-num">${i + 1}</span>
-                </button>
-                <div class="etxt-thumb-actions">
-                  <button type="button" class="etxt-thumb-act" data-act="rot" data-p="${i+1}" title="Rotate Page 90°">🔄</button>
-                  ${pages.length > 1 ? `<button type="button" class="etxt-thumb-act etxt-thumb-del" data-act="del" data-p="${i+1}" title="Delete Page">🗑️</button>` : ''}
-                  <button type="button" class="etxt-thumb-act" data-act="dup" data-p="${i+1}" title="Duplicate Page">📋</button>
-                </div>
-              </div>`).join('')}
-            <button type="button" class="etxt-add-page" id="etxt-add" title="Add file">
-              ${I.plus}
-              <span>Add file</span>
-            </button>
-            <input id="etxt-add-inp" type="file" accept=".pdf,application/pdf" hidden>
-          </aside>
-
+          <!-- Centered Scrollable Canvas Stage -->
           <main class="etxt-canvas-wrap" id="etxt-canvas-wrap">
             <div id="etxt-scanned-banner" class="etxt-scanned-toast is-hidden" hidden>
-              <span class="etxt-scanned-icon">💡</span>
+              <span class="etxt-scanned-icon">${I.info}</span>
               <span class="etxt-scanned-msg">Scanned / image-only PDF detected. Use <strong>Type Tool [T]</strong> to add or overlay text.</span>
               <button type="button" id="etxt-switch-type" class="etxt-scanned-btn">Switch to Type Tool</button>
-              <button type="button" id="etxt-scanned-dismiss" class="etxt-scanned-close" aria-label="Dismiss">✕</button>
+              <button type="button" id="etxt-scanned-dismiss" class="etxt-scanned-close" aria-label="Dismiss">${I.x}</button>
             </div>
-            <div class="etxt-canvas" style="transform: scale(${zoom/100})">
+            
+            <div class="etxt-canvas" id="etxt-canvas" style="transform: scale(${zoom/100})">
               <div class="etxt-page">
-                ${pages[page - 1]?.full ? '<canvas class="etxt-full-canvas"></canvas>' : `<span class="etxt-page-ph" id="etxt-page-ph">Rendering page ${page}…</span>`}
+                <canvas class="etxt-full-canvas"></canvas>
                 <div class="etxt-text-layer" aria-hidden="true"></div>
                 <div class="etxt-annot-layer" aria-hidden="false"></div>
                 <div class="etxt-crop-layer" id="etxt-crop-layer" hidden></div>
                 ${imgSrc ? '<canvas class="etxt-img-preview" id="etxt-img-preview" hidden></canvas>' : ''}
               </div>
             </div>
-            ${pageCount > 1 ? `
-            <div class="etxt-pager">
-              <button type="button" id="etxt-prev" ${page<=1?'disabled':''}>${I.chevL}</button>
-              <span><b>${page}</b> / ${pageCount}</span>
-              <button type="button" id="etxt-next" ${page>=pageCount?'disabled':''}>${I.chevR}</button>
-            </div>` : ''}
           </main>
+
+          <!-- Slide-out Thumbnail Drawer (Anchored to Right Rail, slides out to the left) -->
+          <aside class="etxt-thumbs-drawer" id="etxt-thumbs-drawer" aria-label="Page Thumbnails">
+            <div class="etxt-thumbs-head">
+              <span class="etxt-thumbs-title">Pages (${pageCount})</span>
+              <button type="button" class="etxt-thumbs-close" id="etxt-thumbs-close" title="Close Drawer">${I.x}</button>
+            </div>
+            <div class="etxt-thumbs-scroll">
+              ${pages.map((pg, i) => `
+                <div class="etxt-thumb-card${i+1===page?' is-on':''}" data-page="${i+1}">
+                  <button type="button" class="etxt-thumb" data-page="${i+1}">
+                    ${pg.thumb ? '' : `<span class="etxt-thumb-ph">${i + 1}</span>`}
+                    <span class="etxt-thumb-num">${i + 1}</span>
+                  </button>
+                </div>`).join('')}
+            </div>
+          </aside>
+
+          <!-- Fixed Full-Height Right Side-Rail (Page, Thumbnails & Zoom Controller) -->
+          <aside class="etxt-right-rail" id="etxt-floating-zoom" aria-label="Zoom and View Controls">
+            <div class="etxt-rail-top">
+              <button type="button" class="etxt-fzoom-action etxt-rail-pages-btn" id="etxt-rail-thumbs-toggle" title="Toggle Page Previews">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+              </button>
+              <span class="etxt-rail-sep"></span>
+              ${pageCount > 1 ? `
+              <div class="etxt-fzoom-page-ctrl">
+                <button type="button" class="etxt-fzoom-step" id="etxt-fnav-prev" ${page<=1?'disabled':''} title="Previous page">${I.chevL}</button>
+                <div class="etxt-fzoom-page-badge" title="Current Page">${page} / ${pageCount}</div>
+                <button type="button" class="etxt-fzoom-step" id="etxt-fnav-next" ${page>=pageCount?'disabled':''} title="Next page">${I.chevR}</button>
+              </div>
+              <span class="etxt-rail-sep"></span>
+              ` : ''}
+            </div>
+
+            <div class="etxt-rail-mid">
+              <div class="etxt-fzoom-badge" id="etxt-fzoom-badge">${zoom}%</div>
+              <button type="button" class="etxt-fzoom-step" id="etxt-fzoom-in" title="Zoom In">+</button>
+              <div class="etxt-fzoom-slider-wrap">
+                <input type="range" min="30" max="250" step="5" value="${zoom}" class="etxt-fzoom-slider" id="etxt-fzoom-slider" orient="vertical" title="Zoom Slider">
+              </div>
+              <button type="button" class="etxt-fzoom-step" id="etxt-fzoom-out" title="Zoom Out">−</button>
+              <button type="button" class="etxt-fzoom-action" id="etxt-fzoom-reset" title="Reset Zoom to 170%">1:1</button>
+            </div>
+
+            <div class="etxt-rail-bot">
+              <span class="etxt-rail-sep"></span>
+              <button type="button" class="etxt-fzoom-action" id="etxt-theme-toggle" title="Toggle Reading Contrast"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+            </div>
+          </aside>
+
         </div>
 
-        
+        <div class="etxt-dialog-backdrop" id="etxt-dlg-backdrop" hidden>
+          <div class="etxt-dialog" id="etxt-dlg" hidden></div>
+        </div>`;
 
-        <div class="etxt-dialog-backdrop" id="etxt-dlg-backdrop" hidden></div>
-        <div class="etxt-dialog" id="etxt-dlg" hidden></div>`;
-
-      // tools
-      container.querySelectorAll('.etxt-tool-btn[data-tool], .etxt-tool[data-tool]').forEach(btn => {
-        btn.onclick = () => activateTool(btn.dataset.tool);
+      // Tools event wiring
+      container.querySelectorAll('.etxt-tool-btn[data-tool], .etxt-floating-dock-btn[data-tool]').forEach(btn => {
+        btn.onclick = () => activateTool(btn.dataset.tool, true);
       });
+
+      // Smooth zoom flow
+      const smoothZoom = (newZoom) => {
+        zoom = Math.max(30, Math.min(250, newZoom));
+        const canvasEl = container.querySelector('#etxt-canvas');
+        if (canvasEl) canvasEl.style.transform = `scale(${zoom / 100})`;
+        const badge = container.querySelector('#etxt-fzoom-badge');
+        if (badge) badge.textContent = `${zoom}%`;
+        const slider = container.querySelector('#etxt-fzoom-slider');
+        if (slider && Number(slider.value) !== zoom) slider.value = zoom;
+      };
+
+      // Page switching helper
+      const goToPage = (newPage) => {
+        if (newPage < 1 || newPage > pageCount || newPage === page) return;
+        page = newPage;
+        const pBadge = container.querySelector('.etxt-fzoom-page-badge');
+        if (pBadge) pBadge.textContent = `${page} / ${pageCount}`;
+        const prevB = container.querySelector('#etxt-fnav-prev');
+        if (prevB) prevB.disabled = (page <= 1);
+        const nextB = container.querySelector('#etxt-fnav-next');
+        if (nextB) nextB.disabled = (page >= pageCount);
+
+        container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
+          tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
+        });
+
+        renderFullPage();
+        renderAnnots();
+        attachTextHits();
+      };
+
+      const fnavPrev = container.querySelector('#etxt-fnav-prev');
+      
+      const canvasWrap = container.querySelector('#etxt-canvas-wrap');
+
+      // Right drawer toggle wiring
+      const drawerEl = container.querySelector('#etxt-thumbs-drawer');
+      const drawerToggle = container.querySelector('#etxt-rail-thumbs-toggle');
+      const drawerClose = container.querySelector('#etxt-thumbs-close');
+
+      const toggleDrawer = (open) => {
+        if (!drawerEl) return;
+        const isOpen = (open !== undefined) ? open : !drawerEl.classList.contains('is-open');
+        drawerEl.classList.toggle('is-open', isOpen);
+        if (drawerToggle) drawerToggle.classList.toggle('is-on', isOpen);
+      };
+
+      if (drawerToggle) drawerToggle.onclick = () => toggleDrawer();
+      if (drawerClose) drawerClose.onclick = () => toggleDrawer(false);
+
+      if (canvasWrap) {
+        canvasWrap.addEventListener('pointerdown', (e) => {
+          if (!e.target.closest('#etxt-thumbs-drawer') && !e.target.closest('#etxt-rail-thumbs-toggle')) {
+            toggleDrawer(false);
+          }
+        });
+      }
+
+      if (fnavPrev) fnavPrev.onclick = () => goToPage(page - 1);
+      const fnavNext = container.querySelector('#etxt-fnav-next');
+      if (fnavNext) fnavNext.onclick = () => goToPage(page + 1);
+
+      const fzoomIn = container.querySelector('#etxt-fzoom-in');
+      if (fzoomIn) fzoomIn.onclick = () => smoothZoom(zoom + 15);
+      const fzoomOut = container.querySelector('#etxt-fzoom-out');
+      if (fzoomOut) fzoomOut.onclick = () => smoothZoom(zoom - 15);
+      const fzoomSlider = container.querySelector('#etxt-fzoom-slider');
+      if (fzoomSlider) fzoomSlider.oninput = () => smoothZoom(Number(fzoomSlider.value));
+      const fzoomReset = container.querySelector('#etxt-fzoom-reset');
+      if (fzoomReset) fzoomReset.onclick = () => smoothZoom(170);
+
+      // Ctrl + Mouse Wheel smooth zoom
+      if (canvasWrap) {
+        canvasWrap.addEventListener('wheel', (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 10 : -10;
+            smoothZoom(zoom + delta);
+          }
+        }, { passive: false });
+      }
+
+      // Delegated thumbnail clicks so page switching always works
+      const thumbsPanel = container.querySelector('#etxt-thumbs-drawer') || container.querySelector('.etxt-thumbs');
+      if (thumbsPanel) {
+        thumbsPanel.onclick = (e) => {
+          const card = e.target.closest('[data-page]');
+          if (card) goToPage(Number(card.dataset.page));
+        };
+      }
+
+      const themeToggle = container.querySelector('#etxt-theme-toggle');
+      if (themeToggle) themeToggle.onclick = () => {
+        const wrap = container.querySelector('#etxt-canvas-wrap');
+        if (wrap) wrap.classList.toggle('etxt-reading-contrast');
+      };
+
       container.querySelector('#etxt-undo')?.addEventListener('click', () => { commitEditor(); undo(); });
       container.querySelector('#etxt-redo')?.addEventListener('click', () => { commitEditor(); redo(); });
+      container.querySelector('#etxt-find-replace')?.addEventListener('click', () => openFindReplaceDlg());
+      container.querySelector('#etxt-sign')?.addEventListener('click', () => openAcrobatSignatureModal());
+      container.querySelector('#etxt-finish')?.addEventListener('click', finishExport);
+      container.querySelector('#etxt-close')?.addEventListener('click', () => {
+        const staleDocInfo = document.querySelector('#topbar-doc-info');
+        if (staleDocInfo) staleDocInfo.remove();
+        if (typeof pointerCleanup === 'function') { pointerCleanup(); pointerCleanup = null; }
+        file = null; currentPdf = null; pages = []; edits = []; pdfDoc = null;
+        renderUpload();
+      });
+
       const imageInp = document.createElement('input');
       imageInp.type = 'file';
       imageInp.id = 'etxt-image-inp';
@@ -4420,220 +4598,19 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         reader.readAsDataURL(f);
       };
       container.append(imageInp);
-      const stampPalette = document.createElement('div');
-      stampPalette.className = 'etxt-stamp-palette';
-      stampPalette.id = 'etxt-stamp-palette';
-      stampPalette.hidden = true;
-      container.append(stampPalette);
-      container.querySelectorAll('.etxt-thumb').forEach(btn => {
-        btn.onclick = () => { commitEditor(); page = Number(btn.dataset.page); renderEditor(); };
-      });
-      const prevBtn = container.querySelector('#etxt-prev');
-      if (prevBtn) prevBtn.onclick = () => { commitEditor(); if (page > 1) { page--; renderEditor(); } };
-      const nextBtn = container.querySelector('#etxt-next');
-      if (nextBtn) nextBtn.onclick = () => { commitEditor(); if (page < pageCount) { page++; renderEditor(); } };
-      const zoomIn = container.querySelector('#etxt-zoom-in');
-      if (zoomIn) zoomIn.onclick = () => { commitEditor(); zoom = Math.min(160, zoom + 10); renderEditor(); };
-      const zoomOut = container.querySelector('#etxt-zoom-out');
-      if (zoomOut) zoomOut.onclick = () => { commitEditor(); zoom = Math.max(70, zoom - 10); renderEditor(); };
-      const addBtn = container.querySelector('#etxt-add');
-      if (addBtn) addBtn.onclick = () => container.querySelector('#etxt-add-inp')?.click();
-      const addInp = container.querySelector('#etxt-add-inp');
-      if (addInp) addInp.onchange = e => {
-        const f = e.target.files?.[0]; if (f) pickFile(f);
-      };
-      const scanDis = container.querySelector('#etxt-scanned-dismiss');
-      if (scanDis) {
-        scanDis.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          scannedBannerDismissed = true;
-          const b = container.querySelector('#etxt-scanned-banner');
-          if (b) {
-            b.hidden = true;
-            b.classList.add('is-hidden');
-            b.style.setProperty('display', 'none', 'important');
-          }
-        };
-      }
-      const scanSw = container.querySelector('#etxt-switch-type');
-      if (scanSw) {
-        scanSw.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          scannedBannerDismissed = true;
-          const b = container.querySelector('#etxt-scanned-banner');
-          if (b) {
-            b.hidden = true;
-            b.classList.add('is-hidden');
-            b.style.setProperty('display', 'none', 'important');
-          }
-          activateTool('type');
-        };
-      }
-      const closeBtn = container.querySelector('#etxt-close');
-      if (closeBtn) closeBtn.onclick = () => {
-        commitEditor();
-        file = null; pages = []; edits = []; pdfDoc = null;
-        const stage = container.closest('.app-stage-container');
-        if (stage) stage.classList.remove('spdf-stage-active');
-        renderUpload();
-      };
-      // clicking empty canvas space commits the open editor
-      container.querySelector('.etxt-canvas-wrap').addEventListener('click', e => {
-        if (!e.target.closest('.etxt-text-layer')) commitEditor();
-      });
-      container.querySelector('#etxt-find-replace')?.addEventListener('click', () => openFindReplaceDlg());
-      /* Photo blur brush — paint on the image preview. */
-      const imgCv = container.querySelector('#etxt-img-preview');
-      if (imgCv) {
-        let painting = false;
-        const toImg = (e) => { const r = imgCv.getBoundingClientRect(); const sx = imgCv.width / r.width, sy = imgCv.height / r.height; return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy }; };
-        imgCv.addEventListener('pointerdown', (e) => { if (toolMode !== 'img-blur' || !imgDraft) return; painting = true; try { imgCv.setPointerCapture(e.pointerId); } catch { /* noop */ } const p = toImg(e); blurDraftAt(p.x, p.y); renderImgPreview(); });
-        imgCv.addEventListener('pointermove', (e) => { if (!painting || toolMode !== 'img-blur') return; const p = toImg(e); blurDraftAt(p.x, p.y); renderImgPreview(); });
-        imgCv.addEventListener('pointerup', () => { painting = false; });
-      }
-      // Page Actions in Left Drawer
-      container.querySelectorAll('.etxt-thumb-act').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const act = btn.dataset.act;
-          const pIdx = Number(btn.dataset.p) - 1;
-          if (act === 'rot') {
-            try {
-              const L = await loadLib();
-              const doc = await L.PDFDocument.load(await (currentPdf || file).arrayBuffer(), { ignoreEncryption: true });
-              const pg = doc.getPage(pIdx);
-              pg.setRotation(L.degrees((pg.getRotation().angle + 90) % 360));
-              const savedBytes = await doc.save();
-              currentPdf = new File([savedBytes], file.name, { type: 'application/pdf' });
-              const pdfjs = await loadJs();
-              pdfDoc = await pdfjs.getDocument({ data: savedBytes }).promise;
-              pages[pIdx].thumb = null;
-              pages[pIdx].full = null;
-              renderEditor();
-            } catch (err) {
-              console.warn('[Edit] rotate page error:', err);
-            }
-          } else if (act === 'del') {
-            if (pages.length <= 1) return;
-            try {
-              const L = await loadLib();
-              const doc = await L.PDFDocument.load(await (currentPdf || file).arrayBuffer(), { ignoreEncryption: true });
-              doc.removePage(pIdx);
-              const savedBytes = await doc.save();
-              currentPdf = new File([savedBytes], file.name, { type: 'application/pdf' });
-              const pdfjs = await loadJs();
-              pdfDoc = await pdfjs.getDocument({ data: savedBytes }).promise;
-              pages.splice(pIdx, 1);
-              pageCount = pdfDoc.numPages;
-              if (page > pageCount) page = pageCount;
-              renderEditor();
-            } catch (err) {
-              console.warn('[Edit] delete page error:', err);
-            }
-          } else if (act === 'dup') {
-            try {
-              const L = await loadLib();
-              const doc = await L.PDFDocument.load(await (currentPdf || file).arrayBuffer(), { ignoreEncryption: true });
-              const [copied] = await doc.copyPages(doc, [pIdx]);
-              doc.insertPage(pIdx + 1, copied);
-              const savedBytes = await doc.save();
-              currentPdf = new File([savedBytes], file.name, { type: 'application/pdf' });
-              const pdfjs = await loadJs();
-              pdfDoc = await pdfjs.getDocument({ data: savedBytes }).promise;
-              pages.splice(pIdx + 1, 0, { thumb: null, full: null });
-              pageCount = pdfDoc.numPages;
-              page = pIdx + 2;
-              renderEditor();
-            } catch (err) {
-              console.warn('[Edit] duplicate page error:', err);
-            }
-          }
-        };
-      });
 
-      // Zoom Select & Fit
-      const zoomSel = container.querySelector('#etxt-zoom-select');
-      if (zoomSel) {
-        zoomSel.onchange = () => {
-          commitEditor();
-          zoom = Number(zoomSel.value) || 100;
-          renderEditor();
-        };
-      }
-      const zoomFit = container.querySelector('#etxt-zoom-fit');
-      if (zoomFit) {
-        zoomFit.onclick = () => {
-          commitEditor();
-          zoom = 100;
-          renderEditor();
-        };
-      }
-
-      // Ctrl + Wheel smooth zoom
-      const canvasWrap = container.querySelector('.etxt-canvas-wrap');
-      if (canvasWrap) {
-        canvasWrap.onwheel = (e) => {
-          if (e.ctrlKey) {
-            e.preventDefault();
-            const delta = e.deltaY < 0 ? 10 : -10;
-            const newZoom = Math.max(50, Math.min(200, zoom + delta));
-            if (newZoom !== zoom) {
-              commitEditor();
-              zoom = newZoom;
-              renderEditor();
-            }
-          }
-        };
-      }
-      const dlBtn = container.querySelector('#etxt-download');
-      if (dlBtn) dlBtn.onclick = finishExport;
-      container.querySelector('#etxt-download-png')?.addEventListener('click', () => {
-        if (!imgSrc) return;
-        const base = (file?.name || 'image.png').replace(/\.[^.]+$/, '') + '.png';
-        imgSrc.toBlob((b) => {
-          if (!b) return;
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(b);
-          a.download = base;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        }, 'image/png');
-      });
-      const finBtn = container.querySelector('#etxt-finish');
-      if (finBtn) finBtn.onclick = finishExport;
-      const signBtn = container.querySelector('#etxt-sign');
-      if (signBtn) {
-        signBtn.onclick = async () => {
-          const f = await exportForSign();
-          if (!f) return;
-          window.__ffSharedFile = f;
-          window.FF.app.openTool('pdf-sign', true);
-        };
-      }
-      const shareBtn = container.querySelector('#etxt-share');
-      if (shareBtn) {
-        shareBtn.onclick = () => {
-          window.FF.util.toast('Direct sharing link will be enabled in cloud export. All files process locally!', 'info');
-        };
-      }
-
-      // re-attach cached canvases (thumbs + current page) and render anything missing
-      const wrapEl = container.querySelector('.etxt-canvas-wrap');
-      if (wrapEl) wrapEl.scrollTop = 0;
       wireCachedCanvases();
-      renderThumbsAsync();
-      renderFullPage();
       attachTextHits();
-      renderOptbar();
       renderAnnots();
+      closeDockFlyout();
       setupPointer();
+      renderFullPage();
+      renderThumbsAsync();
     }
 
-    /* ── Real page rendering (pdf.js) ─────────────────── */
     function wireCachedCanvases() {
       container.querySelectorAll('.etxt-thumb').forEach((btn, i) => {
+        btn.onclick = () => goToPage(i + 1);
         const c = pages[i] && pages[i].thumb;
         if (c && !btn.querySelector('canvas')) {
           btn.insertBefore(c, btn.querySelector('.etxt-thumb-num'));
@@ -4657,25 +4634,29 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         curPageW = baseVp.width;
         curPageH = baseVp.height;
         
-        // Calculate fit scale based on viewport and zoom level
-        const availH = Math.max(500, (window.innerHeight || 768) - 150);
+        // Base viewport fit scale (fixed user-space, zoom handled by CSS transform)
+        const availH = Math.max(500, (window.innerHeight || 768) - 140);
         const fitScaleH = availH / baseVp.height;
         const fitScaleW = 680 / baseVp.width;
         const baseScale = Math.min(fitScaleH, fitScaleW, 1.25);
-        const finalScale = baseScale * (zoom / 100);
-        pageScale = finalScale;
+        pageScale = baseScale;
 
-        const c = await renderPageAt(i, finalScale);
+        // Render crisp canvas at base scale * DPR
+        const dpr = Math.min(2.5, window.devicePixelRatio || 2);
+        const c = await renderPageAt(i, baseScale * dpr);
         if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
         pages[i].full = c;
         c.className = 'etxt-full-canvas';
-        const ph = container.querySelector('#etxt-page-ph') || container.querySelector('.etxt-full-canvas');
-        if (ph) ph.replaceWith(c);
+        c.style.width = '100%';
+        c.style.height = '100%';
         
         const pageEl = container.querySelector('.etxt-page');
         if (pageEl) {
-          pageEl.style.width = Math.round(baseVp.width * finalScale) + 'px';
-          pageEl.style.height = Math.round(baseVp.height * finalScale) + 'px';
+          pageEl.style.width = Math.round(baseVp.width * baseScale) + 'px';
+          pageEl.style.height = Math.round(baseVp.height * baseScale) + 'px';
+          const oldCanvas = pageEl.querySelector('.etxt-full-canvas');
+          if (oldCanvas) oldCanvas.replaceWith(c);
+          else pageEl.prepend(c);
         }
       } catch (err) { console.warn('[Edit] page render', err); }
     }
@@ -4720,6 +4701,167 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return pageEl && curPageW ? pageEl.clientWidth / curPageW : 0;
     }
 
+    function clusterTextItems(rawItems, scaledVp, pageScale, styles) {
+      if (!rawItems || !rawItems.length) return [];
+      const P = pageScale > 0 ? pageScale : 1;
+      const parsed = [];
+      for (const item of rawItems) {
+        if (!item || typeof item.str !== 'string') continue;
+        if (!item.str.trim() && (item.width || 0) <= 0) continue;
+
+        const rawSize = Math.hypot(item.transform[2], item.transform[3]) || Math.hypot(item.transform[0], item.transform[1]) || (item.height > 0 ? item.height : 12);
+        const [vx1, vy1] = scaledVp.convertToViewportPoint(item.transform[4], item.transform[5]);
+        const [vx2, vy2] = scaledVp.convertToViewportPoint(item.transform[4] + (item.width || 0), item.transform[5] + rawSize);
+        const left = Math.min(vx1, vx2);
+        const top = Math.min(vy1, vy2);
+        const width = Math.max(1, Math.abs(vx2 - vx1));
+        const height = Math.max(12, Math.abs(vy2 - vy1));
+
+        parsed.push({
+          raw: item,
+          str: item.str,
+          pdfX: item.transform[4],
+          pdfY: item.transform[5],
+          pdfW: item.width || 0,
+          pdfH: item.height || rawSize,
+          fontSizePdf: rawSize,
+          fontSizeVp: Math.max(8, rawSize * P),
+          fontName: item.fontName,
+          left,
+          top,
+          width,
+          height,
+        });
+      }
+
+      if (!parsed.length) return [];
+
+      // Sort top-to-bottom (PDF Y descending), then left-to-right (PDF X ascending)
+      parsed.sort((a, b) => {
+        const dy = b.pdfY - a.pdfY;
+        if (Math.abs(dy) > Math.max(2.5, Math.min(a.fontSizePdf, b.fontSizePdf) * 0.35)) {
+          return dy;
+        }
+        return a.pdfX - b.pdfX;
+      });
+
+      const clusters = [];
+      let curCluster = null;
+
+      for (const p of parsed) {
+        if (!curCluster) {
+          curCluster = {
+            items: [p],
+            baselinePdfY: p.pdfY,
+            fontSizePdf: p.fontSizePdf,
+            minPdfX: p.pdfX,
+            maxPdfX: p.pdfX + p.pdfW,
+            fontName: p.fontName,
+          };
+          continue;
+        }
+
+        const sameY = Math.abs(p.pdfY - curCluster.baselinePdfY) <= Math.max(3.0, curCluster.fontSizePdf * 0.4);
+        const sameSize = Math.abs(p.fontSizePdf - curCluster.fontSizePdf) <= Math.max(4.0, curCluster.fontSizePdf * 0.5);
+        const lastItem = curCluster.items[curCluster.items.length - 1];
+        const lastEnd = lastItem.pdfX + lastItem.pdfW;
+        const gap = p.pdfX - lastEnd;
+        const isConsecutive = sameY && sameSize && (gap <= Math.max(35, curCluster.fontSizePdf * 2.2)) && (gap >= -curCluster.fontSizePdf * 0.8);
+
+        if (isConsecutive) {
+          curCluster.items.push(p);
+          curCluster.maxPdfX = Math.max(curCluster.maxPdfX, p.pdfX + p.pdfW);
+          curCluster.minPdfX = Math.min(curCluster.minPdfX, p.pdfX);
+        } else {
+          clusters.push(curCluster);
+          curCluster = {
+            items: [p],
+            baselinePdfY: p.pdfY,
+            fontSizePdf: p.fontSizePdf,
+            minPdfX: p.pdfX,
+            maxPdfX: p.pdfX + p.pdfW,
+            fontName: p.fontName,
+          };
+        }
+      }
+      if (curCluster) clusters.push(curCluster);
+
+      const hits = [];
+      for (const c of clusters) {
+        let combinedStr = '';
+        for (let i = 0; i < c.items.length; i++) {
+          const it = c.items[i];
+          if (i > 0) {
+            const prev = c.items[i - 1];
+            const gap = it.pdfX - (prev.pdfX + prev.pdfW);
+            if (gap > c.fontSizePdf * 0.15 && !prev.str.endsWith(' ') && !it.str.startsWith(' ')) {
+              combinedStr += ' ';
+            }
+          }
+          combinedStr += it.str;
+        }
+
+        if (!combinedStr.trim()) continue;
+
+        const domFont = c.fontName || c.items[0].fontName;
+        const fontObj = (styles && styles[domFont]) || {};
+        const fn = (domFont || '').toLowerCase();
+        const fontFamDesc = (fontObj.fontFamily || '').toLowerCase();
+
+        let fontFamily = 'Arial, Helvetica, "Segoe UI", sans-serif';
+        if (/times|roman|serif|georgia|garamond|cambria|minion|baskerville/i.test(fn) || fontFamDesc === 'serif') {
+          fontFamily = '"Times New Roman", Times, "Liberation Serif", Georgia, serif';
+        } else if (/courier|mono|typewriter|consolas|menlo|monospace/i.test(fn) || fontFamDesc === 'monospace') {
+          fontFamily = '"Courier New", Courier, "Liberation Mono", Consolas, monospace';
+        } else {
+          fontFamily = 'Arial, Helvetica, "Segoe UI", Roboto, sans-serif';
+        }
+
+        const isBold = /bold|black|heavy|demi|700|800|900/i.test(fn);
+        const isItalic = /italic|oblique|slant|kursiv/i.test(fn);
+        const fontWeight = isBold ? '700' : '400';
+        const fontStyle = isItalic ? 'italic' : 'normal';
+
+        const minLeft = Math.min(...c.items.map(it => it.left));
+        const minTop = Math.min(...c.items.map(it => it.top));
+        const maxRight = Math.max(...c.items.map(it => it.left + it.width));
+        const maxBottom = Math.max(...c.items.map(it => it.top + it.height));
+        const width = Math.max(18, maxRight - minLeft + 3);
+        const height = Math.max(14, maxBottom - minTop + 2);
+        const fontSize = Math.max(8, c.fontSizePdf * P);
+
+        const geom = {
+          left: minLeft,
+          top: minTop,
+          width,
+          height,
+          fontSize,
+          fontFamily,
+          fontWeight,
+          fontStyle,
+          isBold,
+          isItalic,
+          fontName: domFont,
+          pdfX: c.minPdfX,
+          pdfY: c.baselinePdfY,
+          pdfW: c.maxPdfX - c.minPdfX,
+          pdfH: c.fontSizePdf,
+        };
+
+        const clusterItem = {
+          str: combinedStr,
+          rawItems: c.items.map(x => x.raw),
+          transform: c.items[0].raw.transform,
+          width: c.maxPdfX - c.minPdfX,
+          height: c.fontSizePdf,
+          fontName: domFont,
+        };
+
+        hits.push({ raw: clusterItem, item: clusterItem, geom });
+      }
+      return hits;
+    }
+
     async function attachTextHits() {
       const layer = container.querySelector('.etxt-text-layer');
       if (!layer || !pdfDoc) return;
@@ -4727,6 +4869,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         // Keep committed boxes visible, but make the whole layer inert so
         // drawing/annotation tools aren't blocked by hit zones.
         layer.classList.add('etxt-text-layer--off');
+        layer.innerHTML = '';
         for (const e of edits) if (e.pageIdx === page - 1) renderCommittedBox(e);
         return;
       }
@@ -4734,91 +4877,163 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const myDoc = docToken, myPage = page;
       try {
         const pageProxy = await pdfDoc.getPage(page);
-        const vp = pageProxy.getViewport({ scale: 1 });
-        curPageW = vp.width; curPageH = vp.height;
-        pageScale = 660 / curPageW;
+        const baseVp = pageProxy.getViewport({ scale: 1 });
+        curPageW = baseVp.width; curPageH = baseVp.height;
+        const scaledVp = pageProxy.getViewport({ scale: pageScale > 0 ? pageScale : 1 });
         const txt = await pageProxy.getTextContent();
         if (myDoc !== docToken || myPage !== page || !container.contains(layer)) return;
-        const R = pageRatio();
-        if (R <= 0) return;
         layer.innerHTML = '';
-        const meaningfulItems = txt.items.filter(item => item.str && item.str.trim());
+        const meaningfulItems = txt.items.filter(item => item && typeof item.str === 'string' && (item.str.trim() || item.width > 0));
         const scanBanner = container.querySelector('#etxt-scanned-banner');
-        if (scanBanner) {
+        if (scanBanner && !scannedBannerDismissed) {
           scanBanner.style.display = meaningfulItems.length === 0 ? 'inline-flex' : 'none';
+          scanBanner.hidden = meaningfulItems.length > 0;
           const switchBtn = scanBanner.querySelector('#etxt-switch-type');
           if (switchBtn) switchBtn.onclick = () => activateTool('type');
         }
-        for (const item of meaningfulItems) {
-          const h = (item.height || 12) * 1.2;
-          const w = Math.max(8, item.width * R + 4);
-          const x = item.transform[4] * R;
-          const y = (curPageH - item.transform[5] - (item.height || 12)) * R;
-          const edited = edits.some(e => e.pageIdx === page - 1 && e.target === item.str);
+
+        const styles = txt.styles || {};
+        currentHits = clusterTextItems(meaningfulItems, scaledVp, pageScale, styles);
+
+        for (const h of currentHits) {
+          const item = h.item;
+          const geom = h.geom;
+          const edited = edits.some(e => e.pageIdx === page - 1 && (e.target === item.str || (e.geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'etxt-hit' + (edited ? ' etxt-hit--edited' : '');
-          btn.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+          btn.style.cssText = `left:${geom.left.toFixed(1)}px;top:${geom.top.toFixed(1)}px;width:${geom.width.toFixed(1)}px;height:${geom.height.toFixed(1)}px;`;
           btn.title = item.str;
-          btn.onclick = (ev) => { ev.stopPropagation(); openEditor(item); };
+          btn.onclick = (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            openEditor(item, geom);
+          };
           layer.append(btn);
         }
         for (const e of edits) if (e.pageIdx === page - 1) renderCommittedBox(e);
-        const wrapEl = container.querySelector('.etxt-canvas-wrap');
-        if (wrapEl) wrapEl.scrollTop = 0;
       } catch (err) { console.warn('[Edit] text hits', err); }
     }
 
-    function openEditor(item) {
+    function sampleCanvasBgColor(left, top, width, height) {
+      const cv = container.querySelector('.etxt-full-canvas');
+      if (!cv) return '#FFFFFF';
+      try {
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return '#FFFFFF';
+        const dpr = cv.width / (cv.clientWidth || cv.width);
+        const sx1 = Math.max(0, (left - 3) * dpr);
+        const sy1 = Math.max(0, (top - 3) * dpr);
+        const sx2 = Math.min(cv.width - 1, (left + width + 3) * dpr);
+        const sy2 = Math.min(cv.height - 1, (top + height + 3) * dpr);
+        const points = [[sx1, sy1], [sx2, sy1], [sx1, sy2], [sx2, sy2]];
+        let r = 0, g = 0, b = 0, count = 0;
+        for (const [px, py] of points) {
+          const p = ctx.getImageData(Math.round(px), Math.round(py), 1, 1).data;
+          if (p[3] > 20) {
+            r += p[0]; g += p[1]; b += p[2];
+            count++;
+          }
+        }
+        if (count === 0) return '#FFFFFF';
+        return `rgb(${Math.round(r / count)}, ${Math.round(g / count)}, ${Math.round(b / count)})`;
+      } catch {
+        return '#FFFFFF';
+      }
+    }
+
+    function openEditor(item, geom) {
       commitEditor();
       const layer = container.querySelector('.etxt-text-layer');
       if (!layer) return;
-      const existing = edits.find(e => e.pageIdx === page - 1 && e.target === item.str);
+      const existing = edits.find(e => e.pageIdx === page - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
       layer.querySelector('.etxt-text-box')?.remove();
-      const R = pageRatio();
-      const h = (item.height || 12) * 1.2;
+
+      const P = pageScale > 0 ? pageScale : 1;
       const box = document.createElement('div');
       box.className = 'etxt-text-box';
-      const inner = document.createElement('span');
+
+      const inner = document.createElement('div');
       inner.className = 'etxt-text-inner';
       inner.contentEditable = 'true';
       inner.spellcheck = false;
-      inner.textContent = existing ? existing.replacement : item.str;
+      inner.setAttribute('role', 'textbox');
+      inner.setAttribute('aria-multiline', 'true');
+      inner.innerText = existing ? existing.replacement : item.str;
       box.append(inner);
-      const w = Math.max(80, item.width * R + 18);
-      box.style.cssText = `left:${item.transform[4] * R}px;top:${(curPageH - item.transform[5] - (item.height || 12)) * R}px;width:${w}px;min-height:${h}px;font-size:${Math.max(10, (item.height || 12) * R * 0.72)}px`;
-      const okBtn = document.createElement('button');
-      okBtn.type = 'button'; okBtn.className = 'etxt-edit-btn etxt-edit-ok'; okBtn.textContent = '✓';
-      okBtn.title = 'Apply edit';
-      okBtn.onclick = (ev) => { ev.stopPropagation(); commitEditor(); };
-      const xBtn = document.createElement('button');
-      xBtn.type = 'button'; xBtn.className = 'etxt-edit-btn etxt-edit-cx'; xBtn.textContent = '✕';
-      xBtn.title = 'Cancel edit';
-      xBtn.onclick = (ev) => { ev.stopPropagation(); activeEdit = null; box.remove(); attachTextHits(); };
-      box.append(okBtn, xBtn);
+
+      const fontSize = geom ? geom.fontSize : Math.max(8, (item.height || 12) * P);
+      const fontFamily = geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", sans-serif';
+      const fontWeight = geom?.fontWeight || '400';
+      const fontStyle = geom?.fontStyle || 'normal';
+
+      const left = geom ? geom.left : Math.max(0, item.transform[4] * P);
+      const top = geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P);
+      const minW = geom ? Math.max(geom.width, 24) : 40;
+      const minH = geom ? Math.max(geom.height, 14) : 18;
+      const bgColor = sampleCanvasBgColor(left, top, minW, minH);
+
+      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background-color:${bgColor};font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};`;
+      inner.style.cssText = `font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};line-height:1.15;`;
+
       layer.append(box);
-      activeEdit = { item, box };
-      inner.focus();
-      const range = document.createRange(); range.selectNodeContents(inner);
-      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-      box.addEventListener('keydown', ev => {
-        if (ev.key === 'Enter') { ev.preventDefault(); inner.blur(); }
-        else if (ev.key === 'Escape') { ev.preventDefault(); activeEdit = null; box.remove(); attachTextHits(); }
+      activeEdit = { item, box, geom };
+
+      // ── Focus & select all on open ──────────────────────────────────────
+      setTimeout(() => {
+        inner.focus();
+        const range = document.createRange();
+        range.selectNodeContents(inner);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }, 20);
+
+      // ── Keyboard: Enter = commit, Esc = discard ────────────────────────
+      inner.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+          ev.preventDefault();
+          lastCommitTime = Date.now();
+          commitEditor();
+        } else if (ev.key === 'Escape') {
+          ev.preventDefault();
+          lastCommitTime = Date.now();
+          activeEdit = null;
+          box.remove();
+          attachTextHits();
+        }
       });
-      inner.addEventListener('blur', () => { if (activeEdit && activeEdit.box === box) commitEditor(); });
+
+      // ── Blur = commit (with guard: don't fire if click went to optbar) ─
+      const openTime = Date.now();
+      inner.addEventListener('blur', (ev) => {
+        if (Date.now() - openTime < 200) return;
+        const optbar = document.querySelector('#etxt-optbar');
+        if (optbar && ev.relatedTarget && optbar.contains(ev.relatedTarget)) return;
+        setTimeout(() => {
+          if (document.body.contains(box) && activeEdit) commitEditor();
+        }, 150);
+      });
+
+      // Update optbar to reflect "editing" state with edit count
+      renderOptbar();
     }
 
     function commitEditor() {
       if (!activeEdit) return;
-      const { item, box } = activeEdit;
+      const { item, box, geom } = activeEdit;
       activeEdit = null;
+      lastCommitTime = Date.now();
       const inner = box.querySelector('.etxt-text-inner');
-      const replacement = ((inner ? inner.textContent : '') || '').replace(/\s+/g, ' ').trim();
-      const idx = edits.findIndex(e => e.pageIdx === page - 1 && e.target === item.str);
+      const raw = (inner ? (inner.innerText !== undefined ? inner.innerText : inner.textContent) : '') || '';
+      const replacement = raw.split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).join('\n').trim();
+      const idx = edits.findIndex(e => e.pageIdx === page - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
       if (replacement && replacement !== item.str) {
-        const edit = { pageIdx: page - 1, item, target: item.str, replacement };
+        pushUndo();
+        const edit = { pageIdx: page - 1, item, target: item.str, replacement, geom };
         if (idx >= 0) edits[idx] = edit; else edits.push(edit);
       } else if (idx >= 0) {
+        pushUndo();
         edits.splice(idx, 1);   // cleared back to original → drop the edit
       }
       box.remove();
@@ -4828,118 +5043,43 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function renderCommittedBox(e) {
       const layer = container.querySelector('.etxt-text-layer');
       if (!layer) return;
-      const R = pageRatio();
-      const h = (e.item.height || 12) * 1.2;
+      const P = pageScale > 0 ? pageScale : 1;
       const box = document.createElement('div');
       box.className = 'etxt-committed';
-      box.textContent = e.replacement;
-      const w = Math.max(80, e.item.width * R + 18);
-      box.style.cssText = `left:${e.item.transform[4] * R}px;top:${(curPageH - e.item.transform[5] - (e.item.height || 12)) * R}px;width:${w}px;height:${h}px;font-size:${Math.max(10, (e.item.height || 12) * R * 0.72)}px`;
+      box.innerText = e.replacement;
+      const left = e.geom?.left ?? (e.item.transform[4] * P);
+      const top = e.geom?.top ?? ((curPageH - e.item.transform[5] - 12) * P);
+      const minW = e.geom?.width ?? Math.max(20, e.item.width * P);
+      const minH = e.geom?.height ?? Math.max(12, (e.item.height || 12) * P);
+      const fontSize = Math.max(8, e.geom?.fontSize ?? ((e.item.height || 12) * P));
+      const fontFamily = e.geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", sans-serif';
+      const fontWeight = e.geom?.fontWeight || '400';
+      const fontStyle = e.geom?.fontStyle || 'normal';
+      const bgColor = sampleCanvasBgColor(left, top, minW, minH);
+
+      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background-color:${bgColor};font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};line-height:1.15;`;
+      
       const xBtn = document.createElement('button');
-      xBtn.type = 'button'; xBtn.className = 'etxt-commit-x'; xBtn.textContent = '✕';
-      xBtn.onclick = (ev) => { ev.stopPropagation(); edits = edits.filter(x => !(x.pageIdx === e.pageIdx && x.target === e.target)); attachTextHits(); };
+      xBtn.type = 'button';
+      xBtn.className = 'etxt-commit-x';
+      xBtn.innerHTML = '✕';
+      xBtn.title = 'Revert text to original';
+      xBtn.onclick = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        lastCommitTime = Date.now();
+        pushUndo();
+        edits = edits.filter(x => !(x.pageIdx === e.pageIdx && (x.target === e.target || (x.geom && e.geom && Math.abs(x.geom.left - e.geom.left) < 5))));
+        attachTextHits();
+      };
       box.append(xBtn);
-      box.onclick = (ev) => { if (ev.target.closest('.etxt-commit-x')) return; openEditor(e.item); };
+      box.onclick = (ev) => {
+        if (ev.target.closest('.etxt-commit-x')) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        openEditor(e.item, e.geom);
+      };
       layer.append(box);
-    }
-
-    /* ═══════════════════════════════════════════════════════════════════
-       Annotation engine — every real tool draws into this layer and is
-       genuinely rendered into the exported PDF via pdf-lib.
-    ═══════════════════════════════════════════════════════════════════ */
-    function annotCount() {
-      let n = 0;
-      for (const k in annots) n += annots[k].length;
-      return n;
-    }
-
-    function pushUndo() {
-      undoStack.push({ edits: JSON.parse(JSON.stringify(edits)), annots: JSON.parse(JSON.stringify(annots)), cropBox: cropBox ? { ...cropBox } : null });
-      if (undoStack.length > 60) undoStack.shift();
-      redoStack = [];
-    }
-
-    function undo() {
-      if (!undoStack.length) return;
-      redoStack.push({ edits: JSON.parse(JSON.stringify(edits)), annots: JSON.parse(JSON.stringify(annots)), cropBox: cropBox ? { ...cropBox } : null });
-      const s = undoStack.pop();
-      edits = s.edits; annots = s.annots; cropBox = s.cropBox;
-      selAnnot = null; draft = null;
-      renderEditor();
-    }
-
-    function redo() {
-      if (!redoStack.length) return;
-      undoStack.push({ edits: JSON.parse(JSON.stringify(edits)), annots: JSON.parse(JSON.stringify(annots)), cropBox: cropBox ? { ...cropBox } : null });
-      const s = redoStack.pop();
-      edits = s.edits; annots = s.annots; cropBox = s.cropBox;
-      selAnnot = null; draft = null;
-      renderEditor();
-    }
-
-    function addAnnot(annot) {
-      const idx = page - 1;
-      if (!annots[idx]) annots[idx] = [];
-      annot.id = 'a' + (annotSeq++);
-      annot.pageIdx = idx;
-      annots[idx].push(annot);
-      return annot;
-    }
-
-    function removeAnnot(id) {
-      const idx = page - 1;
-      if (!annots[idx]) return;
-      annots[idx] = annots[idx].filter(a => a.id !== id);
-      if (selAnnot === id) selAnnot = null;
-      renderAnnots();
-    }
-
-    function normRect(p, c) {
-      return { x: Math.min(p.x, c.x), y: Math.min(p.y, c.y), w: Math.abs(c.x - p.x), h: Math.abs(c.y - p.y) };
-    }
-
-    function pageGeom() {
-      const el = container.querySelector('.etxt-page');
-      const r = el.getBoundingClientRect();
-      return { el, r, z: zoom / 100 };
-    }
-
-    function toUser(clientX, clientY) {
-      const { r, z } = pageGeom();
-      return { x: (clientX - r.left) / (pageScale * z), y: (clientY - r.top) / (pageScale * z) };
-    }
-
-    function userToCss(x, y) { return { x: x * pageScale, y: y * pageScale }; }
-
-    function hexToRgbObj(hex) {
-      const h = String(hex || '#111827').replace('#', '');
-      const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
-      return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
-    }
-
-    function smoothPath(pts) {
-      if (!pts.length) return '';
-      let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
-      for (let i = 1; i < pts.length - 1; i++) {
-        const mx = (pts[i][0] + pts[i + 1][0]) / 2;
-        const my = (pts[i][1] + pts[i + 1][1]) / 2;
-        d += ` Q ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
-      }
-      const last = pts[pts.length - 1];
-      d += ` L ${last[0].toFixed(2)} ${last[1].toFixed(2)}`;
-      return d;
-    }
-
-    function squigglePath(x, y, w) {
-      const amp = 2.2, step = 5;
-      let d = '';
-      let up = true;
-      for (let px = 0; px <= w; px += step) {
-        const yy = y + (up ? -amp : amp);
-        d += (px === 0 ? 'M ' : ' L ') + (x + px).toFixed(2) + ' ' + yy.toFixed(2);
-        up = !up;
-      }
-      return d;
     }
 
     /* ── Render all annotations for the current page ── */
@@ -4952,7 +5092,35 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       for (const a of list) {
         const el = annotToEl(a);
         if (el) {
-          if (a.id === selAnnot) el.classList.add('etxt-sel');
+          if (a.id === selAnnot) {
+            el.classList.add('etxt-sel');
+            if (a.kind === 'signature' || a.type === 'stamp' || a.type === 'img' || a.type === 'shape') {
+              const pop = document.createElement('div');
+              pop.className = 'etxt-annot-popover';
+              if (a.kind === 'signature') {
+                pop.innerHTML = `
+                  <button type="button" class="etxt-annot-pop-btn" data-annot-act="edit" title="Change / Re-draw Signature">🖊️ Change</button>
+                  <span class="etxt-annot-pop-sep"></span>
+                  <button type="button" class="etxt-annot-swatch" data-annot-color="#0F172A" style="background:#0F172A;" title="Black"></button>
+                  <button type="button" class="etxt-annot-swatch" data-annot-color="#1E3A8A" style="background:#1E3A8A;" title="Navy Blue"></button>
+                  <button type="button" class="etxt-annot-swatch" data-annot-color="#334155" style="background:#334155;" title="Charcoal"></button>
+                  <span class="etxt-annot-pop-sep"></span>
+                  <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate Signature">Duplicate</button>
+                  <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete Signature">✕</button>
+                `;
+              } else {
+                pop.innerHTML = `
+                  <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate">Duplicate</button>
+                  <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete">✕</button>
+                `;
+              }
+              const handle = document.createElement('div');
+              handle.className = 'etxt-annot-handle etxt-annot-handle-se';
+              handle.dataset.handle = 'se';
+              handle.title = 'Drag to Resize';
+              el.append(pop, handle);
+            }
+          }
           layer.append(el);
         }
       }
@@ -5041,20 +5209,61 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         return svg;
       }
       if (a.type === 'text') {
+        const isSel = (a.id === selAnnot);
+        el.className = 'etxt-a etxt-a-text' + (isSel ? ' is-selected' : '');
+        el.dataset.id = a.id;
         el.textContent = a.text;
-        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;font-size:${(a.size * P * 0.72).toFixed(1)}px;color:${a.color || '#111827'};`;
-        el.style.fontWeight = '600';
-        el.style.lineHeight = '1.2';
+        const fontFam = /times|serif|roman/i.test(a.font) ? 'Times New Roman, Georgia, serif' : (/courier|mono/i.test(a.font) ? 'Courier New, Consolas, monospace' : 'Inter, system-ui, sans-serif');
+        const fontSize = (a.size * P * 0.72).toFixed(1);
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;font-size:${fontSize}px;color:${a.color || '#111827'};font-family:${fontFam};font-weight:${a.isBold ? '700' : '500'};font-style:${a.isItalic ? 'italic' : 'normal'};text-align:${a.align || 'left'};line-height:1.25;`;
+
+        if (isSel) {
+          const nw = document.createElement('span'); nw.className = 'etxt-handle etxt-handle-nw';
+          const ne = document.createElement('span'); ne.className = 'etxt-handle etxt-handle-ne';
+          const se = document.createElement('span'); se.className = 'etxt-handle etxt-handle-se';
+          const sw = document.createElement('span'); sw.className = 'etxt-handle etxt-handle-sw';
+          el.append(nw, ne, se, sw);
+        }
+
+        el.ondblclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openTypeBoxAt(a.x * P, a.y * P, a);
+        };
+
+        return el;
+      }
+      if (a.type === 'redact') {
+        el.className = 'etxt-a etxt-a-redact';
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;background:${a.color || '#000000'};border:${a.color === '#FFFFFF' ? '1px dashed #CBD5E1' : 'none'};`;
+        return el;
+      }
+      if (a.type === 'note') {
+        el.className = 'etxt-a etxt-a-note';
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${Math.max(120, (a.w || 140) * P).toFixed(1)}px;min-height:${Math.max(60, (a.h || 80) * P).toFixed(1)}px;background:${a.color || '#FEF3C7'};`;
+        el.innerHTML = `<div class="etxt-note-header"><span class="etxt-note-pin">${I.pin}</span><button type="button" class="etxt-note-x" title="Delete note">${I.x}</button></div><div class="etxt-note-body" contenteditable="true" spellcheck="false">${_esc(a.text || 'Add note...')}</div>`;
+        const xBtn = el.querySelector('.etxt-note-x');
+        if (xBtn) xBtn.onclick = (ev) => { ev.stopPropagation(); pushUndo(); removeAnnot(a.id); };
+        const body = el.querySelector('.etxt-note-body');
+        if (body) {
+          body.onblur = () => {
+            const t = body.innerText.trim();
+            if (t && t !== a.text) { pushUndo(); a.text = t; }
+          };
+        }
+        return el;
+      }
+      if (a.type === 'stamp-text') {
+        el.className = 'etxt-a etxt-a-stamp-custom';
+        el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;color:${a.color || '#2563EB'};border:2.5px solid ${a.color || '#2563EB'};`;
+        el.innerHTML = `<span class="etxt-stamp-txt">${_esc(a.text)}</span>`;
         return el;
       }
       if (a.type === 'img') {
-        const img = document.createElement('img');
-        img.src = a.dataUrl;
-        img.alt = a.name || 'image';
-        img.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;object-fit:contain;`;
-        img.className = 'etxt-a etxt-a-img';
-        img.dataset.id = a.id;
-        return img;
+        el.className = 'etxt-a etxt-a-img';
+        el.style.cssText = `position:absolute;left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;cursor:move;`;
+        el.innerHTML = `<img src="${a.dataUrl}" alt="${_esc(a.name || 'image')}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;display:block;">`;
+        return el;
       }
       if (a.type === 'link') {
         el.textContent = a.url;
@@ -5064,44 +5273,38 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
       if (a.type === 'stamp') {
         if (a.kind === 'signature') {
-          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('class', 'etxt-a-signature');
-          svg.setAttribute('viewBox', '0 0 100 40');
-          svg.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
-          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          path.setAttribute('d', smoothPath((a.points || []).map(p => [p.x * 100, p.y * 40])));
-          path.setAttribute('fill', 'none');
-          path.setAttribute('stroke', '#1D4ED8');
-          path.setAttribute('stroke-width', '2.4');
-          path.setAttribute('stroke-linecap', 'round');
-          path.setAttribute('stroke-linejoin', 'round');
-          svg.append(path);
-          return svg;
+          el.classList.add('etxt-a-signature');
+          if (a.sigType === 'type') {
+            el.textContent = a.text || 'Signature';
+            el.style.cssText = `position:absolute;left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;font-family:${a.font || "'Dancing Script', cursive"};font-size:${((a.size || 26) * P).toFixed(1)}px;color:${a.color || '#0F172A'};display:flex;align-items:center;white-space:nowrap;user-select:none;cursor:move;`;
+            el.classList.add('etxt-a-signature-type');
+          } else if ((a.sigType === 'image' || a.sigType === 'draw') && a.dataUrl) {
+            el.innerHTML = `<img src="${a.dataUrl}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;display:block;">`;
+            el.style.cssText = `position:absolute;left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;pointer-events:auto;user-select:none;cursor:move;`;
+            el.classList.add('etxt-a-signature-img');
+          } else {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 100 40');
+            svg.style.cssText = `width:100%;height:100%;pointer-events:none;display:block;`;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', smoothPath((a.points || []).map(p => [p.x * 100, p.y * 40])));
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', a.color || '#0F172A');
+            path.setAttribute('stroke-width', '2.4');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            svg.append(path);
+            el.style.cssText = `position:absolute;left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;cursor:move;`;
+            el.append(svg);
+          }
+          return el;
         }
         el.textContent = a.text || (a.kind || '').toUpperCase();
         el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
         el.classList.add('etxt-a-stamp-' + (a.kind || 'approved'));
         return el;
       }
-      if (a.type === 'wm') {
-        el.textContent = a.text;
-        el.style.cssText = `left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${(a.size * P).toFixed(1)}px;color:${a.color || '#94A3B8'};opacity:${a.opacity ?? 0.12};transform:rotate(${a.rotation || 0}deg);`;
-        el.style.fontWeight = '800';
-        el.style.letterSpacing = '2px';
-        el.style.pointerEvents = 'none';
-        return el;
-      }
-      if (a.type === 'pagenum') {
-        const pageNo = (a.pageIdx ?? 0) + 1;
-        const total = pageCount || 1;
-        el.textContent = a.format ? a.format.replace('{n}', String(pageNo)).replace('{t}', String(total)) : String(pageNo);
-        const y = a.align === 'top' ? a.y : curPageH - a.y;
-        el.style.cssText = `left:0;top:${(y * P).toFixed(1)}px;width:100%;text-align:${a.align === 'center' ? 'center' : a.align === 'right' ? 'right' : 'left'};padding:0 ${(14 * P).toFixed(1)}px;font-size:${(a.size * P * 0.72).toFixed(1)}px;color:${a.color || '#475569'};`;
-        el.style.fontWeight = '600';
-        el.style.pointerEvents = 'none';
-        return el;
-      }
-      return null;
+      return el;
     }
 
     /* ── Crop overlay ── */
@@ -5111,7 +5314,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       layer.innerHTML = '';
       if (toolMode !== 'crop' || !cropBox) { layer.hidden = true; return; }
       layer.hidden = false;
-      const P = pageScale;
+      const P = pageScale > 0 ? pageScale : 1;
       const box = document.createElement('div');
       box.className = 'etxt-crop-box';
       box.style.cssText = `left:${(cropBox.x * P).toFixed(1)}px;top:${(cropBox.y * P).toFixed(1)}px;width:${(cropBox.w * P).toFixed(1)}px;height:${(cropBox.h * P).toFixed(1)}px;`;
@@ -5460,52 +5663,212 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
 
+    function closeDockFlyout() {
+      const bar = container.querySelector('#etxt-dock-flyout');
+      if (bar) {
+        bar.hidden = true;
+        bar.classList.add('is-hidden');
+      }
+    }
+
+    function closeDockFlyout() {
+      const flyout = container.querySelector('#etxt-dock-flyout');
+      if (flyout) {
+        flyout.hidden = true;
+        flyout.classList.add('is-hidden');
+      }
+    }
+
     function renderOptbar() {
-      const bar = container.querySelector('#etxt-optbar');
+      const bar = container.querySelector('#etxt-dock-flyout') || container.querySelector('#etxt-optbar');
       if (!bar) return;
       let html = '';
-      if (toolMode === 'draw' || toolMode === 'highlight') {
-        html = `<span class="etxt-opt-label">Mode</span>
-          <button type="button" class="etxt-photo-chip${toolMode==='draw'?' is-on':''}" id="etxt-sub-draw">${I.pen} Pen</button>
-          <button type="button" class="etxt-photo-chip${toolMode==='highlight'?' is-on':''}" id="etxt-sub-hl">${I.highlight} Highlighter</button>
-          <span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-label">Color</span>
-          ${(toolMode==='highlight' ? HL_COLORS : COLOR_SWATCHES).map(c => `<button type="button" class="etxt-swatch${(toolMode==='highlight'?toolOpts.hlColor:toolOpts.color) === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
-          <span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-label">Stroke</span>
-          ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}`;
+
+      if (toolMode === 'edit-text') {
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Edit Document Text</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Search & Actions</span>
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip" id="etxt-flyout-find-btn">${I.find} <span>Find & Replace</span></button>
+            </div>
+          </div>
+          <div class="etxt-flyout-hint">Click on any text in the PDF to select, edit, replace or format it directly.</div>`;
+      } else if (toolMode === 'draw' || toolMode === 'highlight') {
+        const curC = toolMode === 'highlight' ? toolOpts.hlColor : toolOpts.color;
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">${toolMode === 'highlight' ? 'Highlighter' : 'Pen & Draw'}</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip${toolMode==='draw'?' is-on':''}" id="etxt-sub-draw">${I.pen} <span>Pen</span></button>
+              <button type="button" class="etxt-photo-chip${toolMode==='highlight'?' is-on':''}" id="etxt-sub-hl">${I.highlight} <span>Highlighter</span></button>
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Color</span>
+            <div class="etxt-swatch-group">
+              ${(toolMode==='highlight' ? HL_COLORS : COLOR_SWATCHES).map(c => `<button type="button" class="etxt-swatch${curC === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${curC}" title="Choose custom color">
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Stroke Width</span>
+            <div class="etxt-opt-track">
+              ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}
+            </div>
+          </div>`;
       } else if (toolMode === 'shape') {
-        html = `<span class="etxt-opt-label">Shape</span>
-          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect">${I.rect || 'Rect'}</button>
-          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse">${I.ellipse || 'Circle'}</button>
-          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line">${I.line || 'Line'}</button>
-          <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow">${I.arr || 'Arrow'}</button>
-          <span class="etxt-opt-sep"></span>
-          ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.shapeColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
-          <span class="etxt-opt-sep"></span>
-          ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.shapeStroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}`;
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Shapes</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-opt-track">
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect" title="Rectangle">${I.rect || 'Rectangle'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse" title="Circle">${I.ellipse || 'Circle'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line" title="Line">${I.line || 'Line'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow" title="Arrow">${I.arr || 'Arrow'}</button>
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Color</span>
+            <div class="etxt-swatch-group">
+              ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.shapeColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${toolOpts.shapeColor}" title="Choose custom shape color">
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Border Width</span>
+            <div class="etxt-opt-track">
+              ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.shapeStroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}
+            </div>
+          </div>`;
       } else if (toolMode === 'redact') {
-        html = `<span class="etxt-opt-label">Redaction Type</span>
-          <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#000000'?' is-on':''}" data-rc="#000000">⬛ Blackout</button>
-          <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#FFFFFF'?' is-on':''}" data-rc="#FFFFFF">⬜ Whiteout</button>
-          <span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-hint" style="color:#64748B;">Drag over sensitive areas to redact permanently</span>`;
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Redaction</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-opt-track">
+              <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#000000'?' is-on':''}" data-rc="#000000">⬛ <span>Blackout</span></button>
+              <button type="button" class="etxt-photo-chip${toolOpts.redactColor==='#FFFFFF'?' is-on':''}" data-rc="#FFFFFF">⬜ <span>Whiteout</span></button>
+            </div>
+          </div>
+          <div class="etxt-flyout-hint">Drag across sensitive content to permanently redact.</div>`;
       } else if (toolMode === 'type') {
-        html = `<span class="etxt-opt-label">Text Color</span>
-          ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.textColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
-          <span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-label">Size</span>
-          <button type="button" class="etxt-size-btn" data-d="-2">A−</button>
-          <span class="etxt-opt-size">${toolOpts.textSize}pt</span>
-          <button type="button" class="etxt-size-btn" data-d="2">A+</button>`;
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Text Box</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <select class="etxt-font-select" id="etxt-font-family" title="Font family">
+              <option value="Helvetica"${toolOpts.textFont==='Helvetica'?' selected':''}>Sans-Serif (Helvetica)</option>
+              <option value="Times"${toolOpts.textFont==='Times'?' selected':''}>Serif (Times Roman)</option>
+              <option value="Courier"${toolOpts.textFont==='Courier'?' selected':''}>Monospace (Courier)</option>
+            </select>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-opt-track">
+              <button type="button" class="etxt-fmt-btn${toolOpts.isBold?' is-on':''}" id="etxt-font-bold" title="Toggle Bold"><b>B</b></button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.isItalic?' is-on':''}" id="etxt-font-italic" title="Toggle Italic"><i>I</i></button>
+              <span class="etxt-vsep" style="height:14px;margin:0 2px;"></span>
+              <button type="button" class="etxt-fmt-btn${(toolOpts.textAlign||'left')==='left'?' is-on':''}" data-align="left" title="Align Left">⯈</button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.textAlign==='center'?' is-on':''}" data-align="center" title="Align Center">≡</button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.textAlign==='right'?' is-on':''}" data-align="right" title="Align Right">⯇</button>
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Size</span>
+            <div class="etxt-size-capsule">
+              <button type="button" class="etxt-size-btn" data-d="-2" title="Decrease font size">−</button>
+              <span class="etxt-opt-size">${toolOpts.textSize || 14}pt</span>
+              <button type="button" class="etxt-size-btn" data-d="2" title="Increase font size">+</button>
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Color</span>
+            <div class="etxt-swatch-group">
+              ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.textColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${toolOpts.textColor || '#111827'}" title="Choose custom text color">
+            </div>
+          </div>`;
       } else if (toolMode === 'image' || toolMode === 'stamp' || toolMode === 'note') {
-        const STAMPS = ['APPROVED', 'CONFIDENTIAL', 'DRAFT', 'PAID', 'VOID'];
-        html = `<span class="etxt-opt-label">Insert</span>
-          <button type="button" class="etxt-photo-chip" id="etxt-pick-img-btn">${I.image} Upload Image</button>
-          <button type="button" class="etxt-photo-chip" id="etxt-add-note-btn">${I.note} Add Note</button>
-          <span class="etxt-opt-sep"></span>
-          <span class="etxt-opt-label">Stamps:</span>
-          ${STAMPS.map(s => `<button type="button" class="etxt-photo-chip etxt-stamp-btn" data-stamp="${s}">${s}</button>`).join('')}`;
+        const STAMPS = ['APPROVED', 'CONFIDENTIAL', 'DRAFT', 'PAID', 'VOID', 'VERIFIED', 'URGENT', 'FINAL'];
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Insert Asset</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip" id="etxt-pick-img-btn">${I.image} <span>Image</span></button>
+              <button type="button" class="etxt-photo-chip${toolMode==='note'?' is-on':''}" id="etxt-add-note-btn">${I.note} <span>Note</span></button>
+            </div>
+          </div>
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Rubber Stamps</span>
+            <div class="etxt-stamp-grid">
+              ${STAMPS.map(s => `<button type="button" class="etxt-photo-chip etxt-stamp-btn" data-stamp="${s}">${s}</button>`).join('')}
+            </div>
+          </div>`;
+      } else if (toolMode === 'sign') {
+        const saved = getSavedSignature();
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Signature</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip is-on" id="etxt-flyout-sign-btn">${I.sign} <span>Create / Place Sign</span></button>
+            </div>
+            ${saved ? `<button type="button" class="etxt-photo-chip" id="etxt-place-saved-sig" style="margin-top:4px;width:100%;justify-content:center;">Place Saved Signature</button>` : ''}
+          </div>
+          <div class="etxt-flyout-hint">Click anywhere on the document to place your signature.</div>`;
+      } else if (toolMode === 'crop') {
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Crop Margins</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip is-on" id="etxt-crop-apply">${I.crop || ''} <span>Apply Crop</span></button>
+              <button type="button" class="etxt-photo-chip" id="etxt-crop-clear">${I.undo || ''} <span>Reset</span></button>
+            </div>
+          </div>
+          <div class="etxt-flyout-hint">Drag handles on the document stage to crop margin boundaries.</div>`;
+      } else if (toolMode === 'watermark') {
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Watermark</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip is-on" id="etxt-flyout-wm-btn">💧 <span>Watermark Setup</span></button>
+            </div>
+          </div>`;
+      } else if (toolMode === 'pagenum') {
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Page Numbers</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip is-on" id="etxt-flyout-pgn-btn"># <span>Page Numbers Setup</span></button>
+            </div>
+          </div>`;
+      } else if (toolMode === 'form-fill') {
+        html = `
+          <div class="etxt-flyout-head">
+            <span class="etxt-flyout-title">Form Fill & Fields</span>
+          </div>
+          <div class="etxt-flyout-section">
+            <div class="etxt-flyout-row">
+              <button type="button" class="etxt-photo-chip is-on" id="etxt-flyout-ff-btn">📋 <span>Interactive Form</span></button>
+            </div>
+          </div>`;
       }
 
       if (html) {
@@ -5518,24 +5881,103 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         bar.innerHTML = '';
       }
 
+      // Flyout event wiring
       const subDraw = bar.querySelector('#etxt-sub-draw');
       if (subDraw) subDraw.onclick = () => activateTool('draw');
       const subHl = bar.querySelector('#etxt-sub-hl');
       if (subHl) subHl.onclick = () => activateTool('highlight');
+      const findBtn = bar.querySelector('#etxt-flyout-find-btn');
+      if (findBtn) findBtn.onclick = () => { closeDockFlyout(); openFindReplaceDlg(); };
+      const flySign = bar.querySelector('#etxt-flyout-sign-btn');
+      if (flySign) flySign.onclick = () => { closeDockFlyout(); openAcrobatSignatureModal(); };
+      const flyWm = bar.querySelector('#etxt-flyout-wm-btn');
+      if (flyWm) flyWm.onclick = () => { closeDockFlyout(); openWatermarkDlg(); };
+      const flyPgn = bar.querySelector('#etxt-flyout-pgn-btn');
+      if (flyPgn) flyPgn.onclick = () => { closeDockFlyout(); openPagenumDlg(); };
+      const flyFf = bar.querySelector('#etxt-flyout-ff-btn');
+      if (flyFf) flyFf.onclick = () => { closeDockFlyout(); openFormDlg(); };
+
       const pickImg = bar.querySelector('#etxt-pick-img-btn');
       if (pickImg) pickImg.onclick = () => {
         dragType = { x: curPageW / 2 - 100, y: curPageH / 2 - 75 };
+        closeDockFlyout();
         container.querySelector('#etxt-image-inp')?.click();
       };
       const addNote = bar.querySelector('#etxt-add-note-btn');
-      if (addNote) addNote.onclick = () => activateTool('note');
-      if (html) {
-        bar.innerHTML = html;
-        bar.hidden = false;
-      } else {
-        bar.hidden = true;
-        bar.innerHTML = '';
+      if (addNote) addNote.onclick = () => {
+        activateTool('note');
+        closeDockFlyout();
+      };
+      const placeSaved = bar.querySelector('#etxt-place-saved-sig');
+      if (placeSaved) placeSaved.onclick = () => {
+        const saved = getSavedSignature();
+        if (saved) {
+          pushUndo();
+          const newAnnot = {
+            id: Math.random().toString(36).slice(2, 9),
+            type: 'stamp',
+            kind: 'signature',
+            sigType: saved.type,
+            text: saved.text,
+            font: saved.font,
+            points: saved.points,
+            strokePaths: saved.strokePaths,
+            dataUrl: saved.dataUrl,
+            color: saved.color || '#0F172A',
+            x: curPageW / 2 - (saved.w || 150) / 2,
+            y: curPageH / 2 - (saved.h || 56) / 2,
+            w: saved.w || 150,
+            h: saved.h || 56
+          };
+          addAnnot(newAnnot);
+          selAnnot = newAnnot.id;
+          renderAnnots();
+          closeDockFlyout();
+          toolMode = 'select';
+          renderEditor();
+          toast('Signature placed! Drag to reposition or resize.');
+        }
+      };
+
+      const fontSelect = bar.querySelector('#etxt-font-family');
+      if (fontSelect) fontSelect.onchange = () => {
+        toolOpts.textFont = fontSelect.value;
+        if (selAnnot) updateSelectedText({ font: fontSelect.value });
+      };
+      const fontBold = bar.querySelector('#etxt-font-bold');
+      if (fontBold) fontBold.onclick = () => {
+        toolOpts.isBold = !toolOpts.isBold;
+        if (selAnnot) updateSelectedText({ isBold: toolOpts.isBold });
+        renderOptbar();
+      };
+      const fontItalic = bar.querySelector('#etxt-font-italic');
+      if (fontItalic) fontItalic.onclick = () => {
+        toolOpts.isItalic = !toolOpts.isItalic;
+        if (selAnnot) updateSelectedText({ isItalic: toolOpts.isItalic });
+        renderOptbar();
+      };
+      bar.querySelectorAll('[data-align]').forEach(b => {
+        b.onclick = () => {
+          toolOpts.textAlign = b.dataset.align;
+          if (selAnnot) updateSelectedText({ align: b.dataset.align });
+          renderOptbar();
+        };
+      });
+
+      const colPicker = bar.querySelector('#etxt-color-picker');
+      if (colPicker) {
+        colPicker.oninput = () => {
+          if (toolMode === 'draw') toolOpts.color = colPicker.value;
+          else if (toolMode === 'highlight') toolOpts.hlColor = colPicker.value;
+          else if (toolMode === 'shape') toolOpts.shapeColor = colPicker.value;
+          else if (toolMode === 'type') {
+            toolOpts.textColor = colPicker.value;
+            if (selAnnot) updateSelectedText({ color: colPicker.value });
+          }
+          renderOptbar();
+        };
       }
+
       bar.querySelectorAll('[data-rc]').forEach(b => {
         b.onclick = () => { toolOpts.redactColor = b.dataset.rc; renderOptbar(); };
       });
@@ -5553,14 +5995,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             color: text === 'APPROVED' || text === 'VERIFIED' ? '#059669' : (text === 'CONFIDENTIAL' || text === 'VOID' ? '#DC2626' : '#2563EB')
           });
           renderAnnots();
+          closeDockFlyout();
         };
       });
       bar.querySelectorAll('.etxt-swatch').forEach(b => {
         b.onclick = () => {
           if (toolMode === 'draw') toolOpts.color = b.dataset.c;
-          else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') toolOpts.hlColor = b.dataset.c;
+          else if (toolMode === 'highlight') toolOpts.hlColor = b.dataset.c;
           else if (toolMode === 'shape') toolOpts.shapeColor = b.dataset.c;
-          else if (toolMode === 'type') toolOpts.textColor = b.dataset.c;
+          else if (toolMode === 'type') {
+            toolOpts.textColor = b.dataset.c;
+            if (selAnnot) updateSelectedText({ color: b.dataset.c });
+          }
           renderOptbar();
         };
       });
@@ -5575,42 +6021,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         b.onclick = () => { toolOpts.shapeKind = b.dataset.k; renderOptbar(); };
       });
       bar.querySelectorAll('.etxt-size-btn').forEach(b => {
-        b.onclick = () => { toolOpts.textSize = Math.max(8, Math.min(72, toolOpts.textSize + Number(b.dataset.d))); renderOptbar(); };
-      });
-      const applyBtn = bar.querySelector('#etxt-crop-apply');
-      if (applyBtn) applyBtn.onclick = () => { pushUndo(); toolMode = 'select'; renderEditor(); };
-      const clearBtn = bar.querySelector('#etxt-crop-clear');
-      if (clearBtn) clearBtn.onclick = () => { pushUndo(); cropBox = null; renderEditor(); };
-
-      /* ── Photo tool controls ── */
-      const setImg = (path, v) => {
-        const [g, k] = path.split('.');
-        imgOpts[g][k] = v;
-        if (g === 'bg' && k === 'tol') { const lab = bar.querySelector('.etxt-opt-val'); if (lab) lab.textContent = v; }
-        renderImgPreview();
-      };
-      bar.querySelectorAll('input[data-img]').forEach(inp => {
-        inp.oninput = () => {
-          const v = inp.type === 'checkbox' ? inp.checked : Number(inp.value);
-          if (inp.dataset.img === 'brush.size') { imgBrush.size = v; renderImgPreview(); const lab = inp.nextElementSibling; if (lab) lab.textContent = v + 'px'; return; }
-          if (inp.type === 'color') setImg(inp.dataset.img, inp.value);
-          else { setImg(inp.dataset.img, v); const lab = inp.nextElementSibling; if (lab && lab.classList.contains('etxt-opt-val')) lab.textContent = inp.type === 'range' && inp.dataset.img === 'filt.amount' ? v + '%' : (v > 0 ? '+' : '') + v; }
+        b.onclick = () => {
+          toolOpts.textSize = Math.max(8, Math.min(72, (toolOpts.textSize || 14) + Number(b.dataset.d)));
+          if (selAnnot) updateSelectedText({ size: toolOpts.textSize });
+          renderOptbar();
         };
       });
-      bar.querySelector('#etxt-auto-enhance')?.addEventListener('click', () => autoEnhance());
-      bar.querySelector('#etxt-ai-bg')?.addEventListener('click', () => aiRemoveBg());
-      bar.querySelectorAll('.etxt-photo-chip[data-f]').forEach(b => {
-        b.onclick = () => { imgOpts.filt.id = b.dataset.f; renderOptbar(); renderImgPreview(); };
-      });
-      bar.querySelectorAll('.etxt-photo-chip[data-duo]').forEach(b => {
-        b.onclick = () => { imgOpts.eff.duotone = b.dataset.duo; renderOptbar(); renderImgPreview(); };
-      });
-      bar.querySelectorAll('.etxt-swatch[data-bc]').forEach(b => {
-        b.onclick = () => { imgOpts.eff.borderColor = b.dataset.c; renderOptbar(); renderImgPreview(); };
-      });
-      bar.querySelector('.etxt-photo-apply')?.addEventListener('click', () => applyImgTools());
-      bar.querySelector('.etxt-photo-reset')?.addEventListener('click', () => resetImgTools());
+      const applyBtn = bar.querySelector('#etxt-crop-apply');
+      if (applyBtn) applyBtn.onclick = () => { pushUndo(); toolMode = 'select'; closeDockFlyout(); renderEditor(); };
+      const clearBtn = bar.querySelector('#etxt-crop-clear');
+      if (clearBtn) clearBtn.onclick = () => { pushUndo(); cropBox = null; closeDockFlyout(); renderEditor(); };
     }
+
 
     /* ── Pointer interaction ── */
     function startDrag(e) {
@@ -5720,14 +6142,76 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function setupPointer() {
+      if (typeof pointerCleanup === 'function') {
+        pointerCleanup();
+        pointerCleanup = null;
+      }
       const wrap = container.querySelector('.etxt-canvas-wrap');
       const page = container.querySelector('.etxt-page');
       if (!wrap || !page) return;
       let panStart = null;
       let selDrag = null;
+      let resizeDrag = null;
       let moved = false;
+      let spaceDown = false;
+
       const down = (e) => {
-        if (activeDialog) return;
+        if (activeDialog || document.querySelector('.etxt-dialog:not([hidden])')) return;
+
+        // 1. Popover actions on selected signature/annotation
+        const popBtn = e.target.closest('.etxt-annot-pop-btn, .etxt-annot-swatch');
+        if (popBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const list = annots[page - 1] || [];
+          const a = list.find(x => x.id === selAnnot);
+          if (!a) return;
+          const act = popBtn.dataset.annotAct;
+          if (act === 'del') {
+            pushUndo();
+            removeAnnot(selAnnot);
+            selAnnot = null;
+            renderAnnots();
+          } else if (act === 'dup') {
+            pushUndo();
+            const dup = { ...JSON.parse(JSON.stringify(a)), id: Math.random().toString(36).slice(2, 9), x: a.x + 20, y: a.y + 20 };
+            addAnnot(dup);
+            selAnnot = dup.id;
+            renderAnnots();
+            toast('Signature duplicated! Drag to position.');
+          } else if (act === 'edit') {
+            openAcrobatSignatureModal({ x: a.x, y: a.y }, a);
+          } else if (popBtn.dataset.annotColor) {
+            pushUndo();
+            a.color = popBtn.dataset.annotColor;
+            renderAnnots();
+          }
+          return;
+        }
+
+        // 2. Corner resize handle interaction
+        const handleEl = e.target.closest('.etxt-annot-handle');
+        if (handleEl) {
+          e.preventDefault();
+          e.stopPropagation();
+          const list = annots[page - 1] || [];
+          const a = list.find(x => x.id === selAnnot);
+          if (a) {
+            const startU = toUser(e.clientX, e.clientY);
+            resizeDrag = { id: a.id, startX: startU.x, startY: startU.y, initW: a.w, initH: a.h, ratio: a.w / Math.max(1, a.h), moved: false };
+          }
+          return;
+        }
+
+        if (e.target.closest('.etxt-hit, .etxt-text-box, .etxt-committed, .etxt-type-box, .etxt-a-note, .etxt-edit-btn, .etxt-commit-x, select, button, input, .etxt-stamp-palette, .etxt-optbar')) {
+          return;
+        }
+        if (spaceDown || toolMode === 'pan' || e.button === 1) {
+          panStart = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop };
+          wrap.style.cursor = 'grabbing';
+          e.preventDefault();
+          return;
+        }
         if (toolMode === 'select') {
           const aEl = e.target.closest('.etxt-a');
           if (aEl) {
@@ -5742,15 +6226,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           renderAnnots();
           return;
         }
-        if (toolMode === 'pan') {
-          panStart = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop };
-          wrap.style.cursor = 'grabbing';
-          e.preventDefault();
-          return;
-        }
         if (toolMode === 'type') {
           e.preventDefault();
           openTypeBox(e);
+          return;
+        }
+        if (toolMode === 'note') {
+          e.preventDefault();
+          openNoteBox(toUser(e.clientX, e.clientY));
           return;
         }
         if (toolMode === 'image') {
@@ -5767,13 +6250,58 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           openStampPalette(toUser(e.clientX, e.clientY));
           return;
         }
-        if (['draw', 'highlight', 'underline', 'strike', 'squiggle', 'shape', 'link', 'crop'].includes(toolMode)) {
+        if (toolMode === 'sign') {
+          e.preventDefault();
+          const targetPos = toUser(e.clientX, e.clientY);
+          const saved = getSavedSignature();
+          if (saved) {
+            pushUndo();
+            const newAnnot = {
+              id: Math.random().toString(36).slice(2, 9),
+              type: 'stamp',
+              kind: 'signature',
+              sigType: saved.type,
+              text: saved.text,
+              font: saved.font,
+              points: saved.points,
+              dataUrl: saved.dataUrl,
+              color: saved.color || '#0F172A',
+              x: targetPos.x - (saved.w || 150) / 2,
+              y: targetPos.y - (saved.h || 56) / 2,
+              w: saved.w || 150,
+              h: saved.h || 56
+            };
+            addAnnot(newAnnot);
+            selAnnot = newAnnot.id;
+            renderAnnots();
+            activateTool('select');
+            toast('Signature placed! Drag to reposition, use corner handles to resize.');
+          } else {
+            openAcrobatSignatureModal(targetPos);
+          }
+          return;
+        }
+        if (['draw', 'highlight', 'underline', 'strike', 'squiggle', 'shape', 'link', 'crop', 'redact'].includes(toolMode)) {
           e.preventDefault();
           startDrag(e);
           moved = false;
         }
       };
+
       const move = (e) => {
+        if (resizeDrag) {
+          const u = toUser(e.clientX, e.clientY);
+          const dw = u.x - resizeDrag.startX;
+          if (Math.abs(dw) > 1) resizeDrag.moved = true;
+          const list = annots[page - 1] || [];
+          const a = list.find(x => x.id === resizeDrag.id);
+          if (a) {
+            a.w = Math.max(30, resizeDrag.initW + dw);
+            a.h = Math.max(15, a.w / resizeDrag.ratio);
+            renderAnnots();
+          }
+          return;
+        }
         if (selDrag) {
           const u = toUser(e.clientX, e.clientY);
           const dx = u.x - selDrag.startX, dy = u.y - selDrag.startY;
@@ -5796,164 +6324,746 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
         if (draft) moveDrag(e);
       };
+
       const up = (e) => {
+        if (resizeDrag) {
+          if (resizeDrag.moved) pushUndo();
+          resizeDrag = null;
+          return;
+        }
         if (selDrag) {
           if (selDrag.moved) pushUndo();
           selDrag = null;
           return;
         }
-        if (panStart) { panStart = null; wrap.style.cursor = ''; return; }
+        if (panStart) {
+          panStart = null;
+          wrap.style.cursor = spaceDown ? 'grab' : '';
+          return;
+        }
         if (draft) endDrag(e);
       };
+
       const key = (e) => {
-        if (activeDialog) return;
+        if (activeDialog || document.querySelector('.etxt-dialog:not([hidden])')) return;
+        const isEditing = !!(e.target.closest && e.target.closest('input,textarea,[contenteditable]'));
+        if (isEditing) return;
+
+        if (e.code === 'Space') {
+          if (!spaceDown) {
+            spaceDown = true;
+            wrap.style.cursor = 'grab';
+          }
+          e.preventDefault();
+        }
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          const k = e.key.toLowerCase();
+          if (k === 'e') activateTool('edit-text');
+          else if (k === 't') activateTool('type');
+          else if (k === 'p') activateTool('draw');
+          else if (k === 'h') activateTool('highlight');
+          else if (k === 's') activateTool('shape');
+          else if (k === 'r') activateTool('redact');
+          else if (k === 'i') activateTool('image');
+          else if (k === 'v') activateTool('select');
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+          e.preventDefault();
+          openFindReplaceDlg();
+        }
+        if (e.ctrlKey || e.metaKey) {
+          if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+            e.preventDefault();
+            commitEditor();
+            undo();
+            return;
+          }
+          if (((e.key === 'z' || e.key === 'Z') && e.shiftKey) || e.key === 'y' || e.key === 'Y') {
+            e.preventDefault();
+            commitEditor();
+            redo();
+            return;
+          }
+        }
         if (e.key === 'Delete' || e.key === 'Backspace') {
           if (selAnnot) {
-            const el = e.target.closest && e.target.closest('input,textarea,[contenteditable]');
-            if (el) return;
             e.preventDefault();
             pushUndo();
             removeAnnot(selAnnot);
+            selAnnot = null;
+            renderAnnots();
           }
         } else if (e.key === 'Escape') {
           if (selAnnot) { selAnnot = null; renderAnnots(); }
+        }
+      };
+
+      const keyUp = (e) => {
+        if (e.code === 'Space') {
+          spaceDown = false;
+          if (!panStart) wrap.style.cursor = '';
         }
       };
       wrap.addEventListener('pointerdown', down);
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
       window.addEventListener('keydown', key);
-      return () => {
+      window.addEventListener('keyup', keyUp);
+      pointerCleanup = () => {
+        wrap.removeEventListener('pointerdown', down);
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         window.removeEventListener('keydown', key);
+        window.removeEventListener('keyup', keyUp);
       };
     }
 
-    /* ── Type tool: click to add real text ── */
-    function openTypeBox(e) {
-      const layer = container.querySelector('.etxt-annot-layer');
-      if (!layer) return;
-      const u = toUser(e.clientX, e.clientY);
-      const box = document.createElement('div');
-      box.className = 'etxt-type-box';
-      const inner = document.createElement('div');
-      inner.className = 'etxt-type-inner';
-      inner.contentEditable = 'true';
-      inner.spellcheck = false;
-      inner.textContent = 'Type here';
-      box.append(inner);
-      const pos = userToCss(u.x, u.y);
-      box.style.cssText = `left:${pos.x.toFixed(1)}px;top:${pos.y.toFixed(1)}px;font-size:${(toolOpts.textSize * pageScale * 0.72).toFixed(1)}px;color:${toolOpts.textColor};`;
-      const ok = document.createElement('button');
-      ok.type = 'button'; ok.className = 'etxt-edit-btn etxt-edit-ok'; ok.textContent = '✓';
-      const cx = document.createElement('button');
-      cx.type = 'button'; cx.className = 'etxt-edit-btn etxt-edit-cx'; cx.textContent = '✕';
-      box.append(ok, cx);
-      layer.append(box);
-      inner.focus();
-      const commit = () => {
-        if (activeEdit) { /* noop */ }
-        const text = inner.textContent.replace(/\s+/g, ' ').trim();
-        box.remove();
-        if (text && text !== 'Type here') {
-          pushUndo();
-          addAnnot({ type: 'text', x: u.x, y: u.y, text, size: toolOpts.textSize, color: toolOpts.textColor });
-          renderAnnots();
-        }
-      };
-      ok.onclick = (ev) => { ev.stopPropagation(); commit(); };
-      cx.onclick = (ev) => { ev.stopPropagation(); box.remove(); };
-      inner.addEventListener('keydown', ev => {
-        if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
-        else if (ev.key === 'Escape') { ev.preventDefault(); box.remove(); }
-      });
-      inner.addEventListener('blur', () => { commit(); });
+    const SIG_FONTS = [
+      "'Dancing Script', cursive",               // 0: Fluid Cursive
+      "'Great Vibes', cursive",                 // 1: Executive Calligraphy
+      "'Caveat', cursive",                      // 2: Casual Handwritten
+      "'Sacramento', cursive",                  // 3: Formal Legal
+      "'Marck Script', cursive",                // 4: Minimalist Monoline
+      "'Playfair Display', Georgia, serif"     // 5: Document Formal Print / Stamp
+    ];
+    let sigFontIdx = 0;
+
+    function getSavedSignature() {
+      try {
+        return JSON.parse(localStorage.getItem('filekit.saved-signature') || 'null');
+      } catch { return null; }
     }
 
-    /* ── Stamp palette ── */
-    function openStampPalette(u) {
-      const palette = container.querySelector('#etxt-stamp-palette');
-      const stamps = [
-        { kind: 'approved', text: 'APPROVED', cls: 'approved' },
-        { kind: 'confidential', text: 'CONFIDENTIAL', cls: 'confidential' },
-        { kind: 'draft', text: 'DRAFT', cls: 'draft' },
-        { kind: 'final', text: 'FINAL', cls: 'final' },
-        { kind: 'check', text: '✓', cls: 'check' },
-        { kind: 'date', text: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), cls: 'date' },
-        { kind: 'signature', text: 'Sign', cls: 'signature' },
-      ];
-      palette.innerHTML = '';
-      palette.hidden = false;
-      const pos = userToCss(u.x, u.y);
-      const el = pageGeom().el;
-      palette.style.left = Math.min(el.getBoundingClientRect().right - 200, Math.max(el.getBoundingClientRect().left, pos.x + el.getBoundingClientRect().left)) + 'px';
-      palette.style.top = Math.max(el.getBoundingClientRect().top + 8, pos.y + el.getBoundingClientRect().top - 210) + 'px';
-      for (const s of stamps) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'etxt-stamp-item';
-        btn.innerHTML = `<span class="etxt-stamp-prev etxt-stamp-prev-${s.cls}">${s.text}</span><small>${s.kind === 'signature' ? 'Draw signature' : s.kind}</small>`;
-        btn.onclick = () => {
-          palette.hidden = true;
-          if (s.kind === 'signature') { openSignaturePad(u); return; }
-          pushUndo();
-          addAnnot({ type: 'stamp', kind: s.kind, text: s.text, x: u.x, y: u.y, w: 140, h: 46 });
-          renderAnnots();
-        };
-        palette.append(btn);
+    function saveUserSignature(sig) {
+      try {
+        localStorage.setItem('filekit.saved-signature', JSON.stringify(sig));
+      } catch { /* noop */ }
+    }
+
+    /* ── Adobe Acrobat-Style Signature Studio Modal (Complete State Flow) ── */
+    function openAcrobatSignatureModal(targetPos, editingAnnot = null) {
+      let backdrop = document.getElementById('etxt-dlg-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'etxt-dlg-backdrop';
+        backdrop.className = 'etxt-dialog-backdrop';
+        document.body.appendChild(backdrop);
+      } else if (backdrop.parentElement !== document.body) {
+        document.body.appendChild(backdrop);
       }
-      const close = () => { palette.hidden = true; };
-      setTimeout(() => window.addEventListener('pointerdown', close, { once: true }), 0);
-    }
+      backdrop.innerHTML = '<div class="etxt-dialog acrobat-sig-dlg" id="etxt-dlg"></div>';
+      const dlg = backdrop.querySelector('#etxt-dlg');
+      if (!dlg) return;
 
-    /* ── Signature pad ── */
-    function openSignaturePad(u) {
-      const dlg = container.querySelector('#etxt-dlg');
-      const backdrop = container.querySelector('#etxt-dlg-backdrop');
-      const W = 460, H = 180;
+      const saved = getSavedSignature();
+      let activeTab = editingAnnot ? (editingAnnot.sigType || 'type') : 'type';
+      let activeColor = editingAnnot?.color || saved?.color || '#0F172A';
+      let sigFontIdx = 0;
+      if (editingAnnot?.font) {
+        const found = SIG_FONTS.findIndex(f => f === editingAnnot.font || f.includes(editingAnnot.font));
+        if (found >= 0) sigFontIdx = found;
+      }
+      let typedText = editingAnnot ? (editingAnnot.text || '') : (saved?.type === 'type' && saved.text ? saved.text : (saved?.name || 'Shahrukh Khan'));
+      let penStyle = 'fountain';
+      let strokeWidth = 2.8;
+      let strokePaths = editingAnnot?.strokePaths ? [...editingAnnot.strokePaths] : (saved?.type === 'draw' && saved.strokePaths ? [...saved.strokePaths] : []);
+      let currentStroke = [];
+      let imgDataUrl = editingAnnot?.dataUrl || (saved?.type === 'image' ? saved.dataUrl : null);
+      let rawImgEl = null;
+      let removeWhiteBg = true;
+
+      dlg.className = 'etxt-dialog acrobat-sig-dlg';
       dlg.innerHTML = `
-        <h3 class="etxt-dlg-title">Draw your signature</h3>
-        <p class="etxt-dlg-sub">Sign with your mouse or finger — placed where you clicked.</p>
-        <div class="etxt-drawpad" id="etxt-drawpad"><canvas width="${W}" height="${H}"></canvas></div>
-        <div class="etxt-dlg-actions">
-          <button type="button" class="etxt-btn-ghost" id="etxt-sig-clear">Clear</button>
-          <button type="button" class="etxt-btn-ghost" id="etxt-sig-cancel">Cancel</button>
-          <button type="button" class="etxt-btn-finish" id="etxt-sig-ok">Use signature</button>
-        </div>`;
+        <div class="acrobat-sig-header">
+          <div class="acrobat-sig-tabs">
+            <button type="button" class="acrobat-sig-tab${activeTab === 'type' ? ' is-active' : ''}" data-tab="type">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+              <span>Type</span>
+            </button>
+            <button type="button" class="acrobat-sig-tab${activeTab === 'draw' ? ' is-active' : ''}" data-tab="draw">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              <span>Draw</span>
+            </button>
+            <button type="button" class="acrobat-sig-tab${activeTab === 'image' ? ' is-active' : ''}" data-tab="image">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span>Image</span>
+            </button>
+          </div>
+          <div class="acrobat-sig-header-actions">
+            <div class="acrobat-sig-ink-group" title="Select signature ink color">
+              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#0F172A'?' is-active':''}" data-ink="#0F172A" style="background:#0F172A;" title="Black Ink"></button>
+              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#1E3A8A'?' is-active':''}" data-ink="#1E3A8A" style="background:#1E3A8A;" title="Navy Ink"></button>
+              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#334155'?' is-active':''}" data-ink="#334155" style="background:#334155;" title="Charcoal Ink"></button>
+            </div>
+            <label class="acrobat-sig-save-wrap">
+              <input type="checkbox" id="acrobat-sig-save-chk" checked>
+              <span>Save</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="acrobat-sig-body">
+          <div class="acrobat-sign-flag" title="Signature Line">
+            <svg class="acrobat-sign-flag-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <span class="acrobat-sign-flag-text">Sign</span>
+          </div>
+
+          <!-- Tab 1: Type Panel (6 Signature Typography Archetypes) -->
+          <div class="acrobat-sig-tab-panel" id="acrobat-tab-type"${activeTab !== 'type' ? ' hidden' : ''}>
+            <input type="text" class="acrobat-sig-type-input" id="acrobat-sig-name-input" placeholder="Type your name" value="${_esc(typedText)}" autocomplete="off" spellcheck="false">
+            <div class="acrobat-sig-style-strip" id="acrobat-sig-style-strip">
+              <button type="button" class="acrobat-sig-style-chip${sigFontIdx===0?' is-active':''}" data-fidx="0" style="font-family:'Dancing Script', cursive;">Script</button>
+              <button type="button" class="acrobat-sig-style-chip${sigFontIdx===1?' is-active':''}" data-fidx="1" style="font-family:'Great Vibes', cursive;">Calligraphy</button>
+              <button type="button" class="acrobat-sig-style-chip${sigFontIdx===2?' is-active':''}" data-fidx="2" style="font-family:'Caveat', cursive;">Handwritten</button>
+              <button type="button" class="acrobat-sig-style-chip${sigFontIdx===3?' is-active':''}" data-fidx="3" style="font-family:'Sacramento', cursive;">Formal Legal</button>
+              <button type="button" class="acrobat-sig-style-chip${sigFontIdx===4?' is-active':''}" data-fidx="4" style="font-family:'Marck Script', cursive;">Minimal</button>
+              <button type="button" class="acrobat-sig-style-chip${sigFontIdx===5?' is-active':''}" data-fidx="5" style="font-family:'Playfair Display', serif; font-style:italic;">Doc Print</button>
+            </div>
+          </div>
+
+          <!-- Tab 2: Draw Panel with Pen Style & Stroke Thickness -->
+          <div class="acrobat-sig-tab-panel" id="acrobat-tab-draw"${activeTab !== 'draw' ? ' hidden' : ''}>
+            <div class="acrobat-sig-draw-toolbar">
+              <div class="acrobat-sig-pen-type-group">
+                <span class="acrobat-sig-config-label">Pen:</span>
+                <button type="button" class="acrobat-sig-pen-btn is-active" data-pen="fountain" title="Fountain Pen (Variable Pressure & Velocity Taper)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h-6l3-7z"/><path d="M9 9v11h6v-11"/></svg>
+                  <span>Fountain</span>
+                </button>
+                <button type="button" class="acrobat-sig-pen-btn" data-pen="ballpoint" title="Ballpoint Pen (Uniform Crisp Line)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  <span>Ballpoint</span>
+                </button>
+              </div>
+
+              <div class="acrobat-sig-draw-thickness-group">
+                <span class="acrobat-sig-config-label">Stroke:</span>
+                <button type="button" class="acrobat-sig-thick-btn" data-thick="1.6" title="Fine Stroke">
+                  <span class="acrobat-thick-line" style="height:1.6px;"></span>
+                  <span>Fine</span>
+                </button>
+                <button type="button" class="acrobat-sig-thick-btn is-active" data-thick="2.8" title="Regular Stroke">
+                  <span class="acrobat-thick-line" style="height:2.8px;"></span>
+                  <span>Regular</span>
+                </button>
+                <button type="button" class="acrobat-sig-thick-btn" data-thick="4.5" title="Bold Stroke">
+                  <span class="acrobat-thick-line" style="height:4.5px;"></span>
+                  <span>Bold</span>
+                </button>
+              </div>
+            </div>
+            <div class="acrobat-sig-draw-stage">
+              <span class="acrobat-sig-draw-hint" id="acrobat-sig-draw-hint">Draw your signature here with mouse, touch or stylus</span>
+              <canvas id="acrobat-sig-draw-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Tab 3: Image Panel -->
+          <div class="acrobat-sig-tab-panel" id="acrobat-tab-image"${activeTab !== 'image' ? ' hidden' : ''}>
+            <div class="acrobat-sig-upload-box" id="acrobat-sig-upload-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span>Drop signature file here or <strong>Click to Browse</strong></span>
+              <input type="file" id="acrobat-sig-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+            </div>
+            <div class="acrobat-sig-img-preview-wrap" id="acrobat-sig-img-wrap" hidden>
+              <img id="acrobat-sig-img-preview" class="acrobat-sig-img-preview" alt="Signature Preview">
+              <label class="acrobat-sig-bg-toggle">
+                <input type="checkbox" id="acrobat-sig-bg-trans-chk" checked>
+                <span>Make white paper background transparent</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="acrobat-sig-baseline-bar"></div>
+          <div class="acrobat-sig-sub-row">
+            <span class="acrobat-sig-sub-hint" id="acrobat-sig-sub-hint">${activeTab === 'draw' ? 'Draw your signature above' : (activeTab === 'image' ? 'Upload a clear signature image' : 'Type your signature above')}</span>
+            <div class="acrobat-sig-sub-actions">
+              <button type="button" class="acrobat-sig-link-btn" id="acrobat-sig-undo-btn" style="display:${activeTab === 'draw' && strokePaths.length ? 'inline-block' : 'none'}; margin-right: 10px;">Undo Stroke</button>
+              <button type="button" class="acrobat-sig-link-btn" id="acrobat-sig-clear-btn">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="acrobat-sig-footer">
+          <button type="button" class="acrobat-sig-btn-close" id="acrobat-sig-cancel">Cancel</button>
+          <button type="button" class="acrobat-sig-btn-save" id="acrobat-sig-apply">${editingAnnot ? 'Update Signature' : 'Place Signature'}</button>
+        </div>
+      `;
+
       activeDialog = dlg;
       dlg.hidden = false;
       backdrop.hidden = false;
-      const canvas = dlg.querySelector('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#1D4ED8';
-      let pts = [];
-      let drawing = false;
-      const pos = (e) => {
+
+      const typeBox = dlg.querySelector('#acrobat-tab-type');
+      const drawBox = dlg.querySelector('#acrobat-tab-draw');
+      const imgBox = dlg.querySelector('#acrobat-tab-image');
+      const nameInput = dlg.querySelector('#acrobat-sig-name-input');
+      const hintText = dlg.querySelector('#acrobat-sig-sub-hint');
+      const drawHint = dlg.querySelector('#acrobat-sig-draw-hint');
+      const undoBtn = dlg.querySelector('#acrobat-sig-undo-btn');
+      const clearBtn = dlg.querySelector('#acrobat-sig-clear-btn');
+      const canvas = dlg.querySelector('#acrobat-sig-draw-canvas');
+      const uploadBox = dlg.querySelector('#acrobat-sig-upload-box');
+      const fileInput = dlg.querySelector('#acrobat-sig-file-input');
+      const imgWrap = dlg.querySelector('#acrobat-sig-img-wrap');
+      const imgPrev = dlg.querySelector('#acrobat-sig-img-preview');
+      const bgTransChk = dlg.querySelector('#acrobat-sig-bg-trans-chk');
+      const saveChk = dlg.querySelector('#acrobat-sig-save-chk');
+      const saveBtn = dlg.querySelector('#acrobat-sig-apply');
+
+      // High-DPI canvas setup & sizing
+      const getCanvasContext = () => {
+        const dpr = window.devicePixelRatio || 2;
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width > 0 ? rect.width : 540;
+        const h = rect.height > 0 ? rect.height : 120;
+        if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+          canvas.width = Math.round(w * dpr);
+          canvas.height = Math.round(h * dpr);
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        return { ctx, w, h };
+      };
+
+      const getPt = (p) => ({
+        x: (p && typeof p.x === 'number') ? p.x : (Array.isArray(p) && typeof p[0] === 'number' ? p[0] : 0),
+        y: (p && typeof p.y === 'number') ? p.y : (Array.isArray(p) && typeof p[1] === 'number' ? p[1] : 0),
+        t: p?.t || 0,
+        press: p?.press || 0.5
+      });
+
+      const getCanvasPos = (e) => {
         const r = canvas.getBoundingClientRect();
-        return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const width = r.width > 0 ? r.width : 540;
+        const height = r.height > 0 ? r.height : 120;
+        return {
+          x: Math.max(0, Math.min(1, (clientX - r.left) / width)),
+          y: Math.max(0, Math.min(1, (clientY - r.top) / height)),
+          t: Date.now(),
+          press: e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
+        };
       };
-      const draw = (e) => {
+
+      // Render a stroke with chosen pen tip physics
+      const drawStrokeOnCtx = (targetCtx, rawStroke, width, color, style, targetW = 540, targetH = 120) => {
+        if (!rawStroke || rawStroke.length === 0) return;
+        const stroke = rawStroke.map(getPt);
+        if (stroke.length === 1) {
+          targetCtx.fillStyle = color;
+          targetCtx.beginPath();
+          targetCtx.arc(stroke[0].x * targetW, stroke[0].y * targetH, Math.max(1, width / 2), 0, Math.PI * 2);
+          targetCtx.fill();
+          return;
+        }
+
+        targetCtx.strokeStyle = color;
+        targetCtx.fillStyle = color;
+        targetCtx.lineCap = 'round';
+        targetCtx.lineJoin = 'round';
+
+        if (style === 'ballpoint') {
+          targetCtx.lineWidth = width;
+          targetCtx.beginPath();
+          const p0 = stroke[0];
+          targetCtx.moveTo(p0.x * targetW, p0.y * targetH);
+          for (let i = 1; i < stroke.length - 1; i++) {
+            const xc = (stroke[i].x * targetW + stroke[i + 1].x * targetW) / 2;
+            const yc = (stroke[i].y * targetH + stroke[i + 1].y * targetH) / 2;
+            targetCtx.quadraticCurveTo(stroke[i].x * targetW, stroke[i].y * targetH, xc, yc);
+          }
+          const last = stroke[stroke.length - 1];
+          const prev = stroke[stroke.length - 2];
+          targetCtx.quadraticCurveTo(prev.x * targetW, prev.y * targetH, last.x * targetW, last.y * targetH);
+          targetCtx.stroke();
+        } else {
+          // Fountain Pen: Dynamic velocity & pressure tapered curve
+          let lastW = width;
+          for (let i = 1; i < stroke.length; i++) {
+            const pA = stroke[i - 1];
+            const pB = stroke[i];
+            const dx = (pB.x - pA.x) * targetW;
+            const dy = (pB.y - pA.y) * targetH;
+            const dist = Math.hypot(dx, dy);
+            const dt = Math.max(1, (pB.t || 0) - (pA.t || 0));
+            const vel = Math.min(3, dist / dt);
+            let targetStrokeW = width * Math.max(0.4, Math.min(1.85, 1.45 - vel * 0.4));
+            if (pB.press && pB.press > 0.05) {
+              targetStrokeW *= Math.max(0.5, Math.min(1.6, pB.press * 1.5));
+            }
+            const curW = lastW * 0.6 + targetStrokeW * 0.4;
+            lastW = curW;
+
+            targetCtx.lineWidth = curW;
+            targetCtx.beginPath();
+            targetCtx.moveTo(pA.x * targetW, pA.y * targetH);
+            targetCtx.lineTo(pB.x * targetW, pB.y * targetH);
+            targetCtx.stroke();
+          }
+        }
+      };
+
+      // Redraw Canvas from stroke history
+      const redrawCanvas = () => {
+        const { ctx, w, h } = getCanvasContext();
+        ctx.clearRect(0, 0, w, h);
+        if (!strokePaths.length) {
+          if (drawHint) drawHint.style.display = 'block';
+          if (undoBtn) undoBtn.style.display = 'none';
+          updateSaveBtnState();
+          return;
+        }
+        if (drawHint) drawHint.style.display = 'none';
+        if (undoBtn) undoBtn.style.display = 'inline-block';
+
+        strokePaths.forEach(stroke => {
+          drawStrokeOnCtx(ctx, stroke, strokeWidth, activeColor, penStyle, w, h);
+        });
+        updateSaveBtnState();
+      };
+
+      // Update active signature style
+      const applyStyleAndColor = () => {
+        nameInput.style.fontFamily = SIG_FONTS[sigFontIdx];
+        nameInput.style.color = activeColor;
+        redrawCanvas();
+      };
+      applyStyleAndColor();
+
+      const updateSaveBtnState = () => {
+        let valid = false;
+        if (activeTab === 'type') {
+          valid = nameInput.value.trim().length > 0;
+        } else if (activeTab === 'draw') {
+          valid = strokePaths.length > 0;
+        } else if (activeTab === 'image') {
+          valid = !!imgDataUrl;
+        }
+        saveBtn.disabled = !valid;
+      };
+      updateSaveBtnState();
+
+      // Ink Color switching
+      dlg.querySelectorAll('.acrobat-sig-ink-dot').forEach(dot => {
+        dot.onclick = (e) => {
+          e.stopPropagation();
+          dlg.querySelectorAll('.acrobat-sig-ink-dot').forEach(d => d.classList.remove('is-active'));
+          dot.classList.add('is-active');
+          activeColor = dot.dataset.ink;
+          applyStyleAndColor();
+        };
+      });
+
+      // Style Chips switching for Type mode
+      dlg.querySelectorAll('.acrobat-sig-style-chip').forEach(chip => {
+        chip.onclick = (e) => {
+          e.stopPropagation();
+          dlg.querySelectorAll('.acrobat-sig-style-chip').forEach(c => c.classList.remove('is-active'));
+          chip.classList.add('is-active');
+          sigFontIdx = Number(chip.dataset.fidx) || 0;
+          applyStyleAndColor();
+        };
+      });
+
+      // Pen Tip Style Selector for Draw mode
+      dlg.querySelectorAll('.acrobat-sig-pen-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          dlg.querySelectorAll('.acrobat-sig-pen-btn').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          penStyle = btn.dataset.pen || 'fountain';
+          redrawCanvas();
+        };
+      });
+
+      // Thickness Selector for Draw mode
+      dlg.querySelectorAll('.acrobat-sig-thick-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          dlg.querySelectorAll('.acrobat-sig-thick-btn').forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          strokeWidth = parseFloat(btn.dataset.thick) || 2.8;
+          redrawCanvas();
+        };
+      });
+
+      // Tab switching
+      dlg.querySelectorAll('.acrobat-sig-tab').forEach(tab => {
+        tab.onclick = (e) => {
+          e.stopPropagation();
+          dlg.querySelectorAll('.acrobat-sig-tab').forEach(t => t.classList.remove('is-active'));
+          tab.classList.add('is-active');
+          activeTab = tab.dataset.tab;
+
+          typeBox.hidden = activeTab !== 'type';
+          drawBox.hidden = activeTab !== 'draw';
+          imgBox.hidden = activeTab !== 'image';
+
+          if (activeTab === 'type') {
+            hintText.textContent = 'Type your signature above';
+            nameInput.focus();
+            if (undoBtn) undoBtn.style.display = 'none';
+          } else if (activeTab === 'draw') {
+            hintText.textContent = 'Draw your signature above';
+            if (undoBtn) undoBtn.style.display = strokePaths.length ? 'inline-block' : 'none';
+            requestAnimationFrame(() => redrawCanvas());
+          } else if (activeTab === 'image') {
+            hintText.textContent = 'Upload a clear signature image';
+            if (undoBtn) undoBtn.style.display = 'none';
+          }
+          updateSaveBtnState();
+        };
+      });
+
+      // Strict StopPropagation on Keyboard Events in Name Input
+      nameInput.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (!saveBtn.disabled) saveBtn.click();
+        }
+      });
+      nameInput.addEventListener('keyup', (e) => e.stopPropagation());
+      nameInput.addEventListener('keypress', (e) => e.stopPropagation());
+      nameInput.addEventListener('input', (e) => {
+        e.stopPropagation();
+        updateSaveBtnState();
+      });
+
+      // Undo button for Draw mode
+      if (undoBtn) {
+        undoBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (activeTab === 'draw' && strokePaths.length > 0) {
+            strokePaths.pop();
+            redrawCanvas();
+          }
+        };
+      }
+
+      // Clear button
+      clearBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (activeTab === 'type') {
+          nameInput.value = '';
+          nameInput.focus();
+        } else if (activeTab === 'draw') {
+          strokePaths = [];
+          currentStroke = [];
+          redrawCanvas();
+        } else if (activeTab === 'image') {
+          imgDataUrl = null;
+          rawImgEl = null;
+          imgWrap.hidden = true;
+          uploadBox.hidden = false;
+          fileInput.value = '';
+        }
+        updateSaveBtnState();
+      };
+
+      // Draw Pad interaction (Pointer capture & live rendering)
+      let drawing = false;
+
+      canvas.onpointerdown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { canvas.setPointerCapture(e.pointerId); } catch { /* noop */ }
+        drawing = true;
+        const p = getCanvasPos(e);
+        currentStroke = [p];
+        if (drawHint) drawHint.style.display = 'none';
+        const { ctx, w, h } = getCanvasContext();
+        drawStrokeOnCtx(ctx, currentStroke, strokeWidth, activeColor, penStyle, w, h);
+      };
+
+      canvas.onpointermove = (e) => {
         if (!drawing) return;
-        const p = pos(e);
-        pts.push(p);
-        const px = p.x * W, py = p.y * H;
-        if (pts.length === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(px, py);
+        e.preventDefault();
+        e.stopPropagation();
+        const p = getCanvasPos(e);
+        currentStroke.push(p);
+        const { ctx, w, h } = getCanvasContext();
+        if (currentStroke.length >= 2) {
+          drawStrokeOnCtx(ctx, [currentStroke[currentStroke.length - 2], p], strokeWidth, activeColor, penStyle, w, h);
+        }
       };
-      canvas.addEventListener('pointerdown', e => { drawing = true; pts = []; ctx.clearRect(0, 0, W, H); draw(e); });
-      window.addEventListener('pointermove', draw);
-      window.addEventListener('pointerup', () => { drawing = false; });
-      dlg.querySelector('#etxt-sig-clear').onclick = () => { pts = []; ctx.clearRect(0, 0, W, H); };
-      dlg.querySelector('#etxt-sig-cancel').onclick = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
-      dlg.querySelector('#etxt-sig-ok').onclick = () => {
-        if (pts.length < 2) return;
-        pushUndo();
-        addAnnot({ type: 'stamp', kind: 'signature', points: pts, x: u.x, y: u.y, w: 140, h: 56 });
+
+      const finishDraw = (e) => {
+        if (!drawing) return;
+        drawing = false;
+        try { if (e && e.pointerId) canvas.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+        if (currentStroke.length >= 1) {
+          strokePaths.push(currentStroke);
+          currentStroke = [];
+        }
+        redrawCanvas();
+      };
+
+      canvas.onpointerup = finishDraw;
+      canvas.onpointercancel = finishDraw;
+
+      // Image Upload & Transparency Extraction
+      const processSignatureImage = (img) => {
+        rawImgEl = img;
+        if (removeWhiteBg) {
+          // Luminance alpha transparency pass
+          const tCanvas = document.createElement('canvas');
+          tCanvas.width = img.naturalWidth || 600;
+          tCanvas.height = img.naturalHeight || 200;
+          const tCtx = tCanvas.getContext('2d');
+          tCtx.drawImage(img, 0, 0);
+          const iData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height);
+          const d = iData.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const r = d[i], g = d[i+1], b = d[i+2];
+            const lum = (r * 299 + g * 587 + b * 114) / 1000;
+            if (lum > 215) d[i+3] = 0;
+            else if (lum > 170) d[i+3] = Math.round((215 - lum) / 45 * 255);
+          }
+          tCtx.putImageData(iData, 0, 0);
+          imgDataUrl = tCanvas.toDataURL('image/png');
+        } else {
+          imgDataUrl = img.src;
+        }
+        imgPrev.src = imgDataUrl;
+        imgWrap.hidden = false;
+        uploadBox.hidden = true;
+        updateSaveBtnState();
+      };
+
+      uploadBox.onclick = () => fileInput.click();
+      uploadBox.ondragover = (e) => { e.preventDefault(); uploadBox.style.borderColor = '#0F172A'; };
+      uploadBox.ondragleave = () => { uploadBox.style.borderColor = ''; };
+      uploadBox.ondrop = (e) => {
+        e.preventDefault();
+        uploadBox.style.borderColor = '';
+        const file = e.dataTransfer?.files?.[0];
+        if (file && file.type.startsWith('image/')) loadFile(file);
+      };
+
+      const loadFile = (file) => {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+          const img = new Image();
+          img.onload = () => processSignatureImage(img);
+          img.src = re.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      fileInput.onchange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) loadFile(file);
+      };
+
+      bgTransChk.onchange = () => {
+        removeWhiteBg = bgTransChk.checked;
+        if (rawImgEl) processSignatureImage(rawImgEl);
+      };
+
+      // Close Modal
+      const closeModal = () => {
+        dlg.hidden = true;
+        backdrop.hidden = true;
+        dlg.className = 'etxt-dialog';
+        activeDialog = null;
+      };
+      dlg.querySelector('#acrobat-sig-cancel').onclick = (e) => {
+        e.stopPropagation();
+        closeModal();
+      };
+      backdrop.onclick = (e) => {
+        if (e.target === backdrop) closeModal();
+      };
+
+      // Apply / Save Signature
+      dlg.querySelector('#acrobat-sig-apply').onclick = (e) => {
+        e.stopPropagation();
+        let sigResult = null;
+
+        if (activeTab === 'type') {
+          const val = nameInput.value.trim();
+          if (!val) { nameInput.focus(); return; }
+          sigResult = {
+            type: 'type',
+            text: val,
+            font: SIG_FONTS[sigFontIdx],
+            color: activeColor,
+            w: Math.max(120, Math.min(240, val.length * 16)),
+            h: 56
+          };
+        } else if (activeTab === 'draw') {
+          if (!strokePaths.length) return;
+          sigResult = {
+            type: 'draw',
+            points: strokePaths.flat().map(getPt),
+            strokePaths: strokePaths.map(st => st.map(getPt)),
+            strokeWidth: strokeWidth,
+            color: activeColor,
+            dataUrl: canvas.toDataURL('image/png'),
+            w: 160,
+            h: 60
+          };
+        } else if (activeTab === 'image') {
+          if (!imgDataUrl) return;
+          sigResult = {
+            type: 'image',
+            dataUrl: imgDataUrl,
+            color: activeColor,
+            w: 160,
+            h: 60
+          };
+        }
+
+        if (!sigResult) return;
+
+        if (saveChk.checked) {
+          saveUserSignature(sigResult);
+        }
+
+        closeModal();
+
+        if (editingAnnot) {
+          pushUndo();
+          editingAnnot.sigType = sigResult.type;
+          editingAnnot.text = sigResult.text;
+          editingAnnot.font = sigResult.font;
+          editingAnnot.strokePaths = sigResult.strokePaths;
+          editingAnnot.points = sigResult.points;
+          editingAnnot.dataUrl = sigResult.dataUrl;
+          editingAnnot.color = sigResult.color;
+          editingAnnot.w = sigResult.w;
+          editingAnnot.h = sigResult.h;
+          selAnnot = editingAnnot.id;
+        } else {
+          const pos = targetPos || { x: curPageW / 2 - (sigResult.w || 150) / 2, y: curPageH / 2 - (sigResult.h || 56) / 2 };
+          pushUndo();
+          const newAnnot = {
+            id: Math.random().toString(36).slice(2, 9),
+            type: 'stamp',
+            kind: 'signature',
+            sigType: sigResult.type,
+            text: sigResult.text,
+            font: sigResult.font,
+            points: sigResult.points,
+            strokePaths: sigResult.strokePaths,
+            dataUrl: sigResult.dataUrl,
+            color: sigResult.color || '#0F172A',
+            x: pos.x,
+            y: pos.y,
+            w: sigResult.w || 150,
+            h: sigResult.h || 56
+          };
+          addAnnot(newAnnot);
+          selAnnot = newAnnot.id;
+        }
+
         renderAnnots();
-        dlg.hidden = true; backdrop.hidden = true; activeDialog = null;
+        activateTool('select');
+        toast('Signature placed! Drag to reposition, use corner handles to resize.');
       };
     }
 
@@ -6343,16 +7453,39 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       };
     }
 
-    /* ── Tool activation with dialogs ── */
-    function activateTool(id) {
+    /* ── Tool activation with dialogs & in-place state update ── */
+    function activateTool(id, fromDock = false) {
       commitEditor();
       if (id === 'watermark') { openWatermarkDlg(); return; }
       if (id === 'pagenum') { openPagenumDlg(); return; }
       if (id === 'form-fill') { openFormDlg(); return; }
+      if (id === 'sign') { openAcrobatSignatureModal(); return; }
+
+      if (toolMode === id && fromDock) {
+        const flyout = container.querySelector('#etxt-dock-flyout');
+        if (flyout && !flyout.hidden) {
+          closeDockFlyout();
+          return;
+        }
+      }
+
       toolMode = id;
       selAnnot = null;
       if (id === 'img-blur' && imgSrc && !imgDraft) imgDraft = cloneCanvas(imgSrc);
-      renderEditor();
+
+      // Update toolbar and dock active states in-place without rebuilding DOM
+      container.querySelectorAll('.etxt-tool-btn[data-tool]').forEach(b => {
+        b.classList.toggle('is-on', b.dataset.tool === id || (id === 'highlight' && b.dataset.tool === 'draw') || (id === 'stamp' && b.dataset.tool === 'image') || (id === 'note' && b.dataset.tool === 'image'));
+      });
+
+      container.querySelectorAll('.etxt-floating-dock-btn[data-tool]').forEach(b => {
+        b.classList.toggle('is-on', b.dataset.tool === id || (id === 'highlight' && b.dataset.tool === 'draw') || (id === 'stamp' && b.dataset.tool === 'image') || (id === 'note' && b.dataset.tool === 'image'));
+      });
+
+      const cropLayer = container.querySelector('#etxt-crop-layer');
+      if (cropLayer) cropLayer.hidden = (toolMode !== 'crop');
+
+      renderOptbar();
       renderImgPreview();
     }
 
@@ -6484,7 +7617,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         else if (op === 'TJ') {
           const arr = a[0] ? a[0].v : '';
           let text = '';
-          for (const p of csTokenize(arr)) if (p.t === 'str') text += p.v;
+          const toks = csTokenize(arr);
+          for (let ti = 0; ti < toks.length; ti++) {
+            const p = toks[ti];
+            if (p.t === 'str') text += p.v;
+            else if (p.t === 'num' && p.v < -120 && text.length > 0 && !text.endsWith(' ')) {
+              text += ' ';
+            }
+          }
           runs.push({ opIdx: i, text, x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
         }
       }
@@ -6520,19 +7660,23 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function findRun(runs, target) {
+      const normTarget = String(target || '').replace(/\s+/g, ' ').trim();
       for (let i = 0; i < runs.length; i++) {
-        if (runs[i].text === target) return { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, i] };
+        if (runs[i].text === target || String(runs[i].text).replace(/\s+/g, ' ').trim() === normTarget) {
+          return { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, i] };
+        }
       }
       for (let i = 0; i < runs.length; i++) {
         let acc = runs[i].text;
         for (let j = i + 1; j < runs.length; j++) {
-          acc += runs[j].text;
-          if (acc === target) {
+          acc += (acc.endsWith(' ') || runs[j].text.startsWith(' ') ? '' : ' ') + runs[j].text;
+          const normAcc = String(acc).replace(/\s+/g, ' ').trim();
+          if (acc === target || normAcc === normTarget) {
             let consec = true;
             for (let k = i + 1; k <= j; k++) if (runs[k].opIdx !== runs[k - 1].opIdx + 1) { consec = false; break; }
             return consec ? { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, j] } : null;
           }
-          if (acc.length > target.length) break;
+          if (normAcc.length > normTarget.length + 10) break;
         }
       }
       return null;
@@ -6764,13 +7908,28 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         });
       } else if (a.type === 'stamp') {
         if (a.kind === 'signature') {
-          const d = smoothPath((a.points || []).map(p => [a.x + p.x * a.w, yFlip(a.y + p.y * a.h)]));
-          page.drawSvgPath(d, {
-            x: 0, y: 0,
-            color: L.rgb(1, 1, 1), opacity: 0.001,
-            borderColor: L.rgb(0.11, 0.31, 0.85), borderWidth: 2, borderOpacity: 1,
-            borderLineCap: 1, borderLineJoin: 1,
-          });
+          if ((a.sigType === 'image' || a.sigType === 'draw') && a.dataUrl) {
+            const img = await embedImageData(doc, a.dataUrl);
+            page.drawImage(img, { x: a.x, y: yFlip(a.y + a.h), width: a.w, height: a.h });
+          } else if (a.points && a.points.length) {
+            const d = smoothPath((a.points || []).map(p => [a.x + p.x * a.w, yFlip(a.y + p.y * a.h)]));
+            page.drawSvgPath(d, {
+              x: 0, y: 0,
+              color: L.rgb(1, 1, 1), opacity: 0.001,
+              borderColor: a.color ? rgbOf(a.color) : L.rgb(0.06, 0.09, 0.16), borderWidth: 2.4, borderOpacity: 1,
+              borderLineCap: 1, borderLineJoin: 1,
+            });
+          } else {
+            const font = await doc.embedFont(L.StandardFonts.TimesRomanItalic);
+            const size = a.size || 22;
+            page.drawText(a.text || 'Signature', {
+              x: a.x,
+              y: yFlip(a.y + a.h) + (a.h - size) / 2,
+              size,
+              font,
+              color: a.color ? rgbOf(a.color) : L.rgb(0.06, 0.09, 0.16),
+            });
+          }
         } else if (a.kind === 'check') {
           const c = rgbOf('#059669');
           const d = `M ${(a.x + a.w * 0.08).toFixed(2)} ${yFlip(a.y + a.h * 0.62).toFixed(2)} L ${(a.x + a.w * 0.42).toFixed(2)} ${yFlip(a.y + a.h * 0.24).toFixed(2)} L ${(a.x + a.w * 0.94).toFixed(2)} ${yFlip(a.y + a.h * 0.78).toFixed(2)}`;
@@ -6834,49 +7993,45 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
         setPageContentString(page, content);
         for (const e of fallbacks) {
-          if (!helv) helv = await doc.embedFont(L.StandardFonts.Helvetica);
-          const h = (e.item.height || 12) * 1.25;
-          const pad = 1.5;
+          const fontChoice = (await resolveStdFont(page.node, e.item?.fontName)) || L.StandardFonts.Helvetica;
+          const targetFont = await doc.embedFont(fontChoice);
+          const rawH = e.geom?.pdfH || e.item.height || 12;
+          const fontSize = Math.max(6, rawH * 0.95);
+          const lineHeight = fontSize * 1.25;
+          const minW = Math.max(20, e.geom?.pdfW || e.item.width || 40);
+          
+          const rawLines = String(e.replacement || '').split('\n');
+          const lines = [];
+          for (const raw of rawLines) {
+            lines.push(raw);
+          }
+          if (!lines.length) lines.push('');
+
+          const maxLineW = Math.max(...lines.map(ln => targetFont.widthOfTextAtSize(ln, fontSize)), minW);
+          const totalBoxW = Math.max(minW, maxLineW);
+          const totalBoxH = Math.max(rawH * 1.05, lines.length * lineHeight);
+          const originX = e.geom?.pdfX ?? e.item.transform[4];
+          const originY = e.geom?.pdfY ?? e.item.transform[5];
+
           page.drawRectangle({
-            x: e.item.transform[4] - pad,
-            y: e.item.transform[5] - (e.item.height || 12) * 0.35,
-            width: e.item.width + pad * 2,
-            height: h,
+            x: originX,
+            y: originY - rawH * 0.22,
+            width: totalBoxW,
+            height: totalBoxH,
             color: L.rgb(1, 1, 1),
-            borderColor: L.rgb(0.86, 0.9, 0.94),
-            borderWidth: 0.5,
+            borderWidth: 0,
           });
-          page.drawText(e.replacement, {
-            x: e.item.transform[4],
-            y: e.item.transform[5] - (e.item.height || 12) * 0.35,
-            size: Math.max(6, (e.item.height || 12) * 0.95),
-            font: helv,
-            color: L.rgb(0.07, 0.1, 0.17),
+
+          lines.forEach((ln, idx) => {
+            page.drawText(ln, {
+              x: originX,
+              y: originY - (idx * lineHeight),
+              size: fontSize,
+              font: targetFont,
+              color: L.rgb(0.07, 0.1, 0.17),
+            });
           });
           overlaid++;
-        }
-      }
-      // Draw every real annotation on its page.
-      let annotCount = 0;
-      if (!helv) helv = await doc.embedFont(L.StandardFonts.Helvetica);
-      for (let i = 0; i < doc.getPageCount(); i++) {
-        const page = doc.getPage(i);
-        const pw = page.getWidth();
-        const ph = page.getHeight();
-        const list = (annotsAll[i] || []).filter(a => a.type !== 'wm' && a.type !== 'pagenum');
-        for (const a of list) {
-          await drawAnnot(doc, page, a, pw, ph);
-          annotCount++;
-        }
-        // Page numbers
-        for (const pn of pns) {
-          const text = pn.format.replace('{n}', String(i + 1)).replace('{t}', String(doc.getPageCount()));
-          const size = pn.size || 10;
-          const w = helv.widthOfTextAtSize(text, size);
-          const margin = 14;
-          const x = pn.align === 'center' ? (pw - w) / 2 : pn.align === 'right' ? pw - w - margin : margin;
-          const y = pn.vAlign === 'top' ? ph - margin - size : margin;
-          page.drawText(text, { x, y, size, font: helv, color: rgbOf(pn.color || '#475569') });
         }
         // Watermark
         for (const wm of wms) {

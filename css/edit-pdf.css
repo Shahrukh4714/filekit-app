@@ -1,0 +1,853 @@
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIXES: TOOLBAR FIT, NON-OVERFLOWING RIGHT RAIL & DECOUPLED ZOOM
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Single-Row Action Toolbar — Guaranteed Fit */
+.etxt-unified-toolbar {
+  height: 46px !important;
+  min-height: 46px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  z-index: 40 !important;
+}
+
+.etxt-toolbar-center {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex: 1 1 auto !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.etxt-tool-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  gap: 2px !important;
+  flex-wrap: nowrap !important;
+  box-shadow: none !important;
+}
+
+.etxt-tool-btn {
+  all: unset !important;
+  height: 28px !important;
+  padding: 0 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 100ms ease !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-tool-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: currentColor !important;
+}
+
+.etxt-tool-btn:hover:not(.is-on) {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-tool-btn.is-on {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1.5px 5px rgba(15, 23, 42, 0.25) !important;
+}
+
+.etxt-tool-btn.is-on svg {
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.etxt-vsep {
+  width: 1px !important;
+  height: 16px !important;
+  background: #E2E8F0 !important;
+  margin: 0 2px !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-util-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-icon-btn {
+  all: unset !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  color: #64748B !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-icon-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-toolbar-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.etxt-sign-btn {
+  all: unset !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #0F172A !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-sign-btn:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+}
+
+.etxt-export-btn {
+  all: unset !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1.5px 5px rgba(15, 23, 42, 0.25) !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-export-btn:hover {
+  background: #1E293B !important;
+}
+
+.etxt-close-btn {
+  all: unset !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-close-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Right Rail — Fixed Fit with Zero Scrollbars */
+.etxt-right-rail {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 44px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  background: #FFFFFF !important;
+  border-left: 1px solid #E2E8F0 !important;
+  box-shadow: -2px 0 8px rgba(15, 23, 42, 0.04) !important;
+  z-index: 50 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 8px 4px !important;
+  box-sizing: border-box !important;
+  user-select: none !important;
+}
+
+.etxt-rail-top,
+.etxt-rail-mid,
+.etxt-rail-bot {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  width: 100% !important;
+}
+
+.etxt-rail-mid {
+  flex: 1 1 auto !important;
+  justify-content: center !important;
+}
+
+.etxt-rail-sep {
+  width: 20px !important;
+  height: 1px !important;
+  background: #E2E8F0 !important;
+  margin: 3px 0 !important;
+}
+
+.etxt-fzoom-page-ctrl {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+.etxt-fzoom-page-badge {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  color: #475569 !important;
+  padding: 1px 0 !important;
+  white-space: nowrap !important;
+}
+
+.etxt-fzoom-badge {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  color: #0F172A !important;
+  padding: 1px 4px !important;
+  letter-spacing: 0.02em !important;
+}
+
+.etxt-fzoom-step {
+  all: unset !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  background: #F1F5F9 !important;
+  color: #334155 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-fzoom-step:hover:not(:disabled) {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.etxt-fzoom-step:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+.etxt-fzoom-slider-wrap {
+  height: 75px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2px 0 !important;
+}
+
+.etxt-fzoom-slider {
+  writing-mode: vertical-lr !important;
+  direction: rtl !important;
+  appearance: slider-vertical !important;
+  -webkit-appearance: slider-vertical !important;
+  width: 6px !important;
+  height: 70px !important;
+  accent-color: #0F172A !important;
+  cursor: pointer !important;
+}
+
+.etxt-fzoom-action {
+  all: unset !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #64748B !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-fzoom-action:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-fzoom-action svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+
+/* Left Thumbnail Sidebar */
+.etxt-thumbs {
+  width: 130px !important;
+  min-width: 130px !important;
+  max-width: 130px !important;
+  height: 100% !important;
+  background: #FFFFFF !important;
+  border-right: 1px solid #E2E8F0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 12px 10px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  z-index: 30 !important;
+}
+
+.etxt-thumbs-scroll {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.etxt-thumb-card {
+  width: 100% !important;
+  border: 2px solid transparent !important;
+  border-radius: 8px !important;
+  padding: 3px !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-thumb-card:hover {
+  border-color: #CBD5E1 !important;
+}
+
+.etxt-thumb-card.is-on {
+  border-color: #8B5CF6 !important;
+  background: rgba(139, 92, 246, 0.04) !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15) !important;
+}
+
+.etxt-thumb {
+  all: unset !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+.etxt-thumb canvas,
+.etxt-thumb-canvas {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  display: block !important;
+  background: #FFFFFF !important;
+}
+
+.etxt-thumb-ph {
+  width: 100% !important;
+  height: 130px !important;
+  border-radius: 4px !important;
+  background: #F1F5F9 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #94A3B8 !important;
+}
+
+.etxt-thumb-num {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  margin-top: 4px !important;
+}
+
+/* Floating Vertical Pill Dock */
+.etxt-floating-dock-wrap {
+  position: absolute !important;
+  top: 60px !important;
+  left: 154px !important;
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
+.etxt-body.is-thumbs-collapsed .etxt-floating-dock-wrap {
+  left: 24px !important;
+}
+
+.etxt-floating-dock {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 20px !important;
+  padding: 6px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.etxt-floating-dock-btn {
+  all: unset !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  color: #475569 !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-floating-dock-btn svg {
+  width: 14.5px !important;
+  height: 14.5px !important;
+  stroke: currentColor !important;
+}
+
+.etxt-floating-dock-btn:hover:not(.is-on) {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-floating-dock-btn.is-on {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25) !important;
+}
+
+.etxt-floating-dock-btn.is-on svg {
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.etxt-dock-sep {
+  width: 18px !important;
+  height: 1px !important;
+  background: #E2E8F0 !important;
+  margin: 2px 0 !important;
+}
+
+/* Anchored Flyout Popover */
+.etxt-dock-flyout {
+  position: absolute !important;
+  left: calc(100% + 12px) !important;
+  top: 0 !important;
+  width: 220px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  z-index: 60 !important;
+  box-sizing: border-box !important;
+}
+
+/* Canvas Area */
+.etxt-canvas-wrap {
+  flex: 1 1 auto !important;
+  position: relative !important;
+  overflow: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  padding-top: 32px !important;
+  padding-bottom: 64px !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-canvas {
+  transform-origin: center top !important;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-block !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 2px !important;
+  background: #FFFFFF !important;
+}
+
+
+/* Document Canvas Perfectly Centered */
+.etxt-body {
+  position: relative !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: calc(100% - 46px) !important;
+  overflow: hidden !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-canvas-wrap {
+  flex: 1 1 auto !important;
+  position: relative !important;
+  overflow: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  padding-top: 32px !important;
+  padding-bottom: 64px !important;
+  padding-left: 60px !important;
+  padding-right: 60px !important;
+  box-sizing: border-box !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-canvas {
+  margin: 0 auto !important;
+  transform-origin: center top !important;
+  display: inline-block !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 2px !important;
+  background: #FFFFFF !important;
+}
+
+/* Floating Vertical Pill Dock Pinned to Left of Screen */
+.etxt-floating-dock-wrap {
+  position: absolute !important;
+  top: 50px !important;
+  left: 20px !important;
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
+.etxt-floating-dock {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 20px !important;
+  padding: 6px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.etxt-dock-flyout {
+  position: absolute !important;
+  left: calc(100% + 12px) !important;
+  top: 0 !important;
+  width: 220px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  z-index: 60 !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-dock-flyout[hidden],
+.etxt-dock-flyout.is-hidden {
+  display: none !important;
+}
+
+/* Slide-out Thumbnail Drawer (Overlay so it never pushes center canvas) */
+.etxt-thumbs {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 130px !important;
+  background: #FFFFFF !important;
+  border-right: 1px solid #E2E8F0 !important;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.06) !important;
+  z-index: 45 !important;
+  display: none !important;
+}
+
+.etxt-thumbs.is-open {
+  display: flex !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   GENEROUS VERTICAL CLEARANCE & PERFECT CENTERING FOR DOCUMENT CANVAS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.etxt-canvas-wrap {
+  flex: 1 1 auto !important;
+  position: relative !important;
+  overflow: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  padding-top: 56px !important;
+  padding-bottom: 96px !important;
+  padding-left: 80px !important;
+  padding-right: 80px !important;
+  box-sizing: border-box !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-canvas {
+  margin: 12px auto 64px auto !important;
+  transform-origin: center top !important;
+  display: inline-block !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 3px !important;
+  background: #FFFFFF !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   PERFECT TOP CLEARANCE FOR CENTERED CANVAS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.etxt-canvas-wrap {
+  flex: 1 1 auto !important;
+  position: relative !important;
+  overflow: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 40px 60px 80px 60px !important;
+  box-sizing: border-box !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-canvas {
+  margin: 20px auto 60px auto !important;
+  transform-origin: center top !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 3px !important;
+  background: #FFFFFF !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADJUSTED: 170% DEFAULT ZOOM & -20PX VERTICAL BREATHING ROOM
+   ═══════════════════════════════════════════════════════════════════ */
+
+.etxt-canvas-wrap {
+  flex: 1 1 auto !important;
+  position: relative !important;
+  overflow: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 20px 40px 60px 40px !important;
+  box-sizing: border-box !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-canvas {
+  margin: 0 auto 40px auto !important;
+  transform-origin: center top !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 3px !important;
+  background: #FFFFFF !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   RIGHT-SIDE THUMBNAIL DRAWER SLIDING OUT FROM RIGHT SIDE-RAIL
+   ═══════════════════════════════════════════════════════════════════ */
+
+.etxt-thumbs-drawer {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: 44px !important;
+  width: 140px !important;
+  height: 100% !important;
+  background: #FFFFFF !important;
+  border-left: 1px solid #E2E8F0 !important;
+  box-shadow: -6px 0 24px rgba(15, 23, 42, 0.08) !important;
+  z-index: 48 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 10px 8px !important;
+  box-sizing: border-box !important;
+  transform: translateX(100%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease !important;
+}
+
+.etxt-thumbs-drawer.is-open {
+  transform: translateX(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.etxt-thumbs-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 8px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+}
+
+.etxt-thumbs-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+}
+
+.etxt-thumbs-close {
+  all: unset !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-thumbs-close:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-thumbs-scroll {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+}
+
+.etxt-thumb-card {
+  width: 100% !important;
+  border: 2px solid transparent !important;
+  border-radius: 6px !important;
+  padding: 3px !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+  background: #F8FAFC !important;
+}
+
+.etxt-thumb-card:hover {
+  border-color: #CBD5E1 !important;
+}
+
+.etxt-thumb-card.is-on {
+  border-color: #8B5CF6 !important;
+  background: rgba(139, 92, 246, 0.04) !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15) !important;
+}
+
+.etxt-thumb {
+  all: unset !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+.etxt-thumb canvas,
+.etxt-thumb-canvas {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  display: block !important;
+  background: #FFFFFF !important;
+}
+
+.etxt-thumb-ph {
+  width: 100% !important;
+  height: 120px !important;
+  border-radius: 4px !important;
+  background: #F1F5F9 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #94A3B8 !important;
+}
+
+.etxt-thumb-num {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  margin-top: 3px !important;
+}
+
+.etxt-rail-pages-btn.is-on {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+}
