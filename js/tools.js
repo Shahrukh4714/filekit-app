@@ -4154,7 +4154,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       }
       page = 1;
-      zoom = 100;
+      zoom = 170;
       pageCount = 0;
       pages = [];
       edits = [];
@@ -4388,14 +4388,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
             
             <div class="etxt-canvas" id="etxt-canvas" style="transform: scale(${zoom/100})">
-              <div class="etxt-page">
-                <canvas class="etxt-full-canvas"></canvas>
-                <div class="etxt-text-layer" aria-hidden="true"></div>
-                <div class="etxt-annot-layer" aria-hidden="false"></div>
-                <div class="etxt-crop-layer" id="etxt-crop-layer" hidden></div>
-                ${imgSrc ? '<canvas class="etxt-img-preview" id="etxt-img-preview" hidden></canvas>' : ''}
-              </div>
+              ${pages.map((pg, i) => `
+                <div class="etxt-page" data-page="${i + 1}" style="position:relative; margin-bottom:24px;">
+                  <canvas class="etxt-full-canvas" data-page="${i + 1}"></canvas>
+                  <div class="etxt-text-layer" data-page="${i + 1}" aria-hidden="true"></div>
+                  <div class="etxt-annot-layer" data-page="${i + 1}" aria-hidden="false"></div>
+                  <div class="etxt-crop-layer" data-page="${i + 1}" hidden></div>
+                </div>
+              `).join('')}
             </div>
+
           </main>
 
           <!-- Slide-out Thumbnail Drawer (Anchored to Right Rail, slides out to the left) -->
@@ -4470,28 +4472,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         if (slider && Number(slider.value) !== zoom) slider.value = zoom;
       };
 
-      // Page switching helper
-      const goToPage = (newPage) => {
-        if (newPage < 1 || newPage > pageCount || newPage === page) return;
-        page = newPage;
-        const pBadge = container.querySelector('.etxt-fzoom-page-badge');
-        if (pBadge) pBadge.textContent = `${page} / ${pageCount}`;
-        const prevB = container.querySelector('#etxt-fnav-prev');
-        if (prevB) prevB.disabled = (page <= 1);
-        const nextB = container.querySelector('#etxt-fnav-next');
-        if (nextB) nextB.disabled = (page >= pageCount);
-
-        container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
-          tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
-        });
-
-        renderFullPage();
-        renderAnnots();
-        attachTextHits();
-      };
-
-      const fnavPrev = container.querySelector('#etxt-fnav-prev');
-      
       const canvasWrap = container.querySelector('#etxt-canvas-wrap');
 
       // Right drawer toggle wiring
@@ -4517,6 +4497,61 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         });
       }
 
+      // Page switching helper
+      const goToPage = (newPage) => {
+        if (newPage < 1 || newPage > pageCount) return;
+        page = newPage;
+        const pBadge = container.querySelector('.etxt-fzoom-page-badge');
+        if (pBadge) pBadge.textContent = `${page} / ${pageCount}`;
+        const prevB = container.querySelector('#etxt-fnav-prev');
+        if (prevB) prevB.disabled = (page <= 1);
+        const nextB = container.querySelector('#etxt-fnav-next');
+        if (nextB) nextB.disabled = (page >= pageCount);
+
+        container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
+          tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
+        });
+
+        const targetPageEl = container.querySelector(`.etxt-page[data-page="${page}"]`);
+        if (targetPageEl) {
+          targetPageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      };
+
+      // Dynamic scroll page tracker for continuous Adobe view
+      if (canvasWrap) {
+        let scrollTimeout = null;
+        canvasWrap.addEventListener('scroll', () => {
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            const wrapRect = canvasWrap.getBoundingClientRect();
+            const wrapMid = wrapRect.top + wrapRect.height / 3;
+            let currentVisiblePage = page;
+            container.querySelectorAll('.etxt-page').forEach(pageEl => {
+              const rect = pageEl.getBoundingClientRect();
+              if (rect.top <= wrapMid && rect.bottom >= wrapMid) {
+                currentVisiblePage = Number(pageEl.dataset.page) || currentVisiblePage;
+              }
+            });
+            if (currentVisiblePage !== page) {
+              page = currentVisiblePage;
+              const pBadge = container.querySelector('.etxt-fzoom-page-badge');
+              if (pBadge) pBadge.textContent = `${page} / ${pageCount}`;
+              const prevB = container.querySelector('#etxt-fnav-prev');
+              if (prevB) prevB.disabled = (page <= 1);
+              const nextB = container.querySelector('#etxt-fnav-next');
+              if (nextB) nextB.disabled = (page >= pageCount);
+
+              container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
+                tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
+              });
+            }
+          }, 60);
+        }, { passive: true });
+      }
+
+
+      const fnavPrev = container.querySelector('#etxt-fnav-prev');
       if (fnavPrev) fnavPrev.onclick = () => goToPage(page - 1);
       const fnavNext = container.querySelector('#etxt-fnav-next');
       if (fnavNext) fnavNext.onclick = () => goToPage(page + 1);
@@ -4626,40 +4661,46 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     async function renderFullPage() {
       const myDoc = docToken;
       const myToken = ++renderToken;
-      const i = page - 1;
-      if (!pdfDoc || !pages[i]) return;
+      if (!pdfDoc) return;
       try {
-        const base = await pdfDoc.getPage(page);
-        const baseVp = base.getViewport({ scale: 1 });
-        curPageW = baseVp.width;
-        curPageH = baseVp.height;
-        
-        // Base viewport fit scale (fixed user-space, zoom handled by CSS transform)
+        const firstPage = await pdfDoc.getPage(1);
+        const firstVp = firstPage.getViewport({ scale: 1 });
+        curPageW = firstVp.width;
+        curPageH = firstVp.height;
+
         const availH = Math.max(500, (window.innerHeight || 768) - 140);
-        const fitScaleH = availH / baseVp.height;
-        const fitScaleW = 680 / baseVp.width;
+        const fitScaleH = availH / firstVp.height;
+        const fitScaleW = 680 / firstVp.width;
         const baseScale = Math.min(fitScaleH, fitScaleW, 1.25);
         pageScale = baseScale;
-
-        // Render crisp canvas at base scale * DPR
         const dpr = Math.min(2.5, window.devicePixelRatio || 2);
-        const c = await renderPageAt(i, baseScale * dpr);
-        if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
-        pages[i].full = c;
-        c.className = 'etxt-full-canvas';
-        c.style.width = '100%';
-        c.style.height = '100%';
-        
-        const pageEl = container.querySelector('.etxt-page');
-        if (pageEl) {
-          pageEl.style.width = Math.round(baseVp.width * baseScale) + 'px';
-          pageEl.style.height = Math.round(baseVp.height * baseScale) + 'px';
-          const oldCanvas = pageEl.querySelector('.etxt-full-canvas');
-          if (oldCanvas) oldCanvas.replaceWith(c);
-          else pageEl.prepend(c);
+
+        for (let i = 0; i < pageCount; i++) {
+          if (myDoc !== docToken || myToken !== renderToken) return;
+          const pgObj = await pdfDoc.getPage(i + 1);
+          const vp = pgObj.getViewport({ scale: 1 });
+          const c = await renderPageAt(i, baseScale * dpr);
+          if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
+          pages[i].full = c;
+          c.className = 'etxt-full-canvas';
+          c.dataset.page = String(i + 1);
+          c.style.width = '100%';
+          c.style.height = '100%';
+
+          const pageEl = container.querySelector(`.etxt-page[data-page="${i + 1}"]`);
+          if (pageEl) {
+            pageEl.style.width = Math.round(vp.width * baseScale) + 'px';
+            pageEl.style.height = Math.round(vp.height * baseScale) + 'px';
+            const oldCanvas = pageEl.querySelector('.etxt-full-canvas');
+            if (oldCanvas) oldCanvas.replaceWith(c);
+            else pageEl.prepend(c);
+          }
         }
-      } catch (err) { console.warn('[Edit] page render', err); }
+        attachTextHits();
+        renderAnnots();
+      } catch (err) { console.warn('[Edit] render all pages error:', err); }
     }
+
 
     function renderThumbsAsync() {
       if (!pdfDoc) return;
@@ -5082,50 +5123,54 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       layer.append(box);
     }
 
-    /* ── Render all annotations for the current page ── */
+    /* ── Render all annotations for all pages ── */
     function renderAnnots() {
-      const layer = container.querySelector('.etxt-annot-layer');
-      if (!layer) return;
-      layer.classList.toggle('etxt-annot-layer--select', toolMode === 'select');
-      layer.innerHTML = '';
-      const list = annots[page - 1] || [];
-      for (const a of list) {
-        const el = annotToEl(a);
-        if (el) {
-          if (a.id === selAnnot) {
-            el.classList.add('etxt-sel');
-            if (a.kind === 'signature' || a.type === 'stamp' || a.type === 'img' || a.type === 'shape') {
-              const pop = document.createElement('div');
-              pop.className = 'etxt-annot-popover';
-              if (a.kind === 'signature') {
-                pop.innerHTML = `
-                  <button type="button" class="etxt-annot-pop-btn" data-annot-act="edit" title="Change / Re-draw Signature">🖊️ Change</button>
-                  <span class="etxt-annot-pop-sep"></span>
-                  <button type="button" class="etxt-annot-swatch" data-annot-color="#0F172A" style="background:#0F172A;" title="Black"></button>
-                  <button type="button" class="etxt-annot-swatch" data-annot-color="#1E3A8A" style="background:#1E3A8A;" title="Navy Blue"></button>
-                  <button type="button" class="etxt-annot-swatch" data-annot-color="#334155" style="background:#334155;" title="Charcoal"></button>
-                  <span class="etxt-annot-pop-sep"></span>
-                  <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate Signature">Duplicate</button>
-                  <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete Signature">✕</button>
-                `;
-              } else {
-                pop.innerHTML = `
-                  <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate">Duplicate</button>
-                  <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete">✕</button>
-                `;
+      container.querySelectorAll('.etxt-page').forEach(pageEl => {
+        const pNum = Number(pageEl.dataset.page) || 1;
+        const layer = pageEl.querySelector('.etxt-annot-layer');
+        if (!layer) return;
+        layer.classList.toggle('etxt-annot-layer--select', toolMode === 'select');
+        layer.innerHTML = '';
+        const list = annots[pNum - 1] || [];
+        for (const a of list) {
+          const el = annotToEl(a);
+          if (el) {
+            if (a.id === selAnnot) {
+              el.classList.add('etxt-sel');
+              if (a.kind === 'signature' || a.type === 'stamp' || a.type === 'img' || a.type === 'shape') {
+                const pop = document.createElement('div');
+                pop.className = 'etxt-annot-popover';
+                if (a.kind === 'signature') {
+                  pop.innerHTML = `
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="edit" title="Change / Re-draw Signature">🖊️ Change</button>
+                    <span class="etxt-annot-pop-sep"></span>
+                    <button type="button" class="etxt-annot-swatch" data-annot-color="#0F172A" style="background:#0F172A;" title="Black"></button>
+                    <button type="button" class="etxt-annot-swatch" data-annot-color="#1E3A8A" style="background:#1E3A8A;" title="Navy Blue"></button>
+                    <button type="button" class="etxt-annot-swatch" data-annot-color="#334155" style="background:#334155;" title="Charcoal"></button>
+                    <span class="etxt-annot-pop-sep"></span>
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate Signature">Duplicate</button>
+                    <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete Signature">✕</button>
+                  `;
+                } else {
+                  pop.innerHTML = `
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate">Duplicate</button>
+                    <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete">✕</button>
+                  `;
+                }
+                const handle = document.createElement('div');
+                handle.className = 'etxt-annot-handle etxt-annot-handle-se';
+                handle.dataset.handle = 'se';
+                handle.title = 'Drag to Resize';
+                el.append(pop, handle);
               }
-              const handle = document.createElement('div');
-              handle.className = 'etxt-annot-handle etxt-annot-handle-se';
-              handle.dataset.handle = 'se';
-              handle.title = 'Drag to Resize';
-              el.append(pop, handle);
             }
+            layer.append(el);
           }
-          layer.append(el);
         }
-      }
+      });
       renderCropOverlay();
     }
+
 
     function annotToEl(a) {
       const P = pageScale;
