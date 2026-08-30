@@ -13,3 +13,13 @@ New folder/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local test & audit scratch files
+test_*.html
+test-*.html
+audit_screenshots/
+browser_audit_results.json
+debug_after_upload.png
+test_sample.pdf
+scratch_sample.pdf
+

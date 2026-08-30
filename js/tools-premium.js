@@ -1081,60 +1081,297 @@
       });
     }
 
-    /* ── Compare ── */
+    /* ── Compare (Interactive Curtain Slider & Semantic Text Diff) ── */
     function bodyCompare(s, files) {
       const [a, b] = files;
       s.body.className = 'pro-body pro-compare-body';
+
+      let curPage = 1;
+      let maxPages = 1;
+      let viewMode = 'curtain'; // 'curtain' | 'side' | 'text'
+      let curtainPos = 50; // 0 - 100%
+
+      function diffWords(textA, textB) {
+        const wordsA = (textA || '').split(/\s+/).filter(Boolean);
+        const wordsB = (textB || '').split(/\s+/).filter(Boolean);
+        const n = wordsA.length, m = wordsB.length;
+        const dp = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < m; j++) {
+            if (wordsA[i] === wordsB[j]) dp[i + 1][j + 1] = dp[i][j] + 1;
+            else dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+          }
+        }
+        let i = n, j = m;
+        const diff = [];
+        let added = 0, deleted = 0;
+        while (i > 0 || j > 0) {
+          if (i > 0 && j > 0 && wordsA[i - 1] === wordsB[j - 1]) {
+            diff.unshift({ type: 'same', text: wordsA[i - 1] });
+            i--; j--;
+          } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+            diff.unshift({ type: 'add', text: wordsB[j - 1] });
+            added++;
+            j--;
+          } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
+            diff.unshift({ type: 'del', text: wordsA[i - 1] });
+            deleted++;
+            i--;
+          }
+        }
+        return { diff, added, deleted };
+      }
+
       s.body.innerHTML = `
-        <div class="pro-compare-grid">
-          <figure class="pro-diff-fig"><figcaption>${esc(a.name)}</figcaption><img id="pro-cmp-a" alt="First PDF page"></figure>
-          <figure class="pro-diff-fig is-diff"><figcaption>Difference</figcaption><canvas id="pro-cmp-out"></canvas><div class="pro-cmp-pct" id="pro-cmp-pct"></div></figure>
-          <figure class="pro-diff-fig"><figcaption>${esc(b.name)}</figcaption><img id="pro-cmp-b" alt="Second PDF page"></figure>
+        <div class="pro-cmp-container">
+          <div class="pro-cmp-toolbar-sub">
+            <div class="pro-cmp-mode-toggle">
+              <button type="button" class="pro-cmp-tab-btn active" data-mode="curtain">↔ Swipe Curtain</button>
+              <button type="button" class="pro-cmp-tab-btn" data-mode="side">◫ Side-by-Side</button>
+              <button type="button" class="pro-cmp-tab-btn" data-mode="text">📄 Text Diff</button>
+            </div>
+
+            <div class="pro-cmp-page-nav">
+              <button type="button" class="pro-cmp-page-btn" id="pro-cmp-prev" title="Previous Page">◀</button>
+              <span class="pro-cmp-page-label" id="pro-cmp-page-lbl">Page 1 / 1</span>
+              <button type="button" class="pro-cmp-page-btn" id="pro-cmp-next" title="Next Page">▶</button>
+            </div>
+          </div>
+
+          <div class="pro-cmp-stage" id="pro-cmp-stage">
+            <!-- Curtain Swipe View -->
+            <div class="pro-cmp-curtain-view" id="pro-cmp-curtain-view">
+              <div class="pro-cmp-curtain-wrap" id="pro-cmp-curtain-wrap">
+                <canvas id="pro-cmp-canvas-base" class="pro-cmp-canvas base"></canvas>
+                <div class="pro-cmp-overlay-clip" id="pro-cmp-overlay-clip" style="width: 50%;">
+                  <canvas id="pro-cmp-canvas-top" class="pro-cmp-canvas top"></canvas>
+                </div>
+                <div class="pro-cmp-curtain-divider" id="pro-cmp-curtain-divider" style="left: 50%;">
+                  <div class="pro-cmp-handle">◀ ▶</div>
+                </div>
+                <div class="pro-cmp-badge base-badge">${esc(a.name)}</div>
+                <div class="pro-cmp-badge top-badge">${esc(b.name)}</div>
+              </div>
+            </div>
+
+            <!-- Side-by-Side Dual View -->
+            <div class="pro-cmp-side-view" id="pro-cmp-side-view" style="display:none;">
+              <div class="pro-cmp-side-col">
+                <div class="pro-cmp-side-head">${esc(a.name)} (Original)</div>
+                <canvas id="pro-cmp-canvas-side-a" class="pro-cmp-side-canvas"></canvas>
+              </div>
+              <div class="pro-cmp-side-col">
+                <div class="pro-cmp-side-head">${esc(b.name)} (Modified)</div>
+                <canvas id="pro-cmp-canvas-side-b" class="pro-cmp-side-canvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Semantic Text Diff View -->
+            <div class="pro-cmp-text-view" id="pro-cmp-text-view" style="display:none;">
+              <div class="pro-cmp-text-box" id="pro-cmp-text-box">
+                <p style="color:#64748b; font-size:13px;">Extracting and analyzing text diff…</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <aside class="pro-panel"><div class="pro-panel-head"><strong>Compare PDFs</strong><span>Page by page</span></div>
-        <p class="pro-panel-note" id="pro-cmp-note">Rendering…</p>
-        <button type="button" class="etxt-btn-finish pro-panel-run" data-cmp-dl>${dlIco} Download diff image</button></aside>`;
-      s.toolbar.innerHTML = `<span class="pro-dim">${a.name} vs ${b.name}</span><span class="pro-live" id="pro-cmp-live">Rendering…</span>`;
+
+        <aside class="pro-panel">
+          <div class="pro-panel-head">
+            <strong>Compare PDFs</strong>
+            <span>Interactive Diff Station</span>
+          </div>
+
+          <div class="pro-cmp-metrics-box">
+            <div class="pro-cmp-metric-row">
+              <span class="lbl">Pixel Difference</span>
+              <b class="val" id="pro-cmp-pixel-val">Calculating…</b>
+            </div>
+            <div class="pro-cmp-metric-row">
+              <span class="lbl">Words Added</span>
+              <b class="val text-green" id="pro-cmp-words-add">+0 words</b>
+            </div>
+            <div class="pro-cmp-metric-row">
+              <span class="lbl">Words Deleted</span>
+              <b class="val text-red" id="pro-cmp-words-del">-0 words</b>
+            </div>
+          </div>
+
+          <p class="pro-panel-note" id="pro-cmp-note">Drag the center slider to inspect changes.</p>
+          <button type="button" class="etxt-btn-finish pro-panel-run" data-cmp-dl>${dlIco} Download Comparison</button>
+        </aside>
+      `;
+
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(a.name)} vs ${esc(b.name)}</span><span class="pro-live" id="pro-cmp-live">Rendering…</span>`;
       s.runBtn.textContent = 'Compare pages';
+
       const runCompare = async (pageNum) => {
         const pdfjs = await load.pdfjs();
         const [da, db] = [await u8(a), await u8(b)];
         const [pa, pb] = await Promise.all([pdfjs.getDocument({ data: da }).promise, pdfjs.getDocument({ data: db }).promise]);
-        const n = Math.min(pa.numPages, pb.numPages);
-        const p = Math.min(pageNum, n);
-        const scale = 1.5;
-        const ra = await pa.getPage(p), rb = await pb.getPage(p);
+        maxPages = Math.min(pa.numPages, pb.numPages);
+        curPage = Math.min(pageNum, maxPages);
+
+        const pageLbl = s.body.querySelector('#pro-cmp-page-lbl');
+        if (pageLbl) pageLbl.textContent = `Page ${curPage} / ${maxPages}`;
+
+        const scale = 1.6;
+        const [ra, rb] = await Promise.all([pa.getPage(curPage), pb.getPage(curPage)]);
         const va = ra.getViewport({ scale }), vb = rb.getViewport({ scale });
         const w = Math.max(va.width, vb.width), h = Math.max(va.height, vb.height);
-        const ca = cv(w, h), cb = cv(w, h);
-        const cta = ca.getContext('2d'); cta.fillStyle = '#fff'; cta.fillRect(0, 0, w, h);
+
+        // Render Canvas A
+        const ca = cv(w, h);
+        const cta = ca.getContext('2d');
+        cta.fillStyle = '#fff';
+        cta.fillRect(0, 0, w, h);
         await ra.render({ canvasContext: cta, viewport: va }).promise;
-        const ctb = cb.getContext('2d'); ctb.fillStyle = '#fff'; ctb.fillRect(0, 0, w, h);
+
+        // Render Canvas B
+        const cb = cv(w, h);
+        const ctb = cb.getContext('2d');
+        ctb.fillStyle = '#fff';
+        ctb.fillRect(0, 0, w, h);
         await rb.render({ canvasContext: ctb, viewport: vb }).promise;
+
+        // Calculate Pixel Diff
         const da2 = cta.getImageData(0, 0, w, h).data;
         const db2 = ctb.getImageData(0, 0, w, h).data;
-        const out = cv(w, h); const od = out.getContext('2d').createImageData(w, h);
-        let diff = 0;
+        let diffCount = 0;
+        for (let i = 0; i < da2.length; i += 4) {
+          const dr = Math.abs(da2[i] - db2[i]);
+          const dg = Math.abs(da2[i + 1] - db2[i + 1]);
+          const dbl = Math.abs(da2[i + 2] - db2[i + 2]);
+          if (dr + dg + dbl > 36) diffCount++;
+        }
+        const pct = ((diffCount / (w * h)) * 100).toFixed(1);
+
+        // Update Curtain View Canvases
+        const baseCv = s.body.querySelector('#pro-cmp-canvas-base');
+        const topCv = s.body.querySelector('#pro-cmp-canvas-top');
+        if (baseCv && topCv) {
+          baseCv.width = w; baseCv.height = h;
+          baseCv.getContext('2d').drawImage(ca, 0, 0);
+          topCv.width = w; topCv.height = h;
+          topCv.getContext('2d').drawImage(cb, 0, 0);
+        }
+
+        // Update Side-by-Side Canvases
+        const sideA = s.body.querySelector('#pro-cmp-canvas-side-a');
+        const sideB = s.body.querySelector('#pro-cmp-canvas-side-b');
+        if (sideA && sideB) {
+          sideA.width = w; sideA.height = h;
+          sideA.getContext('2d').drawImage(ca, 0, 0);
+          sideB.width = w; sideB.height = h;
+          sideB.getContext('2d').drawImage(cb, 0, 0);
+        }
+
+        // Semantic Text Diff
+        const [tcA, tcB] = await Promise.all([ra.getTextContent(), rb.getTextContent()]);
+        const textA = (tcA.items || []).map(it => it.str).join(' ');
+        const textB = (tcB.items || []).map(it => it.str).join(' ');
+        const { diff: textDiffList, added, deleted } = diffWords(textA, textB);
+
+        const textBox = s.body.querySelector('#pro-cmp-text-box');
+        if (textBox) {
+          textBox.innerHTML = textDiffList.map(token => {
+            if (token.type === 'add') return `<span class="pro-cmp-token add">+${esc(token.text)}</span> `;
+            if (token.type === 'del') return `<span class="pro-cmp-token del">-${esc(token.text)}</span> `;
+            return `<span class="pro-cmp-token same">${esc(token.text)}</span> `;
+          }).join('');
+        }
+
+        // Update Metrics Panel
+        const pixelVal = s.body.querySelector('#pro-cmp-pixel-val');
+        if (pixelVal) pixelVal.textContent = `${pct}% modified`;
+        const wordsAdd = s.body.querySelector('#pro-cmp-words-add');
+        if (wordsAdd) wordsAdd.textContent = `+${added} ${added === 1 ? 'word' : 'words'}`;
+        const wordsDel = s.body.querySelector('#pro-cmp-words-del');
+        if (wordsDel) wordsDel.textContent = `-${deleted} ${deleted === 1 ? 'word' : 'words'}`;
+
+        const note = s.body.querySelector('#pro-cmp-note');
+        if (note) note.textContent = `Page ${curPage} of ${maxPages} · ${pct}% pixel diff · ${added + deleted} word change(s)`;
+
+        const liveEl = s.toolbar.querySelector('#pro-cmp-live');
+        if (liveEl) liveEl.textContent = `Page ${curPage}/${maxPages} · ${pct}% diff`;
+
+        // Create Composite Diff Download Blob
+        const outCanvas = cv(w, h);
+        const outCtx = outCanvas.getContext('2d');
+        outCtx.drawImage(ca, 0, 0);
+        const od = outCtx.getImageData(0, 0, w, h);
         for (let i = 0; i < da2.length; i += 4) {
           const dr = Math.abs(da2[i] - db2[i]), dg = Math.abs(da2[i + 1] - db2[i + 1]), dbl = Math.abs(da2[i + 2] - db2[i + 2]);
-          if (dr + dg + dbl > 36) { diff++; od.data[i] = 220; od.data[i + 1] = 45; od.data[i + 2] = 45; od.data[i + 3] = 255; }
+          if (dr + dg + dbl > 36) {
+            od.data[i] = 239; od.data[i + 1] = 68; od.data[i + 2] = 68; od.data[i + 3] = 255;
+          }
         }
-        out.getContext('2d').putImageData(od, 0, 0);
-        const pct = ((diff / (w * h)) * 100).toFixed(1);
-        s.body.querySelector('#pro-cmp-a').src = ca.toDataURL('image/png');
-        s.body.querySelector('#pro-cmp-b').src = cb.toDataURL('image/png');
-        const oc = s.body.querySelector('#pro-cmp-out');
-        oc.width = w; oc.height = h;
-        oc.getContext('2d').drawImage(out, 0, 0);
-        s.body.querySelector('#pro-cmp-pct').textContent = pct + '% changed';
-        s.body.querySelector('#pro-cmp-note').textContent = `Page ${p} of ${n} compared · ${pct}% of pixels differ`;
-        s.toolbar.querySelector('.pro-live').textContent = `Page ${p}/${n} · ${pct}%`;
-        window.__cmpBlob = await new Promise((res) => out.toBlob(res, 'image/png'));
-        window.__cmpPct = pct;
+        outCtx.putImageData(od, 0, 0);
+        window.__cmpBlob = await new Promise((res) => outCanvas.toBlob(res, 'image/png'));
       };
-      (async () => { try { await runCompare(1); } catch (e) { s.body.querySelector('#pro-cmp-note').textContent = 'Could not render pages: ' + e.message; } })();
-      s.body.querySelector('[data-cmp-dl]').addEventListener('click', () => { if (window.__cmpBlob) download(window.__cmpBlob, 'pdf-compare.png'); });
+
+      // Handle Curtain Dragging
+      const curtainWrap = s.body.querySelector('#pro-cmp-curtain-wrap');
+      const overlayClip = s.body.querySelector('#pro-cmp-overlay-clip');
+      const divider = s.body.querySelector('#pro-cmp-curtain-divider');
+
+      let isDraggingCurtain = false;
+      const onMove = (clientX) => {
+        if (!curtainWrap || !overlayClip || !divider) return;
+        const rect = curtainWrap.getBoundingClientRect();
+        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        curtainPos = (x / rect.width) * 100;
+        overlayClip.style.width = `${curtainPos}%`;
+        divider.style.left = `${curtainPos}%`;
+      };
+
+      if (curtainWrap) {
+        curtainWrap.addEventListener('pointerdown', (e) => {
+          isDraggingCurtain = true;
+          onMove(e.clientX);
+          try { curtainWrap.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        curtainWrap.addEventListener('pointermove', (e) => {
+          if (isDraggingCurtain) onMove(e.clientX);
+        });
+        curtainWrap.addEventListener('pointerup', () => { isDraggingCurtain = false; });
+        curtainWrap.addEventListener('pointercancel', () => { isDraggingCurtain = false; });
+      }
+
+      // Mode Toggles
+      s.body.querySelectorAll('.pro-cmp-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          s.body.querySelectorAll('.pro-cmp-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          viewMode = btn.dataset.mode;
+          const curtainV = s.body.querySelector('#pro-cmp-curtain-view');
+          const sideV = s.body.querySelector('#pro-cmp-side-view');
+          const textV = s.body.querySelector('#pro-cmp-text-view');
+          if (curtainV) curtainV.style.display = viewMode === 'curtain' ? 'block' : 'none';
+          if (sideV) sideV.style.display = viewMode === 'side' ? 'grid' : 'none';
+          if (textV) textV.style.display = viewMode === 'text' ? 'block' : 'none';
+        });
+      });
+
+      // Page Navigation
+      const prevBtn = s.body.querySelector('#pro-cmp-prev');
+      const nextBtn = s.body.querySelector('#pro-cmp-next');
+      if (prevBtn) prevBtn.addEventListener('click', () => { if (curPage > 1) runCompare(curPage - 1); });
+      if (nextBtn) nextBtn.addEventListener('click', () => { if (curPage < maxPages) runCompare(curPage + 1); });
+
+      // Initial Compare Run
+      (async () => {
+        try {
+          await runCompare(1);
+        } catch (e) {
+          const note = s.body.querySelector('#pro-cmp-note');
+          if (note) note.textContent = 'Could not render pages: ' + e.message;
+        }
+      })();
+
+      const dlBtn = s.body.querySelector('[data-cmp-dl]');
+      if (dlBtn) dlBtn.addEventListener('click', () => { if (window.__cmpBlob) download(window.__cmpBlob, 'pdf-compare-diff.png'); });
     }
+
 
     /* ── Invert ── */
     function bodyInvert(s, files) {

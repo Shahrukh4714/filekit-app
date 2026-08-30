@@ -24,6 +24,7 @@ class FileKitHandler(http.server.SimpleHTTPRequestHandler):
         # Enable SharedArrayBuffer & multi-threaded WASM in local dev
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
         self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
+        self.send_header('Cross-Origin-Resource-Policy', 'same-origin')
         self.send_header('Cache-Control', 'no-cache, must-revalidate')
         super().end_headers()
 

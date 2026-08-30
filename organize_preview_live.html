@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organize PDF Online Free - FileKit Studio Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/local-fonts.css">
+<link rel="stylesheet" href="css/styles.css?v=fk_organize_v28">
+<link rel="stylesheet" href="css/edit-pdf.css?v=fk_organize_v28">
+<link rel="stylesheet" href="css/organize-pdf.css?v=fk_organize_v28">
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #F8FAFC;
+  margin: 0;
+  padding: 0;
+  color: #0F172A;
+}
+#debug-log {
+  background: #0F172A;
+  color: #38BDF8;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.preview-container {
+  max-width: 1200px;
+  margin: 20px auto 40px;
+  padding: 0 20px;
+}
+.preview-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.preview-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 4px;
+}
+.preview-header p {
+  color: #64748B;
+  font-size: 13.5px;
+}
+.studio-mount-frame {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  height: 720px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  margin-bottom: 30px;
+  position: relative;
+}
+.quick-test-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.test-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #0F172A;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 120ms ease;
+}
+.test-btn:hover {
+  background: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+}
+</style>
+</head>
+<body>
+
+<div class="preview-container">
+  <div class="preview-header">
+    <h1>Organize PDF &amp; Document Studio</h1>
+    <p>Visual drag-and-drop page reordering, High-DPI rendering, multi-page batch dock, and universal format ingestion.</p>
+  </div>
+
+  <div class="quick-test-bar">
+    <button class="test-btn" id="btn-sample-pdf" type="button">📄 4-Page Document Workbench</button>
+    <button class="test-btn" id="btn-sample-select" type="button">☑️ Multi-Selection &amp; Batch Dock</button>
+    <button class="test-btn" id="btn-sample-split" type="button">✂️ Split Mode &amp; Scissor Cuts</button>
+    <button class="test-btn" id="btn-sample-multi" type="button">📑 Multi-Document Merge Set</button>
+  </div>
+
+  <div id="debug-log">Log initialized...</div>
+  <!-- Live Studio Frame -->
+  <div class="studio-mount-frame" id="live-stage"></div>
+
+  <!-- Feature Trust Strip -->
+  <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0; gap: 30px;">
+    <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit Organize Studio gives you surgical control over PDF page ordering, rotations, intervals, deletions, and multi-file merging with 100% in-browser WebAssembly processing and instant High-DPI 4K rendering.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>True HTML5 Drag-and-Drop Page Reordering</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>High-DPI Retina/4K Canvas Preview Engine</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Batch Action Dock (Rotate, Delete, Duplicate, Extract)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js?v=fk_organize_v28"></script>
+<script src="js/tools.js?v=fk_organize_v28"></script>
+<script src="js/tools-new.js?v=fk_organize_v28"></script>
+<script src="js/tools-premium.js?v=fk_organize_v28"></script>
+<script src="js/tools-premium2.js?v=fk_organize_v28"></script>
+<script>
+  const logEl = document.getElementById('debug-log');
+  function logMsg(msg) {
+    if (logEl) logEl.textContent += '\n' + msg;
+    console.log(msg);
+  }
+  window.onerror = (msg, url, line) => {
+    logMsg(`[ERROR] ${msg} at line ${line}`);
+  };
+  window.onunhandledrejection = (e) => {
+    logMsg(`[UNHANDLED PROMISE REJECTION] ${e.reason?.message || e.reason}`);
+  };
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    logMsg('DOMContentLoaded fired.');
+    const stage = document.getElementById('live-stage');
+
+    // Helper: Generate sample PDF with synthetic pages
+    async function createSamplePdf(pageLabels = ['Overview & Scope', 'Technical Architecture', 'Financial Analysis', 'Implementation Schedule']) {
+      const L = await window.FF.util.loadScript('vendor/pdf-lib.min.js').then(() => window.PDFLib);
+      const doc = await L.PDFDocument.create();
+      const font = await doc.embedFont(L.StandardFonts.HelveticaBold);
+      const subFont = await doc.embedFont(L.StandardFonts.Helvetica);
+
+      const colors = [
+        [0.06, 0.09, 0.16], // Dark Slate
+        [0.15, 0.39, 0.92], // Blue
+        [0.02, 0.59, 0.41], // Emerald
+        [0.55, 0.23, 0.95]  // Violet
+      ];
+
+      for (let i = 0; i < pageLabels.length; i++) {
+        const page = doc.addPage([595, 842]); // A4
+        const col = colors[i % colors.length];
+        
+        // Top colored banner
+        page.drawRectangle({
+          x: 0, y: 780, width: 595, height: 62,
+          color: L.rgb(col[0], col[1], col[2])
+        });
+
+        // Header text
+        page.drawText(`DOCUMENT SECTION ${i + 1}`, {
+          x: 40, y: 802, size: 14, font, color: L.rgb(1, 1, 1)
+        });
+
+        // Page title
+        page.drawText(pageLabels[i], {
+          x: 40, y: 720, size: 24, font, color: L.rgb(0.06, 0.09, 0.16)
+        });
+
+        // Body paragraph lines
+        const lines = [
+          `Simulated high-fidelity document content for section ${i + 1}.`,
+          'FileKit local sandbox processes all vector elements and typography client-side.',
+          'Verify page orientation, reordering, and extraction operate losslessly.'
+        ];
+
+        lines.forEach((text, lineIdx) => {
+          page.drawText(text, {
+            x: 40, y: 660 - (lineIdx * 28), size: 12, font: subFont, color: L.rgb(0.3, 0.35, 0.45)
+          });
+        });
+
+        // Bottom page number
+        page.drawText(`Page ${i + 1} of ${pageLabels.length}`, {
+          x: 40, y: 40, size: 10, font: subFont, color: L.rgb(0.6, 0.65, 0.75)
+        });
+      }
+
+      const bytes = await doc.save();
+      return new File([bytes], 'FileKit_Sample_Report.pdf', { type: 'application/pdf' });
+    }
+
+    const mountWithSample = async (labels) => {
+      try {
+        logMsg('Creating sample PDF...');
+        const sampleFile = await createSamplePdf(labels);
+        window.FF.app = window.FF.app || {};
+        window.FF.app.pendingFiles = [sampleFile];
+        window.__ffMountOrganize(stage, { id: 'organize', name: 'Organize PDF' }, [sampleFile]);
+        logMsg('mountOrganize called successfully.');
+
+        await new Promise(resolve => {
+          const check = setInterval(() => {
+            if (stage.querySelector('.org-canvas-grid')) {
+              clearInterval(check);
+              logMsg('Workbench canvas grid mounted!');
+              resolve();
+            }
+          }, 100);
+          setTimeout(resolve, 5000);
+        });
+      } catch (err) {
+        logMsg(`[ERROR in mountWithSample] ${err.message}\n${err.stack}`);
+      }
+    };
+
+    document.getElementById('btn-sample-pdf').onclick = () => mountWithSample();
+    document.getElementById('btn-sample-select').onclick = async () => {
+      await mountWithSample();
+      setTimeout(() => {
+        const chks = stage.querySelectorAll('.org-card-chk');
+        if (chks[0]) chks[0].click();
+        if (chks[1]) chks[1].click();
+      }, 500);
+    };
+    document.getElementById('btn-sample-split').onclick = async () => {
+      await mountWithSample();
+      setTimeout(() => {
+        const splitBtn = stage.querySelector('.org-tool-btn[data-mode="split"]');
+        if (splitBtn) splitBtn.click();
+      }, 500);
+    };
+    document.getElementById('btn-sample-multi').onclick = async () => {
+      const f1 = await createSamplePdf(['Contract Agreement', 'Terms of Engagement']);
+      const f2 = await createSamplePdf(['Executive Summary', 'Financial Projections', 'Signatures']);
+      window.FF.app.pendingFiles = [f1, f2];
+      window.__ffMountOrganize(stage, { id: 'organize', name: 'Organize PDF' });
+    };
+
+    // Auto-test mode from URL
+    const params = new URLSearchParams(window.location.search);
+    const test = params.get('test');
+    if (test === 'workbench') {
+      await mountWithSample();
+    } else if (test === 'selected') {
+      await mountWithSample();
+      setTimeout(() => {
+        const chks = stage.querySelectorAll('.org-card-chk');
+        if (chks[0]) chks[0].click();
+        if (chks[1]) chks[1].click();
+      }, 600);
+    } else if (test === 'split') {
+      await mountWithSample();
+      setTimeout(() => {
+        const splitBtn = stage.querySelector('.org-tool-btn[data-mode="split"]');
+        if (splitBtn) splitBtn.click();
+      }, 600);
+    } else {
+      window.__ffMountOrganize(stage, { id: 'organize', name: 'Organize PDF' });
+    }
+  });
+</script>
+</body>
+</html>

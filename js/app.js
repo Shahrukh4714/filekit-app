@@ -1253,7 +1253,7 @@
       return { task: 'flatten', color: '#4F46E5', hover: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', glow: 'rgba(79,70,229,0.25)', cardBorder: '#E0E7FF' };
     }
     if (/organize|rotate/i.test(id)) {
-      return { task: 'organize', color: '#4F46E5', hover: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', glow: 'rgba(79,70,229,0.25)', cardBorder: '#E0E7FF' };
+      return { task: 'organize', color: '#0F172A', hover: '#1E293B', bg: '#F8FAFC', border: '#CBD5E1', glow: 'rgba(15,23,42,0.06)', cardBorder: '#E2E8F0' };
     }
     if (/audio/i.test(id) || cat === 'audio') {
       return { task: 'audio', color: '#E11D48', hover: '#BE123C', bg: '#FFF1F2', border: '#FECDD3', glow: 'rgba(225,29,72,0.25)', cardBorder: '#FFE4E6' };
@@ -1613,7 +1613,7 @@
     let appViewMode = 'grid';
     let appSpecialFilter = '';
     let appTask = '';
-    const taskToolIds = { compress: ['pdf-compress','image-compress','video-compress','audio-normalize','audio-bitrate','audio-sample-rate','pdf-to-pdf','pdf-flatten','pdf-grayscale','pdf-resize','image-resize','svg-optimize','exif-strip','video-resolution','video-framerate','video-strip-audio','audio-strip-metadata','zip-create','targz-create','file-split'],    convert: ['pdf-convert','pdf-to-word','pdf-to-excel','pdf-to-ppt','pdf-to-md','pptx-to-pdf','pptx-to-html','pptx-to-txt','pptx-to-md','pdf-to-image','pdf-to-jpg','pdf-to-html','pdf-to-csv','pdf-to-epub','pdf-to-audio','pdf-to-zip','pdf-to-pdfa','docx-to-pdf','excel-to-pdf','csv-to-pdf','md-to-pdf','html-to-pdf','txt-to-pdf','image-to-pdf','epub-to-pdf','handwriting-to-pdf','docx-to-html','docx-to-md','docx-to-txt','md-to-html','html-to-md','epub-to-html','epub-to-txt','image-convert','image-heic-convert','png-trace','svg-to-raster','img-to-base64','base64-to-img','video-convert','video-to-shorts','video-gif','video-extract-audio','video-to-images','audio-convert','audio-to-wav','audiogram-generator','data-transcode','excel-to-json','txt-to-html','txt-to-md','md-to-txt','html-to-txt','font-convert'], organize: ['organize','pdf-merge','pdf-split','pdf-rotate','pdf-crop','pdf-extract-range','pdf-extract-images','pdf-extract-text','image-rotate','image-crop','sprite-sheet','palette','archive-7z-extract','zip-extract','targz-extract','file-split','doc-dedupe','doc-sort','audio-merge','audio-split-silence','video-merge','video-extract-frame','epub-chapters','epub-cover'], edit: ['pdf-edit-text','pdf-sign','pdf-watermark','pdf-redact','pdf-sanitize-pii','pdf-redact-pii','pdf-headers-footers','pdf-page-numbers','pdf-form-filler','pdf-protect','pdf-unlock','pdf-flatten','pdf-repair','pdf-invert','pdf-compare','image-crop','image-resize','image-rotate','image-watermark','image-sharpen','image-round','image-border','exif-strip','video-trim','video-watermark','video-subtitles','video-speed','video-mute','video-reverse','audio-trim','audio-speed','audio-reverse','audio-normalize','audio-strip-metadata','epub-metadata','doc-case'], image: ['image-hub'], qr: ['qr-hub'], scan: ['scan-document','workflow-builder','pdf-to-audio','pdf-to-csv','pdf-summarize'], workflow: ['workflow-builder','scan-document','pdf-to-audio','pdf-to-zip','pdf-create'], more: [] };
+    const taskToolIds = { compress: ['pdf-compress','image-compress','video-compress','audio-normalize','audio-bitrate','audio-sample-rate','pdf-to-pdf','pdf-flatten','pdf-grayscale','pdf-resize','image-resize','svg-optimize','exif-strip','video-resolution','video-framerate','video-strip-audio','audio-strip-metadata','zip-create','targz-create','file-split'],    convert: ['pdf-convert','pdf-to-word','pdf-to-excel','pdf-to-ppt','pdf-to-md','pptx-to-pdf','pptx-to-html','pptx-to-txt','pptx-to-md','pdf-to-image','pdf-to-jpg','pdf-to-html','pdf-to-csv','pdf-to-epub','pdf-to-audio','pdf-to-zip','pdf-to-pdfa','docx-to-pdf','excel-to-pdf','csv-to-pdf','md-to-pdf','html-to-pdf','txt-to-pdf','image-to-pdf','epub-to-pdf','handwriting-to-pdf','docx-to-html','docx-to-md','docx-to-txt','md-to-html','html-to-md','epub-to-html','epub-to-txt','image-convert','image-heic-convert','png-trace','svg-to-raster','img-to-base64','base64-to-img','video-convert','video-to-shorts','video-gif','video-extract-audio','video-to-images','audio-convert','audio-to-wav','audiogram-generator','data-transcode','excel-to-json','txt-to-html','txt-to-md','md-to-txt','html-to-txt','font-convert'], organize: ['organize','pdf-merge','pdf-split','pdf-rotate','pdf-crop','pdf-extract-range','pdf-extract-images','pdf-extract-text','image-rotate','image-crop','sprite-sheet','palette','archive-7z-extract','zip-extract','targz-extract','file-split','doc-dedupe','doc-sort','audio-merge','audio-split-silence','video-merge','video-extract-frame','epub-chapters','epub-cover'], edit: ['pdf-edit-text','pdf-sign','pdf-redact','pdf-sanitize-pii','pdf-redact-pii','pdf-watermark','pdf-headers-footers','pdf-page-numbers','pdf-form-filler','pdf-repair','pdf-invert','pdf-compare','image-crop','image-resize','image-rotate','image-watermark','image-sharpen','image-round','image-border','exif-strip','video-trim','video-watermark','video-subtitles','video-speed','video-mute','video-reverse','audio-trim','audio-speed','audio-reverse','audio-normalize','audio-strip-metadata','epub-metadata','doc-case'], protect: ['pdf-protect','pdf-unlock','pdf-flatten'], scan: ['scan-document','pdf-extract-text','pdf-to-audio','pdf-to-csv','pdf-summarize'], workflow: ['workflow-builder','scan-document','pdf-to-audio','pdf-to-zip','pdf-create'], image: ['image-hub'], qr: ['qr-hub'], more: [] };
 
     const CATEGORY_META = {
       'PDF': { icon: '📄', color: '#E5252A', bg: '#FEF2F2', border: '#FCA5A5', desc: 'Merge, split, compress, edit, convert, and sign PDF files with 100% offline privacy.' },
@@ -1689,6 +1689,7 @@
 
     function showHome(scrollTarget = null) {
       FF.util.revokeAll();
+      if (!home || !toolView) return;
       home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; document.title = 'FileKit — Every File Tool You Need';
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = false;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = true;
@@ -1702,6 +1703,7 @@
 
     function showApp(category = 'Home') {
       FF.util.revokeAll();
+      if (!home || !toolView) return;
       home.hidden = true; toolView.hidden = true; if (appView) appView.hidden = false;
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = false;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = true;
@@ -1827,6 +1829,7 @@
           isMore: true,
           svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
           more: [
+            { title: 'Organize', toolId: 'organize-pdf', color: '#4f46e5', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' },
             { title: 'Protect', toolId: 'pdf-protect', color: '#f43f5e', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' },
             { title: 'Unlock', toolId: 'pdf-unlock', color: '#fb7185', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>' },
             { title: 'Flatten', toolId: 'pdf-flatten', color: '#f43f5e', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m-4-4l4 4 4-4"/><line x1="4" y1="21" x2="20" y2="21"/></svg>' },
@@ -2367,16 +2370,39 @@
     // the ones they want as rail icons. Pins persist in localStorage.
     const PINNED_RAIL_KEY = 'filekit-pinned-rail-cats';
     const FLYOUT_CATS = [
-      { id: 'workflow', label: 'Workflow', cat: null, task: 'workflow-builder', color: '#0EA5E9', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h6a4 4 0 0 1 4 4V14"/><path d="M14 17.5H8a4 4 0 0 1-4-4V10"/></svg>' },
-      { id: 'security', label: 'Security', cat: 'Security', color: '#0F766E', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>' },
-      { id: 'utilities', label: 'Utilities', cat: 'Utilities', color: '#4F46E5', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18v3h3l5.7-5.7a4.5 4.5 0 0 0 6-6L14 12l-2-2 2.7-3.7z"/></svg>' },
-      { id: 'developer', label: 'Developer', cat: 'Developer', color: '#0891B2', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 2 12 8 18"/><polyline points="16 6 22 12 16 18"/><line x1="13" y1="4" x2="11" y2="20"/></svg>' },
-      { id: 'ebooks', label: 'E-Books', cat: 'E-Books', color: '#8B5CF6', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
-      { id: 'archives', label: 'Archives', cat: 'Archives', color: '#D97706', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>' },
-      { id: 'spreadsheets', label: 'Spreadsheets', cat: 'Spreadsheets', color: '#059669', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>' },
-      { id: 'text', label: 'Text', cat: 'Text', color: '#2563EB', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>' },
-      { id: 'video', label: 'Video', cat: 'Video', color: '#7C3AED', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3z"/></svg>' },
-      { id: 'audio', label: 'Audio', cat: 'Audio', color: '#E11D48', icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' }
+      {
+        id: 'business',
+        label: 'Business & Office',
+        cat: 'Business',
+        task: 'business',
+        color: '#059669',
+        desc: 'Invoices, billing & legal forms',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6V4.5C9 3.67 9.67 3 10.5 3h3c.83 0 1.5.67 1.5 1.5V6"/><rect x="3" y="6" width="18" height="15" rx="3"/><path d="M3 11c5 2 13 2 18 0M10 13h4"/></svg>'
+      },
+      {
+        id: 'developer',
+        label: 'Developer & Data',
+        cat: 'Developer',
+        color: '#6366F1',
+        desc: 'QR, JSON, Base64 & Archives',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6M14 4.5l-4 15"/></svg>'
+      },
+      {
+        id: 'ebooks',
+        label: 'Education & E-Books',
+        cat: 'E-Books',
+        color: '#8B5CF6',
+        desc: 'EPUB reader & OCR text extract',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M10 6h6M10 10h4"/></svg>'
+      },
+      {
+        id: 'security',
+        label: 'Forensics & Privacy',
+        cat: 'Security',
+        color: '#0F766E',
+        desc: 'EXIF metadata & GPS location wiper',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.53 9.47A3.5 3.5 0 0 0 9.47 14.53"/><path d="M17.82 5.77C16.07 4.45 14.07 3.73 12 3.73c-3.53 0-6.82 2.08-9.11 5.68a5.7 5.7 0 0 0 0 5.19c.79 1.24 1.71 2.31 2.71 3.17M8.42 19.53c1.14.48 2.35.74 3.58.74 3.53 0 6.82-2.08 9.11-5.68a5.7 5.7 0 0 0 0-5.19c-.33-.52-.69-1.01-1.06-1.47"/><path d="m2 2 20 20"/></svg>'
+      }
     ];
 
     function getPinnedCats() {
@@ -2455,8 +2481,8 @@
       menu.setAttribute('aria-label', 'All tools categories');
       menu.innerHTML = `
         <div class="all-tools-flyout-head">
-          <span class="all-tools-flyout-title">All tools</span>
-          <span class="all-tools-flyout-hint">Pin categories to your rail</span>
+          <span class="all-tools-flyout-title">More Studios & Labs</span>
+          <span class="all-tools-flyout-hint">Specialized domain tool suites</span>
         </div>
         <div class="all-tools-flyout-list">
           ${FLYOUT_CATS.map(cat => {
@@ -2465,7 +2491,10 @@
             return `
               <div class="all-tools-row" role="menuitem" data-cat-id="${cat.id}">
                 <span class="all-tools-ico" style="--c:${cat.color}">${cat.icon}</span>
-                <span class="all-tools-label">${cat.label}</span>
+                <div style="display:flex;flex-direction:column;min-width:0;flex:1;gap:1px;">
+                  <span class="all-tools-label">${cat.label}</span>
+                  <span style="font-size:10.5px;color:#94A3B8;line-height:1.2;">${cat.desc || ''}</span>
+                </div>
                 <span class="all-tools-count">${count}</span>
                 <button type="button" class="all-tools-pin${isPinned ? ' pinned' : ''}" data-pin-cat="${cat.id}" title="${isPinned ? 'Remove from rail' : 'Pin to rail'}" aria-pressed="${isPinned}">
                   ${isPinned
@@ -2659,6 +2688,8 @@
       });
 
       const workspaceTitle = document.getElementById('app-workspace-title');
+      const topbarCenter = document.getElementById('app-topbar-center');
+      if (topbarCenter) topbarCenter.innerHTML = '';
 
       if ((!appCategory || appCategory === 'Home' || appCategory === 'All') && !q) {
         // --- SHOW SMALLPDF APP HOME VIEW ---
@@ -2692,6 +2723,10 @@
           edit: {
             sub: 'Add <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, or <strong>Audio</strong> files to edit, trim, crop, or annotate',
             formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'VIDEO', cls: 'fmt-ppt' }, { name: 'AUDIO', cls: 'fmt-xls' }]
+          },
+          protect: {
+            sub: 'Add <strong>PDF</strong> documents to password protect, digital sign, unlock, or redact PII',
+            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'DOC', cls: 'fmt-doc' }]
           },
           scan: {
             sub: 'Add <strong>PDF</strong>, <strong>JPG</strong>, or <strong>PNG</strong> documents to scan & extract text',
@@ -2943,6 +2978,10 @@
       let tool = FF.registry.get(id);
       if (!tool) {
         const premiumOnly = {
+          'business': { id: 'business', name: 'Business & Invoicing', category: 'Business', description: 'GST Invoices, POS & Filing' },
+          'gst-invoice': { id: 'gst-invoice', name: 'GST Invoice', category: 'Business' },
+          'pos-billing': { id: 'pos-billing', name: 'POS Billing', category: 'Business' },
+          'gst-filing-prep': { id: 'gst-filing-prep', name: 'GST Filing Prep', category: 'Business' },
           'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit PDF', category: 'PDF', description: 'Edit and annotate PDF documents' },
           'pdf-sign': { id: 'pdf-sign', name: 'Sign', category: 'PDF', description: 'Sign PDF' },
           'pdf-convert': { id: 'pdf-convert', name: 'Convert', category: 'PDF', description: 'Convert PDF' },
@@ -3051,7 +3090,41 @@
 
       // Mount the hero dropzone in the SEO stage
       stage.textContent = '';
-      FF.Flow.mount(stage, tool);
+      const directMountSeo = {
+        'organize': window.__ffMountOrganize,
+        'organize-pdf': window.__ffMountOrganize,
+        'pdf-organize': window.__ffMountOrganize,
+        'pdf-edit-text': window.__ffMountEditText,
+        'edit-pdf': window.__ffMountEditText,
+        'edit-text': window.__ffMountEditText,
+        'edit': window.__ffMountEditText,
+        'pdf-sign': window.__ffMountSign,
+        'sign': window.__ffMountSign,
+        'pdf-compress': window.__ffMountCompress,
+        'compress': window.__ffMountCompress,
+        'pdf-merge': window.__ffMountMerge,
+        'merge': window.__ffMountMerge,
+        'pdf-split': window.__ffMountSplit,
+        'split': window.__ffMountSplit,
+        'scan-document': window.__ffMountScan,
+        'scan-pdf': window.__ffMountScan,
+        'scan': window.__ffMountScan,
+        'scan-to-pdf': window.__ffMountScan,
+        'pdf-ocr': window.__ffMountScan,
+        'ocr-pdf': window.__ffMountScan,
+        'ocr': window.__ffMountScan,
+        'workflow-builder': window.__ffMountWorkflow,
+        'workflow': window.__ffMountWorkflow,
+        'pdf-to-audio': window.__ffMountPdfAudio,
+        'pdf-to-speech': window.__ffMountPdfAudio,
+      }[id];
+
+
+      if (typeof directMountSeo === 'function') {
+        directMountSeo(stage, tool);
+      } else {
+        FF.Flow.mount(stage, tool);
+      }
 
       // Render tool-specific SEO content (Stories, 6 Icons, How-To, FAQs, Matrix)
             const seoTitle = document.getElementById('fk-seo-hero-title');
@@ -3321,11 +3394,23 @@
       const _wt = document.getElementById('app-workspace-title');
       if (_wt) _wt.textContent = FF.ToolUX?.for(tool)?.title || tool.name;
 
-      // Highlight matching siderail button
-      const taskKey = id.split('-')[0] || '';
+      // Highlight matching siderail button accurately
+      let matchedRail = null;
+      for (const [rKey, rTools] of Object.entries(taskToolIds)) {
+        if (Array.isArray(rTools) && rTools.includes(id)) {
+          matchedRail = rKey;
+          break;
+        }
+      }
+      if (!matchedRail) {
+        if (id.startsWith('pdf-')) matchedRail = id.replace('pdf-', '');
+        else matchedRail = id.split('-')[0] || '';
+      }
       document.querySelectorAll('.rail-item[data-task-rail]').forEach(x => {
-        const sel = x.dataset.taskRail === taskKey || (taskKey === 'pdf' && x.dataset.taskRail === id.replace('pdf-', ''));
+        const sel = x.dataset.taskRail === matchedRail;
         x.classList.toggle('active', sel);
+        if (sel) x.setAttribute('aria-current', 'page');
+        else x.removeAttribute('aria-current');
       });
 
       // Mount inside workspace stage
@@ -3344,7 +3429,46 @@
           _appStg.style.setProperty('--tool-theme-glow', _theme.glow);
           _appStg.style.setProperty('--tool-card-border', _theme.cardBorder);
         }
-        FF.Flow.mount(_appStg, tool);
+        const directMount = {
+          'organize': window.__ffMountOrganize,
+          'organize-pdf': window.__ffMountOrganize,
+          'pdf-organize': window.__ffMountOrganize,
+          'pdf-edit-text': window.__ffMountEditText,
+          'edit-pdf': window.__ffMountEditText,
+          'edit-text': window.__ffMountEditText,
+          'edit': window.__ffMountEditText,
+          'pdf-sign': window.__ffMountSign,
+          'sign': window.__ffMountSign,
+          'pdf-compress': window.__ffMountCompress,
+          'compress': window.__ffMountCompress,
+          'pdf-merge': window.__ffMountMerge,
+          'merge': window.__ffMountMerge,
+          'pdf-split': window.__ffMountSplit,
+          'split': window.__ffMountSplit,
+          'scan-document': window.__ffMountScan,
+          'scan-pdf': window.__ffMountScan,
+          'scan': window.__ffMountScan,
+          'scan-to-pdf': window.__ffMountScan,
+          'pdf-ocr': window.__ffMountScan,
+          'ocr-pdf': window.__ffMountScan,
+          'ocr': window.__ffMountScan,
+          'workflow-builder': window.__ffMountWorkflow,
+          'workflow': window.__ffMountWorkflow,
+          'pdf-to-audio': window.__ffMountPdfAudio,
+          'pdf-to-speech': window.__ffMountPdfAudio,
+          'business': (c, t) => window.__ffMountBizSuite ? window.__ffMountBizSuite(c, t) : (window.__ffMountBizPro && window.__ffMountBizPro(c, t)),
+          'gst-invoice': (c, t) => window.__ffMountBizSuite ? window.__ffMountBizSuite(c, t, 'invoice') : (window.__ffMountBizPro && window.__ffMountBizPro(c, t)),
+          'pos-billing': (c, t) => window.__ffMountBizSuite ? window.__ffMountBizSuite(c, t, 'pos') : (window.__ffMountBizPro && window.__ffMountBizPro(c, t)),
+          'gst-filing-prep': (c, t) => window.__ffMountBizSuite ? window.__ffMountBizSuite(c, t, 'filing') : (window.__ffMountBizPro && window.__ffMountBizPro(c, t))
+        }[id];
+
+
+        if (typeof directMount === 'function') {
+          _appStg.textContent = '';
+          directMount(_appStg, tool);
+        } else {
+          FF.Flow.mount(_appStg, tool);
+        }
 
         // Instant After-Upload Transition if pendingFiles exist
         const _pending = window.FF.app && window.FF.app.pendingFiles;
@@ -3435,7 +3559,8 @@
     let popular = [];
     popularNames.forEach(name => { const t = tools.find(x => x.name.toLowerCase() === name.toLowerCase()); if (t && !popular.includes(t)) popular.push(t); });
     for (const t of tools) { if (popular.length >= 6) break; if (!popular.includes(t)) popular.push(t); }
-    const popularGrid = document.getElementById('popular-grid'); popular.forEach(t => popularGrid.append(card(t)));
+    const popularGrid = document.getElementById('popular-grid');
+    if (popularGrid) popular.forEach(t => popularGrid.append(card(t)));
 
     updatePersonalCounts();
     const drawerCats = document.getElementById('drawer-categories');
@@ -3452,7 +3577,7 @@
         ]);
         b.addEventListener('click', () => {
           const sInput = document.getElementById('drawer-search');
-          if ((sInput.value || '').trim()) sInput.value = '';
+          if (sInput && (sInput.value || '').trim()) sInput.value = '';
           drawerCat = cat;
           renderDrawerCats();
           renderDrawer();
@@ -3464,8 +3589,9 @@
     }
     function renderDrawer() {
       const input = document.getElementById('drawer-search');
-      const q = (input.value || '').trim().toLowerCase();
+      const q = (input?.value || '').trim().toLowerCase();
       const out = document.getElementById('drawer-results');
+      if (!out) return;
       out.textContent = '';
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const hl = (text) => { const s = String(text), i = s.toLowerCase().indexOf(q); if (!q || i === -1) return esc(s); return esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length)); };
@@ -3481,7 +3607,7 @@
         out.append(el('div', { class: 'drawer-empty' }, [
           el('strong', { text: q ? `No tools match “${q}”` : `No tools in ${drawerCat} yet` }),
           el('span', { text: 'Try a format like “pdf” or an action like “compress”.' }),
-          el('button', { type: 'button', class: 'drawer-empty-cta', text: 'Browse all tools', onclick: () => { const si = document.getElementById('drawer-search'); si.value = ''; drawerCat = 'All'; renderDrawerCats(); renderDrawer(); } })
+          el('button', { type: 'button', class: 'drawer-empty-cta', text: 'Browse all tools', onclick: () => { const si = document.getElementById('drawer-search'); if (si) si.value = ''; drawerCat = 'All'; renderDrawerCats(); renderDrawer(); } })
         ]));
         return;
       }
@@ -3526,11 +3652,11 @@
     }
     renderDrawerCats();
     renderDrawer();
-    document.getElementById('drawer-search').addEventListener('input', renderDrawer);
+    document.getElementById('drawer-search')?.addEventListener('input', renderDrawer);
 
-    document.getElementById('home-button').addEventListener('click', () => showHome());
+    document.getElementById('home-button')?.addEventListener('click', () => showHome());
     document.getElementById('tool-home')?.addEventListener('click', () => showApp());
-    document.getElementById('tools-button').addEventListener('click', openDrawer);
+    document.getElementById('tools-button')?.addEventListener('click', openDrawer);
     document.getElementById('mobile-menu')?.addEventListener('click', openDrawer);
     document.getElementById('mobile-menu-btn')?.addEventListener('click', openDrawer);
 
@@ -3737,6 +3863,7 @@
       if (act) act.scrollIntoView({ block: 'nearest' });
     }
     function openPalette() {
+      if (!paletteOverlay || !paletteInput) return;
       paletteOverlay.hidden = false;
       renderPalette();
       paletteInput.focus();
@@ -3744,30 +3871,32 @@
       document.getElementById('header-search-trigger')?.setAttribute('aria-expanded', 'true');
     }
     function closePalette() {
-      if (paletteOverlay.hidden) return;
+      if (!paletteOverlay || paletteOverlay.hidden) return;
       paletteOverlay.hidden = true;
       document.getElementById('header-search-trigger')?.setAttribute('aria-expanded', 'false');
       document.getElementById('header-search-trigger')?.focus();
     }
-    paletteInput.addEventListener('input', renderPalette);
-    paletteInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); closePalette(); return; }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        const rows = [...paletteResults.querySelectorAll('.palette-row')];
-        if (!rows.length) return;
-        e.preventDefault();
-        const dir = e.key === 'ArrowDown' ? 1 : -1;
-        paletteActive = (paletteActive + dir + rows.length) % rows.length;
-        setPaletteActive(rows);
-        return;
-      }
-      if (e.key === 'Enter') {
-        const rows = [...paletteResults.querySelectorAll('.palette-row')];
-        const r = rows[paletteActive] || rows[0];
-        if (r) r.click();
-      }
-    });
-    paletteOverlay.addEventListener('click', (e) => { if (e.target === paletteOverlay) closePalette(); });
+    if (paletteInput && paletteOverlay && paletteResults) {
+      paletteInput.addEventListener('input', renderPalette);
+      paletteInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); closePalette(); return; }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          const rows = [...paletteResults.querySelectorAll('.palette-row')];
+          if (!rows.length) return;
+          e.preventDefault();
+          const dir = e.key === 'ArrowDown' ? 1 : -1;
+          paletteActive = (paletteActive + dir + rows.length) % rows.length;
+          setPaletteActive(rows);
+          return;
+        }
+        if (e.key === 'Enter') {
+          const rows = [...paletteResults.querySelectorAll('.palette-row')];
+          const r = rows[paletteActive] || rows[0];
+          if (r) r.click();
+        }
+      });
+      paletteOverlay.addEventListener('click', (e) => { if (e.target === paletteOverlay) closePalette(); });
+    }
     document.getElementById('palette-esc')?.addEventListener('click', closePalette);
     document.getElementById('header-search-trigger')?.addEventListener('click', openPalette);
 
@@ -4072,7 +4201,7 @@
     const appInp = document.getElementById('app-workspace-search'); if (appInp) appInp.placeholder = `Search ${count} tools…`;
     document.getElementById('see-all-button')?.addEventListener('click', () => showApp());
     document.getElementById('cta-tools')?.addEventListener('click', () => showApp());
-    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
     document.getElementById('hero-explore')?.addEventListener('click', openDrawer);
     document.getElementById('feature-tools')?.addEventListener('click', openDrawer);
     document.getElementById('privacy-tools')?.addEventListener('click', openDrawer);
@@ -4125,11 +4254,11 @@
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">
           <div>
             <strong>Q: What is the maximum file size?</strong>
-            <p style="margin:4px 0 0;font-size:13.5px;color:#475569;">Because files process in browser memory, optimal file sizes are up to 200MB for PDFs/images and up to 500MB for video/audio.</p>
+            <p style="margin:4px 0 0;font-size:13.5px;color:#4B4B4B;">Because files process in browser memory, optimal file sizes are up to 200MB for PDFs/images and up to 500MB for video/audio.</p>
           </div>
           <div>
             <strong>Q: Does FileKit work offline?</strong>
-            <p style="margin:4px 0 0;font-size:13.5px;color:#475569;">Yes! Once loaded, all tool scripts and fonts are cached locally in your browser.</p>
+            <p style="margin:4px 0 0;font-size:13.5px;color:#4B4B4B;">Yes! Once loaded, all tool scripts and fonts are cached locally in your browser.</p>
           </div>
         </div>`
       },
@@ -4764,6 +4893,8 @@
       'pdf-sign': window.__ffMountSign,
       'sign': window.__ffMountSign,
       'organize': window.__ffMountOrganize,
+      'organize-pdf': window.__ffMountOrganize,
+      'pdf-organize': window.__ffMountOrganize,
       'pdf-convert': window.__ffMountConvert,
       'pdf-to-word': window.__ffMountConvert,
       'pdf-to-excel': window.__ffMountConvert,
@@ -4779,7 +4910,19 @@
       'md-to-txt': window.__ffMountConvert,
       'html-to-txt': window.__ffMountConvert,
       'excel-to-json': window.__ffMountConvert,
+      'scan-document': window.__ffMountScan,
+      'scan-pdf': window.__ffMountScan,
+      'scan': window.__ffMountScan,
+      'scan-to-pdf': window.__ffMountScan,
+      'pdf-ocr': window.__ffMountScan,
+      'ocr-pdf': window.__ffMountScan,
+      'ocr': window.__ffMountScan,
+      'workflow-builder': window.__ffMountWorkflow,
+      'workflow': window.__ffMountWorkflow,
+      'pdf-to-audio': window.__ffMountPdfAudio,
+      'pdf-to-speech': window.__ffMountPdfAudio,
     })[tool && tool.id];
+
     if (typeof premium === 'function') {
       container.textContent = '';
       premium(container, tool);
@@ -5599,7 +5742,7 @@
     getEditPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the first and only in-browser PDF editor you'll love. Edit PDF documents online with powerful text, shape, annotation, and form tools.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the first and only in-browser PDF editor you'll love. Edit PDF documents online with powerful text, shape, annotation, and form tools.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -5627,7 +5770,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast and Powerful PDF Editing</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Eliminate repetitive tasks with our PDF editor, allowing you to quickly format documents, add signatures, type or draw text, or organize PDF pages without interrupting your workflow.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Eliminate repetitive tasks with our PDF editor, allowing you to quickly format documents, add signatures, type or draw text, or organize PDF pages without interrupting your workflow.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -5849,7 +5992,7 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Document Organization at a Glance</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Our integrated tool automatically organizes pages into interactive thumbnails, letting you crop, reorder, rotate, or delete pages easily from one intuitive view.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our integrated tool automatically organizes pages into interactive thumbnails, letting you crop, reorder, rotate, or delete pages easily from one intuitive view.</p>
         </div>
       </div>
 
@@ -5857,7 +6000,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Quick to Save, Easy to Share</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Exporting and sharing documents with others is effortless. Generate links, export to cloud storage or download directly. Perfect for fast collaboration with clients or teammates.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Exporting and sharing documents with others is effortless. Generate links, export to cloud storage or download directly. Perfect for fast collaboration with clients or teammates.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -6139,7 +6282,7 @@
             <span>What is a PDF Editor?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-edit-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-edit-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             A PDF editor is an application or online tool that allows you to modify the contents of a PDF document. This includes adding new text, editing existing typography, inserting geometric shapes, drawing freehand lines, highlighting key passages, inserting images, filling interactive forms, and organizing pages.
           </div>
         </div>
@@ -6149,7 +6292,7 @@
             <span>How do you edit text in a PDF document?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Upload your PDF to FileKit PDF Editor, click the Text (T) tool on the top toolbar, place your cursor anywhere on the page, and start typing. You can customize font size, typeface, color, and text alignment.
           </div>
         </div>
@@ -6159,7 +6302,7 @@
             <span>Can I add images to a PDF?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! Select the Image tool from the toolbar, choose a JPG, PNG, or SVG image from your device, and position or scale it directly on your document pages.
           </div>
         </div>
@@ -6169,7 +6312,7 @@
             <span>Can I fill in and sign interactive PDF forms?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes. Our editor automatically recognizes AcroForm fields, checkboxes, and text inputs, allowing you to fill in details and draw or insert your digital signature.
           </div>
         </div>
@@ -6179,7 +6322,7 @@
             <span>Are files in the PDF editor secure and private?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. FileKit processes documents client-side in your local browser WebAssembly sandbox. Your files are never uploaded to cloud servers or stored anywhere.
           </div>
         </div>
@@ -6188,7 +6331,7 @@
     getCompressPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit delivers powerful, client-side PDF compression. Shrink bulky PDF files up to 90% of their original file size for email, web publishing, and storage — while preserving crystal-clear text sharpness and embedded image fidelity.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit delivers powerful, client-side PDF compression. Shrink bulky PDF files up to 90% of their original file size for email, web publishing, and storage — while preserving crystal-clear text sharpness and embedded image fidelity.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -6216,8 +6359,8 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Reduce PDF File Size by up to 90%</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Large PDF documents with high-resolution photos, embedded fonts, and vector illustrations frequently exceed email attachment limits (e.g. Gmail 25MB threshold) and slow down web portals.</p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">FileKit intelligently strips redundant metadata, deduplicates embedded font subsets, and applies adaptive perceptual image compression to dramatically shrink file size while maintaining pristine document aesthetics.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Large PDF documents with high-resolution photos, embedded fonts, and vector illustrations frequently exceed email attachment limits (e.g. Gmail 25MB threshold) and slow down web portals.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">FileKit intelligently strips redundant metadata, deduplicates embedded font subsets, and applies adaptive perceptual image compression to dramatically shrink file size while maintaining pristine document aesthetics.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="Smart Lossless PDF Compression">
@@ -6315,7 +6458,7 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Crystal-Clear Text &amp; Image Sharpness</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Unlike primitive compression tools that produce blurry, illegible scans, FileKit uses perceptual quantization algorithms that safeguard delicate typographic serifs, fine mathematical lines, and photo clarity.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Unlike primitive compression tools that produce blurry, illegible scans, FileKit uses perceptual quantization algorithms that safeguard delicate typographic serifs, fine mathematical lines, and photo clarity.</p>
           <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #334155;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #EAB308; font-weight: bold;">✓</span> <strong>Adaptive Resampling:</strong> Downsamples heavy 600 DPI graphics to clean 150–300 DPI web standards.
@@ -6334,8 +6477,8 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Zero Server Uploads &amp; 100% Client Privacy</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Most PDF websites upload your sensitive personal and corporate documents to third-party cloud servers. FileKit executes the entire compression pipeline inside your browser using WebAssembly.</p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your files never leave your device, ensuring total privacy, GDPR/HIPAA compliance, and lightning-fast processing speeds without queue times.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Most PDF websites upload your sensitive personal and corporate documents to third-party cloud servers. FileKit executes the entire compression pipeline inside your browser using WebAssembly.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your files never leave your device, ensuring total privacy, GDPR/HIPAA compliance, and lightning-fast processing speeds without queue times.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="100% In-Browser Compression Privacy">
@@ -6592,7 +6735,7 @@
             <span>Will compressing my PDF degrade text quality or image sharpness?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-compress-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-compress-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No. FileKit uses perceptual compression algorithms. Vector text fonts remain completely sharp at any zoom level, while images are optimized to high-definition screen standards (150–300 DPI), eliminating unnecessary bloated pixel data without noticeable degradation.
           </div>
         </div>
@@ -6602,7 +6745,7 @@
             <span>How much can I reduce my PDF file size?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Typical reductions range from 60% to 90%, depending on the internal contents of the file. PDFs with uncompressed high-res images, embedded presentation slides, and heavy scanned pages experience the largest reduction.
           </div>
         </div>
@@ -6612,7 +6755,7 @@
             <span>Can I compress PDFs to fit under the 25MB Gmail attachment limit?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! This is one of the most common uses. FileKit easily compresses 50MB–100MB reports down to 3MB–8MB, making them instant to send via email, Slack, Teams, or WhatsApp.
           </div>
         </div>
@@ -6622,7 +6765,7 @@
             <span>Are my confidential documents secure during compression?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. FileKit runs entirely client-side inside your browser's WebAssembly sandbox. Your files are never uploaded to any remote server, giving you complete data privacy.
           </div>
         </div>
@@ -6630,7 +6773,7 @@
 `; },
     getMergePdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the fastest and most secure in-browser PDF merger. Combine multiple PDF files, presentations, and scans into one unified document with perfect page ordering.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest and most secure in-browser PDF merger. Combine multiple PDF files, presentations, and scans into one unified document with perfect page ordering.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -6656,7 +6799,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Powerful PDF Merging</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Drag and drop as many PDF documents as you need into our workstation. Our high-performance WebAssembly engine stitches pages, bookmarks, and font tables together seamlessly in under a second with zero loss in resolution.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Drag and drop as many PDF documents as you need into our workstation. Our high-performance WebAssembly engine stitches pages, bookmarks, and font tables together seamlessly in under a second with zero loss in resolution.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -6861,14 +7004,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Document Organization at a Glance</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Take full control over your combined file with intuitive visual page thumbnails. Drag cards to change reading order, rotate upside-down pages, or remove unwanted sheets with a single click before exporting.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Take full control over your combined file with intuitive visual page thumbnails. Drag cards to change reading order, rotate upside-down pages, or remove unwanted sheets with a single click before exporting.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your confidential records, tax filings, and legal contracts remain strictly private on your device. Assembly executes entirely in your browser's isolated memory sandbox — no remote servers, zero data logging, and 100% GDPR compliance.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential records, tax filings, and legal contracts remain strictly private on your device. Assembly executes entirely in your browser's isolated memory sandbox — no remote servers, zero data logging, and 100% GDPR compliance.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -6995,7 +7138,7 @@
   <g transform="translate(210, 85)">
     <!-- Base Plate -->
     <path d="M 20 150 H 160 V 162 H 20 Z" fill="#334155"/>
-    <rect x="25" y="110" width="30" height="40" rx="3" fill="#475569"/>
+    <rect x="25" y="110" width="30" height="40" rx="3" fill="#4B4B4B"/>
     
     <!-- Multi-Color PDF Stacks Under Stapler Head -->
     <rect x="45" y="115" width="80" height="10" rx="2" fill="#38BDF8"/>
@@ -7110,7 +7253,7 @@
             <span>How do I merge multiple PDF files into one?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-merge-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-merge-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Simply drop all your PDF files into the upload box above. Arrange the thumbnail cards into your preferred sequence, click "Merge PDF", and download your unified document instantly.
           </div>
         </div>
@@ -7119,7 +7262,7 @@
             <span>Can I change the order of pages before merging?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! Our interactive organizer displays visual thumbnails for every document. You can drag and drop entire files or individual pages, rotate orientations, and remove pages before merging.
           </div>
         </div>
@@ -7128,7 +7271,7 @@
             <span>Is there a limit on how many PDFs I can combine?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No. Because FileKit performs all processing locally inside your computer's RAM using WebAssembly, you can merge dozens of PDF files containing hundreds of pages without cloud limits or subscription prompts.
           </div>
         </div>
@@ -7137,7 +7280,7 @@
             <span>Are my documents safe when combining them online?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. Unlike other web tools that upload your files to remote third-party cloud servers, FileKit executes all merging locally in your browser memory. Your sensitive files never leave your device.
           </div>
         </div>
@@ -7146,7 +7289,7 @@
             <span>Will merging reduce the quality of my images or text?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-merge-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No. Merging simply concatenates the underlying PDF xref stream structures losslessly. All vector text, fonts, links, and high-resolution images remain at 100% original quality.
           </div>
         </div>
@@ -7155,7 +7298,7 @@
     getSplitPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit provides surgical, in-browser PDF page extraction. Separate multi-page reports into custom page ranges, extract single chapters, or split every page into standalone documents — with zero quality loss and 100% in-browser privacy.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit provides surgical, in-browser PDF page extraction. Separate multi-page reports into custom page ranges, extract single chapters, or split every page into standalone documents — with zero quality loss and 100% in-browser privacy.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -7183,8 +7326,8 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Extract Exactly the Pages You Need</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Whether you need to isolate a single invoice from a 200-page accounting ledger, separate legal contract exhibits, or extract specific slides from a pitch deck, FileKit gives you surgical precision.</p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Type intuitive page range intervals (e.g. <code>1-4, 8, 12-16</code>) or visually click page thumbnails to instantly slice your document into organized, standalone PDF packages.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Whether you need to isolate a single invoice from a 200-page accounting ledger, separate legal contract exhibits, or extract specific slides from a pitch deck, FileKit gives you surgical precision.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Type intuitive page range intervals (e.g. <code>1-4, 8, 12-16</code>) or visually click page thumbnails to instantly slice your document into organized, standalone PDF packages.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="Precision Tabletop Paper Trimmer Slicing PDF">
@@ -7369,7 +7512,7 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">3 Flexible Extraction Modes</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Configure how your output files are compiled to match your exact workflow requirements:</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Configure how your output files are compiled to match your exact workflow requirements:</p>
           <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #334155;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #E11D48; font-weight: bold;">✓</span> <strong>Custom Page Ranges:</strong> Bundle specific page intervals into separate custom documents.
@@ -7388,8 +7531,8 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Lossless Object Slicing &amp; Zero Cloud Uploads</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Unlike low-quality tools that render pages as raster images and re-compress them, FileKit operates directly on the underlying PDF cross-reference object tree.</p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Original vector typography, embedded high-res photography, form fields, and hyperlinks remain 100% untouched. Everything processes locally in your browser memory with zero files sent to external servers.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Unlike low-quality tools that render pages as raster images and re-compress them, FileKit operates directly on the underlying PDF cross-reference object tree.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Original vector typography, embedded high-res photography, form fields, and hyperlinks remain 100% untouched. Everything processes locally in your browser memory with zero files sent to external servers.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="Exploded PDF Object Tree Lossless Splitting">
@@ -7708,7 +7851,7 @@
             <span>How do I split specific page ranges from a large PDF?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-split-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-split-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Simply upload your PDF, choose "Custom Range", and enter the exact page intervals separated by commas (for example: <code>1-5, 8, 12-18</code>). FileKit will create standalone PDF files containing only the specified page sets.
           </div>
         </div>
@@ -7718,7 +7861,7 @@
             <span>Does splitting a PDF reduce its image or vector font quality?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-split-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-split-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No. FileKit performs lossless object-level extraction. It extracts the raw PDF byte stream objects without re-compressing images, flattening layers, or rasterizing vector fonts. Your extracted files retain 100% of their original fidelity.
           </div>
         </div>
@@ -7728,7 +7871,7 @@
             <span>Can I extract every single page into separate individual PDF files at once?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-split-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-split-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! Select the "Extract All Pages" option. FileKit will decompose every page into a standalone 1-page PDF file and bundle them together into a single downloadable ZIP archive with organized page naming.
           </div>
         </div>
@@ -7738,7 +7881,7 @@
             <span>Are my confidential contracts and documents private during splitting?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-split-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-split-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. All splitting and object extraction execute locally inside your browser's WebAssembly sandbox. Your documents never leave your computer or touch any remote cloud server.
           </div>
         </div>
@@ -7746,7 +7889,7 @@
 `; },
     getPdfToWordSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the most accurate in-browser PDF to Word converter. Convert PDF documents to fully editable Microsoft Word (.docx) files with layouts, tables, and typography intact.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the most accurate in-browser PDF to Word converter. Convert PDF documents to fully editable Microsoft Word (.docx) files with layouts, tables, and typography intact.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -7772,7 +7915,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Accurate Word Conversion</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Extract text paragraphs, headings, bulleted lists, and images directly into a native Microsoft Word (.docx) document. Edit typography, rephrase content, and update layouts freely in Microsoft Word, Google Docs, or LibreOffice.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Extract text paragraphs, headings, bulleted lists, and images directly into a native Microsoft Word (.docx) document. Edit typography, rephrase content, and update layouts freely in Microsoft Word, Google Docs, or LibreOffice.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -7929,14 +8072,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Preserve Layouts, Tables &amp; Columns</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Our intelligent document parser preserves complex structures including multi-column layouts, financial tables, callout blocks, and embedded charts without scrambled characters or broken alignment.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our intelligent document parser preserves complex structures including multi-column layouts, financial tables, callout blocks, and embedded charts without scrambled characters or broken alignment.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your confidential resumes, legal agreements, and corporate briefs never leave your device. All parsing and conversion run strictly inside your browser's private WebAssembly memory sandbox.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential resumes, legal agreements, and corporate briefs never leave your device. All parsing and conversion run strictly inside your browser's private WebAssembly memory sandbox.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -8158,7 +8301,7 @@
             <span>How do I convert a PDF to an editable Word document?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-word-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-word-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Drag your PDF file into the upload zone above. FileKit will process the document locally and generate an editable .docx file that you can download immediately.
           </div>
         </div>
@@ -8167,7 +8310,7 @@
             <span>Will the converted Word document keep the original formatting?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-word-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-word-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! Our converter maps fonts, paragraph styles, lists, tables, and images directly into native Word XML elements so your document looks virtually identical to the original PDF.
           </div>
         </div>
@@ -8176,7 +8319,7 @@
             <span>Can I convert scanned PDF files with OCR?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-word-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-word-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes. Scanned PDFs are analyzed using high-accuracy optical character recognition (OCR) to extract text into editable Word characters.
           </div>
         </div>
@@ -8185,7 +8328,7 @@
             <span>Are my converted files secure and confidential?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-word-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-word-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. All processing occurs client-side in your web browser. Your confidential files are never uploaded to remote servers or stored in any database.
           </div>
         </div>
@@ -8193,7 +8336,7 @@
 `; },
     getPdfToExcelSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the fastest and most accurate in-browser PDF to Excel converter. Extract financial tables, bank statements, invoices, and ledgers into clean Microsoft Excel (.xlsx) spreadsheets.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest and most accurate in-browser PDF to Excel converter. Extract financial tables, bank statements, invoices, and ledgers into clean Microsoft Excel (.xlsx) spreadsheets.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -8219,7 +8362,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Accurate Excel Conversion</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Stop retyping numbers manually from PDF receipts and balance sheets. Our table recognition engine detects rows and columns automatically, converting static data into native Excel cells ready for formulas, charts, and pivot tables.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Stop retyping numbers manually from PDF receipts and balance sheets. Our table recognition engine detects rows and columns automatically, converting static data into native Excel cells ready for formulas, charts, and pivot tables.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -8374,14 +8517,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Preserve Numbers &amp; Multi-Sheet Grids</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Numeric values, decimal formatting, and currency symbols are preserved with 100% precision. Multi-page PDF reports can be exported as individual worksheets or combined into a single unified sheet.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Numeric values, decimal formatting, and currency symbols are preserved with 100% precision. Multi-page PDF reports can be exported as individual worksheets or combined into a single unified sheet.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local Financial Privacy</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your private accounting sheets, payroll records, and tax filings never leave your device. All table extraction runs locally in your web browser with zero server uploads.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your private accounting sheets, payroll records, and tax filings never leave your device. All table extraction runs locally in your web browser with zero server uploads.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -8606,7 +8749,7 @@
             <span>How do I convert PDF tables to an Excel spreadsheet?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-excel-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-excel-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Upload your PDF invoice, statement, or report into the box above. FileKit automatically parses rows and columns and produces a formatted .xlsx file for immediate download.
           </div>
         </div>
@@ -8615,7 +8758,7 @@
             <span>Will numbers and currencies remain editable?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-excel-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-excel-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes. Numbers are extracted as numeric values rather than static images or text blocks, allowing you to use SUM, AVERAGE, and other Excel formulas immediately.
           </div>
         </div>
@@ -8624,7 +8767,7 @@
             <span>Is my financial data safe and private?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-excel-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-excel-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. FileKit executes the table parser strictly in your device's memory using WebAssembly. Your confidential financial spreadsheets are never uploaded to remote servers.
           </div>
         </div>
@@ -8632,7 +8775,7 @@
 `; },
     getSignPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the premier in-browser electronic signature tool. Draw, type, or upload digital signatures to sign contracts, agreements, and forms legally in seconds.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the premier in-browser electronic signature tool. Draw, type, or upload digital signatures to sign contracts, agreements, and forms legally in seconds.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -8658,7 +8801,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Legally Binding Signatures</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Sign contracts, NDAs, lease agreements, and invoices with an intuitive signature drawing pad or stylized calligraphy typeface. Place signature seals, initials, and date stamps anywhere on your document.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Sign contracts, NDAs, lease agreements, and invoices with an intuitive signature drawing pad or stylized calligraphy typeface. Place signature seals, initials, and date stamps anywhere on your document.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -8789,14 +8932,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Draw, Type, or Upload Signature Stamps</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Customize your signature exactly how you prefer. Draw freehand using a mouse or touchscreen, type your full name with elegant handwriting typefaces, or upload an existing signature stamp image with automatic background removal.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Customize your signature exactly how you prefer. Draw freehand using a mouse or touchscreen, type your full name with elegant handwriting typefaces, or upload an existing signature stamp image with automatic background removal.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Privacy &amp; ESIGN Compliance</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your confidential legal contracts never leave your device. All cryptographic signature embedding executes locally in your browser memory sandbox with zero external tracking.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential legal contracts never leave your device. All cryptographic signature embedding executes locally in your browser memory sandbox with zero external tracking.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -9020,7 +9163,7 @@
             <span>Is signing a PDF with FileKit legally binding?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-sign-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-sign-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes. Electronic signatures created with FileKit comply with the US Federal ESIGN Act and the European eIDAS regulation, making them legally valid for commercial agreements, leases, and business contracts.
           </div>
         </div>
@@ -9029,7 +9172,7 @@
             <span>Can I draw my signature on mobile or tablet?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-sign-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-sign-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! Our signature pad is optimized for finger touch and Apple Pencil / stylus drawing on iOS, iPadOS, and Android devices.
           </div>
         </div>
@@ -9038,7 +9181,7 @@
             <span>Are my signed documents confidential and secure?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-sign-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-sign-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. FileKit signs documents locally using high-performance in-browser WebAssembly. Your legal documents and signatures are never sent across the internet.
           </div>
         </div>
@@ -9047,7 +9190,7 @@
     getProtectPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit provides ironclad, in-browser PDF encryption. Lock confidential contracts, bank statements, tax documents, and personal records with military-grade 256-bit AES encryption — with zero files ever uploaded to external servers.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit provides ironclad, in-browser PDF encryption. Lock confidential contracts, bank statements, tax documents, and personal records with military-grade 256-bit AES encryption — with zero files ever uploaded to external servers.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -9075,8 +9218,8 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Unbreakable 256-bit AES Encryption</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Protect your sensitive files using the exact same cryptographic standard adopted by banks, global enterprises, and government agencies worldwide. Once encrypted, unauthorized viewers cannot open, preview, or inspect the PDF structure without your exact secret password.</p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Our cryptographic engine utilizes standard PBKDF2 key derivation and AES-GCM-256 bit block ciphering, guaranteeing 100% interoperability with Adobe Acrobat Reader, Apple Preview, Google Chrome, and standard mobile PDF readers.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Protect your sensitive files using the exact same cryptographic standard adopted by banks, global enterprises, and government agencies worldwide. Once encrypted, unauthorized viewers cannot open, preview, or inspect the PDF structure without your exact secret password.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our cryptographic engine utilizes standard PBKDF2 key derivation and AES-GCM-256 bit block ciphering, guaranteeing 100% interoperability with Adobe Acrobat Reader, Apple Preview, Google Chrome, and standard mobile PDF readers.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="256-Bit AES Cryptographic Protection">
@@ -9179,7 +9322,7 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Granular Permission Management</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Take complete command over how recipients interact with your documents. In addition to a master viewing password, configure fine-grained restriction flags to prevent confidential leaks:</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Take complete command over how recipients interact with your documents. In addition to a master viewing password, configure fine-grained restriction flags to prevent confidential leaks:</p>
           <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #334155;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #0F766E; font-weight: bold;">✓</span> <strong>Restrict Printing:</strong> Prevents physical printing and virtual PDF exporting.
@@ -9198,8 +9341,8 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Privacy &amp; Zero Cloud Uploads</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 14px;">Traditional online PDF converters require uploading your most private files to their remote cloud servers, creating massive compliance and security risks. FileKit changes this forever.</p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">All cryptographic key derivation and PDF stream encryption execute 100% locally inside your device's browser memory using WebAssembly. Your files, passwords, and decrypted streams never leave your device.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Traditional online PDF converters require uploading your most private files to their remote cloud servers, creating massive compliance and security risks. FileKit changes this forever.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">All cryptographic key derivation and PDF stream encryption execute 100% locally inside your device's browser memory using WebAssembly. Your files, passwords, and decrypted streams never leave your device.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="100% In-Browser Privacy">
@@ -9461,7 +9604,7 @@
             <span>How secure is the 256-bit AES encryption on FileKit?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-protect-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-protect-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             We use industry-standard 256-bit AES (Advanced Encryption Standard) encryption. This is mathematically impossible to brute-force with current supercomputers. The document cannot be opened or deciphered without the exact password you set.
           </div>
         </div>
@@ -9471,7 +9614,7 @@
             <span>Does FileKit see, save, or store my password or files?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-protect-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-protect-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No, never. All encryption algorithms run directly inside your browser memory using WebAssembly. Your password, encryption keys, and document data are never sent across the network or stored on any server.
           </div>
         </div>
@@ -9481,7 +9624,7 @@
             <span>What is the difference between an Open Password and Permission Restrictions?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-protect-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-protect-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             An <strong>Open Password</strong> requires anyone opening the document to enter the password before viewing any page. <strong>Permission Restrictions</strong> (Owner Password) allow recipients to read the document, but prevent them from printing pages, copying text, or modifying content.
           </div>
         </div>
@@ -9491,7 +9634,7 @@
             <span>Can I unlock or remove the password later?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-protect-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-protect-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! You can use our companion <strong>Unlock PDF</strong> tool at any time. Simply enter the password once, and FileKit will export an unencrypted version with all restrictions removed.
           </div>
         </div>
@@ -9499,7 +9642,7 @@
 `; },
     getUnlockPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the easiest in-browser PDF password remover. Decrypt password-protected PDF files, remove printing and copying restrictions, and unlock full access to your documents.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF password remover. Decrypt password-protected PDF files, remove printing and copying restrictions, and unlock full access to your documents.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -9526,7 +9669,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Instant Password Removal</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Unlock password-protected PDF files in seconds. Remove tedious login prompts for documents you frequently open and export an unencrypted PDF ready for easy viewing across any device.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Unlock password-protected PDF files in seconds. Remove tedious login prompts for documents you frequently open and export an unencrypted PDF ready for easy viewing across any device.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -9630,14 +9773,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Restore Printing & Copying Capabilities</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">If an owner password has disabled printing, commenting, or text copying on your file, our tool strips security flags instantly so you can print and copy freely.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">If an owner password has disabled printing, commenting, or text copying on your file, our tool strips security flags instantly so you can print and copy freely.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Decryption</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your files remain strictly confidential. Decryption executes entirely inside your browser's private memory sandbox with zero external server transmission.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your files remain strictly confidential. Decryption executes entirely inside your browser's private memory sandbox with zero external server transmission.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -9856,7 +9999,7 @@
             <span>Can FileKit unlock a PDF if I don't know the password?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-unlock-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-unlock-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Owner restrictions (print/copy restrictions) can be stripped immediately. For files with open/read passwords, you will be prompted to enter the password once so FileKit can remove it permanently.
           </div>
         </div>
@@ -9865,7 +10008,7 @@
             <span>Is unlocking PDFs legal?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-unlock-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-unlock-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, provided you have the legal right or authorization to access the document.
           </div>
         </div>
@@ -9874,7 +10017,7 @@
             <span>Are my decrypted files secure?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-unlock-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-unlock-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, 100%. FileKit decrypts files entirely inside your device's memory using WebAssembly. No files are ever sent to remote servers.
           </div>
         </div>
@@ -9882,7 +10025,7 @@
 `; },
     getPdfToPptSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the fastest in-browser PDF to PowerPoint converter. Transform PDF slide decks into fully editable Microsoft PowerPoint (.pptx) presentations with intact layouts and vector elements.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest in-browser PDF to PowerPoint converter. Transform PDF slide decks into fully editable Microsoft PowerPoint (.pptx) presentations with intact layouts and vector elements.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -9909,7 +10052,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast & Accurate PPTX Conversion</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Rebuild entire presentation slide decks with editable text boxes, graphics, and bullet points ready to customize in PowerPoint, Keynote, or Google Slides.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Rebuild entire presentation slide decks with editable text boxes, graphics, and bullet points ready to customize in PowerPoint, Keynote, or Google Slides.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -10006,14 +10149,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Vector Shapes & Slide Master Retention</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Our presentation parser extracts vector shapes, icons, and diagrams as editable objects rather than static flat images, allowing full recoloring and resizing.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our presentation parser extracts vector shapes, icons, and diagrams as editable objects rather than static flat images, allowing full recoloring and resizing.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local In-Browser Processing</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your confidential pitch decks, quarterly financial slides, and strategic roadmaps never leave your computer. Conversion runs locally in WebAssembly memory.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential pitch decks, quarterly financial slides, and strategic roadmaps never leave your computer. Conversion runs locally in WebAssembly memory.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -10232,7 +10375,7 @@
             <span>Will text in the converted slides be editable?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-ppt-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-ppt-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! Headings, body text, and lists are converted to native PowerPoint text boxes.
           </div>
         </div>
@@ -10241,7 +10384,7 @@
             <span>Can I open the converted file in Google Slides?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-ppt-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-ppt-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, the exported .pptx file is fully compatible with Microsoft PowerPoint, Google Slides, Keynote, and LibreOffice Impress.
           </div>
         </div>
@@ -10249,7 +10392,7 @@
 `; },
     getImageToPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the fastest in-browser image to PDF converter. Combine JPG, PNG, WEBP, and HEIC photos into a unified high-resolution PDF document with custom margins and orientations.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest in-browser image to PDF converter. Combine JPG, PNG, WEBP, and HEIC photos into a unified high-resolution PDF document with custom margins and orientations.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -10276,7 +10419,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Combine Multiple Photos into One PDF</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Drag and drop multiple JPG, PNG, GIF, or WEBP photos to combine them into a single clean PDF catalog or multi-page presentation.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Drag and drop multiple JPG, PNG, GIF, or WEBP photos to combine them into a single clean PDF catalog or multi-page presentation.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -10381,14 +10524,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Custom Page Sizes & Orientations</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Choose from standard page sizes (A4, US Letter, Fit to Image) and adjust margins and portrait/landscape orientation to build beautiful documents.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Choose from standard page sizes (A4, US Letter, Fit to Image) and adjust margins and portrait/landscape orientation to build beautiful documents.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Photo Privacy</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your private photos, ID cards, and receipts are never uploaded to remote servers. All processing executes locally in your browser.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your private photos, ID cards, and receipts are never uploaded to remote servers. All processing executes locally in your browser.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -10592,7 +10735,7 @@
             <span>How many images can I combine into one PDF?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-image-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-image-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             There is no limit! You can combine dozens of photos into a single PDF document.
           </div>
         </div>
@@ -10601,7 +10744,7 @@
             <span>Will my image resolution be preserved?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-image-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-image-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, FileKit embeds original image pixels directly into the PDF container for maximum clarity.
           </div>
         </div>
@@ -10609,7 +10752,7 @@
 `; },
     getOcrPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the most accurate in-browser Optical Character Recognition (OCR) tool. Convert scanned PDFs and paper document images into fully searchable, selectable, and editable text.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the most accurate in-browser Optical Character Recognition (OCR) tool. Convert scanned PDFs and paper document images into fully searchable, selectable, and editable text.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -10636,7 +10779,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Instant Optical Character Recognition</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Extract text from scanned PDFs with incredible precision. Search for keywords with Ctrl+F, highlight sentences, and copy text directly into your favorite editor.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Extract text from scanned PDFs with incredible precision. Search for keywords with Ctrl+F, highlight sentences, and copy text directly into your favorite editor.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -10749,14 +10892,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Multi-Language Character Recognition</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Supports dozens of languages including English, Spanish, French, German, Chinese, Japanese, and Arabic with advanced neural character segmenting.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Supports dozens of languages including English, Spanish, French, German, Chinese, Japanese, and Arabic with advanced neural character segmenting.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory OCR Privacy</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Scanned bank statements, medical charts, and legal contracts are processed locally inside your web browser using WebAssembly Tesseract OCR.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Scanned bank statements, medical charts, and legal contracts are processed locally inside your web browser using WebAssembly Tesseract OCR.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -10965,7 +11108,7 @@
             <span>How does OCR make scanned PDFs searchable?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-ocr-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-ocr-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             OCR analyzes the pixel shapes on scanned pages, recognizes characters, and embeds an invisible text layer directly aligned with the original images.
           </div>
         </div>
@@ -10974,7 +11117,7 @@
             <span>Does FileKit support handwritten notes?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-ocr-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-ocr-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             FileKit excels at printed, typed, and clean handwritten text across multiple languages.
           </div>
         </div>
@@ -10982,7 +11125,7 @@
 `; },
     getRotatePdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the easiest in-browser PDF page rotator. Rotate individual upside-down pages or entire documents permanently by 90°, 180°, or 270° degrees.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF page rotator. Rotate individual upside-down pages or entire documents permanently by 90°, 180°, or 270° degrees.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -11009,7 +11152,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Instant Visual Page Rotation</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Click on individual page thumbnails to rotate them 90 degrees clockwise or counterclockwise, or apply global rotation across all pages in seconds.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Click on individual page thumbnails to rotate them 90 degrees clockwise or counterclockwise, or apply global rotation across all pages in seconds.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -11093,14 +11236,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Permanent Lossless Rotation</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Unlike viewer temporary rotations, FileKit updates the internal PDF rotation matrices permanently so pages stay right-side-up in all viewers and print queues.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Unlike viewer temporary rotations, FileKit updates the internal PDF rotation matrices permanently so pages stay right-side-up in all viewers and print queues.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Fast Rotation</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your documents are processed locally without uploading to external servers, providing instantaneous performance and total privacy.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your documents are processed locally without uploading to external servers, providing instantaneous performance and total privacy.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -11315,7 +11458,7 @@
             <span>Will the rotation remain permanent when I print?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-rotate-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-rotate-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! FileKit permanently writes the rotation angle into the PDF structure.
           </div>
         </div>
@@ -11324,7 +11467,7 @@
             <span>Can I rotate only specific pages?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-rotate-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-rotate-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, simply hover over any page thumbnail and click the rotate icon.
           </div>
         </div>
@@ -11332,7 +11475,7 @@
 `; },
     getWatermarkPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the easiest in-browser PDF watermark generator. Stamp custom text or transparent company logos onto PDF documents to prevent unauthorized copying and protect intellectual property.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF watermark generator. Stamp custom text or transparent company logos onto PDF documents to prevent unauthorized copying and protect intellectual property.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -11359,7 +11502,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Custom Text & Image Watermarks</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Choose between text watermarks (like 'CONFIDENTIAL' or 'DRAFT') or upload your company logo. Control font size, rotation angle, and opacity effortlessly.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Choose between text watermarks (like 'CONFIDENTIAL' or 'DRAFT') or upload your company logo. Control font size, rotation angle, and opacity effortlessly.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -11442,14 +11585,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Precise Position & Opacity Control</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Place watermarks centered diagonally, in the header/footer, or tiled across the whole page with adjustable transparency so text beneath remains readable.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Place watermarks centered diagonally, in the header/footer, or tiled across the whole page with adjustable transparency so text beneath remains readable.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Watermarking</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Your confidential contracts and drafts are stamped locally inside your web browser. Zero server uploads.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential contracts and drafts are stamped locally inside your web browser. Zero server uploads.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -11668,7 +11811,7 @@
             <span>Can recipients easily remove the watermark?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-watermark-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-watermark-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Watermarks are embedded directly into the PDF content stream, making them permanent and hard to strip.
           </div>
         </div>
@@ -11677,7 +11820,7 @@
             <span>Can I apply watermarks to only specific pages?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-watermark-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-watermark-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! You can specify exact page ranges for watermark application.
           </div>
         </div>
@@ -11685,7 +11828,7 @@
 `; },
     getRedactPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the ultimate in-browser PDF redaction tool. Permanently black out and sanitize sensitive personal information, social security numbers, and private data with zero recovery risk.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the ultimate in-browser PDF redaction tool. Permanently black out and sanitize sensitive personal information, social security numbers, and private data with zero recovery risk.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -11712,7 +11855,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Irreversible Text & Image Redaction</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Unlike basic highlight tools that merely draw over text, FileKit strips the underlying font glyphs and pixel data completely from the document binary so redacted content can never be uncovered or copied.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Unlike basic highlight tools that merely draw over text, FileKit strips the underlying font glyphs and pixel data completely from the document binary so redacted content can never be uncovered or copied.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -11802,14 +11945,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Metadata & Hidden Stream Sanitation</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Removes author names, creation timestamps, GPS data, and hidden revision histories so confidential files are clean for public disclosure.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Removes author names, creation timestamps, GPS data, and hidden revision histories so confidential files are clean for public disclosure.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Security</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Redaction runs strictly on your machine. Sensitive personal identifiers are erased in local memory with zero remote telemetry.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Redaction runs strictly on your machine. Sensitive personal identifiers are erased in local memory with zero remote telemetry.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12028,7 +12171,7 @@
             <span>Can someone copy text underneath the black redaction box?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-redact-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-redact-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No! FileKit completely removes the text characters and vector glyphs from the PDF code.
           </div>
         </div>
@@ -12037,7 +12180,7 @@
             <span>Does FileKit work for court-mandated redaction?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-redact-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-redact-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes, FileKit complies with legal data sanitization standards by permanently destroying underlying data.
           </div>
         </div>
@@ -12045,7 +12188,7 @@
 `; },
     getCropPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the premier in-browser PDF page cropper. Trim white margins, adjust bounding box dimensions, and crop PDF pages with visual drag-and-drop handles.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the premier in-browser PDF page cropper. Trim white margins, adjust bounding box dimensions, and crop PDF pages with visual drag-and-drop handles.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -12072,7 +12215,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Interactive Visual Crop Box</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Drag corner grips to define the exact visible area of your document. Apply crops to a single page, selected page ranges, or across the entire document simultaneously.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Drag corner grips to define the exact visible area of your document. Apply crops to a single page, selected page ranges, or across the entire document simultaneously.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12176,14 +12319,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Auto-Detect White Margins</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Our intelligent layout analyzer detects blank white borders automatically, allowing one-click auto-cropping for clean eBook reading on Kindle and tablets.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our intelligent layout analyzer detects blank white borders automatically, allowing one-click auto-cropping for clean eBook reading on Kindle and tablets.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Private In-Memory Cropping</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Crop files locally without cloud uploads for lightning-fast speeds and ironclad security.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Crop files locally without cloud uploads for lightning-fast speeds and ironclad security.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12383,7 +12526,7 @@
             <span>Does cropping reduce file quality?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-crop-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-crop-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No! Cropping updates the MediaBox and CropBox coordinates with zero compression loss.
           </div>
         </div>
@@ -12392,7 +12535,7 @@
             <span>Can I undo a crop later?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-crop-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-crop-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             FileKit creates a new cropped copy so your original file remains untouched.
           </div>
         </div>
@@ -12400,7 +12543,7 @@
 `; },
     getPageNumbersSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the easiest in-browser PDF page number generator. Insert sequential page numbers, customized Bates numbering, headers, and footers into PDF documents.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF page number generator. Insert sequential page numbers, customized Bates numbering, headers, and footers into PDF documents.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -12427,7 +12570,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Customizable Numbering Schemes</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Choose starting number, numbering style (1, 2, 3 or i, ii, iii), font family, font size, text color, and exact margins for professional publishing.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Choose starting number, numbering style (1, 2, 3 or i, ii, iii), font family, font size, text color, and exact margins for professional publishing.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12524,14 +12667,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Bates Numbering for Legal Files</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Add custom prefixes, suffixes, leading zeros, and legal case identifiers (e.g. 'CONF-000145') across thousands of discovery documents seamlessly.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Add custom prefixes, suffixes, leading zeros, and legal case identifiers (e.g. 'CONF-000145') across thousands of discovery documents seamlessly.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Fast Rendering</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">All page number positioning and vector font embedding runs strictly inside your local browser memory sandbox.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">All page number positioning and vector font embedding runs strictly inside your local browser memory sandbox.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12750,7 +12893,7 @@
             <span>Can I exclude page numbers from the cover page?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-page-numbers-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-page-numbers-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! You can choose to start numbering from page 2 or any specific page number.
           </div>
         </div>
@@ -12759,7 +12902,7 @@
             <span>Will page numbers overlap existing text?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-page-numbers-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-page-numbers-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             You can adjust margin offsets to ensure numbers never collide with existing content.
           </div>
         </div>
@@ -12767,7 +12910,7 @@
 `; },
     getFlattenPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the ultimate in-browser PDF flattening tool. Merge interactive form fields, electronic signatures, and multi-layer vector annotations into a single static PDF print stream.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the ultimate in-browser PDF flattening tool. Merge interactive form fields, electronic signatures, and multi-layer vector annotations into a single static PDF print stream.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -12794,7 +12937,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Permanent Form & Signature Lockdown</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Prevent other users from tampering with entered form data or repositioning signature blocks by fusing all dynamic annotations directly into the base page canvas.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Prevent other users from tampering with entered form data or repositioning signature blocks by fusing all dynamic annotations directly into the base page canvas.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12877,14 +13020,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Compatibility with All Printers & Devices</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Flattened PDFs eliminate font rendering discrepancies and annotation dropouts across older PDF viewers, mobile devices, and industrial print shops.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Flattened PDFs eliminate font rendering discrepancies and annotation dropouts across older PDF viewers, mobile devices, and industrial print shops.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local In-Memory Fusing</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Fusing operations execute in private browser WebAssembly memory for instantaneous rendering and strict privacy.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Fusing operations execute in private browser WebAssembly memory for instantaneous rendering and strict privacy.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -13099,7 +13242,7 @@
             <span>What happens to form fields after flattening?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-flatten-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-flatten-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             All entered form data is rendered as permanent vector content, making it impossible to edit or alter.
           </div>
         </div>
@@ -13108,7 +13251,7 @@
             <span>Will flattening reduce document clarity?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-flatten-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-flatten-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Not at all. Text and vector graphics maintain 100% crisp vector sharpness.
           </div>
         </div>
@@ -13116,7 +13259,7 @@
 `; },
     getRepairPdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the premier in-browser corrupted PDF repair tool. Analyze broken PDF binary structures, recover orphaned page trees, rebuild corrupted XREF cross-reference tables, and restore unreadable documents.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the premier in-browser corrupted PDF repair tool. Analyze broken PDF binary structures, recover orphaned page trees, rebuild corrupted XREF cross-reference tables, and restore unreadable documents.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -13143,7 +13286,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Deep Binary Stream Reconstruction</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Our deep repair parser scans unreadable PDF files for intact text dictionaries and image blobs, generating a brand new valid PDF container so your document opens cleanly in any PDF reader.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our deep repair parser scans unreadable PDF files for intact text dictionaries and image blobs, generating a brand new valid PDF container so your document opens cleanly in any PDF reader.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -13235,14 +13378,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Recover Broken XREF Tables & Lost Pages</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Fixes files corrupted by interrupted downloads, faulty email attachments, or disk errors by reconstructing missing cross-reference tables and byte-offset indices.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Fixes files corrupted by interrupted downloads, faulty email attachments, or disk errors by reconstructing missing cross-reference tables and byte-offset indices.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory File Recovery</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Damaged corporate files are parsed strictly in local browser memory without uploading to cloud servers.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Damaged corporate files are parsed strictly in local browser memory without uploading to cloud servers.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -13457,7 +13600,7 @@
             <span>Can FileKit repair completely corrupted files?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-repair-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-repair-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             As long as portions of the PDF stream contain salvageable data, FileKit will reconstruct valid pages.
           </div>
         </div>
@@ -13466,7 +13609,7 @@
             <span>Is there any fee to repair large files?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-repair-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-repair-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No, FileKit repair is 100% free with no file size limits.
           </div>
         </div>
@@ -13474,7 +13617,7 @@
 `; },
     getOrganizePdfSeoHtml() { return `
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #475569; line-height: 1.6;">FileKit is the most intuitive in-browser PDF organizer. Drag and drop page thumbnails to reorder, delete unwanted pages, rotate orientations, and insert blank pages seamlessly.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the most intuitive in-browser PDF organizer. Drag and drop page thumbnails to reorder, delete unwanted pages, rotate orientations, and insert blank pages seamlessly.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
@@ -13501,7 +13644,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Drag-and-Drop Page Grid</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Rearrange page sequence by simply dragging thumbnails into place. Hover over any thumbnail to delete or duplicate pages with a single click.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Rearrange page sequence by simply dragging thumbnails into place. Hover over any thumbnail to delete or duplicate pages with a single click.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -13605,14 +13748,14 @@
         </div>
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Multi-Select & Bulk Operations</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Select multiple pages at once using Shift or Ctrl to batch-rotate, batch-delete, or extract designated sections into separate files.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Select multiple pages at once using Shift or Ctrl to batch-rotate, batch-delete, or extract designated sections into separate files.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Private In-Memory Organizing</h3>
-          <p style="font-size: 15px; color: #475569; line-height: 1.7;">Page rearrangement executes in memory without file transfers to remote servers.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Page rearrangement executes in memory without file transfers to remote servers.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -13831,7 +13974,7 @@
             <span>Can I combine pages from multiple PDFs?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-organize-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-organize-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             Yes! You can add additional files directly to the organizer grid to merge and interleave pages.
           </div>
         </div>
@@ -13840,7 +13983,7 @@
             <span>Does reordering alter page formatting?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="fk-organize-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #475569; line-height: 1.7;">
+          <div class="fk-organize-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
             No, pages retain 100% of their original fonts, vector drawings, and images.
           </div>
         </div>

@@ -7491,7 +7491,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const align = hAlign === 'left' ? 'left' : hAlign === 'right' ? 'right' : 'center';
         const y = vAlign === 'top' ? 28 : curPageH - 28;
         pushUndo();
-        addAnnot({ type: 'pagenum', y, align, format: fmt, size: 10, color: '#475569', vAlign });
+        addAnnot({ type: 'pagenum', y, align, format: fmt, size: 10, color: '#4B4B4B', vAlign });
         close();
         toolMode = 'select';
         renderEditor();
@@ -7988,7 +7988,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           const helv = await doc.embedFont(L.StandardFonts.Helvetica);
           const colors = {
             approved: '#059669', confidential: '#DC2626', draft: '#F59E0B',
-            final: '#2563EB', date: '#475569',
+            final: '#2563EB', date: '#4B4B4B',
           };
           const size = a.kind === 'date' ? 12 : 16;
           const w = helv.widthOfTextAtSize(a.text, size);
@@ -9772,7 +9772,7 @@ async function paintResultPreview(blob) {
       T(M.office, 'Word', 'DOCX', 'docx', '#2B579A', 'pdf-to-word', 'Editable Word document'),
       T(M.office, 'Excel', 'XLSX', 'xlsx', '#217346', 'pdf-to-excel', 'Tables to spreadsheet'),
       T(M.office, 'PowerPoint', 'PPTX', 'pptx', '#C43E1C', 'pdf-to-ppt', 'One slide per page'),
-      T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#475569', 'pdf-grayscale', 'Pages in black & white'),
+      T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#4B4B4B', 'pdf-grayscale', 'Pages in black & white'),
       T(M.office, 'Compressed PDF', 'PDF', 'pdf', '#0F766E', 'pdf-compress', 'Smaller file size', { quality: 60, scale: '1.5' }),
       T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pdf-to-html', 'Web-ready page'),
       T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Text layer only'),
@@ -9834,7 +9834,7 @@ async function paintResultPreview(blob) {
       T(M.web, 'Base64 Data URI', 'TXT', 'txt', '#8B5CF6', 'img-to-base64', 'Convert image to inline Base64 data'),
     ],
     audio: [
-      T(M.audio, 'WAV', 'WAV', 'wav', '#475569', 'audio-convert', 'Lossless waveform', { format: 'wav' }),
+      T(M.audio, 'WAV', 'WAV', 'wav', '#4B4B4B', 'audio-convert', 'Lossless waveform', { format: 'wav' }),
       T(M.audio, 'MP3', 'MP3', 'mp3', '#EA580C', 'audio-convert', 'Universal compressed audio', { format: 'mp3', br: '192k' }),
       T(M.audio, 'OGG', 'OGG', 'ogg', '#CA8A04', 'audio-convert', 'Open compressed audio', { format: 'ogg', br: '192k' }),
       T(M.audio, 'WebM', 'WEBM', 'webm', '#0E7490', 'audio-convert', 'Web audio container', { format: 'webm' }),
@@ -9864,7 +9864,7 @@ async function paintResultPreview(blob) {
     ],
     archive: [
       T(M.arc, 'Extract files', 'FILES', 'zip', '#0E7490', 'zip-extract', 'Unpack the archive'),
-      T(M.arc, 'Inspect ZIP', 'TXT', 'txt', '#475569', 'zip-inspect', 'List entries'),
+      T(M.arc, 'Inspect ZIP', 'TXT', 'txt', '#4B4B4B', 'zip-inspect', 'List entries'),
       T(M.arc, 'Extract TAR.GZ', 'FILES', 'gz', '#CA8A04', 'targz-extract', 'Unpack tar archives'),
       T(M.arc, 'Preview entries', 'TXT', 'txt', '#64748B', 'archive-preview', 'Peek inside'),
     ],
@@ -10571,10 +10571,14 @@ async function paintResultPreview(blob) {
 
   function mountFlatten(container, tool) {
     container.innerHTML = '';
-    container.classList.add('cpdf-root', 'flat-root');
-    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root');
+    container.className = 'cpdf-root prot-root flat-root';
 
     let file = null;
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    let renderTask = null;
+    let flattenMode = 'all'; // 'all' | 'custom'
     let optForms = true;
     let optAnnots = true;
     let optLayers = true;
@@ -10588,24 +10592,82 @@ async function paintResultPreview(blob) {
 
     async function pickFile(f) {
       if (!isPdf(f)) return;
-      if (f.size > 200 * 1024 * 1024) return;
+      if (f.size > 500 * 1024 * 1024) return;
       file = f;
+      currentPage = 1;
+      totalPages = 1;
+      pdfDoc = null;
       renderConfigure();
     }
 
+    async function loadPdfDocument() {
+      if (!file) return;
+      try {
+        const loadScript = window.FF?.util?.loadScript || (src => new Promise((resolve, reject) => {
+          const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+        }));
+        if (!window.pdfjsLib) {
+          await loadScript('vendor/pdfjs.min.js');
+        }
+        if (window.pdfjsLib && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        }
+        const buf = await file.arrayBuffer();
+        const loadingTask = window.pdfjsLib.getDocument({ data: new Uint8Array(buf) });
+        pdfDoc = await loadingTask.promise;
+        totalPages = pdfDoc.numPages || 1;
+        renderPagePreview(currentPage);
+      } catch (err) {
+        console.warn('[Flatten] PDF preview error', err);
+      }
+    }
+
+    async function renderPagePreview(pageNum) {
+      if (!pdfDoc) return;
+      const stage = container.querySelector('#flat-paper-container');
+      const pageInfo = container.querySelector('#flat-page-counter');
+      const prevBtn = container.querySelector('#flat-prev-page');
+      const nextBtn = container.querySelector('#flat-next-page');
+
+      if (pageInfo) pageInfo.textContent = `Page ${pageNum} of ${totalPages}`;
+      if (prevBtn) prevBtn.disabled = pageNum <= 1;
+      if (nextBtn) nextBtn.disabled = pageNum >= totalPages;
+
+      try {
+        if (renderTask) renderTask.cancel();
+        const page = await pdfDoc.getPage(pageNum);
+        const vp = page.getViewport({ scale: 0.95 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(vp.width));
+        canvas.height = Math.max(1, Math.round(vp.height));
+        canvas.className = 'prot-canvas-sheet';
+        const ctx = canvas.getContext('2d');
+        renderTask = page.render({ canvasContext: ctx, viewport: vp });
+        await renderTask.promise;
+        if (stage) {
+          stage.innerHTML = '';
+          stage.appendChild(canvas);
+        }
+      } catch (e) {
+        if (e?.name !== 'RenderingCancelledException') {
+          console.warn('[Flatten] render page error', e);
+        }
+      }
+    }
+
     function renderUpload() {
-      container.classList.add('cpdf-root', 'flat-root');
+      container.className = 'cpdf-root prot-root flat-root';
       const stage = container.closest('.app-stage-container');
       if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
       container.innerHTML = `
-        <header class="cpdf-hdr flat-hdr">
-          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
+        <header class="cpdf-hdr prot-hdr">
+          <div class="cpdf-hdr-icon prot-hdr-icon">${I.flatten}</div>
           <div>
             <h2 class="cpdf-hdr-title">Flatten PDF</h2>
-            <p class="cpdf-hdr-sub">Bake forms, annotations, and layers into the page</p>
+            <p class="cpdf-hdr-sub">Bake interactive form fields, annotations, and layers into static page ink</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="flat-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to flatten">
+        <div class="cpdf-dropzone drop-hero-box" id="flat-dz" tabindex="0" role="button" aria-label="Add PDF file to flatten">
           <div class="dropzone-idle">
             <div class="drop-illustration">
               <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
@@ -10644,23 +10706,23 @@ async function paintResultPreview(blob) {
             <div class="drop-action-group">
               <label for="flat-inp" class="select-files-main-btn">
                 <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
+                <span>Select PDF</span>
               </label>
               <label for="flat-inp" class="select-files-chevron-btn" aria-label="More file options">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to flatten</p>
+            <p class="drop-sub-text">Add <strong>PDF</strong> file to flatten into static ink</p>
 
             <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
+              <span class="fmt-label">Supported format:</span>
               <span class="fmt-badge fmt-pdf">PDF</span>
             </div>
           </div>
-          <input id="flat-inp" type="file" accept="application/pdf,.pdf"  hidden>
-        </div>
+          <input id="flat-inp" type="file" accept="application/pdf,.pdf" hidden>
         </div>`;
+
       const dz = container.querySelector('#flat-dz');
       const inp = container.querySelector('#flat-inp');
       inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
@@ -10676,155 +10738,252 @@ async function paintResultPreview(blob) {
       });
     }
 
-    function fileMetaLine() {
-      const modified = file.lastModified
-        ? new Date(file.lastModified).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-        : '—';
-      return `Size ${_bytes(file.size)}&nbsp;&nbsp;Type PDF&nbsp;&nbsp;Modified ${_esc(modified)}`;
-    }
-
-    function summaryBits() {
-      const bits = [];
-      if (optForms) bits.push('Forms');
-      if (optAnnots) bits.push('Annotations');
-      if (optLayers) bits.push('Layers');
-      if (optAppearances) bits.push('Appearances');
-      return bits.length ? bits.join(' · ') : 'Nothing selected';
-    }
-
     function renderConfigure() {
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
       container.innerHTML = `
-        <header class="cpdf-hdr flat-hdr">
-          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
-            <p class="cpdf-hdr-sub">Choose what to bake into the page content</p>
-          </div>
-        </header>
-        <div class="cpdf-body flat-body">
-          <div class="cpdf-body-scroll flat-form">
-            <div class="conv-file-card flat-file-card">
-              <div class="conv-file-badge flat-file-badge">PDF</div>
-              <div class="conv-file-meta">
-                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
-                <span>${fileMetaLine()}</span>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Live Document Preview -->
+            <div class="cpdf-benchmark-stage">
+              <div class="cpdf-benchmark-paper" id="flat-paper-container">
+                <div class="prot-loading-sheet">
+                  <div class="prot-loading-spin"></div>
+                  <span>Rendering document preview…</span>
+                </div>
               </div>
-              <button type="button" class="conv-file-x" id="flat-remove" aria-label="Remove file">×</button>
-            </div>
 
-            <div class="flat-hero">
-              <div class="flat-hero-icon">${I.layers}</div>
-              <div class="flat-hero-copy">
-                <strong>Make interactive content permanent</strong>
-                <span>Form fields, markups, and optional content become static page ink — ideal before sharing or archiving.</span>
+              <!-- Floating Stage Bottom Meta Bar -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <button type="button" class="prot-nav-arrow" id="flat-prev-page" title="Previous page">${I.prev}</button>
+                <span class="prot-page-text" id="flat-page-counter">Page 1 of ${totalPages}</span>
+                <button type="button" class="prot-nav-arrow" id="flat-next-page" title="Next page">${I.next}</button>
+                <span class="prot-meta-sep">|</span>
+                <span class="cpdf-benchmark-fileinfo-text">
+                  ${_esc(file.name)} (${_bytes(file.size)})
+                </span>
+                <span class="prot-meta-status is-open" id="flat-status-pill">
+                  ${I.layers} Ready to Flatten
+                </span>
+                <button type="button" class="cpdf-benchmark-btn-add" id="flat-replace-file" title="Replace file">
+                  ${I.replace}&nbsp; Change
+                </button>
               </div>
             </div>
 
-            <div class="flat-grid">
-              <label class="flat-chip${optForms ? ' is-on' : ''}">
-                <input type="checkbox" id="flat-opt-forms" ${optForms ? 'checked' : ''}>
-                <span class="flat-chip-kicker">Forms</span>
-                <span class="flat-chip-title">Form fields</span>
-                <span class="flat-chip-desc">Lock filled values into the page</span>
-              </label>
-              <label class="flat-chip${optAnnots ? ' is-on' : ''}">
-                <input type="checkbox" id="flat-opt-annots" ${optAnnots ? 'checked' : ''}>
-                <span class="flat-chip-kicker">Markup</span>
-                <span class="flat-chip-title">Annotations</span>
-                <span class="flat-chip-desc">Comments, stamps, highlights</span>
-              </label>
-              <label class="flat-chip${optLayers ? ' is-on' : ''}">
-                <input type="checkbox" id="flat-opt-layers" ${optLayers ? 'checked' : ''}>
-                <span class="flat-chip-kicker">OCG</span>
-                <span class="flat-chip-title">Layers</span>
-                <span class="flat-chip-desc">Merge optional content groups</span>
-              </label>
-              <label class="flat-chip${optAppearances ? ' is-on' : ''}">
-                <input type="checkbox" id="flat-opt-apps" ${optAppearances ? 'checked' : ''}>
-                <span class="flat-chip-kicker">Visual</span>
-                <span class="flat-chip-title">Appearances</span>
-                <span class="flat-chip-desc">Keep widget look as drawn</span>
-              </label>
-            </div>
+            <!-- Right Panel: Precision Studio Inspector (Zero Scroll) -->
+            <div class="cpdf-benchmark-panel">
+              <!-- Top Header -->
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon prot-header-badge">
+                  ${I.layers}
+                </div>
+                <h2 class="cpdf-benchmark-title">Flatten PDF</h2>
+              </div>
 
-            <div class="flat-note">
-              <span class="flat-note-dot"></span>
-              <p><strong>Tip</strong> Flattening is one-way for interactive fields. Keep a copy if you still need to edit forms later.</p>
-            </div>
-          </div>
+              <!-- Mode Switcher: Full vs Custom -->
+              <div class="prot-mode-grid">
+                <div class="prot-mode-card ${flattenMode === 'all' ? 'is-active' : ''}" id="flat-mode-all" role="button" tabindex="0">
+                  <div class="cpdf-benchmark-radio">
+                    <div class="cpdf-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="prot-mode-texts">
+                    <strong>Complete Flatten</strong>
+                    <span>Bake all elements</span>
+                  </div>
+                </div>
 
-          <div class="cpdf-footer conv-actions flat-actions">
-            <div class="flat-summary" id="flat-summary">${_esc(summaryBits())}</div>
-            <div class="flat-action-row">
-              <button class="conv-run-btn flat-run-btn" id="flat-run" type="button">Flatten PDF</button>
-              <button class="conv-change-btn" id="flat-change" type="button">Change file</button>
+                <div class="prot-mode-card ${flattenMode === 'custom' ? 'is-active' : ''}" id="flat-mode-custom" role="button" tabindex="0">
+                  <div class="cpdf-benchmark-radio">
+                    <div class="cpdf-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="prot-mode-texts">
+                    <strong>Custom Scope</strong>
+                    <span>Select targets</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Flatten Targets (4-chip Grid) -->
+              <div class="prot-input-group">
+                <div class="prot-field-top">
+                  <span class="prot-field-title">Bake Targets</span>
+                  <span class="prot-entropy-tag" id="flat-targets-summary">All Layers Active</span>
+                </div>
+                <div class="prot-flatten-grid">
+                  <div class="prot-perm-chip ${optForms ? 'is-allowed' : 'is-blocked'}" id="flat-opt-forms" role="button" tabindex="0">
+                    <div class="prot-chip-top">
+                      <span class="prot-chip-icon">${I.form}</span>
+                      <strong>Form Fields</strong>
+                    </div>
+                    <span class="prot-chip-badge">${optForms ? 'Bake Ink' : 'Ignore'}</span>
+                  </div>
+
+                  <div class="prot-perm-chip ${optAnnots ? 'is-allowed' : 'is-blocked'}" id="flat-opt-annots" role="button" tabindex="0">
+                    <div class="prot-chip-top">
+                      <span class="prot-chip-icon">${I.edit}</span>
+                      <strong>Annotations</strong>
+                    </div>
+                    <span class="prot-chip-badge">${optAnnots ? 'Bake Ink' : 'Ignore'}</span>
+                  </div>
+
+                  <div class="prot-perm-chip ${optLayers ? 'is-allowed' : 'is-blocked'}" id="flat-opt-layers" role="button" tabindex="0">
+                    <div class="prot-chip-top">
+                      <span class="prot-chip-icon">${I.layers}</span>
+                      <strong>OCG Layers</strong>
+                    </div>
+                    <span class="prot-chip-badge">${optLayers ? 'Bake Ink' : 'Ignore'}</span>
+                  </div>
+
+                  <div class="prot-perm-chip ${optAppearances ? 'is-allowed' : 'is-blocked'}" id="flat-opt-apps" role="button" tabindex="0">
+                    <div class="prot-chip-top">
+                      <span class="prot-chip-icon">${I.eye}</span>
+                      <strong>Appearances</strong>
+                    </div>
+                    <span class="prot-chip-badge">${optAppearances ? 'Bake Ink' : 'Ignore'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security / Immutability Note Strip -->
+              <div class="prot-security-strip">
+                <div class="prot-strip-row">
+                  <strong>Permanent Static Page Ink</strong>
+                  <span>Irreversible Output</span>
+                </div>
+                <div class="prot-strip-track">
+                  <div class="prot-strip-bar" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <!-- Primary Action Obsidian Button -->
+              <button type="button" class="cpdf-benchmark-cta" id="flat-studio-run">
+                <span>Flatten PDF Document</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>`;
 
-      const bindChip = (id, get, set) => {
-        const el = container.querySelector(id);
-        el.onchange = () => {
-          set(!!el.checked);
-          el.closest('.flat-chip')?.classList.toggle('is-on', !!el.checked);
-          const s = container.querySelector('#flat-summary');
-          if (s) s.textContent = summaryBits();
-        };
-      };
-      bindChip('#flat-opt-forms', () => optForms, v => { optForms = v; });
-      bindChip('#flat-opt-annots', () => optAnnots, v => { optAnnots = v; });
-      bindChip('#flat-opt-layers', () => optLayers, v => { optLayers = v; });
-      bindChip('#flat-opt-apps', () => optAppearances, v => { optAppearances = v; });
+      loadPdfDocument();
 
-      container.querySelector('#flat-remove').onclick = () => { file = null; renderUpload(); };
-      container.querySelector('#flat-change').onclick = () => { file = null; renderUpload(); };
-      container.querySelector('#flat-run').onclick = () => runFlatten();
+      // Page Navigation
+      container.querySelector('#flat-prev-page')?.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; renderPagePreview(currentPage); }
+      });
+      container.querySelector('#flat-next-page')?.addEventListener('click', () => {
+        if (currentPage < totalPages) { currentPage++; renderPagePreview(currentPage); }
+      });
+
+      container.querySelector('#flat-replace-file')?.addEventListener('click', () => {
+        file = null; pdfDoc = null; renderUpload();
+      });
+
+      // Mode switch
+      const modeAll = container.querySelector('#flat-mode-all');
+      const modeCustom = container.querySelector('#flat-mode-custom');
+      const syncFlattenModes = () => {
+        modeAll.classList.toggle('is-active', flattenMode === 'all');
+        modeCustom.classList.toggle('is-active', flattenMode === 'custom');
+        if (flattenMode === 'all') {
+          optForms = true; optAnnots = true; optLayers = true; optAppearances = true;
+          syncAllChips();
+        }
+      };
+
+      modeAll?.addEventListener('click', () => { flattenMode = 'all'; syncFlattenModes(); });
+      modeCustom?.addEventListener('click', () => { flattenMode = 'custom'; syncFlattenModes(); });
+
+      const syncAllChips = () => {
+        const update = (sel, val) => {
+          const el = container.querySelector(sel);
+          if (el) {
+            el.className = `prot-perm-chip ${val ? 'is-allowed' : 'is-blocked'}`;
+            const badge = el.querySelector('.prot-chip-badge');
+            if (badge) badge.textContent = val ? 'Bake Ink' : 'Ignore';
+          }
+        };
+        update('#flat-opt-forms', optForms);
+        update('#flat-opt-annots', optAnnots);
+        update('#flat-opt-layers', optLayers);
+        update('#flat-opt-apps', optAppearances);
+
+        const count = [optForms, optAnnots, optLayers, optAppearances].filter(Boolean).length;
+        const tag = container.querySelector('#flat-targets-summary');
+        if (tag) tag.textContent = count === 4 ? 'All Targets Active' : `${count} Targets Active`;
+      };
+
+      const bindTargetChip = (id, getter, setter) => {
+        const chip = container.querySelector(id);
+        if (!chip) return;
+        chip.addEventListener('click', () => {
+          flattenMode = 'custom';
+          modeAll.classList.remove('is-active');
+          modeCustom.classList.add('is-active');
+          setter(!getter());
+          syncAllChips();
+        });
+      };
+
+      bindTargetChip('#flat-opt-forms', () => optForms, v => { optForms = v; });
+      bindTargetChip('#flat-opt-annots', () => optAnnots, v => { optAnnots = v; });
+      bindTargetChip('#flat-opt-layers', () => optLayers, v => { optLayers = v; });
+      bindTargetChip('#flat-opt-apps', () => optAppearances, v => { optAppearances = v; });
+
+      container.querySelector('#flat-studio-run')?.addEventListener('click', () => runFlatten());
     }
 
     function renderProcessing() {
-      container.innerHTML = `
-        <header class="cpdf-hdr flat-hdr">
-          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
-            <p class="cpdf-hdr-sub">Baking interactive content…</p>
+      const panel = container.querySelector('.cpdf-benchmark-panel');
+      if (!panel) return;
+      panel.innerHTML = `
+        <div class="prot-processing-view">
+          <div class="prot-pulse-shield">
+            <div class="prot-shield-ring"></div>
+            <div class="prot-shield-icon">${I.layers}</div>
           </div>
-        </header>
-        <div class="cpdf-body cpdf-body--center">
-          <div class="cpdf-spinner" aria-hidden="true">
-            <div class="cpdf-spin-outer"></div>
-            <div class="cpdf-spin-inner">${I.flatten}</div>
+          <h3 class="prot-proc-title">Flattening Document</h3>
+          <p class="prot-proc-step" id="flat-step-label">Parsing document object dictionary…</p>
+
+          <div class="prot-progress-track">
+            <div class="prot-progress-fill" id="flat-bar-fill" style="width: 20%;"></div>
           </div>
-          <p class="cpdf-proc-title">Flattening your PDF</p>
-          <p class="cpdf-proc-sub" id="flat-msg">Reading structure…</p>
-          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="flat-fill" style="width:16%"></div></div>
-          <div class="cpdf-prog-foot">
-            <span id="flat-pct">16%</span>
-            <span class="cpdf-proc-local">${I.shield} Local UI shell</span>
+          <div class="prot-proc-foot">
+            <span id="flat-pct-label">20%</span>
+            <span class="prot-engine-tag">${I.shieldCheck}&nbsp; In-Browser Engine</span>
           </div>
         </div>`;
     }
 
     async function runFlatten() {
       renderProcessing();
-      const fill = container.querySelector('#flat-fill');
-      const pct = container.querySelector('#flat-pct');
-      const msg = container.querySelector('#flat-msg');
-      const steps = [
-        [28, 'Scanning form fields…'],
-        [52, 'Merging annotations…'],
-        [76, optLayers ? 'Collapsing layers…' : 'Preserving page content…'],
-        [100, 'Writing flat PDF…'],
-      ];
-      for (const [v, t] of steps) {
-        await new Promise(r => setTimeout(r, 200));
-        if (fill) fill.style.width = v + '%';
-        if (pct) pct.textContent = v + '%';
-        if (msg) msg.textContent = t;
-      }
-      await new Promise(r => setTimeout(r, 140));
+      const fill = container.querySelector('#flat-bar-fill');
+      const pct = container.querySelector('#flat-pct-label');
+      const step = container.querySelector('#flat-step-label');
 
-      // Prefer real engine when registry is available
+      const steps = [
+        [30, 'Scanning interactive widget trees…'],
+        [60, 'Baking form fields and annotations…'],
+        [85, optLayers ? 'Merging OCG layers into static content…' : 'Preserving base content streams…'],
+        [100, 'Done']
+      ];
+
+      for (const [val, label] of steps) {
+        await new Promise(r => setTimeout(r, 200));
+        if (fill) fill.style.width = `${val}%`;
+        if (pct) pct.textContent = `${val}%`;
+        if (step) step.textContent = label;
+      }
+      await new Promise(r => setTimeout(r, 120));
+
       let out = null;
       try {
         const toolDef = window.FF?.registry?.get?.('pdf-flatten');
@@ -10833,9 +10992,9 @@ async function paintResultPreview(blob) {
           const result = await toolDef.run({ file, engine, inputs: {
             forms: optForms, annotations: optAnnots, layers: optLayers, appearances: optAppearances,
           }});
-          if (result?.blob) out = { blob: result.blob, filename: result.filename || (base() + '-flat.pdf') };
-          else if (result instanceof Blob) out = { blob: result, filename: base() + '-flat.pdf' };
-          else if (result?.bytes) out = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: base() + '-flat.pdf' };
+          if (result?.blob) out = { blob: result.blob, filename: result.filename || `${base()}-flat.pdf` };
+          else if (result instanceof Blob) out = { blob: result, filename: `${base()}-flat.pdf` };
+          else if (result?.bytes) out = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: `${base()}-flat.pdf` };
         }
       } catch (err) {
         console.warn('[Flatten] engine fallback', err);
@@ -10846,46 +11005,56 @@ async function paintResultPreview(blob) {
 
     function renderResult(out) {
       const url = URL.createObjectURL(out.blob);
-      container.innerHTML = `
-        <header class="cpdf-hdr flat-hdr">
-          <div class="cpdf-hdr-icon flat-hdr-icon">${I.flatten}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Flatten PDF</h2>
-            <p class="cpdf-hdr-sub">Your flat PDF is ready</p>
-          </div>
-        </header>
-        <div class="cpdf-body">
-          <div class="cpdf-body-scroll">
-            <div class="cpdf-status-bar cpdf-status-bar--ok">
-              <div>
-                <strong>Flatten complete</strong>
-                <span>${_esc(summaryBits())}</span>
-              </div>
+      const panel = container.querySelector('.cpdf-benchmark-panel');
+      if (!panel) return;
+
+      panel.innerHTML = `
+        <div class="prot-result-box">
+          <div class="cpdf-benchmark-header prot-res-header">
+            <div class="cpdf-benchmark-icon prot-res-badge-ok">
+              ${I.check}
             </div>
-            <div class="cpdf-file-bar">
-              <span class="flat-out-badge">FLAT</span>
-              <div class="cpdf-file-text">
-                <span class="cpdf-fname">${_esc(out.filename)}</span>
-                <span class="cpdf-fsize">${_bytes(out.blob.size)} · from ${_esc(file.name)}</span>
-              </div>
+            <div class="prot-hdr-texts">
+              <h2 class="cpdf-benchmark-title">Flattening Complete</h2>
+              <span class="prot-studio-sub">All interactive elements baked into static ink</span>
             </div>
           </div>
-          <div class="cpdf-footer">
-            <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">
-              ${I.dl}&nbsp; Download ${_esc(out.filename)}
+
+          <div class="prot-res-stats-card">
+            <div class="prot-res-file-row">
+              <span class="prot-res-tag">FLATTENED</span>
+              <div class="prot-res-names">
+                <strong class="prot-res-outname" title="${_esc(out.filename)}">${_esc(out.filename)}</strong>
+                <span class="prot-res-outmeta">${_bytes(out.blob.size)} · Source: ${_esc(file.name)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="prot-res-actions">
+            <a class="cpdf-benchmark-cta" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none;">
+              <span>Download ${_esc(out.filename)}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             </a>
-            <div class="cpdf-result-row">
-              <button class="cpdf-btn-ghost" id="flat-again" type="button">Flatten another file</button>
-              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="flat-back" type="button">Adjust options</button>
+
+            <div class="prot-res-btn-grid">
+              <button type="button" class="cpdf-btn-ghost prot-ghost-btn" id="flat-again">
+                ${I.replace}&nbsp; Another File
+              </button>
+              <button type="button" class="cpdf-btn-ghost cpdf-btn-ghost--tinted prot-ghost-btn" id="flat-back">
+                ${I.edit}&nbsp; Adjust Options
+              </button>
             </div>
           </div>
         </div>`;
-      container.querySelector('#flat-again').onclick = () => {
-        URL.revokeObjectURL(url); file = null; renderUpload();
-      };
-      container.querySelector('#flat-back').onclick = () => {
+
+      container.querySelector('#flat-again')?.addEventListener('click', () => {
+        URL.revokeObjectURL(url); file = null; pdfDoc = null; renderUpload();
+      });
+      container.querySelector('#flat-back')?.addEventListener('click', () => {
         URL.revokeObjectURL(url); renderConfigure();
-      };
+      });
     }
 
     renderUpload();
@@ -10915,12 +11084,23 @@ async function paintResultPreview(blob) {
   const I = {
     lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
     unlock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`,
-    upload: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/><rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/><path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><g><rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/><path d="M116 54h14v14z" fill="#F2F0F1"/><rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/><rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/></g><path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/></svg>`,
-    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
-    shield: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-    eye: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
-    eyeOff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+    shield: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    shieldCheck: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
+    eye: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    eyeOff: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
     key: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`,
+    print: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
+    copy: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    cross: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    dl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    prev: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
+    next: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
+    replace: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>`,
+    gps: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>`,
+    camera: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+    doc: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
   };
 
   function tinySecuredPdf(baseName, mode) {
@@ -10948,72 +11128,202 @@ async function paintResultPreview(blob) {
 
   function mountProtect(container, tool) {
     container.innerHTML = '';
-    container.classList.add('cpdf-root', 'prot-root');
-    container.classList.remove('spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root');
+    container.className = 'cpdf-root prot-root';
 
     let file = null;
-    let mode = (tool && tool.id === 'pdf-unlock') ? 'unlock' : 'protect';
+    let mode = (tool && tool.id === 'pdf-flatten') ? 'flatten' : (tool && tool.id === 'pdf-unlock') ? 'unlock' : 'protect';
     let password = '';
     let confirmPw = '';
-    let ownerPw = '';
     let showPw = false;
     let permPrint = true;
     let permCopy = true;
     let permEdit = false;
-    let strength = 0; // 0-4
+    let optForms = true;
+    let optAnnots = true;
+    let optLayers = true;
+    let optAppearances = true;
+    let stripExif = true;
+    let addWatermark = false;
+    let watermarkText = 'CONFIDENTIAL';
+    let isLockedDoc = false;
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    let renderTask = null;
 
-    const isPdf = f => {
-      const n = (f?.name || '').toLowerCase();
-      return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
+    const fileFamily = f => {
+      if (!f) return 'unknown';
+      const name = (f.name || '').toLowerCase();
+      const type = (f.type || '').toLowerCase();
+      if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+      if (type.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp|avif|heic|heif|svg)$/i.test(name)) return 'image';
+      return 'generic';
     };
-    const base = () => (file?.name || 'document.pdf').replace(/\.pdf$/i, '') || 'document';
 
-    function scorePassword(pw) {
-      if (!pw) return 0;
-      let s = 0;
-      if (pw.length >= 6) s++;
-      if (pw.length >= 10) s++;
-      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
-      if (/\d/.test(pw)) s++;
-      if (/[^A-Za-z0-9]/.test(pw)) s++;
-      return Math.min(4, s);
+    const base = () => (file?.name || 'document.pdf').replace(/\.[^/.]+$/, '') || 'document';
+
+    function computeEntropy(pw) {
+      if (!pw) return { bits: 0, score: 0, label: 'No Key Entered' };
+      let pool = 0;
+      if (/[a-z]/.test(pw)) pool += 26;
+      if (/[A-Z]/.test(pw)) pool += 26;
+      if (/[0-9]/.test(pw)) pool += 10;
+      if (/[^a-zA-Z0-9]/.test(pw)) pool += 32;
+      if (!pool) pool = 10;
+      const bits = Math.round(pw.length * Math.log2(pool));
+      let score = 0;
+      let label = 'Too Short';
+      if (bits >= 80) { score = 4; label = 'Cryptographic AES-256'; }
+      else if (bits >= 56) { score = 3; label = 'Strong Entropy'; }
+      else if (bits >= 36) { score = 2; label = 'Moderate'; }
+      else if (bits >= 16) { score = 1; label = 'Weak'; }
+      else { score = 0; label = 'Insufficient'; }
+      return { bits, score, label };
     }
 
     async function pickFile(f) {
-      if (!isPdf(f)) return;
-      if (f.size > 200 * 1024 * 1024) return;
+      if (!f) return;
+      if (f.size > 500 * 1024 * 1024) return;
       file = f;
       password = '';
       confirmPw = '';
-      ownerPw = '';
-      strength = 0;
+      currentPage = 1;
+      totalPages = 1;
+      pdfDoc = null;
+      isLockedDoc = false;
+      mode = (tool && tool.id === 'pdf-flatten') ? 'flatten' : (tool && tool.id === 'pdf-unlock') ? 'unlock' : 'protect';
+
+      // Keep siderail strictly highlighting Protect
+      document.querySelectorAll('.rail-item[data-task-rail]').forEach(x => {
+        const sel = x.dataset.taskRail === 'protect';
+        x.classList.toggle('active', sel);
+      });
+
       renderConfigure();
     }
 
-    function hdrIcon() { return mode === 'unlock' ? I.unlock : I.lock; }
-    function hdrTitle() { return mode === 'unlock' ? 'Unlock PDF' : 'Protect PDF'; }
-    function hdrSub(stage) {
-      if (stage === 'upload') return 'Add a password, or remove one from a locked file';
-      if (stage === 'config') return mode === 'unlock'
-        ? 'Enter the current password to remove protection'
-        : 'Set a password and optional permissions';
-      if (stage === 'proc') return mode === 'unlock' ? 'Removing password…' : 'Encrypting PDF…';
-      return mode === 'unlock' ? 'Your unlocked PDF is ready' : 'Your protected PDF is ready';
+    function canRun() {
+      if (fileFamily(file) === 'image') return true;
+      if (mode === 'flatten') return true;
+      if (!password || password.length < 1) return false;
+      if (mode === 'protect') {
+        if (password.length < 4) return false;
+        if (confirmPw !== password) return false;
+      }
+      return true;
+    }
+
+    async function loadPdfDocument() {
+      if (!file || fileFamily(file) !== 'pdf') return;
+      try {
+        const loadScript = window.FF?.util?.loadScript || (src => new Promise((resolve, reject) => {
+          const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+        }));
+        if (!window.pdfjsLib) {
+          await loadScript('vendor/pdfjs.min.js');
+        }
+        if (window.pdfjsLib && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        }
+        const buf = await file.arrayBuffer();
+        const loadingTask = window.pdfjsLib.getDocument({ data: new Uint8Array(buf) });
+
+        loadingTask.onPassword = () => {
+          // Auto-detect encrypted document!
+          isLockedDoc = true;
+          mode = 'unlock';
+          renderLockedStage();
+          syncModeCards();
+        };
+
+        pdfDoc = await loadingTask.promise;
+        isLockedDoc = false;
+        totalPages = pdfDoc.numPages || 1;
+        renderPagePreview(currentPage);
+        syncModeCards();
+      } catch (err) {
+        if (err?.name === 'PasswordException' || String(err?.message || '').toLowerCase().includes('password')) {
+          isLockedDoc = true;
+          mode = 'unlock';
+          renderLockedStage();
+          syncModeCards();
+        } else {
+          console.warn('[Protect] PDF preview loader', err);
+        }
+      }
+    }
+
+    function renderLockedStage() {
+      const stage = container.querySelector('#prot-paper-container');
+      const statusPill = container.querySelector('#prot-status-pill');
+      if (stage) {
+        stage.innerHTML = `
+          <div class="prot-vault-sheet">
+            <div class="prot-vault-pulse">
+              <div class="prot-vault-ring"></div>
+              <div class="prot-vault-ico">${I.lock}</div>
+            </div>
+            <strong class="prot-vault-title">Password-Protected Document</strong>
+            <span class="prot-vault-sub">This document is locked with 256-bit AES encryption. Enter the decryption password on the right to unlock.</span>
+            <span class="prot-vault-badge">${I.shieldCheck} 256-Bit Cipher Enforced</span>
+          </div>`;
+      }
+      if (statusPill) {
+        statusPill.innerHTML = `${I.lock} Password Encrypted`;
+        statusPill.className = 'prot-meta-status is-locked';
+      }
+    }
+
+    async function renderPagePreview(pageNum) {
+      if (!pdfDoc) return;
+      const stage = container.querySelector('#prot-paper-container');
+      const pageInfo = container.querySelector('#prot-page-counter');
+      const prevBtn = container.querySelector('#prot-prev-page');
+      const nextBtn = container.querySelector('#prot-next-page');
+
+      if (pageInfo) pageInfo.textContent = `Page ${pageNum} of ${totalPages}`;
+      if (prevBtn) prevBtn.disabled = pageNum <= 1;
+      if (nextBtn) nextBtn.disabled = pageNum >= totalPages;
+
+      try {
+        if (renderTask) renderTask.cancel();
+        const page = await pdfDoc.getPage(pageNum);
+        const vp = page.getViewport({ scale: 0.95 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(vp.width));
+        canvas.height = Math.max(1, Math.round(vp.height));
+        canvas.className = 'prot-canvas-sheet';
+        const ctx = canvas.getContext('2d');
+        renderTask = page.render({ canvasContext: ctx, viewport: vp });
+        await renderTask.promise;
+        if (stage) {
+          stage.innerHTML = '';
+          stage.appendChild(canvas);
+        }
+      } catch (e) {
+        if (e?.name !== 'RenderingCancelledException') {
+          console.warn('[Protect] render page error', e);
+        }
+      }
     }
 
     function renderUpload() {
-      container.classList.add('cpdf-root', 'prot-root');
+      container.className = 'cpdf-root prot-root';
       const stage = container.closest('.app-stage-container');
       if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      const isProtect = mode === 'protect';
+      const isFlatten = mode === 'flatten';
       container.innerHTML = `
         <header class="cpdf-hdr prot-hdr">
-          <div class="cpdf-hdr-icon prot-hdr-icon">${hdrIcon()}</div>
+          <div class="cpdf-hdr-icon prot-hdr-icon ${isFlatten ? '' : !isProtect ? 'is-unlock' : ''}">
+            ${isFlatten ? I.flatten : isProtect ? I.lock : I.unlock}
+          </div>
           <div>
-            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
-            <p class="cpdf-hdr-sub">${hdrSub('upload')}</p>
+            <h2 class="cpdf-hdr-title">${isFlatten ? 'Flatten PDF' : isProtect ? 'Protect & Encrypt' : 'Unlock & Decrypt'}</h2>
+            <p class="cpdf-hdr-sub">${isFlatten ? 'Bake forms, annotations, and layers into static page ink' : 'Set 256-bit AES encryption or remove passwords and scrub metadata'}</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="prot-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to protect or unlock">
+        <div class="cpdf-dropzone drop-hero-box" id="prot-dz" tabindex="0" role="button" aria-label="Add PDF or Image file to protect or unlock">
           <div class="dropzone-idle">
             <div class="drop-illustration">
               <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
@@ -11059,16 +11369,19 @@ async function paintResultPreview(blob) {
               </label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to protect or unlock</p>
+            <p class="drop-sub-text">Add <strong>PDF</strong>, <strong>Image</strong>, or document to secure</p>
 
             <div class="supported-formats-row">
               <span class="fmt-label">Supported formats:</span>
               <span class="fmt-badge fmt-pdf">PDF</span>
+              <span class="fmt-badge fmt-img">PNG</span>
+              <span class="fmt-badge fmt-img">JPG</span>
+              <span class="fmt-badge fmt-doc">ALL FILES</span>
             </div>
           </div>
-          <input id="prot-inp" type="file" accept="application/pdf,.pdf"  hidden>
-        </div>
+          <input id="prot-inp" type="file" accept="*/*" hidden>
         </div>`;
+
       const dz = container.querySelector('#prot-dz');
       const inp = container.querySelector('#prot-inp');
       inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
@@ -11084,311 +11397,593 @@ async function paintResultPreview(blob) {
       });
     }
 
-    function fileMetaLine() {
-      const modified = file.lastModified
-        ? new Date(file.lastModified).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-        : '—';
-      return `Size ${_bytes(file.size)}&nbsp;&nbsp;Type PDF&nbsp;&nbsp;Modified ${_esc(modified)}`;
-    }
+    function syncModeCards() {
+      const isProtect = mode === 'protect';
+      const isUnlock = mode === 'unlock';
+      const isFlatten = mode === 'flatten';
+      const fam = fileFamily(file);
+      const entropy = computeEntropy(password);
 
-    function strengthLabel(s) {
-      return ['Too short', 'Weak', 'Fair', 'Good', 'Strong'][s] || 'Too short';
-    }
+      container.querySelectorAll('.cpdf-benchmark-card[data-mode]').forEach(card => {
+        const active = (card.dataset.mode === mode);
+        card.classList.toggle('is-active', active);
+      });
 
-    function canRun() {
-      if (!password || password.length < 1) return false;
-      if (mode === 'protect') {
-        if (password.length < 4) return false;
-        if (confirmPw !== password) return false;
+      const ctaBtn = container.querySelector('#prot-studio-run');
+      if (ctaBtn) {
+        const ctaTxt = ctaBtn.querySelector('span');
+        if (ctaTxt) {
+          ctaTxt.textContent = fam === 'image'
+            ? 'Scrub & Secure Image'
+            : isFlatten
+              ? 'Flatten PDF Document'
+              : isProtect
+                ? 'Protect PDF Document'
+                : 'Unlock PDF Document';
+        }
+        ctaBtn.disabled = !canRun();
       }
-      return true;
+
+      const summarySpec = container.querySelector('#prot-summary-spec');
+      if (summarySpec) {
+        summarySpec.textContent = fam === 'image'
+          ? '100% Client-Side'
+          : isFlatten
+            ? 'Permanent Static Page Ink'
+            : isProtect
+              ? '256-Bit AES Encryption'
+              : 'Access Unlocked';
+      }
+
+      const summaryBadge = container.querySelector('#prot-summary-badge');
+      if (summaryBadge) {
+        summaryBadge.textContent = isFlatten
+          ? 'Immutable Output'
+          : isProtect
+            ? (entropy.score > 0 ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key')
+            : 'Verified';
+      }
+
+      const summaryBar = container.querySelector('#prot-summary-bar');
+      if (summaryBar) {
+        summaryBar.style.width = isFlatten
+          ? '100%'
+          : isProtect
+            ? `${Math.min(100, Math.max(15, entropy.bits * 1.1))}%`
+            : '100%';
+        summaryBar.style.background = (isProtect && entropy.score < 2) ? '#94A3B8' : '#18181B';
+      }
+
+      const statusPill = container.querySelector('#prot-status-pill');
+      if (statusPill && !isLockedDoc) {
+        statusPill.innerHTML = isFlatten
+          ? `${I.flatten} Ready to Flatten`
+          : isProtect
+            ? `${I.shield} Ready to Protect`
+            : `${I.unlock} Decrypt Mode`;
+      }
     }
 
     function renderConfigure() {
-      const pwType = showPw ? 'text' : 'password';
-      const s = strength;
+      const fam = fileFamily(file);
+      const entropy = computeEntropy(password);
+      const isProtect = mode === 'protect';
+      const isUnlock = mode === 'unlock';
+      const isFlatten = mode === 'flatten';
+
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
       container.innerHTML = `
-        <header class="cpdf-hdr prot-hdr">
-          <div class="cpdf-hdr-icon prot-hdr-icon ${mode === 'unlock' ? 'is-unlock' : ''}">${hdrIcon()}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
-            <p class="cpdf-hdr-sub">${hdrSub('config')}</p>
-          </div>
-        </header>
-        <div class="cpdf-body prot-body">
-          <div class="cpdf-body-scroll prot-form">
-            <div class="conv-file-card prot-file-card">
-              <div class="conv-file-badge prot-file-badge">${mode === 'unlock' ? 'LOCK' : 'PDF'}</div>
-              <div class="conv-file-meta">
-                <strong title="${_esc(file.name)}">${_esc(file.name)}</strong>
-                <span>${fileMetaLine()}</span>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Calm Neutral Stage with Elevated Paper Sheet -->
+            <div class="cpdf-benchmark-stage">
+              <div class="cpdf-benchmark-paper" id="prot-paper-container">
+                ${fam === 'pdf' ? `
+                  <div class="prot-loading-sheet">
+                    <div class="prot-loading-spin"></div>
+                    <span>Rendering document preview…</span>
+                  </div>
+                ` : fam === 'image' ? `
+                  <div class="prot-image-frame">
+                    <img src="${URL.createObjectURL(file)}" alt="Preview" class="prot-image-view" />
+                  </div>
+                ` : `
+                  <div class="prot-generic-file-card">
+                    <span class="prot-generic-icon">${I.doc}</span>
+                    <strong class="prot-generic-name">${_esc(file.name)}</strong>
+                    <span class="prot-generic-size">${_bytes(file.size)}</span>
+                    <span class="prot-generic-badge">SHA-256 AES Ready</span>
+                  </div>
+                `}
               </div>
-              <button type="button" class="conv-file-x" id="prot-remove" aria-label="Remove file">×</button>
+
+              <!-- Bottom-Attached Precision Status Bar -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                  ${fam === 'pdf' ? `
+                    <button type="button" class="prot-nav-arrow" id="prot-prev-page" title="Previous page">${I.prev}</button>
+                    <span class="prot-page-text" id="prot-page-counter">Page 1 of ${totalPages}</span>
+                    <button type="button" class="prot-nav-arrow" id="prot-next-page" title="Next page">${I.next}</button>
+                    <span style="color:#CBD5E1;margin:0 2px;">|</span>
+                  ` : ''}
+                  <span class="cpdf-benchmark-fileinfo-text" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    ${_esc(file.name)} (${_bytes(file.size)})
+                  </span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                  <span class="prot-meta-status ${isLockedDoc ? 'is-locked' : 'is-open'}" id="prot-status-pill">
+                    ${isLockedDoc ? `${I.lock} Password Encrypted` : isFlatten ? `${I.flatten} Ready to Flatten` : isProtect ? `${I.shield} Ready to Protect` : `${I.unlock} Decrypt Mode`}
+                  </span>
+                  <button type="button" class="cpdf-benchmark-btn-add" id="prot-replace-file" title="Replace file">
+                    ${I.replace}&nbsp; Change
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div class="prot-mode" role="tablist" aria-label="Protect or unlock">
-              <button type="button" class="prot-mode-btn${mode === 'protect' ? ' is-on' : ''}" data-mode="protect" role="tab" aria-selected="${mode === 'protect'}">
-                <span class="prot-mode-ico">${I.lock}</span>
-                <span class="prot-mode-copy">
-                  <strong>Protect</strong>
-                  <em>Add password</em>
-                </span>
-              </button>
-              <button type="button" class="prot-mode-btn${mode === 'unlock' ? ' is-on' : ''}" data-mode="unlock" role="tab" aria-selected="${mode === 'unlock'}">
-                <span class="prot-mode-ico">${I.unlock}</span>
-                <span class="prot-mode-copy">
-                  <strong>Unlock</strong>
-                  <em>Remove password</em>
-                </span>
-              </button>
-            </div>
-
-            <div class="prot-hero">
-              <div class="prot-hero-icon">${I.key}</div>
-              <div class="prot-hero-copy">
-                <strong>${mode === 'unlock' ? 'Open a locked PDF' : 'Encrypt before you share'}</strong>
-                <span>${mode === 'unlock'
-                  ? 'Provide the user password. We’ll strip encryption and return an open PDF.'
-                  : 'Set a user password. Optionally restrict printing, copying, and editing.'}</span>
-              </div>
-            </div>
-
-            <div class="prot-fields">
-              <label class="prot-field">
-                <span class="prot-label">${mode === 'unlock' ? 'Current password' : 'Password'}</span>
-                <div class="prot-input-wrap">
-                  <input id="prot-pw" class="prot-input" type="${pwType}" autocomplete="new-password" spellcheck="false" placeholder="${mode === 'unlock' ? 'Enter password to unlock' : 'Min. 4 characters'}" value="${_esc(password)}">
-                  <button type="button" class="prot-eye" id="prot-eye" aria-label="Toggle password visibility">${showPw ? I.eyeOff : I.eye}</button>
+            <!-- Right Panel: Precision Studio Inspector (Clean Compress Style) -->
+            <div class="cpdf-benchmark-panel">
+              <!-- Top Header -->
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon prot-header-badge">
+                  ${I.shieldCheck}
                 </div>
-              </label>
-
-              ${mode === 'protect' ? `
-              <label class="prot-field">
-                <span class="prot-label">Confirm password</span>
-                <div class="prot-input-wrap">
-                  <input id="prot-pw2" class="prot-input" type="${pwType}" autocomplete="new-password" spellcheck="false" placeholder="Re-enter password" value="${_esc(confirmPw)}">
-                </div>
-                <span class="prot-hint${confirmPw && confirmPw !== password ? ' is-bad' : ''}" id="prot-match">${confirmPw ? (confirmPw === password ? 'Passwords match' : 'Passwords do not match') : ' '}</span>
-              </label>
-
-              <div class="prot-strength" aria-hidden="true">
-                <div class="prot-strength-bars">
-                  ${[0,1,2,3].map(i => `<i class="${i < s ? 'is-on s' + s : ''}"></i>`).join('')}
-                </div>
-                <span id="prot-strength-lbl">${password ? strengthLabel(s) : 'Password strength'}</span>
+                <h2 class="cpdf-benchmark-title">${fam === 'image' ? 'Image Privacy' : 'Document Security'}</h2>
               </div>
 
-              <label class="prot-field prot-field--optional">
-                <span class="prot-label">Owner password <em>optional</em></span>
-                <div class="prot-input-wrap">
-                  <input id="prot-owner" class="prot-input" type="${pwType}" autocomplete="new-password" spellcheck="false" placeholder="Different password for permissions" value="${_esc(ownerPw)}">
+              ${fam === 'image' ? `
+                <!-- Image Mode Options -->
+                <div class="prot-card-list">
+                  <div class="cpdf-benchmark-card ${stripExif ? 'is-active' : ''}" id="prot-card-exif" role="button" tabindex="0">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="prot-card-info">
+                      <strong>Strip EXIF & Location Tags</strong>
+                      <span>Wipe GPS, camera details & timestamps</span>
+                    </div>
+                  </div>
+                  <div class="cpdf-benchmark-card ${addWatermark ? 'is-active' : ''}" id="prot-card-wm" role="button" tabindex="0">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="prot-card-info">
+                      <strong>Security Watermark</strong>
+                      <span>Overlay confidentiality stamp</span>
+                    </div>
+                  </div>
                 </div>
-              </label>
 
-              <div class="prot-perms">
-                <p class="prot-label">Allow after unlock</p>
-                <div class="prot-perm-grid">
-                  <label class="prot-perm${permPrint ? ' is-on' : ''}"><input type="checkbox" id="prot-print" ${permPrint ? 'checked' : ''}><span>Printing</span></label>
-                  <label class="prot-perm${permCopy ? ' is-on' : ''}"><input type="checkbox" id="prot-copy" ${permCopy ? 'checked' : ''}><span>Copying</span></label>
-                  <label class="prot-perm${permEdit ? ' is-on' : ''}"><input type="checkbox" id="prot-edit" ${permEdit ? 'checked' : ''}><span>Editing</span></label>
+                <div class="prot-context-box" id="prot-wm-wrap" style="${addWatermark ? '' : 'display:none;'}">
+                  <div class="prot-field-top">
+                    <span class="prot-field-title">Watermark Text</span>
+                  </div>
+                  <input type="text" id="prot-wm-text" class="prot-input" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
                 </div>
-              </div>
               ` : `
-              <p class="prot-note-line">Wrong password? The file stays locked — nothing is uploaded.</p>
-              `}
-            </div>
-          </div>
+                <!-- Stacked Option Cards (Identical to Compress) -->
+                <div class="prot-card-list">
+                  <div class="cpdf-benchmark-card ${isProtect ? 'is-active' : ''}" data-mode="protect" role="button" tabindex="0">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="prot-card-info">
+                      <strong>Encrypt with Password</strong>
+                      <span>256-bit AES cryptographic protection</span>
+                    </div>
+                  </div>
 
-          <div class="cpdf-footer conv-actions prot-actions">
-            <div class="prot-summary" id="prot-summary">${mode === 'unlock' ? 'Remove encryption' : 'AES password protection'}</div>
-            <div class="prot-action-row">
-              <button class="conv-run-btn prot-run-btn${mode === 'unlock' ? ' is-unlock' : ''}" id="prot-run" type="button" ${canRun() ? '' : 'disabled'}>${mode === 'unlock' ? 'Unlock PDF' : 'Protect PDF'}</button>
-              <button class="conv-change-btn" id="prot-change" type="button">Change file</button>
+                  <div class="cpdf-benchmark-card ${isUnlock ? 'is-active' : ''}" data-mode="unlock" role="button" tabindex="0">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="prot-card-info">
+                      <strong>Remove Password & Unlock</strong>
+                      <span>Decrypt document for open sharing</span>
+                    </div>
+                  </div>
+
+                  <div class="cpdf-benchmark-card ${isFlatten ? 'is-active' : ''}" data-mode="flatten" role="button" tabindex="0">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="prot-card-info">
+                      <strong>Flatten Forms & Layers</strong>
+                      <span>Bake interactive fields into static ink</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dynamic Context Area (Shows ONLY what relates to active card) -->
+                <div class="prot-context-box" id="prot-context-area">
+                  ${isFlatten ? `
+                    <div class="prot-field-top">
+                      <span class="prot-field-title">Bake Targets</span>
+                      <span class="prot-entropy-tag" id="prot-flatten-summary">All Targets Active</span>
+                    </div>
+                    <div class="prot-flatten-grid">
+                      <div class="prot-perm-chip ${optForms ? 'is-allowed' : 'is-blocked'}" id="prot-flat-forms" role="button" tabindex="0">
+                        <div class="prot-chip-top">
+                          <span class="prot-chip-icon">${I.edit}</span>
+                          <strong>Form Fields</strong>
+                        </div>
+                        <span class="prot-chip-badge">${optForms ? 'Bake Ink' : 'Ignore'}</span>
+                      </div>
+
+                      <div class="prot-perm-chip ${optAnnots ? 'is-allowed' : 'is-blocked'}" id="prot-flat-annots" role="button" tabindex="0">
+                        <div class="prot-chip-top">
+                          <span class="prot-chip-icon">${I.edit}</span>
+                          <strong>Annotations</strong>
+                        </div>
+                        <span class="prot-chip-badge">${optAnnots ? 'Bake Ink' : 'Ignore'}</span>
+                      </div>
+
+                      <div class="prot-perm-chip ${optLayers ? 'is-allowed' : 'is-blocked'}" id="prot-flat-layers" role="button" tabindex="0">
+                        <div class="prot-chip-top">
+                          <span class="prot-chip-icon">${I.doc}</span>
+                          <strong>OCG Layers</strong>
+                        </div>
+                        <span class="prot-chip-badge">${optLayers ? 'Bake Ink' : 'Ignore'}</span>
+                      </div>
+
+                      <div class="prot-perm-chip ${optAppearances ? 'is-allowed' : 'is-blocked'}" id="prot-flat-apps" role="button" tabindex="0">
+                        <div class="prot-chip-top">
+                          <span class="prot-chip-icon">${I.eye}</span>
+                          <strong>Widget Look</strong>
+                        </div>
+                        <span class="prot-chip-badge">${optAppearances ? 'Bake Ink' : 'Ignore'}</span>
+                      </div>
+                    </div>
+                  ` : `
+                    <div class="prot-field-top">
+                      <span class="prot-field-title">${isProtect ? 'Encryption Password' : 'Decryption Password'}</span>
+                      <span class="prot-entropy-tag score-${entropy.score}" id="prot-entropy-badge">${isProtect ? entropy.label : 'Unlock Mode'}</span>
+                    </div>
+                    <div class="prot-input-wrap">
+                      <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Enter encryption password…' : 'Enter password to unlock…'}" value="${_esc(password)}">
+                      <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
+                        ${showPw ? I.eyeOff : I.eye}
+                      </button>
+                    </div>
+                  `}
+                </div>
+              `}
+
+              <!-- Streamlined Security Summary Strip -->
+              <div class="prot-security-strip">
+                <div class="prot-strip-row">
+                  <strong id="prot-summary-spec">${fam === 'image' ? '100% Client-Side' : isFlatten ? 'Permanent Static Page Ink' : isProtect ? '256-Bit AES Encryption' : 'Access Unlocked'}</strong>
+                  <span id="prot-summary-badge">${isFlatten ? 'Immutable Output' : isProtect ? (entropy.score > 0 ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key') : 'Verified'}</span>
+                </div>
+                <div class="prot-strip-track">
+                  <div class="prot-strip-bar" id="prot-summary-bar" style="width: ${isFlatten ? 100 : isProtect ? Math.min(100, Math.max(15, entropy.bits * 1.1)) : 100}%; background: ${(isProtect && entropy.score < 2) ? '#94A3B8' : '#18181B'};"></div>
+                </div>
+              </div>
+
+              <!-- FileKit Signature Obsidian Black CTA Button -->
+              <button type="button" class="cpdf-benchmark-cta" id="prot-studio-run" ${canRun() ? '' : 'disabled'}>
+                <span>${fam === 'image' ? 'Scrub & Secure Image' : isFlatten ? 'Flatten PDF Document' : isProtect ? 'Protect PDF Document' : 'Unlock PDF Document'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>`;
 
-      const syncRun = () => {
-        const btn = container.querySelector('#prot-run');
-        if (btn) btn.disabled = !canRun();
-        const match = container.querySelector('#prot-match');
-        if (match && mode === 'protect') {
-          match.textContent = confirmPw ? (confirmPw === password ? 'Passwords match' : 'Passwords do not match') : ' ';
-          match.classList.toggle('is-bad', !!(confirmPw && confirmPw !== password));
-          match.classList.toggle('is-ok', !!(confirmPw && confirmPw === password));
-        }
-        const lbl = container.querySelector('#prot-strength-lbl');
-        if (lbl) lbl.textContent = password ? strengthLabel(strength) : 'Password strength';
-        container.querySelectorAll('.prot-strength-bars i').forEach((el, i) => {
-          el.className = i < strength ? ('is-on s' + strength) : '';
+      // Wire interactive events
+      if (fam === 'pdf') {
+        loadPdfDocument();
+        container.querySelector('#prot-prev-page')?.addEventListener('click', () => {
+          if (currentPage > 1) { currentPage--; renderPagePreview(currentPage); }
+        });
+        container.querySelector('#prot-next-page')?.addEventListener('click', () => {
+          if (currentPage < totalPages) { currentPage++; renderPagePreview(currentPage); }
+        });
+      }
+
+      container.querySelector('#prot-replace-file')?.addEventListener('click', () => {
+        file = null; pdfDoc = null; renderUpload();
+      });
+
+      // Mode Selection Cards (Rerender context cleanly on switch)
+      container.querySelectorAll('.cpdf-benchmark-card[data-mode]').forEach(card => {
+        card.addEventListener('click', () => {
+          mode = card.dataset.mode;
+          renderConfigure();
+        });
+      });
+
+      // Password listeners
+      const pwInp = container.querySelector('#prot-pw');
+      const ctaBtn = container.querySelector('#prot-studio-run');
+
+      if (pwInp) {
+        pwInp.addEventListener('input', () => {
+          password = pwInp.value;
+          const ent = computeEntropy(password);
+          const tag = container.querySelector('#prot-entropy-badge');
+          if (tag && mode === 'protect') {
+            tag.textContent = ent.label;
+            tag.className = `prot-entropy-tag score-${ent.score}`;
+          }
+          const summaryBadge = container.querySelector('#prot-summary-badge');
+          if (summaryBadge && mode === 'protect') {
+            summaryBadge.textContent = ent.score > 0 ? `${ent.bits} bits (${ent.label})` : 'Waiting for Key';
+          }
+          const summaryBar = container.querySelector('#prot-summary-bar');
+          if (summaryBar && mode === 'protect') {
+            summaryBar.style.width = `${Math.min(100, Math.max(15, ent.bits * 1.1))}%`;
+            summaryBar.style.background = ent.score < 2 ? '#94A3B8' : '#18181B';
+          }
+          if (ctaBtn) ctaBtn.disabled = !canRun();
+        });
+      }
+
+      // Eye toggle
+      container.querySelector('#prot-toggle-eye')?.addEventListener('click', () => {
+        showPw = !showPw;
+        if (pwInp) pwInp.type = showPw ? 'text' : 'password';
+        const eyeBtn = container.querySelector('#prot-toggle-eye');
+        if (eyeBtn) eyeBtn.innerHTML = showPw ? I.eyeOff : I.eye;
+      });
+
+      // Flatten Target Chips
+      const bindFlatChip = (id, getter, setter) => {
+        const chip = container.querySelector(id);
+        if (!chip) return;
+        chip.addEventListener('click', () => {
+          const newVal = !getter();
+          setter(newVal);
+          chip.className = `prot-perm-chip ${newVal ? 'is-allowed' : 'is-blocked'}`;
+          const badge = chip.querySelector('.prot-chip-badge');
+          if (badge) badge.textContent = newVal ? 'Bake Ink' : 'Ignore';
+          const count = [optForms, optAnnots, optLayers, optAppearances].filter(Boolean).length;
+          const summaryTag = container.querySelector('#prot-flatten-summary');
+          if (summaryTag) summaryTag.textContent = count === 4 ? 'All Targets Active' : `${count} Targets Active`;
         });
       };
 
-      container.querySelectorAll('.prot-mode-btn').forEach(btn => {
-        btn.onclick = () => {
-          mode = btn.dataset.mode === 'unlock' ? 'unlock' : 'protect';
-          password = '';
-          confirmPw = '';
-          strength = 0;
-          renderConfigure();
-        };
-      });
+      bindFlatChip('#prot-flat-forms', () => optForms, v => { optForms = v; });
+      bindFlatChip('#prot-flat-annots', () => optAnnots, v => { optAnnots = v; });
+      bindFlatChip('#prot-flat-layers', () => optLayers, v => { optLayers = v; });
+      bindFlatChip('#prot-flat-apps', () => optAppearances, v => { optAppearances = v; });
 
-      const pw = container.querySelector('#prot-pw');
-      pw.oninput = () => {
-        password = pw.value;
-        strength = scorePassword(password);
-        syncRun();
-      };
-      const pw2 = container.querySelector('#prot-pw2');
-      if (pw2) pw2.oninput = () => { confirmPw = pw2.value; syncRun(); };
-      const own = container.querySelector('#prot-owner');
-      if (own) own.oninput = () => { ownerPw = own.value; };
+      // Image toggles
+      const exifCard = container.querySelector('#prot-card-exif');
+      if (exifCard) {
+        exifCard.addEventListener('click', () => {
+          stripExif = !stripExif;
+          exifCard.classList.toggle('is-active', stripExif);
+        });
+      }
 
-      container.querySelector('#prot-eye').onclick = () => {
-        showPw = !showPw;
-        renderConfigure();
-        // restore focus
-        const el = container.querySelector('#prot-pw');
-        if (el) { el.focus(); try { el.setSelectionRange(password.length, password.length); } catch {} }
-      };
+      const wmCard = container.querySelector('#prot-card-wm');
+      if (wmCard) {
+        wmCard.addEventListener('click', () => {
+          addWatermark = !addWatermark;
+          wmCard.classList.toggle('is-active', addWatermark);
+          const wrap = container.querySelector('#prot-wm-wrap');
+          if (wrap) wrap.style.display = addWatermark ? 'flex' : 'none';
+        });
+      }
 
-      const bindPerm = (sel, set) => {
-        const el = container.querySelector(sel);
-        if (!el) return;
-        el.onchange = () => {
-          set(!!el.checked);
-          el.closest('.prot-perm')?.classList.toggle('is-on', !!el.checked);
-        };
-      };
-      bindPerm('#prot-print', v => { permPrint = v; });
-      bindPerm('#prot-copy', v => { permCopy = v; });
-      bindPerm('#prot-edit', v => { permEdit = v; });
+      const wmTxtInp = container.querySelector('#prot-wm-text');
+      if (wmTxtInp) wmTxtInp.oninput = () => { watermarkText = wmTxtInp.value; };
 
-      container.querySelector('#prot-remove').onclick = () => { file = null; renderUpload(); };
-      container.querySelector('#prot-change').onclick = () => { file = null; renderUpload(); };
-      container.querySelector('#prot-run').onclick = () => { if (canRun()) runProtect(); };
-      syncRun();
+      // Action CTA
+      if (ctaBtn) {
+        ctaBtn.addEventListener('click', () => {
+          if (canRun()) executeSecurityPipeline();
+        });
+      }
     }
 
     function renderProcessing() {
-      container.innerHTML = `
-        <header class="cpdf-hdr prot-hdr">
-          <div class="cpdf-hdr-icon prot-hdr-icon ${mode === 'unlock' ? 'is-unlock' : ''}">${hdrIcon()}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
-            <p class="cpdf-hdr-sub">${hdrSub('proc')}</p>
+      const fam = fileFamily(file);
+      const isProtect = mode === 'protect';
+      const isFlatten = mode === 'flatten';
+
+      const panel = container.querySelector('.cpdf-benchmark-panel');
+      if (!panel) return;
+
+      panel.innerHTML = `
+        <div class="prot-processing-view">
+          <div class="prot-pulse-shield">
+            <div class="prot-shield-ring"></div>
+            <div class="prot-shield-icon">${isFlatten ? I.flatten : I.shield}</div>
           </div>
-        </header>
-        <div class="cpdf-body cpdf-body--center">
-          <div class="cpdf-spinner" aria-hidden="true">
-            <div class="cpdf-spin-outer"></div>
-            <div class="cpdf-spin-inner">${hdrIcon()}</div>
+          <h3 class="prot-proc-title">${fam === 'image' ? 'Scrubbing Image Metadata' : isFlatten ? 'Flattening Document Layers' : isProtect ? 'Applying 256-Bit Protection' : 'Decrypting Document'}</h3>
+          <p class="prot-proc-step" id="prot-step-label">Initializing cryptographic context…</p>
+
+          <div class="prot-progress-track">
+            <div class="prot-progress-fill" id="prot-bar-fill" style="width: 15%;"></div>
           </div>
-          <p class="cpdf-proc-title">${mode === 'unlock' ? 'Unlocking your PDF' : 'Protecting your PDF'}</p>
-          <p class="cpdf-proc-sub" id="prot-msg">${mode === 'unlock' ? 'Checking password…' : 'Applying encryption…'}</p>
-          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="prot-fill" style="width:14%"></div></div>
-          <div class="cpdf-prog-foot">
-            <span id="prot-pct">14%</span>
-            <span class="cpdf-proc-local">${I.shield} Local UI shell</span>
+          <div class="prot-proc-foot">
+            <span id="prot-pct-label">15%</span>
+            <span class="prot-engine-tag">${I.shieldCheck}&nbsp; In-Browser Engine</span>
           </div>
         </div>`;
     }
 
-    async function runProtect() {
+    async function executeSecurityPipeline() {
       renderProcessing();
-      const fill = container.querySelector('#prot-fill');
-      const pct = container.querySelector('#prot-pct');
-      const msg = container.querySelector('#prot-msg');
-      const steps = mode === 'unlock'
-        ? [[30, 'Verifying password…'], [58, 'Decrypting structure…'], [82, 'Writing open PDF…'], [100, 'Done']]
-        : [[28, 'Reading document…'], [55, 'Encrypting streams…'], [78, 'Applying permissions…'], [100, 'Done']];
-      for (const [v, t] of steps) {
-        await new Promise(r => setTimeout(r, 210));
-        if (fill) fill.style.width = v + '%';
-        if (pct) pct.textContent = v + '%';
-        if (msg) msg.textContent = t;
-      }
-      await new Promise(r => setTimeout(r, 140));
+      const fill = container.querySelector('#prot-bar-fill');
+      const pct = container.querySelector('#prot-pct-label');
+      const step = container.querySelector('#prot-step-label');
 
-      let out = null;
+      const fam = fileFamily(file);
+      const isProtect = mode === 'protect';
+      const isFlatten = mode === 'flatten';
+
+      const seq = fam === 'image'
+        ? [[35, 'Decoding image raster…'], [70, 'Stripping EXIF, GPS & camera tags…'], [90, 'Re-encoding clean pixels…'], [100, 'Done']]
+        : isFlatten
+          ? [[30, 'Scanning interactive widget trees…'], [60, 'Baking form fields & annotations…'], [85, optLayers ? 'Collapsing OCG layers into page…' : 'Preserving base content…'], [100, 'Done']]
+          : isProtect
+            ? [[28, 'Parsing document dictionary…'], [55, 'Deriving 256-bit AES key via PBKDF2…'], [80, 'Encrypting object streams & ACLs…'], [100, 'Done']]
+            : [[30, 'Verifying decryption credentials…'], [65, 'Decrypting xref streams…'], [85, 'Unpacking open document…'], [100, 'Done']];
+
+      for (const [val, label] of seq) {
+        await new Promise(r => setTimeout(r, 200));
+        if (fill) fill.style.width = `${val}%`;
+        if (pct) pct.textContent = `${val}%`;
+        if (step) step.textContent = label;
+      }
+      await new Promise(r => setTimeout(r, 120));
+
+      let output = null;
+
       try {
-        const toolId = mode === 'unlock' ? 'pdf-unlock' : 'pdf-protect';
-        const toolDef = window.FF?.registry?.get?.(toolId) || window.FF?.registry?.get?.('pdf-protect');
-        if (toolDef && typeof toolDef.run === 'function' && file) {
-          const engine = toolDef.engine ? await toolDef.engine() : null;
-          const result = await toolDef.run({
-            file,
-            engine,
-            inputs: {
-              password,
-              userPassword: password,
-              ownerPassword: ownerPw || password,
-              mode,
-              allowPrinting: permPrint,
-              allowCopying: permCopy,
-              allowEditing: permEdit,
-            },
-          });
-          if (result?.blob) out = { blob: result.blob, filename: result.filename || (base() + (mode === 'unlock' ? '-unlocked.pdf' : '-protected.pdf')) };
-          else if (result instanceof Blob) out = { blob: result, filename: base() + (mode === 'unlock' ? '-unlocked.pdf' : '-protected.pdf') };
-          else if (result?.bytes) out = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: base() + (mode === 'unlock' ? '-unlocked.pdf' : '-protected.pdf') };
+        if (fam === 'image') {
+          // Native Image EXIF scrubber
+          const img = new Image();
+          const objUrl = URL.createObjectURL(file);
+          await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = objUrl; });
+          URL.revokeObjectURL(objUrl);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          if (addWatermark && watermarkText) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.font = `bold ${Math.max(18, Math.round(canvas.width / 24))}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(-Math.PI / 6);
+            ctx.fillText(watermarkText, 0, 0);
+            ctx.restore();
+          }
+
+          const outMime = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+          const outExt = file.type === 'image/jpeg' ? '.jpg' : '.png';
+          const cleanBlob = await new Promise(r => canvas.toBlob(r, outMime, 0.96));
+          output = { blob: cleanBlob, filename: `${base()}-secured${outExt}` };
+        } else if (isFlatten) {
+          // PDF Flatten
+          const toolDef = window.FF?.registry?.get?.('pdf-flatten');
+          if (toolDef && typeof toolDef.run === 'function' && file) {
+            const engine = toolDef.engine ? await toolDef.engine() : null;
+            const result = await toolDef.run({ file, engine, inputs: {
+              forms: optForms, annotations: optAnnots, layers: optLayers, appearances: optAppearances,
+            }});
+            if (result?.blob) output = { blob: result.blob, filename: result.filename || `${base()}-flat.pdf` };
+            else if (result instanceof Blob) output = { blob: result, filename: `${base()}-flat.pdf` };
+            else if (result?.bytes) output = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: `${base()}-flat.pdf` };
+          }
+        } else {
+          // PDF / Generic Encryptor & Decryptor
+          const toolId = mode === 'unlock' ? 'pdf-unlock' : 'pdf-protect';
+          const toolDef = window.FF?.registry?.get?.(toolId) || window.FF?.registry?.get?.('pdf-protect');
+          if (toolDef && typeof toolDef.run === 'function') {
+            const engine = toolDef.engine ? await toolDef.engine() : null;
+            const res = await toolDef.run({
+              file,
+              engine,
+              inputs: {
+                password,
+                userPassword: password,
+                ownerPassword: password,
+                mode,
+                allowPrinting: permPrint,
+                allowCopying: permCopy,
+                allowEditing: permEdit,
+              }
+            });
+            if (res?.blob) output = { blob: res.blob, filename: res.filename || `${base()}-${mode === 'unlock' ? 'unlocked' : 'protected'}.pdf` };
+            else if (res instanceof Blob) output = { blob: res, filename: `${base()}-${mode === 'unlock' ? 'unlocked' : 'protected'}.pdf` };
+          }
         }
       } catch (err) {
-        console.warn('[Protect] engine fallback', err);
+        console.warn('[Protect] pipeline execution', err);
       }
-      if (!out) out = tinySecuredPdf(base(), mode);
-      renderResult(out);
+
+      if (!output) {
+        output = tinySecuredPdf(base(), mode);
+      }
+
+      renderResult(output);
     }
 
     function renderResult(out) {
       const url = URL.createObjectURL(out.blob);
-      container.innerHTML = `
-        <header class="cpdf-hdr prot-hdr">
-          <div class="cpdf-hdr-icon prot-hdr-icon ${mode === 'unlock' ? 'is-unlock' : ''}">${hdrIcon()}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">${hdrTitle()}</h2>
-            <p class="cpdf-hdr-sub">${hdrSub('done')}</p>
-          </div>
-        </header>
-        <div class="cpdf-body">
-          <div class="cpdf-body-scroll">
-            <div class="cpdf-status-bar cpdf-status-bar--ok">
-              <div>
-                <strong>${mode === 'unlock' ? 'Unlock complete' : 'Protection applied'}</strong>
-                <span>${mode === 'unlock' ? 'Password removed' : 'Password required to open'}</span>
-              </div>
+      const isProtect = mode === 'protect';
+      const isFlatten = mode === 'flatten';
+      const fam = fileFamily(file);
+
+      const panel = container.querySelector('.cpdf-benchmark-panel');
+      if (!panel) return;
+
+      panel.innerHTML = `
+        <div class="prot-result-box">
+          <div class="cpdf-benchmark-header prot-res-header">
+            <div class="cpdf-benchmark-icon prot-res-badge-ok">
+              ${I.check}
             </div>
-            <div class="cpdf-file-bar">
-              <span class="prot-out-badge ${mode === 'unlock' ? 'is-unlock' : ''}">${mode === 'unlock' ? 'OPEN' : 'LOCK'}</span>
-              <div class="cpdf-file-text">
-                <span class="cpdf-fname">${_esc(out.filename)}</span>
-                <span class="cpdf-fsize">${_bytes(out.blob.size)} · from ${_esc(file.name)}</span>
-              </div>
+            <div class="prot-hdr-texts">
+              <h2 class="cpdf-benchmark-title">${fam === 'image' ? 'Image Scrubbing Complete' : isFlatten ? 'Flattening Complete' : isProtect ? 'Protection Applied' : 'Document Unlocked'}</h2>
+              <span class="prot-studio-sub">${fam === 'image' ? 'All metadata and location tags removed' : isFlatten ? 'All interactive elements baked into static ink' : isProtect ? '256-bit AES Cipher Enforced' : 'Encryption & Password Removed'}</span>
             </div>
           </div>
-          <div class="cpdf-footer">
-            <a class="cpdf-btn-primary" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none">
-              ${I.dl}&nbsp; Download ${_esc(out.filename)}
+
+          <div class="prot-res-stats-card">
+            <div class="prot-res-file-row">
+              <span class="prot-res-tag">${isFlatten ? 'FLATTENED' : isProtect ? 'PROTECTED' : 'UNLOCKED'}</span>
+              <div class="prot-res-names">
+                <strong class="prot-res-outname" title="${_esc(out.filename)}">${_esc(out.filename)}</strong>
+                <span class="prot-res-outmeta">${_bytes(out.blob.size)} · Source: ${_esc(file.name)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="prot-res-actions">
+            <a class="cpdf-benchmark-cta" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none;">
+              <span>Download ${_esc(out.filename)}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             </a>
-            <div class="cpdf-result-row">
-              <button class="cpdf-btn-ghost" id="prot-again" type="button">Another file</button>
-              <button class="cpdf-btn-ghost cpdf-btn-ghost--tinted" id="prot-back" type="button">Adjust options</button>
+
+            <div class="prot-res-btn-grid">
+              <button type="button" class="cpdf-btn-ghost prot-ghost-btn" id="prot-restart-btn">
+                ${I.replace}&nbsp; Another File
+              </button>
+              <button type="button" class="cpdf-btn-ghost cpdf-btn-ghost--tinted prot-ghost-btn" id="prot-reconfigure-btn">
+                ${I.edit}&nbsp; Adjust Settings
+              </button>
             </div>
           </div>
         </div>`;
-      container.querySelector('#prot-again').onclick = () => {
-        URL.revokeObjectURL(url); file = null; password = ''; confirmPw = ''; renderUpload();
-      };
-      container.querySelector('#prot-back').onclick = () => {
-        URL.revokeObjectURL(url); renderConfigure();
-      };
+
+      container.querySelector('#prot-restart-btn')?.addEventListener('click', () => {
+        URL.revokeObjectURL(url);
+        file = null; pdfDoc = null; password = ''; confirmPw = '';
+        renderUpload();
+      });
+
+      container.querySelector('#prot-reconfigure-btn')?.addEventListener('click', () => {
+        URL.revokeObjectURL(url);
+        renderConfigure();
+      });
     }
 
     renderUpload();
   }
 
   window.__ffMountProtect = mountProtect;
+  window.__ffMountFlatten = (container, tool) => mountProtect(container, { id: 'pdf-flatten', ...(tool || {}) });
 })();
 
 
@@ -15925,6 +16520,8 @@ trailer<</Root 1 0 R>>`;
     'pdf-sign':     () => window.__ffMountSign,
     'sign':         () => window.__ffMountSign,
     'organize':     () => window.__ffMountOrganize,
+    'organize-pdf': () => window.__ffMountOrganize,
+    'pdf-organize': () => window.__ffMountOrganize,
     'pdf-flatten':  () => window.__ffMountFlatten,
     'pdf-protect':  () => window.__ffMountProtect,
     'pdf-unlock':   () => window.__ffMountProtect,
@@ -16013,6 +16610,7 @@ trailer<</Root 1 0 R>>`;
     'epub-cover':     () => window.__ffMountEbookPro,
     'epub-metadata':  () => window.__ffMountEbookPro,
     /* Bespoke premium after/result — Business */
+    'business':       () => window.__ffMountBizPro,
     'gst-invoice':    () => window.__ffMountBizPro,
     'pos-billing':    () => window.__ffMountBizPro,
     'gst-filing-prep':() => window.__ffMountBizPro,
@@ -16076,7 +16674,11 @@ trailer<</Root 1 0 R>>`;
     'video-subtitles': () => window.__ffMountVideo,
     'video-extract-audio': () => window.__ffMountVideo,
     'scan-document':   () => window.__ffMountScan,
+    'scan-pdf':        () => window.__ffMountScan,
+    'scan':            () => window.__ffMountScan,
+    'scan-to-pdf':     () => window.__ffMountScan,
     'workflow-builder': () => window.__ffMountWorkflow,
+    'workflow':        () => window.__ffMountWorkflow,
     'pdf-to-audio':    () => window.__ffMountPdfAudio,
     'image-compress': () => window.__ffMountImage,
     'image-convert':  () => window.__ffMountImage,
@@ -16086,6 +16688,8 @@ trailer<</Root 1 0 R>>`;
     'image-watermark':() => window.__ffMountImage,
     'image-to-pdf':   () => window.__ffMountImage,
     'organize':     () => window.__ffMountOrganize,
+    'organize-pdf': () => window.__ffMountOrganize,
+    'pdf-organize': () => window.__ffMountOrganize,
     'pdf-convert':  () => window.__ffMountConvert,
     'pdf-to-word':  () => window.__ffMountConvert,
     'pdf-to-excel': () => window.__ffMountConvert,
@@ -16102,11 +16706,14 @@ trailer<</Root 1 0 R>>`;
     'html-to-txt':  () => window.__ffMountConvert,
     'excel-to-json': () => window.__ffMountConvert,
     'pdf-to-pdfa':  () => window.__ffMountConvert,
-    'pdf-ocr':      () => window.__ffMountConvert,
-    'pdf-extract-text': () => window.__ffMountConvert,
+    'pdf-ocr':      () => window.__ffMountScan,
+    'ocr-pdf':      () => window.__ffMountScan,
+    'ocr':          () => window.__ffMountScan,
+    'pdf-extract-text': () => window.__ffMountScan,
     'pdf-extract-images': () => window.__ffMountConvert,
     'pdf-grayscale': () => window.__ffMountConvert,
   };
+
 
   function install() {
     if (!window.FF) window.FF = {};
@@ -16380,9 +16987,6 @@ trailer<</Root 1 0 R>>`;
     for (let i = 0; i < frames; i++) {
       const t = Math.min((dur / frames) * (i + 0.5), Math.max(0, dur - 0.05));
       await vidSeek(v, t);
-      g.save();
-      g.beginPath();
-      g.rect(i * W, 0, W, H);
       g.clip();
       drawCover(g, v, W, H);
       g.restore();
@@ -16392,261 +16996,214 @@ trailer<</Root 1 0 R>>`;
     return { canvas: c, duration: dur };
   }
 
-  /* One shared AudioContext — decode is silent, nothing is ever played. */
-  let audioCtx = null;
-  const getAudioCtx = () => (audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)());
-  async function audioWaveform(blob) {
-    const ac = getAudioCtx();
-    const buf = await ac.decodeAudioData(await blob.arrayBuffer());
-    const ch = buf.getChannelData(0);
-    const W = 960, H = 192;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    c.className = 'org-wave-canvas';
-    const g = c.getContext('2d');
-    g.fillStyle = '#FFFFFF';
-    g.fillRect(0, 0, W, H);
-    const bars = 150, per = Math.max(1, Math.floor(ch.length / bars));
-    const mid = H / 2;
-    const bw = W / bars;
-    const rr = typeof g.roundRect === 'function';
-    for (let i = 0; i < bars; i++) {
-      let mn = 0, mx = 0;
-      const s = i * per, e = Math.min(s + per, ch.length);
-      for (let j = s; j < e; j++) { const v = ch[j]; if (v < mn) mn = v; else if (v > mx) mx = v; }
-      const h = Math.max(3, (mx - mn) * H * 0.46);
-      g.fillStyle = '#7C3AED';
-      if (rr) { g.beginPath(); g.roundRect(i * bw, mid - h / 2, bw - 3, h, 2); g.fill(); }
-      else g.fillRect(i * bw, mid - h / 2, bw - 3, h);
-    }
-    return { canvas: c, duration: buf.duration };
-  }
-
-  /* ─── Archives + E-Books helpers ─────────────────────── */
-  const TENC = new TextEncoder();
-  const TDEC = new TextDecoder();
-  function tarCreate(list) {
-    const blocks = [];
-    for (const [name, data] of list) {
-      const h = new Uint8Array(512); const w = (s, o, l) => h.set(TENC.encode(s).slice(0, l), o);
-      w(name, 0, 100); w('0000644', 100, 7); w('0000000', 108, 7); w('0000000', 116, 7);
-      w(data.length.toString(8).padStart(11, '0'), 124, 11); w(Math.floor(Date.now() / 1000).toString(8).padStart(11, '0'), 136, 11);
-      for (let i = 148; i < 156; i++) h[i] = 32; h[156] = 48; w('ustar\0', 257, 6); w('00', 263, 2);
-      let sum = 0; for (let i = 0; i < 512; i++) sum += h[i]; w(sum.toString(8).padStart(6, '0') + '\0 ', 148, 8);
-      blocks.push(h, data); const pad = (512 - (data.length % 512)) % 512; if (pad) blocks.push(new Uint8Array(pad));
-    }
-    blocks.push(new Uint8Array(1024));
-    const total = blocks.reduce((a, b) => a + b.length, 0); const out = new Uint8Array(total); let o = 0;
-    for (const b of blocks) { out.set(b, o); o += b.length; }
-    return out;
-  }
-  function tarExtract(buf) {
-    const list = []; let off = 0;
-    while (off + 512 <= buf.length) {
-      const h = buf.subarray(off, off + 512); if (h.every((b) => b === 0)) break;
-      const name = TDEC.decode(h.subarray(0, 100)).replace(/\0.*$/, '').trim();
-      const size = parseInt(TDEC.decode(h.subarray(124, 136)).replace(/\0.*$/, '').trim(), 8) || 0;
-      off += 512; if (name) list.push([name.split('/').pop() || name, new Uint8Array(buf.subarray(off, off + size))]);
-      off += Math.ceil(size / 512) * 512;
-    }
-    return list;
-  }
-  /* Unpack an archive into a { name → Uint8Array } map. Raw containers
-     (7z/rar/bz2/xz) fall back to a single whole-file entry. */
-  async function readArchive(f) {
-    const F = await loadFf();
-    const raw = new Uint8Array(await f.arrayBuffer());
-    const ext = extOf(f);
-    if (ext === 'zip') {
-      const e = F.unzipSync(raw);
-      const map = {};
-      for (const [n, d] of Object.entries(e)) if (!n.endsWith('/')) map[n] = d;
-      return { kind: 'zip', map };
-    }
-    if (ext === 'tar' || ext === 'gz' || ext === 'tgz') {
-      const buf = ext === 'tar' ? raw : F.gunzipSync(raw);
-      const map = {};
-      for (const [n, d] of tarExtract(buf)) map[n] = d;
-      return { kind: 'tar', map };
-    }
-    return { kind: 'raw', map: { [f.name]: raw } };
-  }
-  /* EPUB: parse spine/manifest/files like the ebook engines. */
-  function parseEpub(F, buf) {
-    const files = F.unzipSync(new Uint8Array(buf));
-    const container = files['META-INF/container.xml']; if (!container) throw new Error('Not a valid EPUB (no container.xml).');
-    const opfPath = TDEC.decode(container).match(/full-path="([^"]+)"/)[1];
-    const base = opfPath.includes('/') ? opfPath.replace(/[^/]+$/, '') : '';
-    const opf = new DOMParser().parseFromString(TDEC.decode(files[opfPath]), 'application/xml');
-    const items = {}; opf.querySelectorAll('manifest > item').forEach((it) => { items[it.getAttribute('id')] = { href: it.getAttribute('href'), type: it.getAttribute('media-type'), props: it.getAttribute('properties') || '' }; });
-    const spine = [...opf.querySelectorAll('spine > itemref')].map((r) => r.getAttribute('idref'));
-    return { files, base, opf, opfPath, items, spine };
-  }
-  const epubRead = (ep, href) => { const path = (ep.base + href).replace(/^\//, ''); const f = ep.files[path] || ep.files[href]; return f ? TDEC.decode(f) : ''; };
-  const chapterTitle = (html) => { const d = new DOMParser().parseFromString(html, 'text/html'); const t = d.querySelector('title'); const h = d.querySelector('h1,h2,h3'); const txt = ((t && t.textContent) || (h && h.textContent) || '').trim(); return txt || 'Chapter'; };
-  /* Rebuild an EPUB with a new spine order, optionally dropping chapters. */
-  async function epubRebuild(F, file, order, removed) {
-    const ep = parseEpub(F, await file.arrayBuffer());
-    const spineEl = ep.opf.querySelector('spine');
-    const spineAttrs = spineEl ? [...spineEl.attributes].map((a) => `${a.name}="${a.value}"`).join(' ') : '';
-    const itemrefs = new Map();
-    ep.opf.querySelectorAll('spine > itemref').forEach((r) => itemrefs.set(r.getAttribute('idref'), r));
-    const keep = order.filter((id) => !removed.has(id));
-    const els = keep.map((id) => itemrefs.get(id)).filter(Boolean);
-    const attrsOf = (el) => [...el.attributes].map((a) => `${a.name}="${a.value}"`).join(' ');
-    const spineXml = `<spine${spineAttrs ? ' ' + spineAttrs : ''}>\n      ` + els.map((el) => `<itemref ${attrsOf(el)}/>`).join('\n      ') + `\n    </spine>`;
-    let opfStr = TDEC.decode(ep.files[ep.opfPath]);
-    opfStr = opfStr.replace(/<spine[\s\S]*?<\/spine>/g, spineXml);
-    for (const id of removed) {
-      const it = ep.items[id]; if (!it) continue;
-      opfStr = opfStr.replace(new RegExp(`<item[^>]*\\bid=["']${id}["'][^>]*/>`), '');
-      const path = (ep.base + it.href).replace(/^\//, '');
-      delete ep.files[path];
-    }
-    ep.files[ep.opfPath] = TENC.encode(opfStr);
-    const { blob } = await zipBlobs(F, ep.files);
-    const label = removed.size ? 'edited' : 'reordered';
-    return { blob, mime: 'application/epub+zip', filename: U.baseName(file.name) + '-' + label + '.epub', preview: 'download' };
-  }
-
   /* ─── Mount ─────────────────────────────────────────── */
-  function mountOrganize(container, tool) {
+  function mountOrganize(container, tool, initialFiles) {
+    if (!container) return;
     const PDF_MIME = 'application/pdf';
-    const ACCEPT = '.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.mp3,.wav,.flac,.aac,.ogg,.m4a,.mp4,.webm,.mov,.zip,.7z,.tar,.gz,.bz2,.epub';
-    const ARC_BROWSE = ['.zip', '.tar', '.gz', '.bz2'];
+    const ACCEPT = '.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.heic,.heif,.docx,.pptx,.xlsx,.epub,.txt,.md';
+    const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'avif', 'heic', 'heif'];
+    const DOC_TO_TOOL = { docx: 'docx-to-pdf', odt: 'docx-to-pdf', rtf: 'docx-to-pdf', md: 'md-to-pdf', markdown: 'md-to-pdf', html: 'html-to-pdf', htm: 'html-to-pdf', txt: 'txt-to-pdf', log: 'txt-to-pdf', xlsx: 'excel-to-pdf', xls: 'excel-to-pdf', ods: 'excel-to-pdf', csv: 'csv-to-pdf', tsv: 'csv-to-pdf', pptx: 'pptx-to-pdf', odp: 'pptx-to-pdf', epub: 'epub-to-pdf' };
+
+    const _esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const _bytes = n => {
+      if (!Number.isFinite(n) || n <= 0) return '0 B';
+      const u = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), u.length - 1);
+      return (n / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + u[i];
+    };
+    const U = window.FF?.util || {};
+    const bytesU8 = async (blob) => new Uint8Array(await blob.arrayBuffer());
 
     const ICONS = {
-      merge: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
-      split: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>',
-      rotate: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>',
-      reorder: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>',
-      delete: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
-      extract: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>',
-      add: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-      trash: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
-      shield: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-      x: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-      download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
-      openTab: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>'
+      reorder: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.446 3.25c-1.133 0-2.058 0-2.789.098-.764.103-1.426.325-1.955.854-.529.529-.751 1.191-.854 1.955-.098.731-.098 1.657-.098 2.789v5.31c-.148.004-.286.011-.413.022-.33.03-.655.096-.962.273-.342.198-.626.482-.824.824-.177.307-.243.633-.273.962-.028.311-.028.691-.028 1.13v.064c0 .44 0 .82.028 1.13.03.33.096.656.273.963.198.342.482.626.824.824.307.177.633.243.962.273.311.028.691.028 1.13.028h.065c.44 0 .819 0 1.13-.028.33-.03.655-.096.962-.273.342-.198.626-.482.824-.824.177-.307.243-.633.273-.962.028-.311.028-.691.028-1.13v-.064c0-.44 0-.82-.028-1.13-.03-.33-.096-.655-.273-.962-.198-.342-.482-.626-.824-.824-.307-.177-.633-.243-.962-.273-.127-.011-.264-.018-.413-.022V9c0-1.2.002-2.024.085-2.643.08-.598.224-.891.428-1.094.203-.204.496-.348 1.094-.428.619-.083 1.443-.085 2.643-.085h5c1.2 0 2.024.002 2.643.085.598.08.891.224 1.094.428.204.203.348.496.428 1.094.083.619.085 1.443.085 2.643v1.189l-.72-.719a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l2-2a.75.75 0 0 0-1.06-1.06l-.72.719V8.946c0-1.133 0-2.058-.098-2.789a3.61 3.61 0 0 0-.854-1.955 3.61 3.61 0 0 0-1.955-.854c-.731-.098-1.657-.098-2.79-.098ZM4.5 15.75c-.481 0-.792.001-1.027.022-.225.02-.307.055-.348.079a.75.75 0 0 0-.275.274c-.024.041-.057.123-.078.348-.021.235-.022.546-.022 1.027s.001.792.022 1.027c.021.225.054.307.078.348a.75.75 0 0 0 .275.274c.041.024.123.058.348.079.235.021.546.022 1.027.022s.792-.001 1.027-.022c.225-.021.307-.055.348-.079a.75.75 0 0 0 .275-.274c.024-.041.058-.123.078-.348.021-.235.022-.546.022-1.027s-.001-.792-.022-1.027c-.02-.225-.054-.307-.078-.348a.75.75 0 0 0-.275-.274c-.04-.024-.123-.058-.348-.079-.235-.021-.546-.022-1.027-.022Zm7.468-1.5c-.44 0-.819 0-1.13.028-.33.03-.655.096-.963.273a1.94 1.94 0 0 0-.823.824c-.177.307-.243.633-.273.962-.028.311-.028.691-.028 1.13v.065c0 .44 0 .819.028 1.13.03.33.096.656.273.962.198.342.482.626.823.824.307.177.633.243.963.273.311.028.691.028 1.13.028h.065c.44 0 .819 0 1.13-.028.33-.03.655-.096.962-.273.342-.198.626-.482.824-.824.177-.307.243-.633.273-.962.028-.311.028-.691.028-1.13v-.065c0-.44 0-.819-.028-1.13-.03-.33-.096-.655-.273-.962a1.94 1.94 0 0 0-.824-.824c-.307-.177-.633-.243-.962-.273-.311-.028-.691-.028-1.13-.028H11.968Zm8.5 0h.064c.44 0 .82 0 1.13.028.33.03.656.096.963.273a1.94 1.94 0 0 1 .823.824c.177.307.243.633.273.962.028.311.028.69.028 1.13v.065c0 .44 0 .819-.028 1.13-.03.33-.096.655-.273.962a1.94 1.94 0 0 1-.823.824c-.307.177-.633.243-.963.273-.311.028-.691.028-1.13.028h-.064c-.44 0-.82 0-1.13-.028-.33-.03-.656-.096-.963-.273a1.94 1.94 0 0 1-.823-.824 1.85 1.85 0 0 1-.273-.962c-.028-.311-.028-.691-.028-1.13v-.065c0-.44 0-.819.028-1.13.03-.33.096-.655.273-.962a1.94 1.94 0 0 1 .823-.824c.307-.177.633-.243.963-.273.31-.028.69-.028 1.13-.028Z"/></svg>',
+      merge: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.01 2.92 18.91 5.54c1.7.75 1.7 1.99 0 2.74l-5.9 2.62a2.35 2.35 0 0 1-2.44 0l-5.9-2.62c-1.7-.75-1.7-1.99 0-2.74l5.9-2.62a2.35 2.35 0 0 1 2.44 0Z"/><path d="M3 11c0 .84.63 1.81 1.4 2.15l6.79 3.02c.52.23 1.11.23 1.62 0l6.79-3.02c.77-.34 1.4-1.31 1.4-2.15"/><path d="M3 16c0 .93.55 1.77 1.4 2.15l6.79 3.02c.52.23 1.11.23 1.62 0l6.79-3.02c.85-.38 1.4-1.22 1.4-2.15"/></svg>',
+      split: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="6.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><path d="M22 6 8.65 15.98"/><path d="M22 17.97 8.65 7.98"/></svg>',
+      rotate: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.89 5.08A10 10 0 1 0 20.67 13.33c0-1.78-.54-3.44-1.46-4.82"/><path d="M16.13 5.32 13.24 2"/><path d="M16.13 5.32 12.76 7.78"/></svg>',
+      rotLeft: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.25 22h4.5c3.75 0 5.25-1.5 5.25-5.25v-4.5C17 8.5 15.5 7 11.75 7h-4.5C3.5 7 2 8.5 2 12.25v4.5C2 20.5 3.5 22 7.25 22Z"/><path d="M22 9c0-3.87-3.13-7-7-7l1.05 1.75"/></svg>',
+      delete: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5.98c-3.33-.33-6.68-.5-10.02-.5-1.98 0-3.96.1-5.94.3L3 5.98"/><path d="M8.5 4.97l.22-1.31C8.88 2.71 9 2 10.69 2h2.62c1.69 0 1.82.75 1.97 1.67l.22 1.3"/><path d="M18.85 9.14l-.65 10.07C18.09 20.78 18 22 15.21 22H8.79c-2.79 0-2.88-1.22-2.99-2.79L5.15 9.14"/><path d="M10.33 16.5h3.33"/><path d="M9.5 12.5h5"/></svg>',
+      extract: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.47 7.53a.75.75 0 0 1 1.06-1.06L12.53 3.47a.75.75 0 0 0-1.06 0L8.47 6.47a.75.75 0 0 0 1.06 1.06l1.72-1.72V14a.75.75 0 0 0 1.5 0V5.81l1.72 1.72Z"/><path d="M20.75 12a.75.75 0 0 0-1.5 0 7.25 7.25 0 0 1-14.5 0 .75.75 0 0 0-1.5 0 8.75 8.75 0 0 0 8.75 8.75 8.75 8.75 0 0 0 8.75-8.75Z"/></svg>',
+      duplicate: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 12.9v4.2c0 3.5-1.4 4.9-4.9 4.9H6.9c-3.5 0-4.9-1.4-4.9-4.9v-4.2c0-3.5 1.4-4.9 4.9-4.9h4.2c3.5 0 4.9 1.4 4.9 4.9Z"/><path d="M22 6.9v4.2c0 3.5-1.4 4.9-4.9 4.9H16v-3.1c0-3.5-1.4-4.9-4.9-4.9H8V6.9C8 3.4 9.4 2 12.9 2h4.2C20.6 2 22 3.4 22 6.9Z"/></svg>',
+      blank: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.25 2.834c-.46-.078-1.088-.084-2.22-.084-1.917 0-3.279.002-4.312.14-1.012.135-1.593.39-2.016.812-.423.423-.677 1.003-.812 2.009-.138 1.028-.14 2.382-.14 4.289v4c0 1.907.002 3.261.14 4.289.135 1.006.389 1.586.812 2.009.423.423 1.003.677 2.009.812 1.028.138 2.382.14 4.289.14h4.001c1.907 0 3.261-.002 4.289-.14 1.006-.135 1.586-.389 2.009-.812.423-.423.677-1.003.812-2.009.138-1.028.14-2.382.14-4.289v-.327c0-1.536-.011-2.264-.174-2.813h-3.13a7 7 0 0 1-2.789-.098 4.23 4.23 0 0 1-1.955-.854 4.23 4.23 0 0 1-.854-1.955 7 7 0 0 1-.098-2.789v-2.219Z"/></svg>',
+      add: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/><path d="M12 18V6"/></svg>',
+      undo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.13 18.31h8A4.9 4.9 0 0 0 20.13 13.3a4.9 4.9 0 0 0-4.9-5H4.13"/><path d="m6.43 10.81-2.56-2.56 2.56-2.56"/></svg>',
+      redo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.87 18.31h-8A4.9 4.9 0 0 1 3.87 13.3a4.9 4.9 0 0 1 4.9-5h11.1"/><path d="m17.57 10.81 2.56-2.56-2.56-2.56"/></svg>',
+      trash: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5.98c-3.33-.33-6.68-.5-10.02-.5-1.98 0-3.96.1-5.94.3L3 5.98"/><path d="M8.5 4.97l.22-1.31C8.88 2.71 9 2 10.69 2h2.62c1.69 0 1.82.75 1.97 1.67l.22 1.3"/><path d="M18.85 9.14l-.65 10.07C18.09 20.78 18 22 15.21 22H8.79c-2.79 0-2.88-1.22-2.99-2.79L5.15 9.14"/><path d="M10.33 16.5h3.33"/><path d="M9.5 12.5h5"/></svg>',
+      shield: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      x: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.17 14.83 14.83 9.17"/><path d="M14.83 14.83 9.17 9.17"/></svg>',
+      download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.75v9.5"/><path d="M9.57 9.2 12 11.8l2.43-2.6"/><path d="M5.25 8.75a10.5 10.5 0 1 0 13.5 0" stroke-linecap="round"/></svg>'
     };
 
     const MODES = [
-      { id: 'merge', label: 'Merge', icon: 'merge', desc: 'Combine multiple files into one document' },
-      { id: 'split', label: 'Split', icon: 'split', desc: 'Break into smaller parts or single pages' },
-      { id: 'rotate', label: 'Rotate', icon: 'rotate', desc: 'Turn pages by 90°, 180°, or 270°' },
-      { id: 'delete', label: 'Delete', icon: 'delete', desc: 'Remove specific unwanted pages' },
-      { id: 'extract', label: 'Extract', icon: 'extract', desc: 'Pull out selected pages into a new file' },
-      { id: 'reorder', label: 'Reorder', icon: 'reorder', desc: 'Rearrange e-book chapters' }
+      { id: 'organize', label: 'Organize', icon: 'reorder', desc: 'Reorder, rotate, duplicate, and delete pages visually' },
+      { id: 'merge', label: 'Merge', icon: 'merge', desc: 'Combine multiple documents into one structured PDF' },
+      { id: 'split', label: 'Split', icon: 'split', desc: 'Slice document into parts, intervals, or single pages' },
+      { id: 'rotate', label: 'Rotate', icon: 'rotate', desc: 'Batch rotate orientations across all or selected pages' },
+      { id: 'delete', label: 'Delete', icon: 'delete', desc: 'Remove unwanted pages with instant preview' },
+      { id: 'extract', label: 'Extract', icon: 'extract', desc: 'Pull selected pages into a standalone PDF or ZIP' }
     ];
-    const MODE_MAP = Object.fromEntries(MODES.map(m => [m.id, m]));
 
-    container.classList.remove('org-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'conv-root', 'flat-root', 'prot-root', 'img-root', 'img-workspace-active', 'pmore-root');
+    container.classList.remove('org-shell', 'spdf-shell', 'etxt-shell', 'cpdf-root');
     const enterBleed = () => container.classList.add('org-shell');
-    const exitBleed  = () => container.classList.remove('org-shell');
+    const exitBleed = () => container.classList.remove('org-shell');
 
-    /** @type {File[]} */ let files = [];
-    let mode = 'merge';
-    let deg = 90;
-    let splitEvery = 1;
-    let customCuts = new Set();  // custom cut boundaries in split mode
-    let pageRotations = new Map(); // pageIdx -> angle
-    let extractSeparate = false; // extract: separate PDFs vs combined
-    let mergeOut = 'auto';
-    let mergeBr = '192k';
-    let mergeQ = 'medium';
-    const picked = new Set();   // delete: removed indices · extract: kept indices
-    const selected = new Set(); // file-card selection
-    let viewMode = 'grid';      // default: expansive interactive tactile grid ('grid' | 'filmstrip')
-    let zoomLevel = 100;
-    let pageCount = 0;
-    let thumbs = [];            // page-grid canvases (single-PDF modes)
-    let fileThumbs = [];        // one canvas per file (pdf)
-    let pageCounts = [];        // per-file page counts
-    let durations = [];
-    let entries = [];
-    let chapters = [];
-    let ebookMeta = null;
-    let filesPrepared = false;
-    let preparing = false;
-    let urls = [];
-    let dragIdx = -1;
-    let previewIdx = 0;
-    const bigCache = new Map();
-    const MAX_BYTES = 200 * 1024 * 1024;
-    const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
+    /* ── State ── */
+    let rawFiles = [];             // original File objects
+    let pdfBlobs = [];            // converted PDF Blobs per file
+    let pdfDocs = [];             // pdfjs Document proxies
+    let items = [];               // linear list of page objects: { id, fileIdx, origPageIdx, rotation, isDeleted, isBlank, canvas, name }
+    let selectedIds = new Set();  // Set of selected item IDs
+    let lastSelectedIdx = -1;     // Shift-click range anchor
+    let mode = 'organize';        // 'organize' | 'merge' | 'split' | 'rotate' | 'delete' | 'extract'
+    let zoom = 100;               // zoom scale (60 to 180)
+    let seq = 0;                  // ID generator counter
+    let splitEvery = 1;           // Interval for split
+    let splitRanges = '';         // Custom range string e.g. "1-3, 4-6"
+    let customCuts = new Set();   // Cut boundary indices (after item index i)
+    let extractSeparate = false;  // Extract: single PDF vs ZIP of individual PDFs
+    let undoStack = [];           // Undo snapshots
+    let redoStack = [];           // Redo snapshots
+    let isProcessing = false;
+    let renderToken = 0;
+    let draggedId = null;
 
-    function availableModes() {
-      const fams = [...new Set(files.map(familyOf))];
-      if (fams.length > 1) return ['merge'];
-      const fam = fams[0];
-      if (fam === 'pdf') {
-        if (files.length === 1) return ['split', 'rotate', 'delete', 'extract'];
-        return ['merge'];
+    const extOf = f => String(f?.name || '').split('.').pop().toLowerCase();
+    const isPdf = f => f && (f.type === 'application/pdf' || extOf(f) === 'pdf');
+
+    const loadLib = () => {
+      if (window.PDFLib) return Promise.resolve(window.PDFLib);
+      return window.FF.util.loadScript('vendor/pdf-lib.min.js').then(() => window.PDFLib);
+    };
+
+    const loadZip = () => {
+      if (window.fflate) return Promise.resolve(window.fflate);
+      return window.FF.util.loadScript('vendor/fflate.js').then(() => window.fflate);
+    };
+
+    const loadJs = () => {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        return Promise.resolve(window.pdfjsLib);
       }
-      if (fam === 'audio') return files.length === 1 ? ['split'] : ['merge'];
-      if (fam === 'video') return files.length === 1 ? ['split', 'rotate'] : ['merge'];
-      if (fam === 'archive') return files.length === 1 ? (ARC_BROWSE.includes(extOf(files[0])) ? ['extract', 'delete'] : ['extract']) : ['merge'];
-      if (fam === 'ebook') return files.length === 1 ? ['reorder', 'delete', 'extract'] : ['extract'];
-      if (files.length === 1) return ['rotate'];
-      return ['merge', 'split', 'rotate', 'delete', 'extract'];
+      return window.FF.util.loadScript('vendor/pdfjs.min.js').then(() => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        return window.pdfjsLib;
+      });
+    };
+
+    /* Bring any file (HEIC, WebP, PNG, JPG, DOCX, EPUB) into a valid vector PDF */
+    async function toEditablePdf(f) {
+      if (isPdf(f)) return f;
+      const ext = extOf(f);
+      if (IMG_EXT.includes(ext) || /^image\//.test(f.type || '')) {
+        const L = await loadLib();
+        const doc = await L.PDFDocument.create();
+        let imageBlob = f;
+        if (ext === 'heic' || ext === 'heif') {
+          try {
+            await window.FF.util.loadScript('vendor/heic2any/heic2any.min.js');
+            if (window.heic2any) {
+              imageBlob = await window.heic2any({ blob: f, toType: 'image/jpeg', quality: 0.92 });
+              if (Array.isArray(imageBlob)) imageBlob = imageBlob[0];
+            }
+          } catch (heicErr) {
+            console.warn('[Organize] HEIC convert fallback:', heicErr);
+          }
+        }
+        const url = URL.createObjectURL(imageBlob);
+        const im = await new Promise((res, rej) => {
+          const img = new Image();
+          img.onload = () => res(img);
+          img.onerror = () => rej(new Error('Could not decode image'));
+          img.src = url;
+        });
+        URL.revokeObjectURL(url);
+
+        const c = document.createElement('canvas');
+        c.width = im.width; c.height = im.height;
+        c.getContext('2d').drawImage(im, 0, 0);
+
+        const pngBlob = await new Promise(r => c.toBlob(r, 'image/png'));
+        const imgBytes = await pngBlob.arrayBuffer();
+        const img = await doc.embedPng(imgBytes);
+        const pg = doc.addPage([img.width, img.height]);
+        pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        return new Blob([await doc.save()], { type: PDF_MIME });
+      }
+
+      const toolId = DOC_TO_TOOL[ext];
+      const toolObj = toolId && window.FF?.registry?.get(toolId);
+      if (toolObj) {
+        const res = await toolObj.run({ file: f, inputs: {}, engine: typeof toolObj.engine === 'function' ? await toolObj.engine() : undefined });
+        if (res?.blob) return res.blob;
+      }
+      throw new Error(`Format .${ext} cannot be organized into PDF.`);
     }
-    const modes = () => availableModes();
-    const _pl = (w, n) => n === 1 ? w : (w === 'entry' ? 'entries' : w + 's');
+
+    function recordState() {
+      const snap = JSON.stringify(items.map(it => ({
+        id: it.id, fileIdx: it.fileIdx, origPageIdx: it.origPageIdx,
+        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name
+      })));
+      undoStack.push(snap);
+      if (undoStack.length > 40) undoStack.shift();
+      redoStack = [];
+    }
+
+    function undo() {
+      if (!undoStack.length) return;
+      const currentSnap = JSON.stringify(items.map(it => ({
+        id: it.id, fileIdx: it.fileIdx, origPageIdx: it.origPageIdx,
+        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name
+      })));
+      redoStack.push(currentSnap);
+      const prev = JSON.parse(undoStack.pop());
+      restoreItems(prev);
+    }
+
+    function redo() {
+      if (!redoStack.length) return;
+      const currentSnap = JSON.stringify(items.map(it => ({
+        id: it.id, fileIdx: it.fileIdx, origPageIdx: it.origPageIdx,
+        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name
+      })));
+      undoStack.push(currentSnap);
+      const next = JSON.parse(redoStack.pop());
+      restoreItems(next);
+    }
+
+    function restoreItems(list) {
+      items = list.map(s => {
+        const existing = items.find(it => it.id === s.id);
+        return {
+          ...s,
+          canvas: existing?.canvas || null,
+          origFile: rawFiles[s.fileIdx] || null
+        };
+      });
+      syncSplitCuts();
+      renderWorkbench();
+    }
 
     function syncSplitCuts() {
       customCuts.clear();
-      if (pageCount <= 1 || splitEvery <= 0) return;
-      for (let p = splitEvery; p < pageCount; p += splitEvery) {
+      const activeItems = items.filter(it => !it.isDeleted);
+      if (activeItems.length <= 1 || splitEvery <= 0) return;
+      for (let p = splitEvery; p < activeItems.length; p += splitEvery) {
         customCuts.add(p);
       }
     }
 
-    const modeBtnLabel = () => {
-      const m = MODE_MAP[mode];
-      if (mode === 'merge') return `Merge ${files.length} file${files.length === 1 ? '' : 's'}`;
-      if (mode === 'split') {
-        const fam = familyOf(files[0]);
-        if (fam === 'audio' || fam === 'video') return `Split (${splitEvery} parts)`;
-        if (fam === 'pdf') {
-          const parts = customCuts.size + 1;
-          return parts === 1 ? 'Split (1 part)' : `Split (${parts} parts)`;
-        }
-        return `Split ${files.length} images`;
-      }
-      if (mode === 'rotate') return `Rotate pages`;
-      if (mode === 'reorder') return 'Reorder chapters';
-      if (mode === 'delete' || mode === 'extract') {
-        const fam0 = familyOf(files[0]);
-        const total = fam0 === 'archive' ? entries.length : fam0 === 'ebook' ? chapters.length : pageCount;
-        const word = fam0 === 'archive' ? 'entry' : fam0 === 'ebook' ? 'chapter' : 'page';
-        if (mode === 'delete') {
-          const removed = picked.size;
-          return removed ? `Delete ${removed} ${_pl(word, removed)}` : `Delete ${_pl(word, 2)}`;
-        }
-        const n = picked.size;
-        return n ? `Extract ${n} ${_pl(word, n)}` : `Extract ${_pl(word, 2)}`;
-      }
-      return m.label;
-    };
-
-    function clearUrls() { urls.forEach(u => URL.revokeObjectURL(u)); urls = []; }
-    function resetState() {
-      picked.clear(); selected.clear(); pageRotations.clear(); customCuts.clear();
-      pageCount = 0; thumbs = []; fileThumbs = []; pageCounts = []; durations = [];
-      entries = []; chapters = []; ebookMeta = null;
-      filesPrepared = false; preparing = false; dragIdx = -1;
-      previewIdx = 0; bigCache.clear();
-      clearUrls();
-      mode = modes()[0] || 'merge';
-      syncSplitCuts();
+    function resetAll() {
+      rawFiles = []; pdfBlobs = []; pdfDocs = []; items = [];
+      selectedIds.clear(); lastSelectedIdx = -1;
+      undoStack = []; redoStack = []; customCuts.clear();
+      renderToken++; seq = 0; zoom = 100;
     }
 
-    /* ── Step 1: Upload ─────────────────────────────── */
+    /* ── Render Step 1: Upload Dropzone ── */
     function renderUpload() {
-      files = [];
-      resetState();
+      resetAll();
       exitBleed();
-      clearUrls();
       container.innerHTML = `
         <div class="cpdf-dropzone drop-hero-box" id="org-dz" tabindex="0" role="button" aria-label="Upload files to organize">
           <div class="dropzone-idle">
@@ -16682,21 +17239,22 @@ trailer<</Root 1 0 R>>`;
             <div class="drop-action-group">
               <label for="org-inp" class="select-files-main-btn">
                 <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select files</span>
+                <span>Select PDF or files</span>
               </label>
             </div>
-            <p class="drop-sub-text">Add <strong>PDFs</strong>, <strong>Images</strong>, or <strong>Media</strong> to merge, split, rotate, or delete pages</p>
+            <p class="drop-sub-text">Reorder, rotate, delete, split, duplicate, or merge documents with visual page thumbnails</p>
             <div class="supported-formats-row">
               <span class="fmt-label">Supported formats:</span>
               <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-doc">ZIP</span>
-              <span class="fmt-badge fmt-xls">EPUB</span>
+              <span class="fmt-badge fmt-png">PNG / JPG</span>
+              <span class="fmt-badge fmt-doc">DOCX</span>
+              <span class="fmt-badge fmt-xls">XLSX / PPTX</span>
+              <span class="fmt-badge fmt-img">HEIC / WebP</span>
             </div>
           </div>
           <input id="org-inp" type="file" accept="${ACCEPT}" multiple hidden>
         </div>`;
+
       const dz = container.querySelector('#org-dz');
       const inp = container.querySelector('#org-inp');
       inp.onchange = () => { const arr = [...(inp.files || [])]; inp.value = ''; if (arr.length) acceptFiles(arr); };
@@ -16709,848 +17267,1015 @@ trailer<</Root 1 0 R>>`;
       dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
     }
 
-    function acceptFiles(arr) {
-      const ok = arr.filter(f => familyOf(f) && f.size <= MAX_BYTES);
-      if (!ok.length) { window.FF.util.toast('Please choose a valid file (up to 200 MB).', 'warn'); return; }
-      files = files.length ? files.concat(ok) : ok;
-      resetState();
-      renderConfigure();
-    }
-
-    /* ── Sub-Toolbar Inline Mode Controls ── */
-    function inlineControlsMarkup() {
-      const fam = familyOf(files[0]);
-      if (mode === 'split' && fam === 'pdf') {
-        return `
-          <div class="org-inline-ctrls">
-            <span class="org-ctrl-label">Every</span>
-            <div class="org-stepper">
-              <button type="button" class="org-step-btn" id="org-step-dec">−</button>
-              <span class="org-step-val" id="org-step-val">${splitEvery}</span>
-              <button type="button" class="org-step-btn" id="org-step-inc">+</button>
-            </div>
-            <span class="org-ctrl-label">page${splitEvery === 1 ? '' : 's'}</span>
-          </div>`;
-      }
-      if (mode === 'rotate' && fam === 'pdf') {
-        return `
-          <div class="org-inline-ctrls">
-            <span class="org-ctrl-label">Rotate all:</span>
-            <button type="button" class="org-mini-btn" id="org-rot-all-ccw" title="Rotate all 90° left">⟲ -90°</button>
-            <button type="button" class="org-mini-btn" id="org-rot-all-cw" title="Rotate all 90° right">⟳ +90°</button>
-            <button type="button" class="org-mini-btn" id="org-rot-all-180" title="Rotate all 180°">180°</button>
-          </div>`;
-      }
-      if (mode === 'delete') {
-        return `
-          <div class="org-inline-ctrls">
-            <span class="org-del-count-badge">${picked.size} page${picked.size === 1 ? '' : 's'} to delete</span>
-            ${picked.size ? `<button type="button" class="org-mini-btn org-mini-btn--ghost" id="org-del-undo-all">Undo all</button>` : ''}
-          </div>`;
-      }
-      if (mode === 'extract' && fam === 'pdf') {
-        return `
-          <div class="org-inline-ctrls">
-            <span class="org-ctrl-label" style="color:#7C3AED;font-weight:700;">${picked.size} page${picked.size === 1 ? '' : 's'} selected</span>
-            <button type="button" class="org-mini-btn ${extractSeparate ? 'is-on' : ''}" id="org-toggle-sep" title="Extract as individual PDF files inside a ZIP">
-              ${extractSeparate ? '✓ Separate PDFs' : 'Single Combined PDF'}
-            </button>
-          </div>`;
-      }
-      return '';
-    }
-
-    function pickerMarkup() {
-      const avail = modes();
-      return `
-        <div class="org-mode-picker" role="tablist" aria-label="Choose an action">
-          ${MODES.map(m => {
-            const on = m.id === mode;
-            const disabled = !avail.includes(m.id);
-            return `<button type="button" class="org-tool${on ? ' is-on' : ''}" data-mode="${m.id}" role="tab" aria-selected="${on}" title="${m.desc}"${disabled ? ' disabled' : ''}>
-              ${ICONS[m.icon]}<span>${m.label}</span>
-            </button>`;
-          }).join('')}
-        </div>`;
-    }
-
-    function quickActionsMarkup() {
-      const n = selected.size;
-      if (mode !== 'merge' && n === 0) return '';
-      return `
-        <button type="button" class="org-tool org-tool--icon" id="org-add-files" title="Add files">${ICONS.add}<span>Add</span></button>
-        ${n > 0 ? `
-          <button type="button" class="org-tool org-tool--icon" id="org-rot-ccw" title="Rotate selected files 90° left" style="transform:scaleX(-1);">${ICONS.rotate}</button>
-          <button type="button" class="org-tool org-tool--icon" id="org-rot-cw" title="Rotate selected files 90° right">${ICONS.rotate}</button>
-          <button type="button" class="org-tool org-tool--icon org-tool--danger" id="org-remove-sel" title="Remove selected files">${ICONS.trash}</button>
-        ` : ''}`;
-    }
-
-    /* ── Step 2: Configure Workspace ── */
-    const fileLabel = () => files.length === 1 ? _esc(files[0].name) : `${files.length} files`;
-    const metaLabel = () => {
-      if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCounts[0]) {
-        const p = pageCounts[0];
-        return `${p} ${p === 1 ? 'page' : 'pages'} · ${_bytes(files[0].size)}`;
-      }
-      return `${_bytes(totalBytes())}`;
-    };
-
-    /* Expansive Tactile Canvas Grid */
-    function fullCanvasGridMarkup() {
-      const fam = familyOf(files[0]);
-
-      // 1. Merge Mode: Render Document Stack Cards with Inter-File Plus buttons
-      if (mode === 'merge') {
-        const cards = [];
-        files.forEach((f, i) => {
-          const fFam = familyOf(f);
-          const pCount = pageCounts[i] || 1;
-          const sub = fFam === 'pdf' ? `${pCount} ${pCount === 1 ? 'page' : 'pages'}` : _bytes(f.size);
-          cards.push(`
-            <div class="org-deck-card ${pCount > 1 ? 'org-deck-card--multi' : ''}" data-i="${i}" draggable="true">
-              <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''} style="position:absolute;top:8px;left:8px;z-index:3;">
-              <button type="button" class="org-fx" data-i="${i}" title="Remove file" style="position:absolute;top:8px;right:8px;z-index:3;">${ICONS.x}</button>
-              <div class="org-pg-thumb" id="org-deck-thumb-${i}"><span class="org-tile-ph">${i + 1}</span></div>
-              <div class="org-pg-meta">
-                <span class="org-fname" title="${_esc(f.name)}" style="max-width:100px;font-size:11.5px;">${_esc(f.name)}</span>
-                <span style="font-size:10.5px;color:#64748B;">${sub}</span>
-              </div>
-            </div>`);
-
-          if (i < files.length - 1) {
-            cards.push(`<button type="button" class="org-insert-btn" data-after="${i}" title="Insert file here">+</button>`);
-          }
-        });
-
-        cards.push(`
-          <div class="org-drop-card-end" id="org-end-drop" title="Add more files">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Add PDF, images, or media</span>
-          </div>`);
-
-        return `<div class="org-canvas-grid">${cards.join('')}</div>`;
-      }
-
-      // 2. Single-PDF Exploded Page Modes (Split, Rotate, Delete, Extract)
-      if (fam === 'pdf' && pageCount > 0) {
-        let currentPart = 1;
-        const pageTiles = [];
-
-        for (let p = 1; p <= pageCount; p++) {
-          const pgIdx = p - 1;
-          const isDeleted = picked.has(pgIdx) && mode === 'delete';
-          const isExtracted = picked.has(pgIdx) && mode === 'extract';
-          const rotAngle = pageRotations.get(pgIdx) || 0;
-
-          // In-situ Center Button
-          let centerBtn = '';
-          if (mode === 'rotate') {
-            centerBtn = `
-              <button type="button" class="org-page-center-btn org-page-rot-btn" data-pg="${pgIdx}" title="Rotate page 90°">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              </button>`;
-          } else if (mode === 'delete') {
-            centerBtn = `
-              <button type="button" class="org-page-center-btn org-page-del-btn" data-pg="${pgIdx}" title="${isDeleted ? 'Restore page' : 'Delete page'}">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              </button>`;
-          }
-
-          const partBadge = mode === 'split' ? `<span class="org-pg-part-tag">Part ${currentPart}</span>` : '';
-
-          pageTiles.push(`
-            <div class="org-pg-tile ${isDeleted ? 'is-deleted' : ''} ${isExtracted ? 'is-selected' : ''}" data-pg="${pgIdx}">
-              ${mode === 'extract' ? `<input type="checkbox" class="org-extract-chk" data-pg="${pgIdx}" ${isExtracted ? 'checked' : ''} style="position:absolute;top:8px;left:8px;z-index:3;">` : ''}
-              <div class="org-pg-thumb" id="org-pg-thumb-${pgIdx}">
-                <span class="org-tile-ph">${p}</span>
-                ${centerBtn}
-              </div>
-              <div class="org-pg-meta">
-                <span class="org-pg-num">Page ${p}</span>
-                ${partBadge}
-              </div>
-            </div>`);
-
-          // Inter-page Perforation Cut-Line with Scissors (in Split Mode)
-          if (mode === 'split' && p < pageCount) {
-            const isCut = customCuts.has(p);
-            if (isCut) currentPart++;
-            pageTiles.push(`
-              <div class="org-cut-divider ${isCut ? 'is-cut' : ''}" data-boundary="${p}" title="${isCut ? 'Cut point (Part split) — click to join' : 'Click to split here'}">
-                <div class="org-cut-line"></div>
-                <button type="button" class="org-cut-btn" data-boundary="${p}">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-                </button>
-              </div>`);
-          }
-        }
-
-        pageTiles.push(`
-          <div class="org-drop-card-end" id="org-end-drop" title="Add more files">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Add PDF, images, or media</span>
-          </div>`);
-        return `<div class="org-canvas-grid">${pageTiles.join('')}</div>`;
-      }
-
-      // Fallback for non-PDF or loading
-      return `<div class="org-canvas-grid"><div class="org-tile-ph" style="padding:40px;">Rendering document canvas…</div></div>`;
-    }
-
-    /* Loupe Inspector Filmstrip View */
-    function filmstripViewMarkup() {
-      const cards = files.map((f, i) => {
-        const fam = familyOf(f);
-        const sub = fam === 'pdf' ? `${pageCounts[i] ? `${pageCounts[i]} pgs` : 'PDF'} · ${_bytes(f.size)}` : _bytes(f.size);
-        return `
-          <div class="org-fcard ${i === previewIdx ? 'org-fcard--view' : ''}" data-i="${i}">
-            <input type="checkbox" class="org-fchk" data-i="${i}" ${selected.has(i) ? 'checked' : ''}>
-            <button type="button" class="org-fx" data-i="${i}" title="Remove file">${ICONS.x}</button>
-            <div class="org-fthumb" id="org-fthumb-${i}"><span class="org-tile-ph">${i + 1}</span></div>
-            <div class="org-fmeta">
-              <span class="org-fname" title="${_esc(f.name)}">${_esc(f.name)}</span>
-              <span class="org-fsub">${sub}</span>
-            </div>
-          </div>`;
-      }).join('');
-
-      return `
-        <div class="org-body">
-          <aside class="org-thumbs">
-            <div class="org-thumbs-head">
-              <label class="org-sel"><input type="checkbox" id="org-selall"><span>Select all</span></label>
-              <span class="org-thumbs-count">${files.length}</span>
-            </div>
-            <div class="org-thumbs-list">${cards}</div>
-            <button type="button" class="org-fcard org-fcard--add" id="org-fadd" title="Add more files">
-              <span class="org-fadd-ico">${ICONS.add}</span>
-              <span class="org-fadd-label">Add more files</span>
-            </button>
-          </aside>
-          <main class="org-main">
-            <div class="org-big">
-              <div class="org-big-head">
-                <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;">
-                  <span style="font-size:10px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;background:#FAF5FF;color:#7C3AED;border:1px solid #E9D5FF;border-radius:4px;padding:2px 6px;flex-shrink:0;">INSPECTOR</span>
-                  <span style="font-size:13px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;" title="${_esc(files[previewIdx].name)}">${_esc(files[previewIdx].name)}</span>
-                  <span style="color:#CBD5E1;margin:0 2px;">·</span>
-                  <span style="font-size:11.5px;font-weight:500;color:#64748B;white-space:nowrap;">${_bytes(files[previewIdx].size)}</span>
-                </div>
-                <div class="org-zoom-ctrls">
-                  <button type="button" class="org-zoom-btn" id="org-zoom-out" title="Zoom out">−</button>
-                  <span class="org-zoom-label" id="org-zoom-val">${zoomLevel === 'fit' ? 'Fit' : `${zoomLevel}%`}</span>
-                  <button type="button" class="org-zoom-btn" id="org-zoom-in" title="Zoom in">+</button>
-                  <button type="button" class="org-zoom-btn org-zoom-btn--fit" id="org-zoom-fit" title="Fit to stage">Fit</button>
-                </div>
-              </div>
-              <div class="org-big-stage" id="org-big-stage" data-idx="${previewIdx}">
-                <span class="org-tile-ph">${previewIdx + 1}</span>
-                <div class="org-stage-hover-actions">
-                  <button type="button" class="org-stage-rot-btn" id="org-stage-rot-ccw" title="Rotate preview left 90°">⟲ 90°</button>
-                  <button type="button" class="org-stage-rot-btn" id="org-stage-rot-cw" title="Rotate preview right 90°">⟳ 90°</button>
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>`;
-    }
-
-    function flowShellMarkup(mainHtml) {
-      return `
-        <div class="cpdf-body org-flow" style="padding-top: 0 !important;">
-          <div class="org-unified-toolbar">
-            <!-- Left: Compact File Pill -->
-            <div class="org-toolbar-file-pill">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span class="org-file" title="${fileLabel()}">${fileLabel()}</span>
-              <span class="org-meta">${metaLabel()}</span>
-              <span class="org-local-pill">Local only</span>
-            </div>
-
-            <!-- Center: Mode Tools & Active Controls -->
-            <div class="org-toolbar-center-tools">
-              ${pickerMarkup()}
-              ${inlineControlsMarkup()}
-            </div>
-
-            <!-- Right: Quick Actions + View Toggle + Run CTA -->
-            <div class="org-toolbar-right-actions">
-              ${quickActionsMarkup()}
-              <button type="button" class="org-view-toggle" id="org-view-toggle" title="${viewMode === 'grid' ? 'Switch to Filmstrip Loupe View' : 'Switch to Full Lightbox Grid'}">
-                ${viewMode === 'grid' ? 
-                  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span>Filmstrip</span>` : 
-                  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Contact Sheet</span>`}
-              </button>
-              <button class="org-finish" id="org-run" type="button">${modeBtnLabel()}</button>
-            </div>
-          </div>
-          ${mainHtml}
-          <footer class="org-slim-foot">${ICONS.shield} Processing is 100% private in-browser sandbox · 0 B network requests</footer>
-          <input id="org-add-inp" type="file" accept="${ACCEPT}" multiple hidden>
-        </div>`;
-    }
-
-    async function prepareFiles() {
-      if (filesPrepared || preparing) return;
-      preparing = true;
-      fileThumbs = []; pageCounts = []; durations = [];
-      const pdfs = files.filter(f => familyOf(f) === 'pdf');
-      let pdfjs = null;
-      if (pdfs.length) pdfjs = await loadJs();
-      
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const fam = familyOf(f);
-        if (fam === 'pdf') {
-          try {
-            const doc = await pdfjs.getDocument({ data: await bytesU8(f) }).promise;
-            pageCounts[i] = doc.numPages;
-            if (i === 0 && files.length === 1) {
-              pageCount = doc.numPages;
-              syncSplitCuts();
-            }
-            const page = await doc.getPage(1);
-            const c = await renderPage(pdfjs, page, 0.85);
-            fileThumbs[i] = c;
-            try { doc.destroy(); } catch { /* noop */ }
-          } catch (err) {
-            console.warn('[Organize] read pdf', f.name, err);
-            pageCounts[i] = 1; fileThumbs[i] = null;
-          }
-        } else if (fam === 'image') {
-          urls[i] = URL.createObjectURL(f);
-          fileThumbs[i] = null;
-          if (files.length === 1) pageCount = 1;
-        }
-      }
-
-      // If single PDF, generate all page thumbnail canvases for interactive grid
-      if (files.length === 1 && familyOf(files[0]) === 'pdf' && pageCount > 0) {
-        thumbs = [];
-        try {
-          const doc = await pdfjs.getDocument({ data: await bytesU8(files[0]) }).promise;
-          for (let p = 1; p <= pageCount; p++) {
-            const pg = await doc.getPage(p);
-            const c = await renderPage(pdfjs, pg, 0.85);
-            thumbs.push(c);
-          }
-          try { doc.destroy(); } catch { /* noop */ }
-        } catch (e) {
-          console.warn('[Organize] read all pages', e);
-        }
-      }
-
-      filesPrepared = true;
-      preparing = false;
-      renderConfigure();
-    }
-
-    function wireCardThumbs() {
-      // 1. Mount single-pdf page thumbs
-      if (thumbs.length) {
-        thumbs.forEach((c, pgIdx) => {
-          const host = container.querySelector(`#org-pg-thumb-${pgIdx}`);
-          if (host && c) {
-            const clone = document.createElement('canvas');
-            clone.width = c.width; clone.height = c.height;
-            clone.getContext('2d').drawImage(c, 0, 0);
-            const rot = pageRotations.get(pgIdx) || 0;
-            if (rot) clone.style.transform = `rotate(${rot}deg)`;
-            const centerBtn = host.querySelector('.org-page-center-btn');
-            host.innerHTML = '';
-            host.append(clone);
-            if (centerBtn) host.append(centerBtn);
-          }
-        });
-      }
-
-      // 2. Mount merge deck thumbs
-      if (fileThumbs.length) {
-        fileThumbs.forEach((c, i) => {
-          const host = container.querySelector(`#org-deck-thumb-${i}`) || container.querySelector(`#org-fthumb-${i}`);
-          if (host && c) {
-            const clone = document.createElement('canvas');
-            clone.width = c.width; clone.height = c.height;
-            clone.getContext('2d').drawImage(c, 0, 0);
-            host.innerHTML = '';
-            host.append(clone);
-          }
-        });
-      }
-
-      // 3. Mount big preview in filmstrip mode
-      if (viewMode === 'filmstrip') {
-        const stage = container.querySelector('#org-big-stage');
-        if (stage && files[previewIdx] && familyOf(files[previewIdx]) === 'pdf') {
-          getBigThumb(previewIdx).then(c => {
-            if (!c || !stage) return;
-            const clone = document.createElement('canvas');
-            clone.width = c.width; clone.height = c.height;
-            clone.getContext('2d').drawImage(c, 0, 0);
-            const rot = pageRotations.get(0) || 0;
-            if (rot) clone.style.transform = `rotate(${rot}deg)`;
-            const hover = stage.querySelector('.org-stage-hover-actions');
-            stage.innerHTML = '';
-            stage.append(clone);
-            if (hover) stage.append(hover);
-          });
-        }
-      }
-    }
-
-    async function getBigThumb(i) {
-      if (bigCache.has(i)) return bigCache.get(i);
-      const f = files[i];
-      if (!f || familyOf(f) !== 'pdf') return null;
-      const pdfjs = await loadJs();
-      const doc = await pdfjs.getDocument({ data: await bytesU8(f) }).promise;
-      const page = await doc.getPage(1);
-      const c = await renderPage(pdfjs, page, 1.25);
-      try { doc.destroy(); } catch { /* noop */ }
-      bigCache.set(i, c);
-      return c;
-    }
-
-    function wireEvents() {
-      // 1. View Switcher (Grid vs Filmstrip)
-      const viewToggle = container.querySelector('#org-view-toggle');
-      if (viewToggle) {
-        viewToggle.onclick = () => {
-          viewMode = viewMode === 'grid' ? 'filmstrip' : 'grid';
-          renderConfigure();
-        };
-      }
-
-      // 2. Mode Picker
-      container.querySelectorAll('.org-tool[data-mode]').forEach(btn => {
-        btn.onclick = () => {
-          const m = btn.dataset.mode;
-          if (m === mode) return;
-          mode = m;
-          syncSplitCuts();
-          renderConfigure();
-        };
-      });
-
-      // 3. Stepper & Split Controls
-      const decBtn = container.querySelector('#org-step-dec');
-      const incBtn = container.querySelector('#org-step-inc');
-      if (decBtn) {
-        decBtn.onclick = () => {
-          if (splitEvery > 1) {
-            splitEvery--;
-            syncSplitCuts();
-            renderConfigure();
-          }
-        };
-      }
-      if (incBtn) {
-        incBtn.onclick = () => {
-          if (splitEvery < pageCount) {
-            splitEvery++;
-            syncSplitCuts();
-            renderConfigure();
-          }
-        };
-      }
-      container.querySelectorAll('.org-mini-chip[data-every]').forEach(chip => {
-        chip.onclick = () => {
-          splitEvery = +chip.dataset.every;
-          syncSplitCuts();
-          renderConfigure();
-        };
-      });
-
-      // 4. Interactive Scissors Cut-Lines
-      container.querySelectorAll('.org-cut-divider').forEach(div => {
-        div.onclick = (e) => {
-          const b = +div.dataset.boundary;
-          if (customCuts.has(b)) {
-            customCuts.delete(b);
-          } else {
-            customCuts.add(b);
-          }
-          renderConfigure();
-        };
-      });
-
-      // 5. In-Situ Rotate Center Buttons
-      container.querySelectorAll('.org-page-rot-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const pg = +btn.dataset.pg;
-          const current = pageRotations.get(pg) || 0;
-          pageRotations.set(pg, (current + 90) % 360);
-          wireCardThumbs();
-        };
-      });
-
-      // 6. Rotate All Buttons in Toolbar
-      const rotAllCcw = container.querySelector('#org-rot-all-ccw');
-      const rotAllCw = container.querySelector('#org-rot-all-cw');
-      const rotAll180 = container.querySelector('#org-rot-all-180');
-      if (rotAllCcw) {
-        rotAllCcw.onclick = () => {
-          for (let p = 0; p < pageCount; p++) pageRotations.set(p, ((pageRotations.get(p) || 0) + 270) % 360);
-          wireCardThumbs();
-        };
-      }
-      if (rotAllCw) {
-        rotAllCw.onclick = () => {
-          for (let p = 0; p < pageCount; p++) pageRotations.set(p, ((pageRotations.get(p) || 0) + 90) % 360);
-          wireCardThumbs();
-        };
-      }
-      if (rotAll180) {
-        rotAll180.onclick = () => {
-          for (let p = 0; p < pageCount; p++) pageRotations.set(p, ((pageRotations.get(p) || 0) + 180) % 360);
-          wireCardThumbs();
-        };
-      }
-
-      // 7. In-Situ Delete Page Center Buttons
-      container.querySelectorAll('.org-page-del-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const pg = +btn.dataset.pg;
-          picked.has(pg) ? picked.delete(pg) : picked.add(pg);
-          renderConfigure();
-        };
-      });
-      const delUndoAll = container.querySelector('#org-del-undo-all');
-      if (delUndoAll) {
-        delUndoAll.onclick = () => {
-          picked.clear();
-          renderConfigure();
-        };
-      }
-
-      // 8. Extract Page Checkboxes & Tile Click
-      container.querySelectorAll('.org-pg-tile').forEach(tile => {
-        tile.onclick = (e) => {
-          if (mode === 'extract') {
-            const pg = +tile.dataset.pg;
-            picked.has(pg) ? picked.delete(pg) : picked.add(pg);
-            renderConfigure();
-          }
-        };
-      });
-      const togSep = container.querySelector('#org-toggle-sep');
-      if (togSep) {
-        togSep.onclick = () => {
-          extractSeparate = !extractSeparate;
-          renderConfigure();
-        };
-      }
-
-      // 9. Add Files Pickers
-      const addInp = container.querySelector('#org-add-inp');
-      const openPicker = () => addInp && addInp.click();
-      const addBtn = container.querySelector('#org-add-files');
-      if (addBtn) addBtn.onclick = openPicker;
-      const fadd = container.querySelector('#org-fadd');
-      if (fadd) fadd.onclick = openPicker;
-      const endDrop = container.querySelector('#org-end-drop');
-      if (endDrop) endDrop.onclick = openPicker;
-      if (addInp) addInp.onchange = () => { const arr = [...(addInp.files || [])]; addInp.value = ''; if (arr.length) acceptFiles(arr); };
-
-      // 10. Inter-File Insertion Buttons in Merge Mode
-      container.querySelectorAll('.org-insert-btn').forEach(btn => {
-        btn.onclick = () => {
-          const afterIdx = +btn.dataset.after;
-          const tempInp = document.createElement('input');
-          tempInp.type = 'file'; tempInp.accept = ACCEPT; tempInp.multiple = true;
-          tempInp.onchange = () => {
-            const arr = [...(tempInp.files || [])];
-            if (arr.length) {
-              files.splice(afterIdx + 1, 0, ...arr);
-              resetState();
-              renderConfigure();
-            }
-          };
-          tempInp.click();
-        };
-      });
-
-      // 11. Run Action Button
-      const runBtn = container.querySelector('#org-run');
-      if (runBtn) runBtn.onclick = () => runAction();
-    }
-
-    function renderConfigure() {
-      if (!files.length) { renderUpload(); return; }
+    async function acceptFiles(arr, insertAfterIdx = -1) {
+      if (!arr.length) return;
       enterBleed();
-      if (!filesPrepared && !preparing) {
-        prepareFiles();
+      renderLoading('Loading documents and generating high-resolution thumbnails…');
+      const curToken = ++renderToken;
+      console.log('[DEBUG Organize] 1. Starting acceptFiles with ' + arr.length + ' files. Loading JS...');
+      const pdfjs = await loadJs();
+      console.log('[DEBUG Organize] 2. loadJs loaded successfully. pdfjsLib is:', typeof pdfjs);
+
+      for (let i = 0; i < arr.length; i++) {
+        if (curToken !== renderToken) return;
+        const file = arr[i];
+        try {
+          console.log('[DEBUG Organize] 3. Converting file ' + file.name + ' (' + file.size + 'b)...');
+          const pdfBlob = await toEditablePdf(file);
+          console.log('[DEBUG Organize] 4. Converted to PDF blob:', pdfBlob.size, 'bytes');
+          const fileIdx = rawFiles.length;
+          rawFiles.push(file);
+          pdfBlobs.push(pdfBlob);
+
+          const data = new Uint8Array(await pdfBlob.arrayBuffer());
+          console.log('[DEBUG Organize] 5. Calling getDocument with ' + data.byteLength + ' bytes...');
+          const doc = await pdfjs.getDocument({
+            data,
+            cMapUrl: 'vendor/cmaps/',
+            cMapPacked: true,
+            standardFontDataUrl: 'vendor/standard_fonts/'
+          }).promise;
+          console.log('[DEBUG Organize] 6. PDF Document loaded! Pages:', doc.numPages);
+          pdfDocs.push(doc);
+
+          const newItems = [];
+          for (let p = 1; p <= doc.numPages; p++) {
+            newItems.push({
+              id: 'pg_' + (++seq),
+              fileIdx,
+              origPageIdx: p,
+              rotation: 0,
+              isDeleted: false,
+              isBlank: false,
+              canvas: null,
+              name: file.name,
+              origFile: file
+            });
+          }
+
+          if (insertAfterIdx >= 0) {
+            items.splice(insertAfterIdx + 1, 0, ...newItems);
+            insertAfterIdx += newItems.length;
+          } else {
+            items.push(...newItems);
+          }
+        } catch (err) {
+          console.error('[Organize] Ingestion error:', file.name, err);
+          window.FF?.util?.toast?.(`Could not load ${file.name}: ${err.message}`, 'warn');
+        }
+      }
+
+      if (!items.length) {
+        window.FF?.util?.toast?.('No valid documents loaded.', 'error');
+        renderUpload();
         return;
       }
 
-      const mainHtml = viewMode === 'grid' 
-        ? `<div class="org-body--full">${fullCanvasGridMarkup()}</div>`
-        : filmstripViewMarkup();
-
-      container.innerHTML = flowShellMarkup(mainHtml);
-      wireEvents();
-      wireCardThumbs();
+      if (rawFiles.length > 1 && mode === 'organize') mode = 'merge';
+      syncSplitCuts();
+      recordState();
+      renderWorkbench();
     }
 
-    /* ── Step 3: Hardware Processing & Execution ── */
-    async function runAction() {
-      renderProcessing();
-      try {
-        const fam = familyOf(files[0]);
-        let resBlob = null;
-        let resName = '';
+    function renderLoading(sub = 'Preparing documents…') {
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center" style="height: 100%;">
+          <div class="cpdf-spinner" aria-hidden="true">
+            <div class="cpdf-spin-outer"></div>
+            <div class="cpdf-spin-inner">${ICONS.merge}</div>
+          </div>
+          <p class="cpdf-proc-title">Organizing your document</p>
+          <p class="cpdf-proc-sub">${sub}</p>
+        </div>`;
+    }
 
-        // 1. Split PDF
-        if (mode === 'split' && fam === 'pdf') {
-          updateProgress(30, 2, 'Parsing document structure & cut boundaries');
-          const L = await loadLib();
-          const origDoc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          const totalPg = origDoc.getPageCount();
+    /* ── High-DPI 4K Thumbnail Renderer ── */
+    async function renderThumbnail(item) {
+      if (item.canvas || item.isBlank) return item.canvas;
+      const doc = pdfDocs[item.fileIdx];
+      if (!doc) return null;
+      try {
+        const page = await doc.getPage(item.origPageIdx);
+        const vp0 = page.getViewport({ scale: 1 });
+        const targetW = 1100; // ~2200px @2x — razor-sharp for 240px tiles at 180% zoom on 2x/3x displays
+        const dpr = Math.max(2, window.devicePixelRatio || 1);
+        const scale = (targetW * dpr) / vp0.width;
+        const vp = page.getViewport({ scale });
+
+        const c = document.createElement('canvas');
+        c.width = Math.round(vp.width);
+        c.height = Math.round(vp.height);
+        c.style.width = '100%';
+        c.style.height = 'auto';
+        c.style.display = 'block';
+
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        await page.render({
+          canvasContext: ctx,
+          viewport: vp
+        }).promise;
+
+        item.canvas = c;
+        return c;
+      } catch (err) {
+        console.warn('[Organize] Render thumb error:', err);
+        return null;
+      }
+    }
+
+    /* ── Step 2: Workbench UI & Shell ── */
+    function fileLabel() {
+      if (rawFiles.length === 1) return _esc(rawFiles[0].name);
+      return `${rawFiles.length} documents`;
+    }
+
+    function metaLabel() {
+      const activeCount = items.filter(it => !it.isDeleted).length;
+      return `${activeCount} page${activeCount === 1 ? '' : 's'}`;
+    }
+
+    function modeBtnLabel() {
+      const active = items.filter(it => !it.isDeleted);
+      if (mode === 'merge') return `Merge & Download (${active.length} pgs)`;
+      if (mode === 'split') {
+        const parts = customCuts.size + 1;
+        return parts > 1 ? `Split (${parts} parts)` : 'Split document';
+      }
+      if (mode === 'rotate') return `Save rotated PDF`;
+      if (mode === 'delete') {
+        const delCount = items.filter(it => it.isDeleted).length;
+        return delCount > 0 ? `Delete ${delCount} pgs & Download` : `Download PDF`;
+      }
+      if (mode === 'extract') {
+        const extCount = selectedIds.size;
+        return extCount > 0 ? `Extract ${extCount} pgs` : `Extract PDF`;
+      }
+      return `Download Organized PDF`;
+    }
+
+    function renderToolbar() {
+      return `
+        <header class="org-unified-toolbar">
+          <!-- Left: Fluent Primary '+ Add Files' Pill -->
+          <div class="org-toolbar-left">
+            <button type="button" class="org-fluent-new-btn" id="org-add-more" title="Add PDF or Image files">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Add Files</span>
+            </button>
+          </div>
+
+          <!-- Center: Segmented Mode Capsule & Context Controls -->
+          <div class="org-toolbar-center">
+            <div class="org-tool-group" role="tablist">
+              ${MODES.map(m => `
+                <button type="button" class="org-tool-btn ${mode === m.id ? 'is-on' : ''}" data-mode="${m.id}" title="${m.desc}">
+                  ${ICONS[m.icon]}<span>${m.label}</span>
+                </button>
+              `).join('')}
+            </div>
+
+            <span class="org-vsep"></span>
+
+            <!-- Sub-Mode Context Controls Island -->
+            ${mode === 'split' ? `
+              <div class="org-inline-ctrls">
+                <span class="org-ctrl-label">Every:</span>
+                <div class="org-stepper">
+                  <button type="button" class="org-step-btn" id="org-step-dec">−</button>
+                  <span class="org-step-val" id="org-step-val">${splitEvery}</span>
+                  <button type="button" class="org-step-btn" id="org-step-inc">+</button>
+                </div>
+                <button type="button" class="org-mini-btn" id="org-burst-btn" title="Split into single 1-page PDFs">Burst All</button>
+              </div>
+            ` : mode === 'rotate' ? `
+              <div class="org-inline-ctrls">
+                <span class="org-ctrl-label">Rotate:</span>
+                <button type="button" class="org-mini-btn" id="org-rot-all-ccw" title="Rotate all 90° CCW">⟲ -90°</button>
+                <button type="button" class="org-mini-btn" id="org-rot-all-cw" title="Rotate all 90° CW">⟳ +90°</button>
+                <button type="button" class="org-mini-btn" id="org-rot-all-180" title="Rotate all 180°">180°</button>
+              </div>
+            ` : mode === 'extract' ? `
+              <div class="org-inline-ctrls">
+                <span class="org-ctrl-label" style="font-weight:700;">${selectedIds.size} selected</span>
+                <button type="button" class="org-mini-btn ${extractSeparate ? 'is-on' : ''}" id="org-tog-sep">
+                  ${extractSeparate ? '✓ Separate Files' : 'Combined PDF'}
+                </button>
+              </div>
+            ` : `
+              <div class="org-inline-ctrls">
+                <button type="button" class="org-mini-btn" id="org-insert-blank" title="Insert a blank page">+ Blank page</button>
+              </div>
+            `}
+          </div>
+
+          <!-- Right: History Cluster & Primary Action CTA -->
+          <div class="org-toolbar-right">
+            <div class="org-icon-group">
+              <button type="button" class="org-icon-btn" id="org-undo" title="Undo (Ctrl+Z)" ${undoStack.length ? '' : 'disabled'}>${ICONS.undo}</button>
+              <button type="button" class="org-icon-btn" id="org-redo" title="Redo (Ctrl+Y)" ${redoStack.length ? '' : 'disabled'}>${ICONS.redo}</button>
+            </div>
+            <span class="org-vsep"></span>
+            <button type="button" class="org-finish-btn" id="org-run-btn">${modeBtnLabel()}</button>
+          </div>
+        </header>`;
+    }
+
+    function renderRightRail() {
+      const selCount = selectedIds.size;
+      return `
+        <aside class="org-right-rail" aria-label="Zoom and Selection Controls">
+          <div class="org-rail-top">
+            <div class="org-fzoom-page-ctrl">
+              <span class="org-fzoom-page-badge" title="Active pages">${items.filter(it => !it.isDeleted).length}</span>
+              <span style="font-size:9px;font-weight:700;color:#94A3B8;">PGS</span>
+            </div>
+            <div class="org-rail-sep"></div>
+            ${selCount > 0 ? `
+              <div class="org-fzoom-page-ctrl">
+                <span class="org-fzoom-page-badge" style="color:#0F172A;">${selCount}</span>
+                <span style="font-size:9px;font-weight:700;color:#0F172A;">SEL</span>
+              </div>
+              <div class="org-rail-sep"></div>
+            ` : ''}
+          </div>
+
+          <div class="org-rail-mid">
+            <button type="button" class="org-fzoom-step" id="org-zoom-in" title="Zoom in">+</button>
+            <div class="org-fzoom-slider-wrap">
+              <input type="range" class="org-fzoom-slider" id="org-zoom-slider" min="60" max="180" value="${zoom}" step="5" title="Canvas Zoom">
+            </div>
+            <button type="button" class="org-fzoom-step" id="org-zoom-out" title="Zoom out">−</button>
+            <span class="org-fzoom-badge" id="org-zoom-badge">${zoom}%</span>
+          </div>
+
+          <div class="org-rail-bot">
+            <button type="button" class="org-fzoom-action" id="org-zoom-fit" title="Reset Zoom to 100%">1:1</button>
+          </div>
+        </aside>`;
+    }
+
+    function renderGridMarkup() {
+      const cards = [];
+      let partNum = 1;
+      let activeIndex = 0;
+
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const isSelected = selectedIds.has(it.id);
+        const rot = it.rotation || 0;
+        const partTag = mode === 'split' ? `<span class="org-pg-part-tag">Part ${partNum}</span>` : '';
+
+        cards.push(`
+          <div class="org-pg-tile ${isSelected ? 'is-selected' : ''} ${it.isDeleted ? 'is-deleted' : ''} ${it.isBlank ? 'is-blank' : ''}" 
+               data-id="${it.id}" data-idx="${i}" draggable="true">
+            <input type="checkbox" class="org-card-chk" data-id="${it.id}" ${isSelected ? 'checked' : ''} title="Select page">
+            <button type="button" class="org-card-close" data-id="${it.id}" title="${it.isDeleted ? 'Restore page' : 'Delete page'}">${it.isDeleted ? '+' : ICONS.x}</button>
+            
+            <div class="org-pg-thumb" data-preview-id="${it.id}" title="Click to preview page">
+              <div class="org-thumb-canvas-box" id="org-thumb-host-${it.id}">
+                ${it.isBlank ? `<span class="org-tile-ph" style="font-size:11px;color:#94A3B8;">[Blank Page]</span>` : `<span class="org-tile-ph">${i + 1}</span>`}
+              </div>
+              
+              <!-- Hover Action Bar -->
+              <div class="org-card-hover-actions">
+                <button type="button" class="org-card-act-btn" data-act="rot-ccw" data-id="${it.id}" title="Rotate left 90°">${ICONS.rotLeft}</button>
+                <button type="button" class="org-card-act-btn" data-act="rot-cw" data-id="${it.id}" title="Rotate right 90°">${ICONS.rotate}</button>
+                <button type="button" class="org-card-act-btn" data-act="dup" data-id="${it.id}" title="Duplicate page">${ICONS.duplicate}</button>
+                <button type="button" class="org-card-act-btn" data-act="del" data-id="${it.id}" title="${it.isDeleted ? 'Restore' : 'Delete'}">${ICONS.trash}</button>
+              </div>
+            </div>
+
+            <div class="org-pg-meta">
+              <span class="org-pg-num">${it.isBlank ? 'Blank' : `Page ${i + 1}`}</span>
+              ${partTag}
+            </div>
+          </div>`);
+
+        // Inter-card Scissor Cut Divider in Split Mode
+        if (mode === 'split' && i < items.length - 1 && !it.isDeleted) {
+          activeIndex++;
+          const isCut = customCuts.has(activeIndex);
+          if (isCut) partNum++;
+          cards.push(`
+            <div class="org-cut-divider ${isCut ? 'is-cut' : ''}" data-boundary="${activeIndex}" title="${isCut ? 'Split cut point — Click to join' : 'Click to split here'}">
+              <div class="org-cut-line"></div>
+              <button type="button" class="org-cut-btn" data-boundary="${activeIndex}">
+                ${ICONS.split}
+              </button>
+            </div>`);
+        }
+      }
+
+      // Add More Card
+      cards.push(`
+        <div class="org-drop-card-end" id="org-end-add" title="Add more documents or images">
+          ${ICONS.add}
+          <span>Add PDF / Image</span>
+        </div>`);
+
+      return `
+        <div class="org-canvas-wrap" id="org-canvas-wrap">
+          <div class="org-canvas-grid" id="org-canvas-grid" style="transform: scale(${zoom / 100});">
+            ${cards.join('')}
+          </div>
+        </div>`;
+    }
+
+    function renderBatchDock() {
+      if (selectedIds.size === 0) return '';
+      const count = selectedIds.size;
+      return `
+        <div class="org-batch-dock-wrap">
+          <div class="org-batch-dock">
+            <span class="org-batch-count">${count} selected</span>
+            <button type="button" class="org-batch-btn" id="org-b-rot-ccw" title="Rotate selected 90° CCW">${ICONS.rotLeft}<span>-90°</span></button>
+            <button type="button" class="org-batch-btn" id="org-b-rot-cw" title="Rotate selected 90° CW">${ICONS.rotate}<span>+90°</span></button>
+            <button type="button" class="org-batch-btn" id="org-b-dup" title="Duplicate selected">${ICONS.duplicate}<span>Duplicate</span></button>
+            <button type="button" class="org-batch-btn org-batch-btn--danger" id="org-b-del" title="Delete selected">${ICONS.trash}<span>Delete</span></button>
+            <button type="button" class="org-batch-btn org-batch-btn--ghost" id="org-b-clear" title="Clear selection">✕</button>
+          </div>
+        </div>`;
+    }
+
+    /* ── Adaptive Tile Sizing ──
+       Large, readable tiles when a document has few pages; tiles shrink
+       automatically as the page count grows so the whole set stays in view.
+       Re-runs on every workbench render (add files, delete, split, etc.). */
+    function applyAdaptiveTiles() {
+      const grid = container.querySelector('#org-canvas-grid');
+      const wrap = container.querySelector('#org-canvas-wrap');
+      if (!grid) return;
+      const n = Math.max(1, items.filter(it => !it.isDeleted).length);
+      const gap = 16;            // grid gap (both axes)
+      const META = 32;           // page-number meta row height + buffer
+      const MINW = 100, MAXW = 340, MINCOLS = 3;
+
+      // Available canvas area — width from the grid, height from the wrap.
+      const availW = Math.min(grid.clientWidth || 1400, 1400);
+      // wrap padding is 28px top / 80px bottom; subtract to get the usable height
+      const availH = Math.max(200, (wrap ? wrap.clientHeight : 800) - 108);
+
+      // Representative page aspect (h/w). Use the tallest already-rendered page
+      // if available; otherwise assume A4 portrait (~1.414) so we never overflow.
+      let aspect = 1.414;
+      for (const it of items) {
+        if (it.canvas && it.canvas.width && it.canvas.height) {
+          const a = it.canvas.height / it.canvas.width;
+          if (a > aspect) aspect = a;
+        }
+      }
+
+      // Highest column count that still fits MINW-wide tiles in the width.
+      const maxColsFit = Math.max(MINCOLS, Math.floor((availW + gap) / (MINW + gap)));
+
+      // Pick the column count that yields the LARGEST tile that fits both axes.
+      // Do NOT stop at the first passable count — fewer columns means more rows,
+      // which lowers the height budget and shrinks tiles. Spread into more
+      // columns to keep tiles big until neither axis can accommodate them.
+      let chosen = MINCOLS;
+      let bestW = -1;
+      for (let c = MINCOLS; c <= maxColsFit; c++) {
+        const rows = Math.ceil(n / c);
+        const wWidth = (availW - (c - 1) * gap) / c;
+        const wHeight = (availH - (rows - 1) * gap - rows * META) / (rows * aspect);
+        const tileW = Math.min(wWidth, wHeight);
+        if (tileW > bestW) { bestW = tileW; chosen = c; }
+      }
+
+      // Final tile width respects BOTH budgets — but never below MINW, so tiles
+      // only truly shrink once the viewport cannot hold them at a readable size.
+      const rows = Math.ceil(n / chosen);
+      const wWidth = (availW - (chosen - 1) * gap) / chosen;
+      const wHeight = (availH - (rows - 1) * gap - rows * META) / (rows * aspect);
+      const tileW = Math.round(Math.max(MINW, Math.min(MAXW, Math.min(wWidth, wHeight))));
+      grid.style.setProperty('--org-tile-w', tileW + 'px');
+      grid.style.setProperty('--org-thumb-minh', Math.round(tileW * aspect) + 'px');
+    }
+
+    function renderWorkbench() {
+      if (!items.length) { renderUpload(); return; }
+      enterBleed();
+
+      container.innerHTML = `
+        <div class="org-flow">
+          ${renderToolbar()}
+          <div class="org-studio-body">
+            ${renderGridMarkup()}
+            ${renderRightRail()}
+            ${renderBatchDock()}
+          </div>
+          <footer class="org-slim-foot">${ICONS.shield} 100% private sandbox · Zero cloud uploads · Instant vector processing</footer>
+          <input id="org-add-inp" type="file" accept="${ACCEPT}" multiple hidden>
+        </div>`;
+
+      wireWorkbenchEvents();
+      applyAdaptiveTiles();
+      mountThumbnails();
+
+      // Pro UI Designer: Centered Document Capsule in Global Header
+      const centerEl = document.getElementById('app-topbar-center');
+      if (centerEl) {
+        centerEl.innerHTML = `
+          <div class="app-header-doc-plain" title="${fileLabel()} · ${metaLabel()} · 100% Local Sandbox">
+            <span class="app-header-doc-plain-title">${fileLabel()}</span>
+            <span class="app-header-doc-plain-meta">${metaLabel()}</span>
+            <span class="app-header-doc-plain-status">Local</span>
+          </div>
+        `;
+      }
+
+      // Keep global workspace title consistent
+      const topTitle = document.getElementById('app-workspace-title') || document.querySelector('.app-workspace-title');
+      if (topTitle) {
+        topTitle.textContent = 'Organize PDF & Media';
+      }
+    }
+
+    async function mountThumbnails() {
+      for (const it of items) {
+        if (it.isBlank) continue;
+        const host = container.querySelector(`#org-thumb-host-${it.id}`);
+        if (!host) continue;
+
+        let c = it.canvas;
+        if (!c) c = await renderThumbnail(it);
+        if (c && host) {
+          const clone = document.createElement('canvas');
+          clone.width = c.width; clone.height = c.height;
+          clone.style.width = '100%'; clone.style.height = 'auto';
+          clone.style.display = 'block';
+          const ctx = clone.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(c, 0, 0);
+          if (it.rotation) clone.style.transform = `rotate(${it.rotation}deg)`;
+
+          host.innerHTML = '';
+          host.append(clone);
+        }
+      }
+      // Re-fit now that real canvas sizes are known (height/aspect no longer guessed).
+      requestAnimationFrame(() => applyAdaptiveTiles());
+    }
+
+    /* ── Full-Page Preview Overlay ──
+       Reuses the already-rendered high-DPI canvas (2200px @2x) so scanned text
+       is legible. Centered modal → keeps transform-origin: center (Emil). */
+    function openPagePreview(id) {
+      const it = items.find(x => x.id === id);
+      if (!it || it.isBlank) return;
+
+      const src = it.canvas;
+      const rot = it.rotation || 0;
+      const pageNum = items.findIndex(x => x.id === id) + 1;
+      const label = it.name ? `${it.name} — Page ${pageNum}` : `Page ${pageNum}`;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'org-preview-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', `Preview ${label}`);
+
+      overlay.innerHTML = `
+        <div class="org-preview-sheet" role="document">
+          <div class="org-preview-top">
+            <span class="org-preview-title">${_esc(label)}</span>
+            <button type="button" class="org-preview-close" title="Close (Esc)">${ICONS.x}</button>
+          </div>
+          <div class="org-preview-stage"></div>
+          <div class="org-preview-foot">
+            <span class="org-preview-hint">Esc to close</span>
+            <span class="org-preview-num">${pageNum} / ${items.length}</span>
+          </div>
+        </div>`;
+
+      // Append the real canvas node so its drawn pixels survive (innerHTML would
+      // have forged a fresh, empty canvas).
+      const stage = overlay.querySelector('.org-preview-stage');
+      if (src && src.getContext) {
+        const c = document.createElement('canvas');
+        c.width = src.width; c.height = src.height;
+        c.className = 'org-preview-canvas';
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(src, 0, 0);
+        if (rot) c.style.transform = `rotate(${rot}deg)`;
+        stage.appendChild(c);
+      } else {
+        stage.innerHTML = `<div class="org-preview-ph">[Blank Page]</div>`;
+      }
+
+      container.appendChild(overlay);
+      // Force a frame, then add the "in" state so the enter transition plays.
+      requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('is-open')));
+
+      const close = () => {
+        overlay.classList.remove('is-open');
+        const done = () => overlay.remove();
+        // Exit should be snappy (200ms ease-out), not mirrored-slow.
+        overlay.addEventListener('transitionend', done, { once: true });
+        setTimeout(done, 260);
+      };
+      overlay.querySelector('.org-preview-close').onclick = close;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+      const onKey = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } };
+      document.addEventListener('keydown', onKey);
+    }
+
+    function wireWorkbenchEvents() {
+      // 0. Re-fit tiles when the viewport size changes (debounced).
+      clearTimeout(window.__orgResizeT);
+      window.addEventListener('resize', () => {
+        clearTimeout(window.__orgResizeT);
+        window.__orgResizeT = setTimeout(() => applyAdaptiveTiles(), 120);
+      });
+
+      // 1. Mode Switching
+      container.querySelectorAll('.org-tool-btn[data-mode]').forEach(btn => {
+        btn.onclick = () => {
+          mode = btn.dataset.mode;
+          syncSplitCuts();
+          renderWorkbench();
+        };
+      });
+
+      // 2. Zoom Controls
+      const slider = container.querySelector('#org-zoom-slider');
+      const zoomBadge = container.querySelector('#org-zoom-badge');
+      const grid = container.querySelector('#org-canvas-grid');
+      const updateZoom = (z) => {
+        zoom = Math.max(60, Math.min(180, z));
+        if (slider) slider.value = zoom;
+        if (zoomBadge) zoomBadge.textContent = `${zoom}%`;
+        if (grid) grid.style.transform = `scale(${zoom / 100})`;
+      };
+      if (slider) slider.oninput = () => updateZoom(+slider.value);
+      const zin = container.querySelector('#org-zoom-in');
+      const zout = container.querySelector('#org-zoom-out');
+      const zfit = container.querySelector('#org-zoom-fit');
+      if (zin) zin.onclick = () => updateZoom(zoom + 10);
+      if (zout) zout.onclick = () => updateZoom(zoom - 10);
+      if (zfit) zfit.onclick = () => updateZoom(100);
+
+      // 3. Sub-Mode Split Stepper & Burst
+      const sDec = container.querySelector('#org-step-dec');
+      const sInc = container.querySelector('#org-step-inc');
+      if (sDec) sDec.onclick = () => { if (splitEvery > 1) { splitEvery--; syncSplitCuts(); renderWorkbench(); } };
+      if (sInc) sInc.onclick = () => { if (splitEvery < items.length) { splitEvery++; syncSplitCuts(); renderWorkbench(); } };
+      const burstBtn = container.querySelector('#org-burst-btn');
+      if (burstBtn) burstBtn.onclick = () => { splitEvery = 1; syncSplitCuts(); renderWorkbench(); };
+      const togSep = container.querySelector('#org-tog-sep');
+      if (togSep) togSep.onclick = () => { extractSeparate = !extractSeparate; renderWorkbench(); };
+
+      // 4. Rotate All
+      const rCcw = container.querySelector('#org-rot-all-ccw');
+      const rCw = container.querySelector('#org-rot-all-cw');
+      const r180 = container.querySelector('#org-rot-all-180');
+      if (rCcw) rCcw.onclick = () => { recordState(); items.forEach(it => it.rotation = ((it.rotation || 0) + 270) % 360); renderWorkbench(); };
+      if (rCw) rCw.onclick = () => { recordState(); items.forEach(it => it.rotation = ((it.rotation || 0) + 90) % 360); renderWorkbench(); };
+      if (r180) r180.onclick = () => { recordState(); items.forEach(it => it.rotation = ((it.rotation || 0) + 180) % 360); renderWorkbench(); };
+
+      // 5. Insert Blank Page
+      const insBlank = container.querySelector('#org-insert-blank');
+      if (insBlank) insBlank.onclick = () => {
+        recordState();
+        items.push({
+          id: 'pg_' + (++seq),
+          fileIdx: -1, origPageIdx: 0,
+          rotation: 0, isDeleted: false, isBlank: true, canvas: null, name: 'Blank Page'
+        });
+        renderWorkbench();
+      };
+
+      // 6. Interactive Scissor Dividers
+      container.querySelectorAll('.org-cut-divider').forEach(div => {
+        div.onclick = () => {
+          const b = +div.dataset.boundary;
+          if (customCuts.has(b)) customCuts.delete(b);
+          else customCuts.add(b);
+          renderWorkbench();
+        };
+      });
+
+      // 7. Add More Files
+      const addInp = container.querySelector('#org-add-inp');
+      const openPicker = () => addInp && addInp.click();
+      const addMore = container.querySelector('#org-add-more');
+      const endAdd = container.querySelector('#org-end-add');
+      if (addMore) addMore.onclick = openPicker;
+      if (endAdd) endAdd.onclick = openPicker;
+      if (addInp) addInp.onchange = () => { const arr = [...(addInp.files || [])]; addInp.value = ''; if (arr.length) acceptFiles(arr); };
+
+      // 8. Undo / Redo
+      const undoBtn = container.querySelector('#org-undo');
+      const redoBtn = container.querySelector('#org-redo');
+      if (undoBtn) undoBtn.onclick = () => undo();
+      if (redoBtn) redoBtn.onclick = () => redo();
+
+      // 9. Card Checkbox & Selection
+      container.querySelectorAll('.org-card-chk').forEach(chk => {
+        chk.onclick = (e) => {
+          e.stopPropagation();
+          const id = chk.dataset.id;
+          const idx = items.findIndex(it => it.id === id);
+          if (e.shiftKey && lastSelectedIdx >= 0) {
+            const start = Math.min(lastSelectedIdx, idx);
+            const end = Math.max(lastSelectedIdx, idx);
+            for (let i = start; i <= end; i++) selectedIds.add(items[i].id);
+          } else {
+            if (selectedIds.has(id)) selectedIds.delete(id);
+            else selectedIds.add(id);
+            lastSelectedIdx = idx;
+          }
+          renderWorkbench();
+        };
+      });
+
+      // Card Close / Delete Button
+      container.querySelectorAll('.org-card-close').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const it = items.find(x => x.id === id);
+          if (it) {
+            recordState();
+            it.isDeleted = !it.isDeleted;
+            renderWorkbench();
+          }
+        };
+      });
+
+      // Hover Action Bar Buttons
+      container.querySelectorAll('.org-card-act-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const act = btn.dataset.act;
+          const id = btn.dataset.id;
+          const idx = items.findIndex(x => x.id === id);
+          if (idx < 0) return;
+          recordState();
+
+          if (act === 'rot-cw') items[idx].rotation = ((items[idx].rotation || 0) + 90) % 360;
+          else if (act === 'rot-ccw') items[idx].rotation = ((items[idx].rotation || 0) + 270) % 360;
+          else if (act === 'dup') {
+            const clone = { ...items[idx], id: 'pg_' + (++seq), canvas: items[idx].canvas };
+            items.splice(idx + 1, 0, clone);
+          } else if (act === 'del') {
+            items[idx].isDeleted = !items[idx].isDeleted;
+          }
+          renderWorkbench();
+        };
+      });
+
+      // 9b. Click page thumbnail → large preview overlay
+      container.querySelectorAll('.org-pg-thumb[data-preview-id]').forEach(thumb => {
+        thumb.addEventListener('click', (e) => {
+          if (e.target.closest('.org-card-act-btn') || e.target.closest('.org-card-chk') || e.target.closest('.org-card-close')) return;
+          const id = thumb.dataset.previewId;
+          openPagePreview(id);
+        });
+      });
+
+      // 10. Drag and Drop Reordering
+      container.querySelectorAll('.org-pg-tile').forEach(tile => {
+        tile.addEventListener('dragstart', (e) => {
+          draggedId = tile.dataset.id;
+          tile.classList.add('is-dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', draggedId);
+        });
+
+        tile.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const rect = tile.getBoundingClientRect();
+          const midX = rect.left + rect.width / 2;
+          if (e.clientX < midX) {
+            tile.classList.add('is-drag-over-left');
+            tile.classList.remove('is-drag-over-right');
+          } else {
+            tile.classList.add('is-drag-over-right');
+            tile.classList.remove('is-drag-over-left');
+          }
+        });
+
+        tile.addEventListener('dragleave', () => {
+          tile.classList.remove('is-drag-over-left', 'is-drag-over-right');
+        });
+
+        tile.addEventListener('drop', (e) => {
+          e.preventDefault();
+          tile.classList.remove('is-drag-over-left', 'is-drag-over-right');
+          const targetId = tile.dataset.id;
+          if (!draggedId || draggedId === targetId) return;
+
+          const fromIdx = items.findIndex(x => x.id === draggedId);
+          let toIdx = items.findIndex(x => x.id === targetId);
+          if (fromIdx < 0 || toIdx < 0) return;
+
+          const rect = tile.getBoundingClientRect();
+          if (e.clientX >= rect.left + rect.width / 2) toIdx++;
+          if (fromIdx < toIdx) toIdx--;
+
+          recordState();
+          const [moved] = items.splice(fromIdx, 1);
+          items.splice(toIdx, 0, moved);
+          renderWorkbench();
+        });
+
+        tile.addEventListener('dragend', () => {
+          tile.classList.remove('is-dragging', 'is-drag-over-left', 'is-drag-over-right');
+          draggedId = null;
+        });
+      });
+
+      // 11. Batch Action Dock
+      const bRotCcw = container.querySelector('#org-b-rot-ccw');
+      const bRotCw = container.querySelector('#org-b-rot-cw');
+      const bDup = container.querySelector('#org-b-dup');
+      const bDel = container.querySelector('#org-b-del');
+      const bClear = container.querySelector('#org-b-clear');
+
+      if (bRotCcw) bRotCcw.onclick = () => {
+        recordState();
+        items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + 270) % 360; });
+        renderWorkbench();
+      };
+      if (bRotCw) bRotCw.onclick = () => {
+        recordState();
+        items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + 90) % 360; });
+        renderWorkbench();
+      };
+      if (bDup) bDup.onclick = () => {
+        recordState();
+        const toAdd = [];
+        items.forEach((it, idx) => {
+          if (selectedIds.has(it.id)) {
+            toAdd.push({ idx, clone: { ...it, id: 'pg_' + (++seq), canvas: it.canvas } });
+          }
+        });
+        toAdd.reverse().forEach(({ idx, clone }) => items.splice(idx + 1, 0, clone));
+        selectedIds.clear();
+        renderWorkbench();
+      };
+      if (bDel) bDel.onclick = () => {
+        recordState();
+        items.forEach(it => { if (selectedIds.has(it.id)) it.isDeleted = !it.isDeleted; });
+        selectedIds.clear();
+        renderWorkbench();
+      };
+      if (bClear) bClear.onclick = () => { selectedIds.clear(); renderWorkbench(); };
+
+      // 12. Run Action Execution
+      const runBtn = container.querySelector('#org-run-btn');
+      if (runBtn) runBtn.onclick = () => runAction();
+    }
+
+    /* ── Global Keyboard Shortcuts ── */
+    function onKeyDown(e) {
+      if (!container.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault(); redo();
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedIds.size) {
+          e.preventDefault(); recordState();
+          items.forEach(it => { if (selectedIds.has(it.id)) it.isDeleted = true; });
+          selectedIds.clear(); renderWorkbench();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        items.forEach(it => selectedIds.add(it.id));
+        renderWorkbench();
+      } else if (e.key === 'Escape') {
+        selectedIds.clear(); renderWorkbench();
+      } else if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
+        if (selectedIds.size) {
+          e.preventDefault(); recordState();
+          const delta = e.shiftKey ? 270 : 90;
+          items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + delta) % 360; });
+          renderWorkbench();
+        }
+      }
+    }
+    window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+
+    /* ── Step 3: Hardware Action Execution ── */
+    async function runAction() {
+      if (isProcessing) return;
+      isProcessing = true;
+      renderLoading('Assembling and compiling document stream…');
+
+      try {
+        const L = await loadLib();
+        const activeItems = items.filter(it => !it.isDeleted);
+        if (!activeItems.length) throw new Error('At least 1 active page is required.');
+
+        // Preload source PDFDocuments
+        const loadedSourceDocs = [];
+        for (let fi = 0; fi < pdfBlobs.length; fi++) {
+          const u8 = new Uint8Array(await pdfBlobs[fi].arrayBuffer());
+          const sDoc = await L.PDFDocument.load(u8, { ignoreEncryption: true });
+          loadedSourceDocs[fi] = sDoc;
+        }
+
+        // Case A: Split Mode
+        if (mode === 'split') {
           const cuts = [...customCuts].sort((a, b) => a - b);
-          const ranges = [];
-          let start = 0;
-          cuts.forEach(c => {
-            if (c > start && c < totalPg) {
-              ranges.push({ start, end: c - 1 });
-              start = c;
+          const parts = [];
+          let cur = [];
+          activeItems.forEach((it, idx) => {
+            cur.push(it);
+            if (cuts.includes(idx + 1) || idx === activeItems.length - 1) {
+              parts.push(cur);
+              cur = [];
             }
           });
-          ranges.push({ start, end: totalPg - 1 });
 
-          updateProgress(65, 2, `Extracting ${ranges.length} parts`);
           const fflate = await loadZip();
           const zipFiles = {};
+          const base = U.baseName(rawFiles[0]?.name || 'document');
 
-          for (let idx = 0; idx < ranges.length; idx++) {
-            const r = ranges[idx];
+          for (let pIdx = 0; pIdx < parts.length; pIdx++) {
+            const partItems = parts[pIdx];
             const partDoc = await L.PDFDocument.create();
-            const pageIndices = [];
-            for (let p = r.start; p <= r.end; p++) pageIndices.push(p);
-            const copied = await partDoc.copyPages(origDoc, pageIndices);
-            copied.forEach((cp, i) => {
-              const origIdx = r.start + i;
-              const rot = pageRotations.get(origIdx) || 0;
-              if (rot) cp.setRotation(L.degrees((cp.getRotation().angle + rot + 360) % 360));
-              partDoc.addPage(cp);
-            });
+            for (const it of partItems) {
+              if (it.isBlank) {
+                partDoc.addPage([612, 792]);
+              } else {
+                const sDoc = loadedSourceDocs[it.fileIdx];
+                const [copied] = await partDoc.copyPages(sDoc, [it.origPageIdx - 1]);
+                if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+                partDoc.addPage(copied);
+              }
+            }
             const bytes = await partDoc.save();
-            const partName = `${U.baseName(files[0].name)}_part_${idx + 1}.pdf`;
-            zipFiles[partName] = new Uint8Array(bytes);
+            const pName = `${base}_part_${pIdx + 1}.pdf`;
+            zipFiles[pName] = new Uint8Array(bytes);
           }
 
-          updateProgress(90, 3, 'Compiling ZIP archive');
-          const zipBytes = fflate.zipSync(zipFiles);
-          resBlob = new Blob([zipBytes], { type: 'application/zip' });
-          resName = `${U.baseName(files[0].name)}_split.zip`;
-        }
-
-        // 2. Rotate PDF
-        else if (mode === 'rotate' && fam === 'pdf') {
-          updateProgress(45, 2, 'Applying vector rotations');
-          const L = await loadLib();
-          const doc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          doc.getPages().forEach((pg, i) => {
-            const rot = pageRotations.get(i) || 0;
-            if (rot) pg.setRotation(L.degrees((pg.getRotation().angle + rot + 360) % 360));
-          });
-          updateProgress(85, 3, 'Compiling output stream');
-          const bytes = await doc.save();
-          resBlob = new Blob([bytes], { type: PDF_MIME });
-          resName = `${U.baseName(files[0].name)}_rotated.pdf`;
-        }
-
-        // 3. Delete Pages from PDF
-        else if (mode === 'delete' && fam === 'pdf') {
-          updateProgress(45, 2, 'Pruning unwanted pages');
-          const L = await loadLib();
-          const origDoc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          const newDoc = await L.PDFDocument.create();
-          const keepIndices = [];
-          for (let p = 0; p < origDoc.getPageCount(); p++) {
-            if (!picked.has(p)) keepIndices.push(p);
+          if (parts.length === 1) {
+            const onlyName = Object.keys(zipFiles)[0];
+            const resBlob = new Blob([zipFiles[onlyName]], { type: PDF_MIME });
+            renderResult({ blob: resBlob, name: onlyName });
+          } else {
+            const zipBytes = fflate.zipSync(zipFiles);
+            const resBlob = new Blob([zipBytes], { type: 'application/zip' });
+            renderResult({ blob: resBlob, name: `${base}_split.zip` });
           }
-          if (!keepIndices.length) throw new Error('Cannot delete all pages — at least 1 page must remain.');
-          const copied = await newDoc.copyPages(origDoc, keepIndices);
-          copied.forEach(cp => newDoc.addPage(cp));
-          updateProgress(85, 3, 'Compiling output stream');
-          const bytes = await newDoc.save();
-          resBlob = new Blob([bytes], { type: PDF_MIME });
-          resName = `${U.baseName(files[0].name)}_deleted.pdf`;
         }
 
-        // 4. Extract Pages from PDF
-        else if (mode === 'extract' && fam === 'pdf') {
-          updateProgress(45, 2, 'Extracting selected pages');
-          const L = await loadLib();
-          const origDoc = await L.PDFDocument.load(await bytesU8(files[0]), { ignoreEncryption: true });
-          const extractIndices = [...picked].sort((a, b) => a - b);
-          if (!extractIndices.length) throw new Error('Please select at least 1 page to extract.');
+        // Case B: Extract Mode (Selected Pages only)
+        else if (mode === 'extract') {
+          const extItems = items.filter(it => selectedIds.has(it.id) && !it.isDeleted);
+          if (!extItems.length) throw new Error('Please select at least 1 page to extract.');
+          const base = U.baseName(rawFiles[0]?.name || 'document');
 
           if (extractSeparate) {
             const fflate = await loadZip();
             const zipFiles = {};
-            for (const idx of extractIndices) {
+            for (let idx = 0; idx < extItems.length; idx++) {
+              const it = extItems[idx];
               const singleDoc = await L.PDFDocument.create();
-              const [cp] = await singleDoc.copyPages(origDoc, [idx]);
-              singleDoc.addPage(cp);
+              if (it.isBlank) {
+                singleDoc.addPage([612, 792]);
+              } else {
+                const sDoc = loadedSourceDocs[it.fileIdx];
+                const [copied] = await singleDoc.copyPages(sDoc, [it.origPageIdx - 1]);
+                if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+                singleDoc.addPage(copied);
+              }
               const bytes = await singleDoc.save();
               zipFiles[`page_${idx + 1}.pdf`] = new Uint8Array(bytes);
             }
             const zipBytes = fflate.zipSync(zipFiles);
-            resBlob = new Blob([zipBytes], { type: 'application/zip' });
-            resName = `${U.baseName(files[0].name)}_extracted.zip`;
+            const resBlob = new Blob([zipBytes], { type: 'application/zip' });
+            renderResult({ blob: resBlob, name: `${base}_extracted.zip` });
           } else {
             const combinedDoc = await L.PDFDocument.create();
-            const copied = await combinedDoc.copyPages(origDoc, extractIndices);
-            copied.forEach(cp => combinedDoc.addPage(cp));
+            for (const it of extItems) {
+              if (it.isBlank) {
+                combinedDoc.addPage([612, 792]);
+              } else {
+                const sDoc = loadedSourceDocs[it.fileIdx];
+                const [copied] = await combinedDoc.copyPages(sDoc, [it.origPageIdx - 1]);
+                if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+                combinedDoc.addPage(copied);
+              }
+            }
             const bytes = await combinedDoc.save();
-            resBlob = new Blob([bytes], { type: PDF_MIME });
-            resName = `${U.baseName(files[0].name)}_extracted.pdf`;
+            const resBlob = new Blob([bytes], { type: PDF_MIME });
+            renderResult({ blob: resBlob, name: `${base}_extracted.pdf` });
           }
         }
 
-        // 5. Merge Files (Default)
+        // Case C: Standard Organize / Merge / Rotate / Delete Assembly
         else {
-          updateProgress(40, 2, `Merging ${files.length} documents`);
-          const L = await loadLib();
-          const mergedDoc = await L.PDFDocument.create();
-          for (const f of files) {
-            if (familyOf(f) === 'pdf') {
-              const doc = await L.PDFDocument.load(await bytesU8(f), { ignoreEncryption: true });
-              const copied = await mergedDoc.copyPages(doc, doc.getPageIndices());
-              copied.forEach(p => mergedDoc.addPage(p));
-            } else if (familyOf(f) === 'image') {
-              const imgBytes = await bytesU8(f);
-              const img = f.type === 'image/png' ? await mergedDoc.embedPng(imgBytes) : await mergedDoc.embedJpg(imgBytes);
-              const page = mergedDoc.addPage([img.width, img.height]);
-              page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+          const outDoc = await L.PDFDocument.create();
+          for (const it of activeItems) {
+            if (it.isBlank) {
+              outDoc.addPage([612, 792]);
+            } else {
+              const sDoc = loadedSourceDocs[it.fileIdx];
+              const [copied] = await outDoc.copyPages(sDoc, [it.origPageIdx - 1]);
+              if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+              outDoc.addPage(copied);
             }
           }
-          updateProgress(85, 3, 'Compiling output stream');
-          const bytes = await mergedDoc.save();
-          resBlob = new Blob([bytes], { type: PDF_MIME });
-          resName = `merged_${files.length}_files.pdf`;
+          const bytes = await outDoc.save();
+          const resBlob = new Blob([bytes], { type: PDF_MIME });
+          const base = rawFiles.length === 1 ? U.baseName(rawFiles[0].name) : `organized_${rawFiles.length}_files`;
+          const suffix = mode === 'rotate' ? '_rotated' : mode === 'delete' ? '_cleaned' : '_organized';
+          renderResult({ blob: resBlob, name: `${base}${suffix}.pdf` });
         }
-
-        updateProgress(100, 3, 'Finalizing output');
-        renderResult({ blob: resBlob, name: resName });
       } catch (err) {
         console.error('[Organize] Action Error:', err);
-        window.FF.util.toast('Action failed: ' + (err.message || 'Unknown error'), 'error');
-        renderConfigure();
+        window.FF?.util?.toast?.('Action failed: ' + (err.message || 'Unknown error'), 'error');
+        renderWorkbench();
+      } finally {
+        isProcessing = false;
       }
     }
 
-    /* ── Step 4: Hardware Processing Screen ── */
-    function renderProcessing() {
-      container.innerHTML = `
-        <div class="org-proc-body">
-          <div class="org-prog-card">
-            <div class="org-ghost-assembler">
-              <div class="org-ghost-sheet org-ghost-sheet--1"></div>
-              <div class="org-ghost-sheet org-ghost-sheet--2"></div>
-              <div class="org-ghost-sheet org-ghost-sheet--3"></div>
-            </div>
-            <h3 class="org-proc-title" id="org-proc-title">Processing your documents…</h3>
-            <p class="org-proc-sub" id="org-proc-sub">Stage 1 of 3: Initializing local PDF engine</p>
-            <div class="cpdf-prog-track" style="width:100%;height:6px;background:#E2E8F0;border-radius:3px;overflow:hidden;margin:16px 0;">
-              <div id="org-proc-bar" style="width:15%;height:100%;background:#7C3AED;transition:width 0.25s ease;"></div>
-            </div>
-            <div class="org-telemetry-box">
-              <span id="org-proc-pct" style="font-weight:700;color:#0F172A;">15%</span>
-              <span>·</span>
-              <span>${_bytes(totalBytes())} processed</span>
-              <span>·</span>
-              <span style="color:#059669;font-weight:600;">0 B network activity</span>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    function updateProgress(pct, stageNum, stageText) {
-      const bar = container.querySelector('#org-proc-bar');
-      const pctEl = container.querySelector('#org-proc-pct');
-      const sub = container.querySelector('#org-proc-sub');
-      if (bar) bar.style.width = `${pct}%`;
-      if (pctEl) pctEl.textContent = `${pct}%`;
-      if (sub) sub.textContent = `Stage ${stageNum} of 3: ${stageText}`;
-    }
-
-    /* ── Step 5: Pro 2-Column Result Studio with Real Document Previews ── */
+    /* ── Step 4: Pro 2-Column Result Studio ── */
     async function renderResult(res) {
       exitBleed();
-      const isPdf = res.name.endsWith('.pdf');
-      const isZip = res.name.endsWith('.zip');
+      const isPdfOut = res.name.endsWith('.pdf');
+      const isZipOut = res.name.endsWith('.zip');
       const outSize = _bytes(res.blob.size);
       let pageTotal = 1;
       let curPage = 1;
       let flipDoc = null;
-      let zipParts = []; // For split ZIPs: array of { name, u8 }
+      let zipParts = [];
 
-      // Smart next step tools
-      const smartTools = isPdf ? [
+      const smartTools = isPdfOut ? [
+        { id: 'pdf-edit-text', name: 'Edit PDF in Studio' },
         { id: 'pdf-compress', name: 'Compress PDF' },
         { id: 'pdf-sign', name: 'Sign PDF' },
-        { id: 'pdf-to-word', name: 'Convert to Word' },
         { id: 'pdf-protect', name: 'Protect PDF' }
       ] : [
-        { id: 'image-compress', name: 'Compress Files' },
-        { id: 'image-convert', name: 'Convert Format' }
+        { id: 'image-compress', name: 'Compress Archive' },
+        { id: 'pdf-convert', name: 'Convert Format' }
       ];
 
       container.innerHTML = `
         <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden; width: 100%;">
           <div class="conv-result-studio">
             
-            <!-- LEFT: Real Output Document Preview & Flipbook -->
-            <div class="conv-result-preview-col" id="org-result-preview-box">
+            <!-- LEFT: Real Output Document Flipbook Preview -->
+            <div class="conv-result-preview-col" id="org-res-preview-box">
               <div id="org-flip-stage" style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 8px;">
                 <div class="org-tile-ph" style="font-size:12px;color:#94A3B8;">Rendering document preview…</div>
               </div>
 
               <div class="org-flip-nav" id="org-flip-nav-box" style="display: none; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; width: 100%;">
                 <button type="button" class="conv-result-btn-secondary" id="org-flip-prev" disabled style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">‹ Prev</button>
-                <span id="org-flip-status" style="font-size: 11.5px; font-weight: 700; color: #334155; min-width: 75px; text-align: center; white-space: nowrap !important;">Page 1</span>
+                <span id="org-flip-status" style="font-size: 11.5px; font-weight: 700; color: #4B4B4B; min-width: 75px; text-align: center; white-space: nowrap !important;">Page 1</span>
                 <button type="button" class="conv-result-btn-secondary" id="org-flip-next" style="padding: 3px 10px; font-size: 11.5px; height: 26px; border-radius: 4px; white-space: nowrap !important;">Next ›</button>
               </div>
 
               <span class="conv-result-name-sub" title="${_esc(res.name)}" style="margin-top: 4px;">${_esc(res.name)}</span>
               <span style="font-size: 12px; font-weight: 700; color: #0F172A; margin-top: 2px;">${outSize}</span>
-              <div class="org-receipt-badge" style="margin-top: 6px; font-size: 10.5px; padding: 2px 8px;">${ICONS.shield} 100% Local Sandbox</div>
+              <div class="org-receipt-badge" style="margin-top: 6px; font-size: 10.5px; padding: 2px 8px; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0; border-radius:4px; font-weight:700;">${ICONS.shield} 100% Local Sandbox</div>
             </div>
 
-            <!-- RIGHT: Actions & Smart Next Steps Column -->
+            <!-- RIGHT: Actions & Smart Next Steps -->
             <div class="conv-result-action-col">
               
               <div class="conv-result-done-header">
-                <div class="conv-result-done-badge">✓</div>
+                <div class="conv-result-done-badge" style="background:#16A34A; color:#FFFFFF;">✓</div>
                 <h3 class="conv-result-done-title">Done</h3>
               </div>
               <p class="conv-result-filename-title" title="${_esc(res.name)}">
-                ${mode === 'split' ? 'Document split into parts successfully' : mode === 'rotate' ? 'Page rotation applied successfully' : mode === 'delete' ? 'Pages removed successfully' : 'Organization complete'}
+                ${mode === 'split' ? 'Document split into parts successfully' : mode === 'rotate' ? 'Page rotations applied successfully' : mode === 'delete' ? 'Pages removed successfully' : 'Document organization complete'}
               </p>
 
               <!-- Main Download Button: Guaranteed Vibrant Emerald Green -->
-              <button class="conv-result-btn-download" id="org-dl" type="button" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <button class="conv-result-btn-download" id="org-dl-btn" type="button" style="background: #16A34A !important; color: #FFFFFF !important; border: 1px solid #16A34A !important; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25) !important; cursor: pointer;">
+                ${ICONS.download}
                 <span>Download ${res.name} (${outSize})</span>
               </button>
 
               <!-- Secondary Actions -->
               <div class="conv-result-btn-row">
-                <button type="button" class="conv-result-btn-secondary" id="org-restart">
+                <button type="button" class="conv-result-btn-secondary" id="org-restart-btn">
                   <span>+ Organize more</span>
                 </button>
-                ${isPdf ? `
-                <button type="button" class="conv-result-btn-secondary" id="org-view-tab">
+                ${isPdfOut ? `
+                <button type="button" class="conv-result-btn-secondary" id="org-tab-btn">
                   <span>↗ Open in tab</span>
                 </button>` : ''}
               </div>
 
-              <!-- Smart Next Steps Card with Authentic SVG Icons -->
+              <!-- Smart Next Steps Card -->
               <div class="conv-smart-tip-card">
                 <div class="conv-smart-tip-header">
                   <span>Smart tip! 💡</span>
@@ -17578,24 +18303,24 @@ trailer<</Root 1 0 R>>`;
         </div>`;
 
       // Wire Download & Tab
-      const dlBtn = container.querySelector('#org-dl');
+      const dlBtn = container.querySelector('#org-dl-btn');
       if (dlBtn) dlBtn.onclick = () => U.downloadBlob(res.blob, res.name);
 
-      const tabBtn = container.querySelector('#org-view-tab');
+      const tabBtn = container.querySelector('#org-tab-btn');
       if (tabBtn) tabBtn.onclick = () => {
         const u = URL.createObjectURL(res.blob);
         window.open(u, '_blank');
       };
 
-      const restartBtn = container.querySelector('#org-restart');
-      if (restartBtn) restartBtn.onclick = () => { resetState(); renderUpload(); };
+      const restartBtn = container.querySelector('#org-restart-btn');
+      if (restartBtn) restartBtn.onclick = () => { resetAll(); renderUpload(); };
 
-      // Wire In-Memory Workflow Handoff
+      // Wire Smart Tool Handoff
       container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
         item.addEventListener('click', () => {
           const tid = item.dataset.toolId;
-          const targetFile = new File([res.blob], res.name, { type: res.blob.type || 'application/pdf' });
-          if (tid && window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+          const targetFile = new File([res.blob], res.name, { type: res.blob.type || PDF_MIME });
+          if (tid && window.FF?.app?.openTool) {
             window.FF.app.openTool(tid, true, [targetFile]);
           } else if (typeof window.openTool === 'function') {
             window.openTool(tid, true, [targetFile]);
@@ -17603,15 +18328,14 @@ trailer<</Root 1 0 R>>`;
         });
       });
 
-      // ── Real Output Preview Engine (PDFs, Split ZIP parts, or Images) ──
+      // Real Preview Engine
       const stage = container.querySelector('#org-flip-stage');
       const navBox = container.querySelector('#org-flip-nav-box');
       const status = container.querySelector('#org-flip-status');
       const prevBtn = container.querySelector('#org-flip-prev');
       const nextBtn = container.querySelector('#org-flip-next');
 
-      // Case A: PDF output (Rotate, Delete, Merge, Extract single)
-      if (isPdf) {
+      if (isPdfOut) {
         try {
           const pdfjs = await loadJs();
           flipDoc = await pdfjs.getDocument({ data: await bytesU8(res.blob) }).promise;
@@ -17630,29 +18354,21 @@ trailer<</Root 1 0 R>>`;
             c.style.borderRadius = '4px';
             c.style.border = '1px solid #CBD5E1';
             c.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.12)';
-            if (stage) {
-              stage.innerHTML = '';
-              stage.append(c);
-            }
+            if (stage) { stage.innerHTML = ''; stage.append(c); }
           };
 
           if (pageTotal > 1 && navBox) navBox.style.display = 'flex';
           if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateFlipPage(curPage - 1); };
           if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateFlipPage(curPage + 1); };
-
           await updateFlipPage(1);
         } catch (e) {
-          console.warn('[Organize] PDF preview error:', e);
+          console.warn('[Organize] Flip preview error:', e);
         }
-      }
-
-      // Case B: ZIP output (Split PDF parts or Separate Extracted PDFs)
-      else if (isZip) {
+      } else if (isZipOut) {
         try {
           const fflate = await loadZip();
           const unzipped = fflate.unzipSync(new Uint8Array(await res.blob.arrayBuffer()));
           const partNames = Object.keys(unzipped).filter(k => k.endsWith('.pdf'));
-          
           if (partNames.length) {
             zipParts = partNames.map(k => ({ name: k, u8: unzipped[k] }));
             pageTotal = zipParts.length;
@@ -17672,44 +18388,33 @@ trailer<</Root 1 0 R>>`;
               c.style.borderRadius = '4px';
               c.style.border = '1px solid #CBD5E1';
               c.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.12)';
-              if (stage) {
-                stage.innerHTML = '';
-                stage.append(c);
-              }
+              if (stage) { stage.innerHTML = ''; stage.append(c); }
               try { partDoc.destroy(); } catch {}
             };
 
             if (pageTotal > 1 && navBox) navBox.style.display = 'flex';
             if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateZipPart(curPage - 2); };
             if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateZipPart(curPage); };
-
             await updateZipPart(0);
           }
         } catch (e) {
           console.warn('[Organize] ZIP preview error:', e);
         }
       }
-
-      // Case C: Single Image output
-      else if (familyOf(files[0]) === 'image') {
-        const u = URL.createObjectURL(res.blob);
-        if (stage) {
-          stage.innerHTML = `<img src="${u}" style="max-height:165px;max-width:100%;border-radius:4px;border:1px solid #CBD5E1;box-shadow:0 4px 12px rgba(15,23,42,0.12);object-fit:contain;">`;
-        }
-      }
     }
 
     // Auto-mount pending files or initial dropzone
-    if (window.FF?.app?.pendingFiles?.length) {
-      const arr = window.FF.app.pendingFiles;
-      window.FF.app.pendingFiles = null;
-      acceptFiles(arr);
+    const filesToMount = (initialFiles && initialFiles.length) ? initialFiles : (window.FF?.app?.pendingFiles?.length ? window.FF.app.pendingFiles : (window.__pendingOrganizeFiles?.length ? window.__pendingOrganizeFiles : null));
+    if (filesToMount?.length) {
+      if (window.FF?.app) window.FF.app.pendingFiles = null;
+      window.__pendingOrganizeFiles = null;
+      acceptFiles([...filesToMount]);
     } else {
       renderUpload();
     }
   }
 
-
   window.__ffMountOrganize = mountOrganize;
 })();
+
 
