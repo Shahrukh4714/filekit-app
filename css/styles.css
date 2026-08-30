@@ -23442,114 +23442,124 @@ body #app-view .drop-hero-box,
   text-decoration: underline;
 }
 
-/* ── View 3: Re-Crop Modal (Compact & Zero-Scroll) ── */
-.scan-recrop-modal {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #1A1714;
-  color: #ffffff;
-  overflow: hidden;
+/* ── In-Studio Crop Mode Control Ribbon ── */
+.scan-crop-ribbon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #EFF6FF !important;
+  border-bottom: 1px solid #BFDBFE !important;
+  padding: 6px 16px !important;
+  z-index: 40 !important;
+  animation: scanRibbonIn 0.16s ease !important;
 }
 
-.scan-recrop-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background: #1A1714;
-  border-bottom: 1px solid #334155;
-  flex: 0 0 48px;
-  height: 48px;
-  gap: 12px;
-  box-sizing: border-box;
+.scan-crop-ribbon-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
-.scan-recrop-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.scan-crop-pulse-dot {
+  width: 8px !important;
+  height: 8px !important;
+  background: #2563EB !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+  animation: scanPulse 1.4s infinite !important;
 }
 
-.scan-recrop-sub {
-  margin: 1px 0 0;
-  font-size: 11px;
-  color: #94a3b8;
+.scan-crop-ribbon-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #1E40AF !important;
 }
 
-.scan-recrop-actions {
-  display: flex;
-  gap: 6px;
+.scan-crop-ribbon-sub {
+  font-size: 11px !important;
+  color: #3B82F6 !important;
 }
 
-.scan-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 120ms ease-out, transform 120ms ease-out;
+.scan-crop-ribbon-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }
 
-.scan-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.2);
+.scan-crop-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #93C5FD !important;
+  color: #1E40AF !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
 }
 
-.scan-btn-ghost:active {
+.scan-crop-chip svg {
+  stroke: currentColor !important;
 }
 
-.scan-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 14px;
-  background: #18181b;
-  color: #ffffff;
-  border: 1px solid #18181b;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 120ms ease-out, border-color 120ms ease-out, transform 120ms ease-out;
+.scan-crop-chip:hover {
+  background: #DBEAFE !important;
+  border-color: #60A5FA !important;
+  color: #1D4ED8 !important;
 }
 
-.scan-btn-primary:hover {
-  background: #27272a;
-  border-color: #27272a;
+.scan-crop-chip-cancel {
+  background: #E2E8F0 !important;
+  border: none !important;
+  color: #334155 !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
 }
 
-.scan-btn-primary:active {
+.scan-crop-chip-cancel:hover {
+  background: #CBD5E1 !important;
+  color: #0F172A !important;
 }
 
-.scan-recrop-stage {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  overflow: hidden;
-  background: #090d16;
-  box-sizing: border-box;
+.scan-crop-chip-apply {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: #F6D860 !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.3) !important;
+  border: none !important;
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(246, 216, 96, 0.4) !important;
+  transition: all 0.12s ease !important;
 }
 
-.scan-recrop-stage canvas {
-  display: block;
-  max-width: 100%;
-  max-height: 100%;
-  touch-action: none;
-  cursor: crosshair;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  border: 1px solid #334155;
-  border-radius: 4px !important;
+.scan-crop-chip-apply svg {
+  stroke: #FFFFFF !important;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.3)) !important;
 }
+
+.scan-crop-chip-apply:hover {
+  background: rgba(246, 216, 96, 0.9) !important;
+  box-shadow: 0 4px 12px rgba(246, 216, 96, 0.5) !important;
+  transform: translateY(-0.5px) !important;
+}
+
+.scan-crop-chip-apply:active {
+  transform: scale(0.97) !important;
+}
+
 
 /* ── View 4: Side-by-Side OCR Proofreader (Compact & Zero-Scroll) ── */
 .scan-ocr-proof-shell {

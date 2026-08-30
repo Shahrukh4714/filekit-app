@@ -2114,6 +2114,7 @@
     let ocrPanelOpen = isOcrIntent || isReceiptIntent;
     let ocrSidebarTab = isReceiptIntent ? 'insights' : 'text'; // 'text' | 'insights'
     let isRedacting = isRedactIntent;
+    let isCropping = false;
     let keywordRedactQuery = '';
     let keywordMatchCase = false;
     let keywordWholeWord = false;
@@ -2858,8 +2859,6 @@
         renderCaptureHub(vp);
       } else if (viewMode === 'review') {
         renderReviewStudio(vp);
-      } else if (viewMode === 'recrop') {
-        renderRecropModal(vp);
       } else if (viewMode === 'ocr') {
         renderOcrProofreader(vp);
       }
@@ -3912,6 +3911,35 @@
             </div>
           ` : ''}
 
+          ${isCropping ? `
+            <div class="scan-crop-ribbon" id="scan-crop-ribbon">
+              <div class="scan-crop-ribbon-left">
+                <span class="scan-crop-pulse-dot"></span>
+                <span class="scan-crop-ribbon-title">Adjust Crop Boundaries</span>
+                <span class="scan-crop-ribbon-sub">Drag corner pins or edge handles to unwarp perspective.</span>
+              </div>
+              <div class="scan-crop-ribbon-actions">
+                <button type="button" class="scan-crop-chip" id="btn-crop-autodetect" title="Auto-detect paper boundaries">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                  <span>Auto-Detect</span>
+                </button>
+                <button type="button" class="scan-crop-chip" id="btn-crop-rotate" title="Rotate 90° Clockwise">
+                  ${ICONS.rotate}
+                  <span>Rotate 90°</span>
+                </button>
+                <button type="button" class="scan-crop-chip" id="btn-crop-full" title="Expand to full page">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="21" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                  <span>Full Page</span>
+                </button>
+                <button type="button" class="scan-crop-chip-cancel" id="btn-crop-cancel" title="Cancel (Esc)">Cancel</button>
+                <button type="button" class="scan-crop-chip-apply" id="btn-crop-apply" title="Apply crop (Enter)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Apply Crop</span>
+                </button>
+              </div>
+            </div>
+          ` : ''}
+
           <!-- Main Stage Body -->
           <div class="scan-editor-body" id="scan-editor-body">
 
@@ -4373,6 +4401,10 @@
       }
     }
 
+    function lerpPt(a, b, t) {
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    }
+
     function updateStudioPreview() {
       const cv = container.querySelector('#scan-studio-canvas');
       const pageWrap = container.querySelector('#scan-paper-page');
@@ -4380,8 +4412,12 @@
       const p = pages[selIdx];
       if (!p) return;
 
-      const source = p.canvas;
+      const source = (isCropping && recrop) ? recrop.raw : p.canvas;
       const rawSource = p.raw || p.canvas;
+      const rot = (isCropping && recrop) ? (recrop.rot % 4) : 0;
+      const srcW = rot % 2 === 1 ? source.height : source.width;
+      const srcH = rot % 2 === 1 ? source.width : source.height;
+
       const wrap = container.querySelector('#scan-canvas-wrap');
       const maxW = 3200;
       const wrapW = wrap?.clientWidth || 900;
@@ -4389,10 +4425,15 @@
       const availableW = Math.max(300, wrapW - (ocrPanelOpen ? 48 : 80));
       // Responsive document reading width (fits cleanly without left-dock collision)
       const targetW = Math.min(availableW, Math.max(320, Math.round(availableW * 0.88)));
-      const sc = Math.min(maxW / source.width, targetW / source.width, 1);
-      const displayW = Math.max(1, Math.round(source.width * sc));
-      const displayH = Math.max(1, Math.round(source.height * sc));
+      const sc = Math.min(maxW / srcW, targetW / srcW, 1);
+      const displayW = Math.max(1, Math.round(srcW * sc));
+      const displayH = Math.max(1, Math.round(srcH * sc));
       const dpr = Math.min(4, Math.max(2, window.devicePixelRatio || 2));
+
+      if (isCropping && recrop) {
+        recrop.scale = sc * dpr;
+        recrop.displayScale = sc;
+      }
 
       // High-DPI internal buffer dimensions
       const bufferW = Math.round(displayW * dpr);
@@ -4413,82 +4454,200 @@
       ctx.imageSmoothingQuality = 'high';
       ctx.clearRect(0, 0, bufferW, bufferH);
 
-      // Create high-resolution enhanced offscreen buffer
-      const enhCv = document.createElement('canvas');
-      enhCv.width = bufferW;
-      enhCv.height = bufferH;
-      const enhCtx = enhCv.getContext('2d');
-      enhCtx.imageSmoothingEnabled = true;
-      enhCtx.imageSmoothingQuality = 'high';
-      enhCtx.drawImage(source, 0, 0, bufferW, bufferH);
-
-      try {
-        A.enhancePage(enhCv, p.enhanceMode || 'enhanced', {
-          brightness: p.brightness ?? 100,
-          contrast: p.contrast ?? 100,
-        });
-      } catch (e) {}
-
-      if (isSplitView) {
-        // Draw enhanced base
-        ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
-
-        // Draw raw un-enhanced on the left side
-        const splitX = Math.round(bufferW * splitRatio);
+      if (isCropping && recrop) {
+        // Draw oriented raw source image
         ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, 0, splitX, bufferH);
-        ctx.clip();
-        ctx.drawImage(rawSource, 0, 0, bufferW, bufferH);
+        ctx.scale(sc * dpr, sc * dpr);
+        if (rot === 1) { ctx.translate(srcW, 0); ctx.rotate(Math.PI / 2); }
+        else if (rot === 2) { ctx.translate(srcW, srcH); ctx.rotate(Math.PI); }
+        else if (rot === 3) { ctx.translate(0, srcH); ctx.rotate(-Math.PI / 2); }
+        ctx.drawImage(source, 0, 0, source.width, source.height);
         ctx.restore();
 
-        // Draw vertical separator line
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2 * dpr;
+        const quad = recrop.quad || defaultQuad(source);
+
+        // 1. Darken area outside quad with smooth scrim
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.48)';
         ctx.beginPath();
-        ctx.moveTo(splitX, 0);
-        ctx.lineTo(splitX, bufferH);
-        ctx.stroke();
+        ctx.rect(0, 0, bufferW, bufferH);
+        quad.forEach((pt, i) => {
+          const [dx, dy] = recropToDisplay(pt);
+          const X = dx * sc * dpr, Y = dy * sc * dpr;
+          if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+        });
+        ctx.closePath();
+        ctx.fill('evenodd');
+        ctx.restore();
 
-        // Draw draggable center handle
-        const handleY = bufferH / 2;
-        ctx.fillStyle = '#ffffff';
+        // 2. Rule of thirds grid inside quad when dragging
+        if (recrop.drag >= 0) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.lineWidth = 1 * dpr;
+          for (let step = 1; step <= 2; step++) {
+            const f = step / 3;
+            // Horizontal grid line
+            const [p0x, p0y] = recropToDisplay(lerpPt(quad[0], quad[3], f));
+            const [p1x, p1y] = recropToDisplay(lerpPt(quad[1], quad[2], f));
+            ctx.beginPath();
+            ctx.moveTo(p0x * sc * dpr, p0y * sc * dpr);
+            ctx.lineTo(p1x * sc * dpr, p1y * sc * dpr);
+            ctx.stroke();
+
+            // Vertical grid line
+            const [q0x, q0y] = recropToDisplay(lerpPt(quad[0], quad[1], f));
+            const [q1x, q1y] = recropToDisplay(lerpPt(quad[3], quad[2], f));
+            ctx.beginPath();
+            ctx.moveTo(q0x * sc * dpr, q0y * sc * dpr);
+            ctx.lineTo(q1x * sc * dpr, q1y * sc * dpr);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        // 3. Draw luminous quad boundary stroke
+        ctx.save();
+        ctx.strokeStyle = '#3B82F6';
+        ctx.lineWidth = 2.5 * dpr;
+        ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
+        ctx.shadowBlur = 6 * dpr;
         ctx.beginPath();
-        ctx.arc(splitX, handleY, 14 * dpr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 2 * dpr;
+        quad.forEach((pt, i) => {
+          const [dx, dy] = recropToDisplay(pt);
+          const X = dx * sc * dpr, Y = dy * sc * dpr;
+          if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+        });
+        ctx.closePath();
         ctx.stroke();
+        ctx.restore();
 
-        ctx.fillStyle = '#0284c7';
-        ctx.font = `bold ${10 * dpr}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('◀ ▶', splitX, handleY);
+        // 4. Draw Midpoint Edge Handles
+        for (let i = 0; i < 4; i++) {
+          const ptA = quad[i], ptB = quad[(i + 1) % 4];
+          const mid = lerpPt(ptA, ptB, 0.5);
+          const [mx, my] = recropToDisplay(mid);
+          const X = mx * sc * dpr, Y = my * sc * dpr;
 
-        // Draw floating tags
-        ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
-        ctx.textBaseline = 'top';
+          ctx.save();
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2 * dpr;
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+          ctx.shadowBlur = 4 * dpr;
+          ctx.beginPath();
+          ctx.arc(X, Y, 5 * dpr, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
 
-        // Raw tag
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-        ctx.fillRect(12 * dpr, 12 * dpr, 74 * dpr, 22 * dpr);
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'left';
-        ctx.fillText('Raw Photo', 20 * dpr, 17 * dpr);
+        // 5. Draw 4 Corner Handles
+        quad.forEach((pt, i) => {
+          const [dx, dy] = recropToDisplay(pt);
+          const X = dx * sc * dpr, Y = dy * sc * dpr;
+          const isDraggingThis = (recrop.drag === i);
 
-        // Enhanced tag
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
-        ctx.fillRect(bufferW - 86 * dpr, 12 * dpr, 74 * dpr, 22 * dpr);
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'right';
-        ctx.fillText('Enhanced', bufferW - 20 * dpr, 17 * dpr);
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+          ctx.shadowBlur = (isDraggingThis ? 8 : 5) * dpr;
+          ctx.shadowOffsetY = 2 * dpr;
+
+          // Outer circle
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = isDraggingThis ? '#2563EB' : '#3B82F6';
+          ctx.lineWidth = (isDraggingThis ? 3 : 2.5) * dpr;
+          ctx.beginPath();
+          ctx.arc(X, Y, (isDraggingThis ? 11 : 9) * dpr, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Inner dot
+          ctx.fillStyle = '#2563EB';
+          ctx.beginPath();
+          ctx.arc(X, Y, 3.5 * dpr, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
       } else {
-        ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
+        // Create high-resolution enhanced offscreen buffer
+        const enhCv = document.createElement('canvas');
+        enhCv.width = bufferW;
+        enhCv.height = bufferH;
+        const enhCtx = enhCv.getContext('2d');
+        enhCtx.imageSmoothingEnabled = true;
+        enhCtx.imageSmoothingQuality = 'high';
+        enhCtx.drawImage(source, 0, 0, bufferW, bufferH);
+
+        try {
+          A.enhancePage(enhCv, p.enhanceMode || 'enhanced', {
+            brightness: p.brightness ?? 100,
+            contrast: p.contrast ?? 100,
+          });
+        } catch (e) {}
+
+        if (isSplitView) {
+          // Draw enhanced base
+          ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
+
+          // Draw raw un-enhanced on the left side
+          const splitX = Math.round(bufferW * splitRatio);
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, 0, splitX, bufferH);
+          ctx.clip();
+          ctx.drawImage(rawSource, 0, 0, bufferW, bufferH);
+          ctx.restore();
+
+          // Draw vertical separator line
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2 * dpr;
+          ctx.beginPath();
+          ctx.moveTo(splitX, 0);
+          ctx.lineTo(splitX, bufferH);
+          ctx.stroke();
+
+          // Draw draggable center handle
+          const handleY = bufferH / 2;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(splitX, handleY, 14 * dpr, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 2 * dpr;
+          ctx.stroke();
+
+          ctx.fillStyle = '#0284c7';
+          ctx.font = `bold ${10 * dpr}px Inter, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('◀ ▶', splitX, handleY);
+
+          // Draw floating tags
+          ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
+          ctx.textBaseline = 'top';
+
+          // Raw tag
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+          ctx.fillRect(12 * dpr, 12 * dpr, 74 * dpr, 22 * dpr);
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'left';
+          ctx.fillText('Raw Photo', 20 * dpr, 17 * dpr);
+
+          // Enhanced tag
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+          ctx.fillRect(bufferW - 86 * dpr, 12 * dpr, 74 * dpr, 22 * dpr);
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'right';
+          ctx.fillText('Enhanced', bufferW - 20 * dpr, 17 * dpr);
+        } else {
+          ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
+        }
       }
 
       applyCanvasTransform();
-      renderTextLayer();
+      if (!isCropping) renderTextLayer();
     }
 
     function paintFilmstripThumbs() {
@@ -5144,6 +5303,174 @@
         };
       }
 
+      // In-Studio Interactive Cropping Pointer Handlers
+      if (studioCanvas && isCropping && recrop) {
+        studioCanvas.onpointerdown = (e) => {
+          const rect = studioCanvas.getBoundingClientRect();
+          const px = (e.clientX - rect.left);
+          const py = (e.clientY - rect.top);
+          const displayScale = recrop.displayScale || (rect.width / ((recrop.rot % 2 === 1) ? recrop.raw.height : recrop.raw.width));
+          const quad = recrop.quad || defaultQuad(recrop.raw);
+          let bestIdx = -1;
+          let bestDist = 32;
+
+          // Check 4 corner pins
+          quad.forEach((pt, i) => {
+            const [dx, dy] = recropToDisplay(pt);
+            const cx = dx * displayScale, cy = dy * displayScale;
+            const dist = Math.hypot(cx - px, cy - py);
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestIdx = i;
+            }
+          });
+
+          // Check 4 edge midpoint pins
+          if (bestIdx < 0) {
+            for (let i = 0; i < 4; i++) {
+              const mid = lerpPt(quad[i], quad[(i + 1) % 4], 0.5);
+              const [mx, my] = recropToDisplay(mid);
+              const cx = mx * displayScale, cy = my * displayScale;
+              const dist = Math.hypot(cx - px, cy - py);
+              if (dist < 22) {
+                bestDist = dist;
+                bestIdx = 4 + i;
+                break;
+              }
+            }
+          }
+
+          if (bestIdx >= 0) {
+            recrop.drag = bestIdx;
+            try { studioCanvas.setPointerCapture(e.pointerId); } catch {}
+            e.preventDefault();
+            updateStudioPreview();
+          }
+        };
+
+        studioCanvas.onpointermove = (e) => {
+          if (!recrop) return;
+          const rect = studioCanvas.getBoundingClientRect();
+          const raw = recrop.raw;
+          const rot = recrop.rot % 4;
+          const displayScale = recrop.displayScale || (rect.width / (rot % 2 === 1 ? raw.height : raw.width));
+
+          if (recrop.drag < 0) {
+            const px = (e.clientX - rect.left);
+            const py = (e.clientY - rect.top);
+            const quad = recrop.quad || defaultQuad(raw);
+            let isHover = false;
+            quad.forEach((pt) => {
+              const [dx, dy] = recropToDisplay(pt);
+              if (Math.hypot(dx * displayScale - px, dy * displayScale - py) < 22) isHover = true;
+            });
+            studioCanvas.style.cursor = isHover ? 'grab' : 'crosshair';
+            return;
+          }
+
+          const X = (e.clientX - rect.left) / displayScale;
+          const Y = (e.clientY - rect.top) / displayScale;
+
+          let ax, ay;
+          if (rot === 0) { ax = X; ay = Y; }
+          else if (rot === 1) { ax = Y; ay = raw.height - X; }
+          else if (rot === 2) { ax = raw.width - X; ay = raw.height - Y; }
+          else { ax = raw.width - Y; ay = X; }
+
+          ax = Math.max(2, Math.min(raw.width - 2, ax));
+          ay = Math.max(2, Math.min(raw.height - 2, ay));
+
+          // Magnetic snap check
+          try {
+            const imgCtx = raw.getContext('2d');
+            const id = imgCtx.getImageData(0, 0, raw.width, raw.height);
+            const edge = getNearestEdge(id, raw.width, raw.height, ax, ay, 14);
+            if (edge.snapped) { ax = edge.x; ay = edge.y; }
+          } catch {}
+
+          if (recrop.drag < 4) {
+            recrop.quad[recrop.drag] = { x: ax, y: ay };
+          } else {
+            const edgeIdx = recrop.drag - 4;
+            const i1 = edgeIdx, i2 = (edgeIdx + 1) % 4;
+            const prevMid = lerpPt(recrop.quad[i1], recrop.quad[i2], 0.5);
+            const dx = ax - prevMid.x, dy = ay - prevMid.y;
+            recrop.quad[i1] = { x: Math.max(2, Math.min(raw.width - 2, recrop.quad[i1].x + dx)), y: Math.max(2, Math.min(raw.height - 2, recrop.quad[i1].y + dy)) };
+            recrop.quad[i2] = { x: Math.max(2, Math.min(raw.width - 2, recrop.quad[i2].x + dx)), y: Math.max(2, Math.min(raw.height - 2, recrop.quad[i2].y + dy)) };
+          }
+
+          updateLoupe(e.clientX, e.clientY, raw, ax, ay, 36);
+          updateStudioPreview();
+        };
+
+        const handlePointerEnd = () => {
+          if (recrop && recrop.drag >= 0) {
+            recrop.drag = -1;
+            hideLoupe();
+            updateStudioPreview();
+          }
+        };
+        studioCanvas.onpointerup = handlePointerEnd;
+        studioCanvas.onpointercancel = handlePointerEnd;
+      }
+
+      // Crop Ribbon Controls
+      const btnCropAuto = parent.querySelector('#btn-crop-autodetect');
+      const btnCropRotate = parent.querySelector('#btn-crop-rotate');
+      const btnCropFull = parent.querySelector('#btn-crop-full');
+      const btnCropCancel = parent.querySelector('#btn-crop-cancel');
+      const btnCropApply = parent.querySelector('#btn-crop-apply');
+
+      if (btnCropAuto && recrop) {
+        btnCropAuto.onclick = async () => {
+          const raw = recrop.raw;
+          const detected = await A.detectQuad(raw);
+          if (detected) {
+            recrop.quad = detected.map(q => ({ x: q.x, y: q.y }));
+            updateStudioPreview();
+            setStatus('Auto-detected document boundaries.', 'ok');
+          } else {
+            setStatus('Default boundaries applied.', 'info');
+          }
+        };
+      }
+
+      if (btnCropRotate && recrop) {
+        btnCropRotate.onclick = () => {
+          recrop.quad = A.rotateQuad(recrop.quad || defaultQuad(recrop.raw));
+          recrop.rot = (recrop.rot + 1) % 4;
+          updateStudioPreview();
+        };
+      }
+
+      if (btnCropFull && recrop) {
+        btnCropFull.onclick = () => {
+          const raw = recrop.raw;
+          recrop.quad = [
+            { x: 2, y: 2 },
+            { x: raw.width - 2, y: 2 },
+            { x: raw.width - 2, y: raw.height - 2 },
+            { x: 2, y: raw.height - 2 }
+          ];
+          updateStudioPreview();
+          setStatus('Expanded to full page margins.', 'ok');
+        };
+      }
+
+      if (btnCropCancel) {
+        btnCropCancel.onclick = () => {
+          isCropping = false;
+          recrop = null;
+          hideLoupe();
+          refreshStudioUI();
+          setStatus('Crop canceled.', 'ok');
+        };
+      }
+
+      if (btnCropApply) {
+        btnCropApply.onclick = applyRecrop;
+      }
+
       // Stamps & Signature Pad
       parent.querySelectorAll('[data-stamp]').forEach((chip) => {
         chip.onclick = () => {
@@ -5471,6 +5798,29 @@
           }
           if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
 
+          if (isCropping) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              applyRecrop();
+              return;
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              isCropping = false;
+              recrop = null;
+              hideLoupe();
+              refreshStudioUI();
+              return;
+            } else if (e.key === 'r' || e.key === 'R') {
+              if (recrop) {
+                e.preventDefault();
+                recrop.quad = A.rotateQuad(recrop.quad || defaultQuad(recrop.raw));
+                recrop.rot = (recrop.rot + 1) % 4;
+                updateStudioPreview();
+                return;
+              }
+            }
+          }
+
           if (e.key === '+' || e.key === '=' || ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+'))) {
             e.preventDefault();
             zoom = Math.min(250, zoom + 15);
@@ -5494,6 +5844,15 @@
               selIdx--; zoom = 100; panX = 0; panY = 0;
               refreshStudioUI();
             }
+          } else if ((e.key === 'c' || e.key === 'C') && !isCropping && !isRedacting) {
+            e.preventDefault();
+            openRecrop(selIdx);
+          } else if ((e.key === 'r' || e.key === 'R') && !isCropping && !isRedacting) {
+            e.preventDefault();
+            rotatePage(selIdx, 1);
+          } else if (e.key === 'Delete' && !isCropping && !isRedacting) {
+            e.preventDefault();
+            deletePage(selIdx);
           }
         };
         window.addEventListener('keydown', onStudioKeyDown);
@@ -5636,25 +5995,31 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
-       VIEW 3: PRECISION HOMOGRAPHY RE-CROP MODAL (With Magnetic Snap)
+       IN-STUDIO HOMOGRAPHY CROP ENGINE (Magnetic Edge Snapping)
     ════════════════════════════════════════════════════════════════ */
     function openRecrop(idx) {
       const p = pages[idx];
       if (!p) return;
+      isCropping = true;
+      isRedacting = false;
+      showSearchBar = false;
+      activeFlyout = null;
+      const raw = p.raw || p.canvas;
       recrop = {
         idx,
-        raw: p.raw || p.canvas,
-        quad: p.quad ? p.quad.map((q) => ({ x: q.x, y: q.y })) : null,
-        origQuad: p.quad ? p.quad.map((q) => ({ x: q.x, y: q.y })) : null,
+        raw,
+        quad: p.quad ? p.quad.map((q) => ({ x: q.x, y: q.y })) : defaultQuad(raw),
+        origQuad: p.quad ? p.quad.map((q) => ({ x: q.x, y: q.y })) : defaultQuad(raw),
         rot: (p.rot || 0) % 4,
         origRot: (p.rot || 0) % 4,
         drag: -1,
         scale: 1,
       };
-      switchView('recrop');
+      refreshStudioUI();
+      setStatus('Adjust crop handles. Press Enter to apply or Esc to cancel.', 'info');
     }
 
-    function getNearestEdge(imgData, w, h, px, py, radius = 12) {
+    function getNearestEdge(imgData, w, h, px, py, radius = 14) {
       let maxGrad = -1, bestX = px, bestY = py;
       const x0 = Math.max(1, Math.floor(px - radius)), x1 = Math.min(w - 2, Math.floor(px + radius));
       const y0 = Math.max(1, Math.floor(py - radius)), y1 = Math.min(h - 2, Math.floor(py + radius));
@@ -5673,131 +6038,18 @@
       return maxGrad > 60 ? { x: bestX, y: bestY, snapped: true } : { x: px, y: py, snapped: false };
     }
 
-    function renderRecropModal(parent) {
-      if (!recrop) { switchView('review'); return; }
-
-      parent.innerHTML = `
-        <div class="scan-recrop-modal">
-          <div class="scan-recrop-header">
-            <div>
-              <h3 class="scan-recrop-title">Precision Boundary Adjustment</h3>
-              <p class="scan-recrop-sub">Drag corner handles to align document boundaries. Smart magnetic snap aligns to true edges.</p>
-            </div>
-            <div class="scan-recrop-actions">
-              <button type="button" class="scan-btn-ghost" id="recrop-rotate">
-                ${ICONS.rotate}
-                <span>Rotate 90°</span>
-              </button>
-              <button type="button" class="scan-btn-ghost" id="recrop-reset">
-                ${ICONS.reset}
-                <span>Reset</span>
-              </button>
-              <button type="button" class="scan-btn-ghost" id="recrop-cancel">
-                ${ICONS.cross}
-                <span>Cancel</span>
-              </button>
-              <button type="button" class="scan-btn-primary" id="recrop-apply">
-                ${ICONS.check}
-                <span>Apply Crop</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="scan-recrop-stage">
-            <canvas id="recrop-canvas"></canvas>
-          </div>
-        </div>
-      `;
-
-      const rc = parent.querySelector('#recrop-canvas');
-      drawRecrop();
-
-      rc.addEventListener('pointerdown', (e) => {
-        if (!recrop) return;
-        const r = rc.getBoundingClientRect();
-        const px = e.clientX - r.left, py = e.clientY - r.top;
-        const quad = recrop.quad || defaultQuad(recrop.raw);
-        let best = -1, bestD = 36;
-        quad.forEach((p2, i) => {
-          const dpt = recropToDisplay(p2);
-          const d = Math.hypot(dpt[0] * recrop.scale - px, dpt[1] * recrop.scale - py);
-          if (d < bestD) { bestD = d; best = i; }
-        });
-        if (best < 0) return;
-        if (!recrop.quad) recrop.quad = quad.map((q) => ({ x: q.x, y: q.y }));
-        recrop.drag = best;
-        try { rc.setPointerCapture(e.pointerId); } catch {}
-        e.preventDefault();
-      });
-
-      rc.addEventListener('pointermove', (e) => {
-        if (!recrop || recrop.drag < 0) return;
-        const r = rc.getBoundingClientRect();
-        const raw = recrop.raw, rot = recrop.rot % 4;
-        const X = (e.clientX - r.left) / recrop.scale, Y = (e.clientY - r.top) / recrop.scale;
-
-        let ax, ay;
-        if (rot === 0) { ax = X; ay = Y; }
-        else if (rot === 1) { ax = Y; ay = raw.height - X; }
-        else if (rot === 2) { ax = raw.width - X; ay = raw.height - Y; }
-        else { ax = raw.width - Y; ay = X; }
-
-        const snapX = Math.max(0.03 * raw.width, 8), snapY = Math.max(0.03 * raw.height, 8);
-        if (ax < snapX) ax = 2; else if (ax > raw.width - snapX) ax = raw.width - 2;
-        if (ay < snapY) ay = 2; else if (ay > raw.height - snapY) ay = raw.height - 2;
-
-        // Magnetic snap check
-        try {
-          const imgCtx = raw.getContext('2d');
-          const id = imgCtx.getImageData(0, 0, raw.width, raw.height);
-          const edge = getNearestEdge(id, raw.width, raw.height, ax, ay, 14);
-          if (edge.snapped) { ax = edge.x; ay = edge.y; }
-        } catch (e) {}
-
-        recrop.quad[recrop.drag] = {
-          x: Math.max(2, Math.min(raw.width - 2, ax)),
-          y: Math.max(2, Math.min(raw.height - 2, ay)),
-        };
-        drawRecrop();
-
-        updateLoupe(e.clientX, e.clientY, recrop.raw, ax, ay, 40);
-      });
-
-      const rcEnd = () => {
-        if (recrop) recrop.drag = -1;
-        hideLoupe();
-      };
-      rc.addEventListener('pointerup', rcEnd);
-      rc.addEventListener('pointercancel', rcEnd);
-
-      parent.querySelector('#recrop-rotate').onclick = () => {
-        if (!recrop) return;
-        const q = recrop.quad || defaultQuad(recrop.raw);
-        recrop.quad = A.rotateQuad(q);
-        recrop.rot = (recrop.rot + 1) % 4;
-        drawRecrop();
-      };
-      parent.querySelector('#recrop-reset').onclick = () => {
-        if (!recrop) return;
-        recrop.quad = recrop.origQuad ? recrop.origQuad.map((q) => ({ x: q.x, y: q.y })) : null;
-        recrop.rot = recrop.origRot;
-        drawRecrop();
-      };
-      parent.querySelector('#recrop-cancel').onclick = () => { recrop = null; switchView('review'); };
-      parent.querySelector('#recrop-apply').onclick = applyRecrop;
-    }
-
     function defaultQuad(raw) {
-      const m = 0.03;
+      const m = 0.025;
       return [
-        { x: raw.width * m, y: raw.height * m },
-        { x: raw.width * (1 - m), y: raw.height * m },
-        { x: raw.width * (1 - m), y: raw.height * (1 - m) },
-        { x: raw.width * m, y: raw.height * (1 - m) },
+        { x: Math.round(raw.width * m), y: Math.round(raw.height * m) },
+        { x: Math.round(raw.width * (1 - m)), y: Math.round(raw.height * m) },
+        { x: Math.round(raw.width * (1 - m)), y: Math.round(raw.height * (1 - m)) },
+        { x: Math.round(raw.width * m), y: Math.round(raw.height * (1 - m)) },
       ];
     }
 
     function recropToDisplay(p) {
+      if (!recrop) return [p.x, p.y];
       const raw = recrop.raw, rot = recrop.rot % 4, x = p.x, y = p.y;
       if (rot === 0) return [x, y];
       if (rot === 1) return [raw.height - y, x];
@@ -5805,73 +6057,23 @@
       return [y, raw.width - x];
     }
 
-    function drawRecrop() {
-      const c = container.querySelector('#recrop-canvas');
-      if (!c || !recrop) return;
-      const raw = recrop.raw, rot = recrop.rot % 4;
-      const iw = rot % 2 === 1 ? raw.height : raw.width, ih = rot % 2 === 1 ? raw.width : raw.height;
-      const parentH = c.parentElement.clientHeight || 520;
-      const maxW = Math.min(c.parentElement.clientWidth || 700, 850);
-      const maxH = Math.min(Math.max(280, parentH - 40), 580);
-      const s = Math.min(1, maxW / iw, maxH / ih);
-      const W = Math.max(120, Math.round(iw * s)), H = Math.max(120, Math.round(ih * s));
-      c.width = W; c.height = H;
-      recrop.scale = s;
-
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, W, H);
-
-      // Draw oriented document background
-      ctx.save();
-      ctx.scale(s, s);
-      if (rot === 1) { ctx.translate(iw, 0); ctx.rotate(Math.PI / 2); }
-      else if (rot === 2) { ctx.translate(iw, ih); ctx.rotate(Math.PI); }
-      else if (rot === 3) { ctx.translate(0, ih); ctx.rotate(-Math.PI / 2); }
-      ctx.drawImage(raw, 0, 0, raw.width, raw.height);
-      ctx.restore();
-
-      // Draw quadrilateral crop outline and corner nodes in display space
-      const quad = recrop.quad || defaultQuad(raw);
-      const manual = !!recrop.quad;
-      ctx.strokeStyle = manual ? '#f59e0b' : '#10b981';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      quad.forEach((p, i) => {
-        const [dx, dy] = recropToDisplay(p);
-        const X = dx * s, Y = dy * s;
-        if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
-      });
-      ctx.closePath();
-      ctx.stroke();
-
-      quad.forEach((p) => {
-        const [dx, dy] = recropToDisplay(p);
-        const X = dx * s, Y = dy * s;
-        const atEdge = manual && (p.x <= 3 || p.x >= raw.width - 3 || p.y <= 3 || p.y >= raw.height - 3);
-        ctx.strokeStyle = atEdge ? '#0284c7' : (manual ? '#f59e0b' : '#10b981');
-        ctx.beginPath();
-        ctx.arc(X, Y, atEdge ? 9 : 8, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.stroke();
-      });
-    }
-
     async function applyRecrop() {
       if (!recrop) return;
       const q = recrop.quad || defaultQuad(recrop.raw);
+      setStatus('Unwarping perspective crop...', 'info');
       const res = await A.processPhoto(recrop.raw, { detect: false, quad: q, maxDim: 4096 });
       pages[recrop.idx] = Object.assign({}, pages[recrop.idx], {
         canvas: res.canvas,
         cropped: true,
         quad: q.map((p) => ({ x: p.x, y: p.y })),
         rot: recrop.rot % 4,
+        ocrData: null,
       });
-      selIdx = recrop.idx;
+      isCropping = false;
       recrop = null;
-      switchView('review');
+      hideLoupe();
+      refreshStudioUI();
+      setStatus('Document cropped & perspective unwarped.', 'ok');
     }
 
     /* ════════════════════════════════════════════════════════════════
