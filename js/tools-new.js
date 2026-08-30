@@ -3892,22 +3892,20 @@
               ${ICONS.ocr}<span>OCR</span>
             </button>
 
-            <div class="scan-tb-lang-flat" title="OCR Language">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <select id="scan-top-ocr-lang" class="scan-top-lang-select" aria-label="OCR Language">
-                <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
-                <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
-                <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
-                <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
-                <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
-                <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi</option>
-                <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
-                <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
-                <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
-                <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto</option>
-              </select>
-            </div>
+            <select id="scan-top-ocr-lang" class="scan-tb-lang-compact" aria-label="OCR Language" title="OCR Language">
+              <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>EN</option>
+              <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>ES</option>
+              <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>FR</option>
+              <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>DE</option>
+              <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>IT</option>
+              <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>PT</option>
+              <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>HI</option>
+              <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>ZH</option>
+              <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>JA</option>
+              <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>AR</option>
+              <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto</option>
+            </select>
+
 
             <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply filter to all ${pages.length} pages">
               ${ICONS.sparkle}<span>All (${pages.length})</span>
