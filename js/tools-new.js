@@ -4013,9 +4013,18 @@
 
               ${ocrSidebarTab === 'text' ? `
                 <div class="scan-ocr-quick-strip">
-                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-flow" title="Merge linebreaks into readable paragraphs">✨ Format Flow</button>
-                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-clean" title="Clean extra spaces and dangling symbols">🔤 Clean Text</button>
-                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-md" title="Copy formatted as Markdown">📋 Markdown</button>
+                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-flow" title="Merge linebreaks into readable paragraphs">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10H3"/><path d="M21 6H3"/><path d="M11 14H3"/><path d="M11 18H3"/><polygon points="15 13 18 19 21 13 15 13"/></svg>
+                    <span>Format Flow</span>
+                  </button>
+                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-clean" title="Clean extra spaces and dangling symbols">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                    <span>Clean Text</span>
+                  </button>
+                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-md" title="Copy formatted as Markdown">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 15V9l3 3 3-3v6"/><path d="M17 9v6"/></svg>
+                    <span>Markdown</span>
+                  </button>
                 </div>
 
                 <div class="scan-ocr-sidebar-body">
@@ -4038,10 +4047,8 @@
                 </div>
               `}
 
-
-
               <div class="scan-ocr-sidebar-footer">
-                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-copy-text" title="Copy text to clipboard">
+                <button type="button" class="scan-btn-primary-sm" id="btn-sidebar-copy-text" title="Copy text to clipboard">
                   ${ICONS.copy}
                   <span>Copy</span>
                 </button>
@@ -4053,8 +4060,8 @@
                   ${ICONS.word}
                   <span>.DOC</span>
                 </button>
-                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words & positions as .json">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/></svg>
+                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words &amp; positions as .json">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/></svg>
                   <span>.JSON</span>
                 </button>
               </div>
@@ -4417,9 +4424,9 @@
       const maxW = 3200;
       const wrapW = wrap?.clientWidth || 900;
       const wrapH = wrap?.clientHeight || 640;
-      const availableW = Math.max(320, wrapW - 60);
-      // Allow comfortable document reading width (target ~720px - 820px or fit width)
-      const targetW = Math.min(availableW, Math.max(680, Math.round(availableW * 0.82)));
+      const availableW = Math.max(300, wrapW - (ocrPanelOpen ? 48 : 80));
+      // Responsive document reading width (fits cleanly without left-dock collision)
+      const targetW = Math.min(availableW, Math.max(320, Math.round(availableW * 0.88)));
       const sc = Math.min(maxW / source.width, targetW / source.width, 1);
       const displayW = Math.max(1, Math.round(source.width * sc));
       const displayH = Math.max(1, Math.round(source.height * sc));
@@ -4662,6 +4669,10 @@
               runPageOcr(selIdx);
             }
           }
+          setTimeout(() => {
+            updateStudioPreview();
+            applyCanvasTransform();
+          }, 60);
         };
       }
 
@@ -4674,6 +4685,10 @@
           if (sidebar) sidebar.classList.remove('is-open');
           if (stage) stage.classList.remove('ocr-panel-active');
           if (ocrProofBtn) ocrProofBtn.classList.remove('is-on');
+          setTimeout(() => {
+            updateStudioPreview();
+            applyCanvasTransform();
+          }, 60);
         };
       }
 

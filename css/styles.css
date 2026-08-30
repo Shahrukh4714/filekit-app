@@ -41848,28 +41848,43 @@ body #app-view .rail-item.active {
 
 .scan-ocr-tool-chip {
   flex: 1 !important;
-  padding: 4px 6px !important;
+  height: 26px !important;
+  padding: 0 8px !important;
   background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  font-size: 10.5px !important;
-  font-weight: 600 !important;
-  color: #4B4B4B !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 550 !important;
+  color: #334155 !important;
   cursor: pointer !important;
-  transition: all 0.12s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease !important;
   white-space: nowrap !important;
-  text-align: center !important;
+}
+
+.scan-ocr-tool-chip svg {
+  stroke: #64748B !important;
+  flex-shrink: 0 !important;
+  transition: stroke 120ms ease !important;
 }
 
 .scan-ocr-tool-chip:hover {
-  background: #F1F5F9 !important;
-  border-color: #7C3AED !important;
-  color: #7C3AED !important;
-  transform: translateY(-1px) !important;
+  background: #EEF2FF !important;
+  border-color: #C7D2FE !important;
+  color: #4338CA !important;
+  transform: translateY(-0.5px) !important;
+}
+
+.scan-ocr-tool-chip:hover svg {
+  stroke: #4338CA !important;
 }
 
 .scan-ocr-tool-chip:active {
-  transform: scale(0.96) !important;
+  transform: scale(0.97) !important;
+  background: #E0E7FF !important;
 }
 
 .scan-ocr-sidebar-body {
@@ -41909,7 +41924,7 @@ body #app-view .rail-item.active {
   border-radius: 6px !important;
   padding: 12px !important;
   font-family: 'Consolas', 'Courier New', monospace !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   line-height: 1.55 !important;
   color: #1E293B !important;
   resize: none !important;
@@ -41919,44 +41934,95 @@ body #app-view .rail-item.active {
 }
 
 .scan-ocr-sidebar-textarea:focus {
-  border-color: #7C3AED !important;
+  border-color: #4F46E5 !important;
   background: #FFFFFF !important;
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12) !important;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.12) !important;
 }
 
 .scan-ocr-sidebar-footer {
-  height: 48px !important;
-  padding: 0 12px !important;
+  height: 44px !important;
+  padding: 0 10px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 6px !important;
   border-top: 1px solid #E2E8F0 !important;
   background: #F8FAFC !important;
   flex-shrink: 0 !important;
 }
 
-.scan-btn-ghost-sm {
-  flex: 1 !important;
-  height: 30px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  font-size: 11.5px !important;
+.scan-btn-primary-sm {
+  flex: 1.2 !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  background: #4F46E5 !important;
+  border: 1px solid #4338CA !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
-  color: #334155 !important;
+  color: #FFFFFF !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 4px !important;
   cursor: pointer !important;
-  transition: all 0.12s ease !important;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2) !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-btn-primary-sm svg {
+  stroke: #FFFFFF !important;
+}
+
+.scan-btn-primary-sm:hover {
+  background: #4338CA !important;
+  transform: translateY(-0.5px) !important;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3) !important;
+}
+
+.scan-btn-primary-sm:active {
+  transform: scale(0.97) !important;
+  background: #3730A3 !important;
+}
+
+.scan-btn-primary-sm.is-copied {
+  background: #059669 !important;
+  border-color: #047857 !important;
+  color: #FFFFFF !important;
+}
+
+.scan-btn-ghost-sm {
+  flex: 1 !important;
+  height: 28px !important;
+  padding: 0 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-btn-ghost-sm svg {
+  stroke: #64748B !important;
 }
 
 .scan-btn-ghost-sm:hover {
   background: #F1F5F9 !important;
-  border-color: #94A3B8 !important;
+  border-color: #CBD5E1 !important;
   color: #0F172A !important;
+  transform: translateY(-0.5px) !important;
 }
+
+.scan-btn-ghost-sm:active {
+  transform: scale(0.97) !important;
+}
+
 
 /* ══════════════════════════════════════════════════════════════════════════════
    HIGH-CONTRAST OCR SIDEBAR POLISH
@@ -42013,39 +42079,19 @@ body #app-view .rail-item.active {
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  padding: 36px 60px 60px 60px !important;
+  padding: 24px 36px 40px 36px !important;
   width: 100% !important;
   box-sizing: border-box !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
-  transition: padding 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: padding 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* When OCR Text Sidebar is open, fluidly offset stage padding so document stays centered in remaining space */
+/* When OCR Text Sidebar is open, maintain clean balanced stage padding */
 .scan-canvas-stage.ocr-panel-active {
-  padding-right: 436px !important;
+  padding: 24px 28px 40px 28px !important;
 }
 
-/* Obsidian Active State Standard */
-.scan-seg-btn.is-on,
-.etxt-tool.is-on {
-  background: #18181B !important;
-  color: #FFFFFF !important;
-  border-color: #18181B !important;
-  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.25) !important;
-  font-weight: 700 !important;
-}
-
-.scan-seg-btn.is-on span,
-.etxt-tool.is-on span {
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-}
-
-.scan-seg-btn.is-on svg,
-.etxt-tool.is-on svg {
-  stroke: #FFFFFF !important;
-}
 
 /* Topbar Header Document Info Center Positioning */
 #topbar-doc-info,
@@ -42897,30 +42943,31 @@ body #app-view .rail-item.active {
   background: #E2E8F0 !important;
 }
 
-/* Active State (Obsidian Clean Finish) */
+/* Active State (Refined Light Indigo / Charcoal Accent — Zero Layout Shift) */
 .scan-tb-btn.is-on,
 .scan-unified-toolbar .etxt-tool.is-on,
 .scan-unified-toolbar .scan-seg-btn.is-on {
-  background: #18181B !important;
-  color: #FFFFFF !important;
-  border-color: #18181B !important;
-  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.2) !important;
-  font-weight: 650 !important;
+  background: #EEF2FF !important;
+  color: #3730A3 !important;
+  border-color: #C7D2FE !important;
+  box-shadow: 0 1px 2px rgba(67, 56, 202, 0.08) !important;
+  font-weight: 600 !important;
 }
 
 .scan-tb-btn.is-on span,
 .scan-unified-toolbar .etxt-tool.is-on span,
 .scan-unified-toolbar .scan-seg-btn.is-on span {
-  color: #FFFFFF !important;
-  font-weight: 650 !important;
+  color: #3730A3 !important;
+  font-weight: 600 !important;
 }
 
 .scan-tb-btn.is-on svg,
 .scan-unified-toolbar .etxt-tool.is-on svg,
 .scan-unified-toolbar .scan-seg-btn.is-on svg {
-  stroke: #FFFFFF !important;
-  color: #FFFFFF !important;
+  stroke: #4338CA !important;
+  color: #4338CA !important;
 }
+
 
 /* Language selector */
 /* Language selector */
