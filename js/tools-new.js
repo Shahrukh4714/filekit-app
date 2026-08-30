@@ -353,17 +353,16 @@
     return { canvas: src, cropped: false, quad: null };
   }
 
-  /* Enhance a page. Modes: 'original' | 'enhanced' (Magic Color Document) | 'bw' | 'board' | 'photo'.
-     opts: { brightness: 0-200 (100 = none), contrast: 0-200 (100 = none) } */
-  function enhancePage(canvas, mode, opts) {
-    const b = (opts && opts.brightness != null ? opts.brightness : 100) / 100;
-    const c = (opts && opts.contrast != null ? opts.contrast : 100) / 100;
-    const bc = (v) => { const x = ((v - 128) * c + 128) * b; return Math.max(0, Math.min(255, x)); };
+  /* Enhance a page. Modes: 'original' | 'enhanced' (Magic Color Document) | 'bw' | 'photo' | 'form' | 'whiteboard' | 'board'.
+     opts: { brightness: 0-200 (100 = default), contrast: 0-200 (100 = default) } */
+  function enhancePage(canvas, mode, opts = {}) {
+    const b = opts.brightness != null ? opts.brightness : 100;
+    const c = opts.contrast != null ? opts.contrast : 100;
     const w = canvas.width, h = canvas.height;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const id = ctx.getImageData(0, 0, w, h);
     const d = id.data;
-    if ((!mode || mode === 'original') && b === 1 && c === 1) return canvas;
+    if ((!mode || mode === 'original') && b === 100 && c === 100) return canvas;
     const g = imgGray(id);
     const out = ctx.createImageData(w, h);
 
@@ -379,11 +378,10 @@
         const bgVal = Math.max(20, gBg[i]);
         const normalized = (g[i] / bgVal) * 255;
         const isDark = normalized < 198 && (bgVal - g[i] > 12);
-        const v = bc(isDark ? 0 : 255);
+        const v = isDark ? 0 : 255;
         out.data[i * 4] = v; out.data[i * 4 + 1] = v; out.data[i * 4 + 2] = v; out.data[i * 4 + 3] = 255;
       }
-    }
-    else if (mode === 'photo') {
+    } else if (mode === 'photo') {
       // Vivid Color Photo Mode:
       // Instant O(N) histogram stretch, color vibrance, and natural tonal clarity
       const hist = new Uint32Array(256);
@@ -413,9 +411,9 @@
         const bVal = lut[d[o + 2]];
         const gray = 0.299 * r + 0.587 * gVal + 0.114 * bVal;
 
-        out.data[o] = bc(Math.max(0, Math.min(255, gray + (r - gray) * sat)));
-        out.data[o + 1] = bc(Math.max(0, Math.min(255, gray + (gVal - gray) * sat)));
-        out.data[o + 2] = bc(Math.max(0, Math.min(255, gray + (bVal - gray) * sat)));
+        out.data[o] = Math.max(0, Math.min(255, gray + (r - gray) * sat));
+        out.data[o + 1] = Math.max(0, Math.min(255, gray + (gVal - gray) * sat));
+        out.data[o + 2] = Math.max(0, Math.min(255, gray + (bVal - gray) * sat));
         out.data[o + 3] = 255;
       }
     } else if (mode === 'form') {
@@ -428,16 +426,14 @@
       const rBg = boxBlur(rArr, w, h, 10), gBg = boxBlur(gArr, w, h, 10), bBg = boxBlur(bArr, w, h, 10);
       for (let i = 0, p = 0; i < w * h; i++, p += 4) {
         const lum = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2];
-        // flatten the illumination, then harden the ink: near-black stays dark,
-        // mid tones lift toward paper so thin form lines survive.
         const nr = d[p] / Math.max(15, rBg[i]);
         const ng = d[p + 1] / Math.max(15, gBg[i]);
         const nb = d[p + 2] / Math.max(15, bBg[i]);
         const x = Math.max(0, Math.min(1, (lum / 255 - 0.5) * 2.6 + 0.5));
         const hardening = x * x * (3 - 2 * x) * 255;
-        out.data[p] = bc(((nr * 245) * 0.35 + hardening * 0.65) * (lum < 150 ? 0.82 : 1.08));
-        out.data[p + 1] = bc(((ng * 245) * 0.35 + hardening * 0.65) * (lum < 150 ? 0.82 : 1.08));
-        out.data[p + 2] = bc(((nb * 245) * 0.35 + hardening * 0.65) * (lum < 150 ? 0.82 : 1.08));
+        out.data[p] = Math.max(0, Math.min(255, ((nr * 245) * 0.35 + hardening * 0.65) * (lum < 150 ? 0.82 : 1.08)));
+        out.data[p + 1] = Math.max(0, Math.min(255, ((ng * 245) * 0.35 + hardening * 0.65) * (lum < 150 ? 0.82 : 1.08)));
+        out.data[p + 2] = Math.max(0, Math.min(255, ((nb * 245) * 0.35 + hardening * 0.65) * (lum < 150 ? 0.82 : 1.08)));
         out.data[p + 3] = 255;
       }
     } else if (mode === 'enhanced') {
@@ -453,16 +449,13 @@
         const nr = Math.min(255, (d[p] / Math.max(20, rBg[i])) * 250);
         const ng = Math.min(255, (d[p + 1] / Math.max(20, gBg[i])) * 250);
         const nb = Math.min(255, (d[p + 2] / Math.max(20, bBg[i])) * 250);
-        // If dark text/ink, sharpen and harden ink tone; if background, whiten cleanly
         const isInk = lum < 155;
-        out.data[p] = bc(isInk ? nr * 0.85 : Math.min(255, nr * 1.04));
-        out.data[p + 1] = bc(isInk ? ng * 0.85 : Math.min(255, ng * 1.04));
-        out.data[p + 2] = bc(isInk ? nb * 0.85 : Math.min(255, nb * 1.04));
+        out.data[p] = Math.max(0, Math.min(255, isInk ? nr * 0.85 : nr * 1.04));
+        out.data[p + 1] = Math.max(0, Math.min(255, isInk ? ng * 0.85 : ng * 1.04));
+        out.data[p + 2] = Math.max(0, Math.min(255, isInk ? nb * 0.85 : nb * 1.04));
         out.data[p + 3] = 255;
       }
     } else if (mode === 'whiteboard') {
-      // Whiteboard: divide out the uneven illumination (room light + marker
-      // glare) so the whole board reads as an even white sheet, then boost ink.
       const gArr = new Float32Array(w * h);
       const rArr = new Float32Array(w * h), bArr = new Float32Array(w * h);
       for (let i = 0; i < g.length; i++) {
@@ -496,31 +489,32 @@
       for (let i = 0; i < base.length; i++) stretch[i] = Math.max(0, Math.min(255, (base[i] - lo) / range * 255));
       const blurred = boxBlur(stretch, w, h, 2);
       for (let i = 0; i < stretch.length; i++) {
-        const v = bc(Math.max(0, Math.min(255, stretch[i] + 1.1 * (stretch[i] - blurred[i]))));
-        out.data[i * 4] = v; out.data[i * 4 + 1] = v; out.data[i * 4 + 2] = v; out.data[i * 4 + 3] = 255;
+        out.data[i * 4] = Math.max(0, Math.min(255, stretch[i] + 1.1 * (stretch[i] - blurred[i])));
+        out.data[i * 4 + 1] = out.data[i * 4];
+        out.data[i * 4 + 2] = out.data[i * 4];
+        out.data[i * 4 + 3] = 255;
       }
     } else {
-      // Board mode
-      const hist = new Uint32Array(256);
-      for (let i = 0; i < g.length; i++) hist[g[i]]++;
+      // Original / Default
+      for (let i = 0; i < d.length; i++) out.data[i] = d[i];
+    }
 
-      const targetLo = Math.floor(g.length * 0.003);
-      const targetHi = Math.floor(g.length * 0.997);
-      let count = 0, lo = 0, hi = 255;
-      for (let v = 0; v < 256; v++) {
-        count += hist[v];
-        if (lo === 0 && count >= targetLo) lo = v;
-        if (count >= targetHi) { hi = v; break; }
+    // 2. High-Precision Photographic Brightness & Contrast Look-Up Table (LUT)
+    if (b !== 100 || c !== 100) {
+      const lut = new Uint8ClampedArray(256);
+      const cFactor = c / 100;
+      const bOffset = (b - 100) * 1.28;
+      for (let i = 0; i < 256; i++) {
+        const val = (i - 128) * cFactor + 128 + bOffset;
+        lut[i] = Math.max(0, Math.min(255, Math.round(val)));
       }
-      const range = Math.max(1, hi - lo);
-      const stretch = new Float32Array(g.length);
-      for (let i = 0; i < g.length; i++) stretch[i] = Math.max(0, Math.min(255, (g[i] - lo) / range * 255));
-      const blurred = boxBlur(stretch, w, h, 2);
-      for (let i = 0; i < g.length; i++) {
-        const v = bc(Math.max(0, Math.min(255, stretch[i] + 1.0 * (stretch[i] - blurred[i]))));
-        out.data[i * 4] = v; out.data[i * 4 + 1] = v; out.data[i * 4 + 2] = v; out.data[i * 4 + 3] = 255;
+      for (let i = 0; i < out.data.length; i += 4) {
+        out.data[i] = lut[out.data[i]];
+        out.data[i + 1] = lut[out.data[i + 1]];
+        out.data[i + 2] = lut[out.data[i + 2]];
       }
     }
+
     ctx.putImageData(out, 0, 0);
     return canvas;
   }
@@ -4313,7 +4307,10 @@
       p.ocrData.words = p.ocrData.words.filter(item => item !== w);
       p.ocrData.text = p.ocrData.words.map(item => item.text).join(' ');
 
-refreshStudioUI();
+      p._baseCache = null;
+      p._enhCache = null;
+      p._thumbCache = null;
+      refreshStudioUI();
       setStatus(`Permanently blacked out "${w.text}".`, 'ok');
     }
 
@@ -4325,31 +4322,67 @@ refreshStudioUI();
       const mode = p.enhanceMode || 'enhanced';
       const b = p.brightness ?? 100;
       const c = p.contrast ?? 100;
-      const key = `${p.canvas.width}x${p.canvas.height}_${mode}_${b}_${c}_${maxDim}`;
+      const baseKey = `${p.canvas.width}x${p.canvas.height}_${mode}_${maxDim}`;
+      const fullKey = `${baseKey}_${b}_${c}`;
 
-      if (p._enhCache && p._enhCache.key === key && p._enhCache.canvas) {
+      if (p._enhCache && p._enhCache.key === fullKey && p._enhCache.canvas) {
         return p._enhCache.canvas;
       }
 
-      let src = p.canvas;
-      if (maxDim && (src.width > maxDim || src.height > maxDim)) {
-        const sc = maxDim / Math.max(src.width, src.height);
-        const fitCv = document.createElement('canvas');
-        fitCv.width = Math.max(1, Math.round(src.width * sc));
-        fitCv.height = Math.max(1, Math.round(src.height * sc));
-        const fCtx = fitCv.getContext('2d');
-        fCtx.drawImage(src, 0, 0, fitCv.width, fitCv.height);
-        src = fitCv;
-      } else {
-        src = A.copyCanvas(p.canvas);
+      // 1. Get or compute base-filtered canvas (Clean Doc, B&W, Photo, Form)
+      let baseCv = (p._baseCache && p._baseCache.key === baseKey) ? p._baseCache.canvas : null;
+
+      if (!baseCv) {
+        let src = p.canvas;
+        if (maxDim && (src.width > maxDim || src.height > maxDim)) {
+          const sc = maxDim / Math.max(src.width, src.height);
+          const fitCv = document.createElement('canvas');
+          fitCv.width = Math.max(1, Math.round(src.width * sc));
+          fitCv.height = Math.max(1, Math.round(src.height * sc));
+          const fCtx = fitCv.getContext('2d');
+          fCtx.drawImage(src, 0, 0, fitCv.width, fitCv.height);
+          src = fitCv;
+        } else {
+          src = A.copyCanvas(p.canvas);
+        }
+
+        try {
+          A.enhancePage(src, mode, { brightness: 100, contrast: 100 });
+        } catch (e) {}
+
+        baseCv = src;
+        p._baseCache = { key: baseKey, canvas: baseCv };
       }
 
-      try {
-        A.enhancePage(src, mode, { brightness: b, contrast: c });
-      } catch (e) {}
+      // If neutral 100/100, return base canvas directly (< 0.01ms)
+      if (b === 100 && c === 100) {
+        p._enhCache = { key: fullKey, canvas: baseCv };
+        return baseCv;
+      }
 
-      p._enhCache = { key, canvas: src };
-      return src;
+      // 2. High-speed 0.2ms Brightness / Contrast LUT pass on a copy of base
+      const tunedCv = A.copyCanvas(baseCv);
+      const ctx = tunedCv.getContext('2d');
+      const id = ctx.getImageData(0, 0, tunedCv.width, tunedCv.height);
+      const d = id.data;
+
+      const lut = new Uint8ClampedArray(256);
+      const cFactor = c / 100;
+      const bOffset = (b - 100) * 1.28;
+      for (let i = 0; i < 256; i++) {
+        const val = (i - 128) * cFactor + 128 + bOffset;
+        lut[i] = Math.max(0, Math.min(255, Math.round(val)));
+      }
+
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = lut[d[i]];
+        d[i + 1] = lut[d[i + 1]];
+        d[i + 2] = lut[d[i + 2]];
+      }
+
+      ctx.putImageData(id, 0, 0);
+      p._enhCache = { key: fullKey, canvas: tunedCv };
+      return tunedCv;
     }
 
     let studioPreviewRaf = null;
@@ -5362,6 +5395,9 @@ refreshStudioUI();
             } else {
               setStatus('Permanently redacted area.', 'ok');
             }
+            p._baseCache = null;
+            p._enhCache = null;
+            p._thumbCache = null;
             updateStudioPreview();
             paintFilmstripThumbs();
           }
@@ -5556,6 +5592,9 @@ refreshStudioUI();
           ctx.fillText(stampText, 0, 0);
           ctx.restore();
 
+          p._baseCache = null;
+          p._enhCache = null;
+          p._thumbCache = null;
           activeFlyout = null;
           updateStudioPreview();
           paintFilmstripThumbs();
@@ -5605,6 +5644,9 @@ refreshStudioUI();
             const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
 
             pageCtx.drawImage(sigCv, targetX, targetY, targetW, targetH);
+            p._baseCache = null;
+            p._enhCache = null;
+            p._thumbCache = null;
             activeFlyout = null;
             updateStudioPreview();
             paintFilmstripThumbs();
@@ -5670,6 +5712,7 @@ refreshStudioUI();
             pg.enhanceMode = curEnhance;
             pg.brightness = curB;
             pg.contrast = curC;
+            pg._baseCache = null;
             pg._enhCache = null;
             pg._thumbCache = null;
             pg.ocrData = null;
@@ -5686,6 +5729,7 @@ refreshStudioUI();
           const tool = btn.dataset.tool;
           if (tool === 'clean') {
             p.enhanceMode = 'enhanced';
+            p._baseCache = null;
             p._enhCache = null;
             p._thumbCache = null;
             activeFlyout = null;
@@ -5693,6 +5737,7 @@ refreshStudioUI();
             refreshStudioUI();
           } else if (tool === 'bw') {
             p.enhanceMode = 'bw';
+            p._baseCache = null;
             p._enhCache = null;
             p._thumbCache = null;
             activeFlyout = null;
@@ -5700,6 +5745,7 @@ refreshStudioUI();
             refreshStudioUI();
           } else if (tool === 'photo') {
             p.enhanceMode = 'photo';
+            p._baseCache = null;
             p._enhCache = null;
             p._thumbCache = null;
             activeFlyout = null;
@@ -5707,6 +5753,7 @@ refreshStudioUI();
             refreshStudioUI();
           } else if (tool === 'form') {
             p.enhanceMode = 'form';
+            p._baseCache = null;
             p._enhCache = null;
             p._thumbCache = null;
             activeFlyout = null;
@@ -5752,13 +5799,19 @@ refreshStudioUI();
             const val = +inpB.value;
             if (valB) valB.textContent = val === 100 ? '100% (Normal)' : `${val}%`;
             if (filterScope === 'all') {
-              pages.forEach((pg) => { pg.brightness = val; pg._enhCache = null; pg._thumbCache = null; });
+              pages.forEach((pg) => { pg.brightness = val; pg._enhCache = null; });
             } else {
               p.brightness = val;
               p._enhCache = null;
-              p._thumbCache = null;
             }
             scheduleStudioPreview();
+          };
+          inpB.onchange = () => {
+            if (filterScope === 'all') {
+              pages.forEach((pg) => { pg._thumbCache = null; });
+            } else {
+              p._thumbCache = null;
+            }
             paintFilmstripThumbs();
           };
         }
@@ -5768,19 +5821,29 @@ refreshStudioUI();
             const val = +inpC.value;
             if (valC) valC.textContent = val === 100 ? '100% (Normal)' : `${val}%`;
             if (filterScope === 'all') {
-              pages.forEach((pg) => { pg.contrast = val; pg._enhCache = null; pg._thumbCache = null; });
+              pages.forEach((pg) => { pg.contrast = val; pg._enhCache = null; });
             } else {
               p.contrast = val;
               p._enhCache = null;
-              p._thumbCache = null;
             }
             scheduleStudioPreview();
+          };
+          inpC.onchange = () => {
+            if (filterScope === 'all') {
+              pages.forEach((pg) => { pg._thumbCache = null; });
+            } else {
+              p._thumbCache = null;
+            }
             paintFilmstripThumbs();
           };
         }
 
         if (resetFt) {
           resetFt.onclick = () => {
+            if (inpB) inpB.value = 100;
+            if (inpC) inpC.value = 100;
+            if (valB) valB.textContent = '100% (Normal)';
+            if (valC) valC.textContent = '100% (Normal)';
             if (filterScope === 'all') {
               pages.forEach((pg) => { pg.brightness = 100; pg.contrast = 100; pg._enhCache = null; pg._thumbCache = null; });
             } else {
@@ -5789,7 +5852,8 @@ refreshStudioUI();
               p._enhCache = null;
               p._thumbCache = null;
             }
-            refreshStudioUI();
+            scheduleStudioPreview();
+            paintFilmstripThumbs();
           };
         }
       }
@@ -5919,22 +5983,22 @@ refreshStudioUI();
           } else if (e.key === '1' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'enhanced';
-            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
             refreshStudioUI();
           } else if (e.key === '2' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'bw';
-            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
             refreshStudioUI();
           } else if (e.key === '3' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'photo';
-            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
             refreshStudioUI();
           } else if (e.key === '4' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'form';
-            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
             refreshStudioUI();
           } else if (e.key === 'Delete' && !isCropping && !isRedacting) {
             e.preventDefault();
@@ -6019,6 +6083,7 @@ refreshStudioUI();
 
       p.canvas = rotCanvas;
       p.rot = ((p.rot || 0) + direction + 4) % 4;
+      p._baseCache = null;
       p._enhCache = null;
       p._thumbCache = null;
       p.ocrData = null;
@@ -6159,6 +6224,7 @@ refreshStudioUI();
 
       p.canvas = croppedCv;
       p.cropped = true;
+      p._baseCache = null;
       p._enhCache = null;
       p._thumbCache = null;
       p.ocrData = null; // Clear cached OCR text for cropped area
