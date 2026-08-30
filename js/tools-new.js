@@ -4175,41 +4175,39 @@
               </div>
             </aside>
 
-            <!-- Sleek Right Floating Control Dock (Apple / Figma / Linear style) -->
-            <aside class="scan-right-dock" id="scan-right-rail" aria-label="Page & Zoom Controls">
-              <!-- Top Group: Page Navigation & Thumbnails Drawer Toggle -->
-              <div class="scan-dock-group">
-                <button type="button" class="scan-dock-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-toggle-thumbs" title="Page Thumbnails (${pages.length} pages)">
+            <!-- Fixed Full-Height Docked Right Side-Rail (Zero Document Overlap) -->
+            <aside class="scan-right-rail" id="scan-right-rail" aria-label="Page & Zoom Controls">
+              <!-- Top Group: Page Thumbnails Drawer Toggle & Page Navigation -->
+              <div class="scan-rail-top">
+                <button type="button" class="scan-rail-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-toggle-thumbs" title="Page Thumbnails (${pages.length} pages)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
                 </button>
-                <div class="scan-dock-page-pill" title="Current Page (Page Up/Down)">
-                  <button type="button" class="scan-dock-page-arrow" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page (Left Arrow)">${ICONS.prev}</button>
-                  <span class="scan-dock-page-text">${selIdx + 1}<span class="scan-dock-page-total">/${pages.length}</span></span>
-                  <button type="button" class="scan-dock-page-arrow" id="btn-rail-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next page (Right Arrow)">${ICONS.next}</button>
+                <span class="scan-rail-sep"></span>
+                <div class="scan-rail-page-pill" title="Current Page (Page Up/Down)">
+                  <button type="button" class="scan-rail-page-arrow" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page (Left Arrow)">${ICONS.prev}</button>
+                  <span class="scan-rail-page-text">${selIdx + 1}<span class="scan-rail-page-total">/${pages.length}</span></span>
+                  <button type="button" class="scan-rail-page-arrow" id="btn-rail-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next page (Right Arrow)">${ICONS.next}</button>
                 </div>
               </div>
 
-              <span class="scan-dock-divider"></span>
-
               <!-- Mid Group: Zoom Stepper, Live Value & Reset -->
-              <div class="scan-dock-group">
-                <button type="button" class="scan-dock-btn" id="btn-zoom-in" title="Zoom In (Ctrl +)">
+              <div class="scan-rail-mid">
+                <button type="button" class="scan-rail-btn" id="btn-zoom-in" title="Zoom In (Ctrl +)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
-                <button type="button" class="scan-dock-zoom-badge" id="scan-zoom-badge" title="Click to Reset Zoom (100%)">${zoom}%</button>
-                <button type="button" class="scan-dock-btn" id="btn-zoom-out" title="Zoom Out (Ctrl -)">
+                <button type="button" class="scan-rail-zoom-badge" id="scan-zoom-badge" title="Click to Reset Zoom (100%)">${zoom}%</button>
+                <button type="button" class="scan-rail-btn" id="btn-zoom-out" title="Zoom Out (Ctrl -)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
-                <button type="button" class="scan-dock-btn scan-dock-btn-reset" id="btn-zoom-reset" title="Fit to Screen (Double Click Canvas)">
+                <button type="button" class="scan-rail-btn scan-rail-btn-fit" id="btn-zoom-reset" title="Fit to Screen (Double Click Canvas)">
                   <span>Fit</span>
                 </button>
               </div>
 
-              <span class="scan-dock-divider"></span>
-
               <!-- Bottom Group: Privacy & Security Badge -->
-              <div class="scan-dock-group">
-                <div class="scan-dock-privacy-pill" title="100% On-Device Processing (Zero Cloud Uploads)">
+              <div class="scan-rail-bot">
+                <span class="scan-rail-sep"></span>
+                <div class="scan-rail-privacy-pill" title="100% On-Device Local Processing (Zero Cloud Uploads)">
                   ${ICONS.shield}
                 </div>
               </div>

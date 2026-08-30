@@ -40482,24 +40482,25 @@ body #app-view .rail-item.active {
   margin: 4px 0 !important;
 }
 
-/* Slide-out Thumbnail Drawer */
+/* Slide-out Thumbnail Drawer (Flush Docked to Right Rail) */
 .scan-thumbs-drawer {
   position: absolute !important;
-  right: 68px !important;
-  top: 16px !important;
-  bottom: 16px !important;
-  width: 190px !important;
+  right: 48px !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 210px !important;
   background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14) !important;
-  z-index: 24 !important;
+  border-left: 1px solid #E2E8F0 !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  box-shadow: -6px 0 24px rgba(15, 23, 42, 0.08) !important;
+  z-index: 32 !important;
   display: flex !important;
   flex-direction: column !important;
-  transform: translateX(20px) !important;
+  transform: translateX(100%) !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), opacity 200ms ease !important;
   box-sizing: border-box !important;
 }
 
@@ -41661,43 +41662,50 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   SLEEK FLOATING RIGHT CONTROL DOCK & OCR SIDEBAR (Apple / Linear / Figma style)
+   SLEEK FIXED RIGHT SIDE-RAIL (Zero Document Overlap / Flush Docking)
    ══════════════════════════════════════════════════════════════════════════════ */
 
-.scan-right-dock {
+.scan-right-rail {
   position: absolute !important;
-  right: 14px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 48px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  background: #FFFFFF !important;
+  border-left: 1px solid #E2E8F0 !important;
+  box-shadow: -2px 0 10px rgba(15, 23, 42, 0.04) !important;
+  z-index: 40 !important;
   display: flex !important;
   flex-direction: column !important;
+  justify-content: space-between !important;
   align-items: center !important;
-  gap: 5px !important;
-  padding: 6px 4px !important;
-  background: rgba(255, 255, 255, 0.94) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(226, 232, 240, 0.85) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.1), 0 2px 6px -1px rgba(15, 23, 42, 0.04) !important;
-  z-index: 35 !important;
-  user-select: none !important;
+  padding: 10px 4px !important;
   box-sizing: border-box !important;
+  user-select: none !important;
 }
 
-.scan-dock-group {
+.scan-rail-top,
+.scan-rail-mid,
+.scan-rail-bot {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 4px !important;
   width: 100% !important;
 }
 
-.scan-dock-btn {
+.scan-rail-mid {
+  flex: 1 1 auto !important;
+  justify-content: center !important;
+}
+
+.scan-rail-btn {
   width: 32px !important;
   height: 32px !important;
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: 7px !important;
   background: transparent !important;
   color: #64748B !important;
   display: flex !important;
@@ -41707,33 +41715,33 @@ body #app-view .rail-item.active {
   transition: background 120ms ease, color 120ms ease, transform 120ms cubic-bezier(0.23, 1, 0.32, 1) !important;
 }
 
-.scan-dock-btn:hover {
+.scan-rail-btn:hover {
   background: #F1F5F9 !important;
   color: #0F172A !important;
 }
 
-.scan-dock-btn:active {
+.scan-rail-btn:active {
   transform: scale(0.92) !important;
   background: #E2E8F0 !important;
 }
 
-.scan-dock-btn.is-active {
+.scan-rail-btn.is-active {
   background: #EDE9FE !important;
   color: #7C3AED !important;
 }
 
-.scan-dock-page-pill {
+.scan-rail-page-pill {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
-  border-radius: 8px !important;
+  border-radius: 7px !important;
   padding: 2px !important;
   gap: 1px !important;
 }
 
-.scan-dock-page-arrow {
+.scan-rail-page-arrow {
   width: 28px !important;
   height: 18px !important;
   border: none !important;
@@ -41748,21 +41756,21 @@ body #app-view .rail-item.active {
   transition: all 100ms ease !important;
 }
 
-.scan-dock-page-arrow:hover:not(:disabled) {
+.scan-rail-page-arrow:hover:not(:disabled) {
   background: #E2E8F0 !important;
   color: #0F172A !important;
 }
 
-.scan-dock-page-arrow:active:not(:disabled) {
+.scan-rail-page-arrow:active:not(:disabled) {
   transform: scale(0.92) !important;
 }
 
-.scan-dock-page-arrow:disabled {
+.scan-rail-page-arrow:disabled {
   opacity: 0.25 !important;
   cursor: not-allowed !important;
 }
 
-.scan-dock-page-text {
+.scan-rail-page-text {
   font-size: 11px !important;
   font-weight: 750 !important;
   color: #0F172A !important;
@@ -41773,74 +41781,75 @@ body #app-view .rail-item.active {
   align-items: baseline !important;
 }
 
-.scan-dock-page-total {
+.scan-rail-page-total {
   font-size: 9.5px !important;
   font-weight: 600 !important;
   color: #94A3B8 !important;
 }
 
-.scan-dock-zoom-badge {
+.scan-rail-zoom-badge {
   border: none !important;
   background: transparent !important;
   font-size: 10px !important;
   font-weight: 750 !important;
   color: #475569 !important;
-  padding: 3px 6px !important;
-  border-radius: 6px !important;
+  padding: 3px 4px !important;
+  border-radius: 5px !important;
   cursor: pointer !important;
   letter-spacing: -0.2px !important;
   transition: all 120ms ease !important;
 }
 
-.scan-dock-zoom-badge:hover {
+.scan-rail-zoom-badge:hover {
   background: #F1F5F9 !important;
   color: #0F172A !important;
 }
 
-.scan-dock-zoom-badge:active {
+.scan-rail-zoom-badge:active {
   transform: scale(0.92) !important;
 }
 
-.scan-dock-btn-reset {
+.scan-rail-btn-fit {
   font-size: 10px !important;
   font-weight: 700 !important;
   color: #64748B !important;
   letter-spacing: 0.2px !important;
+  height: 24px !important;
 }
 
-.scan-dock-divider {
+.scan-rail-sep {
   width: 20px !important;
   height: 1px !important;
   background: #E2E8F0 !important;
-  margin: 2px 0 !important;
+  margin: 3px 0 !important;
 }
 
-.scan-dock-privacy-pill {
-  width: 26px !important;
-  height: 26px !important;
+.scan-rail-privacy-pill {
+  width: 28px !important;
+  height: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   color: #10B981 !important;
   cursor: help !important;
-  position: relative !important;
 }
 
 .scan-ocr-sidebar {
   position: absolute !important;
-  top: 12px !important;
-  right: 68px !important; /* aligns cleanly with floating right dock */
-  bottom: 12px !important;
+  top: 0 !important;
+  right: 48px !important; /* Docks flush against the right rail */
+  bottom: 0 !important;
   width: 380px !important;
   background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+  border-left: 1px solid #E2E8F0 !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  box-shadow: -6px 0 24px rgba(15, 23, 42, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   z-index: 30 !important;
   transform: translateX(110%) !important;
-  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), opacity 220ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1) !important;
   overflow: hidden !important;
 }
 
@@ -42548,7 +42557,7 @@ body #app-view .rail-item.active {
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  padding: 24px 36px 40px 36px !important;
+  padding: 28px 64px 56px 64px !important;
   width: 100% !important;
   box-sizing: border-box !important;
   overflow-y: auto !important;
@@ -42556,9 +42565,9 @@ body #app-view .rail-item.active {
   transition: padding 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* When OCR Text Sidebar is open, maintain clean balanced stage padding */
+/* When OCR Text Sidebar is open, shift canvas gracefully without covering paper */
 .scan-canvas-stage.ocr-panel-active {
-  padding: 24px 28px 40px 28px !important;
+  padding: 28px 440px 56px 64px !important;
 }
 
 
