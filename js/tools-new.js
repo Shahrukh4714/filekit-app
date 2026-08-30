@@ -3981,6 +3981,7 @@
 
               <!-- Document Paper Container -->
               <div class="scan-paper-page" id="scan-paper-page">
+                <div class="scan-canvas-scanline" id="scan-canvas-scanline" style="display:none;" aria-hidden="true"></div>
                 <canvas id="scan-studio-canvas" class="scan-studio-canvas"></canvas>
                 <!-- Interactive Selectable OCR Text Layer -->
                 <div class="scan-text-layer ${showOcrLayer ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer}"></div>
@@ -4012,8 +4013,15 @@
 
                 <div class="scan-ocr-sidebar-body">
                   <div class="scan-ocr-sidebar-loading" id="ocr-sidebar-loading" ${isOcrRunning ? '' : 'style="display:none"'}>
-                    <div class="scan-ocr-spinner"></div>
-                    <span id="ocr-sidebar-progress-label">Loading OCR engine…</span>
+                    <div class="scan-ocr-progress-capsule">
+                      <div class="scan-ocr-spinner"></div>
+                      <div class="scan-ocr-progress-info">
+                        <span id="ocr-sidebar-progress-label">Recognizing text…</span>
+                        <div class="scan-ocr-progress-track">
+                          <div class="scan-ocr-progress-fill" id="ocr-sidebar-progress-bar" style="width: 0%"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <textarea class="scan-ocr-sidebar-textarea" id="scan-ocr-sidebar-textarea" placeholder="Recognized text for this page will appear here...">${esc(curPage.ocrData ? (curPage.ocrData.text || '') : '')}</textarea>
                 </div>
@@ -4120,64 +4128,81 @@
       }
     }
 
-    async function runPageOcr(idx) {
+    async function runPageOcr(idx, isBackground = false) {
       const p = pages[idx];
       if (!p) return;
 
       // Helper: update the sidebar loading/text state
-      const setSidebarLoading = (show, statusText) => {
+      const setSidebarLoading = (show, statusText, pct = 0) => {
+        if (isBackground && idx !== selIdx) return;
         const el = document.querySelector('#ocr-sidebar-loading');
         const lbl = document.querySelector('#ocr-sidebar-progress-label');
+        const bar = document.querySelector('#ocr-sidebar-progress-bar');
         const ta = document.querySelector('#scan-ocr-sidebar-textarea');
+        const sweep = document.querySelector('#scan-canvas-scanline');
         if (el) {
           el.style.setProperty('display', show ? 'flex' : 'none', 'important');
           el.hidden = !show;
           el.classList.toggle('is-hidden', !show);
         }
         if (lbl && statusText) lbl.textContent = statusText;
-        if (ta) ta.style.opacity = show ? '0.4' : '1';
+        if (bar) bar.style.width = `${Math.min(100, Math.max(5, pct))}%`;
+        if (ta) ta.style.opacity = show ? '0.35' : '1';
+        if (sweep && idx === selIdx) sweep.style.display = show ? 'block' : 'none';
       };
+
       const setSidebarText = (text) => {
-        const ta = document.querySelector('#scan-ocr-sidebar-textarea');
-        if (ta) {
-          ta.value = text;
-          ta.style.opacity = '1';
+        if (idx === selIdx) {
+          const ta = document.querySelector('#scan-ocr-sidebar-textarea');
+          if (ta) {
+            ta.value = text;
+            ta.style.opacity = '1';
+          }
+          setSidebarLoading(false);
         }
-        setSidebarLoading(false);
       };
 
       // Connect live status updates from the OCR engine to the sidebar label
       _ocrStatusCallback = (msg) => {
-        const lbl = document.querySelector('#ocr-sidebar-progress-label');
-        if (lbl) lbl.textContent = msg;
+        if (idx === selIdx) {
+          const lbl = document.querySelector('#ocr-sidebar-progress-label');
+          if (lbl) lbl.textContent = msg;
+        }
+      };
+
+      _ocrOnProgress = (progressRatio) => {
+        if (idx === selIdx) {
+          const pct = Math.round(progressRatio * 100);
+          setSidebarLoading(true, `Recognizing characters… ${pct}%`, pct);
+        }
       };
 
       // If already computed, show immediately
       if (p.ocrData) {
         setSidebarText((p.ocrData.text || '').trim() || '(No text detected)');
-        renderTextLayer();
+        if (idx === selIdx) renderTextLayer();
         return;
       }
 
       // If OCR is already running for this page, wait for it
       if (p.ocrPromise) {
-        setSidebarLoading(true, 'Running…');
+        if (!isBackground) setSidebarLoading(true, 'Analyzing page…', 40);
         try { await p.ocrPromise; } catch {}
         if (p.ocrData) {
           setSidebarText((p.ocrData.text || '').trim() || '(No text detected)');
-          renderTextLayer(); paintFilmstripThumbs();
+          if (idx === selIdx) { renderTextLayer(); paintFilmstripThumbs(); }
         }
         return;
       }
 
       // Validate canvas
       if (!p.canvas || typeof p.canvas.toDataURL !== 'function') {
-        setSidebarText('Error: page image is not available. Please re-import the file.');
+        if (!isBackground) setSidebarText('Error: page image is not available. Please re-import the file.');
         console.error('[OCR] p.canvas is invalid:', p.canvas);
         return;
       }
 
-      setSidebarLoading(true, 'Starting…');
+      if (!isBackground) setSidebarLoading(true, 'Initializing neural engine…', 15);
 
       // Store the promise so concurrent calls can coalesce onto it
       const ocrTask = (async () => {
@@ -4212,13 +4237,29 @@
         await ocrTask;
         if (p.ocrData) {
           setSidebarText((p.ocrData.text || '').trim() || '(No text detected on this page)');
-          renderTextLayer();
-          paintFilmstripThumbs();
+          if (idx === selIdx) {
+            renderTextLayer();
+            paintFilmstripThumbs();
+          }
         }
+
+        // Background Pre-OCR: Silently prepare adjacent pages in background for zero latency switching
+        setTimeout(() => {
+          if (pages[idx + 1] && !pages[idx + 1].ocrData && !pages[idx + 1].ocrPromise) {
+            runPageOcr(idx + 1, true).catch(() => {});
+          } else if (pages[idx - 1] && !pages[idx - 1].ocrData && !pages[idx - 1].ocrPromise) {
+            runPageOcr(idx - 1, true).catch(() => {});
+          }
+        }, 120);
+
       } catch (err) {
-        setSidebarText(`OCR failed: ${err.message || 'Unknown error'}. Check browser console for details.`);
+        if (!isBackground) setSidebarText(`OCR failed: ${err.message || 'Unknown error'}.`);
       } finally {
         p.ocrPromise = null;
+        if (idx === selIdx) {
+          const sweep = document.querySelector('#scan-canvas-scanline');
+          if (sweep) sweep.style.display = 'none';
+        }
       }
     }
 
@@ -4301,10 +4342,24 @@
 
         if (isRedacting) {
           span.classList.add('is-redactable');
-          span.title = 'Click to blackout word';
+          span.title = `Click to blackout "${clean}"`;
           span.onclick = (e) => {
             e.stopPropagation();
             blackoutSingleWord(p, w);
+          };
+        } else {
+          span.title = `"${clean}" (${Math.round(conf)}% confidence)`;
+          span.onclick = (e) => {
+            e.stopPropagation();
+            const ta = container.querySelector('#scan-ocr-sidebar-textarea');
+            if (ta) {
+              const fullText = ta.value;
+              const wordPos = fullText.toLowerCase().indexOf(clean.toLowerCase());
+              if (wordPos !== -1) {
+                ta.focus();
+                ta.setSelectionRange(wordPos, wordPos + clean.length);
+              }
+            }
           };
         }
 
@@ -4675,7 +4730,14 @@
           const pageObj = pages[selIdx];
           const txt = sidebarTextarea ? sidebarTextarea.value : (pageObj?.ocrData?.text || '');
           await navigator.clipboard.writeText(txt);
+          const origHtml = sidebarCopyBtn.innerHTML;
+          sidebarCopyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#10B981;font-weight:700;">Copied!</span>`;
+          sidebarCopyBtn.classList.add('is-copied');
           setStatus('Text copied to clipboard.', 'ok');
+          setTimeout(() => {
+            sidebarCopyBtn.innerHTML = origHtml;
+            sidebarCopyBtn.classList.remove('is-copied');
+          }, 1800);
         };
       }
 
