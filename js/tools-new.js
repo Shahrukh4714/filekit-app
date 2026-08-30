@@ -2146,8 +2146,8 @@
     let statusEl = null;
     let importError = '';
 
-    // Re-crop & OCR state
-    let recrop = null;          // { idx, raw, quad, origQuad, rot, origRot, drag, scale }
+    // In-Studio Crop & OCR state
+    let cropState = null;       // { idx, box: { x, y, w, h }, origBox, drag, startBox, startPt, displayScale }
     let lastRemoved = null;     // { idx, page } for undo toast
     let ocrResultText = '';     // Recognized OCR text
 
@@ -3911,42 +3911,13 @@
             </div>
           ` : ''}
 
-          ${isCropping ? `
-            <div class="scan-crop-ribbon" id="scan-crop-ribbon">
-              <div class="scan-crop-ribbon-left">
-                <span class="scan-crop-pulse-dot"></span>
-                <span class="scan-crop-ribbon-title">Adjust Crop Boundaries</span>
-                <span class="scan-crop-ribbon-sub">Drag corner pins or edge handles to unwarp perspective.</span>
-              </div>
-              <div class="scan-crop-ribbon-actions">
-                <button type="button" class="scan-crop-chip" id="btn-crop-autodetect" title="Auto-detect paper boundaries">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                  <span>Auto-Detect</span>
-                </button>
-                <button type="button" class="scan-crop-chip" id="btn-crop-rotate" title="Rotate 90° Clockwise">
-                  ${ICONS.rotate}
-                  <span>Rotate 90°</span>
-                </button>
-                <button type="button" class="scan-crop-chip" id="btn-crop-full" title="Expand to full page">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="21" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-                  <span>Full Page</span>
-                </button>
-                <button type="button" class="scan-crop-chip-cancel" id="btn-crop-cancel" title="Cancel (Esc)">Cancel</button>
-                <button type="button" class="scan-crop-chip-apply" id="btn-crop-apply" title="Apply crop (Enter)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Apply Crop</span>
-                </button>
-              </div>
-            </div>
-          ` : ''}
-
           <!-- Main Stage Body -->
           <div class="scan-editor-body" id="scan-editor-body">
 
             <!-- Left Tool Dock: Geometric & Stamp Transforms (Compact Vertical Pill) -->
             <div class="etxt-floating-dock-wrap">
               <nav class="etxt-floating-dock" aria-label="Canvas & Page Tools">
-                <button type="button" class="etxt-floating-dock-btn" data-tool="recrop" title="Re-Crop Margins &amp; Perspective [C]">${ICONS.crop}</button>
+                <button type="button" class="etxt-floating-dock-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">${ICONS.crop}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">${ICONS.rotate}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotccw" title="Rotate 90° Counter-Clockwise"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
                 <span class="etxt-dock-sep"></span>
@@ -3973,6 +3944,19 @@
                   <input type="text" id="scan-search-input" placeholder="Find text in scan (press Enter)..." value="${esc(searchQuery)}" autofocus>
                   <span class="scan-search-counter" id="scan-search-counter">0 matches</span>
                   <button type="button" class="scan-search-close-btn" id="btn-close-search">${ICONS.cross}</button>
+                </div>
+              ` : ''}
+
+              <!-- Floating Crop Bar (Minimalist Apple/Figma style) -->
+              ${isCropping && cropState ? `
+                <div class="scan-crop-floating-bar" id="scan-crop-floating-bar">
+                  <span class="scan-crop-dim-label" id="scan-crop-dim-label">${Math.round(cropState.box.w)} × ${Math.round(cropState.box.h)} px</span>
+                  <span class="scan-crop-sep"></span>
+                  <div class="scan-crop-bar-actions">
+                    <button type="button" class="scan-crop-pill-btn" id="btn-crop-reset" title="Reset crop box">Reset</button>
+                    <button type="button" class="scan-crop-pill-btn" id="btn-crop-cancel" title="Cancel (Esc)">Cancel</button>
+                    <button type="button" class="scan-crop-pill-btn-done" id="btn-crop-apply" title="Apply crop (Enter)">Done</button>
+                  </div>
                 </div>
               ` : ''}
 
@@ -4412,12 +4396,8 @@
       const p = pages[selIdx];
       if (!p) return;
 
-      const source = (isCropping && recrop) ? recrop.raw : p.canvas;
+      const source = p.canvas;
       const rawSource = p.raw || p.canvas;
-      const rot = (isCropping && recrop) ? (recrop.rot % 4) : 0;
-      const srcW = rot % 2 === 1 ? source.height : source.width;
-      const srcH = rot % 2 === 1 ? source.width : source.height;
-
       const wrap = container.querySelector('#scan-canvas-wrap');
       const maxW = 3200;
       const wrapW = wrap?.clientWidth || 900;
@@ -4425,14 +4405,13 @@
       const availableW = Math.max(300, wrapW - (ocrPanelOpen ? 48 : 80));
       // Responsive document reading width (fits cleanly without left-dock collision)
       const targetW = Math.min(availableW, Math.max(320, Math.round(availableW * 0.88)));
-      const sc = Math.min(maxW / srcW, targetW / srcW, 1);
-      const displayW = Math.max(1, Math.round(srcW * sc));
-      const displayH = Math.max(1, Math.round(srcH * sc));
+      const sc = Math.min(maxW / source.width, targetW / source.width, 1);
+      const displayW = Math.max(1, Math.round(source.width * sc));
+      const displayH = Math.max(1, Math.round(source.height * sc));
       const dpr = Math.min(4, Math.max(2, window.devicePixelRatio || 2));
 
-      if (isCropping && recrop) {
-        recrop.scale = sc * dpr;
-        recrop.displayScale = sc;
+      if (isCropping && cropState) {
+        cropState.displayScale = sc;
       }
 
       // High-DPI internal buffer dimensions
@@ -4454,140 +4433,135 @@
       ctx.imageSmoothingQuality = 'high';
       ctx.clearRect(0, 0, bufferW, bufferH);
 
-      if (isCropping && recrop) {
-        // Draw oriented raw source image
-        ctx.save();
-        ctx.scale(sc * dpr, sc * dpr);
-        if (rot === 1) { ctx.translate(srcW, 0); ctx.rotate(Math.PI / 2); }
-        else if (rot === 2) { ctx.translate(srcW, srcH); ctx.rotate(Math.PI); }
-        else if (rot === 3) { ctx.translate(0, srcH); ctx.rotate(-Math.PI / 2); }
-        ctx.drawImage(source, 0, 0, source.width, source.height);
-        ctx.restore();
+      // Create high-resolution enhanced offscreen buffer
+      const enhCv = document.createElement('canvas');
+      enhCv.width = bufferW;
+      enhCv.height = bufferH;
+      const enhCtx = enhCv.getContext('2d');
+      enhCtx.imageSmoothingEnabled = true;
+      enhCtx.imageSmoothingQuality = 'high';
+      enhCtx.drawImage(source, 0, 0, bufferW, bufferH);
 
-        const quad = recrop.quad || defaultQuad(source);
+      try {
+        A.enhancePage(enhCv, p.enhanceMode || 'enhanced', {
+          brightness: p.brightness ?? 100,
+          contrast: p.contrast ?? 100,
+        });
+      } catch (e) {}
 
-        // 1. Darken area outside quad with smooth scrim
+      if (isCropping && cropState) {
+        // Draw document base
+        ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
+
+        const b = cropState.box;
+        const bx = Math.round(b.x * sc * dpr);
+        const by = Math.round(b.y * sc * dpr);
+        const bw = Math.round(b.w * sc * dpr);
+        const bh = Math.round(b.h * sc * dpr);
+
+        // 1. Dim outer area outside crop rectangle
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.48)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.54)';
         ctx.beginPath();
         ctx.rect(0, 0, bufferW, bufferH);
-        quad.forEach((pt, i) => {
-          const [dx, dy] = recropToDisplay(pt);
-          const X = dx * sc * dpr, Y = dy * sc * dpr;
-          if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
-        });
-        ctx.closePath();
+        ctx.rect(bx, by, bw, bh);
         ctx.fill('evenodd');
         ctx.restore();
 
-        // 2. Rule of thirds grid inside quad when dragging
-        if (recrop.drag >= 0) {
+        // 2. Rule of thirds grid lines (while actively dragging)
+        if (cropState.drag) {
           ctx.save();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
           ctx.lineWidth = 1 * dpr;
-          for (let step = 1; step <= 2; step++) {
-            const f = step / 3;
-            // Horizontal grid line
-            const [p0x, p0y] = recropToDisplay(lerpPt(quad[0], quad[3], f));
-            const [p1x, p1y] = recropToDisplay(lerpPt(quad[1], quad[2], f));
-            ctx.beginPath();
-            ctx.moveTo(p0x * sc * dpr, p0y * sc * dpr);
-            ctx.lineTo(p1x * sc * dpr, p1y * sc * dpr);
-            ctx.stroke();
-
-            // Vertical grid line
-            const [q0x, q0y] = recropToDisplay(lerpPt(quad[0], quad[1], f));
-            const [q1x, q1y] = recropToDisplay(lerpPt(quad[3], quad[2], f));
-            ctx.beginPath();
-            ctx.moveTo(q0x * sc * dpr, q0y * sc * dpr);
-            ctx.lineTo(q1x * sc * dpr, q1y * sc * dpr);
-            ctx.stroke();
-          }
+          // Horizontal
+          ctx.beginPath();
+          ctx.moveTo(bx, by + bh / 3);
+          ctx.lineTo(bx + bw, by + bh / 3);
+          ctx.moveTo(bx, by + (bh * 2) / 3);
+          ctx.lineTo(bx + bw, by + (bh * 2) / 3);
+          // Vertical
+          ctx.beginPath();
+          ctx.moveTo(bx + bw / 3, by);
+          ctx.lineTo(bx + bw / 3, by + bh);
+          ctx.moveTo(bx + (bw * 2) / 3, by);
+          ctx.lineTo(bx + (bw * 2) / 3, by + bh);
+          ctx.stroke();
           ctx.restore();
         }
 
-        // 3. Draw luminous quad boundary stroke
+        // 3. Crisp white bounding border
         ctx.save();
-        ctx.strokeStyle = '#3B82F6';
-        ctx.lineWidth = 2.5 * dpr;
-        ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
-        ctx.shadowBlur = 6 * dpr;
-        ctx.beginPath();
-        quad.forEach((pt, i) => {
-          const [dx, dy] = recropToDisplay(pt);
-          const X = dx * sc * dpr, Y = dy * sc * dpr;
-          if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
-        });
-        ctx.closePath();
-        ctx.stroke();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 4 * dpr;
+        ctx.strokeRect(bx, by, bw, bh);
         ctx.restore();
 
-        // 4. Draw Midpoint Edge Handles
-        for (let i = 0; i < 4; i++) {
-          const ptA = quad[i], ptB = quad[(i + 1) % 4];
-          const mid = lerpPt(ptA, ptB, 0.5);
-          const [mx, my] = recropToDisplay(mid);
-          const X = mx * sc * dpr, Y = my * sc * dpr;
+        // 4. Corner L-brackets (3.5px white, clean & tactile)
+        ctx.save();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 3.5 * dpr;
+        ctx.lineCap = 'square';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 4 * dpr;
+        const arm = Math.min(16 * dpr, Math.min(bw, bh) / 4);
 
-          ctx.save();
-          ctx.fillStyle = '#FFFFFF';
-          ctx.strokeStyle = '#2563EB';
-          ctx.lineWidth = 2 * dpr;
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-          ctx.shadowBlur = 4 * dpr;
-          ctx.beginPath();
-          ctx.arc(X, Y, 5 * dpr, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
-        }
+        // NW
+        ctx.beginPath();
+        ctx.moveTo(bx, by + arm);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(bx + arm, by);
+        ctx.stroke();
 
-        // 5. Draw 4 Corner Handles
-        quad.forEach((pt, i) => {
-          const [dx, dy] = recropToDisplay(pt);
-          const X = dx * sc * dpr, Y = dy * sc * dpr;
-          const isDraggingThis = (recrop.drag === i);
+        // NE
+        ctx.beginPath();
+        ctx.moveTo(bx + bw - arm, by);
+        ctx.lineTo(bx + bw, by);
+        ctx.lineTo(bx + bw, by + arm);
+        ctx.stroke();
 
-          ctx.save();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-          ctx.shadowBlur = (isDraggingThis ? 8 : 5) * dpr;
-          ctx.shadowOffsetY = 2 * dpr;
+        // SE
+        ctx.beginPath();
+        ctx.moveTo(bx + bw, by + bh - arm);
+        ctx.lineTo(bx + bw, by + bh);
+        ctx.lineTo(bx + bw - arm, by + bh);
+        ctx.stroke();
 
-          // Outer circle
-          ctx.fillStyle = '#FFFFFF';
-          ctx.strokeStyle = isDraggingThis ? '#2563EB' : '#3B82F6';
-          ctx.lineWidth = (isDraggingThis ? 3 : 2.5) * dpr;
-          ctx.beginPath();
-          ctx.arc(X, Y, (isDraggingThis ? 11 : 9) * dpr, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+        // SW
+        ctx.beginPath();
+        ctx.moveTo(bx + arm, by + bh);
+        ctx.lineTo(bx, by + bh);
+        ctx.lineTo(bx, by + bh - arm);
+        ctx.stroke();
 
-          // Inner dot
-          ctx.fillStyle = '#2563EB';
-          ctx.beginPath();
-          ctx.arc(X, Y, 3.5 * dpr, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        });
+        // 5. Midpoint Edge Ticks
+        const bar = Math.min(12 * dpr, Math.min(bw, bh) / 6);
+        ctx.lineWidth = 3 * dpr;
+        // Top
+        ctx.beginPath();
+        ctx.moveTo(bx + bw / 2 - bar, by);
+        ctx.lineTo(bx + bw / 2 + bar, by);
+        ctx.stroke();
+        // Bottom
+        ctx.beginPath();
+        ctx.moveTo(bx + bw / 2 - bar, by + bh);
+        ctx.lineTo(bx + bw / 2 + bar, by + bh);
+        ctx.stroke();
+        // Left
+        ctx.beginPath();
+        ctx.moveTo(bx, by + bh / 2 - bar);
+        ctx.lineTo(bx, by + bh / 2 + bar);
+        ctx.stroke();
+        // Right
+        ctx.beginPath();
+        ctx.moveTo(bx + bw, by + bh / 2 - bar);
+        ctx.lineTo(bx + bw, by + bh / 2 + bar);
+        ctx.stroke();
 
-      } else {
-        // Create high-resolution enhanced offscreen buffer
-        const enhCv = document.createElement('canvas');
-        enhCv.width = bufferW;
-        enhCv.height = bufferH;
-        const enhCtx = enhCv.getContext('2d');
-        enhCtx.imageSmoothingEnabled = true;
-        enhCtx.imageSmoothingQuality = 'high';
-        enhCtx.drawImage(source, 0, 0, bufferW, bufferH);
+        ctx.restore();
 
-        try {
-          A.enhancePage(enhCv, p.enhanceMode || 'enhanced', {
-            brightness: p.brightness ?? 100,
-            contrast: p.contrast ?? 100,
-          });
-        } catch (e) {}
-
-        if (isSplitView) {
+      } else if (isSplitView) {
           // Draw enhanced base
           ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
 
@@ -4644,7 +4618,6 @@
         } else {
           ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
         }
-      }
 
       applyCanvasTransform();
       if (!isCropping) renderTextLayer();
@@ -5303,45 +5276,19 @@
         };
       }
 
-      // In-Studio Interactive Cropping Pointer Handlers
-      if (studioCanvas && isCropping && recrop) {
+      // In-Studio Interactive Rectangular Crop Pointer Handlers
+      if (studioCanvas && isCropping && cropState) {
         studioCanvas.onpointerdown = (e) => {
           const rect = studioCanvas.getBoundingClientRect();
-          const px = (e.clientX - rect.left);
-          const py = (e.clientY - rect.top);
-          const displayScale = recrop.displayScale || (rect.width / ((recrop.rot % 2 === 1) ? recrop.raw.height : recrop.raw.width));
-          const quad = recrop.quad || defaultQuad(recrop.raw);
-          let bestIdx = -1;
-          let bestDist = 32;
+          const px = e.clientX - rect.left;
+          const py = e.clientY - rect.top;
+          const sc = cropState.displayScale || (rect.width / pages[selIdx].canvas.width);
+          const handle = getCropHandle(px, py, cropState.box, sc);
 
-          // Check 4 corner pins
-          quad.forEach((pt, i) => {
-            const [dx, dy] = recropToDisplay(pt);
-            const cx = dx * displayScale, cy = dy * displayScale;
-            const dist = Math.hypot(cx - px, cy - py);
-            if (dist < bestDist) {
-              bestDist = dist;
-              bestIdx = i;
-            }
-          });
-
-          // Check 4 edge midpoint pins
-          if (bestIdx < 0) {
-            for (let i = 0; i < 4; i++) {
-              const mid = lerpPt(quad[i], quad[(i + 1) % 4], 0.5);
-              const [mx, my] = recropToDisplay(mid);
-              const cx = mx * displayScale, cy = my * displayScale;
-              const dist = Math.hypot(cx - px, cy - py);
-              if (dist < 22) {
-                bestDist = dist;
-                bestIdx = 4 + i;
-                break;
-              }
-            }
-          }
-
-          if (bestIdx >= 0) {
-            recrop.drag = bestIdx;
+          if (handle) {
+            cropState.drag = handle;
+            cropState.startBox = { ...cropState.box };
+            cropState.startPt = { x: px, y: py };
             try { studioCanvas.setPointerCapture(e.pointerId); } catch {}
             e.preventDefault();
             updateStudioPreview();
@@ -5349,64 +5296,102 @@
         };
 
         studioCanvas.onpointermove = (e) => {
-          if (!recrop) return;
+          if (!cropState) return;
           const rect = studioCanvas.getBoundingClientRect();
-          const raw = recrop.raw;
-          const rot = recrop.rot % 4;
-          const displayScale = recrop.displayScale || (rect.width / (rot % 2 === 1 ? raw.height : raw.width));
+          const px = e.clientX - rect.left;
+          const py = e.clientY - rect.top;
+          const sc = cropState.displayScale || (rect.width / pages[selIdx].canvas.width);
+          const pCanvas = pages[selIdx].canvas;
 
-          if (recrop.drag < 0) {
-            const px = (e.clientX - rect.left);
-            const py = (e.clientY - rect.top);
-            const quad = recrop.quad || defaultQuad(raw);
-            let isHover = false;
-            quad.forEach((pt) => {
-              const [dx, dy] = recropToDisplay(pt);
-              if (Math.hypot(dx * displayScale - px, dy * displayScale - py) < 22) isHover = true;
-            });
-            studioCanvas.style.cursor = isHover ? 'grab' : 'crosshair';
+          if (!cropState.drag) {
+            const handle = getCropHandle(px, py, cropState.box, sc);
+            const cursorMap = {
+              nw: 'nwse-resize',
+              se: 'nwse-resize',
+              ne: 'nesw-resize',
+              sw: 'nesw-resize',
+              n: 'ns-resize',
+              s: 'ns-resize',
+              w: 'ew-resize',
+              e: 'ew-resize',
+              inside: 'move',
+            };
+            studioCanvas.style.cursor = handle ? (cursorMap[handle] || 'crosshair') : 'crosshair';
             return;
           }
 
-          const X = (e.clientX - rect.left) / displayScale;
-          const Y = (e.clientY - rect.top) / displayScale;
+          const dx = (px - cropState.startPt.x) / sc;
+          const dy = (py - cropState.startPt.y) / sc;
+          const s = cropState.startBox;
+          const minDim = 30;
+          let nx = s.x, ny = s.y, nw = s.w, nh = s.h;
 
-          let ax, ay;
-          if (rot === 0) { ax = X; ay = Y; }
-          else if (rot === 1) { ax = Y; ay = raw.height - X; }
-          else if (rot === 2) { ax = raw.width - X; ay = raw.height - Y; }
-          else { ax = raw.width - Y; ay = X; }
-
-          ax = Math.max(2, Math.min(raw.width - 2, ax));
-          ay = Math.max(2, Math.min(raw.height - 2, ay));
-
-          // Magnetic snap check
-          try {
-            const imgCtx = raw.getContext('2d');
-            const id = imgCtx.getImageData(0, 0, raw.width, raw.height);
-            const edge = getNearestEdge(id, raw.width, raw.height, ax, ay, 14);
-            if (edge.snapped) { ax = edge.x; ay = edge.y; }
-          } catch {}
-
-          if (recrop.drag < 4) {
-            recrop.quad[recrop.drag] = { x: ax, y: ay };
-          } else {
-            const edgeIdx = recrop.drag - 4;
-            const i1 = edgeIdx, i2 = (edgeIdx + 1) % 4;
-            const prevMid = lerpPt(recrop.quad[i1], recrop.quad[i2], 0.5);
-            const dx = ax - prevMid.x, dy = ay - prevMid.y;
-            recrop.quad[i1] = { x: Math.max(2, Math.min(raw.width - 2, recrop.quad[i1].x + dx)), y: Math.max(2, Math.min(raw.height - 2, recrop.quad[i1].y + dy)) };
-            recrop.quad[i2] = { x: Math.max(2, Math.min(raw.width - 2, recrop.quad[i2].x + dx)), y: Math.max(2, Math.min(raw.height - 2, recrop.quad[i2].y + dy)) };
+          switch (cropState.drag) {
+            case 'inside': {
+              nx = Math.max(0, Math.min(pCanvas.width - s.w, s.x + dx));
+              ny = Math.max(0, Math.min(pCanvas.height - s.h, s.y + dy));
+              break;
+            }
+            case 'nw': {
+              nx = Math.max(0, Math.min(s.x + s.w - minDim, s.x + dx));
+              ny = Math.max(0, Math.min(s.y + s.h - minDim, s.y + dy));
+              nw = s.w - (nx - s.x);
+              nh = s.h - (ny - s.y);
+              break;
+            }
+            case 'ne': {
+              ny = Math.max(0, Math.min(s.y + s.h - minDim, s.y + dy));
+              nw = Math.max(minDim, Math.min(pCanvas.width - s.x, s.w + dx));
+              nh = s.h - (ny - s.y);
+              break;
+            }
+            case 'se': {
+              nw = Math.max(minDim, Math.min(pCanvas.width - s.x, s.w + dx));
+              nh = Math.max(minDim, Math.min(pCanvas.height - s.y, s.h + dy));
+              break;
+            }
+            case 'sw': {
+              nx = Math.max(0, Math.min(s.x + s.w - minDim, s.x + dx));
+              nw = s.w - (nx - s.x);
+              nh = Math.max(minDim, Math.min(pCanvas.height - s.y, s.h + dy));
+              break;
+            }
+            case 'n': {
+              ny = Math.max(0, Math.min(s.y + s.h - minDim, s.y + dy));
+              nh = s.h - (ny - s.y);
+              break;
+            }
+            case 's': {
+              nh = Math.max(minDim, Math.min(pCanvas.height - s.y, s.h + dy));
+              break;
+            }
+            case 'w': {
+              nx = Math.max(0, Math.min(s.x + s.w - minDim, s.x + dx));
+              nw = s.w - (nx - s.x);
+              break;
+            }
+            case 'e': {
+              nw = Math.max(minDim, Math.min(pCanvas.width - s.x, s.w + dx));
+              break;
+            }
           }
 
-          updateLoupe(e.clientX, e.clientY, raw, ax, ay, 36);
+          cropState.box = {
+            x: Math.round(nx),
+            y: Math.round(ny),
+            w: Math.round(nw),
+            h: Math.round(nh),
+          };
+
+          const dimEl = parent.querySelector('#scan-crop-dim-label');
+          if (dimEl) dimEl.textContent = `${cropState.box.w} × ${cropState.box.h} px`;
+
           updateStudioPreview();
         };
 
         const handlePointerEnd = () => {
-          if (recrop && recrop.drag >= 0) {
-            recrop.drag = -1;
-            hideLoupe();
+          if (cropState && cropState.drag) {
+            cropState.drag = null;
             updateStudioPreview();
           }
         };
@@ -5414,54 +5399,25 @@
         studioCanvas.onpointercancel = handlePointerEnd;
       }
 
-      // Crop Ribbon Controls
-      const btnCropAuto = parent.querySelector('#btn-crop-autodetect');
-      const btnCropRotate = parent.querySelector('#btn-crop-rotate');
-      const btnCropFull = parent.querySelector('#btn-crop-full');
+      // Floating Crop Bar Action Bindings
+      const btnCropReset = parent.querySelector('#btn-crop-reset');
       const btnCropCancel = parent.querySelector('#btn-crop-cancel');
       const btnCropApply = parent.querySelector('#btn-crop-apply');
 
-      if (btnCropAuto && recrop) {
-        btnCropAuto.onclick = async () => {
-          const raw = recrop.raw;
-          const detected = await A.detectQuad(raw);
-          if (detected) {
-            recrop.quad = detected.map(q => ({ x: q.x, y: q.y }));
-            updateStudioPreview();
-            setStatus('Auto-detected document boundaries.', 'ok');
-          } else {
-            setStatus('Default boundaries applied.', 'info');
-          }
-        };
-      }
-
-      if (btnCropRotate && recrop) {
-        btnCropRotate.onclick = () => {
-          recrop.quad = A.rotateQuad(recrop.quad || defaultQuad(recrop.raw));
-          recrop.rot = (recrop.rot + 1) % 4;
+      if (btnCropReset && cropState) {
+        btnCropReset.onclick = () => {
+          const c = pages[selIdx].canvas;
+          cropState.box = { x: 0, y: 0, w: c.width, h: c.height };
+          const dimEl = parent.querySelector('#scan-crop-dim-label');
+          if (dimEl) dimEl.textContent = `${c.width} × ${c.height} px`;
           updateStudioPreview();
-        };
-      }
-
-      if (btnCropFull && recrop) {
-        btnCropFull.onclick = () => {
-          const raw = recrop.raw;
-          recrop.quad = [
-            { x: 2, y: 2 },
-            { x: raw.width - 2, y: 2 },
-            { x: raw.width - 2, y: raw.height - 2 },
-            { x: 2, y: raw.height - 2 }
-          ];
-          updateStudioPreview();
-          setStatus('Expanded to full page margins.', 'ok');
         };
       }
 
       if (btnCropCancel) {
         btnCropCancel.onclick = () => {
           isCropping = false;
-          recrop = null;
-          hideLoupe();
+          cropState = null;
           refreshStudioUI();
           setStatus('Crop canceled.', 'ok');
         };
@@ -5806,18 +5762,9 @@
             } else if (e.key === 'Escape') {
               e.preventDefault();
               isCropping = false;
-              recrop = null;
-              hideLoupe();
+              cropState = null;
               refreshStudioUI();
               return;
-            } else if (e.key === 'r' || e.key === 'R') {
-              if (recrop) {
-                e.preventDefault();
-                recrop.quad = A.rotateQuad(recrop.quad || defaultQuad(recrop.raw));
-                recrop.rot = (recrop.rot + 1) % 4;
-                updateStudioPreview();
-                return;
-              }
             }
           }
 
@@ -5995,7 +5942,7 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
-       IN-STUDIO HOMOGRAPHY CROP ENGINE (Magnetic Edge Snapping)
+       IN-STUDIO RECTANGULAR CROP ENGINE (8-Handle Box)
     ════════════════════════════════════════════════════════════════ */
     function openRecrop(idx) {
       const p = pages[idx];
@@ -6004,76 +5951,78 @@
       isRedacting = false;
       showSearchBar = false;
       activeFlyout = null;
-      const raw = p.raw || p.canvas;
-      recrop = {
+      const c = p.canvas;
+      const m = 0.04;
+      const bx = Math.round(c.width * m);
+      const by = Math.round(c.height * m);
+      const bw = Math.max(40, Math.round(c.width * (1 - 2 * m)));
+      const bh = Math.max(40, Math.round(c.height * (1 - 2 * m)));
+
+      cropState = {
         idx,
-        raw,
-        quad: p.quad ? p.quad.map((q) => ({ x: q.x, y: q.y })) : defaultQuad(raw),
-        origQuad: p.quad ? p.quad.map((q) => ({ x: q.x, y: q.y })) : defaultQuad(raw),
-        rot: (p.rot || 0) % 4,
-        origRot: (p.rot || 0) % 4,
-        drag: -1,
-        scale: 1,
+        box: { x: bx, y: by, w: bw, h: bh },
+        origBox: { x: bx, y: by, w: bw, h: bh },
+        drag: null,
+        startBox: null,
+        startPt: null,
+        displayScale: 1,
       };
       refreshStudioUI();
-      setStatus('Adjust crop handles. Press Enter to apply or Esc to cancel.', 'info');
+      setStatus('Adjust crop box. Press Enter or click Done to apply.', 'info');
     }
 
-    function getNearestEdge(imgData, w, h, px, py, radius = 14) {
-      let maxGrad = -1, bestX = px, bestY = py;
-      const x0 = Math.max(1, Math.floor(px - radius)), x1 = Math.min(w - 2, Math.floor(px + radius));
-      const y0 = Math.max(1, Math.floor(py - radius)), y1 = Math.min(h - 2, Math.floor(py + radius));
-      const d = imgData.data;
-      for (let y = y0; y <= y1; y++) {
-        for (let x = x0; x <= x1; x++) {
-          const p = (y * w + x) * 4;
-          const gx = Math.abs(d[p + 4] - d[p - 4]);
-          const gy = Math.abs(d[p + w * 4] - d[p - w * 4]);
-          const g = gx + gy;
-          if (g > maxGrad && g > 60) {
-            maxGrad = g; bestX = x; bestY = y;
-          }
-        }
-      }
-      return maxGrad > 60 ? { x: bestX, y: bestY, snapped: true } : { x: px, y: py, snapped: false };
+    function getCropHandle(px, py, box, scale) {
+      if (!box) return null;
+      const bx = box.x * scale;
+      const by = box.y * scale;
+      const bw = box.w * scale;
+      const bh = box.h * scale;
+      const cornerR = 22;
+      const edgeR = 14;
+
+      // Check 4 Corners
+      if (Math.hypot(px - bx, py - by) < cornerR) return 'nw';
+      if (Math.hypot(px - (bx + bw), py - by) < cornerR) return 'ne';
+      if (Math.hypot(px - (bx + bw), py - (by + bh)) < cornerR) return 'se';
+      if (Math.hypot(px - bx, py - (by + bh)) < cornerR) return 'sw';
+
+      // Check 4 Edges
+      if (Math.abs(py - by) < edgeR && px >= bx - 6 && px <= bx + bw + 6) return 'n';
+      if (Math.abs(py - (by + bh)) < edgeR && px >= bx - 6 && px <= bx + bw + 6) return 's';
+      if (Math.abs(px - bx) < edgeR && py >= by - 6 && py <= by + bh + 6) return 'w';
+      if (Math.abs(px - (bx + bw)) < edgeR && py >= by - 6 && py <= by + bh + 6) return 'e';
+
+      // Inside Box
+      if (px > bx && px < bx + bw && py > by && py < by + bh) return 'inside';
+
+      return null;
     }
 
-    function defaultQuad(raw) {
-      const m = 0.025;
-      return [
-        { x: Math.round(raw.width * m), y: Math.round(raw.height * m) },
-        { x: Math.round(raw.width * (1 - m)), y: Math.round(raw.height * m) },
-        { x: Math.round(raw.width * (1 - m)), y: Math.round(raw.height * (1 - m)) },
-        { x: Math.round(raw.width * m), y: Math.round(raw.height * (1 - m)) },
-      ];
-    }
+    function applyRecrop() {
+      if (!cropState) return;
+      const p = pages[cropState.idx];
+      if (!p) return;
 
-    function recropToDisplay(p) {
-      if (!recrop) return [p.x, p.y];
-      const raw = recrop.raw, rot = recrop.rot % 4, x = p.x, y = p.y;
-      if (rot === 0) return [x, y];
-      if (rot === 1) return [raw.height - y, x];
-      if (rot === 2) return [raw.width - x, raw.height - y];
-      return [y, raw.width - x];
-    }
+      const { x, y, w, h } = cropState.box;
+      if (w < 10 || h < 10) return;
 
-    async function applyRecrop() {
-      if (!recrop) return;
-      const q = recrop.quad || defaultQuad(recrop.raw);
-      setStatus('Unwarping perspective crop...', 'info');
-      const res = await A.processPhoto(recrop.raw, { detect: false, quad: q, maxDim: 4096 });
-      pages[recrop.idx] = Object.assign({}, pages[recrop.idx], {
-        canvas: res.canvas,
-        cropped: true,
-        quad: q.map((p) => ({ x: p.x, y: p.y })),
-        rot: recrop.rot % 4,
-        ocrData: null,
-      });
+      const srcCv = p.canvas;
+      const croppedCv = document.createElement('canvas');
+      croppedCv.width = Math.max(1, Math.round(w));
+      croppedCv.height = Math.max(1, Math.round(h));
+      const ctx = croppedCv.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(srcCv, x, y, w, h, 0, 0, croppedCv.width, croppedCv.height);
+
+      p.canvas = croppedCv;
+      p.cropped = true;
+      p.ocrData = null; // Clear cached OCR text for cropped area
+
       isCropping = false;
-      recrop = null;
-      hideLoupe();
+      cropState = null;
       refreshStudioUI();
-      setStatus('Document cropped & perspective unwarped.', 'ok');
+      setStatus('Cropped to selected area.', 'ok');
     }
 
     /* ════════════════════════════════════════════════════════════════
