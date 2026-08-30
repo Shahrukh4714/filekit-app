@@ -383,16 +383,39 @@
         out.data[i * 4] = v; out.data[i * 4 + 1] = v; out.data[i * 4 + 2] = v; out.data[i * 4 + 3] = 255;
       }
     }
- else if (mode === 'photo') {
-      const sorted = Array.from(g).sort((a, b) => a - b);
-      const lo = sorted[Math.floor(sorted.length * 0.015)], hi = sorted[Math.floor(sorted.length * 0.985)];
+    else if (mode === 'photo') {
+      // Vivid Color Photo Mode:
+      // Instant O(N) histogram stretch, color vibrance, and natural tonal clarity
+      const hist = new Uint32Array(256);
+      for (let i = 0; i < g.length; i++) hist[g[i]]++;
+
+      const targetLo = Math.floor(g.length * 0.012);
+      const targetHi = Math.floor(g.length * 0.988);
+
+      let count = 0, lo = 0, hi = 255;
+      for (let v = 0; v < 256; v++) {
+        count += hist[v];
+        if (lo === 0 && count >= targetLo) lo = v;
+        if (count >= targetHi) { hi = v; break; }
+      }
       const range = Math.max(1, hi - lo);
-      for (let i = 0; i < g.length; i++) {
-        const f = Math.max(0, Math.min(1, (g[i] - lo) / range));
-        const o = i * 4;
-        out.data[o] = bc(d[o] * f * 0.35 + (d[o] - lo) / range * 255 * 0.65);
-        out.data[o + 1] = bc(d[o + 1] * f * 0.35 + (d[o + 1] - lo) / range * 255 * 0.65);
-        out.data[o + 2] = bc(d[o + 2] * f * 0.35 + (d[o + 2] - lo) / range * 255 * 0.65);
+
+      const lut = new Float32Array(256);
+      for (let v = 0; v < 256; v++) {
+        const norm = Math.max(0, Math.min(1, (v - lo) / range));
+        lut[v] = norm * 255;
+      }
+
+      const sat = 1.12; // 12% vibrance boost for vivid photos
+      for (let i = 0, o = 0; i < g.length; i++, o += 4) {
+        const r = lut[d[o]];
+        const gVal = lut[d[o + 1]];
+        const bVal = lut[d[o + 2]];
+        const gray = 0.299 * r + 0.587 * gVal + 0.114 * bVal;
+
+        out.data[o] = bc(Math.max(0, Math.min(255, gray + (r - gray) * sat)));
+        out.data[o + 1] = bc(Math.max(0, Math.min(255, gray + (gVal - gray) * sat)));
+        out.data[o + 2] = bc(Math.max(0, Math.min(255, gray + (bVal - gray) * sat)));
         out.data[o + 3] = 255;
       }
     } else if (mode === 'form') {
@@ -450,16 +473,24 @@
       const gBg = boxBlur(gArr, w, h, 24);
       const rBg = boxBlur(rArr, w, h, 24), bBg = boxBlur(bArr, w, h, 24);
       const base = new Float32Array(w * h);
+      const hist = new Uint32Array(256);
       for (let i = 0; i < g.length; i++) {
         const eq = g[i] / Math.max(24, gBg[i]) * 255;
         const nr = rArr[i] / Math.max(24, rBg[i]);
         const nb = bArr[i] / Math.max(24, bBg[i]);
-        // preserve marker colour by re-tinting the normalized grayscale
-        const v = Math.max(0, Math.min(255, eq));
-        base[i] = v * (1 + (nr - 0.5 + nb - 0.5) / 8);
+        const v = Math.max(0, Math.min(255, eq * (1 + (nr - 0.5 + nb - 0.5) / 8)));
+        base[i] = v;
+        hist[Math.round(v)]++;
       }
-      const sorted = Array.from(base).sort((a, b) => a - b);
-      const lo = sorted[Math.floor(sorted.length * 0.004)], hi = sorted[Math.floor(sorted.length * 0.996)];
+
+      const targetLo = Math.floor(base.length * 0.004);
+      const targetHi = Math.floor(base.length * 0.996);
+      let count = 0, lo = 0, hi = 255;
+      for (let v = 0; v < 256; v++) {
+        count += hist[v];
+        if (lo === 0 && count >= targetLo) lo = v;
+        if (count >= targetHi) { hi = v; break; }
+      }
       const range = Math.max(1, hi - lo);
       const stretch = new Float32Array(base.length);
       for (let i = 0; i < base.length; i++) stretch[i] = Math.max(0, Math.min(255, (base[i] - lo) / range * 255));
@@ -470,8 +501,17 @@
       }
     } else {
       // Board mode
-      const sorted = Array.from(g).sort((a, b) => a - b);
-      const lo = sorted[Math.floor(sorted.length * 0.003)], hi = sorted[Math.floor(sorted.length * 0.997)];
+      const hist = new Uint32Array(256);
+      for (let i = 0; i < g.length; i++) hist[g[i]]++;
+
+      const targetLo = Math.floor(g.length * 0.003);
+      const targetHi = Math.floor(g.length * 0.997);
+      let count = 0, lo = 0, hi = 255;
+      for (let v = 0; v < 256; v++) {
+        count += hist[v];
+        if (lo === 0 && count >= targetLo) lo = v;
+        if (count >= targetHi) { hi = v; break; }
+      }
       const range = Math.max(1, hi - lo);
       const stretch = new Float32Array(g.length);
       for (let i = 0; i < g.length; i++) stretch[i] = Math.max(0, Math.min(255, (g[i] - lo) / range * 255));
@@ -5876,6 +5916,26 @@ refreshStudioUI();
           } else if ((e.key === 'r' || e.key === 'R') && !isCropping && !isRedacting) {
             e.preventDefault();
             rotatePage(selIdx, 1);
+          } else if (e.key === '1' && !isCropping && !isRedacting) {
+            e.preventDefault();
+            p.enhanceMode = 'enhanced';
+            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            refreshStudioUI();
+          } else if (e.key === '2' && !isCropping && !isRedacting) {
+            e.preventDefault();
+            p.enhanceMode = 'bw';
+            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            refreshStudioUI();
+          } else if (e.key === '3' && !isCropping && !isRedacting) {
+            e.preventDefault();
+            p.enhanceMode = 'photo';
+            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            refreshStudioUI();
+          } else if (e.key === '4' && !isCropping && !isRedacting) {
+            e.preventDefault();
+            p.enhanceMode = 'form';
+            p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            refreshStudioUI();
           } else if (e.key === 'Delete' && !isCropping && !isRedacting) {
             e.preventDefault();
             deletePage(selIdx);
