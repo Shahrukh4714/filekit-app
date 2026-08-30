@@ -42967,5 +42967,59 @@ body #app-view .rail-item.active {
   border-color: #FECACA !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   ZERO-SCROLL ADAPTIVE VIEWPORT POLISH (Apple Preview & Figma Paradigm)
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1360px) {
+  .scan-unified-toolbar {
+    padding: 0 10px !important;
+    gap: 4px !important;
+  }
+  .scan-tb-btn,
+  .scan-unified-toolbar .etxt-tool,
+  .scan-unified-toolbar .scan-seg-btn {
+    padding: 5px 7px !important;
+    gap: 4px !important;
+  }
+  .scan-tb-sep {
+    margin: 0 3px !important;
+  }
+}
+
+@media (max-width: 1220px) {
+  .scan-unified-toolbar #btn-top-search span,
+  .scan-unified-toolbar .scan-tb-btn[data-tool="stamp"] span,
+  .scan-unified-toolbar .scan-tb-btn[data-tool="tune"] span,
+  .scan-unified-toolbar .scan-tb-btn[data-tool="format"] span {
+    display: none !important;
+  }
+  .scan-unified-toolbar #btn-top-search,
+  .scan-unified-toolbar .scan-tb-btn[data-tool="stamp"],
+  .scan-unified-toolbar .scan-tb-btn[data-tool="tune"],
+  .scan-unified-toolbar .scan-tb-btn[data-tool="format"] {
+    width: 32px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 1060px) {
+  .scan-unified-toolbar #btn-top-ocr-layer span,
+  .scan-unified-toolbar #btn-top-redact span,
+  .scan-unified-toolbar #tab-btn-hub span,
+  .scan-unified-toolbar #btn-global-import span {
+    display: none !important;
+  }
+  .scan-unified-toolbar #btn-top-ocr-layer,
+  .scan-unified-toolbar #btn-top-redact,
+  .scan-unified-toolbar #tab-btn-hub,
+  .scan-unified-toolbar #btn-global-import {
+    width: 32px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+
 
 
