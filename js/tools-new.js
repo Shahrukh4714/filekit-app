@@ -2143,6 +2143,11 @@
     let isSplitView = false, splitRatio = 0.5, isDraggingSplit = false;
     let thumbsDrawerOpen = false;
     let activeFlyout = null; // 'tune' | 'format' | 'stamp' | 'keyword-redact' | null
+    let sigTab = 'draw'; // 'draw' | 'type' | 'upload' | 'stamps'
+    let sigInk = '#0F172A';
+    let sigFont = 'Dancing Script';
+    let sigTypedName = 'Authorized Signature';
+    let sigUploadedImg = null;
     let showOcrLayer = isOcrIntent || isRedactIntent;
 
     let ocrPanelOpen = isOcrIntent || isReceiptIntent;
@@ -3588,31 +3593,90 @@
       }
       if (activeFlyout === 'stamp') {
         return `
-          <div class="scan-flyout-card scan-flyout-stamp">
+          <div class="scan-flyout-card scan-flyout-stamp-pro">
             <div class="scan-flyout-head">
-              <strong>Stamps & Signatures</strong>
+              <strong>✍️ Sign &amp; Stamp</strong>
+              <button type="button" class="scan-flyout-reset-btn" id="btn-close-sig-flyout">${ICONS.cross}</button>
             </div>
-            <div class="scan-stamp-grid">
-              <button type="button" class="scan-stamp-chip stamp-approved" data-stamp="APPROVED">
-                <span>APPROVED</span>
+
+            <!-- Mini Mode Switcher Tabs -->
+            <div class="scan-sig-tab-bar" role="tablist">
+              <button type="button" class="scan-sig-tab-btn ${sigTab === 'draw' ? 'is-active' : ''}" data-sig-tab="draw">
+                <span>Draw</span>
               </button>
-              <button type="button" class="scan-stamp-chip stamp-paid" data-stamp="PAID">
-                <span>PAID</span>
+              <button type="button" class="scan-sig-tab-btn ${sigTab === 'type' ? 'is-active' : ''}" data-sig-tab="type">
+                <span>Type</span>
               </button>
-              <button type="button" class="scan-stamp-chip stamp-confidential" data-stamp="CONFIDENTIAL">
-                <span>CONFIDENTIAL</span>
+              <button type="button" class="scan-sig-tab-btn ${sigTab === 'upload' ? 'is-active' : ''}" data-sig-tab="upload">
+                <span>Image</span>
               </button>
-              <button type="button" class="scan-stamp-chip stamp-draft" data-stamp="DRAFT">
-                <span>DRAFT</span>
+              <button type="button" class="scan-sig-tab-btn ${sigTab === 'stamps' ? 'is-active' : ''}" data-sig-tab="stamps">
+                <span>Stamps</span>
               </button>
             </div>
-            <div class="scan-sig-pad-wrap">
-              <div class="scan-sig-head">
-                <span>Draw Signature</span>
+
+            <!-- Tab 1: Draw Signature -->
+            <div class="scan-sig-panel" id="panel-sig-draw" ${sigTab !== 'draw' ? 'hidden' : ''}>
+              <div class="scan-sig-draw-controls">
+                <div class="scan-sig-ink-dots">
+                  <button type="button" class="scan-ink-dot ${sigInk === '#0F172A' ? 'is-active' : ''}" data-ink="#0F172A" style="background:#0F172A;" title="Black Ink"></button>
+                  <button type="button" class="scan-ink-dot ${sigInk === '#1E3A8A' ? 'is-active' : ''}" data-ink="#1E3A8A" style="background:#1E3A8A;" title="Navy Ink"></button>
+                  <button type="button" class="scan-ink-dot ${sigInk === '#DC2626' ? 'is-active' : ''}" data-ink="#DC2626" style="background:#DC2626;" title="Crimson Ink"></button>
+                </div>
                 <button type="button" class="scan-flyout-reset-btn" id="btn-clear-sig">Clear</button>
               </div>
-              <canvas id="scan-sig-canvas" class="scan-sig-canvas" width="250" height="70"></canvas>
-              <button type="button" class="scan-btn-apply-sig" id="btn-apply-sig">Apply Signature to Page</button>
+              <canvas id="scan-sig-canvas" class="scan-sig-canvas" width="280" height="90"></canvas>
+              <button type="button" class="scan-btn-apply-sig" id="btn-apply-draw-sig">Apply Signature to Page</button>
+            </div>
+
+            <!-- Tab 2: Type Signature -->
+            <div class="scan-sig-panel" id="panel-sig-type" ${sigTab !== 'type' ? 'hidden' : ''}>
+              <input type="text" id="scan-sig-type-input" class="scan-sig-text-input" placeholder="Type your full name..." value="${esc(sigTypedName)}">
+              <div class="scan-sig-font-grid">
+                <button type="button" class="scan-sig-font-chip ${sigFont === 'Dancing Script' ? 'is-active' : ''}" data-font="Dancing Script" style="font-family:'Dancing Script', cursive;">Script</button>
+                <button type="button" class="scan-sig-font-chip ${sigFont === 'Great Vibes' ? 'is-active' : ''}" data-font="Great Vibes" style="font-family:'Great Vibes', cursive;">Calligraphy</button>
+                <button type="button" class="scan-sig-font-chip ${sigFont === 'Caveat' ? 'is-active' : ''}" data-font="Caveat" style="font-family:'Caveat', cursive;">Handwritten</button>
+                <button type="button" class="scan-sig-font-chip ${sigFont === 'Sacramento' ? 'is-active' : ''}" data-font="Sacramento" style="font-family:'Sacramento', cursive;">Formal</button>
+              </div>
+              <div class="scan-sig-type-preview" id="scan-sig-type-preview" style="font-family:'${sigFont}', cursive; color:${sigInk};">
+                ${esc(sigTypedName || 'Your Signature')}
+              </div>
+              <button type="button" class="scan-btn-apply-sig" id="btn-apply-type-sig">Apply Typed Signature</button>
+            </div>
+
+            <!-- Tab 3: Upload Image Signature -->
+            <div class="scan-sig-panel" id="panel-sig-upload" ${sigTab !== 'upload' ? 'hidden' : ''}>
+              <div class="scan-sig-upload-box" id="scan-sig-dropzone">
+                <input type="file" id="scan-sig-file-input" accept="image/png,image/jpeg,image/webp" hidden>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Click to pick signature image</span>
+              </div>
+              <label class="scan-sig-knockout-label">
+                <input type="checkbox" id="scan-sig-knockout-bg" checked>
+                <span>Auto-remove white background</span>
+              </label>
+              <div id="scan-sig-upload-preview-wrap" style="display:none; text-align:center; padding:6px; background:#f8fafc; border-radius:6px; border:1px dashed #cbd5e1; margin-bottom:8px;">
+                <canvas id="scan-sig-upload-canvas" style="max-height:60px; max-width:100%; display:inline-block;"></canvas>
+              </div>
+              <button type="button" class="scan-btn-apply-sig" id="btn-apply-upload-sig" style="display:none;">Apply Uploaded Signature</button>
+            </div>
+
+            <!-- Tab 4: Rubber Stamps -->
+            <div class="scan-sig-panel" id="panel-sig-stamps" ${sigTab !== 'stamps' ? 'hidden' : ''}>
+              <div class="scan-stamp-grid">
+                <button type="button" class="scan-stamp-chip stamp-approved" data-stamp="APPROVED">
+                  <span>APPROVED</span>
+                </button>
+                <button type="button" class="scan-stamp-chip stamp-paid" data-stamp="PAID">
+                  <span>PAID</span>
+                </button>
+                <button type="button" class="scan-stamp-chip stamp-confidential" data-stamp="CONFIDENTIAL">
+                  <span>CONFIDENTIAL</span>
+                </button>
+                <button type="button" class="scan-stamp-chip stamp-draft" data-stamp="DRAFT">
+                  <span>DRAFT</span>
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -3882,6 +3946,10 @@
             </button>
             <button type="button" class="scan-tb-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
               ${ICONS.reset}<span>Tune</span>
+            </button>
+            <button type="button" class="scan-tb-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Sign &amp; Stamp Document [S]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+              <span>Sign</span>
             </button>
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
@@ -5556,7 +5624,218 @@
         btnCropApply.onclick = applyRecrop;
       }
 
-      // Stamps & Signature Pad
+      // Stamps & Signature Flyout Bindings
+      const btnCloseSig = parent.querySelector('#btn-close-sig-flyout');
+      if (btnCloseSig) {
+        btnCloseSig.onclick = () => {
+          activeFlyout = null;
+          refreshStudioUI();
+        };
+      }
+
+      parent.querySelectorAll('[data-sig-tab]').forEach((btn) => {
+        btn.onclick = () => {
+          sigTab = btn.dataset.sigTab;
+          refreshStudioUI();
+        };
+      });
+
+      parent.querySelectorAll('.scan-ink-dot').forEach((dot) => {
+        dot.onclick = () => {
+          sigInk = dot.dataset.ink;
+          refreshStudioUI();
+        };
+      });
+
+      // Tab 1: Draw Signature Pad
+      const sigCv = parent.querySelector('#scan-sig-canvas');
+      if (sigCv) {
+        const dpr = Math.max(2, window.devicePixelRatio || 1);
+        const rect = sigCv.getBoundingClientRect();
+        const cssW = rect.width || 280;
+        const cssH = rect.height || 90;
+        sigCv.width = Math.round(cssW * dpr);
+        sigCv.height = Math.round(cssH * dpr);
+        const sigCtx = sigCv.getContext('2d');
+        sigCtx.scale(dpr, dpr);
+        sigCtx.strokeStyle = sigInk;
+        sigCtx.lineWidth = 2.8;
+        sigCtx.lineCap = 'round';
+        sigCtx.lineJoin = 'round';
+
+        let drawingSig = false;
+        let hasStrokes = false;
+
+        sigCv.onpointerdown = (e) => {
+          drawingSig = true;
+          hasStrokes = true;
+          const r = sigCv.getBoundingClientRect();
+          sigCtx.beginPath();
+          sigCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
+          try { sigCv.setPointerCapture(e.pointerId); } catch {}
+          e.preventDefault();
+        };
+        sigCv.onpointermove = (e) => {
+          if (!drawingSig) return;
+          const r = sigCv.getBoundingClientRect();
+          sigCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
+          sigCtx.stroke();
+        };
+        const endSig = (e) => {
+          if (drawingSig) {
+            drawingSig = false;
+            try { sigCv.releasePointerCapture(e.pointerId); } catch {}
+          }
+        };
+        sigCv.onpointerup = endSig;
+        sigCv.onpointercancel = endSig;
+
+        const clearBtn = parent.querySelector('#btn-clear-sig');
+        if (clearBtn) {
+          clearBtn.onclick = () => {
+            sigCtx.clearRect(0, 0, cssW, cssH);
+            hasStrokes = false;
+          };
+        }
+
+        const applyDrawBtn = parent.querySelector('#btn-apply-draw-sig');
+        if (applyDrawBtn) {
+          applyDrawBtn.onclick = () => {
+            if (!hasStrokes) {
+              setStatus('Please draw your signature first.', 'warn');
+              return;
+            }
+            const pageCtx = p.canvas.getContext('2d');
+            const targetW = Math.round(p.canvas.width * 0.32);
+            const targetH = Math.round(targetW * (sigCv.height / sigCv.width));
+            const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
+            const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
+
+            pageCtx.drawImage(sigCv, targetX, targetY, targetW, targetH);
+            p._baseCache = null;
+            p._enhCache = null;
+            p._thumbCache = null;
+            activeFlyout = null;
+            updateStudioPreview();
+            paintFilmstripThumbs();
+            setStatus('Drawn signature placed on document.', 'ok');
+            refreshStudioUI();
+          };
+        }
+      }
+
+      // Tab 2: Type Signature
+      const typeInp = parent.querySelector('#scan-sig-type-input');
+      const typePrev = parent.querySelector('#scan-sig-type-preview');
+      if (typeInp) {
+        typeInp.oninput = () => {
+          sigTypedName = typeInp.value;
+          if (typePrev) typePrev.textContent = sigTypedName || 'Your Signature';
+        };
+      }
+      parent.querySelectorAll('.scan-sig-font-chip').forEach((chip) => {
+        chip.onclick = () => {
+          sigFont = chip.dataset.font;
+          refreshStudioUI();
+        };
+      });
+      const applyTypeBtn = parent.querySelector('#btn-apply-type-sig');
+      if (applyTypeBtn) {
+        applyTypeBtn.onclick = () => {
+          const name = (sigTypedName || '').trim() || 'Signature';
+          const off = document.createElement('canvas');
+          off.width = 600;
+          off.height = 180;
+          const oCtx = off.getContext('2d');
+          oCtx.font = `64px '${sigFont}', cursive`;
+          oCtx.fillStyle = sigInk;
+          oCtx.textAlign = 'center';
+          oCtx.textBaseline = 'middle';
+          oCtx.fillText(name, 300, 90);
+
+          const pageCtx = p.canvas.getContext('2d');
+          const targetW = Math.round(p.canvas.width * 0.34);
+          const targetH = Math.round(targetW * (180 / 600));
+          const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
+          const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
+
+          pageCtx.drawImage(off, targetX, targetY, targetW, targetH);
+          p._baseCache = null;
+          p._enhCache = null;
+          p._thumbCache = null;
+          activeFlyout = null;
+          updateStudioPreview();
+          paintFilmstripThumbs();
+          setStatus('Typed signature placed on document.', 'ok');
+          refreshStudioUI();
+        };
+      }
+
+      // Tab 3: Upload Image Signature
+      const dropzone = parent.querySelector('#scan-sig-dropzone');
+      const fileInp = parent.querySelector('#scan-sig-file-input');
+      const uploadPrevWrap = parent.querySelector('#scan-sig-upload-preview-wrap');
+      const uploadCv = parent.querySelector('#scan-sig-upload-canvas');
+      const knockoutChk = parent.querySelector('#scan-sig-knockout-bg');
+      const applyUploadBtn = parent.querySelector('#btn-apply-upload-sig');
+
+      if (dropzone && fileInp) {
+        dropzone.onclick = () => fileInp.click();
+        fileInp.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+              if (uploadCv) {
+                uploadCv.width = img.width;
+                uploadCv.height = img.height;
+                const uCtx = uploadCv.getContext('2d');
+                uCtx.drawImage(img, 0, 0);
+
+                if (knockoutChk && knockoutChk.checked) {
+                  const id = uCtx.getImageData(0, 0, uploadCv.width, uploadCv.height);
+                  const d = id.data;
+                  for (let i = 0; i < d.length; i += 4) {
+                    if (d[i] > 205 && d[i + 1] > 205 && d[i + 2] > 205) {
+                      d[i + 3] = 0;
+                    }
+                  }
+                  uCtx.putImageData(id, 0, 0);
+                }
+
+                if (uploadPrevWrap) uploadPrevWrap.style.display = 'block';
+                if (applyUploadBtn) applyUploadBtn.style.display = 'block';
+              }
+            };
+            img.src = String(reader.result);
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      if (applyUploadBtn && uploadCv) {
+        applyUploadBtn.onclick = () => {
+          const pageCtx = p.canvas.getContext('2d');
+          const targetW = Math.round(p.canvas.width * 0.32);
+          const targetH = Math.round(targetW * (uploadCv.height / uploadCv.width));
+          const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
+          const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
+
+          pageCtx.drawImage(uploadCv, targetX, targetY, targetW, targetH);
+          p._baseCache = null;
+          p._enhCache = null;
+          p._thumbCache = null;
+          activeFlyout = null;
+          updateStudioPreview();
+          paintFilmstripThumbs();
+          setStatus('Signature image placed on document.', 'ok');
+          refreshStudioUI();
+        };
+      }
+
+      // Tab 4: Rubber Stamps
       parent.querySelectorAll('[data-stamp]').forEach((chip) => {
         chip.onclick = () => {
           const stampText = chip.dataset.stamp;
@@ -5602,59 +5881,6 @@
           refreshStudioUI();
         };
       });
-
-      const sigCv = parent.querySelector('#scan-sig-canvas');
-      if (sigCv) {
-        const sigCtx = sigCv.getContext('2d');
-        let drawingSig = false;
-        sigCv.onpointerdown = (e) => {
-          drawingSig = true;
-          const r = sigCv.getBoundingClientRect();
-          sigCtx.beginPath();
-          sigCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
-          sigCtx.strokeStyle = '#0F172A';
-          sigCtx.lineWidth = 2.5;
-          sigCtx.lineCap = 'round';
-          e.preventDefault();
-        };
-        sigCv.onpointermove = (e) => {
-          if (!drawingSig) return;
-          const r = sigCv.getBoundingClientRect();
-          sigCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
-          sigCtx.stroke();
-        };
-        const endSig = () => { drawingSig = false; };
-        sigCv.onpointerup = endSig;
-        sigCv.onpointercancel = endSig;
-
-        const clearBtn = parent.querySelector('#btn-clear-sig');
-        if (clearBtn) {
-          clearBtn.onclick = () => {
-            sigCtx.clearRect(0, 0, sigCv.width, sigCv.height);
-          };
-        }
-
-        const applySigBtn = parent.querySelector('#btn-apply-sig');
-        if (applySigBtn) {
-          applySigBtn.onclick = () => {
-            const pageCtx = p.canvas.getContext('2d');
-            const targetW = Math.round(p.canvas.width * 0.28);
-            const targetH = Math.round(targetW * (sigCv.height / sigCv.width));
-            const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
-            const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
-
-            pageCtx.drawImage(sigCv, targetX, targetY, targetW, targetH);
-            p._baseCache = null;
-            p._enhCache = null;
-            p._thumbCache = null;
-            activeFlyout = null;
-            updateStudioPreview();
-            paintFilmstripThumbs();
-            setStatus('Signature placed on document.', 'ok');
-            refreshStudioUI();
-          };
-        }
-      }
 
       const topOcrLayerBtn = parent.querySelector('#btn-top-ocr-layer');
       const dockOcrLayerBtn = parent.querySelector('#btn-dock-ocr-layer');
@@ -5771,6 +5997,9 @@
             btn.classList.toggle('is-on', isSplitView);
           } else if (tool === 'tune') {
             activeFlyout = activeFlyout === 'tune' ? null : 'tune';
+            refreshStudioUI();
+          } else if (tool === 'stamp' || tool === 'sign') {
+            activeFlyout = activeFlyout === 'stamp' ? null : 'stamp';
             refreshStudioUI();
           } else if (tool === 'copy') {
             copyPageImage(selIdx);
@@ -5999,6 +6228,10 @@
             e.preventDefault();
             p.enhanceMode = 'form';
             p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            refreshStudioUI();
+          } else if ((e.key === 's' || e.key === 'S') && !isCropping && !isRedacting) {
+            e.preventDefault();
+            activeFlyout = activeFlyout === 'stamp' ? null : 'stamp';
             refreshStudioUI();
           } else if (e.key === 'Delete' && !isCropping && !isRedacting) {
             e.preventDefault();

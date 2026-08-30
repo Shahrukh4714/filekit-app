@@ -41907,78 +41907,209 @@ body #app-view .rail-item.active {
   align-items: center !important;
   gap: 10px !important;
 }
-
 /* ── Stamps & Signature Flyout ── */
-.scan-flyout-stamp {
-  width: 280px !important;
+.scan-flyout-stamp-pro {
+  width: 290px !important;
+}
+
+.scan-sig-tab-bar {
+  display: flex !important;
+  gap: 4px !important;
+  background: #F1F5F9 !important;
+  padding: 3px !important;
+  border-radius: 6px !important;
+  margin-bottom: 10px !important;
+}
+
+.scan-sig-tab-btn {
+  flex: 1 !important;
+  padding: 5px 0 !important;
+  text-align: center !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+}
+
+.scan-sig-tab-btn.is-active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
+}
+
+.scan-sig-draw-controls {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+
+.scan-sig-ink-dots {
+  display: flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+.scan-ink-dot {
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 50% !important;
+  border: 2px solid transparent !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: transform 0.1s ease !important;
+}
+
+.scan-ink-dot.is-active {
+  border-color: #38BDF8 !important;
+  transform: scale(1.15) !important;
+}
+
+.scan-sig-canvas {
+  background: #F8FAFC !important;
+  border: 1px dashed #CBD5E1 !important;
+  border-radius: 6px !important;
+  width: 100% !important;
+  height: 85px !important;
+  cursor: crosshair !important;
+  touch-action: none !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+}
+
+.scan-sig-text-input {
+  width: 100% !important;
+  padding: 6px 8px !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-family: inherit !important;
+  outline: none !important;
+  margin-bottom: 8px !important;
+  box-sizing: border-box !important;
+}
+.scan-sig-text-input:focus {
+  border-color: #38BDF8 !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+
+.scan-sig-font-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 4px !important;
+  margin-bottom: 8px !important;
+}
+
+.scan-sig-font-chip {
+  padding: 4px 6px !important;
+  border: 1px solid #E2E8F0 !important;
+  background: #FFFFFF !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.scan-sig-font-chip.is-active {
+  border-color: #0284C7 !important;
+  background: #F0F9FF !important;
+  color: #0284C7 !important;
+  font-weight: 700 !important;
+}
+
+.scan-sig-type-preview {
+  padding: 10px !important;
+  background: #F8FAFC !important;
+  border: 1px dashed #CBD5E1 !important;
+  border-radius: 6px !important;
+  font-size: 22px !important;
+  text-align: center !important;
+  margin-bottom: 8px !important;
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.scan-sig-upload-box {
+  border: 1.5px dashed #CBD5E1 !important;
+  background: #F8FAFC !important;
+  border-radius: 6px !important;
+  padding: 14px 10px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  color: #64748B !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  margin-bottom: 6px !important;
+}
+.scan-sig-upload-box:hover {
+  border-color: #38BDF8 !important;
+  background: #F0F9FF !important;
+  color: #0284C7 !important;
+}
+
+.scan-sig-knockout-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 10.5px !important;
+  color: #475569 !important;
+  margin-bottom: 8px !important;
+  cursor: pointer !important;
 }
 
 .scan-stamp-grid {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 6px !important;
-  margin-bottom: 12px !important;
+  margin-top: 4px !important;
 }
 
 .scan-stamp-chip {
-  padding: 6px 8px !important;
-  border-radius: 4px !important;
-  font-size: 10.5px !important;
+  padding: 8px 10px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
   letter-spacing: 0.5px !important;
   cursor: pointer !important;
-  border: 1.5px solid !important;
+  border: 2px solid !important;
   background: transparent !important;
   text-align: center !important;
   transition: all 0.12s ease !important;
 }
 
 .stamp-approved { color: #10B981 !important; border-color: #10B981 !important; }
-.stamp-approved:hover { background: #ECFDF5 !important; }
+.stamp-approved:hover { background: #ECFDF5 !important; transform: scale(1.02) !important; }
 
 .stamp-paid { color: #0284C7 !important; border-color: #0284C7 !important; }
-.stamp-paid:hover { background: #F0F9FF !important; }
+.stamp-paid:hover { background: #F0F9FF !important; transform: scale(1.02) !important; }
 
 .stamp-confidential { color: #DC2626 !important; border-color: #DC2626 !important; }
-.stamp-confidential:hover { background: #FEF2F2 !important; }
+.stamp-confidential:hover { background: #FEF2F2 !important; transform: scale(1.02) !important; }
 
 .stamp-draft { color: #D97706 !important; border-color: #D97706 !important; }
-.stamp-draft:hover { background: #FFFBEB !important; }
-
-.scan-sig-pad-wrap {
-  border-top: 1px solid #E2E8F0 !important;
-  padding-top: 10px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 6px !important;
-}
-
-.scan-sig-head {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #4B4B4B !important;
-}
-
-.scan-sig-canvas {
-  background: #F8FAFC !important;
-  border: 1px dashed #CBD5E1 !important;
-  border-radius: 4px !important;
-  width: 100% !important;
-  height: 70px !important;
-  cursor: crosshair !important;
-  touch-action: none !important;
-}
+.stamp-draft:hover { background: #FFFBEB !important; transform: scale(1.02) !important; }
 
 .scan-btn-apply-sig {
-  padding: 6px 10px !important;
+  width: 100% !important;
+  padding: 7px 10px !important;
   background: #0F172A !important;
   color: #FFFFFF !important;
   border: none !important;
-  border-radius: 4px !important;
-  font-size: 11px !important;
+  border-radius: 6px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: background 0.12s ease !important;
