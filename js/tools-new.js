@@ -2471,6 +2471,15 @@
       if (pctEl) pctEl.textContent = `${Math.round(processingState.progress * 100)}%`;
       if (barEl) barEl.style.width = `${Math.round(processingState.progress * 100)}%`;
       if (progressEl) progressEl.setAttribute('aria-valuenow', String(Math.round(processingState.progress * 100)));
+
+      const modalBtnText = container.querySelector('#modal-confirm-text');
+      if (modalBtnText) {
+        modalBtnText.textContent = `${phase} (${Math.round(processingState.progress * 100)}%)...`;
+      }
+      const modalProgressFill = container.querySelector('#modal-progress-fill');
+      if (modalProgressFill) {
+        modalProgressFill.style.width = `${Math.round(processingState.progress * 100)}%`;
+      }
     }
 
     function renderProcessingView() {
@@ -4113,25 +4122,29 @@
                 ${pages.map((p, i) => `
                   <div class="etxt-thumb-card ${i === selIdx ? 'is-on' : ''}" data-idx="${i}" draggable="true" title="Page ${i + 1} — Drag to reorder">
                     <button type="button" class="etxt-thumb ${i === selIdx ? 'is-on' : ''}" data-idx="${i}">
-                      <canvas id="film-cv-${i}" width="160" height="220"></canvas>
-                      <span class="etxt-thumb-num">${i + 1}</span>
-                      ${p.ocrData ? '<span class="scan-thumb-ocr-badge" title="Text Layer Recognized">OCR ✓</span>' : ''}
+                      <div class="scan-thumb-paper-wrap">
+                        <canvas id="film-cv-${i}" width="160" height="220"></canvas>
+                      </div>
+                      <div class="scan-thumb-info-row">
+                        <span class="scan-thumb-num-label ${i === selIdx ? 'is-active' : ''}">Page ${i + 1}</span>
+                        ${p.ocrData ? '<span class="scan-thumb-ocr-pill" title="OCR Ready">OCR</span>' : ''}
+                      </div>
                     </button>
                     <div class="scan-thumb-quick-actions">
                       <button type="button" class="scan-thumb-btn" data-del="${i}" title="Delete page">${ICONS.cross}</button>
                     </div>
                   </div>
                 `).join('')}
-                <div class="scan-drawer-footer-actions">
-                  <button type="button" class="etxt-add-page" id="btn-drawer-add-cam">
-                    ${ICONS.camera}
-                    <span>+ Camera</span>
-                  </button>
-                  <button type="button" class="etxt-add-page" id="btn-drawer-add-file">
-                    ${ICONS.folder}
-                    <span>+ Upload</span>
-                  </button>
-                </div>
+              </div>
+              <div class="scan-drawer-footer-actions">
+                <button type="button" class="etxt-add-page" id="btn-drawer-add-cam" title="Scan with Camera">
+                  ${ICONS.camera}
+                  <span>Camera</span>
+                </button>
+                <button type="button" class="etxt-add-page" id="btn-drawer-add-file" title="Upload Files">
+                  ${ICONS.folder}
+                  <span>Upload</span>
+                </button>
               </div>
             </aside>
 
@@ -6943,64 +6956,60 @@
           <div class="scan-modal-head">
             <div class="scan-modal-head-text">
               <h3 id="scan-export-modal-title">Export Document</h3>
-              <p>${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · 100% On-Device Local Processing</p>
+              <p class="scan-modal-subtitle">${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · 100% on-device local processing</p>
             </div>
-            <button type="button" class="scan-modal-close" id="btn-modal-close" title="Close">${ICONS.cross}</button>
+            <button type="button" class="scan-modal-close" id="btn-modal-close" title="Close" aria-label="Close modal">${ICONS.cross}</button>
           </div>
 
           <div class="scan-modal-body">
-            <!-- Format Chooser Cards -->
-            <label class="scan-modal-section-title">Select Output Format</label>
-            <div class="scan-modal-fmt-cards">
-              <label class="scan-modal-fmt-card ${pdfFormat === 'searchable' ? 'is-selected' : ''}">
-                <input type="radio" name="modal_export_fmt" value="searchable" ${pdfFormat === 'searchable' ? 'checked' : ''}>
-                <div class="scan-modal-fmt-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                </div>
-                <div class="scan-modal-fmt-details">
-                  <div class="scan-modal-fmt-top">
-                    <strong>Searchable PDF</strong>
-                    <span class="scan-modal-badge-rec">Recommended</span>
+            <!-- Unified Grouped Format Picker -->
+            <div class="scan-modal-section">
+              <label class="scan-modal-section-title">Format</label>
+              <div class="scan-modal-group" role="radiogroup" aria-label="Output Format">
+                <label class="scan-modal-group-row ${pdfFormat === 'searchable' ? 'is-selected' : ''}">
+                  <input type="radio" name="modal_export_fmt" value="searchable" ${pdfFormat === 'searchable' ? 'checked' : ''}>
+                  <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
+                  <div class="scan-modal-row-content">
+                    <div class="scan-modal-row-header">
+                      <span class="scan-modal-row-title">Searchable PDF</span>
+                      <span class="scan-modal-badge-rec">Recommended</span>
+                    </div>
+                    <p class="scan-modal-row-desc">Embedded invisible OCR text for text selection &amp; search</p>
                   </div>
-                  <p>Embedded invisible OCR text layer for text selection &amp; search</p>
-                </div>
-              </label>
+                </label>
 
-              <label class="scan-modal-fmt-card ${pdfFormat === 'image' ? 'is-selected' : ''}">
-                <input type="radio" name="modal_export_fmt" value="image" ${pdfFormat === 'image' ? 'checked' : ''}>
-                <div class="scan-modal-fmt-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                </div>
-                <div class="scan-modal-fmt-details">
-                  <div class="scan-modal-fmt-top">
-                    <strong>Standard PDF</strong>
+                <label class="scan-modal-group-row ${pdfFormat === 'image' ? 'is-selected' : ''}">
+                  <input type="radio" name="modal_export_fmt" value="image" ${pdfFormat === 'image' ? 'checked' : ''}>
+                  <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
+                  <div class="scan-modal-row-content">
+                    <div class="scan-modal-row-header">
+                      <span class="scan-modal-row-title">Standard PDF</span>
+                    </div>
+                    <p class="scan-modal-row-desc">Clean visual PDF document without embedded text vectors</p>
                   </div>
-                  <p>Clean visual PDF document without embedded text vectors</p>
-                </div>
-              </label>
+                </label>
 
-              <label class="scan-modal-fmt-card ${pdfFormat === 'zip' ? 'is-selected' : ''}">
-                <input type="radio" name="modal_export_fmt" value="zip" ${pdfFormat === 'zip' ? 'checked' : ''}>
-                <div class="scan-modal-fmt-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-                </div>
-                <div class="scan-modal-fmt-details">
-                  <div class="scan-modal-fmt-top">
-                    <strong>Image ZIP</strong>
+                <label class="scan-modal-group-row ${pdfFormat === 'zip' ? 'is-selected' : ''}">
+                  <input type="radio" name="modal_export_fmt" value="zip" ${pdfFormat === 'zip' ? 'checked' : ''}>
+                  <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
+                  <div class="scan-modal-row-content">
+                    <div class="scan-modal-row-header">
+                      <span class="scan-modal-row-title">Image ZIP</span>
+                    </div>
+                    <p class="scan-modal-row-desc">Individual high-resolution images in a ZIP bundle</p>
                   </div>
-                  <p>Individual high-resolution PNG / JPEG images in a ZIP bundle</p>
-                </div>
-              </label>
+                </label>
+              </div>
             </div>
 
             <!-- Configuration Grid: Quality + Page Size -->
             <div class="scan-modal-grid">
               <div class="scan-modal-field" id="modal-field-dpi">
-                <label for="modal-export-dpi">Target Resolution (DPI)</label>
+                <label for="modal-export-dpi">Resolution (DPI)</label>
                 <select id="modal-export-dpi" class="scan-modal-select">
-                  <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI — High (Print quality)</option>
-                  <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI — Balanced (Web &amp; Screen)</option>
-                  <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI — Compact (Email friendly)</option>
+                  <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High Quality)</option>
+                  <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
+                  <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
                 </select>
               </div>
 
@@ -7014,10 +7023,10 @@
               </div>
             </div>
 
-            <!-- OCR Language Note for Searchable PDF -->
-            <div class="scan-modal-ocr-strip" id="modal-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
-              <span class="scan-modal-ocr-label">OCR Language Model:</span>
-              <select id="modal-export-lang" class="scan-modal-select-mini">
+            <!-- OCR Language Field -->
+            <div class="scan-modal-field" id="modal-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
+              <label for="modal-export-lang">OCR Language</label>
+              <select id="modal-export-lang" class="scan-modal-select">
                 <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
                 <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
                 <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
@@ -7036,8 +7045,11 @@
           <div class="scan-modal-footer">
             <button type="button" class="scan-modal-btn-cancel" id="btn-modal-cancel">Cancel</button>
             <button type="button" class="scan-modal-btn-confirm" id="btn-modal-confirm">
-              <span id="modal-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : 'Generate & Export PDF'}</span>
-              ${ICONS.arrowRight}
+              <span id="modal-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
+              <span id="modal-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : 'Export PDF'}</span>
+              <div class="scan-modal-progress-track" id="modal-progress-track" style="display:none;">
+                <div class="scan-modal-progress-fill" id="modal-progress-fill"></div>
+              </div>
             </button>
           </div>
         </div>
@@ -7046,6 +7058,7 @@
       container.appendChild(modalWrap);
 
       const closeModal = () => {
+        if (busy) return;
         window.removeEventListener('keydown', handleModalKeyDown);
         modalWrap.remove();
       };
@@ -7060,26 +7073,27 @@
       if (closeBtn) closeBtn.onclick = closeModal;
       if (cancelBtn) cancelBtn.onclick = closeModal;
       modalWrap.onclick = (e) => {
-        if (e.target === modalWrap) closeModal();
+        if (e.target === modalWrap && !busy) closeModal();
       };
 
       const fmtRadios = modalWrap.querySelectorAll('input[name="modal_export_fmt"]');
       fmtRadios.forEach(radio => {
         radio.onchange = () => {
           pdfFormat = radio.value;
-          modalWrap.querySelectorAll('.scan-modal-fmt-card').forEach(c => c.classList.remove('is-selected'));
-          radio.closest('.scan-modal-fmt-card').classList.add('is-selected');
+          modalWrap.querySelectorAll('.scan-modal-group-row').forEach(c => c.classList.remove('is-selected'));
+          const row = radio.closest('.scan-modal-group-row');
+          if (row) row.classList.add('is-selected');
 
           if (pdfFormat === 'zip') {
             if (confirmText) confirmText.textContent = 'Download Image ZIP';
             if (langRow) langRow.style.display = 'none';
             if (sizeField) sizeField.style.display = 'none';
           } else if (pdfFormat === 'image') {
-            if (confirmText) confirmText.textContent = 'Generate Standard PDF';
+            if (confirmText) confirmText.textContent = 'Export PDF';
             if (langRow) langRow.style.display = 'none';
             if (sizeField) sizeField.style.display = 'flex';
           } else {
-            if (confirmText) confirmText.textContent = 'Generate & Export PDF';
+            if (confirmText) confirmText.textContent = 'Export PDF';
             if (langRow) langRow.style.display = 'flex';
             if (sizeField) sizeField.style.display = 'flex';
           }
@@ -7100,18 +7114,25 @@
       };
 
       if (confirmBtn) {
-        confirmBtn.onclick = () => {
-          closeModal();
-          handleExport();
+        confirmBtn.onclick = async () => {
+          if (busy) return;
+          confirmBtn.disabled = true;
+          if (cancelBtn) cancelBtn.disabled = true;
+          if (closeBtn) closeBtn.disabled = true;
+          const spinner = modalWrap.querySelector('#modal-confirm-spinner');
+          const track = modalWrap.querySelector('#modal-progress-track');
+          if (spinner) spinner.style.display = 'inline-block';
+          if (track) track.style.display = 'block';
+          modalWrap.querySelectorAll('input, select').forEach(el => el.disabled = true);
+          await handleExport();
         };
       }
 
       function handleModalKeyDown(e) {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && !busy) {
           closeModal();
-        } else if (e.key === 'Enter' && !e.target.matches('select, textarea, input[type="text"]')) {
-          closeModal();
-          handleExport();
+        } else if (e.key === 'Enter' && !busy && !e.target.matches('select, textarea, input[type="text"]')) {
+          confirmBtn.click();
         }
       }
       window.addEventListener('keydown', handleModalKeyDown);
@@ -7122,7 +7143,7 @@
       const jobId = ++exportJobId;
       busy = true;
       processingState = { phase: 'Preparing export', progress: 0.04, detail: `Preparing ${pages.length} ${pages.length === 1 ? 'page' : 'pages'} locally.` };
-      switchView('processing');
+      updateProcessingState('Preparing export', 0.04, `Preparing ${pages.length} ${pages.length === 1 ? 'page' : 'pages'} locally.`);
 
       const assertCurrent = () => {
         if (jobId !== exportJobId) {
@@ -7135,6 +7156,9 @@
       try {
         const qualityMap = { high: 0.92, balanced: 0.78, compact: 0.55 };
         const q = qualityMap[pdfCompression] || 0.85;
+        const ext = pdfFormat === 'zip' ? 'zip' : 'pdf';
+        const baseName = (getScanSourceName() || 'scanned-document').replace(/\.[^/.]+$/, '');
+        const fileName = `${baseName}.${ext}`;
 
         if (pdfFormat === 'searchable') {
           updateProcessingState('Preparing pages', 0.12, 'Applying the selected cleanup settings at 300 DPI.');
@@ -7152,13 +7176,13 @@
           if (missingIdxs.length > 0) {
             const missingPrep = missingIdxs.map(idx => prep[idx]);
             if (ocrLang === 'auto') {
-              updateProcessingState('Detecting document language', 0.14, 'Scanning the first page to detect the text language.');
+              updateProcessingState('Detecting language', 0.14, 'Scanning first page...');
               const probe = await A.ocrRecognize(missingPrep.slice(0, 1), undefined, 'eng');
               assertCurrent();
               useLang = A.detectScriptLanguage(probe[0] && probe[0].text);
               ocrLang = useLang;
             }
-            updateProcessingState(`Recognizing text (${useLang.toUpperCase()})`, 0.18, `Scanning ${missingIdxs.length} ${missingIdxs.length === 1 ? 'page' : 'pages'} for selectable text.`);
+            updateProcessingState(`Recognizing text (${useLang.toUpperCase()})`, 0.18, `Scanning ${missingIdxs.length} ${missingIdxs.length === 1 ? 'page' : 'pages'}...`);
             const recognized = await A.ocrRecognize(missingPrep, (pr) => {
               if (jobId === exportJobId) updateProcessingState(`Recognizing text (${useLang.toUpperCase()})`, 0.18 + (pr * 0.62), `OCR progress across ${pages.length} ${pages.length === 1 ? 'page' : 'pages'}.`);
             }, useLang);
@@ -7169,22 +7193,30 @@
           }
 
           const results = pages.map(p => p.ocrData);
-          updateProcessingState('Building searchable PDF', 0.88, 'Embedding the recognized text into the 300 DPI document.');
+          updateProcessingState('Building PDF', 0.88, 'Embedding 300 DPI text vectors...');
           const pdfBytes = await A.searchablePdfFromCanvases(fullCanvases, results, { pageSize: pdfPageSize, quality: q, prepCanvases: prep });
           assertCurrent();
-          const allText = pages.map((pg, i) => `── Page ${i + 1} ──\n` + (pg.ocrData?.text || '').trim()).join('\n\n');
-          showScanResult(new Blob([pdfBytes], { type: 'application/pdf' }), `${useLang.toUpperCase()} OCR complete`, allText);
+          
+          updateProcessingState('Downloading', 1.0, 'Saving file...');
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          U.downloadBlob(blob, fileName);
+
+          const modal = container.querySelector('.scan-export-modal-wrap');
+          if (modal) modal.remove();
+
+          busy = false;
+          processingState = null;
+          setStatus(`✓ Downloaded Searchable PDF "${fileName}".`, 'ok');
           return;
         }
 
-
         if (pdfFormat === 'image') {
-          updateProcessingState('Preparing PDF', 0.12, 'Compiling the selected pages into one document.');
+          updateProcessingState('Preparing PDF', 0.12, 'Compiling pages...');
           const PDFLib = await load.pdflib();
           const doc = await PDFLib.PDFDocument.create();
           for (let i = 0; i < pages.length; i++) {
             assertCurrent();
-            updateProcessingState('Compiling standard PDF', 0.14 + ((i / pages.length) * 0.72), `Processing page ${i + 1} of ${pages.length}.`);
+            updateProcessingState('Compiling PDF', 0.14 + ((i / pages.length) * 0.72), `Processing page ${i + 1} of ${pages.length}.`);
             const p = pages[i];
             const canvas = getPageExportCanvas(p);
             const jpg = await A.canvasJpeg(canvas, q);
@@ -7210,33 +7242,62 @@
             page.drawImage(img, { x: imgX, y: imgY, width: imgW, height: imgH });
           }
           assertCurrent();
-          updateProcessingState('Finalizing standard PDF', 0.92, 'Saving the finished document.');
-          showScanResult(new Blob([await doc.save()], { type: 'application/pdf' }), 'OCR not included');
+          updateProcessingState('Downloading', 1.0, 'Saving file...');
+          const blob = new Blob([await doc.save()], { type: 'application/pdf' });
+          U.downloadBlob(blob, fileName);
+
+          const modal = container.querySelector('.scan-export-modal-wrap');
+          if (modal) modal.remove();
+
+          busy = false;
+          processingState = null;
+          setStatus(`✓ Downloaded Standard PDF "${fileName}".`, 'ok');
           return;
         }
 
-        updateProcessingState('Preparing image archive', 0.12, 'Collecting the processed page images.');
+        updateProcessingState('Preparing images', 0.12, 'Collecting pages...');
         const fflate = await load.fflate();
         const files = {};
         for (let i = 0; i < pages.length; i++) {
           assertCurrent();
-          updateProcessingState('Packaging image archive', 0.14 + ((i / pages.length) * 0.72), `Packaging page ${i + 1} of ${pages.length}.`);
+          updateProcessingState('Packaging ZIP', 0.14 + ((i / pages.length) * 0.72), `Packaging page ${i + 1} of ${pages.length}.`);
           const p = pages[i];
           const canvas = getPageExportCanvas(p);
           const jpgBytes = await A.canvasJpeg(canvas, q);
           files[`page-${i + 1}.jpg`] = jpgBytes;
         }
         assertCurrent();
-        updateProcessingState('Finalizing image archive', 0.92, 'Saving the finished archive.');
+        updateProcessingState('Finalizing ZIP', 0.92, 'Packaging archive...');
         const zipped = await new Promise((res, rej) => fflate.zip(files, (err, dat) => err ? rej(err) : res(dat)));
         assertCurrent();
-        showScanResult(new Blob([zipped], { type: 'application/zip' }), 'OCR not included');
+
+        const blob = new Blob([zipped], { type: 'application/zip' });
+        U.downloadBlob(blob, fileName);
+
+        const modal = container.querySelector('.scan-export-modal-wrap');
+        if (modal) modal.remove();
+
+        busy = false;
+        processingState = null;
+        setStatus(`✓ Downloaded Image ZIP "${fileName}".`, 'ok');
       } catch (err) {
         if (err?.code === 'SCAN_EXPORT_CANCELED') return;
         if (jobId !== exportJobId) return;
         busy = false;
         processingState = null;
-        switchView('review');
+        
+        const confirmBtn = container.querySelector('#btn-modal-confirm');
+        const cancelBtn = container.querySelector('#btn-modal-cancel');
+        const closeBtn = container.querySelector('#btn-modal-close');
+        const spinner = container.querySelector('#modal-confirm-spinner');
+        const track = container.querySelector('#modal-progress-track');
+        if (confirmBtn) confirmBtn.disabled = false;
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (closeBtn) closeBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+        if (track) track.style.display = 'none';
+        container.querySelectorAll('.scan-export-modal-wrap input, .scan-export-modal-wrap select').forEach(el => el.disabled = false);
+        
         setStatus('Export failed: ' + err.message, 'err');
       }
     }
