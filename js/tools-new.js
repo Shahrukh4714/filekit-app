@@ -3044,58 +3044,11 @@
       }
     }
 
-    /* Direct PDF & Image file list handler */
+    /* Direct PDF & Image file list handler (Instant Direct-to-Studio Flow) */
     async function handleImportFileList(files) {
       if (!files.length) return;
       importError = '';
       enterBleed();
-
-      const updateImportProgress = (pct, phase, detail) => {
-        const ph = container.querySelector('#scan-import-phase');
-        const pr = container.querySelector('#scan-import-percent');
-        const bar = container.querySelector('#scan-import-bar');
-        const dt = container.querySelector('#scan-import-detail');
-        const clamped = Math.max(0, Math.min(100, Math.round(pct)));
-        if (ph) ph.textContent = phase;
-        if (pr) pr.textContent = `${clamped}%`;
-        if (bar) bar.style.width = `${clamped}%`;
-        if (dt) dt.textContent = detail || '';
-      };
-
-      container.innerHTML = `
-        <div class="scan-state-shell">
-          <header class="scan-header-bar">
-            <div class="scan-title-group">
-              <span class="scan-tool-badge">${ICONS.scanBadge}</span>
-              <div>
-                <h2 class="scan-heading">Scan documents</h2>
-                <p class="scan-subheading">Importing document${files.length === 1 ? '' : 's'} · Local processing</p>
-              </div>
-            </div>
-            <div class="scan-header-actions">
-              <div class="scan-privacy-tag" title="Zero network requests. Processed directly in your browser.">${ICONS.shield}<span>Processed locally</span></div>
-            </div>
-          </header>
-          <main class="scan-state-body scan-processing-state" aria-busy="true" aria-live="polite">
-            <div class="scan-processing-panel">
-              <div class="scan-processing-icon" aria-hidden="true">${ICONS.ocr}</div>
-              <p class="scan-state-kicker">Importing Documents</p>
-              <h1>Preparing your documents</h1>
-              <p class="scan-state-copy">Processing files 100% on this device. Extracting clean pages and text layers.</p>
-              <div class="scan-processing-progress">
-                <div class="scan-processing-progress-head">
-                  <span id="scan-import-phase">Reading ${files[0]?.name || 'files'}…</span>
-                  <strong id="scan-import-percent">5%</strong>
-                </div>
-                <div class="scan-processing-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                  <span id="scan-import-bar" style="width: 5%"></span>
-                </div>
-                <p id="scan-import-detail">Loading document structure…</p>
-              </div>
-            </div>
-          </main>
-        </div>
-      `;
 
       setStatus(`Importing ${files.length} document${files.length === 1 ? '' : 's'}…`, 'ok');
       let importedPages = 0;
@@ -3105,11 +3058,9 @@
         const beforeCount = pages.length;
         try {
           if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
-            updateImportProgress(((i + 0.1) / files.length) * 90, `Loading ${f.name}…`, 'Parsing PDF structure…');
             const pdfjs = await load.pdfjs();
             const doc = await pdfjs.getDocument({ data: await u8(f) }).promise;
             for (let p = 1; p <= doc.numPages; p++) {
-              updateImportProgress(((i + (p / doc.numPages)) / files.length) * 90, `Rendering page ${p} of ${doc.numPages}…`, f.name);
               const page = await doc.getPage(p);
               const vp1 = page.getViewport({ scale: 1 });
               const sc = Math.min(4.5, 4096 / Math.max(vp1.width, vp1.height));
@@ -3166,7 +3117,6 @@
               }
             }
           } else {
-            updateImportProgress(((i + 0.5) / files.length) * 90, `Processing ${f.name}…`, 'Loading image bitmap…');
             const canvas = await A.loadPhotoIntoCanvas(f);
             const name = f.name;
             await addPage(canvas, name, null, false);
@@ -3181,7 +3131,6 @@
         switchView('hub');
         return;
       }
-      updateImportProgress(100, 'Opening Studio…', 'All pages prepared successfully.');
       // Background pre-warm Tesseract worker to eliminate cold start latency
       A.getOrInitOcrWorker(ocrLang || 'eng').catch(() => {});
       if (isOcrIntent || isReceiptIntent) {
