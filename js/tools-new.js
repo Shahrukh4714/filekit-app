@@ -3633,18 +3633,22 @@
       if (activeFlyout === 'keyword-redact') {
         return `
           <div class="scan-flyout-card scan-flyout-keyword-redact">
-
             <div class="scan-flyout-head">
-              <strong>🔍 Find &amp; Blackout Keywords</strong>
-              <button type="button" class="scan-flyout-reset-btn" id="btn-close-kw-flyout">${ICONS.cross}</button>
+              <div class="scan-flyout-title-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <strong>Find &amp; Redact Words</strong>
+              </div>
+              <button type="button" class="scan-flyout-reset-btn" id="btn-close-kw-flyout" title="Close">${ICONS.cross}</button>
             </div>
             <div class="scan-kw-body">
               <div class="scan-kw-input-wrap">
-                <input type="text" id="scan-kw-input" placeholder="Type keyword or phrase (e.g. Acme Corp, Case #49)..." value="${esc(keywordRedactQuery)}" autofocus>
+                <input type="text" id="scan-kw-input" placeholder="Type keyword or phrase to blackout..." value="${esc(keywordRedactQuery)}" autofocus>
               </div>
-              <div class="scan-kw-options">
-                <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-match-case" ${keywordMatchCase ? 'checked' : ''}><span>Match Case</span></label>
-                <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-whole-word" ${keywordWholeWord ? 'checked' : ''}><span>Whole Word</span></label>
+              <div class="scan-kw-options-grid">
+                <div class="scan-kw-checks">
+                  <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-match-case" ${keywordMatchCase ? 'checked' : ''}><span>Match Case</span></label>
+                  <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-whole-word" ${keywordWholeWord ? 'checked' : ''}><span>Whole Word</span></label>
+                </div>
                 <div class="scan-kw-scope-select">
                   <span>Scope:</span>
                   <select id="scan-kw-scope">
@@ -3655,7 +3659,7 @@
               </div>
               <div class="scan-kw-footer">
                 <span class="scan-kw-counter" id="scan-kw-counter">Enter keyword to match</span>
-                <button type="button" class="scan-kw-exec-btn" id="btn-exec-keyword-redact">⚡ Blackout Matches</button>
+                <button type="button" class="scan-kw-exec-btn" id="btn-exec-keyword-redact">Blackout Matches</button>
               </div>
             </div>
           </div>
@@ -3949,15 +3953,15 @@
                 <span class="scan-redact-subbar-hint">Click any word on canvas or drag a blackout box</span>
               </div>
               <div class="scan-redact-subbar-actions">
-                <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <span>Find &amp; Redact Words</span>
-                </button>
-                <button type="button" class="scan-redact-subbar-btn" id="btn-ribbon-auto-redact-pii">
+                <button type="button" class="scan-redact-subbar-btn-primary" id="btn-ribbon-auto-redact-pii" title="Automatically detect and blackout sensitive personal information">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   <span>Auto-Redact PII</span>
                 </button>
-                <button type="button" class="scan-redact-subbar-done" id="btn-close-redact-ribbon">Done</button>
+                <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact" title="Find and blackout specific keywords or phrases">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span>Find &amp; Redact Words</span>
+                </button>
+                <button type="button" class="scan-redact-subbar-done" id="btn-close-redact-ribbon" title="Exit Redaction Mode">Done</button>
               </div>
             </div>
           ` : ''}
