@@ -6289,10 +6289,26 @@
 
       const drawerAddCam = parent.querySelector('#btn-drawer-add-cam');
       const drawerAddFile = parent.querySelector('#btn-drawer-add-file');
+      const topUploadBtn = parent.querySelector('#btn-global-import');
+      const topCamBtn = parent.querySelector('#tab-btn-hub');
       const inp = container.querySelector('#scan-file-input');
 
+      if (topCamBtn) topCamBtn.onclick = () => switchView('hub');
       if (drawerAddCam) drawerAddCam.onclick = () => switchView('hub');
-      if (drawerAddFile && inp) drawerAddFile.onclick = () => inp.click();
+
+      const triggerUpload = () => {
+        if (inp) {
+          inp.value = '';
+          inp.click();
+        }
+      };
+
+      if (topUploadBtn) topUploadBtn.onclick = triggerUpload;
+      if (drawerAddFile) drawerAddFile.onclick = triggerUpload;
+
+      if (inp) {
+        bindFileInput(inp);
+      }
     }
 
     function rotatePage(idx, direction = 1) {
