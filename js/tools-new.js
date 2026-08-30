@@ -3703,12 +3703,14 @@
       }
 
       if (receipt && (receipt.total || receipt.merchant)) {
-
         cardsHtml += `
           <div class="scan-insight-card receipt-card">
             <div class="scan-insight-card-head">
               <span class="insight-badge receipt">🧾 Receipt / Invoice</span>
-              <button type="button" class="insight-copy-btn" id="btn-copy-receipt-json">Copy JSON</button>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="insight-copy-btn" id="btn-copy-receipt-json">Copy JSON</button>
+                <button type="button" class="insight-dl-btn" id="btn-dl-receipt-csv" style="background:#059669; color:#fff; border:none; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:600; cursor:pointer;">Export CSV</button>
+              </div>
             </div>
             <div class="scan-insight-grid">
               ${receipt.merchant ? `<div class="insight-row"><span class="label">Merchant</span><b class="val">${esc(receipt.merchant)}</b></div>` : ''}
@@ -4035,6 +4037,10 @@
                 <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-docx" title="Download as .docx">
                   ${ICONS.word}
                   <span>.DOC</span>
+                </button>
+                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words & positions as .json">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/></svg>
+                  <span>.JSON</span>
                 </button>
               </div>
             </aside>
@@ -4687,6 +4693,25 @@
         };
       }
 
+      const sidebarJsonBtn = parent.querySelector('#btn-sidebar-dl-json');
+      if (sidebarJsonBtn) {
+        sidebarJsonBtn.onclick = () => {
+          const exportData = pages.map((pg, idx) => ({
+            pageNumber: idx + 1,
+            language: ocrLang,
+            text: pg.ocrData?.text || '',
+            wordsCount: (pg.ocrData?.words || []).length,
+            words: (pg.ocrData?.words || []).map(w => ({
+              text: w.text,
+              confidence: w.confidence,
+              bbox: w.bbox
+            }))
+          }));
+          U.downloadBlob(new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' }), 'scan-ocr-data.json');
+          setStatus('Exported structured OCR JSON data.', 'ok');
+        };
+      }
+
       // Subtab switcher in OCR Sidebar
       const subtabText = parent.querySelector('#subtab-ocr-text');
       const subtabInsights = parent.querySelector('#subtab-ocr-insights');
@@ -4700,6 +4725,27 @@
           const r = parseReceiptFields(p.ocrData.text);
           await navigator.clipboard.writeText(JSON.stringify(r, null, 2));
           setStatus('Receipt JSON copied to clipboard!', 'ok');
+        };
+      }
+
+      const btnDlReceiptCsv = parent.querySelector('#btn-dl-receipt-csv');
+      if (btnDlReceiptCsv && p.ocrData?.text) {
+        btnDlReceiptCsv.onclick = () => {
+          const r = parseReceiptFields(p.ocrData.text);
+          if (r) {
+            const rows = [
+              ['Field', 'Value'],
+              ['Merchant', r.merchant || ''],
+              ['Date', r.date || ''],
+              ['Invoice #', r.invoiceNo || ''],
+              ['Subtotal', r.subtotal ? `${r.currency || ''} ${r.subtotal}` : ''],
+              ['Tax', r.tax ? `${r.currency || ''} ${r.tax}` : ''],
+              ['Total', r.total ? `${r.currency || ''} ${r.total}` : '']
+            ];
+            const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+            U.downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${getScanSourceName()}-receipt.csv`);
+            setStatus('Receipt CSV downloaded!', 'ok');
+          }
         };
       }
 
