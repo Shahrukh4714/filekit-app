@@ -43496,6 +43496,322 @@ body #app-view .rail-item.active {
   transform: scale(1.02) !important;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   PRE-EXPORT OPTIONS MODAL SHEET
+   ══════════════════════════════════════════════════════════════ */
+.scan-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  background: rgba(15, 23, 42, 0.48) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  animation: scanModalFadeIn 160ms ease-out forwards !important;
+}
+
+@keyframes scanModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scanModalPop {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.scan-export-modal {
+  width: 100% !important;
+  max-width: 470px !important;
+  background: #FFFFFF !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  animation: scanModalPop 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.scan-modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  background: #FAFAFA !important;
+}
+
+.scan-modal-head-text h3 {
+  margin: 0 0 2px 0 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.01em !important;
+}
+
+.scan-modal-head-text p {
+  margin: 0 !important;
+  font-size: 11.5px !important;
+  color: #64748B !important;
+  font-weight: 500 !important;
+}
+
+.scan-modal-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-modal-close:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-modal-body {
+  padding: 16px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.scan-modal-section-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #64748B !important;
+}
+
+.scan-modal-fmt-cards {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.scan-modal-fmt-card {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  background: #FFFFFF !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-modal-fmt-card input {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.scan-modal-fmt-card:hover {
+  border-color: #CBD5E1 !important;
+  background: #F8FAFC !important;
+}
+
+.scan-modal-fmt-card.is-selected {
+  border-color: #6366F1 !important;
+  background: #F5F3FF !important;
+  box-shadow: 0 0 0 1px #6366F1 !important;
+}
+
+.scan-modal-fmt-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 6px !important;
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+  flex-shrink: 0 !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-modal-fmt-card.is-selected .scan-modal-fmt-icon {
+  background: #EDE9FE !important;
+  color: #6D28D9 !important;
+}
+
+.scan-modal-fmt-details {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.scan-modal-fmt-top {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  line-height: 1.2 !important;
+}
+
+.scan-modal-fmt-top strong {
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  color: #0F172A !important;
+}
+
+.scan-modal-fmt-details p {
+  margin: 2px 0 0 0 !important;
+  font-size: 11px !important;
+  color: #64748B !important;
+  line-height: 1.3 !important;
+}
+
+.scan-modal-badge-rec {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  padding: 1px 5px !important;
+  background: #DCFCE7 !important;
+  color: #15803D !important;
+  border-radius: 4px !important;
+}
+
+.scan-modal-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+
+.scan-modal-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.scan-modal-field label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.scan-modal-select {
+  height: 32px !important;
+  padding: 0 8px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  font-size: 11.5px !important;
+  color: #0F172A !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-modal-select:focus {
+  border-color: #6366F1 !important;
+  background: #FFFFFF !important;
+}
+
+.scan-modal-ocr-strip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+}
+
+.scan-modal-ocr-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.scan-modal-select-mini {
+  height: 26px !important;
+  padding: 0 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #0F172A !important;
+  cursor: pointer !important;
+}
+
+.scan-modal-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  padding: 12px 20px !important;
+  border-top: 1px solid #F1F5F9 !important;
+  background: #FAFAFA !important;
+}
+
+.scan-modal-btn-cancel {
+  height: 32px !important;
+  padding: 0 14px !important;
+  background: transparent !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-modal-btn-cancel:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-modal-btn-confirm {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  padding: 0 16px !important;
+  background: #F6D860 !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.3) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px 0 rgba(246, 216, 96, 0.45) !important;
+  transition: all 200ms linear !important;
+}
+
+.scan-modal-btn-confirm svg {
+  stroke: #FFFFFF !important;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.3)) !important;
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.scan-modal-btn-confirm:hover {
+  background: rgba(246, 216, 96, 0.9) !important;
+  box-shadow: 0 6px 20px rgba(246, 216, 96, 0.35) !important;
+  transform: translateY(-0.5px) !important;
+}
+
+.scan-modal-btn-confirm:active {
+  transform: scale(0.97) !important;
+}
+
+
 
 
 
