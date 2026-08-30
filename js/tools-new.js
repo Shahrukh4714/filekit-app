@@ -3866,15 +3866,20 @@
           <!-- Top Toolbar: All tools flat, text-labeled, zero scroll -->
           <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
 
-            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean — Magic Document Illumination [1]">
-              ${ICONS.filterDoc}<span>Clean</span>
-            </button>
-            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
-              ${ICONS.filterBw}<span>B&amp;W</span>
-            </button>
-            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
-              ${ICONS.filterPhoto}<span>Photo</span>
-            </button>
+            <div class="scan-segmented-modes" role="group" aria-label="Enhancement Filter">
+              <button type="button" class="scan-seg-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
+                <span>Original</span>
+              </button>
+              <button type="button" class="scan-seg-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean Document Illumination [1]">
+                ${ICONS.filterDoc}<span>Clean</span>
+              </button>
+              <button type="button" class="scan-seg-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
+                ${ICONS.filterBw}<span>B&amp;W</span>
+              </button>
+              <button type="button" class="scan-seg-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
+                ${ICONS.filterPhoto}<span>Photo</span>
+              </button>
+            </div>
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
@@ -4700,47 +4705,82 @@
         ctx.drawImage(rawSource, 0, 0, bufferW, bufferH);
         ctx.restore();
 
-        // Draw vertical separator line
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2 * dpr;
+        // Sleek hairline divider with subtle shadow
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 4 * dpr;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1.5 * dpr;
         ctx.beginPath();
         ctx.moveTo(splitX, 0);
         ctx.lineTo(splitX, bufferH);
         ctx.stroke();
+        ctx.restore();
 
-        // Draw draggable center handle
+        // Sleek minimalist floating pill handle
         const handleY = bufferH / 2;
-        ctx.fillStyle = '#ffffff';
+        const pillW = 20 * dpr, pillH = 34 * dpr, pillR = 10 * dpr;
+        ctx.save();
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+        ctx.shadowBlur = 8 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+        ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(splitX, handleY, 14 * dpr, 0, Math.PI * 2);
+        if (ctx.roundRect) {
+          ctx.roundRect(splitX - pillW / 2, handleY - pillH / 2, pillW, pillH, pillR);
+        } else {
+          ctx.rect(splitX - pillW / 2, handleY - pillH / 2, pillW, pillH);
+        }
         ctx.fill();
-        ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 2 * dpr;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.9)';
+        ctx.lineWidth = 1 * dpr;
         ctx.stroke();
+        ctx.restore();
 
-        ctx.fillStyle = '#0284c7';
-        ctx.font = `bold ${10 * dpr}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
+        // Dual subtle grip bars in center of handle
+        ctx.fillStyle = '#94A3B8';
+        ctx.fillRect(splitX - 3 * dpr, handleY - 6 * dpr, 1.5 * dpr, 12 * dpr);
+        ctx.fillRect(splitX + 1.5 * dpr, handleY - 6 * dpr, 1.5 * dpr, 12 * dpr);
+
+        // Subtle, elegant floating labels (minimal glass badges)
+        const badgeH = 22 * dpr;
+        const badgeY = 12 * dpr;
+        ctx.font = `600 ${10.5 * dpr}px Inter, -apple-system, system-ui, sans-serif`;
         ctx.textBaseline = 'middle';
-        ctx.fillText('◀ ▶', splitX, handleY);
 
-        // Draw floating tags
-        ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
-        ctx.textBaseline = 'top';
+        // Left "Original" pill
+        const origText = 'Original';
+        const origW = ctx.measureText(origText).width + 16 * dpr;
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(12 * dpr, badgeY, origW, badgeH, 5 * dpr);
+        } else {
+          ctx.rect(12 * dpr, badgeY, origW, badgeH);
+        }
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(origText, 12 * dpr + origW / 2, badgeY + badgeH / 2);
+        ctx.restore();
 
-        // Raw tag
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-        ctx.fillRect(12 * dpr, 12 * dpr, 74 * dpr, 22 * dpr);
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'left';
-        ctx.fillText('Raw Photo', 20 * dpr, 17 * dpr);
-
-        // Enhanced tag
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
-        ctx.fillRect(bufferW - 86 * dpr, 12 * dpr, 74 * dpr, 22 * dpr);
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'right';
-        ctx.fillText('Enhanced', bufferW - 20 * dpr, 17 * dpr);
+        // Right "Enhanced" pill (showing active mode label)
+        const modeLabel = curPage.enhanceMode === 'bw' ? 'B&W' : (curPage.enhanceMode === 'photo' ? 'Photo' : 'Cleaned');
+        const enhW = ctx.measureText(modeLabel).width + 16 * dpr;
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(bufferW - enhW - 12 * dpr, badgeY, enhW, badgeH, 5 * dpr);
+        } else {
+          ctx.rect(bufferW - enhW - 12 * dpr, badgeY, enhW, badgeH);
+        }
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(modeLabel, bufferW - 12 * dpr - enhW / 2, badgeY + badgeH / 2);
+        ctx.restore();
       } else {
         ctx.drawImage(enhCv, 0, 0, bufferW, bufferH);
       }
@@ -5906,7 +5946,15 @@
         btn.onclick = (e) => {
           e.stopPropagation();
           const tool = btn.dataset.tool;
-          if (tool === 'clean') {
+          if (tool === 'orig' || tool === 'original') {
+            p.enhanceMode = 'original';
+            p._baseCache = null;
+            p._enhCache = null;
+            p._thumbCache = null;
+            activeFlyout = null;
+            p.ocrData = null;
+            refreshStudioUI();
+          } else if (tool === 'clean') {
             p.enhanceMode = 'enhanced';
             p._baseCache = null;
             p._enhCache = null;
