@@ -3833,7 +3833,7 @@
 
       parent.innerHTML = `
         <div class="scan-review-workspace">
-          <!-- Top Master Toolbar: Modern Flat Ribbon (No Pill Boxes, Full Labels) -->
+          <!-- Top Master Toolbar: Ultra-Clean Flat Ribbon (Zero Clutter, No Scrolling) -->
           <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
             <!-- Left Group: Enhancement Profiles -->
             <div class="scan-tb-group">
@@ -3857,42 +3857,12 @@
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
-            <!-- Center Group: Tools & Inspection -->
+            <!-- Center Group: Language & OCR Mode -->
             <div class="scan-tb-group">
               <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Toggle Integrated OCR Text Panel">
                 ${ICONS.ocr}
                 <span>OCR Text</span>
               </button>
-              <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-top-ocr-layer" title="Toggle Selectable Text Layer on Canvas">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span>Text Layer</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find Text in Document (Ctrl+F)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span>Search</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout (Erase sensitive text from image & OCR)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
-                <span>Redact</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Add Stamp or Signature">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
-                <span>Stamp</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
-                ${ICONS.reset}
-                <span>Fine-Tune</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${activeFlyout === 'format' ? 'is-on' : ''}" data-tool="format" title="Export Configuration (Searchable PDF, Page Size, Quality)">
-                ${ICONS.pdf}
-                <span>Format</span>
-              </button>
-            </div>
-
-            <span class="scan-tb-sep" aria-hidden="true"></span>
-
-            <!-- Language & Batch -->
-            <div class="scan-tb-group">
               <div class="scan-tb-lang-pill" title="OCR Language Model">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <select id="scan-top-ocr-lang" class="scan-top-lang-select" aria-label="OCR Language">
@@ -3932,11 +3902,6 @@
               </button>
               <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
             </div>
-
-            <!-- Top Anchored Configuration Popover -->
-            <div class="scan-top-flyout ${activeFlyout ? 'is-open' : ''}" id="scan-top-flyout" ${activeFlyout ? '' : 'hidden'}>
-              ${renderActiveFlyoutContent(curPage)}
-            </div>
           </header>
 
           ${isRedacting ? `
@@ -3962,14 +3927,35 @@
           <!-- Main Stage Body -->
           <div class="scan-editor-body" id="scan-editor-body">
 
-            <!-- Left Tool Dock: Geometric Page Transforms -->
+            <!-- Left Tool Dock: Canvas & Document Markup Tools (Sleek Vertical Pill) -->
             <div class="etxt-floating-dock-wrap">
-              <nav class="etxt-floating-dock" aria-label="Page Geometry and Actions">
-                <button type="button" class="etxt-floating-dock-btn" data-tool="recrop" title="Re-Crop Margins &amp; Quad Perspective [C]">${ICONS.crop}</button>
+              <nav class="etxt-floating-dock" aria-label="Page Tools and Actions">
+                <button type="button" class="etxt-floating-dock-btn ${showSearchBar ? 'is-on' : ''}" id="btn-dock-search" title="Find Text in Document (Ctrl+F)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+                <button type="button" class="etxt-floating-dock-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-dock-ocr-layer" title="Toggle Selectable OCR Text Layer">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button type="button" class="etxt-floating-dock-btn ${isRedacting ? 'is-on' : ''}" id="btn-dock-redact" title="Permanent Privacy Blackout (Redact PII)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
+                </button>
+                <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Add Stamp or Signature">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                </button>
+                <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
+                  ${ICONS.reset}
+                </button>
+                <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'format' ? 'is-on' : ''}" data-tool="format" title="Export Configuration (Searchable PDF, DPI, Format)">
+                  ${ICONS.pdf}
+                </button>
+                
+                <span class="etxt-dock-sep"></span>
+                
+                <button type="button" class="etxt-floating-dock-btn" data-tool="recrop" title="Re-Crop Margins &amp; Perspective [C]">${ICONS.crop}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">${ICONS.rotate}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotccw" title="Rotate 90° Counter-Clockwise"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
                 <span class="etxt-dock-sep"></span>
-                <button type="button" class="etxt-floating-dock-btn" data-tool="copy" title="Copy enhanced image to clipboard">${ICONS.copy}</button>
+                <button type="button" class="etxt-floating-dock-btn" data-tool="copy" title="Copy image to clipboard">${ICONS.copy}</button>
                 <button type="button" class="etxt-floating-dock-btn scan-dock-del" data-tool="delete" title="Delete page [Del]">${ICONS.trash}</button>
               </nav>
 
@@ -4973,15 +4959,15 @@
       }
 
       // Redaction Tool
-      const redactBtn = parent.querySelector('#btn-top-redact');
-      if (redactBtn) {
-        redactBtn.onclick = () => {
+      const redactBtns = parent.querySelectorAll('#btn-top-redact, #btn-dock-redact');
+      redactBtns.forEach(btn => {
+        btn.onclick = () => {
           isRedacting = !isRedacting;
           activeFlyout = null;
           setStatus(isRedacting ? 'Redaction Active: Click words or drag to blackout.' : 'Redaction mode closed.', isRedacting ? 'warn' : 'ok');
           refreshStudioUI();
         };
-      }
+      });
 
       const studioCanvas = parent.querySelector('#scan-studio-canvas');
 
@@ -5171,17 +5157,17 @@
 
 
       // In-Scan Search
-      const searchBtn = parent.querySelector('#btn-top-search');
+      const searchBtns = parent.querySelectorAll('#btn-top-search, #btn-dock-search');
       const searchCloseBtn = parent.querySelector('#btn-close-search');
       const searchInput = parent.querySelector('#scan-search-input');
 
-      if (searchBtn) {
-        searchBtn.onclick = () => {
+      searchBtns.forEach(btn => {
+        btn.onclick = () => {
           showSearchBar = !showSearchBar;
           if (showSearchBar && !showOcrLayer) showOcrLayer = true;
           refreshStudioUI();
         };
-      }
+      });
       if (searchCloseBtn) {
         searchCloseBtn.onclick = () => {
           showSearchBar = false;

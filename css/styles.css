@@ -43020,6 +43020,50 @@ body #app-view .rail-item.active {
   }
 }
 
+/* Vertical Floating Pill Dock Tactile Polish */
+.etxt-floating-dock {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  padding: 4px !important;
+  gap: 3px !important;
+}
+
+.etxt-floating-dock-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  color: #4B4B4B !important;
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.etxt-floating-dock-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-floating-dock-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.etxt-floating-dock-btn.is-on {
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(24, 24, 27, 0.2) !important;
+}
+
+.etxt-floating-dock-btn.is-on svg {
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.etxt-floating-dock-btn.scan-dock-del:hover {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+}
+
+
 
 
 
