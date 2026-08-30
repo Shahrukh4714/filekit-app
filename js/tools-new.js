@@ -7204,9 +7204,8 @@
           const modal = container.querySelector('.scan-export-modal-wrap');
           if (modal) modal.remove();
 
-          busy = false;
-          processingState = null;
-          setStatus(`✓ Downloaded Searchable PDF "${fileName}".`, 'ok');
+          const allText = pages.map((pg, i) => `── Page ${i + 1} ──\n` + (pg.ocrData?.text || '').trim()).join('\n\n');
+          showScanResult(blob, `${useLang.toUpperCase()} OCR complete`, allText);
           return;
         }
 
@@ -7249,9 +7248,7 @@
           const modal = container.querySelector('.scan-export-modal-wrap');
           if (modal) modal.remove();
 
-          busy = false;
-          processingState = null;
-          setStatus(`✓ Downloaded Standard PDF "${fileName}".`, 'ok');
+          showScanResult(blob, 'Standard PDF Export');
           return;
         }
 
@@ -7277,9 +7274,7 @@
         const modal = container.querySelector('.scan-export-modal-wrap');
         if (modal) modal.remove();
 
-        busy = false;
-        processingState = null;
-        setStatus(`✓ Downloaded Image ZIP "${fileName}".`, 'ok');
+        showScanResult(blob, 'Image ZIP Bundle');
       } catch (err) {
         if (err?.code === 'SCAN_EXPORT_CANCELED') return;
         if (jobId !== exportJobId) return;
