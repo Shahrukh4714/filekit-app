@@ -956,13 +956,15 @@
     if (!words || !words.length) return { foundItems: {}, piiWords: [], count: 0 };
     const piiRegexes = {
       email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/i,
-      phone: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+      phone: /(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}\b|\b\d{10}\b/,
       card: /\b(?:\d{4}[-\s]?){3}\d{4}\b|\b\d{15,16}\b/,
-      ssn: /\b\d{3}-\d{2}-\d{4}\b|\b\d{9}\b/,
+      ssn_pan: /\b\d{3}-\d{2}-\d{4}\b|\b[A-Z]{5}\d{4}[A-Z]\b/,
+      id_number: /\b\d{9,12}\b/,
+      dob_pass: /\b\d{8}\b|\b\d{2}[-/]\d{2}[-/]\d{4}\b/,
       ip: /\b(?:\d{1,3}\.){3}\d{1,3}\b/,
     };
 
-    const foundItems = { email: [], phone: [], card: [], ssn: [], ip: [] };
+    const foundItems = { email: [], phone: [], card: [], ssn_pan: [], id_number: [], dob_pass: [], ip: [] };
     const piiWords = [];
 
     words.forEach((w) => {
@@ -3630,41 +3632,6 @@
           </div>
         `;
       }
-      if (activeFlyout === 'keyword-redact') {
-        return `
-          <div class="scan-flyout-card scan-flyout-keyword-redact">
-            <div class="scan-flyout-head">
-              <div class="scan-flyout-title-row">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <strong>Find &amp; Redact Words</strong>
-              </div>
-              <button type="button" class="scan-flyout-reset-btn" id="btn-close-kw-flyout" title="Close">${ICONS.cross}</button>
-            </div>
-            <div class="scan-kw-body">
-              <div class="scan-kw-input-wrap">
-                <input type="text" id="scan-kw-input" placeholder="Type keyword or phrase to blackout..." value="${esc(keywordRedactQuery)}" autofocus>
-              </div>
-              <div class="scan-kw-options-grid">
-                <div class="scan-kw-checks">
-                  <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-match-case" ${keywordMatchCase ? 'checked' : ''}><span>Match Case</span></label>
-                  <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-whole-word" ${keywordWholeWord ? 'checked' : ''}><span>Whole Word</span></label>
-                </div>
-                <div class="scan-kw-scope-select">
-                  <span>Scope:</span>
-                  <select id="scan-kw-scope">
-                    <option value="all" ${keywordScope === 'all' ? 'selected' : ''}>All Pages (${pages.length})</option>
-                    <option value="current" ${keywordScope === 'current' ? 'selected' : ''}>Current Page</option>
-                  </select>
-                </div>
-              </div>
-              <div class="scan-kw-footer">
-                <span class="scan-kw-counter" id="scan-kw-counter">Enter keyword to match</span>
-                <button type="button" class="scan-kw-exec-btn" id="btn-exec-keyword-redact">Blackout Matches</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
       return '';
     }
 
@@ -3957,10 +3924,45 @@
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   <span>Auto-Redact PII</span>
                 </button>
-                <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact" title="Find and blackout specific keywords or phrases">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <span>Find &amp; Redact Words</span>
-                </button>
+                <div class="scan-redact-kw-wrap">
+                  <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact" title="Find and blackout specific keywords or phrases">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span>Find &amp; Redact Words</span>
+                  </button>
+                  ${activeFlyout === 'keyword-redact' ? `
+                    <div class="scan-kw-popover" id="scan-kw-popover">
+                      <div class="scan-kw-popover-head">
+                        <div class="scan-flyout-title-row">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                          <strong>Find &amp; Redact Words</strong>
+                        </div>
+                        <button type="button" class="scan-flyout-reset-btn" id="btn-close-kw-flyout" title="Close">${ICONS.cross}</button>
+                      </div>
+                      <div class="scan-kw-body">
+                        <div class="scan-kw-input-wrap">
+                          <input type="text" id="scan-kw-input" placeholder="Type keyword or phrase to blackout..." value="${esc(keywordRedactQuery)}" autofocus>
+                        </div>
+                        <div class="scan-kw-options-grid">
+                          <div class="scan-kw-checks">
+                            <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-match-case" ${keywordMatchCase ? 'checked' : ''}><span>Match Case</span></label>
+                            <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-whole-word" ${keywordWholeWord ? 'checked' : ''}><span>Whole Word</span></label>
+                          </div>
+                          <div class="scan-kw-scope-select">
+                            <span>Scope:</span>
+                            <select id="scan-kw-scope">
+                              <option value="all" ${keywordScope === 'all' ? 'selected' : ''}>All Pages (${pages.length})</option>
+                              <option value="current" ${keywordScope === 'current' ? 'selected' : ''}>Current Page</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="scan-kw-footer">
+                          <span class="scan-kw-counter" id="scan-kw-counter">Enter keyword to match</span>
+                          <button type="button" class="scan-kw-exec-btn" id="btn-exec-keyword-redact">Blackout Matches</button>
+                        </div>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
                 <button type="button" class="scan-redact-subbar-done" id="btn-close-redact-ribbon" title="Exit Redaction Mode">Done</button>
               </div>
             </div>
@@ -4337,13 +4339,19 @@
       pageCtx.fillRect(bx, by, bw, bh);
       if (rawCtx) rawCtx.fillRect(bx * rawScaleX, by * rawScaleY, bw * rawScaleX, bh * rawScaleY);
 
-      p.ocrData.words = p.ocrData.words.filter(item => item !== w);
-      p.ocrData.text = p.ocrData.words.map(item => item.text).join(' ');
+      if (p.ocrData && p.ocrData.words) {
+        p.ocrData.words = p.ocrData.words.filter((item) => item !== w);
+        p.ocrData.text = p.ocrData.words.map((item) => item.text).join(' ');
+      }
 
       p._baseCache = null;
       p._enhCache = null;
       p._thumbCache = null;
-      refreshStudioUI();
+
+      // In-place update to eliminate toolbar flicker
+      updateStudioPreview();
+      renderTextLayer();
+      paintFilmstripThumbs();
       setStatus(`Permanently blacked out "${w.text}".`, 'ok');
     }
 
@@ -5369,10 +5377,15 @@
         // Purge from OCR index
         const piiSet = new Set(piiWords);
         pg.ocrData.words = pg.ocrData.words.filter(w => !piiSet.has(w));
-        pg.ocrData.text = pg.ocrData.words.map(w => w.text).join(' ');
+        pg._baseCache = null;
+        pg._enhCache = null;
+        pg._thumbCache = null;
 
-        refreshStudioUI();
-        setStatus(`Permanently blacked out & wiped ${count} sensitive PII items.`, 'ok');
+        // In-place update to eliminate toolbar flicker
+        updateStudioPreview();
+        renderTextLayer();
+        paintFilmstripThumbs();
+        setStatus(`Auto-Redact: Permanently blacked out & wiped ${count} sensitive PII items.`, 'ok');
       }
 
       function executeKeywordRedact(query, opts = {}) {
@@ -5421,13 +5434,24 @@
             });
 
             const matchSet = new Set(matchingWords);
-            pg.ocrData.words = pg.ocrData.words.filter(w => !matchSet.has(w));
-            pg.ocrData.text = pg.ocrData.words.map(w => w.text).join(' ');
+            pg.ocrData.words = pg.ocrData.words.filter((w) => !matchSet.has(w));
+            pg.ocrData.text = pg.ocrData.words.map((w) => w.text).join(' ');
           }
         });
 
+        targetPages.forEach((pg) => {
+          pg._baseCache = null;
+          pg._enhCache = null;
+          pg._thumbCache = null;
+        });
+
         activeFlyout = null;
-        refreshStudioUI();
+        updateStudioPreview();
+        renderTextLayer();
+        paintFilmstripThumbs();
+        const kwPopover = parent.querySelector('#scan-kw-popover');
+        if (kwPopover) kwPopover.style.display = 'none';
+
         if (totalBlackedOut > 0) {
           setStatus(`Blacked out ${totalBlackedOut} matches across ${pagesCount} page(s).`, 'ok');
         } else {

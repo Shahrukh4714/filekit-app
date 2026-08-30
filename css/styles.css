@@ -42880,23 +42880,17 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Redaction Pro: Linear/Figma Style Sub-Toolbar (No pills, no emojis)
+   Redaction Pro: Matching Light Sub-Toolbar & Anchored Popover
    ══════════════════════════════════════════════════════════════ */
 .scan-redact-subbar {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  background: #0F172A !important;
-  border-bottom: 1px solid #1E293B !important;
+  background: #F8FAFC !important;
+  border-bottom: 1px solid #E2E8F0 !important;
   padding: 0 16px !important;
   height: 38px !important;
   z-index: 40 !important;
-  animation: scanSubbarIn 0.14s ease-out !important;
-}
-
-@keyframes scanSubbarIn {
-  from { opacity: 0; transform: translateY(-3px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .scan-redact-subbar-left {
@@ -42908,27 +42902,27 @@ body #app-view .rail-item.active {
 .scan-redact-indicator {
   width: 7px !important;
   height: 7px !important;
-  background: #F43F5E !important;
+  background: #E11D48 !important;
   border-radius: 50% !important;
-  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2) !important;
 }
 
 .scan-redact-subbar-title {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #F8FAFC !important;
+  color: #0F172A !important;
   letter-spacing: -0.01em !important;
 }
 
 .scan-redact-subbar-divider {
   width: 1px !important;
   height: 14px !important;
-  background: #334155 !important;
+  background: #CBD5E1 !important;
 }
 
 .scan-redact-subbar-hint {
   font-size: 11.5px !important;
-  color: #94A3B8 !important;
+  color: #64748B !important;
 }
 
 .scan-redact-subbar-actions {
@@ -42937,13 +42931,17 @@ body #app-view .rail-item.active {
   gap: 6px !important;
 }
 
+.scan-redact-kw-wrap {
+  position: relative !important;
+}
+
 .scan-redact-subbar-btn {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: transparent !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #E2E8F0 !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #334155 !important;
   padding: 0 10px !important;
   height: 26px !important;
   border-radius: 4px !important;
@@ -42951,27 +42949,29 @@ body #app-view .rail-item.active {
   font-weight: 500 !important;
   cursor: pointer !important;
   transition: all 0.12s ease-out !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
 .scan-redact-subbar-btn:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
-  color: #FFFFFF !important;
+  background: #F1F5F9 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
 }
 
 .scan-redact-subbar-btn.active {
   background: #2563EB !important;
   border-color: #2563EB !important;
   color: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
 }
 
 .scan-redact-subbar-done {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: #FFFFFF !important;
-  border: none !important;
-  color: #0F172A !important;
+  background: #0F172A !important;
+  border: 1px solid #0F172A !important;
+  color: #FFFFFF !important;
   padding: 0 12px !important;
   height: 26px !important;
   border-radius: 4px !important;
@@ -42979,34 +42979,18 @@ body #app-view .rail-item.active {
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.12s ease-out !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .scan-redact-subbar-done:hover {
-  background: #F1F5F9 !important;
+  background: #1E293B !important;
 }
 
 .scan-redact-subbar-done:active {
   transform: scale(0.97) !important;
 }
 
-/* Word-Level Hover in Redaction Mode */
-.scan-text-layer.is-redacting-active {
-  pointer-events: auto !important;
-}
-
-.scan-ocr-word.is-redactable {
-  cursor: crosshair !important;
-  transition: background 0.08s ease, outline 0.08s ease !important;
-  border-radius: 2px !important;
-}
-
-.scan-ocr-word.is-redactable:hover {
-  background: rgba(225, 29, 72, 0.35) !important;
-  outline: 1.5px solid #E11D48 !important;
-  color: transparent !important;
-}
-
-/* Keyword Redact Popover */
+/* Primary Auto-Redact Button */
 .scan-redact-subbar-btn-primary {
   display: inline-flex !important;
   align-items: center !important;
@@ -43021,7 +43005,7 @@ body #app-view .rail-item.active {
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.12s ease-out !important;
-  box-shadow: 0 1px 4px rgba(225, 29, 72, 0.3) !important;
+  box-shadow: 0 1px 4px rgba(225, 29, 72, 0.25) !important;
 }
 
 .scan-redact-subbar-btn-primary:hover {
@@ -43033,11 +43017,33 @@ body #app-view .rail-item.active {
   transform: scale(0.97) !important;
 }
 
-/* Keyword Redact Popover */
-.scan-flyout-keyword-redact {
-  min-width: 330px !important;
-  width: 330px !important;
-  box-sizing: border-box !important;
+/* Anchored Keyword Redact Popover (Directly below button) */
+.scan-kw-popover {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  right: 0 !important;
+  width: 350px !important;
+  max-width: 90vw !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.15), 0 4px 10px -2px rgba(15, 23, 42, 0.08) !important;
+  padding: 12px !important;
+  z-index: 100 !important;
+  animation: scanPopoverIn 0.14s ease-out !important;
+}
+
+@keyframes scanPopoverIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scan-kw-popover-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
 }
 
 .scan-flyout-title-row {
@@ -43149,10 +43155,6 @@ body #app-view .rail-item.active {
 
 .scan-kw-exec-btn:active {
   transform: scale(0.97) !important;
-}
-
-.scan-kw-exec-btn:hover {
-  background: #BE123C !important;
 }
 
 /* ══════════════════════════════════════════════════════════════
