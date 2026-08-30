@@ -3895,9 +3895,6 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
               <span>Redact</span>
             </button>
-            <button type="button" class="scan-tb-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
-              ${ICONS.reset}<span>Tune</span>
-            </button>
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
@@ -3963,14 +3960,17 @@
           <!-- Main Stage Body -->
           <div class="scan-editor-body" id="scan-editor-body">
 
-            <!-- Left Tool Dock: Geometric & Stamp Transforms (Compact Vertical Pill) -->
+            <!-- Left Tool Dock: Geometric, Tune & Stamp Transforms (Compact Vertical Pill) -->
             <div class="etxt-floating-dock-wrap">
               <nav class="etxt-floating-dock" aria-label="Canvas & Page Tools">
                 <button type="button" class="etxt-floating-dock-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">${ICONS.crop}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">${ICONS.rotate}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotccw" title="Rotate 90° Counter-Clockwise"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
                 <span class="etxt-dock-sep"></span>
-                <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Add Stamp or Signature">
+                <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast [T]">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Add Stamp or Signature [S]">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
                 </button>
                 <span class="etxt-dock-sep"></span>
@@ -5649,28 +5649,62 @@
         const sigCtx = sigCv.getContext('2d');
         sigCtx.scale(dpr, dpr);
         sigCtx.strokeStyle = sigInk;
-        sigCtx.lineWidth = 2.8;
+        sigCtx.fillStyle = sigInk;
+        sigCtx.lineWidth = 2.4;
         sigCtx.lineCap = 'round';
         sigCtx.lineJoin = 'round';
 
         let drawingSig = false;
         let hasStrokes = false;
+        let points = [];
+
+        // Restore saved signature if available
+        try {
+          const savedSig = localStorage.getItem('filekit_saved_draw_sig');
+          if (savedSig) {
+            const img = new Image();
+            img.onload = () => {
+              sigCtx.drawImage(img, 0, 0, cssW, cssH);
+              hasStrokes = true;
+            };
+            img.src = savedSig;
+          }
+        } catch (e) {}
 
         sigCv.onpointerdown = (e) => {
           drawingSig = true;
           hasStrokes = true;
           const r = sigCv.getBoundingClientRect();
+          const x = e.clientX - r.left;
+          const y = e.clientY - r.top;
+          points = [{ x, y }];
           sigCtx.beginPath();
-          sigCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
+          sigCtx.arc(x, y, sigCtx.lineWidth / 2, 0, Math.PI * 2);
+          sigCtx.fill();
           try { sigCv.setPointerCapture(e.pointerId); } catch {}
           e.preventDefault();
         };
+
         sigCv.onpointermove = (e) => {
           if (!drawingSig) return;
           const r = sigCv.getBoundingClientRect();
-          sigCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
-          sigCtx.stroke();
+          const x = e.clientX - r.left;
+          const y = e.clientY - r.top;
+          points.push({ x, y });
+
+          if (points.length > 2) {
+            const p1 = points[points.length - 2];
+            const p2 = points[points.length - 1];
+            const midX = (p1.x + p2.x) / 2;
+            const midY = (p1.y + p2.y) / 2;
+
+            sigCtx.beginPath();
+            sigCtx.moveTo(points[points.length - 3].x, points[points.length - 3].y);
+            sigCtx.quadraticCurveTo(p1.x, p1.y, midX, midY);
+            sigCtx.stroke();
+          }
         };
+
         const endSig = (e) => {
           if (drawingSig) {
             drawingSig = false;
@@ -5685,6 +5719,8 @@
           clearBtn.onclick = () => {
             sigCtx.clearRect(0, 0, cssW, cssH);
             hasStrokes = false;
+            points = [];
+            try { localStorage.removeItem('filekit_saved_draw_sig'); } catch (e) {}
           };
         }
 
@@ -5695,6 +5731,10 @@
               setStatus('Please draw your signature first.', 'warn');
               return;
             }
+            try {
+              localStorage.setItem('filekit_saved_draw_sig', sigCv.toDataURL('image/png'));
+            } catch (e) {}
+
             const pageCtx = p.canvas.getContext('2d');
             const targetW = Math.round(p.canvas.width * 0.32);
             const targetH = Math.round(targetW * (sigCv.height / sigCv.width));
@@ -5708,7 +5748,7 @@
             activeFlyout = null;
             updateStudioPreview();
             paintFilmstripThumbs();
-            setStatus('Drawn signature placed on document.', 'ok');
+            setStatus('Signature placed on document.', 'ok');
             refreshStudioUI();
           };
         }
