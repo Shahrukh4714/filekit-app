@@ -3852,95 +3852,88 @@
 
       parent.innerHTML = `
         <div class="scan-review-workspace">
-          <!-- Top Master Toolbar: Ultra-Compact Ribbon with All Tools (Zero Horizontal Scroll) -->
+          <!-- Top Master Toolbar: Flat text-labeled buttons, ultra-compact, zero-scroll -->
           <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
-            <!-- Left Group: Segmented Enhancement Capsule -->
-            <div class="scan-tb-group">
-              <div class="scan-tb-segmented-control" role="group" aria-label="Enhancement Filter">
-                <button type="button" class="scan-seg-item ${curPage.enhanceMode === 'enhanced' ? 'is-active' : ''}" data-tool="clean" title="Magic Clean Document Illumination [1]">
-                  ${ICONS.filterDoc}
-                  <span>Clean</span>
-                </button>
-                <button type="button" class="scan-seg-item ${curPage.enhanceMode === 'bw' ? 'is-active' : ''}" data-tool="bw" title="High-Contrast B&amp;W Printing [2]">
-                  ${ICONS.filterBw}
-                  <span>B&amp;W</span>
-                </button>
-                <button type="button" class="scan-seg-item ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Vivid Color Photo Mode [3]">
-                  ${ICONS.filterPhoto}
-                  <span>Photo</span>
-                </button>
-              </div>
-              <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
-                ${ICONS.split}
-                <span>Compare</span>
-              </button>
-            </div>
+
+            <!-- Enhancement Mode buttons (flat, no pill wrapper) -->
+            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Magic Clean Document Illumination [1]">
+              ${ICONS.filterDoc}<span>Clean</span>
+            </button>
+            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
+              ${ICONS.filterBw}<span>B&amp;W</span>
+            </button>
+            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
+              ${ICONS.filterPhoto}<span>Photo</span>
+            </button>
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
-            <!-- Document Inspection & Editing Capsule (Compact Tools) -->
-            <div class="scan-tb-group">
-              <button type="button" class="scan-tb-btn scan-tb-icon-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find Text in Document (Ctrl+F)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </button>
-              <button type="button" class="scan-tb-btn scan-tb-icon-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-top-ocr-layer" title="Toggle Selectable OCR Text Layer">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-              <button type="button" class="scan-tb-btn scan-tb-icon-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout (Redact PII)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
-              </button>
-              <button type="button" class="scan-tb-btn scan-tb-icon-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
-                ${ICONS.reset}
-              </button>
-            </div>
+            <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
+              ${ICONS.split}<span>Compare</span>
+            </button>
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
-            <!-- OCR Text Drawer & Language Selector -->
-            <div class="scan-tb-group">
-              <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Toggle Integrated OCR Text Panel">
-                ${ICONS.ocr}
-                <span>OCR Text</span>
-              </button>
-              <div class="scan-tb-lang-pill" title="OCR Language Model">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <select id="scan-top-ocr-lang" class="scan-top-lang-select" aria-label="OCR Language">
-                  <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                  <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
-                  <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
-                  <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
-                  <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
-                  <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
-                  <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi</option>
-                  <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
-                  <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
-                  <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
-                  <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
-                </select>
-              </div>
-              <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
-                ${ICONS.sparkle}
-                <span>All (${pages.length})</span>
-              </button>
+            <!-- Inspection tools with text labels -->
+            <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find Text in Document (Ctrl+F)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span>Search</span>
+            </button>
+            <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-top-ocr-layer" title="Toggle Selectable OCR Text Layer">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Text</span>
+            </button>
+            <button type="button" class="scan-tb-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout — Redact PII">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
+              <span>Redact</span>
+            </button>
+            <button type="button" class="scan-tb-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
+              ${ICONS.reset}<span>Tune</span>
+            </button>
+
+            <span class="scan-tb-sep" aria-hidden="true"></span>
+
+            <!-- OCR text panel -->
+            <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Toggle Integrated OCR Text Panel">
+              ${ICONS.ocr}<span>OCR Text</span>
+            </button>
+
+            <!-- Language selector (flat, no pill wrapper) -->
+            <div class="scan-tb-lang-flat" title="OCR Language">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <select id="scan-top-ocr-lang" class="scan-top-lang-select" aria-label="OCR Language">
+                <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
+                <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
+                <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
+                <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
+                <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
+                <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
+                <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi</option>
+                <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
+                <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
+                <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
+                <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto</option>
+              </select>
             </div>
 
-            <!-- Right: Primary Export Action & Add Options -->
-            <div class="scan-tb-group scan-tb-group-right">
-              <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Capture another page with camera">
-                ${ICONS.camera}
-                <span>+ Camera</span>
-              </button>
-              <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
-                ${ICONS.folder}
-                <span>+ Upload</span>
-              </button>
-              <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
-              <button type="button" class="scan-tb-btn-primary" id="btn-main-export" title="Compile and download Searchable PDF">
-                <span>Export PDF</span>
-                ${ICONS.arrowRight}
-              </button>
-              <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
-            </div>
+            <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
+              ${ICONS.sparkle}<span>All (${pages.length})</span>
+            </button>
+
+            <!-- Right-pinned actions -->
+            <div class="scan-tb-spacer"></div>
+
+            <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Capture another page with camera">
+              ${ICONS.camera}<span>Camera</span>
+            </button>
+            <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
+              ${ICONS.folder}<span>Upload</span>
+            </button>
+            <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
+            <button type="button" class="scan-tb-btn-primary" id="btn-main-export" title="Compile and download Searchable PDF">
+              <span>Export PDF</span>${ICONS.arrowRight}
+            </button>
+            <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
           </header>
 
           ${isRedacting ? `
