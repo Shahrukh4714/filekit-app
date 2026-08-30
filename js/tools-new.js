@@ -2311,11 +2311,10 @@
       selIdx = pages.length - 1;
       lastRemoved = null;
 
-      enterBleed();
-
       if (viewMode === 'hub') {
         renderBatchTray();
       } else if (viewMode === 'review') {
+        enterBleed();
         refreshStudioUI();
       }
       return newPage;
@@ -3048,7 +3047,6 @@
     async function handleImportFileList(files) {
       if (!files.length) return;
       importError = '';
-      enterBleed();
 
       setStatus(`Importing ${files.length} document${files.length === 1 ? '' : 's'}…`, 'ok');
       let importedPages = 0;
@@ -3158,7 +3156,6 @@
       const imageItems = [...items].filter((item) => item.type && item.type.startsWith('image/'));
       if (!imageItems.length) return;
       e.preventDefault();
-      enterBleed();
       setStatus(`Pasting ${imageItems.length} image${imageItems.length === 1 ? '' : 's'} from clipboard…`, 'ok');
       for (let i = 0; i < imageItems.length; i++) {
         const file = imageItems[i].getAsFile();
