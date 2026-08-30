@@ -3913,19 +3913,20 @@
               ${ICONS.sparkle}<span>All (${pages.length})</span>
             </button>
 
-            <div class="scan-tb-spacer"></div>
-
-            <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
-              ${ICONS.camera}<span>Camera</span>
-            </button>
-            <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
-              ${ICONS.folder}<span>Upload</span>
-            </button>
-            <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
-            <button type="button" class="scan-tb-btn-primary" id="btn-main-export" title="Compile and download Searchable PDF">
-              <span>Export PDF</span>${ICONS.arrowRight}
-            </button>
-            <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
+            <!-- Right group: push to far right via margin-left:auto -->
+            <div class="scan-tb-group-right">
+              <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
+                ${ICONS.camera}<span>Camera</span>
+              </button>
+              <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
+                ${ICONS.folder}<span>Upload</span>
+              </button>
+              <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
+              <button type="button" class="scan-tb-btn-primary" id="btn-main-export" title="Compile and download Searchable PDF">
+                <span>Export PDF</span>${ICONS.arrowRight}
+              </button>
+              <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
+            </div>
           </header>
 
           ${isRedacting ? `

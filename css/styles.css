@@ -42731,7 +42731,7 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   MODERN FLAT RIBBON TOOLBAR — Compact, all-text-labels, zero horizontal scroll
+   MODERN FLAT RIBBON TOOLBAR — Compact, all-text-labels, zero visible scroll
    ══════════════════════════════════════════════════════════════════════════════ */
 .scan-unified-toolbar {
   height: 40px !important;
@@ -42742,29 +42742,27 @@ body #app-view .rail-item.active {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 1px !important;
+  gap: 0 !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
   z-index: 30 !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
 }
 
-/* Flex spacer to push right-side buttons to the end */
-.scan-tb-spacer {
-  flex: 1 1 auto !important;
-  min-width: 6px !important;
+.scan-unified-toolbar::-webkit-scrollbar {
+  display: none !important;
 }
 
-.scan-tb-group {
+/* Right action group — flex container with margin-left:auto */
+.scan-tb-group-right {
   display: flex !important;
   align-items: center !important;
-  gap: 1px !important;
-  flex-shrink: 0 !important;
-}
-
-.scan-tb-group-right {
-  margin-left: auto !important;
   gap: 3px !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  padding-left: 6px !important;
 }
 
 .scan-tb-sep {
