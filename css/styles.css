@@ -39951,26 +39951,26 @@ body #app-view .rail-item.active {
   align-items: center !important;
   justify-content: space-between !important;
   padding: 10px 14px !important;
-  background: #FACC15 !important;
-  color: #0F172A !important;
+  background: #0F172A !important;
+  color: #FFFFFF !important;
   text-decoration: none !important;
-  border: 1px solid #EAB308 !important;
+  border: 1px solid #0F172A !important;
   border-radius: 6px !important;
-  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25) !important;
   transition: all 120ms ease-out !important;
   cursor: pointer !important;
 }
 
 .scan-btn-download-hero:hover {
-  background: #EAB308 !important;
-  border-color: #CA8A04 !important;
+  background: #1E293B !important;
+  border-color: #1E293B !important;
   transform: translateY(-0.5px) !important;
-  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35) !important;
 }
 
 .scan-btn-download-hero:active {
   transform: scale(0.98) !important;
-  background: #CA8A04 !important;
+  background: #334155 !important;
 }
 
 .scan-btn-download-left {
@@ -39982,7 +39982,7 @@ body #app-view .rail-item.active {
 .scan-btn-download-icon svg {
   width: 20px !important;
   height: 20px !important;
-  stroke: #0F172A !important;
+  stroke: #FFFFFF !important;
 }
 
 .scan-btn-download-copy {
@@ -39993,25 +39993,26 @@ body #app-view .rail-item.active {
 
 .scan-btn-download-copy strong {
   font-size: 13.5px !important;
-  font-weight: 750 !important;
-  color: #0F172A !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
 }
 
 .scan-btn-download-copy span {
   font-size: 10.5px !important;
-  font-weight: 550 !important;
-  color: rgba(15, 23, 42, 0.7) !important;
+  font-weight: 500 !important;
+  color: #94A3B8 !important;
 }
 
 .scan-download-kbd {
   font-size: 10px !important;
   font-weight: 700 !important;
-  background: rgba(15, 23, 42, 0.1) !important;
-  border: 1px solid rgba(15, 23, 42, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   padding: 2px 5px !important;
   border-radius: 4px !important;
-  color: #0F172A !important;
+  color: #E2E8F0 !important;
 }
+
 
 /* Secondary Cards */
 .scan-result-variants-card,
@@ -43185,7 +43186,7 @@ body #app-view .rail-item.active {
 }
 
 
-/* Primary Finish Export Button (Sunny Yellow #FACC15 Homepage Theme) */
+/* Primary Finish Export Button (Sleek Obsidian CTA with White Text) */
 .scan-tb-btn-primary {
   display: inline-flex !important;
   align-items: center !important;
@@ -43193,41 +43194,42 @@ body #app-view .rail-item.active {
   gap: 5px !important;
   height: 28px !important;
   padding: 0 12px !important;
-  background: #FACC15 !important;
-  color: #0F172A !important;
-  border: 1px solid #EAB308 !important;
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  border: 1px solid #0F172A !important;
   border-radius: 5px !important;
   font-size: 11.5px !important;
-  font-weight: 750 !important;
+  font-weight: 650 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  box-shadow: 0 1px 4px rgba(234, 179, 8, 0.32) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2) !important;
   transition: all 120ms ease-out !important;
 }
 
 .scan-tb-btn-primary span {
-  color: #0F172A !important;
-  font-weight: 750 !important;
+  color: #FFFFFF !important;
+  font-weight: 650 !important;
 }
 
 .scan-tb-btn-primary svg {
-  stroke: #0F172A !important;
+  stroke: #FFFFFF !important;
   width: 12px !important;
   height: 12px !important;
 }
 
 .scan-tb-btn-primary:hover {
-  background: #EAB308 !important;
-  border-color: #CA8A04 !important;
+  background: #1E293B !important;
+  border-color: #1E293B !important;
   transform: translateY(-0.5px) !important;
-  box-shadow: 0 3px 8px rgba(234, 179, 8, 0.42) !important;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3) !important;
 }
 
 .scan-tb-btn-primary:active {
   transform: scale(0.97) !important;
-  background: #CA8A04 !important;
+  background: #334155 !important;
 }
+
 
 /* Close Button */
 .scan-tb-btn-close {
