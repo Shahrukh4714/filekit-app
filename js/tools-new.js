@@ -4533,11 +4533,9 @@
                data-overlay-id="${esc(o.id)}"
                style="left: ${(o.x || 0) * 100}%; top: ${(o.y || 0) * 100}%; width: ${(o.w || 0.3) * 100}%; height: ${(o.h || 0.1) * 100}%;">
             ${isSel ? `
-              <div class="scan-overlay-toolbar">
-                <button type="button" class="scan-overlay-btn btn-done" data-act="done" title="Commit position (Click outside)">✓ Done</button>
-                <button type="button" class="scan-overlay-btn btn-dup" data-act="dup" title="Duplicate signature">⧉ Dup</button>
-                <button type="button" class="scan-overlay-btn btn-del" data-act="del" title="Delete signature (Del)">🗑️</button>
-              </div>
+              <button type="button" class="scan-overlay-delete-btn" data-act="del" title="Delete signature (Del)">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
               <div class="scan-overlay-handle nw" data-handle="nw"></div>
               <div class="scan-overlay-handle ne" data-handle="ne"></div>
               <div class="scan-overlay-handle se" data-handle="se"></div>
@@ -4560,30 +4558,19 @@
         const o = curP.overlays.find((x) => x.id === id);
         if (!o) return;
 
-        // Action buttons
-        el.querySelectorAll('.scan-overlay-btn').forEach((btn) => {
-          btn.onclick = (e) => {
+        // Delete button
+        const delBtn = el.querySelector('.scan-overlay-delete-btn');
+        if (delBtn) {
+          delBtn.onclick = (e) => {
             e.stopPropagation();
-            const act = btn.dataset.act;
-            if (act === 'done') {
-              selectedOverlayId = null;
-              renderOverlaysLayer();
-            } else if (act === 'dup') {
-              const dup = { ...o, id: 'ov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), x: Math.min(0.7, (o.x || 0) + 0.04), y: Math.min(0.7, (o.y || 0) + 0.04) };
-              curP.overlays.push(dup);
-              selectedOverlayId = dup.id;
-              renderOverlaysLayer();
-              setStatus('Signature duplicated. Drag to position.', 'ok');
-            } else if (act === 'del') {
-              curP.overlays = curP.overlays.filter((x) => x.id !== id);
-              selectedOverlayId = null;
-              renderOverlaysLayer();
-              setStatus('Signature deleted.', 'ok');
-            }
+            curP.overlays = curP.overlays.filter((x) => x.id !== id);
+            selectedOverlayId = null;
+            renderOverlaysLayer();
+            setStatus('Signature deleted.', 'ok');
           };
-        });
+        }
 
-        // Resize Handles
+        // Resize Handles (Direct 60fps DOM manipulation)
         el.querySelectorAll('.scan-overlay-handle').forEach((handle) => {
           handle.onpointerdown = (e) => {
             e.stopPropagation();
@@ -4598,52 +4585,64 @@
             const paperRect = paper.getBoundingClientRect();
             const ratio = o.aspectRatio || (startW / Math.max(0.001, startH));
 
+            try { handle.setPointerCapture(e.pointerId); } catch {}
+
+            let curLeft = startLeft, curTop = startTop, curW = startW, curH = startH;
+
             const onMove = (me) => {
               const dx = (me.clientX - startX) / paperRect.width;
               const dy = (me.clientY - startY) / paperRect.height;
 
               if (handleType === 'se') {
-                const newW = Math.max(0.06, Math.min(0.95, startW + dx));
-                o.w = newW;
-                o.h = newW / ratio;
+                curW = Math.max(0.05, Math.min(0.95, startW + dx));
+                curH = curW / ratio;
               } else if (handleType === 'sw') {
-                const newW = Math.max(0.06, Math.min(0.95, startW - dx));
-                o.x = startLeft + (startW - newW);
-                o.w = newW;
-                o.h = newW / ratio;
+                curW = Math.max(0.05, Math.min(0.95, startW - dx));
+                curLeft = startLeft + (startW - curW);
+                curH = curW / ratio;
               } else if (handleType === 'ne') {
-                const newW = Math.max(0.06, Math.min(0.95, startW + dx));
-                const newH = newW / ratio;
-                o.y = startTop + (startH - newH);
-                o.w = newW;
-                o.h = newH;
+                curW = Math.max(0.05, Math.min(0.95, startW + dx));
+                curH = curW / ratio;
+                curTop = startTop + (startH - curH);
               } else if (handleType === 'nw') {
-                const newW = Math.max(0.06, Math.min(0.95, startW - dx));
-                const newH = newW / ratio;
-                o.x = startLeft + (startW - newW);
-                o.y = startTop + (startH - newH);
-                o.w = newW;
-                o.h = newH;
+                curW = Math.max(0.05, Math.min(0.95, startW - dx));
+                curH = curW / ratio;
+                curLeft = startLeft + (startW - curW);
+                curTop = startTop + (startH - curH);
               }
-              renderOverlaysLayer();
+
+              el.style.left = `${curLeft * 100}%`;
+              el.style.top = `${curTop * 100}%`;
+              el.style.width = `${curW * 100}%`;
+              el.style.height = `${curH * 100}%`;
             };
 
-            const onUp = () => {
+            const onUp = (ue) => {
+              try { handle.releasePointerCapture(ue.pointerId); } catch {}
               window.removeEventListener('pointermove', onMove);
               window.removeEventListener('pointerup', onUp);
+              o.x = curLeft;
+              o.y = curTop;
+              o.w = curW;
+              o.h = curH;
             };
+
             window.addEventListener('pointermove', onMove);
             window.addEventListener('pointerup', onUp);
           };
         });
 
-        // Drag overlay to reposition
+        // Drag overlay to reposition (Direct 60fps DOM manipulation)
         el.onpointerdown = (e) => {
-          if (e.target.closest('.scan-overlay-toolbar, .scan-overlay-handle')) return;
+          if (e.target.closest('.scan-overlay-delete-btn, .scan-overlay-handle')) return;
           e.stopPropagation();
           e.preventDefault();
-          selectedOverlayId = o.id;
-          renderOverlaysLayer();
+
+          if (selectedOverlayId !== o.id) {
+            selectedOverlayId = o.id;
+            renderOverlaysLayer();
+            return;
+          }
 
           const startX = e.clientX;
           const startY = e.clientY;
@@ -4652,20 +4651,28 @@
           const paperRect = paper.getBoundingClientRect();
           el.classList.add('is-dragging');
 
+          try { el.setPointerCapture(e.pointerId); } catch {}
+
+          let curX = initX, curY = initY;
+
           const onMove = (me) => {
             const dx = (me.clientX - startX) / paperRect.width;
             const dy = (me.clientY - startY) / paperRect.height;
-            o.x = Math.max(0, Math.min(1 - o.w, initX + dx));
-            o.y = Math.max(0, Math.min(1 - o.h, initY + dy));
-            el.style.left = `${o.x * 100}%`;
-            el.style.top = `${o.y * 100}%`;
+            curX = Math.max(0, Math.min(1 - o.w, initX + dx));
+            curY = Math.max(0, Math.min(1 - o.h, initY + dy));
+            el.style.left = `${curX * 100}%`;
+            el.style.top = `${curY * 100}%`;
           };
 
-          const onUp = () => {
+          const onUp = (ue) => {
             el.classList.remove('is-dragging');
+            try { el.releasePointerCapture(ue.pointerId); } catch {}
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
+            o.x = curX;
+            o.y = curY;
           };
+
           window.addEventListener('pointermove', onMove);
           window.addEventListener('pointerup', onUp);
         };
