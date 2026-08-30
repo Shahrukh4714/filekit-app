@@ -41659,23 +41659,187 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   INTEGRATED IN-STUDIO OCR TEXT SIDEBAR (Zero Screen Switch / Pure Flow)
+   SLEEK FLOATING RIGHT CONTROL DOCK & OCR SIDEBAR (Apple / Linear / Figma style)
    ══════════════════════════════════════════════════════════════════════════════ */
+
+.scan-right-dock {
+  position: absolute !important;
+  right: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 6px 4px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.1), 0 2px 6px -1px rgba(15, 23, 42, 0.04) !important;
+  z-index: 35 !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+
+.scan-dock-group {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: 100% !important;
+}
+
+.scan-dock-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #64748B !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background 120ms ease, color 120ms ease, transform 120ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+
+.scan-dock-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-dock-btn:active {
+  transform: scale(0.92) !important;
+  background: #E2E8F0 !important;
+}
+
+.scan-dock-btn.is-active {
+  background: #EDE9FE !important;
+  color: #7C3AED !important;
+}
+
+.scan-dock-page-pill {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 2px !important;
+  gap: 1px !important;
+}
+
+.scan-dock-page-arrow {
+  width: 28px !important;
+  height: 18px !important;
+  border: none !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: #475569 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 100ms ease !important;
+}
+
+.scan-dock-page-arrow:hover:not(:disabled) {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.scan-dock-page-arrow:active:not(:disabled) {
+  transform: scale(0.92) !important;
+}
+
+.scan-dock-page-arrow:disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed !important;
+}
+
+.scan-dock-page-text {
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  color: #0F172A !important;
+  line-height: 1.1 !important;
+  padding: 2px 0 !important;
+  letter-spacing: -0.2px !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+}
+
+.scan-dock-page-total {
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  color: #94A3B8 !important;
+}
+
+.scan-dock-zoom-badge {
+  border: none !important;
+  background: transparent !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  color: #475569 !important;
+  padding: 3px 6px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  letter-spacing: -0.2px !important;
+  transition: all 120ms ease !important;
+}
+
+.scan-dock-zoom-badge:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-dock-zoom-badge:active {
+  transform: scale(0.92) !important;
+}
+
+.scan-dock-btn-reset {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+  letter-spacing: 0.2px !important;
+}
+
+.scan-dock-divider {
+  width: 20px !important;
+  height: 1px !important;
+  background: #E2E8F0 !important;
+  margin: 2px 0 !important;
+}
+
+.scan-dock-privacy-pill {
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #10B981 !important;
+  cursor: help !important;
+  position: relative !important;
+}
 
 .scan-ocr-sidebar {
   position: absolute !important;
-  top: 0 !important;
-  right: 56px !important; /* sits cleanly beside the right rail */
-  bottom: 0 !important;
-  width: 360px !important;
+  top: 12px !important;
+  right: 68px !important; /* aligns cleanly with floating right dock */
+  bottom: 12px !important;
+  width: 380px !important;
   background: #FFFFFF !important;
-  border-left: 1px solid #E2E8F0 !important;
-  box-shadow: -4px 0 20px rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06) !important;
   display: flex !important;
   flex-direction: column !important;
-  z-index: 25 !important;
-  transform: translateX(105%) !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 30 !important;
+  transform: translateX(110%) !important;
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), opacity 220ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+  overflow: hidden !important;
 }
 
 .scan-ocr-sidebar.is-open {
@@ -41684,12 +41848,12 @@ body #app-view .rail-item.active {
 
 .scan-ocr-sidebar-head {
   height: 48px !important;
-  padding: 0 14px !important;
+  padding: 0 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  border-bottom: 1px solid #E2E8F0 !important;
-  background: #F8FAFC !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  background: #FAFAFA !important;
   flex-shrink: 0 !important;
 }
 
@@ -41719,34 +41883,37 @@ body #app-view .rail-item.active {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  border-radius: 6px !important;
+  transition: all 120ms ease !important;
 }
 
 .scan-ocr-close-btn:hover {
+  background: #F1F5F9 !important;
   color: #0F172A !important;
 }
 
 .scan-ocr-subtabs {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  background: #E2E8F0 !important;
-  padding: 2px !important;
-  border-radius: 6px !important;
+  gap: 3px !important;
+  background: #F1F5F9 !important;
+  padding: 3px !important;
+  border-radius: 8px !important;
 }
 
 .scan-ocr-subtab {
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
-  padding: 4px 8px !important;
+  padding: 4px 10px !important;
   border: none !important;
   background: transparent !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #64748B !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   cursor: pointer !important;
-  transition: all 0.12s ease !important;
+  transition: all 120ms ease !important;
 }
 
 .scan-ocr-subtab.active {
@@ -42307,16 +42474,8 @@ body #app-view .rail-item.active {
 
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   HIGH-CONTRAST OCR SIDEBAR POLISH
+   HIGH-CONTRAST OCR TEXTAREA POLISH
    ══════════════════════════════════════════════════════════════════════════════ */
-
-.scan-ocr-sidebar {
-  width: 380px !important;
-  right: 56px !important;
-  background: #FFFFFF !important;
-  border-left: 1px solid #E2E8F0 !important;
-  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.08) !important;
-}
 
 .scan-ocr-sidebar-textarea {
   font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
