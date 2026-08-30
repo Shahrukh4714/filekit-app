@@ -40640,9 +40640,9 @@ body #app-view .rail-item.active {
 
 .scan-unified-toolbar .etxt-meta {
   font-size: 11px !important;
-  font-weight: 700 !important;
-  color: #7C3AED !important;
-  background: #EDE9FE !important;
+  font-weight: 650 !important;
+  color: #475569 !important;
+  background: #EEF2F6 !important;
   padding: 2px 6px !important;
   border-radius: 3px !important;
 }
@@ -41669,8 +41669,12 @@ body #app-view .rail-item.active {
 }
 
 .scan-rail-btn.is-active {
-  background: #EDE9FE !important;
-  color: #7C3AED !important;
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+}
+
+.scan-rail-btn.is-active svg {
+  stroke: #FFFFFF !important;
 }
 
 .scan-rail-page-pill {
@@ -41822,8 +41826,8 @@ body #app-view .rail-item.active {
 .scan-ocr-page-tag {
   font-size: 10px !important;
   font-weight: 700 !important;
-  background: #EDE9FE !important;
-  color: #7C3AED !important;
+  background: #F1F5F9 !important;
+  color: #334155 !important;
   padding: 1px 6px !important;
   border-radius: 4px !important;
 }

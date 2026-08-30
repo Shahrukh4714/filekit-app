@@ -2558,149 +2558,102 @@
       }
       const r = resultData;
       container.innerHTML = `
-        <div class="scan-result-workspace">
-          <!-- Top Bar -->
-          <header class="scan-result-header">
-            <div class="scan-result-title-group">
-              <div class="scan-filetype-badge">PDF</div>
-              <div class="scan-result-title-copy">
-                <h2>${esc(r.name)}</h2>
-                <span>${r.pageCount} ${r.pageCount === 1 ? 'page' : 'pages'} · ${bytes(r.blob.size)} · 100% On-Device</span>
-              </div>
-            </div>
-            <div class="scan-result-header-actions">
-              <button type="button" class="scan-btn-back-workbench" id="res-btn-back" title="Return to adjust pages">
-                ${ICONS.arrowLeft}
-                <span>Back to Review</span>
-              </button>
-              <button type="button" class="scan-btn-new-scan" id="res-btn-new" title="Start a fresh scan">
-                ${ICONS.camera}
-                <span>+ Scan New</span>
-              </button>
-              <div class="scan-privacy-tag" title="Zero cloud uploads. Processed locally on this device.">
-                <span class="scan-res-pulse-dot"></span>
-                <span>100% Local</span>
-              </div>
-            </div>
-          </header>
-
-          <!-- Main Dual Stage Layout -->
-          <div class="scan-result-body">
-            <!-- Left Visualizer Stage -->
-            <div class="scan-result-stage">
-              <div class="scan-result-stage-top">
-                <div class="scan-result-page-nav">
-                  <button type="button" class="scan-page-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>${ICONS.prev}</button>
-                  <span>Page <b>${r.resultPageIdx + 1}</b> of ${r.pageCount}</span>
-                  <button type="button" class="scan-page-nav-btn" id="res-next-page" title="Next page" ${r.resultPageIdx < r.pageCount - 1 ? '' : 'disabled'}>${ICONS.next}</button>
-                </div>
-                <div class="scan-result-badge-row">
-                  <span class="scan-result-tag-pill">${esc(r.formatLabel)}</span>
-                  <span class="scan-result-tag-pill scan-tag-success">${esc(r.ocrLabel)}</span>
-                </div>
-              </div>
-
-              <div class="scan-result-canvas-wrap">
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Large Centered Document Paper Sheet (Compress benchmark) -->
+            <div class="cpdf-benchmark-stage">
+              <div class="cpdf-benchmark-paper" id="comp-result-thumb-box">
                 <canvas id="scan-result-canvas" class="scan-result-canvas"></canvas>
               </div>
 
-              <div class="scan-result-stage-footer">
-                <span class="scan-intel-chip"><b>DPI:</b> 300 DPI Archival</span>
-                <span class="scan-spec-sep">·</span>
-                <span class="scan-intel-chip"><b>Engine:</b> ${pdfFormat === 'searchable' ? 'Searchable PDF/A' : (pdfFormat === 'image' ? 'Standard PDF' : 'ZIP Bundle')}</span>
-                <span class="scan-spec-sep">·</span>
-                <span class="scan-intel-chip"><b>Privacy:</b> 100% On-Device</span>
+              <!-- Floating Info & Switcher Pill -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                ${r.pageCount > 1 ? `
+                  <button type="button" class="cpdf-res-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>‹</button>
+                  <span class="cpdf-res-step-badge" id="scan-res-step-status">${(r.resultPageIdx || 0) + 1} / ${r.pageCount}</span>
+                  <button type="button" class="cpdf-res-nav-btn" id="res-next-page" title="Next page" ${r.resultPageIdx < r.pageCount - 1 ? '' : 'disabled'}>›</button>
+                  <span style="color:#CBD5E1;margin:0 2px;">|</span>
+                ` : ''}
+                <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text">${esc(r.name)} (${bytes(r.blob.size)})</span>
+                <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-btn-add" id="scan-res-stage-dl" style="text-decoration:none;">
+                  <span>⬇ Download</span>
+                </a>
               </div>
             </div>
 
-            <!-- Right Command Center -->
-            <div class="scan-result-command-panel">
-              <!-- Unified Hero Download Action -->
-              <div class="scan-res-hero-box">
-                <div class="scan-res-hero-head">
-                  <div class="scan-res-status-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span>Document Ready &amp; Optimized</span>
+            <!-- Right Panel: Result Studio with Smart Tip Card (Compress benchmark) -->
+            <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important; gap: 10px !important;">
+              <!-- Top Header: Green Check Badge -->
+              <div class="cpdf-benchmark-header">
+                <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+                <h2 class="cpdf-benchmark-title">Scan Complete</h2>
+              </div>
+
+              <!-- Hero Document Specs Card -->
+              <div class="cpdf-benchmark-est-box">
+                <div class="cpdf-benchmark-est-title">${esc(r.formatLabel)} · ${r.pageCount} ${r.pageCount === 1 ? 'Page' : 'Pages'}</div>
+                <div class="cpdf-benchmark-est-metrics">
+                  <strong class="cpdf-benchmark-est-new">${bytes(r.blob.size)}</strong>
+                  <span class="cpdf-benchmark-est-pct" style="color:#16A34A; background:#DCFCE7;">300 DPI Archival</span>
+                </div>
+                <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A;"></div>
+                </div>
+              </div>
+
+              <!-- Primary Action CTA Button (Obsidian Black) -->
+              <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta" style="text-decoration:none;margin-top:2px;">
+                <span>Download Scanned Document</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </a>
+
+              <!-- Smart Tip Card with Bespoke Tool Links -->
+              <div class="conv-smart-tip-card" style="margin-top: 4px;">
+                <div class="conv-smart-tip-header">
+                  <span>Smart tip! 💡</span>
+                </div>
+                <p class="conv-smart-tip-desc">What would you like to do next with your scanned document?</p>
+                <div class="conv-smart-tools-list">
+                  <div class="conv-smart-tool-item" data-tool-id="pdf-compress">
+                    <div class="conv-smart-tool-left">
+                      <span class="conv-smart-tool-icon" style="background:#0284C7;">${ICONS.compress}</span>
+                      <span>Compress &amp; Shrink PDF</span>
+                    </div>
+                    <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
                   </div>
-                  <span class="scan-res-time-badge">Ready</span>
-                </div>
-                <a class="scan-btn-download-hero" id="scan-res-download-btn" href="${r.url}" download="${esc(r.name)}">
-                  <div class="scan-btn-download-left">
-                    <span class="scan-btn-download-icon">${ICONS.download}</span>
-                    <div class="scan-btn-download-copy">
-                      <strong>Download ${esc(r.formatLabel)}</strong>
-                      <span>${esc(r.name)} · ${bytes(r.blob.size)}</span>
+                  <div class="conv-smart-tool-item" data-tool-id="pdf-sign">
+                    <div class="conv-smart-tool-left">
+                      <span class="conv-smart-tool-icon" style="background:#0D9488;">${ICONS.edit}</span>
+                      <span>Sign Document</span>
                     </div>
+                    <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
                   </div>
-                  <kbd class="scan-download-kbd">Ctrl+S</kbd>
-                </a>
-              </div>
-
-              <!-- Quick Multi-Format Downloads -->
-              <div class="scan-result-variants-card">
-                <div class="scan-side-hdr">
-                  <span>Alternative Formats &amp; Text</span>
-                </div>
-                <div class="scan-variants-grid">
-                  <button type="button" class="scan-variant-btn" id="res-btn-dl-txt" title="Download recognized plain text (.txt)">
-                    ${ICONS.txt}
-                    <span>Plain Text (.TXT)</span>
-                  </button>
-                  <button type="button" class="scan-variant-btn" id="res-btn-dl-doc" title="Download formatted Word document (.doc)">
-                    ${ICONS.word}
-                    <span>Word Doc (.DOC)</span>
-                  </button>
-                  <button type="button" class="scan-variant-btn" id="res-btn-dl-zip" title="Download all page images in high-res ZIP">
-                    ${ICONS.zip}
-                    <span>Images (.ZIP)</span>
-                  </button>
-                  <button type="button" class="scan-variant-btn" id="res-btn-copy-text" title="Copy recognized text directly to clipboard">
-                    ${ICONS.copy}
-                    <span id="res-copy-label">Copy Text</span>
-                  </button>
+                  <div class="conv-smart-tool-item" data-tool-id="organize">
+                    <div class="conv-smart-tool-left">
+                      <span class="conv-smart-tool-icon" style="background:#7C3AED;">${ICONS.organize}</span>
+                      <span>Organize &amp; Merge PDF</span>
+                    </div>
+                    <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                  </div>
                 </div>
               </div>
 
-              <!-- FileKit Next Workflow Handoffs -->
-              <div class="scan-result-workflows-card">
-                <div class="scan-side-hdr">
-                  <span>Continue in FileKit Studio</span>
-                </div>
-                <div class="scan-workflow-links">
-                  <button type="button" class="scan-workflow-row" id="res-wf-compress">
-                    <span class="scan-wf-icon">${ICONS.compress}</span>
-                    <div class="scan-wf-copy">
-                      <strong>Compress &amp; Shrink PDF</strong>
-                      <span>Reduce file size for instant email sending</span>
-                    </div>
-                    <svg class="scan-wf-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                  </button>
-                  <button type="button" class="scan-workflow-row" id="res-wf-edit">
-                    <span class="scan-wf-icon">${ICONS.edit}</span>
-                    <div class="scan-wf-copy">
-                      <strong>Annotate &amp; Sign PDF</strong>
-                      <span>Add signatures, stamps, highlights, or text</span>
-                    </div>
-                    <svg class="scan-wf-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                  </button>
-                  <button type="button" class="scan-workflow-row" id="res-wf-organize">
-                    <span class="scan-wf-icon">${ICONS.organize}</span>
-                    <div class="scan-wf-copy">
-                      <strong>Organize &amp; Merge PDF</strong>
-                      <span>Add more files, split, or rotate pages</span>
-                    </div>
-                    <svg class="scan-wf-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div class="scan-result-foot-note">
-                <button type="button" class="scan-link-btn" id="res-btn-restart">Clear and start over</button>
-              </div>
+              <!-- Secondary Actions Row -->
+              <button type="button" class="cpdf-result-btn-secondary-full" id="res-btn-back" style="margin-top: 4px;">
+                ‹ Back to Review Studio
+              </button>
+              <button type="button" class="cpdf-result-btn-secondary-full" id="res-btn-new" style="margin-top: 2px; color: #64748B;">
+                + Scan another document
+              </button>
             </div>
           </div>
         </div>
-
       `;
 
       function drawResultPreview() {
@@ -2709,7 +2662,7 @@
         const src = r.previewCanvases[r.resultPageIdx || 0];
         if (!src) return;
         const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
-        const maxW = Math.min(640, src.width);
+        const maxW = Math.min(480, src.width);
         const scale = maxW / src.width;
         const displayW = Math.round(src.width * scale);
         const displayH = Math.round(src.height * scale);
@@ -2717,115 +2670,54 @@
         cv.height = Math.round(displayH * dpr);
         cv.style.width = `${displayW}px`;
         cv.style.height = `${displayH}px`;
+        cv.style.maxWidth = '100%';
+        cv.style.maxHeight = 'calc(100vh - 220px)';
+        cv.style.borderRadius = '4px';
+        cv.style.display = 'block';
+        cv.style.boxShadow = '0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05)';
         const ctx = cv.getContext('2d');
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(src, 0, 0, cv.width, cv.height);
       }
 
-
       drawResultPreview();
 
       const prevBtn = container.querySelector('#res-prev-page');
       const nextBtn = container.querySelector('#res-next-page');
-      if (prevBtn) prevBtn.onclick = () => {
-        if (r.resultPageIdx > 0) {
-          r.resultPageIdx--;
-          renderResultView();
-        }
-      };
-      if (nextBtn) nextBtn.onclick = () => {
-        if (r.resultPageIdx < r.pageCount - 1) {
-          r.resultPageIdx++;
-          renderResultView();
-        }
-      };
+      if (prevBtn) {
+        prevBtn.onclick = () => {
+          if (r.resultPageIdx > 0) {
+            r.resultPageIdx--;
+            renderResultView();
+          }
+        };
+      }
+      if (nextBtn) {
+        nextBtn.onclick = () => {
+          if (r.resultPageIdx < r.pageCount - 1) {
+            r.resultPageIdx++;
+            renderResultView();
+          }
+        };
+      }
 
       const backBtn = container.querySelector('#res-btn-back');
       const newBtn = container.querySelector('#res-btn-new');
-      const restartBtn = container.querySelector('#res-btn-restart');
       if (backBtn) backBtn.onclick = () => { clearResult(); switchView('review'); };
-      if (newBtn || restartBtn) {
-        const handler = () => { clearResult(); pages = []; selIdx = 0; switchView('hub'); };
-        if (newBtn) newBtn.onclick = handler;
-        if (restartBtn) restartBtn.onclick = handler;
+      if (newBtn) {
+        newBtn.onclick = () => { clearResult(); pages = []; selIdx = 0; switchView('hub'); };
       }
 
-      // Quick export variant handlers
-      const txtBtn = container.querySelector('#res-btn-dl-txt');
-      const docBtn = container.querySelector('#res-btn-dl-doc');
-      const zipBtn = container.querySelector('#res-btn-dl-zip');
-      const copyBtn = container.querySelector('#res-btn-copy-text');
-
-      if (txtBtn) {
-        txtBtn.onclick = async () => {
-          let text = r.ocrText;
-          if (!text) {
-            const prep = pages.map(p => A.fitCanvas(A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast }), 1200));
-            const results = await A.ocrRecognize(prep, undefined, ocrLang === 'auto' ? 'eng' : ocrLang);
-            text = results.map((res, i) => '── Page ' + (i + 1) + ' ──\n' + (res.text || '').trim()).join('\n\n');
-            r.ocrText = text;
+      // Wire Smart Tool Clicks
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.onclick = () => {
+          const tid = item.dataset.toolId;
+          if (tid) {
+            window.location.hash = '#app/' + tid;
           }
-          U.downloadBlob(new Blob([text || 'No text extracted.'], { type: 'text/plain;charset=utf-8' }), `${U.baseName(r.name)}-ocr.txt`);
         };
-      }
-
-      if (docBtn) {
-        docBtn.onclick = async () => {
-          let text = r.ocrText;
-          if (!text) {
-            const prep = pages.map(p => A.fitCanvas(A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast }), 1200));
-            const results = await A.ocrRecognize(prep, undefined, ocrLang === 'auto' ? 'eng' : ocrLang);
-            text = results.map((res, i) => '── Page ' + (i + 1) + ' ──\n' + (res.text || '').trim()).join('\n\n');
-            r.ocrText = text;
-          }
-          U.downloadBlob(A.wordDocFromText(text || 'No text extracted.', r.name), `${U.baseName(r.name)}.doc`);
-        };
-      }
-
-      if (zipBtn) {
-        zipBtn.onclick = async () => {
-          const zipFiles = {};
-          for (let i = 0; i < pages.length; i++) {
-            const p = pages[i];
-            const cv = A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast });
-            const jpg = await A.canvasJpeg(cv, 0.92);
-            zipFiles[`page_${String(i + 1).padStart(3, '0')}.jpg`] = jpg;
-          }
-          const fflate = await load.fflate();
-          const zipped = fflate.zipSync(zipFiles);
-          U.downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${U.baseName(r.name)}-images.zip`);
-        };
-      }
-
-      if (copyBtn) {
-        copyBtn.onclick = async () => {
-          let text = r.ocrText;
-          if (!text) {
-            const prep = pages.map(p => A.fitCanvas(A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast }), 1200));
-            const results = await A.ocrRecognize(prep, undefined, ocrLang === 'auto' ? 'eng' : ocrLang);
-            text = results.map((res, i) => '── Page ' + (i + 1) + ' ──\n' + (res.text || '').trim()).join('\n\n');
-            r.ocrText = text;
-          }
-          try {
-            await navigator.clipboard.writeText(text || 'No text extracted.');
-            const label = container.querySelector('#res-copy-label');
-            if (label) {
-              label.textContent = '✓ Copied!';
-              setTimeout(() => { label.textContent = 'Copy Text'; }, 2000);
-            }
-          } catch (e) {}
-        };
-      }
-
-      // Workflow jumps
-      const wfComp = container.querySelector('#res-wf-compress');
-      const wfEdit = container.querySelector('#res-wf-edit');
-      const wfOrg = container.querySelector('#res-wf-organize');
-
-      if (wfComp) wfComp.onclick = () => { window.location.hash = '#app/compress'; };
-      if (wfEdit) wfEdit.onclick = () => { window.location.hash = '#app/edit'; };
-      if (wfOrg) wfOrg.onclick = () => { window.location.hash = '#app/organize'; };
+      });
     }
 
     function render() {
