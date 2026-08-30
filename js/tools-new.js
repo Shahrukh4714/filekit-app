@@ -2078,6 +2078,12 @@
       container.classList.remove('scan-shell');
     };
 
+    // Detect user search intent from URL hash or path (e.g. #app/ocr, #app/pdf-ocr, #app/receipt-ocr, #app/pdf-redact-pii)
+    const currentHash = (window.location.hash || '').toLowerCase();
+    const isOcrIntent = currentHash.includes('ocr') || currentHash.includes('extract-text');
+    const isReceiptIntent = currentHash.includes('receipt') || currentHash.includes('invoice') || currentHash.includes('table');
+    const isRedactIntent = currentHash.includes('redact') || currentHash.includes('sanitize');
+
     // Core application state
     let pages = [];             // Array of { id, name, canvas, raw, quad, cropped, rot, enhanceMode, brightness, contrast }
     let viewMode = 'hub';       // 'hub' (Camera / Batch Capture) | 'review' (Studio) | 'processing' | 'result' | 'recrop' | 'ocr'
@@ -2096,18 +2102,18 @@
     let idCardStep = 'front';     // 'front' | 'back'
     let idCardFrontCanvas = null;
 
-        // Zoom, Pan, OCR Text Layer, Search & Layout state
+    // Zoom, Pan, OCR Text Layer, Search & Layout state
     let zoom = 100;
     let zoomScale = 1;
     let panX = 0, panY = 0, isPanning = false, panStartX = 0, panStartY = 0;
     let isSplitView = false, splitRatio = 0.5, isDraggingSplit = false;
     let thumbsDrawerOpen = false;
     let activeFlyout = null; // 'tune' | 'format' | 'stamp' | 'keyword-redact' | null
-    let showOcrLayer = false;
+    let showOcrLayer = isOcrIntent || isRedactIntent;
 
-    let ocrPanelOpen = false;
-    let ocrSidebarTab = 'text'; // 'text' | 'insights'
-    let isRedacting = false;
+    let ocrPanelOpen = isOcrIntent || isReceiptIntent;
+    let ocrSidebarTab = isReceiptIntent ? 'insights' : 'text'; // 'text' | 'insights'
+    let isRedacting = isRedactIntent;
     let keywordRedactQuery = '';
     let keywordMatchCase = false;
     let keywordWholeWord = false;
@@ -2891,17 +2897,17 @@
             <div class="drop-action-group scan-entry-actions">
               <button type="button" class="select-files-main-btn" id="scan-import-docs-btn">
                 <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select PDF or images</span>
+                <span>${isOcrIntent ? 'Select PDF or Image to OCR' : (isReceiptIntent ? 'Select Receipt / Invoice' : (isRedactIntent ? 'Select PDF to Redact' : 'Select PDF or images'))}</span>
               </button>
               <span class="scan-entry-or">or</span>
               <button type="button" class="scan-entry-camera" id="scan-start-cam-btn">
                 ${ICONS.camera}
-                <span>Use camera</span>
+                <span>${isOcrIntent ? 'Scan with Camera' : 'Use camera'}</span>
                 <kbd>Space</kbd>
               </button>
             </div>
 
-            <p class="drop-sub-text">Scan, clean, and extract text from <strong>PDF</strong>, <strong>JPG</strong>, <strong>PNG</strong>, or <strong>WebP</strong> documents</p>
+            <p class="drop-sub-text">${isOcrIntent ? 'Extract text and make scanned documents searchable • <strong>100% on-device neural OCR</strong>' : (isReceiptIntent ? 'Extract line items, dates, and amounts into <strong>Excel / CSV</strong> automatically' : (isRedactIntent ? 'Permanently blackout sensitive PII, names, and numbers with <strong>local privacy</strong>' : 'Scan, clean, and extract text from <strong>PDF</strong>, <strong>JPG</strong>, <strong>PNG</strong>, or <strong>WebP</strong> documents'))}</p>
 
             ${importError ? `
               <div class="scan-inline-error-card" role="alert">
@@ -3131,7 +3137,18 @@
       updateImportProgress(100, 'Opening Studio…', 'All pages prepared successfully.');
       // Background pre-warm Tesseract worker to eliminate cold start latency
       A.getOrInitOcrWorker(ocrLang || 'eng').catch(() => {});
+      if (isOcrIntent || isReceiptIntent) {
+        ocrPanelOpen = true;
+        showOcrLayer = true;
+      }
       switchView('review');
+      if (isOcrIntent || isReceiptIntent) {
+        setTimeout(() => {
+          if (pages.length && !pages[0].ocrData) {
+            runPageOcr(0);
+          }
+        }, 100);
+      }
       const importedLabel = `${importedPages} ${importedPages === 1 ? 'page' : 'pages'} imported.`;
       setStatus(failedFiles.length ? `${importedLabel} ${failedFiles.length} file${failedFiles.length === 1 ? '' : 's'} skipped.` : importedLabel, failedFiles.length ? 'warn' : 'ok');
     }
