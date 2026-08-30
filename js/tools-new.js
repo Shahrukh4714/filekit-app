@@ -3852,17 +3852,16 @@
 
       parent.innerHTML = `
         <div class="scan-review-workspace">
-          <!-- Top Master Toolbar: Flat text-labeled buttons, ultra-compact, zero-scroll -->
+          <!-- Top Toolbar: All tools flat, text-labeled, zero scroll -->
           <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
 
-            <!-- Enhancement Mode buttons (flat, no pill wrapper) -->
-            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Magic Clean Document Illumination [1]">
+            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean — Magic Document Illumination [1]">
               ${ICONS.filterDoc}<span>Clean</span>
             </button>
             <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
               ${ICONS.filterBw}<span>B&amp;W</span>
             </button>
-            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
+            <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
               ${ICONS.filterPhoto}<span>Photo</span>
             </button>
 
@@ -3871,11 +3870,7 @@
             <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
               ${ICONS.split}<span>Compare</span>
             </button>
-
-            <span class="scan-tb-sep" aria-hidden="true"></span>
-
-            <!-- Inspection tools with text labels -->
-            <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find Text in Document (Ctrl+F)">
+            <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find text in document (Ctrl+F)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <span>Search</span>
             </button>
@@ -3893,12 +3888,10 @@
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
-            <!-- OCR text panel -->
-            <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Toggle Integrated OCR Text Panel">
-              ${ICONS.ocr}<span>OCR Text</span>
+            <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Toggle OCR Text Panel">
+              ${ICONS.ocr}<span>OCR</span>
             </button>
 
-            <!-- Language selector (flat, no pill wrapper) -->
             <div class="scan-tb-lang-flat" title="OCR Language">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <select id="scan-top-ocr-lang" class="scan-top-lang-select" aria-label="OCR Language">
@@ -3916,14 +3909,13 @@
               </select>
             </div>
 
-            <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
+            <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply filter to all ${pages.length} pages">
               ${ICONS.sparkle}<span>All (${pages.length})</span>
             </button>
 
-            <!-- Right-pinned actions -->
             <div class="scan-tb-spacer"></div>
 
-            <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Capture another page with camera">
+            <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
               ${ICONS.camera}<span>Camera</span>
             </button>
             <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
