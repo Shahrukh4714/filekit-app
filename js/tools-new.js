@@ -2148,6 +2148,7 @@
     let sigFont = 'Dancing Script';
     let sigTypedName = 'Authorized Signature';
     let sigUploadedImg = null;
+    let selectedOverlayId = null;
     let showOcrLayer = isOcrIntent || isRedactIntent;
 
     let ocrPanelOpen = isOcrIntent || isReceiptIntent;
@@ -4015,6 +4016,8 @@
                 <canvas id="scan-studio-canvas" class="scan-studio-canvas"></canvas>
                 <!-- Interactive Selectable OCR Text Layer -->
                 <div class="scan-text-layer ${showOcrLayer ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer}"></div>
+                <!-- Interactive Placed Overlay Elements (Signatures & Stamps) -->
+                <div class="scan-overlays-layer" id="scan-overlays-layer"></div>
               </div>
             </main>
 
@@ -4502,6 +4505,172 @@
       if (counterEl) counterEl.textContent = `${matchCount} ${matchCount === 1 ? 'match' : 'matches'}`;
     }
 
+
+    function getPageExportCanvas(p) {
+      const base = A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'original', { brightness: p.brightness, contrast: p.contrast });
+      if (p.overlays && p.overlays.length) {
+        const ctx = base.getContext('2d');
+        p.overlays.forEach((o) => {
+          if (o.imgCanvas) {
+            ctx.drawImage(o.imgCanvas, (o.x || 0) * base.width, (o.y || 0) * base.height, (o.w || 0.3) * base.width, (o.h || 0.1) * base.height);
+          }
+        });
+      }
+      return base;
+    }
+
+    function renderOverlaysLayer() {
+      const layer = container.querySelector('#scan-overlays-layer');
+      if (!layer || !pages[selIdx]) return;
+      const curP = pages[selIdx];
+      curP.overlays = curP.overlays || [];
+
+      layer.innerHTML = curP.overlays.map((o) => {
+        const isSel = selectedOverlayId === o.id;
+        const dataUrl = o.imgCanvas ? o.imgCanvas.toDataURL('image/png') : '';
+        return `
+          <div class="scan-overlay-item ${isSel ? 'is-selected' : ''}" 
+               data-overlay-id="${esc(o.id)}"
+               style="left: ${(o.x || 0) * 100}%; top: ${(o.y || 0) * 100}%; width: ${(o.w || 0.3) * 100}%; height: ${(o.h || 0.1) * 100}%;">
+            ${isSel ? `
+              <div class="scan-overlay-toolbar">
+                <button type="button" class="scan-overlay-btn btn-done" data-act="done" title="Commit position (Click outside)">✓ Done</button>
+                <button type="button" class="scan-overlay-btn btn-dup" data-act="dup" title="Duplicate signature">⧉ Dup</button>
+                <button type="button" class="scan-overlay-btn btn-del" data-act="del" title="Delete signature (Del)">🗑️</button>
+              </div>
+              <div class="scan-overlay-handle nw" data-handle="nw"></div>
+              <div class="scan-overlay-handle ne" data-handle="ne"></div>
+              <div class="scan-overlay-handle se" data-handle="se"></div>
+              <div class="scan-overlay-handle sw" data-handle="sw"></div>
+            ` : ''}
+            <img src="${dataUrl}" alt="Signature" draggable="false" style="width:100%; height:100%; object-fit:contain;">
+          </div>
+        `;
+      }).join('');
+
+      bindOverlaysLayerEvents(layer, curP);
+    }
+
+    function bindOverlaysLayerEvents(layer, curP) {
+      const paper = container.querySelector('#scan-paper-page');
+      if (!paper) return;
+
+      layer.querySelectorAll('.scan-overlay-item').forEach((el) => {
+        const id = el.dataset.overlayId;
+        const o = curP.overlays.find((x) => x.id === id);
+        if (!o) return;
+
+        // Action buttons
+        el.querySelectorAll('.scan-overlay-btn').forEach((btn) => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const act = btn.dataset.act;
+            if (act === 'done') {
+              selectedOverlayId = null;
+              renderOverlaysLayer();
+            } else if (act === 'dup') {
+              const dup = { ...o, id: 'ov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), x: Math.min(0.7, (o.x || 0) + 0.04), y: Math.min(0.7, (o.y || 0) + 0.04) };
+              curP.overlays.push(dup);
+              selectedOverlayId = dup.id;
+              renderOverlaysLayer();
+              setStatus('Signature duplicated. Drag to position.', 'ok');
+            } else if (act === 'del') {
+              curP.overlays = curP.overlays.filter((x) => x.id !== id);
+              selectedOverlayId = null;
+              renderOverlaysLayer();
+              setStatus('Signature deleted.', 'ok');
+            }
+          };
+        });
+
+        // Resize Handles
+        el.querySelectorAll('.scan-overlay-handle').forEach((handle) => {
+          handle.onpointerdown = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const handleType = handle.dataset.handle;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startW = o.w;
+            const startH = o.h;
+            const startLeft = o.x;
+            const startTop = o.y;
+            const paperRect = paper.getBoundingClientRect();
+            const ratio = o.aspectRatio || (startW / Math.max(0.001, startH));
+
+            const onMove = (me) => {
+              const dx = (me.clientX - startX) / paperRect.width;
+              const dy = (me.clientY - startY) / paperRect.height;
+
+              if (handleType === 'se') {
+                const newW = Math.max(0.06, Math.min(0.95, startW + dx));
+                o.w = newW;
+                o.h = newW / ratio;
+              } else if (handleType === 'sw') {
+                const newW = Math.max(0.06, Math.min(0.95, startW - dx));
+                o.x = startLeft + (startW - newW);
+                o.w = newW;
+                o.h = newW / ratio;
+              } else if (handleType === 'ne') {
+                const newW = Math.max(0.06, Math.min(0.95, startW + dx));
+                const newH = newW / ratio;
+                o.y = startTop + (startH - newH);
+                o.w = newW;
+                o.h = newH;
+              } else if (handleType === 'nw') {
+                const newW = Math.max(0.06, Math.min(0.95, startW - dx));
+                const newH = newW / ratio;
+                o.x = startLeft + (startW - newW);
+                o.y = startTop + (startH - newH);
+                o.w = newW;
+                o.h = newH;
+              }
+              renderOverlaysLayer();
+            };
+
+            const onUp = () => {
+              window.removeEventListener('pointermove', onMove);
+              window.removeEventListener('pointerup', onUp);
+            };
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp);
+          };
+        });
+
+        // Drag overlay to reposition
+        el.onpointerdown = (e) => {
+          if (e.target.closest('.scan-overlay-toolbar, .scan-overlay-handle')) return;
+          e.stopPropagation();
+          e.preventDefault();
+          selectedOverlayId = o.id;
+          renderOverlaysLayer();
+
+          const startX = e.clientX;
+          const startY = e.clientY;
+          const initX = o.x;
+          const initY = o.y;
+          const paperRect = paper.getBoundingClientRect();
+          el.classList.add('is-dragging');
+
+          const onMove = (me) => {
+            const dx = (me.clientX - startX) / paperRect.width;
+            const dy = (me.clientY - startY) / paperRect.height;
+            o.x = Math.max(0, Math.min(1 - o.w, initX + dx));
+            o.y = Math.max(0, Math.min(1 - o.h, initY + dy));
+            el.style.left = `${o.x * 100}%`;
+            el.style.top = `${o.y * 100}%`;
+          };
+
+          const onUp = () => {
+            el.classList.remove('is-dragging');
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+          };
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+        };
+      });
+    }
 
     function applyCanvasTransform() {
       const cv = container.querySelector('#scan-studio-canvas');
@@ -5735,21 +5904,28 @@
               localStorage.setItem('filekit_saved_draw_sig', sigCv.toDataURL('image/png'));
             } catch (e) {}
 
-            const pageCtx = p.canvas.getContext('2d');
-            const targetW = Math.round(p.canvas.width * 0.32);
-            const targetH = Math.round(targetW * (sigCv.height / sigCv.width));
-            const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
-            const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
+            const off = document.createElement('canvas');
+            off.width = sigCv.width;
+            off.height = sigCv.height;
+            off.getContext('2d').drawImage(sigCv, 0, 0);
 
-            pageCtx.drawImage(sigCv, targetX, targetY, targetW, targetH);
-            p._baseCache = null;
-            p._enhCache = null;
-            p._thumbCache = null;
+            const overlay = {
+              id: 'ov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              type: 'signature',
+              imgCanvas: off,
+              x: 0.35,
+              y: 0.65,
+              w: 0.30,
+              h: 0.30 * (off.height / off.width),
+              aspectRatio: off.width / off.height,
+            };
+            p.overlays = p.overlays || [];
+            p.overlays.push(overlay);
+            selectedOverlayId = overlay.id;
             activeFlyout = null;
-            updateStudioPreview();
-            paintFilmstripThumbs();
-            setStatus('Signature placed on document.', 'ok');
             refreshStudioUI();
+            renderOverlaysLayer();
+            setStatus('Signature added! Drag to position on the page or resize handles.', 'ok');
           };
         }
       }
@@ -5783,21 +5959,23 @@
           oCtx.textBaseline = 'middle';
           oCtx.fillText(name, 300, 90);
 
-          const pageCtx = p.canvas.getContext('2d');
-          const targetW = Math.round(p.canvas.width * 0.34);
-          const targetH = Math.round(targetW * (180 / 600));
-          const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
-          const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
-
-          pageCtx.drawImage(off, targetX, targetY, targetW, targetH);
-          p._baseCache = null;
-          p._enhCache = null;
-          p._thumbCache = null;
+          const overlay = {
+            id: 'ov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            type: 'signature',
+            imgCanvas: off,
+            x: 0.35,
+            y: 0.65,
+            w: 0.32,
+            h: 0.32 * (180 / 600),
+            aspectRatio: 600 / 180,
+          };
+          p.overlays = p.overlays || [];
+          p.overlays.push(overlay);
+          selectedOverlayId = overlay.id;
           activeFlyout = null;
-          updateStudioPreview();
-          paintFilmstripThumbs();
-          setStatus('Typed signature placed on document.', 'ok');
           refreshStudioUI();
+          renderOverlaysLayer();
+          setStatus('Typed signature added! Drag to position or resize handles.', 'ok');
         };
       }
 
@@ -5847,21 +6025,28 @@
 
       if (applyUploadBtn && uploadCv) {
         applyUploadBtn.onclick = () => {
-          const pageCtx = p.canvas.getContext('2d');
-          const targetW = Math.round(p.canvas.width * 0.32);
-          const targetH = Math.round(targetW * (uploadCv.height / uploadCv.width));
-          const targetX = p.canvas.width - targetW - Math.round(p.canvas.width * 0.08);
-          const targetY = p.canvas.height - targetH - Math.round(p.canvas.height * 0.08);
+          const off = document.createElement('canvas');
+          off.width = uploadCv.width;
+          off.height = uploadCv.height;
+          off.getContext('2d').drawImage(uploadCv, 0, 0);
 
-          pageCtx.drawImage(uploadCv, targetX, targetY, targetW, targetH);
-          p._baseCache = null;
-          p._enhCache = null;
-          p._thumbCache = null;
+          const overlay = {
+            id: 'ov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            type: 'signature',
+            imgCanvas: off,
+            x: 0.35,
+            y: 0.65,
+            w: 0.30,
+            h: 0.30 * (uploadCv.height / uploadCv.width),
+            aspectRatio: uploadCv.width / uploadCv.height,
+          };
+          p.overlays = p.overlays || [];
+          p.overlays.push(overlay);
+          selectedOverlayId = overlay.id;
           activeFlyout = null;
-          updateStudioPreview();
-          paintFilmstripThumbs();
-          setStatus('Signature image placed on document.', 'ok');
           refreshStudioUI();
+          renderOverlaysLayer();
+          setStatus('Signature image added! Drag to position or resize handles.', 'ok');
         };
       }
 
@@ -5869,13 +6054,15 @@
       parent.querySelectorAll('[data-stamp]').forEach((chip) => {
         chip.onclick = () => {
           const stampText = chip.dataset.stamp;
-          const ctx = p.canvas.getContext('2d');
-          const cw = p.canvas.width, ch = p.canvas.height;
+          const off = document.createElement('canvas');
+          off.width = 500;
+          off.height = 160;
+          const ctx = off.getContext('2d');
           ctx.save();
-          ctx.translate(cw / 2, ch / 2);
-          ctx.rotate(-14 * Math.PI / 180);
+          ctx.translate(250, 80);
+          ctx.rotate(-10 * Math.PI / 180);
 
-          ctx.font = `bold ${Math.round(cw * 0.08)}px Inter, system-ui, sans-serif`;
+          ctx.font = `bold 44px Inter, system-ui, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
@@ -5888,27 +6075,35 @@
           const color = colorMap[stampText] || '#dc2626';
 
           const textW = ctx.measureText(stampText).width;
-          const pad = Math.round(cw * 0.03);
-          const boxW = textW + pad * 2;
-          const boxH = Math.round(cw * 0.12);
+          const boxW = textW + 36;
+          const boxH = 68;
 
           ctx.strokeStyle = color;
-          ctx.lineWidth = Math.max(3, Math.round(cw * 0.008));
+          ctx.lineWidth = 4;
           ctx.strokeRect(-boxW / 2, -boxH / 2, boxW, boxH);
 
           ctx.fillStyle = color;
-          ctx.globalAlpha = 0.85;
+          ctx.globalAlpha = 0.9;
           ctx.fillText(stampText, 0, 0);
           ctx.restore();
 
-          p._baseCache = null;
-          p._enhCache = null;
-          p._thumbCache = null;
+          const overlay = {
+            id: 'ov_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            type: 'stamp',
+            imgCanvas: off,
+            x: 0.35,
+            y: 0.40,
+            w: 0.32,
+            h: 0.32 * (160 / 500),
+            aspectRatio: 500 / 160,
+          };
+          p.overlays = p.overlays || [];
+          p.overlays.push(overlay);
+          selectedOverlayId = overlay.id;
           activeFlyout = null;
-          updateStudioPreview();
-          paintFilmstripThumbs();
-          setStatus(`Stamp "${stampText}" placed.`, 'ok');
           refreshStudioUI();
+          renderOverlaysLayer();
+          setStatus(`Stamp "${stampText}" placed. Drag to position or resize.`, 'ok');
         };
       });
 
@@ -6271,6 +6466,12 @@
             e.preventDefault();
             activeFlyout = activeFlyout === 'stamp' ? null : 'stamp';
             refreshStudioUI();
+          } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedOverlayId && !isCropping && !isRedacting) {
+            e.preventDefault();
+            p.overlays = (p.overlays || []).filter((x) => x.id !== selectedOverlayId);
+            selectedOverlayId = null;
+            renderOverlaysLayer();
+            setStatus('Signature deleted.', 'ok');
           } else if (e.key === 'Delete' && !isCropping && !isRedacting) {
             e.preventDefault();
             deletePage(selIdx);
@@ -6347,6 +6548,8 @@
       if (inp) {
         bindFileInput(inp);
       }
+
+      renderOverlaysLayer();
     }
 
     function rotatePage(idx, direction = 1) {
@@ -6875,7 +7078,7 @@
 
         if (pdfFormat === 'searchable') {
           updateProcessingState('Preparing pages', 0.12, 'Applying the selected cleanup settings at 300 DPI.');
-          const fullCanvases = pages.map((p) => A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast }));
+          const fullCanvases = pages.map((p) => getPageExportCanvas(p));
           const prep = fullCanvases.map((c) => A.fitCanvas(c, 2000));
           assertCurrent();
 
@@ -6923,7 +7126,7 @@
             assertCurrent();
             updateProcessingState('Compiling standard PDF', 0.14 + ((i / pages.length) * 0.72), `Processing page ${i + 1} of ${pages.length}.`);
             const p = pages[i];
-            const canvas = A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast });
+            const canvas = getPageExportCanvas(p);
             const jpg = await A.canvasJpeg(canvas, q);
             const img = await doc.embedJpg(jpg);
             let pageW, pageH, imgW, imgH, imgX = 0, imgY = 0;
@@ -6959,7 +7162,7 @@
           assertCurrent();
           updateProcessingState('Packaging image archive', 0.14 + ((i / pages.length) * 0.72), `Packaging page ${i + 1} of ${pages.length}.`);
           const p = pages[i];
-          const canvas = A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast });
+          const canvas = getPageExportCanvas(p);
           const jpgBytes = await A.canvasJpeg(canvas, q);
           files[`page-${i + 1}.jpg`] = jpgBytes;
         }
