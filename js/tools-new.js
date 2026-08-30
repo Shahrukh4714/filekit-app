@@ -2511,10 +2511,10 @@
           <!-- Top Bar -->
           <header class="scan-result-header">
             <div class="scan-result-title-group">
-              <span class="scan-tool-badge">${ICONS.scanBadge}</span>
+              <div class="scan-filetype-badge">PDF</div>
               <div class="scan-result-title-copy">
                 <h2>${esc(r.name)}</h2>
-                <span>${r.pageCount} ${r.pageCount === 1 ? 'page' : 'pages'} · ${bytes(r.blob.size)} · 100% on-device</span>
+                <span>${r.pageCount} ${r.pageCount === 1 ? 'page' : 'pages'} · ${bytes(r.blob.size)} · 100% On-Device</span>
               </div>
             </div>
             <div class="scan-result-header-actions">
@@ -2526,9 +2526,9 @@
                 ${ICONS.camera}
                 <span>+ Scan New</span>
               </button>
-              <div class="scan-privacy-tag" title="Zero cloud uploads. Processed locally.">
-                ${ICONS.shield}
-                <span>Local</span>
+              <div class="scan-privacy-tag" title="Zero cloud uploads. Processed locally on this device.">
+                <span class="scan-res-pulse-dot"></span>
+                <span>100% Local</span>
               </div>
             </div>
           </header>
@@ -2555,29 +2555,31 @@
 
               <div class="scan-result-stage-footer">
                 <span class="scan-intel-chip"><b>DPI:</b> 300 DPI Archival</span>
+                <span class="scan-spec-sep">·</span>
                 <span class="scan-intel-chip"><b>Engine:</b> ${pdfFormat === 'searchable' ? 'Searchable PDF/A' : (pdfFormat === 'image' ? 'Standard PDF' : 'ZIP Bundle')}</span>
+                <span class="scan-spec-sep">·</span>
                 <span class="scan-intel-chip"><b>Privacy:</b> 100% On-Device</span>
               </div>
             </div>
 
             <!-- Right Command Center -->
             <div class="scan-result-command-panel">
-              <!-- Success Hero -->
-              <div class="scan-result-hero-card">
-                <div class="scan-result-check-icon">${ICONS.check}</div>
-                <div class="scan-result-hero-copy">
-                  <h3>Document Ready</h3>
-                  <p>Your document was compiled, cleaned, and optimized entirely in your browser.</p>
+              <!-- Unified Hero Download Action -->
+              <div class="scan-res-hero-box">
+                <div class="scan-res-hero-head">
+                  <div class="scan-res-status-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Document Ready &amp; Optimized</span>
+                  </div>
+                  <span class="scan-res-time-badge">Ready</span>
                 </div>
-              </div>
-
-              <!-- Primary Hero Action -->
-              <div class="scan-result-primary-box">
                 <a class="scan-btn-download-hero" id="scan-res-download-btn" href="${r.url}" download="${esc(r.name)}">
-                  <span class="scan-btn-download-icon">${ICONS.download}</span>
-                  <div class="scan-btn-download-copy">
-                    <strong>Download ${esc(r.formatLabel)}</strong>
-                    <span>${esc(r.name)} · ${bytes(r.blob.size)}</span>
+                  <div class="scan-btn-download-left">
+                    <span class="scan-btn-download-icon">${ICONS.download}</span>
+                    <div class="scan-btn-download-copy">
+                      <strong>Download ${esc(r.formatLabel)}</strong>
+                      <span>${esc(r.name)} · ${bytes(r.blob.size)}</span>
+                    </div>
                   </div>
                   <kbd class="scan-download-kbd">Ctrl+S</kbd>
                 </a>
@@ -2620,15 +2622,15 @@
                       <strong>Compress &amp; Shrink PDF</strong>
                       <span>Reduce file size for instant email sending</span>
                     </div>
-                    ${ICONS.arrowRight}
+                    <svg class="scan-wf-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </button>
                   <button type="button" class="scan-workflow-row" id="res-wf-edit">
                     <span class="scan-wf-icon">${ICONS.edit}</span>
                     <div class="scan-wf-copy">
                       <strong>Annotate &amp; Sign PDF</strong>
-                      <span>Add signatures, stamps, highlights, or text boxes</span>
+                      <span>Add signatures, stamps, highlights, or text</span>
                     </div>
-                    ${ICONS.arrowRight}
+                    <svg class="scan-wf-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </button>
                   <button type="button" class="scan-workflow-row" id="res-wf-organize">
                     <span class="scan-wf-icon">${ICONS.organize}</span>
@@ -2636,7 +2638,7 @@
                       <strong>Organize &amp; Merge PDF</strong>
                       <span>Add more files, split, or rotate pages</span>
                     </div>
-                    ${ICONS.arrowRight}
+                    <svg class="scan-wf-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   </button>
                 </div>
               </div>
@@ -2647,6 +2649,7 @@
             </div>
           </div>
         </div>
+
       `;
 
       function drawResultPreview() {
@@ -2654,15 +2657,21 @@
         if (!cv || !r.previewCanvases || !r.previewCanvases.length) return;
         const src = r.previewCanvases[r.resultPageIdx || 0];
         if (!src) return;
-        const maxW = Math.min(680, src.width);
+        const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+        const maxW = Math.min(640, src.width);
         const scale = maxW / src.width;
-        cv.width = Math.round(src.width * scale);
-        cv.height = Math.round(src.height * scale);
+        const displayW = Math.round(src.width * scale);
+        const displayH = Math.round(src.height * scale);
+        cv.width = Math.round(displayW * dpr);
+        cv.height = Math.round(displayH * dpr);
+        cv.style.width = `${displayW}px`;
+        cv.style.height = `${displayH}px`;
         const ctx = cv.getContext('2d');
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(src, 0, 0, cv.width, cv.height);
       }
+
 
       drawResultPreview();
 
