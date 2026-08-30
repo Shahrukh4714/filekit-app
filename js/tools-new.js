@@ -3852,25 +3852,27 @@
 
       parent.innerHTML = `
         <div class="scan-review-workspace">
-          <!-- Top Master Toolbar: Ultra-Clean Flat Ribbon with Essential Tools -->
+          <!-- Top Master Toolbar: Ultra-Compact Ribbon with Zero Scroll -->
           <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
-            <!-- Left Group: Enhancement Profiles -->
+            <!-- Left Group: Segmented Enhancement Capsule -->
             <div class="scan-tb-group">
-              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Magic Clean Document Illumination [1]">
-                ${ICONS.filterDoc}
-                <span>Clean Doc</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W Printing [2]">
-                ${ICONS.filterBw}
-                <span>B&amp;W</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo Mode [3]">
-                ${ICONS.filterPhoto}
-                <span>Photo</span>
-              </button>
+              <div class="scan-tb-segmented-control" role="group" aria-label="Enhancement Filter">
+                <button type="button" class="scan-seg-item ${curPage.enhanceMode === 'enhanced' ? 'is-active' : ''}" data-tool="clean" title="Magic Clean Document Illumination [1]">
+                  ${ICONS.filterDoc}
+                  <span>Clean</span>
+                </button>
+                <button type="button" class="scan-seg-item ${curPage.enhanceMode === 'bw' ? 'is-active' : ''}" data-tool="bw" title="High-Contrast B&amp;W Printing [2]">
+                  ${ICONS.filterBw}
+                  <span>B&amp;W</span>
+                </button>
+                <button type="button" class="scan-seg-item ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Vivid Color Photo Mode [3]">
+                  ${ICONS.filterPhoto}
+                  <span>Photo</span>
+                </button>
+              </div>
               <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
                 ${ICONS.split}
-                <span>Compare</span>
+                <span class="scan-tb-label-hide-md">Compare</span>
               </button>
             </div>
 
@@ -3884,19 +3886,19 @@
               </button>
               <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-top-ocr-layer" title="Toggle Selectable Text Layer on Canvas">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span>Text Layer</span>
+                <span class="scan-tb-label-hide-md">Text Layer</span>
               </button>
               <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find Text in Document (Ctrl+F)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span>Search</span>
+                <span class="scan-tb-label-hide-md">Search</span>
               </button>
               <button type="button" class="scan-tb-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout (Redact PII)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
-                <span>Redact</span>
+                <span class="scan-tb-label-hide-md">Redact</span>
               </button>
               <button type="button" class="scan-tb-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast">
                 ${ICONS.reset}
-                <span>Fine-Tune</span>
+                <span class="scan-tb-label-hide-md">Fine-Tune</span>
               </button>
             </div>
 
@@ -3930,11 +3932,11 @@
             <div class="scan-tb-group scan-tb-group-right">
               <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Capture another page with camera">
                 ${ICONS.camera}
-                <span>+ Camera</span>
+                <span class="scan-tb-label-hide-md">+ Camera</span>
               </button>
               <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
                 ${ICONS.folder}
-                <span>+ Upload</span>
+                <span class="scan-tb-label-hide-md">+ Upload</span>
               </button>
               <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
               <button type="button" class="scan-tb-btn-primary" id="btn-main-export" title="Compile and download Searchable PDF">
