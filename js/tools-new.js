@@ -3136,6 +3136,7 @@
         ocrPanelOpen = true;
         showOcrLayer = true;
       }
+      selIdx = 0;
       switchView('review');
       if (isOcrIntent || isReceiptIntent) {
         setTimeout(() => {
@@ -3168,6 +3169,7 @@
         } catch (err) {}
       }
       setStatus(`Pasted ${imageItems.length} image${imageItems.length === 1 ? '' : 's'}.`, 'ok');
+      selIdx = 0;
       switchView('review');
     };
     window.addEventListener('paste', handlePaste);
@@ -3939,21 +3941,23 @@
           </header>
 
           ${isRedacting ? `
-            <div class="scan-redact-ribbon" id="scan-redact-ribbon">
-              <div class="scan-redact-ribbon-left">
-                <span class="scan-redact-pulse-dot"></span>
-                <span class="scan-redact-ribbon-title">Redaction Mode Active</span>
-                <span class="scan-redact-ribbon-sub">Click any word on canvas, drag a box, or batch blackout:</span>
+            <div class="scan-redact-subbar" id="scan-redact-subbar">
+              <div class="scan-redact-subbar-left">
+                <span class="scan-redact-indicator"></span>
+                <span class="scan-redact-subbar-title">Redaction Mode</span>
+                <span class="scan-redact-subbar-divider"></span>
+                <span class="scan-redact-subbar-hint">Click any word on canvas or drag a blackout box</span>
               </div>
-              <div class="scan-redact-ribbon-actions">
-                <button type="button" class="scan-redact-chip ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <span>🔍 Find &amp; Blackout Words</span>
+              <div class="scan-redact-subbar-actions">
+                <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span>Find &amp; Redact Words</span>
                 </button>
-                <button type="button" class="scan-redact-chip" id="btn-ribbon-auto-redact-pii">
-                  <span>🛡️ Auto-Redact PII</span>
+                <button type="button" class="scan-redact-subbar-btn" id="btn-ribbon-auto-redact-pii">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Auto-Redact PII</span>
                 </button>
-                <button type="button" class="scan-redact-chip-close" id="btn-close-redact-ribbon">Done</button>
+                <button type="button" class="scan-redact-subbar-done" id="btn-close-redact-ribbon">Done</button>
               </div>
             </div>
           ` : ''}
@@ -4641,17 +4645,25 @@
           if (selectedOverlayId !== o.id) {
             selectedOverlayId = o.id;
             renderOverlaysLayer();
+            const freshEl = layer.querySelector(`[data-overlay-id="${esc(o.id)}"]`);
+            if (freshEl) {
+              startDrag(freshEl, e);
+            }
             return;
           }
 
+          startDrag(el, e);
+        };
+
+        function startDrag(targetEl, e) {
           const startX = e.clientX;
           const startY = e.clientY;
           const initX = o.x;
           const initY = o.y;
           const paperRect = paper.getBoundingClientRect();
-          el.classList.add('is-dragging');
+          targetEl.classList.add('is-dragging');
 
-          try { el.setPointerCapture(e.pointerId); } catch {}
+          try { targetEl.setPointerCapture(e.pointerId); } catch {}
 
           let curX = initX, curY = initY;
 
@@ -4660,13 +4672,13 @@
             const dy = (me.clientY - startY) / paperRect.height;
             curX = Math.max(0, Math.min(1 - o.w, initX + dx));
             curY = Math.max(0, Math.min(1 - o.h, initY + dy));
-            el.style.left = `${curX * 100}%`;
-            el.style.top = `${curY * 100}%`;
+            targetEl.style.left = `${curX * 100}%`;
+            targetEl.style.top = `${curY * 100}%`;
           };
 
           const onUp = (ue) => {
-            el.classList.remove('is-dragging');
-            try { el.releasePointerCapture(ue.pointerId); } catch {}
+            targetEl.classList.remove('is-dragging');
+            try { targetEl.releasePointerCapture(ue.pointerId); } catch {}
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
             o.x = curX;
@@ -4675,7 +4687,7 @@
 
           window.addEventListener('pointermove', onMove);
           window.addEventListener('pointerup', onUp);
-        };
+        }
       });
     }
 
@@ -6350,6 +6362,12 @@
 
 
         wrap.onmousedown = (e) => {
+          if (!e.target.closest('.scan-overlay-item, .scan-dock-flyout, .etxt-floating-dock, .scan-unified-toolbar, .scan-floating-search-bar, .scan-redact-subbar')) {
+            if (selectedOverlayId) {
+              selectedOverlayId = null;
+              renderOverlaysLayer();
+            }
+          }
           if (isSplitView) {
             const cv = wrap.querySelector('#scan-studio-canvas');
             if (cv) {
@@ -6418,6 +6436,13 @@
               refreshStudioUI();
               return;
             }
+          }
+
+          if ((e.key === 'Escape' || e.key === 'Enter') && selectedOverlayId) {
+            e.preventDefault();
+            selectedOverlayId = null;
+            renderOverlaysLayer();
+            return;
           }
 
           if (e.key === '+' || e.key === '=' || ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+'))) {
