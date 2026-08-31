@@ -3698,55 +3698,51 @@
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
             <!-- Flat, Clean Top Toolbar (Ultra-Lean Zero-Scroll Architecture) -->
-            <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
-              <!-- Group 1: Illumination Filters & Batch -->
-              <div class="scan-tb-group">
-                <button type="button" class="scan-tb-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <span>Original</span>
-                </button>
-                <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean Document Illumination [1]">
-                  ${ICONS.filterDoc}<span>Clean</span>
-                </button>
-                <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
-                  ${ICONS.filterBw}<span>B&amp;W</span>
-                </button>
-                <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
-                  ${ICONS.filterPhoto}<span>Photo</span>
-                </button>
-                <button type="button" class="scan-tb-btn scan-tb-btn-batch" id="btn-top-apply-all" title="Apply active filter to all ${pages.length} pages">
-                  ${ICONS.sparkle}<span>All (${pages.length})</span>
-                </button>
+            <header class="scan-unified-toolbar" id="scan-unified-toolbar" role="toolbar" aria-label="Scan Tools">
+              <div class="scan-tb-left-cluster">
+                <!-- Group 1: Page Management -->
+                <div class="scan-tb-group">
+                  <button type="button" class="scan-tb-btn scan-tb-btn-primary" id="btn-top-add-page" title="Add Page (Upload or Camera)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Add</span>
+                  </button>
+                  <button type="button" class="scan-tb-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-top-toggle-drawer" title="Toggle Page Thumbnails">
+                    ${ICONS.sidebar}<span>Pages (${pages.length})</span>
+                  </button>
+                </div>
+
+                <span class="scan-tb-sep" aria-hidden="true"></span>
+
+                <!-- Group 2: Geometry Tools -->
+                <div class="scan-tb-group">
+                  <button type="button" class="scan-tb-btn ${isCropping ? 'is-active' : ''}" data-tool="recrop" title="Crop Bounds [C]">
+                    ${ICONS.crop}<span>Crop</span>
+                  </button>
+                  <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° [R]">
+                    ${ICONS.rotate}<span>Rotate</span>
+                  </button>
+                </div>
+
+                <span class="scan-tb-sep" aria-hidden="true"></span>
+
+                <!-- Group 3: Document Filter Segmented Switcher (Clean, B&W, Color) -->
+                <div class="scan-segmented-filter" role="radiogroup" aria-label="Filter Modes">
+                  <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'enhanced' || (!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-active' : ''}" data-tool="clean" title="Smart Clean Document [1]">
+                    ${ICONS.filterDoc}<span>Clean</span>
+                  </button>
+                  <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'bw' ? 'is-active' : ''}" data-tool="bw" title="B&W Contrast [2]">
+                    ${ICONS.filterBw}<span>B&W</span>
+                  </button>
+                  <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Full Color Photo [3]">
+                    ${ICONS.filterPhoto}<span>Color</span>
+                  </button>
+                </div>
               </div>
 
-              <span class="scan-tb-sep" aria-hidden="true"></span>
-
-              <!-- Group 2: Geometry & Tools -->
-              <div class="scan-tb-group">
-                <button type="button" class="scan-tb-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">
-                  ${ICONS.crop}<span>Crop</span>
-                </button>
-                <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">
-                  ${ICONS.rotate}<span>Rotate</span>
-                </button>
-                <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
-                  ${ICONS.split}<span>Compare</span>
-                </button>
-              </div>
-
-              <span class="scan-tb-sep" aria-hidden="true"></span>
-
-              <!-- Group 3: OCR Live Text -->
-              <div class="scan-tb-group">
-                <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-toggle-live-text" title="Toggle Direct Live Text Selection on Document">
-                  ${ICONS.ocr}<span>Live Text</span>
-                </button>
-              </div>
-
-              <!-- Group 4: Right Actions -->
+              <!-- Right: Close Button -->
               <div class="scan-tb-group-right">
                 <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
-                <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
+                <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Close and return to home">${ICONS.cross}</button>
               </div>
             </header>
 
@@ -3780,27 +3776,19 @@
                   </div>
                 </div>
 
-                <!-- Unified Frosted Glass Floating Stage Dock (Zero Document Overlap) -->
+                <!-- Apple-Grade Frosted Glass Floating Stage Dock (Zero Document Overlap) -->
                 <div class="scan-stage-dock" id="scan-stage-dock" role="toolbar" aria-label="Page and View Controls">
-                  <button type="button" class="scan-dock-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-toggle-thumbs" title="Page Thumbnails (${pages.length} pages)">
-                    ${ICONS.sidebar}<span>Pages (${pages.length})</span>
-                  </button>
-                  <span class="scan-dock-sep"></span>
                   <div class="scan-dock-stepper">
                     <button type="button" class="scan-dock-icon-btn" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page (Left Arrow)">${ICONS.prev}</button>
-                    <span class="scan-dock-page-text">${selIdx + 1} <span class="scan-dock-page-total">/ ${pages.length}</span></span>
+                    <span class="scan-dock-page-text">Page <strong>${selIdx + 1}</strong> of ${pages.length}</span>
                     <button type="button" class="scan-dock-icon-btn" id="btn-rail-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next page (Right Arrow)">${ICONS.next}</button>
                   </div>
-                  <button type="button" class="scan-dock-btn" id="btn-stage-add-more" title="Add more pages">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                    <span>Add</span>
-                  </button>
                   <span class="scan-dock-sep"></span>
                   <div class="scan-dock-zoom-group">
-                    <button type="button" class="scan-dock-icon-btn" id="btn-zoom-out" title="Zoom Out (Ctrl -)">${ICONS.zoomOut}</button>
-                    <button type="button" class="scan-dock-zoom-val" id="scan-zoom-badge" title="Reset Zoom (100%)">${zoom}%</button>
-                    <button type="button" class="scan-dock-icon-btn" id="btn-zoom-in" title="Zoom In (Ctrl +)">${ICONS.zoomIn}</button>
-                    <button type="button" class="scan-dock-btn scan-dock-btn-fit" id="btn-zoom-reset" title="Fit to Screen (Double Click Canvas)"><span>Fit</span></button>
+                    <button type="button" class="scan-dock-icon-btn" id="btn-zoom-out" title="Zoom Out">${ICONS.zoomOut}</button>
+                    <button type="button" class="scan-dock-zoom-val" id="scan-zoom-badge" title="Reset to 100%">${zoom}%</button>
+                    <button type="button" class="scan-dock-icon-btn" id="btn-zoom-in" title="Zoom In">${ICONS.zoomIn}</button>
+                    <button type="button" class="scan-dock-fit-btn" id="btn-zoom-reset" title="Fit to Screen">Fit</button>
                   </div>
                   <span class="scan-dock-sep"></span>
                   <div class="scan-dock-privacy" title="100% On-Device Local Processing (Zero Cloud Uploads)">
@@ -4865,22 +4853,39 @@
         };
       }
 
-      // Drawer Toggle
-      const toggleThumbs = parent.querySelector('#btn-toggle-thumbs');
-      const closeThumbs = parent.querySelector('#scan-thumbs-close');
-      if (toggleThumbs) {
-        toggleThumbs.onclick = () => {
-          thumbsDrawerOpen = !thumbsDrawerOpen;
-          const drw = parent.querySelector('#scan-thumbs-drawer');
-          if (drw) drw.classList.toggle('is-open', thumbsDrawerOpen);
-          toggleThumbs.classList.toggle('is-active', thumbsDrawerOpen);
+      // Top Bar Add Page & Drawer Toggle
+      const btnTopAdd = parent.querySelector('#btn-top-add-page');
+      const scanFileInput = parent.querySelector('#scan-file-input');
+      if (btnTopAdd && scanFileInput) {
+        btnTopAdd.onclick = () => scanFileInput.click();
+      }
+      if (scanFileInput) {
+        scanFileInput.onchange = (e) => {
+          if (e.target.files && e.target.files.length) {
+            handleFiles(e.target.files);
+          }
         };
       }
+
+      // Drawer Toggle (Top Bar + Stage + Drawer Header)
+      const btnTopToggleDrawer = parent.querySelector('#btn-top-toggle-drawer');
+      const toggleThumbs = parent.querySelector('#btn-toggle-thumbs');
+      const closeThumbs = parent.querySelector('#scan-thumbs-close');
+      const handleToggleDrawer = () => {
+        thumbsDrawerOpen = !thumbsDrawerOpen;
+        const drw = parent.querySelector('#scan-thumbs-drawer');
+        if (drw) drw.classList.toggle('is-open', thumbsDrawerOpen);
+        if (btnTopToggleDrawer) btnTopToggleDrawer.classList.toggle('is-active', thumbsDrawerOpen);
+        if (toggleThumbs) toggleThumbs.classList.toggle('is-active', thumbsDrawerOpen);
+      };
+      if (btnTopToggleDrawer) btnTopToggleDrawer.onclick = handleToggleDrawer;
+      if (toggleThumbs) toggleThumbs.onclick = handleToggleDrawer;
       if (closeThumbs) {
         closeThumbs.onclick = () => {
           thumbsDrawerOpen = false;
           const drw = parent.querySelector('#scan-thumbs-drawer');
           if (drw) drw.classList.remove('is-open');
+          if (btnTopToggleDrawer) btnTopToggleDrawer.classList.remove('is-active');
           if (toggleThumbs) toggleThumbs.classList.remove('is-active');
         };
       }

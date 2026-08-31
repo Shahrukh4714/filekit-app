@@ -44399,47 +44399,397 @@ body #app-view .rail-item.active {
   transform: scale(0.98) !important;
 }
 
-/* Batch Button Styling */
-.scan-tb-btn-batch {
-  background: #EEF2FF !important;
-  color: #4338CA !important;
+/* ══════════════════════════════════════════════════════════════════════════════
+   MASTER NON-SCROLLING TOP TOOLBAR (Apple / Linear Craft Polish)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.scan-unified-toolbar {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E5EAF2 !important;
+  padding: 0 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important; /* 100% GUARANTEED ZERO HORIZONTAL SCROLL */
+  user-select: none !important;
+  z-index: 30 !important;
+}
+
+.scan-tb-left-cluster {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.scan-tb-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Individual Toolbar Action Buttons */
+.scan-tb-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  height: 28px !important;
+  padding: 0 8px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  outline: none !important;
 }
 
-.scan-tb-btn-batch:hover {
-  background: #E0E7FF !important;
-  color: #3730A3 !important;
+.scan-tb-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: #475569 !important;
+  flex-shrink: 0 !important;
+  transition: stroke 0.12s ease !important;
 }
 
-/* Responsive Auto-Condensing Toolbar (Zero Horizontal Scroll) */
-@media (max-width: 1280px) {
+.scan-tb-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+  border-color: #E2E8F0 !important;
+}
+
+.scan-tb-btn:hover svg {
+  stroke: #0F172A !important;
+}
+
+.scan-tb-btn:active {
+  transform: scale(0.97) !important;
+}
+
+/* Primary "+ Add" button */
+.scan-tb-btn-primary {
+  background: #EEF2FF !important;
+  color: #0066FF !important;
+  border-color: #DBEAFE !important;
+}
+
+.scan-tb-btn-primary svg {
+  stroke: #0066FF !important;
+}
+
+.scan-tb-btn-primary:hover {
+  background: #0066FF !important;
+  color: #FFFFFF !important;
+  border-color: #0066FF !important;
+}
+
+.scan-tb-btn-primary:hover svg {
+  stroke: #FFFFFF !important;
+}
+
+/* Active State for toggle buttons (e.g. Crop, Drawer) - SOFT WHITE PILL, NO BLACK BOX */
+.scan-tb-btn.is-active {
+  background: #F1F5F9 !important;
+  color: #0066FF !important;
+  border-color: #CBD5E1 !important;
+  font-weight: 700 !important;
+}
+
+.scan-tb-btn.is-active svg {
+  stroke: #0066FF !important;
+}
+
+/* Toolbar Divider Separator */
+.scan-tb-sep {
+  width: 1px !important;
+  height: 16px !important;
+  background: #E2E8F0 !important;
+  margin: 0 4px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Segmented Document Filter Switcher Capsule (Clean, B&W, Color) */
+.scan-segmented-filter {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 7px !important;
+  padding: 2px !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.scan-seg-filter-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 5px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  outline: none !important;
+}
+
+.scan-seg-filter-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #64748B !important;
+  transition: stroke 0.12s ease !important;
+}
+
+.scan-seg-filter-btn:hover {
+  color: #0F172A !important;
+}
+
+.scan-seg-filter-btn:hover svg {
+  stroke: #0F172A !important;
+}
+
+/* ACTIVE FILTER STATE: Elegant White Card Pill, subtle shadow (NO BLACK BOX) */
+.scan-seg-filter-btn.is-active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04) !important;
+}
+
+.scan-seg-filter-btn.is-active svg {
+  stroke: #0066FF !important;
+}
+
+.scan-seg-filter-btn:active {
+  transform: scale(0.97) !important;
+}
+
+/* Right Close Button */
+.scan-tb-group-right {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.scan-tb-btn-close {
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+  outline: none !important;
+  padding: 0 !important;
+}
+
+.scan-tb-btn-close svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: #64748B !important;
+}
+
+.scan-tb-btn-close:hover {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border-color: #FECACA !important;
+}
+
+.scan-tb-btn-close:hover svg {
+  stroke: #DC2626 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   APPLE-GRADE FROSTED GLASS FLOATING DOCK (Zero Lag, Perfectly Centered)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.scan-stage-dock {
+  position: absolute !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 40 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 10px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+  transition: transform 0.12s ease, opacity 0.12s ease !important;
+}
+
+.scan-dock-stepper {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.scan-dock-icon-btn {
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.1s ease !important;
+  outline: none !important;
+}
+
+.scan-dock-icon-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #475569 !important;
+}
+
+.scan-dock-icon-btn:hover:not(:disabled) {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-dock-icon-btn:hover:not(:disabled) svg {
+  stroke: #0F172A !important;
+}
+
+.scan-dock-icon-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+}
+
+.scan-dock-icon-btn:active:not(:disabled) {
+  transform: scale(0.92) !important;
+}
+
+.scan-dock-page-text {
+  font-size: 11.5px !important;
+  color: #475569 !important;
+  font-weight: 500 !important;
+  padding: 0 4px !important;
+  white-space: nowrap !important;
+}
+
+.scan-dock-page-text strong {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}
+
+.scan-dock-sep {
+  width: 1px !important;
+  height: 14px !important;
+  background: #E2E8F0 !important;
+  margin: 0 4px !important;
+}
+
+.scan-dock-zoom-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+}
+
+.scan-dock-zoom-val {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  min-width: 36px !important;
+  text-align: center !important;
+  transition: all 0.1s ease !important;
+}
+
+.scan-dock-zoom-val:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-dock-fit-btn {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  cursor: pointer !important;
+  transition: all 0.1s ease !important;
+  margin-left: 2px !important;
+}
+
+.scan-dock-fit-btn:hover {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.scan-dock-privacy {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #059669 !important;
+  background: #DCFCE7 !important;
+  padding: 2px 6px !important;
+  border-radius: 9999px !important;
+}
+
+.scan-dock-privacy svg {
+  width: 10px !important;
+  height: 10px !important;
+  stroke: #059669 !important;
+}
+
+/* Responsive Adaptive Toolbars (Zero Scroll On All Screens) */
+@media (max-width: 1050px) {
   .scan-unified-toolbar {
     padding: 0 8px !important;
+  }
+  .scan-tb-left-cluster {
     gap: 4px !important;
   }
   .scan-tb-btn {
-    padding: 0 5px !important;
-    gap: 4px !important;
-  }
-  .scan-tb-sep {
-    margin: 0 3px !important;
-  }
-}
-
-@media (max-width: 1100px) {
-  .scan-tb-btn span {
+    padding: 0 6px !important;
     font-size: 11px !important;
   }
-  .scan-tb-btn[data-tool="recrop"] span,
-  .scan-tb-btn[data-tool="rotate"] span,
-  .scan-tb-btn[data-tool="compare"] span {
-    display: none !important;
-  }
-  .scan-tb-btn[data-tool="recrop"],
-  .scan-tb-btn[data-tool="rotate"],
-  .scan-tb-btn[data-tool="compare"] {
-    width: 28px !important;
-    padding: 0 !important;
+  .scan-seg-filter-btn {
+    padding: 0 6px !important;
+    font-size: 11px !important;
   }
 }
 
