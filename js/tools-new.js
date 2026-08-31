@@ -3785,54 +3785,59 @@
                   </div>
                 </div>
 
-                <!-- Full-Stage Extracted Text Sheet (overlays entire canvas stage) -->
+                <!-- In-Place Minimalist Extracted Text Paper Document Sheet -->
                 <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet">
-                  <!-- Tier 1: Title + Stats + Close -->
-                  <div class="scan-sheet-topbar">
-                    <div class="scan-sheet-topbar-left">
-                      <span class="scan-sheet-title-badge">${ICONS.ocr}<strong>Extracted Text</strong></span>
-                      <span class="scan-sheet-stats-badge" id="scan-sheet-stats">0 words · 0 chars</span>
+                  <!-- Single Unified Minimalist Top Bar -->
+                  <div class="scan-sheet-header">
+                    <div class="scan-sheet-header-left">
+                      <span class="scan-sheet-title">${ICONS.ocr}<span>Extracted Text</span></span>
+                      <span class="scan-sheet-stats-pill" id="scan-sheet-stats">0 words · 0 chars</span>
                     </div>
-                    <div class="scan-sheet-topbar-right">
-                      <button type="button" class="scan-sheet-close-btn" id="btn-sheet-close" title="Back to Document">
-                        ${ICONS.cross}<span>Back to Page</span>
+
+                    <div class="scan-sheet-header-center">
+                      <!-- Language Selector -->
+                      <div class="scan-sheet-lang-pill" title="OCR Language">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                        <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
+                          <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
+                          <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
+                          <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
+                          <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
+                          <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
+                          <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
+                          <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
+                          <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
+                          <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
+                          <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
+                          <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
+                          <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
+                        </select>
+                      </div>
+
+                      <span class="scan-sheet-sep" aria-hidden="true"></span>
+
+                      <!-- Action Buttons -->
+                      <div class="scan-sheet-actions">
+                        <button type="button" class="scan-sheet-btn scan-sheet-btn-copy" id="btn-sheet-copy" title="Copy all text to clipboard">
+                          ${ICONS.copy}<span id="sheet-copy-label">Copy All</span>
+                        </button>
+                        <button type="button" class="scan-sheet-btn" id="btn-sheet-download-txt" title="Download as .txt">
+                          ${ICONS.txt}<span>TXT</span>
+                        </button>
+                        <button type="button" class="scan-sheet-btn" id="btn-sheet-download-doc" title="Download as .docx">
+                          ${ICONS.word}<span>DOCX</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="scan-sheet-header-right">
+                      <button type="button" class="scan-sheet-close-btn" id="btn-sheet-close" title="Close and return to page view">
+                        ${ICONS.cross}
                       </button>
                     </div>
                   </div>
 
-                  <!-- Tier 2: Language + Export Actions -->
-                  <div class="scan-sheet-actionbar">
-                    <div class="scan-sheet-lang-box" title="Recognition Language">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-                      <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
-                        <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                        <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
-                        <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
-                        <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
-                        <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
-                        <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
-                        <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
-                        <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
-                        <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
-                        <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
-                        <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
-                        <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
-                      </select>
-                    </div>
-                    <div class="scan-sheet-export-group">
-                      <button type="button" class="scan-sheet-act-btn scan-sheet-act-primary" id="btn-sheet-copy" title="Copy all text to clipboard">
-                        ${ICONS.copy}<span id="sheet-copy-label">Copy All</span>
-                      </button>
-                      <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-txt" title="Download as .txt">
-                        ${ICONS.txt}<span>TXT</span>
-                      </button>
-                      <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-doc" title="Download as .docx">
-                        ${ICONS.word}<span>DOCX</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Body: Editable textarea -->
+                  <!-- Body: Distraction-Free Text Editor Area -->
                   <div class="scan-text-sheet-body">
                     <div class="scan-sheet-loading-state" id="scan-sheet-loading">
                       <div class="scan-sheet-spinner"></div>
@@ -3840,12 +3845,22 @@
                     </div>
                     <textarea id="scan-sheet-textarea" class="scan-sheet-textarea" placeholder="No text detected on this page." spellcheck="false"></textarea>
                   </div>
+
+                  <!-- Footer: Integrated Multi-Page Stepper -->
+                  <div class="scan-sheet-footer">
+                    <div class="scan-sheet-stepper">
+                      <button type="button" class="scan-sheet-step-btn" id="btn-sheet-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous Page (Left Arrow)">${ICONS.prev}</button>
+                      <span class="scan-sheet-page-label">Page <strong>${selIdx + 1}</strong> of ${pages.length}</span>
+                      <button type="button" class="scan-sheet-step-btn" id="btn-sheet-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next Page (Right Arrow)">${ICONS.next}</button>
+                    </div>
+                    <div class="scan-sheet-footer-right">
+                      <span class="scan-sheet-hint">Tip: Ctrl + A to select all</span>
+                    </div>
+                  </div>
                 </div>
 
-
-
                 <!-- Apple-Grade Frosted Glass Floating Stage Dock (Zero Document Overlap) -->
-                <div class="scan-stage-dock" id="scan-stage-dock" role="toolbar" aria-label="Page and View Controls">
+                <div class="scan-stage-dock" id="scan-stage-dock" style="${isTextSheetOpen ? 'display:none;' : ''}" role="toolbar" aria-label="Page and View Controls">
                   <div class="scan-dock-stepper">
                     <button type="button" class="scan-dock-icon-btn" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page (Left Arrow)">${ICONS.prev}</button>
                     <span class="scan-dock-page-text">Page <strong>${selIdx + 1}</strong> of ${pages.length}</span>
@@ -4966,6 +4981,12 @@
           const chars = text.length;
           statsEl.textContent = `${words} words · ${chars} chars`;
         }
+        const pageLbl = parent.querySelector('.scan-sheet-page-label');
+        const btnPrev = parent.querySelector('#btn-sheet-prev');
+        const btnNext = parent.querySelector('#btn-sheet-next');
+        if (pageLbl) pageLbl.innerHTML = `Page <strong>${selIdx + 1}</strong> of ${pages.length}`;
+        if (btnPrev) btnPrev.disabled = selIdx <= 0;
+        if (btnNext) btnNext.disabled = selIdx >= pages.length - 1;
       }
 
       async function openTextSheet() {
@@ -4978,11 +4999,13 @@
         const laserBeam = parent.querySelector('#scan-laser-beam');
         const loadingEl = parent.querySelector('#scan-sheet-loading');
         const loadingLbl = parent.querySelector('#scan-sheet-loading-label');
+        const stageDock = parent.querySelector('#scan-stage-dock');
 
         if (btnExtract) btnExtract.classList.add('is-active');
         if (sheetEl) sheetEl.classList.add('is-visible');
         if (canvasEl) canvasEl.style.display = 'none';
         if (textLayer) textLayer.style.display = 'none';
+        if (stageDock) stageDock.style.display = 'none';
 
         if (cur && cur.ocrData) {
           if (loadingEl) loadingEl.classList.remove('is-loading');
@@ -5022,11 +5045,13 @@
         const textLayer = parent.querySelector('#scan-text-layer');
         const laserBeam = parent.querySelector('#scan-laser-beam');
         const loadingEl = parent.querySelector('#scan-sheet-loading');
+        const stageDock = parent.querySelector('#scan-stage-dock');
 
         if (btnExtract) btnExtract.classList.remove('is-active');
         if (sheetEl) sheetEl.classList.remove('is-visible');
         if (canvasEl) canvasEl.style.display = 'block';
         if (textLayer && showOcrLayer) textLayer.style.display = 'block';
+        if (stageDock) stageDock.style.display = 'inline-flex';
         if (laserBeam) {
           laserBeam.classList.remove('is-sweeping');
           laserBeam.style.display = 'none';
@@ -5036,6 +5061,8 @@
 
       const btnTopExtract = parent.querySelector('#btn-top-extract-text');
       const btnSheetClose = parent.querySelector('#btn-sheet-close');
+      const btnSheetPrev = parent.querySelector('#btn-sheet-prev');
+      const btnSheetNext = parent.querySelector('#btn-sheet-next');
       const btnSheetCopy = parent.querySelector('#btn-sheet-copy');
       const btnSheetTxt = parent.querySelector('#btn-sheet-download-txt');
       const btnSheetDoc = parent.querySelector('#btn-sheet-download-doc');
@@ -5048,6 +5075,24 @@
         };
       }
       if (btnSheetClose) btnSheetClose.onclick = closeTextSheet;
+
+      if (btnSheetPrev) {
+        btnSheetPrev.onclick = async () => {
+          if (selIdx > 0) {
+            selectPage(selIdx - 1);
+            if (isTextSheetOpen) await openTextSheet();
+          }
+        };
+      }
+
+      if (btnSheetNext) {
+        btnSheetNext.onclick = async () => {
+          if (selIdx < pages.length - 1) {
+            selectPage(selIdx + 1);
+            if (isTextSheetOpen) await openTextSheet();
+          }
+        };
+      }
 
       if (btnSheetCopy) {
         btnSheetCopy.onclick = async () => {
