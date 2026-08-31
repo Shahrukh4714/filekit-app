@@ -5014,13 +5014,12 @@
               if (sbTa) sbTa.value = '';
               runPageOcr(selIdx);
             }
-          } else {
-            renderTextLayer();
           }
+          updateStudioPreview();
           setTimeout(() => {
             updateStudioPreview();
             applyCanvasTransform();
-          }, 60);
+          }, 290);
         };
       }
 
@@ -5039,11 +5038,11 @@
             txtLayer.setAttribute('aria-hidden', 'true');
           }
           if (ocrProofBtn) ocrProofBtn.classList.remove('is-on');
-          renderTextLayer();
+          updateStudioPreview();
           setTimeout(() => {
             updateStudioPreview();
             applyCanvasTransform();
-          }, 60);
+          }, 290);
         };
       }
 

@@ -40890,9 +40890,9 @@ body #app-view .rail-item.active {
   border-radius: 4px !important;
   box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
   position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: block !important;
+  margin: 0 auto !important;
+  flex-shrink: 0 !important;
   transition: transform 120ms ease-out !important;
 }
 
@@ -40954,12 +40954,12 @@ body #app-view .rail-item.active {
 }
 
 .scan-text-layer.is-active .scan-ocr-word {
-  border: 1px dashed rgba(16, 185, 129, 0.25) !important;
+  border: none !important;
+  border-radius: 2px !important;
 }
 
 .scan-text-layer.is-active .scan-ocr-word:hover {
-  background: rgba(59, 130, 246, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: rgba(59, 130, 246, 0.12) !important;
 }
 
 .scan-ocr-word::selection {
