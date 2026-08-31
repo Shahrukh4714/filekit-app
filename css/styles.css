@@ -44122,246 +44122,277 @@ body #app-view .rail-item.active {
 }
 
 /* Right Panel Pinned Sticky Footer & Layout Structure (Ultra-Compact Zero-Scroll) */
+/* ══════════════════════════════════════════════════════════════════════════════
+   EXACT EXPORT PANEL MATCH (1-to-1 Pixel Fidelity with User Mockup)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 .scan-benchmark-panel {
   background: #FFFFFF !important;
   border-left: 1px solid #E5EAF2 !important;
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
-  padding: 0 !important;
-  overflow: hidden !important;
+  padding: 20px !important;
+  gap: 12px !important;
+  overflow-y: auto !important;
   box-sizing: border-box !important;
   z-index: 20 !important;
 }
 
-.scan-panel-header {
-  padding: 14px 16px 8px !important;
-  margin-bottom: 0 !important;
-  flex-shrink: 0 !important;
+/* Header */
+.scan-exact-header {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
+  margin-bottom: 2px !important;
 }
 
-.scan-panel-header .cpdf-benchmark-icon {
-  width: 26px !important;
-  height: 26px !important;
-  border-radius: 6px !important;
+.scan-exact-icon {
+  width: 34px !important;
+  height: 34px !important;
+  background: #EF4444 !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
-.scan-panel-header .cpdf-benchmark-icon svg {
-  width: 14px !important;
-  height: 14px !important;
-}
-
-.scan-panel-header .cpdf-benchmark-title {
-  font-size: 14.5px !important;
+.scan-exact-title {
+  font-size: 18.5px !important;
   font-weight: 700 !important;
   color: #0F172A !important;
   margin: 0 !important;
+  letter-spacing: -0.01em !important;
 }
 
-.scan-panel-scroll-body {
-  flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  padding: 0 16px 8px !important;
+/* Format Cards Stack */
+.scan-exact-cards-stack {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
-  box-sizing: border-box !important;
+  gap: 9px !important;
 }
 
-/* Compact Stacked Format Cards */
-.scan-format-cards-stack {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 5px !important;
-}
-
-.scan-benchmark-card {
-  border-radius: 6px !important;
+.scan-exact-cards-stack .scan-benchmark-card {
+  background: #FFFFFF !important;
   border: 1.5px solid #E2E8F0 !important;
-  padding: 6px 10px !important;
-  height: 32px !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  height: 44px !important;
   display: flex !important;
   align-items: center !important;
   cursor: pointer !important;
-  background: #FFFFFF !important;
   box-sizing: border-box !important;
-  transition: all 0.12s cubic-bezier(0.23, 1, 0.32, 1) !important;
+  transition: all 0.12s ease !important;
 }
 
-.scan-benchmark-card:hover {
+.scan-exact-cards-stack .scan-benchmark-card:hover {
   border-color: #CBD5E1 !important;
   background: #F8FAFC !important;
 }
 
-.scan-benchmark-card.is-active {
-  border-color: #4F46E5 !important;
-  background: #EEF2FF !important;
+.scan-exact-cards-stack .scan-benchmark-card.is-active {
+  border-color: #0066FF !important;
+  background: #F4F8FF !important;
 }
 
-.scan-benchmark-radio {
-  width: 14px !important;
-  height: 14px !important;
+.scan-exact-cards-stack .scan-benchmark-radio {
+  width: 18px !important;
+  height: 18px !important;
   border-radius: 50% !important;
   border: 1.5px solid #CBD5E1 !important;
+  background: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-right: 8px !important;
+  margin-right: 12px !important;
   flex-shrink: 0 !important;
   transition: all 0.12s ease !important;
 }
 
-.scan-benchmark-card.is-active .scan-benchmark-radio {
-  border-color: #4F46E5 !important;
+.scan-exact-cards-stack .scan-benchmark-card.is-active .scan-benchmark-radio {
+  border-color: #0066FF !important;
+  background: #0066FF !important;
 }
 
-.scan-benchmark-radio-dot {
-  width: 6px !important;
-  height: 6px !important;
+.scan-exact-cards-stack .scan-benchmark-radio-dot {
+  width: 7px !important;
+  height: 7px !important;
   border-radius: 50% !important;
-  background: #4F46E5 !important;
+  background: #FFFFFF !important;
   display: none !important;
 }
 
-.scan-benchmark-card.is-active .scan-benchmark-radio-dot {
+.scan-exact-cards-stack .scan-benchmark-card.is-active .scan-benchmark-radio-dot {
   display: block !important;
 }
 
-.scan-benchmark-card-label {
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
+.scan-exact-cards-stack .scan-benchmark-card-label {
+  font-size: 14px !important;
+  font-weight: 700 !important;
   color: #0F172A !important;
   flex: 1 !important;
 }
 
-.scan-benchmark-pill-rec {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  color: #059669 !important;
+.scan-exact-cards-stack .scan-benchmark-pill-rec {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #15803D !important;
   background: #DCFCE7 !important;
-  padding: 1px 6px !important;
-  border-radius: 999px !important;
+  padding: 3px 9px !important;
+  border-radius: 9999px !important;
   letter-spacing: 0.01em !important;
 }
 
-/* 2-Column Compact Configuration Grid */
-.scan-config-grid-box {
+/* 3-Column Settings Container */
+.scan-exact-settings-box {
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  padding: 8px 10px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 6px !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
   box-sizing: border-box !important;
 }
 
-.scan-config-2col-row {
+.scan-exact-3col-grid {
   display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
   gap: 8px !important;
   width: 100% !important;
 }
 
-.scan-config-cfield {
+.scan-exact-field {
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  gap: 3px !important;
   min-width: 0 !important;
 }
 
-.scan-config-clabel {
-  font-size: 10px !important;
+.scan-exact-label {
+  font-size: 9.5px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
   color: #64748B !important;
 }
 
-.scan-config-cselect {
+.scan-exact-select {
   width: 100% !important;
-  height: 28px !important;
-  padding: 0 18px 0 6px !important;
-  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 6px center !important;
+  height: 30px !important;
+  padding: 0 16px 0 6px !important;
+  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 5px center !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
   border: 1px solid #CBD5E1 !important;
-  border-radius: 5px !important;
-  font-size: 11.5px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
   color: #0F172A !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   outline: none !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
   transition: border-color 0.12s ease !important;
 }
 
-.scan-config-cselect:hover {
+.scan-exact-select:hover {
   border-color: #94A3B8 !important;
 }
 
-.scan-config-cselect:focus {
-  border-color: #4F46E5 !important;
+.scan-exact-select:focus {
+  border-color: #0066FF !important;
 }
 
-/* Compact Sticky Footer */
-.scan-panel-sticky-footer {
-  flex-shrink: 0 !important;
-  padding: 8px 16px 12px !important;
-  background: #FFFFFF !important;
-  border-top: 1px solid #E5EAF2 !important;
-  box-shadow: 0 -3px 12px rgba(15, 23, 42, 0.03) !important;
+/* Estimated Output Box */
+.scan-exact-est-box {
+  background: #F0FDF4 !important;
+  border: 1px solid #DCFCE7 !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
-  box-sizing: border-box !important;
+  gap: 4px !important;
 }
 
-.scan-panel-compact-status {
+.scan-exact-est-title {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+.scan-exact-est-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  font-size: 11px !important;
-  color: #64748B !important;
-  padding: 0 2px !important;
 }
 
-.scan-status-dot {
-  width: 6px !important;
-  height: 6px !important;
-  border-radius: 50% !important;
-  background: #10B981 !important;
-  display: inline-block !important;
-  margin-right: 4px !important;
+.scan-exact-est-metric {
+  font-size: 13.5px !important;
+  color: #475569 !important;
 }
 
-.scan-status-pages strong {
-  color: #0F172A !important;
-}
-
-.scan-status-meta {
-  color: #64748B !important;
-  font-weight: 500 !important;
-}
-
-.scan-status-badge {
-  font-size: 10px !important;
+.scan-exact-est-metric strong {
   font-weight: 700 !important;
-  color: #059669 !important;
-  background: #DCFCE7 !important;
-  padding: 1px 5px !important;
-  border-radius: 4px !important;
-  margin-left: auto !important;
+  color: #0F172A !important;
+  font-size: 14px !important;
 }
 
-.scan-benchmark-cta {
-  height: 38px !important;
-  border-radius: 6px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
+.scan-exact-yellow-badge {
+  background: #FEF08A !important;
+  color: #854D0E !important;
+  border: 1px solid #FDE047 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+}
+
+.scan-exact-track {
+  width: 100% !important;
+  height: 4px !important;
+  background: #DCFCE7 !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  margin-top: 6px !important;
+}
+
+.scan-exact-bar {
+  width: 100% !important;
+  height: 100% !important;
+  background: #00C853 !important;
+  border-radius: 9999px !important;
+}
+
+/* Primary Action CTA Button */
+.scan-exact-cta {
+  height: 44px !important;
+  background: #0066FF !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
+  transition: all 0.14s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.scan-exact-cta:hover {
+  background: #0052CC !important;
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35) !important;
+}
+
+.scan-exact-cta:active {
+  transform: scale(0.98) !important;
 }
 
 /* Batch Button Styling */

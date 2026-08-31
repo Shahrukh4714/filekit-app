@@ -3848,113 +3848,113 @@
             </div>
           </div>
 
-          <!-- RIGHT COLUMN: Dedicated Studio Export & Options Panel (with Pinned Sticky Footer) -->
+          <!-- RIGHT COLUMN: Dedicated Studio Export & Options Panel (Exact Mockup Match) -->
           <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="scan-benchmark-panel" aria-label="Export Settings">
-            <!-- Header: Cohesive Indigo Document Badge -->
-            <div class="cpdf-benchmark-header scan-panel-header">
-              <div class="cpdf-benchmark-icon" style="background:#4F46E5;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Header: Red/Coral Document Badge & Title -->
+            <div class="scan-exact-header">
+              <div class="scan-exact-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="16" y1="13" x2="8" y2="13"></line>
                   <line x1="16" y1="17" x2="8" y2="17"></line>
                 </svg>
               </div>
-              <h2 class="cpdf-benchmark-title">Export Scan</h2>
+              <h2 class="scan-exact-title">Export Scan</h2>
             </div>
 
-            <!-- Scrollable Content Body -->
-            <div class="scan-panel-scroll-body">
-              <!-- Format Option Cards Stack (Ultra-Compact 32px Cards) -->
-              <div class="scan-format-cards-stack">
-                <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
-                  <div class="scan-benchmark-radio">
-                    <div class="scan-benchmark-radio-dot"></div>
-                  </div>
-                  <span class="scan-benchmark-card-label">Searchable PDF</span>
-                  <div class="scan-benchmark-card-right">
-                    <span class="scan-benchmark-pill-rec">Rec.</span>
-                  </div>
+            <!-- Format Option Cards Stack (Exact Match) -->
+            <div class="scan-exact-cards-stack">
+              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
+                <div class="scan-benchmark-radio">
+                  <div class="scan-benchmark-radio-dot"></div>
                 </div>
-
-                <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
-                  <div class="scan-benchmark-radio">
-                    <div class="scan-benchmark-radio-dot"></div>
-                  </div>
-                  <span class="scan-benchmark-card-label">Standard PDF</span>
-                </div>
-
-                <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
-                  <div class="scan-benchmark-radio">
-                    <div class="scan-benchmark-radio-dot"></div>
-                  </div>
-                  <span class="scan-benchmark-card-label">Image ZIP</span>
+                <span class="scan-benchmark-card-label">Searchable PDF</span>
+                <div class="scan-benchmark-card-right">
+                  <span class="scan-benchmark-pill-rec">Recommended</span>
                 </div>
               </div>
 
-              <!-- 2-Column Compact Configuration Grid -->
-              <div class="scan-config-grid-box">
-                <div class="scan-config-2col-row">
-                  <div class="scan-config-cfield" id="panel-field-dpi">
-                    <label class="scan-config-clabel" for="panel-export-dpi">Resolution</label>
-                    <select id="panel-export-dpi" class="scan-config-cselect">
-                      <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High Quality)</option>
-                      <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
-                      <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
-                    </select>
-                  </div>
+              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
+                <div class="scan-benchmark-radio">
+                  <div class="scan-benchmark-radio-dot"></div>
+                </div>
+                <span class="scan-benchmark-card-label">Standard PDF</span>
+              </div>
 
-                  <div class="scan-config-cfield" id="panel-field-size">
-                    <label class="scan-config-clabel" for="panel-export-pagesize">Geometry</label>
-                    <select id="panel-export-pagesize" class="scan-config-cselect">
-                      <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297 mm)</option>
-                      <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
-                      <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
-                    </select>
-                  </div>
+              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
+                <div class="scan-benchmark-radio">
+                  <div class="scan-benchmark-radio-dot"></div>
+                </div>
+                <span class="scan-benchmark-card-label">Image ZIP</span>
+              </div>
+            </div>
+
+            <!-- 3-Column Settings Container Box (Resolution, Geometry, Language) -->
+            <div class="scan-exact-settings-box">
+              <div class="scan-exact-3col-grid">
+                <div class="scan-exact-field" id="panel-field-dpi">
+                  <label class="scan-exact-label" for="panel-export-dpi">RESOLUTION</label>
+                  <select id="panel-export-dpi" class="scan-exact-select">
+                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High)</option>
+                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
+                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
+                  </select>
                 </div>
 
-                <div class="scan-config-cfield scan-config-lang-row" id="panel-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
-                  <label class="scan-config-clabel" for="panel-export-lang">OCR Language</label>
-                  <select id="panel-export-lang" class="scan-config-cselect">
+                <div class="scan-exact-field" id="panel-field-size">
+                  <label class="scan-exact-label" for="panel-export-pagesize">GEOMETRY</label>
+                  <select id="panel-export-pagesize" class="scan-exact-select">
+                    <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
+                    <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
+                    <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
+                  </select>
+                </div>
+
+                <div class="scan-exact-field" id="panel-ocr-lang-row">
+                  <label class="scan-exact-label" for="panel-export-lang">LANGUAGE</label>
+                  <select id="panel-export-lang" class="scan-exact-select">
                     <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
-                    <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (Español)</option>
-                    <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (Français)</option>
-                    <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (Deutsch)</option>
-                    <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (Italiano)</option>
-                    <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (Português)</option>
-                    <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिन्दी)</option>
-                    <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (简体中文)</option>
-                    <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (日本語)</option>
-                    <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (العربية)</option>
-                    <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect Language</option>
+                    <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
+                    <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
+                    <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
+                    <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
+                    <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
+                    <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
+                    <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
+                    <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
+                    <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
+                    <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            <!-- Sticky Pinned Action Footer (100% Zero-Scroll Fold) -->
-            <div class="scan-panel-sticky-footer">
-              <!-- Compact 1-Line Metadata Status -->
-              <div class="scan-panel-compact-status">
-                <span class="scan-status-dot"></span>
-                <span class="scan-status-pages"><strong>${pages.length}</strong> ${pages.length === 1 ? 'Page' : 'Pages'}</span>
-                <span class="scan-status-meta" id="scan-panel-summary-meta">· ${pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI')}</span>
-                <span class="scan-status-badge">100% Local</span>
+            <!-- Estimated Output Box (Light Mint Box with Yellow 100% Local Pill & Solid Green Bar) -->
+            <div class="scan-exact-est-box">
+              <div class="scan-exact-est-title">Estimated output</div>
+              <div class="scan-exact-est-row">
+                <span class="scan-exact-est-metric">
+                  <strong>${pages.length} Pages</strong> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res Images' : (pdfCompression === 'high' ? '300 DPI High Quality' : '150 DPI Balanced')}</span>
+                </span>
+                <span class="scan-exact-yellow-badge">100% Local</span>
               </div>
-
-              <!-- Primary Action CTA Button (Obsidian Black) -->
-              <button type="button" class="cpdf-benchmark-cta scan-benchmark-cta" id="btn-panel-confirm-export">
-                <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
-                <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-                <div class="scan-modal-progress-track" id="panel-progress-track" style="display:none;">
-                  <div class="scan-modal-progress-fill" id="panel-progress-fill"></div>
-                </div>
-              </button>
+              <div class="scan-exact-track">
+                <div class="scan-exact-bar"></div>
+              </div>
             </div>
+
+            <!-- Primary Action CTA Button (Vibrant Royal Blue) -->
+            <button type="button" class="scan-exact-cta" id="btn-panel-confirm-export">
+              <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
+              <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+              <div class="scan-modal-progress-track" id="panel-progress-track" style="display:none;">
+                <div class="scan-modal-progress-fill" id="panel-progress-fill"></div>
+              </div>
+            </button>
           </aside>
         </div>
       `;
