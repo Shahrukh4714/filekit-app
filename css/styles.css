@@ -44403,16 +44403,16 @@ body #app-view .rail-item.active {
 
 /* ══════════════════════════════════════════════════════════════════════════════
 /* ══════════════════════════════════════════════════════════════════════════════
-   MASTER NON-SCROLLING TOP TOOLBAR (Neutral Zinc Craft Polish)
+   MINIMALIST ICON-ONLY TOOLBAR (Matching Reference Screenshot)
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-unified-toolbar {
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  background: #FFFFFF !important;
-  border-bottom: 1px solid #E4E4E7 !important;
-  padding: 0 10px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  background: #F9FAFB !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  padding: 0 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -44428,7 +44428,7 @@ body #app-view .rail-item.active {
 .scan-tb-left-cluster {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 6px !important;
   flex: 1 1 auto !important;
   min-width: 0 !important;
   overflow: visible !important;
@@ -44438,152 +44438,72 @@ body #app-view .rail-item.active {
 .scan-tb-group {
   display: flex !important;
   align-items: center !important;
-  gap: 2px !important;
+  gap: 4px !important;
   flex-shrink: 0 !important;
 }
 
-/* Individual Toolbar Action Buttons (100% Neutral Zinc Monochrome) */
+/* Individual Toolbar Icon Buttons (32px x 32px, Crisp Monochrome) */
 .scan-tb-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 4px !important;
-  height: 26px !important;
-  padding: 0 7px !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  padding: 0 !important;
   background: transparent !important;
-  border: 1px solid #E4E4E7 !important;
-  border-radius: 5px !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  color: #18181B !important;
+  border: 1.5px solid transparent !important;
+  border-radius: 6px !important;
+  color: #374151 !important;
   cursor: pointer !important;
-  white-space: nowrap !important;
-  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.12s ease !important;
   outline: none !important;
   flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .scan-tb-btn svg {
-  width: 12px !important;
-  height: 12px !important;
-  stroke: #52525B !important;
+  width: 17px !important;
+  height: 17px !important;
+  stroke: #374151 !important;
   flex-shrink: 0 !important;
   transition: stroke 0.12s ease !important;
 }
 
 .scan-tb-btn:hover {
-  background: #F4F4F5 !important;
-  color: #18181B !important;
-  border-color: #D4D4D8 !important;
+  background: #E5E7EB !important;
+  color: #111827 !important;
+  border-color: transparent !important;
 }
 
 .scan-tb-btn:hover svg {
-  stroke: #18181B !important;
+  stroke: #111827 !important;
 }
 
 .scan-tb-btn:active {
-  transform: scale(0.97) !important;
+  transform: scale(0.94) !important;
 }
 
-/* Primary "+ Add" button (Clean Neutral Slate) */
-.scan-tb-btn-primary {
-  background: #F4F4F5 !important;
-  color: #18181B !important;
-  border-color: #D4D4D8 !important;
-  font-weight: 700 !important;
-}
-
-.scan-tb-btn-primary svg {
-  stroke: #18181B !important;
-}
-
-.scan-tb-btn-primary:hover {
-  background: #E4E4E7 !important;
-  color: #18181B !important;
-  border-color: #A1A1AA !important;
-}
-
-/* Active State for toggle buttons (e.g. Crop, Drawer, Extract Text) */
+/* Active Tool State: Crisp White Card with Blue Border (Matching Reference) */
 .scan-tb-btn.is-active {
-  background: #18181B !important;
-  color: #FFFFFF !important;
-  border-color: #18181B !important;
-  font-weight: 600 !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #2563EB !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15) !important;
+  color: #2563EB !important;
 }
 
 .scan-tb-btn.is-active svg {
-  stroke: #FFFFFF !important;
+  stroke: #2563EB !important;
 }
 
-/* Toolbar Divider Separator */
+/* Toolbar Divider Separator (Vertical Hairline) */
 .scan-tb-sep {
   width: 1px !important;
-  height: 14px !important;
-  background: #E4E4E7 !important;
-  margin: 0 2px !important;
+  height: 18px !important;
+  background: #D1D5DB !important;
+  margin: 0 4px !important;
   flex-shrink: 0 !important;
-}
-
-/* Segmented Document Filter Switcher Capsule (Clean, B&W, Color) */
-.scan-segmented-filter {
-  display: inline-flex !important;
-  align-items: center !important;
-  background: #F4F4F5 !important;
-  border: 1px solid #E4E4E7 !important;
-  border-radius: 6px !important;
-  padding: 1.5px !important;
-  gap: 1.5px !important;
-  flex-shrink: 0 !important;
-}
-
-.scan-seg-filter-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
-  height: 22px !important;
-  padding: 0 6px !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 4px !important;
-  font-size: 11px !important;
-  font-weight: 500 !important;
-  color: #52525B !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  outline: none !important;
-  flex-shrink: 0 !important;
-}
-
-.scan-seg-filter-btn svg {
-  width: 11px !important;
-  height: 11px !important;
-  stroke: #71717A !important;
-  transition: stroke 0.12s ease !important;
-}
-
-.scan-seg-filter-btn:hover {
-  color: #18181B !important;
-}
-
-.scan-seg-filter-btn:hover svg {
-  stroke: #18181B !important;
-}
-
-/* ACTIVE FILTER STATE: Clean White Card Pill, Neutral Dark */
-.scan-seg-filter-btn.is-active {
-  background: #FFFFFF !important;
-  color: #18181B !important;
-  font-weight: 700 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
-}
-
-.scan-seg-filter-btn.is-active svg {
-  stroke: #18181B !important;
-}
-
-.scan-seg-filter-btn:active {
-  transform: scale(0.97) !important;
 }
 
 /* Right Close Button */
@@ -44595,31 +44515,13 @@ body #app-view .rail-item.active {
 }
 
 .scan-tb-btn-close {
-  width: 26px !important;
-  height: 26px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: 5px !important;
-  color: #71717A !important;
-  cursor: pointer !important;
-  transition: all 0.12s ease !important;
-  outline: none !important;
-  padding: 0 !important;
-}
-
-.scan-tb-btn-close svg {
-  width: 13px !important;
-  height: 13px !important;
-  stroke: #71717A !important;
+  color: #6B7280 !important;
 }
 
 .scan-tb-btn-close:hover {
   background: #FEE2E2 !important;
   color: #DC2626 !important;
-  border-color: #FECACA !important;
+  border-color: transparent !important;
 }
 
 .scan-tb-btn-close:hover svg {
