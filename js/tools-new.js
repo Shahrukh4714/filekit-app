@@ -3727,10 +3727,11 @@
               <span>Redact</span>
             </button>
 
-            <span class="scan-tb-sep" aria-hidden="true"></span>
-
-            <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Extract text & inspect document (OCR Text)">
-              ${ICONS.ocr}<span>OCR Text</span>
+            <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-toggle-live-text" title="Toggle Direct Live Text Selection on Document">
+              ${ICONS.ocr}<span>Live Text</span>
+            </button>
+            <button type="button" class="scan-tb-btn" id="btn-quick-copy-text" title="Copy recognized text on this page to clipboard">
+              ${ICONS.copy}<span>Copy Text</span>
             </button>
 
             <select id="scan-top-ocr-lang" class="scan-tb-lang-compact" aria-label="OCR Language" title="OCR Language">
@@ -3881,74 +3882,18 @@
               <div class="scan-paper-page" id="scan-paper-page">
                 <div class="scan-canvas-scanline" id="scan-canvas-scanline" style="display:none;" aria-hidden="true"></div>
                 <canvas id="scan-studio-canvas" class="scan-studio-canvas"></canvas>
-                <!-- Interactive Selectable OCR Text Layer -->
+                <!-- Interactive Selectable OCR Text Layer (Apple Live Text) -->
                 <div class="scan-text-layer ${showOcrLayer ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer}"></div>
                 <!-- Interactive Placed Overlay Elements (Signatures & Stamps) -->
                 <div class="scan-overlays-layer" id="scan-overlays-layer"></div>
+                <!-- Apple Live Text Floating Selection Action Pill -->
+                <div class="scan-live-text-selection-pill" id="scan-selection-pill" style="display:none;" aria-hidden="true">
+                  <button type="button" id="btn-pill-copy" title="Copy selected text">${ICONS.copy}<span>Copy</span></button>
+                  <span class="scan-pill-sep"></span>
+                  <button type="button" id="btn-pill-select-all" title="Select all text on this page">${ICONS.flow}<span>Select All</span></button>
+                </div>
               </div>
             </main>
-
-            <!-- In-Studio Integrated OCR Text Inspector Panel (Option A: Pure Dedicated Text Surface) -->
-            <aside class="scan-ocr-sidebar ${ocrPanelOpen ? 'is-open' : ''}" id="scan-ocr-sidebar" aria-label="Extracted Text Inspector">
-              <div class="scan-ocr-sidebar-head">
-                <div class="scan-ocr-sidebar-title">
-                  ${ICONS.ocr}
-                  <span>Page ${selIdx + 1} Text</span>
-                </div>
-                <button type="button" class="scan-ocr-close-btn" id="btn-close-ocr-panel" title="Close Text Inspector" aria-label="Close Text Inspector">${ICONS.cross}</button>
-              </div>
-
-              <div class="scan-ocr-quick-strip">
-                <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-flow" title="Merge linebreaks into readable paragraphs">
-                  ${ICONS.flow}
-                  <span>Format Flow</span>
-                </button>
-                <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-clean" title="Clean extra spaces and dangling symbols">
-                  ${ICONS.clean}
-                  <span>Clean Text</span>
-                </button>
-                <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-md" title="Copy formatted as Markdown">
-                  ${ICONS.markdown}
-                  <span>Markdown</span>
-                </button>
-              </div>
-
-              <div class="scan-ocr-sidebar-body">
-                <div class="scan-ocr-sidebar-loading" id="ocr-sidebar-loading" ${isOcrRunning ? '' : 'style="display:none"'}>
-                  <div class="scan-ocr-progress-capsule">
-                    <div class="scan-ocr-spinner"></div>
-                    <div class="scan-ocr-progress-info">
-                      <span id="ocr-sidebar-progress-label">Recognizing text…</span>
-                      <div class="scan-ocr-progress-track">
-                        <div class="scan-ocr-progress-fill" id="ocr-sidebar-progress-bar" style="width: 0%"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <textarea class="scan-ocr-sidebar-textarea" id="scan-ocr-sidebar-textarea" placeholder="Recognized text for this page will appear here...">${esc(curPage.ocrData ? (curPage.ocrData.text || '') : '')}</textarea>
-              </div>
-
-              <div class="scan-ocr-sidebar-footer">
-                <button type="button" class="scan-btn-primary-sm scan-ocr-footer-copy-btn" id="btn-sidebar-copy-text" title="Copy text to clipboard">
-                  ${ICONS.copy}
-                  <span>Copy Text</span>
-                </button>
-                <div class="scan-ocr-footer-export-group" role="group" aria-label="Export file formats">
-                  <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-txt" title="Download as .txt text file">
-                    ${ICONS.txt}
-                    <span>TXT</span>
-                  </button>
-                  <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-docx" title="Download as .docx Word document">
-                    ${ICONS.word}
-                    <span>DOC</span>
-                  </button>
-                  <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words &amp; positions as .json">
-                    ${ICONS.json}
-                    <span>JSON</span>
-                  </button>
-                </div>
-              </div>
-            </aside>
 
             <!-- Slide-out Thumbnail Drawer (Anchored to Right Rail) -->
             <aside class="etxt-thumbs-drawer scan-thumbs-drawer ${thumbsDrawerOpen ? 'is-open' : ''}" id="scan-thumbs-drawer" aria-label="Page Thumbnails">
@@ -4964,187 +4909,128 @@
         };
       }
 
-      // Top OCR Layer Toggle
-      const ocrProofBtn = parent.querySelector('#btn-open-ocr-proofreader');
-      const closeOcrPanelBtn = parent.querySelector('#btn-close-ocr-panel');
-      const sidebarCopyBtn = parent.querySelector('#btn-sidebar-copy-text');
-      const sidebarTxtBtn = parent.querySelector('#btn-sidebar-dl-txt');
-      const sidebarDocxBtn = parent.querySelector('#btn-sidebar-dl-docx');
-      const sidebarTextarea = parent.querySelector('#scan-ocr-sidebar-textarea');
+      // Live Text & Direct In-Canvas Selection (Apple Live Text style)
+      const btnLiveText = parent.querySelector('#btn-toggle-live-text');
+      const btnQuickCopy = parent.querySelector('#btn-quick-copy-text');
+      const paperWrap = parent.querySelector('#scan-paper-page');
+      const selectionPill = parent.querySelector('#scan-selection-pill');
+      const btnPillCopy = parent.querySelector('#btn-pill-copy');
+      const btnPillSelectAll = parent.querySelector('#btn-pill-select-all');
 
-      if (ocrProofBtn) {
-        ocrProofBtn.onclick = (e) => {
+      if (btnLiveText) {
+        btnLiveText.onclick = (e) => {
           e.stopPropagation();
-          ocrPanelOpen = !ocrPanelOpen;
-          showOcrLayer = ocrPanelOpen;
-          const sidebar = parent.querySelector('#scan-ocr-sidebar');
-          const stage = parent.querySelector('#scan-canvas-wrap');
+          showOcrLayer = !showOcrLayer;
+          btnLiveText.classList.toggle('is-on', showOcrLayer);
           const txtLayer = parent.querySelector('#scan-text-layer');
-          if (sidebar) sidebar.classList.toggle('is-open', ocrPanelOpen);
-          if (stage) stage.classList.toggle('ocr-panel-active', ocrPanelOpen);
           if (txtLayer) {
             txtLayer.classList.toggle('is-active', showOcrLayer);
             txtLayer.setAttribute('aria-hidden', (!showOcrLayer).toString());
           }
-          ocrProofBtn.classList.toggle('is-on', ocrPanelOpen);
-
-          if (ocrPanelOpen) {
-            thumbsDrawerOpen = false;
-            const drw = parent.querySelector('#scan-thumbs-drawer');
-            const toggleThumbs = parent.querySelector('#btn-toggle-thumbs');
-            if (drw) drw.classList.remove('is-open');
-            if (toggleThumbs) toggleThumbs.classList.remove('is-active');
-
-            const sbTa = parent.querySelector('#scan-ocr-sidebar-textarea');
-            const pageObj = pages[selIdx];
-            if (pageObj && pageObj.ocrData) {
-              if (sbTa) sbTa.value = (pageObj.ocrData.text || '').trim();
-              renderTextLayer();
-            } else {
-              if (sbTa) sbTa.value = '';
+          if (showOcrLayer) {
+            const p = pages[selIdx];
+            if (!p.ocrData) {
               runPageOcr(selIdx);
+            } else {
+              renderTextLayer();
             }
+            setStatus('Live Text active — highlight text directly on the document.', 'ok');
+          } else {
+            if (selectionPill) selectionPill.style.display = 'none';
+            setStatus('Live Text hidden.', 'info');
           }
-          updateStudioPreview();
-          setTimeout(() => {
-            updateStudioPreview();
-            applyCanvasTransform();
-          }, 290);
         };
       }
 
-      if (closeOcrPanelBtn) {
-        closeOcrPanelBtn.onclick = (e) => {
+      if (btnQuickCopy) {
+        btnQuickCopy.onclick = async (e) => {
           e.stopPropagation();
-          ocrPanelOpen = false;
-          showOcrLayer = false;
-          const sidebar = parent.querySelector('#scan-ocr-sidebar');
-          const stage = parent.querySelector('#scan-canvas-wrap');
-          const txtLayer = parent.querySelector('#scan-text-layer');
-          if (sidebar) sidebar.classList.remove('is-open');
-          if (stage) stage.classList.remove('ocr-panel-active');
-          if (txtLayer) {
-            txtLayer.classList.remove('is-active');
-            txtLayer.setAttribute('aria-hidden', 'true');
+          const p = pages[selIdx];
+          if (!p) return;
+          let text = p.ocrData?.text;
+          if (!text) {
+            setStatus('Extracting text for this page...', 'info');
+            await runPageOcr(selIdx);
+            text = pages[selIdx]?.ocrData?.text || '';
           }
-          if (ocrProofBtn) ocrProofBtn.classList.remove('is-on');
-          updateStudioPreview();
-          setTimeout(() => {
-            updateStudioPreview();
-            applyCanvasTransform();
-          }, 290);
+          if (text && text.trim()) {
+            await navigator.clipboard.writeText(text.trim());
+            const origHtml = btnQuickCopy.innerHTML;
+            btnQuickCopy.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#10B981;font-weight:700;">Copied!</span>`;
+            btnQuickCopy.classList.add('is-copied');
+            const wordsCount = text.trim().split(/\s+/).filter(Boolean).length;
+            setStatus(`Copied Page ${selIdx + 1} text to clipboard (${wordsCount} ${wordsCount === 1 ? 'word' : 'words'}).`, 'ok');
+            setTimeout(() => {
+              btnQuickCopy.innerHTML = origHtml;
+              btnQuickCopy.classList.remove('is-copied');
+            }, 1800);
+          } else {
+            setStatus('No readable text detected on this page.', 'warn');
+          }
         };
       }
 
-      if (sidebarTextarea) {
-        sidebarTextarea.oninput = () => {
-          const pageObj = pages[selIdx];
-          if (pageObj && pageObj.ocrData) pageObj.ocrData.text = sidebarTextarea.value;
+      // Apple Live Text Floating Selection Pill Positioner
+      const updateSelectionPill = () => {
+        if (!selectionPill || !paperWrap || !showOcrLayer) return;
+        const sel = window.getSelection();
+        const selText = sel ? sel.toString().trim() : '';
+        if (selText && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          const r = range.getBoundingClientRect();
+          const pr = paperWrap.getBoundingClientRect();
+          if (r.width === 0 && r.height === 0) {
+            selectionPill.style.display = 'none';
+            return;
+          }
+          const pillW = 140;
+          const leftPos = Math.max(8, Math.min(pr.width - pillW, r.left - pr.left + (r.width / 2) - (pillW / 2)));
+          const topPos = Math.max(8, r.top - pr.top - 38);
+          selectionPill.style.left = `${leftPos}px`;
+          selectionPill.style.top = `${topPos}px`;
+          selectionPill.style.display = 'inline-flex';
+          selectionPill.setAttribute('aria-hidden', 'false');
+        } else {
+          selectionPill.style.display = 'none';
+          selectionPill.setAttribute('aria-hidden', 'true');
+        }
+      };
+
+      document.addEventListener('selectionchange', updateSelectionPill);
+
+      if (btnPillCopy) {
+        btnPillCopy.onclick = async (e) => {
+          e.stopPropagation();
+          const sel = window.getSelection();
+          const selText = sel ? sel.toString().trim() : '';
+          if (selText) {
+            await navigator.clipboard.writeText(selText);
+            const orig = btnPillCopy.innerHTML;
+            btnPillCopy.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#10B981;">Copied</span>`;
+            setTimeout(() => {
+              btnPillCopy.innerHTML = orig;
+              if (sel) sel.removeAllRanges();
+              updateSelectionPill();
+            }, 1000);
+            setStatus(`Copied selected text (${selText.length} characters).`, 'ok');
+          }
         };
       }
 
-      // Editorial Intelligence Refinement Chips
-      const chipFlow = parent.querySelector('#ocr-chip-flow');
-      const chipClean = parent.querySelector('#ocr-chip-clean');
-      const chipMd = parent.querySelector('#ocr-chip-md');
-
-      if (chipFlow && sidebarTextarea) {
-        chipFlow.onclick = () => {
-          const raw = sidebarTextarea.value;
-          // Join broken single lines while preserving double newline paragraph breaks
-          const formatted = raw
-            .replace(/([^\n])\n([^\n])/g, '$1 $2')
-            .replace(/[ \t]{2,}/g, ' ')
-            .trim();
-          sidebarTextarea.value = formatted;
-          const pageObj = pages[selIdx];
-          if (pageObj && pageObj.ocrData) pageObj.ocrData.text = formatted;
-          setStatus('Formatted into flowing paragraphs.', 'ok');
+      if (btnPillSelectAll) {
+        btnPillSelectAll.onclick = (e) => {
+          e.stopPropagation();
+          const txtLayer = parent.querySelector('#scan-text-layer');
+          if (txtLayer) {
+            const range = document.createRange();
+            range.selectNodeContents(txtLayer);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            updateSelectionPill();
+          }
         };
       }
-
-      if (chipClean && sidebarTextarea) {
-        chipClean.onclick = () => {
-          const raw = sidebarTextarea.value;
-          // Normalize typographic quotes, clean ligatures, remove stray pipe/tilde symbols
-          const cleaned = raw
-            .replace(/[\uFB00-\uFB04]/g, m => ({'\uFB00':'ff','\uFB01':'fi','\uFB02':'fl','\uFB03':'ffi','\uFB04':'ffl'}[m]))
-            .replace(/[“”]/g, '"')
-            .replace(/[‘’]/g, "'")
-            .replace(/^[|~_•-]\s*/gm, '')
-            .replace(/[ \t]{2,}/g, ' ')
-            .trim();
-          sidebarTextarea.value = cleaned;
-          const pageObj = pages[selIdx];
-          if (pageObj && pageObj.ocrData) pageObj.ocrData.text = cleaned;
-          setStatus('Cleaned typography & extra whitespace.', 'ok');
-        };
-      }
-
-      if (chipMd && sidebarTextarea) {
-        chipMd.onclick = async () => {
-          const pageObj = pages[selIdx];
-          const md = `## ${getScanSourceName()} — Page ${selIdx + 1}\n\n` + sidebarTextarea.value.trim() + '\n';
-          await navigator.clipboard.writeText(md);
-          setStatus('Copied text as Markdown!', 'ok');
-        };
-      }
-
-
-      if (sidebarCopyBtn) {
-        sidebarCopyBtn.onclick = async () => {
-          const pageObj = pages[selIdx];
-          const txt = sidebarTextarea ? sidebarTextarea.value : (pageObj?.ocrData?.text || '');
-          await navigator.clipboard.writeText(txt);
-          const origHtml = sidebarCopyBtn.innerHTML;
-          sidebarCopyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#10B981;font-weight:700;">Copied!</span>`;
-          sidebarCopyBtn.classList.add('is-copied');
-          setStatus('Text copied to clipboard.', 'ok');
-          setTimeout(() => {
-            sidebarCopyBtn.innerHTML = origHtml;
-            sidebarCopyBtn.classList.remove('is-copied');
-          }, 1800);
-        };
-      }
-
-      if (sidebarTxtBtn) {
-        sidebarTxtBtn.onclick = () => {
-          const txt = pages.map((pg, idx) => `── Page ${idx + 1} ──\n` + (pg.ocrData?.text || '').trim()).filter(Boolean).join('\n\n');
-          U.downloadBlob(new Blob([txt], { type: 'text/plain' }), 'scan-extracted.txt');
-        };
-      }
-
-      if (sidebarDocxBtn) {
-        sidebarDocxBtn.onclick = () => {
-          const txt = pages.map((pg, idx) => `── Page ${idx + 1} ──\n` + (pg.ocrData?.text || '').trim()).filter(Boolean).join('\n\n');
-          U.downloadBlob(A.wordDocFromText(txt, getScanSourceName()), 'scan-extracted.doc');
-        };
-      }
-
-      const sidebarJsonBtn = parent.querySelector('#btn-sidebar-dl-json');
-      if (sidebarJsonBtn) {
-        sidebarJsonBtn.onclick = () => {
-          const exportData = pages.map((pg, idx) => ({
-            pageNumber: idx + 1,
-            language: ocrLang,
-            text: pg.ocrData?.text || '',
-            wordsCount: (pg.ocrData?.words || []).length,
-            words: (pg.ocrData?.words || []).map(w => ({
-              text: w.text,
-              confidence: w.confidence,
-              bbox: w.bbox
-            }))
-          }));
-          U.downloadBlob(new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' }), 'scan-ocr-data.json');
-          setStatus('Exported structured OCR JSON data.', 'ok');
-        };
-      }
-
-      // Subtab switcher in OCR Sidebar
-      const subtabText = parent.querySelector('#subtab-ocr-text');
-      const subtabInsights = parent.querySelector('#subtab-ocr-insights');
-      if (subtabText) subtabText.onclick = () => { ocrSidebarTab = 'text'; refreshStudioUI(); };
-      if (subtabInsights) subtabInsights.onclick = () => { ocrSidebarTab = 'insights'; refreshStudioUI(); };
 
       // Smart Insights action handlers
       const btnCopyReceipt = parent.querySelector('#btn-copy-receipt-json');
