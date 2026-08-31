@@ -44919,27 +44919,28 @@ body #app-view .rail-item.active {
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  color: #111827 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #18181B !important;
   white-space: nowrap !important;
 }
 
 .scan-sheet-title svg {
-  width: 13px !important;
-  height: 13px !important;
-  stroke: #111827 !important;
+  width: 14px !important;
+  height: 14px !important;
+  stroke: #18181B !important;
   flex-shrink: 0 !important;
 }
 
+/* Plain stats text label (No container / pill / border) */
 .scan-sheet-stats-pill {
-  font-size: 10px !important;
-  color: #6B7280 !important;
-  font-weight: 500 !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E5E7EB !important;
-  padding: 1px 5px !important;
-  border-radius: 99px !important;
+  font-size: 11px !important;
+  color: #71717A !important;
+  font-weight: 400 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
   white-space: nowrap !important;
 }
 
@@ -44951,15 +44952,14 @@ body #app-view .rail-item.active {
   flex-shrink: 0 !important;
 }
 
-/* Multi-Page Scope Toggle Capsule (This Page vs All Pages) */
+/* Flat Scope Switcher (No Box Container / Pill) */
 .scan-sheet-scope-capsule {
   display: inline-flex !important;
   align-items: center !important;
-  background: #F3F4F6 !important;
-  border: 1px solid #D1D5DB !important;
-  border-radius: 5px !important;
-  padding: 1.5px !important;
-  gap: 1.5px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 6px !important;
   flex-shrink: 0 !important;
 }
 
@@ -44967,54 +44967,55 @@ body #app-view .rail-item.active {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 0 6px !important;
-  height: 20px !important;
+  padding: 2px 4px !important;
+  height: auto !important;
   background: transparent !important;
   border: none !important;
-  border-radius: 3px !important;
-  font-size: 10.5px !important;
+  border-radius: 0 !important;
+  font-size: 11.5px !important;
   font-weight: 500 !important;
-  color: #4B5563 !important;
+  color: #71717A !important;
   cursor: pointer !important;
-  transition: all 0.12s ease !important;
+  transition: color 0.12s ease !important;
   outline: none !important;
   white-space: nowrap !important;
 }
 
 .scan-sheet-scope-btn:hover {
-  color: #111827 !important;
+  color: #18181B !important;
 }
 
 .scan-sheet-scope-btn.is-active {
-  background: #FFFFFF !important;
-  color: #111827 !important;
-  font-weight: 600 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  background: transparent !important;
+  color: #18181B !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
 }
 
-/* Language selector dropdown pill */
+/* Flat Language Selector (No Container Box / Pill) */
 .scan-sheet-lang-pill {
   display: inline-flex !important;
   align-items: center !important;
   gap: 3px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #D1D5DB !important;
-  border-radius: 5px !important;
-  padding: 0 5px !important;
-  height: 24px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 2px 4px !important;
+  height: auto !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
 }
 
 .scan-sheet-lang-pill:hover {
-  background: #F3F4F6 !important;
-  border-color: #9CA3AF !important;
+  background: #F4F4F5 !important;
 }
 
 .scan-sheet-lang-pill svg {
-  width: 11px !important;
-  height: 11px !important;
-  stroke: #4B5563 !important;
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #52525B !important;
   flex-shrink: 0 !important;
 }
 
@@ -45023,7 +45024,7 @@ body #app-view .rail-item.active {
   background: transparent !important;
   font-size: 11px !important;
   font-weight: 500 !important;
-  color: #3B3B3B !important;
+  color: #3F3F46 !important;
   outline: none !important;
   cursor: pointer !important;
   padding: 0 !important;
@@ -45031,17 +45032,17 @@ body #app-view .rail-item.active {
 
 .scan-sheet-sep {
   width: 1px !important;
-  height: 14px !important;
-  background: #D1D5DB !important;
-  margin: 0 2px !important;
+  height: 12px !important;
+  background: #E4E4E7 !important;
+  margin: 0 3px !important;
   flex-shrink: 0 !important;
 }
 
-/* Action buttons inside header */
+/* Flat Action Buttons (No Heavy Borders / Pill Boxes) */
 .scan-sheet-actions {
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
   flex-shrink: 0 !important;
 }
 
@@ -45050,13 +45051,13 @@ body #app-view .rail-item.active {
   align-items: center !important;
   gap: 4px !important;
   height: 24px !important;
-  padding: 0 7px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #D1D5DB !important;
-  border-radius: 5px !important;
-  font-size: 11px !important;
+  padding: 0 6px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-size: 11.5px !important;
   font-weight: 500 !important;
-  color: #3B3B3B !important;
+  color: #52525B !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   outline: none !important;
@@ -45065,51 +45066,41 @@ body #app-view .rail-item.active {
 }
 
 .scan-sheet-btn svg {
-  width: 11px !important;
-  height: 11px !important;
-  stroke: #4B5563 !important;
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #52525B !important;
   flex-shrink: 0 !important;
 }
 
 .scan-sheet-btn:hover {
-  background: #F3F4F6 !important;
-  border-color: #9CA3AF !important;
-  color: #111827 !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
 }
 
 .scan-sheet-btn:hover svg {
-  stroke: #111827 !important;
+  stroke: #18181B !important;
 }
 
 .scan-sheet-btn:active {
   transform: scale(0.96) !important;
 }
 
-/* Primary Copy CTA button */
+/* Primary Copy CTA button (Flat clean style) */
 .scan-sheet-btn-copy {
-  background: #111827 !important;
-  color: #FFFFFF !important;
-  border-color: #111827 !important;
+  color: #18181B !important;
   font-weight: 600 !important;
 }
 
 .scan-sheet-btn-copy svg {
-  stroke: #FFFFFF !important;
-}
-
-.scan-sheet-btn-copy:hover {
-  background: #1F2937 !important;
-  border-color: #1F2937 !important;
-  color: #FFFFFF !important;
-}
-
-.scan-sheet-btn-copy:hover svg {
-  stroke: #FFFFFF !important;
+  stroke: #18181B !important;
 }
 
 .scan-sheet-btn-copy.is-active {
-  background: #059669 !important;
-  border-color: #059669 !important;
+  color: #059669 !important;
+}
+
+.scan-sheet-btn-copy.is-active svg {
+  stroke: #059669 !important;
 }
 
 .scan-sheet-header-right {
@@ -45124,9 +45115,9 @@ body #app-view .rail-item.active {
   align-items: center !important;
   justify-content: center !important;
   background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: 5px !important;
-  color: #6B7280 !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: #71717A !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   outline: none !important;
@@ -45136,20 +45127,19 @@ body #app-view .rail-item.active {
 .scan-sheet-close-btn svg {
   width: 13px !important;
   height: 13px !important;
-  stroke: #6B7280 !important;
+  stroke: #71717A !important;
 }
 
 .scan-sheet-close-btn:hover {
   background: #FEE2E2 !important;
   color: #DC2626 !important;
-  border-color: transparent !important;
 }
 
 .scan-sheet-close-btn:hover svg {
   stroke: #DC2626 !important;
 }
 
-/* ─── Body: Textarea Area (Free Scrolling) ──────────────────────── */
+/* ─── Body: Textarea Area (Zero Visible Scrollbars) ─────────────── */
 .scan-text-sheet-body {
   flex: 1 1 auto !important;
   position: relative !important;
@@ -45179,34 +45169,57 @@ body #app-view .rail-item.active {
   background: transparent !important;
   box-sizing: border-box !important;
   caret-color: #18181B !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: #D1D5DB transparent !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .scan-sheet-textarea::-webkit-scrollbar {
-  width: 5px !important;
-}
-
-.scan-sheet-textarea::-webkit-scrollbar-thumb {
-  background: #D1D5DB !important;
-  border-radius: 4px !important;
-}
-
-.scan-sheet-textarea::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .scan-sheet-textarea::placeholder {
-  color: #9CA3AF !important;
+  color: #A1A1AA !important;
+}
+
+/* ─── Global Scrollbar Invisibility in Scan Studio ──────────────── */
+.scan-text-sheet,
+.scan-text-sheet *,
+.scan-sheet-header,
+.scan-sheet-footer,
+.scan-editor-body,
+.scan-canvas-stage,
+.scan-thumbs-drawer,
+.scan-thumbs-drawer *,
+.etxt-thumbs,
+.etxt-canvas-wrap {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.scan-text-sheet::-webkit-scrollbar,
+.scan-text-sheet *::-webkit-scrollbar,
+.scan-sheet-header::-webkit-scrollbar,
+.scan-sheet-footer::-webkit-scrollbar,
+.scan-editor-body::-webkit-scrollbar,
+.scan-canvas-stage::-webkit-scrollbar,
+.scan-thumbs-drawer::-webkit-scrollbar,
+.scan-thumbs-drawer *::-webkit-scrollbar,
+.etxt-thumbs::-webkit-scrollbar,
+.etxt-canvas-wrap::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* ─── Footer: Integrated Multi-Page Stepper ─────────────────────── */
 .scan-sheet-footer {
-  height: 36px !important;
-  min-height: 36px !important;
+  height: 34px !important;
+  min-height: 34px !important;
   background: #F9FAFB !important;
   border-top: 1px solid #E5E7EB !important;
-  padding: 0 14px !important;
+  padding: 0 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
