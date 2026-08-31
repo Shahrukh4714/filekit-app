@@ -3941,22 +3941,24 @@
               `}
 
               <div class="scan-ocr-sidebar-footer">
-                <button type="button" class="scan-btn-primary-sm" id="btn-sidebar-copy-text" title="Copy text to clipboard">
+                <button type="button" class="scan-btn-primary-sm scan-ocr-footer-copy-btn" id="btn-sidebar-copy-text" title="Copy text to clipboard">
                   ${ICONS.copy}
-                  <span>Copy</span>
+                  <span>Copy Text</span>
                 </button>
-                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-txt" title="Download as .txt">
-                  ${ICONS.txt}
-                  <span>.TXT</span>
-                </button>
-                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-docx" title="Download as .docx">
-                  ${ICONS.word}
-                  <span>.DOC</span>
-                </button>
-                <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words &amp; positions as .json">
-                  ${ICONS.json}
-                  <span>.JSON</span>
-                </button>
+                <div class="scan-ocr-footer-export-group" role="group" aria-label="Export file formats">
+                  <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-txt" title="Download as .txt text file">
+                    ${ICONS.txt}
+                    <span>TXT</span>
+                  </button>
+                  <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-docx" title="Download as .docx Word document">
+                    ${ICONS.word}
+                    <span>DOC</span>
+                  </button>
+                  <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words &amp; positions as .json">
+                    ${ICONS.json}
+                    <span>JSON</span>
+                  </button>
+                </div>
               </div>
             </aside>
 
