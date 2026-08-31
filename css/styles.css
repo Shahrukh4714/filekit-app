@@ -44852,15 +44852,10 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-/* ══════════════════════════════════════════════════════════════════════════════
-   IN-PLACE EXTRACTED TEXT SHEET (Apple / Linear Craft Polish — Zero Emojis)
+   FULL-STAGE EXTRACTED TEXT SHEET — Neutral Zinc Color System, Zero Wrapping
    ══════════════════════════════════════════════════════════════════════════════ */
 
-.scan-paper-page.is-text-mode {
-  overflow: hidden !important;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12) !important;
-}
-
+/* Sheet lives inside scan-canvas-wrap, covers the whole stage area */
 .scan-text-sheet {
   position: absolute !important;
   top: 0 !important;
@@ -44869,114 +44864,124 @@ body #app-view .rail-item.active {
   bottom: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  background: #FFFFFF !important;
-  border-radius: 4px !important;
+  background: #FAFAFA !important;
   display: none !important;
   flex-direction: column !important;
-  z-index: 25 !important;
+  z-index: 40 !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
 
-.scan-text-sheet.is-visible,
-.scan-text-sheet.is-open {
+.scan-text-sheet.is-visible {
   display: flex !important;
-  animation: sheetFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: sheetSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-@keyframes sheetFadeIn {
-  from { opacity: 0; transform: scale(0.99); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes sheetSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* Tier 1 Top Bar: Title, Stats and Return Button */
+/* ─── Tier 1: Title Bar ─────────────────────────────────────────── */
 .scan-sheet-topbar {
-  height: 38px !important;
-  min-height: 38px !important;
-  border-bottom: 1px solid #E2E8F0 !important;
-  background: #F8FAFC !important;
-  padding: 0 12px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  border-bottom: 1px solid #E4E4E7 !important;
+  background: #FFFFFF !important;
+  padding: 0 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   box-sizing: border-box !important;
   user-select: none !important;
   flex-shrink: 0 !important;
+  box-shadow: 0 1px 0 #E4E4E7 !important;
 }
 
 .scan-sheet-topbar-left {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
   min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
 }
 
 .scan-sheet-title-badge {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  font-size: 12px !important;
+  gap: 6px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
-  color: #0F172A !important;
+  color: #18181B !important; /* neutral zinc-900 */
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-sheet-title-badge svg {
-  width: 13px !important;
-  height: 13px !important;
-  stroke: #0F172A !important;
+  width: 14px !important;
+  height: 14px !important;
+  stroke: #3F3F46 !important; /* zinc-700 */
+  flex-shrink: 0 !important;
 }
 
 .scan-sheet-stats-badge {
-  font-size: 11px !important;
-  color: #64748B !important;
+  font-size: 11.5px !important;
+  color: #71717A !important; /* zinc-500 */
   font-weight: 500 !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
+  background: #F4F4F5 !important; /* zinc-100 */
+  border: 1px solid #E4E4E7 !important; /* zinc-200 */
+  padding: 2px 8px !important;
+  border-radius: 99px !important;
   white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.scan-sheet-topbar-right {
+  flex-shrink: 0 !important;
 }
 
 .scan-sheet-close-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  height: 24px !important;
-  padding: 0 8px !important;
+  gap: 5px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
   background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  font-size: 11px !important;
+  border: 1px solid #D4D4D8 !important; /* zinc-300 */
+  border-radius: 6px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
-  color: #334155 !important;
+  color: #3F3F46 !important; /* zinc-700 */
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   outline: none !important;
+  white-space: nowrap !important;
 }
 
 .scan-sheet-close-btn svg {
   width: 11px !important;
   height: 11px !important;
-  stroke: #64748B !important;
+  stroke: #71717A !important; /* zinc-500 */
 }
 
 .scan-sheet-close-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
-  border-color: #94A3B8 !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+  border-color: #A1A1AA !important; /* zinc-400 */
 }
 
 .scan-sheet-close-btn:hover svg {
-  stroke: #0F172A !important;
+  stroke: #3F3F46 !important;
 }
 
-/* Tier 2 Action Bar: Language Selector & One-Click Exports */
+/* ─── Tier 2: Action Bar ─────────────────────────────────────────── */
 .scan-sheet-actionbar {
-  height: 38px !important;
-  min-height: 38px !important;
-  border-bottom: 1px solid #E2E8F0 !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  border-bottom: 1px solid #E4E4E7 !important;
   background: #FFFFFF !important;
-  padding: 0 12px !important;
+  padding: 0 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -44988,28 +44993,28 @@ body #app-view .rail-item.active {
 .scan-sheet-lang-box {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 5px !important;
-  padding: 0 6px !important;
-  height: 26px !important;
-  color: #475569 !important;
+  gap: 5px !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 6px !important;
+  padding: 0 8px !important;
+  height: 28px !important;
+  cursor: pointer !important;
 }
 
 .scan-sheet-lang-box svg {
   width: 12px !important;
   height: 12px !important;
-  stroke: #475569 !important;
+  stroke: #71717A !important;
   flex-shrink: 0 !important;
 }
 
 .scan-sheet-lang-select {
   border: none !important;
   background: transparent !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
-  color: #0F172A !important;
+  color: #3F3F46 !important; /* zinc-700 */
   outline: none !important;
   cursor: pointer !important;
   padding: 0 !important;
@@ -45018,66 +45023,92 @@ body #app-view .rail-item.active {
 .scan-sheet-export-group {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 5px !important;
 }
 
+/* Secondary export buttons */
 .scan-sheet-act-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  height: 26px !important;
-  padding: 0 8px !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 5px !important;
-  font-size: 11px !important;
+  gap: 5px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #D4D4D8 !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
-  color: #0F172A !important;
+  color: #3F3F46 !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   outline: none !important;
+  white-space: nowrap !important;
 }
 
 .scan-sheet-act-btn svg {
   width: 12px !important;
   height: 12px !important;
-  stroke: #475569 !important;
+  stroke: #71717A !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-sheet-act-btn:hover {
-  background: #0F172A !important;
-  color: #FFFFFF !important;
-  border-color: #0F172A !important;
+  background: #F4F4F5 !important;
+  border-color: #A1A1AA !important;
+  color: #18181B !important;
 }
 
 .scan-sheet-act-btn:hover svg {
-  stroke: #FFFFFF !important;
+  stroke: #3F3F46 !important;
 }
 
 .scan-sheet-act-btn:active {
-  transform: scale(0.96) !important;
+  transform: scale(0.97) !important;
 }
 
-.scan-sheet-act-btn.is-active {
-  background: #0F172A !important;
+/* Primary Copy CTA — filled dark */
+.scan-sheet-act-primary {
+  background: #18181B !important; /* zinc-900 */
   color: #FFFFFF !important;
-  border-color: #0F172A !important;
+  border-color: #18181B !important;
 }
 
-.scan-sheet-act-btn.is-active svg {
+.scan-sheet-act-primary svg {
   stroke: #FFFFFF !important;
 }
 
-/* Textarea Body */
+.scan-sheet-act-primary:hover {
+  background: #27272A !important; /* zinc-800 */
+  border-color: #27272A !important;
+  color: #FFFFFF !important;
+}
+
+.scan-sheet-act-primary:hover svg {
+  stroke: #FFFFFF !important;
+}
+
+.scan-sheet-act-btn.is-active,
+.scan-sheet-act-primary.is-active {
+  background: #27272A !important;
+  color: #FFFFFF !important;
+  border-color: #27272A !important;
+}
+
+.scan-sheet-act-btn.is-active svg,
+.scan-sheet-act-primary.is-active svg {
+  stroke: #FFFFFF !important;
+}
+
+/* ─── Body: Textarea ─────────────────────────────────────────── */
 .scan-text-sheet-body {
   flex: 1 1 auto !important;
   position: relative !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  padding: 16px 20px !important;
+  padding: 24px 28px !important;
   box-sizing: border-box !important;
-  background: #FFFFFF !important;
+  background: #FAFAFA !important;
 }
 
 .scan-sheet-textarea {
@@ -45086,30 +45117,32 @@ body #app-view .rail-item.active {
   border: none !important;
   outline: none !important;
   resize: none !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  font-size: 13.5px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif !important;
+  font-size: 14px !important;
   line-height: 1.75 !important;
-  color: #0F172A !important;
+  color: #18181B !important; /* neutral zinc-900 */
   background: transparent !important;
   box-sizing: border-box !important;
+  caret-color: #18181B !important;
 }
 
 .scan-sheet-textarea::placeholder {
-  color: #94A3B8 !important;
+  color: #A1A1AA !important; /* zinc-400 */
 }
 
+/* ─── Loading State ─────────────────────────────────────────── */
 .scan-sheet-loading-state {
   position: absolute !important;
   inset: 0 !important;
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: rgba(250, 250, 250, 0.92) !important;
   backdrop-filter: blur(4px) !important;
   display: none !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   z-index: 10 !important;
-  color: #0F172A !important;
+  color: #3F3F46 !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
 }
@@ -45121,8 +45154,8 @@ body #app-view .rail-item.active {
 .scan-sheet-spinner {
   width: 22px !important;
   height: 22px !important;
-  border: 2px solid #E2E8F0 !important;
-  border-top-color: #0F172A !important;
+  border: 2.5px solid #E4E4E7 !important;
+  border-top-color: #18181B !important;
   border-radius: 50% !important;
   animation: sheetSpin 0.7s linear infinite !important;
 }
@@ -45130,6 +45163,17 @@ body #app-view .rail-item.active {
 @keyframes sheetSpin {
   to { transform: rotate(360deg); }
 }
+
+/* ─── Toolbar: Remove overflow:hidden to stop button clipping ─── */
+.scan-tb-left-cluster {
+  overflow: visible !important;
+  flex-wrap: nowrap !important;
+}
+
+.scan-unified-toolbar {
+  overflow: visible !important;
+}
+
 
 
 

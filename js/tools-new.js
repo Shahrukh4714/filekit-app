@@ -3773,77 +3773,76 @@
                   </div>
                 ` : ''}
 
-                <!-- Document Paper Container with In-Place Text Sheet -->
-                <div class="scan-paper-page ${isTextSheetOpen ? 'is-text-mode' : ''}" id="scan-paper-page">
+                <!-- Document Paper Container -->
+                <div class="scan-paper-page" id="scan-paper-page">
                   <div class="scan-laser-beam" id="scan-laser-beam" style="display:none;" aria-hidden="true"></div>
-                  <canvas id="scan-studio-canvas" class="scan-studio-canvas" style="${isTextSheetOpen ? 'display:none;' : ''}"></canvas>
-                  <!-- Interactive Selectable OCR Text Layer (Apple Live Text) -->
+                  <canvas id="scan-studio-canvas" class="scan-studio-canvas"></canvas>
                   <div class="scan-text-layer ${showOcrLayer && !isTextSheetOpen ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer || isTextSheetOpen}"></div>
-                  <!-- Apple Live Text Floating Selection Action Pill -->
                   <div class="scan-live-text-selection-pill" id="scan-selection-pill" style="display:none;" aria-hidden="true">
                     <button type="button" id="btn-pill-copy" title="Copy selected text">${ICONS.copy}<span>Copy</span></button>
                     <span class="scan-pill-sep"></span>
                     <button type="button" id="btn-pill-select-all" title="Select all text on this page">${ICONS.flow}<span>Select All</span></button>
                   </div>
+                </div>
 
-                  <!-- In-Place Clean Extracted Text Sheet (2-Tier Clean Layout) -->
-                  <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet">
-                    <!-- Top Bar: Title & Return Button -->
-                    <div class="scan-sheet-topbar">
-                      <div class="scan-sheet-topbar-left">
-                        <span class="scan-sheet-title-badge">${ICONS.ocr} <strong>Extracted Text</strong></span>
-                        <span class="scan-sheet-stats-badge" id="scan-sheet-stats">0 words · 0 chars</span>
-                      </div>
-                      <div class="scan-sheet-topbar-right">
-                        <button type="button" class="scan-sheet-close-btn" id="btn-sheet-close" title="Return to Document View">
-                          ${ICONS.cross}<span>Back to Page</span>
-                        </button>
-                      </div>
+                <!-- Full-Stage Extracted Text Sheet (overlays entire canvas stage) -->
+                <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet">
+                  <!-- Tier 1: Title + Stats + Close -->
+                  <div class="scan-sheet-topbar">
+                    <div class="scan-sheet-topbar-left">
+                      <span class="scan-sheet-title-badge">${ICONS.ocr}<strong>Extracted Text</strong></span>
+                      <span class="scan-sheet-stats-badge" id="scan-sheet-stats">0 words · 0 chars</span>
                     </div>
-
-                    <!-- Action Bar: Language Selector & One-Click Exports -->
-                    <div class="scan-sheet-actionbar">
-                      <div class="scan-sheet-lang-box" title="Recognition Language">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-                        <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
-                          <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                          <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
-                          <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
-                          <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
-                          <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
-                          <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
-                          <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
-                          <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
-                          <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
-                          <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
-                          <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
-                          <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
-                        </select>
-                      </div>
-
-                      <div class="scan-sheet-export-group">
-                        <button type="button" class="scan-sheet-act-btn" id="btn-sheet-copy" title="Copy text to clipboard">
-                          ${ICONS.copy}<span id="sheet-copy-label">Copy</span>
-                        </button>
-                        <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-txt" title="Download Text File (.txt)">
-                          ${ICONS.txt}<span>TXT</span>
-                        </button>
-                        <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-doc" title="Download Word Document (.doc)">
-                          ${ICONS.word}<span>DOCX</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Editor Body Area -->
-                    <div class="scan-text-sheet-body">
-                      <div class="scan-sheet-loading-state" id="scan-sheet-loading">
-                        <div class="scan-sheet-spinner"></div>
-                        <span id="scan-sheet-loading-label">Scanning document text…</span>
-                      </div>
-                      <textarea id="scan-sheet-textarea" class="scan-sheet-textarea" placeholder="No text detected on this page." spellcheck="false"></textarea>
+                    <div class="scan-sheet-topbar-right">
+                      <button type="button" class="scan-sheet-close-btn" id="btn-sheet-close" title="Back to Document">
+                        ${ICONS.cross}<span>Back to Page</span>
+                      </button>
                     </div>
                   </div>
+
+                  <!-- Tier 2: Language + Export Actions -->
+                  <div class="scan-sheet-actionbar">
+                    <div class="scan-sheet-lang-box" title="Recognition Language">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                      <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
+                        <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
+                        <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
+                        <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
+                        <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
+                        <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
+                        <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
+                        <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
+                        <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
+                        <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
+                        <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
+                        <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
+                        <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
+                      </select>
+                    </div>
+                    <div class="scan-sheet-export-group">
+                      <button type="button" class="scan-sheet-act-btn scan-sheet-act-primary" id="btn-sheet-copy" title="Copy all text to clipboard">
+                        ${ICONS.copy}<span id="sheet-copy-label">Copy All</span>
+                      </button>
+                      <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-txt" title="Download as .txt">
+                        ${ICONS.txt}<span>TXT</span>
+                      </button>
+                      <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-doc" title="Download as .docx">
+                        ${ICONS.word}<span>DOCX</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Body: Editable textarea -->
+                  <div class="scan-text-sheet-body">
+                    <div class="scan-sheet-loading-state" id="scan-sheet-loading">
+                      <div class="scan-sheet-spinner"></div>
+                      <span id="scan-sheet-loading-label">Scanning document text…</span>
+                    </div>
+                    <textarea id="scan-sheet-textarea" class="scan-sheet-textarea" placeholder="No text detected on this page." spellcheck="false"></textarea>
+                  </div>
                 </div>
+
+
 
                 <!-- Apple-Grade Frosted Glass Floating Stage Dock (Zero Document Overlap) -->
                 <div class="scan-stage-dock" id="scan-stage-dock" role="toolbar" aria-label="Page and View Controls">
