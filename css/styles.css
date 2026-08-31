@@ -36761,9 +36761,9 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
 }
 
 .etxt-thumb-card.is-on {
-  border-color: #8B5CF6 !important;
-  background: rgba(139, 92, 246, 0.04) !important;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15) !important;
+  border-color: #0F172A !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0F172A, 0 3px 10px rgba(15, 23, 42, 0.12) !important;
 }
 
 .etxt-thumb {
@@ -40372,30 +40372,32 @@ body #app-view .rail-item.active {
   margin: 4px 0 !important;
 }
 
-/* Slide-out Thumbnail Drawer (Flush Docked to Right Rail) */
+/* Slide-out Thumbnail Drawer (Flex Sibling Architecture — Zero Dock Overlap) */
 .scan-thumbs-drawer {
-  position: absolute !important;
-  right: 48px !important;
+  position: relative !important;
+  right: 0 !important;
   top: 0 !important;
   bottom: 0 !important;
-  width: 200px !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
   background: #FAFAFB !important;
-  border-left: 1px solid #E2E8F0 !important;
+  border-left: none !important;
   border-right: none !important;
   border-radius: 0 !important;
-  box-shadow: -4px 0 16px rgba(15, 23, 42, 0.06) !important;
-  z-index: 32 !important;
   display: flex !important;
   flex-direction: column !important;
-  transform: translateX(100%) !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease !important;
+  transition: width 150ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease !important;
   box-sizing: border-box !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-thumbs-drawer.is-open {
-  transform: translateX(0) !important;
+  width: 190px !important;
+  min-width: 190px !important;
+  border-left: 1px solid #E2E8F0 !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
