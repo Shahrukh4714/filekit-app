@@ -2169,6 +2169,10 @@
     let selectedOverlayId = null;
     let showOcrLayer = isOcrIntent || isRedactIntent;
     let isTextSheetOpen = false;
+    let ocrScope = 'current'; // 'current' | 'all'
+    let historyStack = [];
+    let historyIndex = -1;
+    let isHistoryAction = false;
 
     let ocrPanelOpen = isOcrIntent || isReceiptIntent;
     let ocrSidebarTab = isReceiptIntent ? 'insights' : 'text'; // 'text' | 'insights'
@@ -2998,6 +3002,7 @@
       }
       selIdx = 0;
       switchView('review');
+      pushHistoryState('Initial Document');
       if (isOcrIntent || isReceiptIntent) {
         setTimeout(() => {
           if (pages.length && !pages[0].ocrData) {
@@ -3715,13 +3720,25 @@
 
                 <span class="scan-tb-sep" aria-hidden="true"></span>
 
-                <!-- Group 2: Geometry Tools (Icon Only) -->
+                <!-- Group 2: Geometry & History Tools (Icon Only) -->
                 <div class="scan-tb-group">
                   <button type="button" class="scan-tb-btn scan-tb-icon-btn ${isCropping ? 'is-active' : ''}" data-tool="recrop" title="Crop Page Bounds [C]">
                     ${ICONS.crop}
                   </button>
                   <button type="button" class="scan-tb-btn scan-tb-icon-btn" data-tool="rotate" title="Rotate 90° [R]">
                     ${ICONS.rotate}
+                  </button>
+                  <button type="button" class="scan-tb-btn scan-tb-icon-btn" id="btn-top-undo" title="Undo [Ctrl+Z]" ${historyIndex <= 0 ? 'disabled' : ''}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="1 4 1 10 7 10"></polyline>
+                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                  </button>
+                  <button type="button" class="scan-tb-btn scan-tb-icon-btn" id="btn-top-redo" title="Redo [Ctrl+Y]" ${historyIndex >= historyStack.length - 1 ? 'disabled' : ''}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
                   </button>
                 </div>
 
@@ -3795,6 +3812,15 @@
                     </div>
 
                     <div class="scan-sheet-header-center">
+                      ${pages.length > 1 ? `
+                        <!-- Multi-Page Scope Toggle Capsule -->
+                        <div class="scan-sheet-scope-capsule" role="radiogroup" aria-label="OCR Scope">
+                          <button type="button" class="scan-sheet-scope-btn ${ocrScope === 'current' ? 'is-active' : ''}" id="btn-sheet-scope-current" data-scope="current" title="Extract current page only">Page ${selIdx + 1}</button>
+                          <button type="button" class="scan-sheet-scope-btn ${ocrScope === 'all' ? 'is-active' : ''}" id="btn-sheet-scope-all" data-scope="all" title="Extract all ${pages.length} pages into a single document">All (${pages.length})</button>
+                        </div>
+                        <span class="scan-sheet-sep" aria-hidden="true"></span>
+                      ` : ''}
+
                       <!-- Language Selector -->
                       <div class="scan-sheet-lang-pill" title="OCR Language">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
@@ -4973,11 +4999,24 @@
         return t.trim();
       }
 
+      function getCombinedAllPagesText() {
+        return pages.map((p, i) => {
+          const header = `=== Page ${i + 1} of ${pages.length} ===`;
+          const body = p.ocrData?.text ? cleanExtractedText(p.ocrData.text) : '(No text recognized on this page)';
+          return `${header}\n\n${body}`;
+        }).join('\n\n\n');
+      }
+
       function updateSheetText() {
-        const cur = pages[selIdx];
         const sheetTa = parent.querySelector('#scan-sheet-textarea');
         const statsEl = parent.querySelector('#scan-sheet-stats');
-        const text = cur?.ocrData?.text ? cleanExtractedText(cur.ocrData.text) : '';
+        let text = '';
+        if (ocrScope === 'all') {
+          text = getCombinedAllPagesText();
+        } else {
+          const cur = pages[selIdx];
+          text = cur?.ocrData?.text ? cleanExtractedText(cur.ocrData.text) : '';
+        }
         if (sheetTa) sheetTa.value = text;
         if (statsEl) {
           const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
@@ -4987,14 +5026,25 @@
         const pageLbl = parent.querySelector('.scan-sheet-page-label');
         const btnPrev = parent.querySelector('#btn-sheet-prev');
         const btnNext = parent.querySelector('#btn-sheet-next');
-        if (pageLbl) pageLbl.innerHTML = `Page <strong>${selIdx + 1}</strong> of ${pages.length}`;
-        if (btnPrev) btnPrev.disabled = selIdx <= 0;
-        if (btnNext) btnNext.disabled = selIdx >= pages.length - 1;
+        const btnScopeCurrent = parent.querySelector('#btn-sheet-scope-current');
+        const btnScopeAll = parent.querySelector('#btn-sheet-scope-all');
+
+        if (btnScopeCurrent) btnScopeCurrent.classList.toggle('is-active', ocrScope === 'current');
+        if (btnScopeAll) btnScopeAll.classList.toggle('is-active', ocrScope === 'all');
+
+        if (pageLbl) {
+          if (ocrScope === 'all') {
+            pageLbl.innerHTML = `All <strong>${pages.length} Pages</strong>`;
+          } else {
+            pageLbl.innerHTML = `Page <strong>${selIdx + 1}</strong> of ${pages.length}`;
+          }
+        }
+        if (btnPrev) btnPrev.disabled = (ocrScope === 'all') || (selIdx <= 0);
+        if (btnNext) btnNext.disabled = (ocrScope === 'all') || (selIdx >= pages.length - 1);
       }
 
       async function openTextSheet() {
         isTextSheetOpen = true;
-        const cur = pages[selIdx];
         const btnExtract = parent.querySelector('#btn-top-extract-text');
         const sheetEl = parent.querySelector('#scan-text-sheet');
         const canvasEl = parent.querySelector('#scan-studio-canvas');
@@ -5010,6 +5060,34 @@
         if (textLayer) textLayer.style.display = 'none';
         if (stageDock) stageDock.style.display = 'none';
 
+        if (ocrScope === 'all') {
+          // Check if any pages need OCR
+          let anyMissing = false;
+          for (let i = 0; i < pages.length; i++) {
+            if (!pages[i].ocrData) { anyMissing = true; break; }
+          }
+          if (anyMissing) {
+            if (laserBeam) { laserBeam.style.display = 'block'; laserBeam.classList.add('is-sweeping'); }
+            if (loadingEl) loadingEl.classList.add('is-loading');
+            try {
+              for (let i = 0; i < pages.length; i++) {
+                if (!pages[i].ocrData) {
+                  if (loadingLbl) loadingLbl.textContent = `Scanning page ${i + 1} of ${pages.length}…`;
+                  await runPageOcr(i);
+                }
+              }
+            } catch (e) {
+              console.error('[Extract All Pages OCR Error]', e);
+            } finally {
+              if (laserBeam) { laserBeam.classList.remove('is-sweeping'); laserBeam.style.display = 'none'; }
+              if (loadingEl) loadingEl.classList.remove('is-loading');
+            }
+          }
+          updateSheetText();
+          return;
+        }
+
+        const cur = pages[selIdx];
         if (cur && cur.ocrData) {
           if (loadingEl) loadingEl.classList.remove('is-loading');
           updateSheetText();
@@ -5070,6 +5148,21 @@
       const btnSheetTxt = parent.querySelector('#btn-sheet-download-txt');
       const btnSheetDoc = parent.querySelector('#btn-sheet-download-doc');
       const sheetLangSel = parent.querySelector('#scan-sheet-ocr-lang');
+      const btnScopeCur = parent.querySelector('#btn-sheet-scope-current');
+      const btnScopeAllPages = parent.querySelector('#btn-sheet-scope-all');
+
+      if (btnScopeCur) {
+        btnScopeCur.onclick = () => {
+          ocrScope = 'current';
+          updateSheetText();
+        };
+      }
+      if (btnScopeAllPages) {
+        btnScopeAllPages.onclick = async () => {
+          ocrScope = 'all';
+          await openTextSheet();
+        };
+      }
 
       if (btnTopExtract) {
         btnTopExtract.onclick = () => {
@@ -5081,7 +5174,7 @@
 
       if (btnSheetPrev) {
         btnSheetPrev.onclick = async () => {
-          if (selIdx > 0) {
+          if (selIdx > 0 && ocrScope !== 'all') {
             selectPage(selIdx - 1);
             if (isTextSheetOpen) await openTextSheet();
           }
@@ -5090,7 +5183,7 @@
 
       if (btnSheetNext) {
         btnSheetNext.onclick = async () => {
-          if (selIdx < pages.length - 1) {
+          if (selIdx < pages.length - 1 && ocrScope !== 'all') {
             selectPage(selIdx + 1);
             if (isTextSheetOpen) await openTextSheet();
           }
@@ -5110,9 +5203,9 @@
             const copyLbl = parent.querySelector('#sheet-copy-label');
             if (copyLbl) copyLbl.textContent = 'Copied';
             btnSheetCopy.classList.add('is-active');
-            setStatus('Text copied to clipboard.', 'ok');
+            setStatus(ocrScope === 'all' ? `All ${pages.length} pages copied to clipboard.` : 'Page text copied to clipboard.', 'ok');
             setTimeout(() => {
-              if (copyLbl) copyLbl.textContent = 'Copy';
+              if (copyLbl) copyLbl.textContent = 'Copy All';
               btnSheetCopy.classList.remove('is-active');
             }, 1800);
           } catch {
@@ -5130,7 +5223,8 @@
             return;
           }
           const cur = pages[selIdx];
-          const name = (cur?.name || 'scanned-page').replace(/\.[^.]+$/, '') + '.txt';
+          const baseName = (pages[0]?.name || cur?.name || 'scanned-document').replace(/\.[^.]+$/, '');
+          const name = (ocrScope === 'all' ? `${baseName}-all-${pages.length}-pages` : `${cur?.name || 'scanned-page'}`).replace(/\.[^.]+$/, '') + '.txt';
           const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -5149,7 +5243,8 @@
             return;
           }
           const cur = pages[selIdx];
-          const name = (cur?.name || 'scanned-page').replace(/\.[^.]+$/, '') + '.doc';
+          const baseName = (pages[0]?.name || cur?.name || 'scanned-document').replace(/\.[^.]+$/, '');
+          const name = (ocrScope === 'all' ? `${baseName}-all-${pages.length}-pages` : `${cur?.name || 'scanned-page'}`).replace(/\.[^.]+$/, '') + '.doc';
           const content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.6;color:#0F172A;margin:1in;}p{margin-bottom:0.8em;white-space:pre-wrap;}</style></head><body>${text.split('\n\n').map(p => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`).join('')}</body></html>`;
           const blob = new Blob(['\ufeff' + content], { type: 'application/msword;charset=utf-8' });
           const url = URL.createObjectURL(blob);
@@ -5163,7 +5258,7 @@
       if (sheetLangSel) {
         sheetLangSel.onchange = async () => {
           ocrLang = sheetLangSel.value;
-          pages[selIdx].ocrData = null;
+          pages.forEach(p => { p.ocrData = null; });
           setStatus(`Switched recognition language to ${sheetLangSel.options[sheetLangSel.selectedIndex].text}`, 'info');
           if (isTextSheetOpen) {
             await openTextSheet();
@@ -6614,6 +6709,11 @@
       // Quick top buttons
       const exportBtn = parent.querySelector('#btn-main-export');
       const closeBtn = parent.querySelector('#btn-studio-close');
+      const btnTopUndo = parent.querySelector('#btn-top-undo');
+      const btnTopRedo = parent.querySelector('#btn-top-redo');
+
+      if (btnTopUndo) btnTopUndo.onclick = () => performUndo();
+      if (btnTopRedo) btnTopRedo.onclick = () => performRedo();
 
       if (exportBtn) exportBtn.onclick = openExportOptionsModal;
       if (closeBtn) closeBtn.onclick = () => { clearGlobalTopbarDocInfo(); pages = []; selIdx = 0; switchView('hub'); };
@@ -6622,16 +6722,27 @@
       const wrap = parent.querySelector('#scan-canvas-wrap');
       if (wrap) {
         wrap.onwheel = (e) => {
-          // Zoom only when Ctrl or Meta (pinch-to-zoom) is active
+          // Pinch-to-zoom (with Ctrl/Meta)
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? 10 : -10;
+            const delta = e.deltaY < 0 ? 15 : -15;
             zoom = Math.min(250, Math.max(30, zoom + delta));
             if (zoom <= 100) { panX = 0; panY = 0; }
             applyCanvasTransform();
+          } else if (zoom > 100) {
+            // Natural 2-finger / wheel panning when zoomed in (eliminates locked/frozen scroll)
+            e.preventDefault();
+            panX -= e.deltaX;
+            panY -= e.deltaY;
+            const cv = wrap.querySelector('#scan-studio-canvas');
+            const scaleVal = zoom / 100;
+            const maxPanX = cv ? Math.max(250, (cv.offsetWidth * scaleVal) / 2) : 600;
+            const maxPanY = cv ? Math.max(250, (cv.offsetHeight * scaleVal) / 2) : 800;
+            panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+            panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+            applyCanvasTransform();
           }
         };
-
 
         wrap.onmousedown = (e) => {
           if (!e.target.closest('.scan-overlay-item, .scan-dock-flyout, .etxt-floating-dock, .scan-unified-toolbar, .scan-floating-search-bar, .scan-redact-subbar')) {
@@ -6672,6 +6783,12 @@
           if (!isPanning) return;
           panX = e.clientX - panStartX;
           panY = e.clientY - panStartY;
+          const cv = wrap.querySelector('#scan-studio-canvas');
+          const scaleVal = zoom / 100;
+          const maxPanX = cv ? Math.max(250, (cv.offsetWidth * scaleVal) / 2) : 600;
+          const maxPanY = cv ? Math.max(250, (cv.offsetHeight * scaleVal) / 2) : 800;
+          panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+          panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
           applyCanvasTransform();
         };
 
@@ -6688,13 +6805,25 @@
           applyCanvasTransform();
         };
 
-        // Studio Keyboard Shortcuts (Zoom In/Out/Reset & Page Switching)
+        // Studio Keyboard Shortcuts (Zoom In/Out/Reset, Undo/Redo & Page Switching)
         const onStudioKeyDown = (e) => {
           if (!document.body.contains(parent)) {
             window.removeEventListener('keydown', onStudioKeyDown);
             return;
           }
           if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+
+          // Undo / Redo Shortcuts
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+            e.preventDefault();
+            performUndo();
+            return;
+          }
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y' || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) {
+            e.preventDefault();
+            performRedo();
+            return;
+          }
 
           if (isCropping) {
             if (e.key === 'Enter') {
@@ -6750,21 +6879,25 @@
             e.preventDefault();
             p.enhanceMode = 'enhanced';
             p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            pushHistoryState('Smart Clean Filter');
             refreshStudioUI();
           } else if (e.key === '2' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'bw';
             p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            pushHistoryState('B&W Filter');
             refreshStudioUI();
           } else if (e.key === '3' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'photo';
             p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            pushHistoryState('Color Photo Filter');
             refreshStudioUI();
           } else if (e.key === '4' && !isCropping && !isRedacting) {
             e.preventDefault();
             p.enhanceMode = 'form';
             p._baseCache = null; p._enhCache = null; p._thumbCache = null; p.ocrData = null;
+            pushHistoryState('Form Filter');
             refreshStudioUI();
           } else if ((e.key === 's' || e.key === 'S') && !isCropping && !isRedacting) {
             e.preventDefault();
@@ -6775,6 +6908,7 @@
             p.overlays = (p.overlays || []).filter((x) => x.id !== selectedOverlayId);
             selectedOverlayId = null;
             renderOverlaysLayer();
+            pushHistoryState('Delete Signature');
             setStatus('Signature deleted.', 'ok');
           } else if (e.key === 'Delete' && !isCropping && !isRedacting) {
             e.preventDefault();
@@ -6852,6 +6986,100 @@
       renderOverlaysLayer();
     }
 
+    /* ════════════════════════════════════════════════════════════════
+       STUDIO HISTORY STACK ENGINE (Undo & Redo System)
+    ════════════════════════════════════════════════════════════════ */
+    function clonePagesSnapshot(pagesArr) {
+      return (pagesArr || []).map(p => {
+        const copyCanvas = (src) => {
+          if (!src) return null;
+          const c = document.createElement('canvas');
+          c.width = src.width; c.height = src.height;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(src, 0, 0);
+          return c;
+        };
+        return {
+          id: p.id || ('p_' + Math.random().toString(36).slice(2, 8)),
+          name: p.name || 'Page',
+          canvas: copyCanvas(p.canvas),
+          raw: copyCanvas(p.raw || p.canvas),
+          quad: p.quad ? JSON.parse(JSON.stringify(p.quad)) : null,
+          cropped: p.cropped,
+          rot: p.rot || 0,
+          enhanceMode: p.enhanceMode || 'enhanced',
+          brightness: p.brightness || 0,
+          contrast: p.contrast || 0,
+          overlays: p.overlays ? JSON.parse(JSON.stringify(p.overlays)) : [],
+          ocrData: p.ocrData ? JSON.parse(JSON.stringify(p.ocrData)) : null,
+        };
+      });
+    }
+
+    function pushHistoryState(desc = 'Action') {
+      if (isHistoryAction || !pages.length) return;
+      if (historyIndex < historyStack.length - 1) {
+        historyStack = historyStack.slice(0, historyIndex + 1);
+      }
+      historyStack.push({
+        pages: clonePagesSnapshot(pages),
+        selIdx,
+        desc
+      });
+      if (historyStack.length > 25) {
+        historyStack.shift();
+      }
+      historyIndex = historyStack.length - 1;
+      updateUndoRedoUI();
+    }
+
+    function performUndo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        const state = historyStack[historyIndex];
+        isHistoryAction = true;
+        pages = clonePagesSnapshot(state.pages);
+        selIdx = Math.min(state.selIdx, Math.max(0, pages.length - 1));
+        refreshStudioUI();
+        isHistoryAction = false;
+        updateUndoRedoUI();
+        setStatus(`Undid: ${historyStack[historyIndex + 1]?.desc || 'Action'}`, 'info');
+      }
+    }
+
+    function performRedo() {
+      if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        const state = historyStack[historyIndex];
+        isHistoryAction = true;
+        pages = clonePagesSnapshot(state.pages);
+        selIdx = Math.min(state.selIdx, Math.max(0, pages.length - 1));
+        refreshStudioUI();
+        isHistoryAction = false;
+        updateUndoRedoUI();
+        setStatus(`Redid: ${state.desc || 'Action'}`, 'info');
+      }
+    }
+
+    function updateUndoRedoUI() {
+      const btnUndo = container.querySelector('#btn-top-undo');
+      const btnRedo = container.querySelector('#btn-top-redo');
+      if (btnUndo) {
+        const canUndo = historyIndex > 0;
+        btnUndo.disabled = !canUndo;
+        btnUndo.style.opacity = canUndo ? '1' : '0.35';
+        btnUndo.style.cursor = canUndo ? 'pointer' : 'default';
+        btnUndo.style.pointerEvents = canUndo ? 'auto' : 'none';
+      }
+      if (btnRedo) {
+        const canRedo = historyIndex < historyStack.length - 1;
+        btnRedo.disabled = !canRedo;
+        btnRedo.style.opacity = canRedo ? '1' : '0.35';
+        btnRedo.style.cursor = canRedo ? 'pointer' : 'default';
+        btnRedo.style.pointerEvents = canRedo ? 'auto' : 'none';
+      }
+    }
+
     function rotatePage(idx, direction = 1) {
       const p = pages[idx];
       if (!p) return;
@@ -6877,6 +7105,7 @@
       p._enhCache = null;
       p._thumbCache = null;
       p.ocrData = null;
+      pushHistoryState('Rotate 90°');
       refreshStudioUI();
     }
 
@@ -6885,6 +7114,7 @@
       lastRemoved = { idx, page: pages[idx] };
       pages.splice(idx, 1);
       if (selIdx >= pages.length) selIdx = Math.max(0, pages.length - 1);
+      pushHistoryState('Delete Page');
       showUndoToast();
       refreshStudioUI();
     }
@@ -6911,6 +7141,7 @@
             selIdx = lastRemoved.idx;
             lastRemoved = null;
             toast.remove();
+            pushHistoryState('Restore Page');
             refreshStudioUI();
           }
         };
@@ -7021,6 +7252,7 @@
 
       isCropping = false;
       cropState = null;
+      pushHistoryState('Crop Page');
       refreshStudioUI();
       setStatus('Cropped to selected area.', 'ok');
     }

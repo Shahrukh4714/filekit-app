@@ -44493,6 +44493,12 @@ body #app-view .rail-item.active {
   transform: scale(0.96) !important;
 }
 
+.scan-tb-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
 /* ACTIVE STATE: High-Contrast Solid Black Pill (Clear & Distinct) */
 .scan-tb-btn.is-active {
   background: #18181B !important;
@@ -44928,6 +44934,47 @@ body #app-view .rail-item.active {
   align-items: center !important;
   gap: 6px !important;
   margin-left: auto !important;
+}
+
+/* Multi-Page Scope Toggle Capsule (This Page vs All Pages) */
+.scan-sheet-scope-capsule {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #F3F4F6 !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.scan-sheet-scope-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+  height: 22px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #4B5563 !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+  outline: none !important;
+  white-space: nowrap !important;
+}
+
+.scan-sheet-scope-btn:hover {
+  color: #111827 !important;
+}
+
+.scan-sheet-scope-btn.is-active {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Language selector dropdown pill */
