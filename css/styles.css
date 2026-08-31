@@ -43635,7 +43635,7 @@ body #app-view .rail-item.active {
   align-items: center !important;
   padding: 12px 14px !important;
   background: #FFFFFF !important;
-  border: 1.5px solid #E2E8F0 !important;
+  border: 1.5px solid #E4E4E7 !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   transition: border-color 0.12s ease, background 0.12s ease !important;
@@ -43643,13 +43643,14 @@ body #app-view .rail-item.active {
 }
 
 .scan-benchmark-card:hover {
-  border-color: #CBD5E1 !important;
-  background: #F8FAFC !important;
+  border-color: #A1A1AA !important;
+  background: #F4F4F5 !important;
 }
 
 .scan-benchmark-card.is-active {
-  border-color: #0066FF !important;
-  background: #F0F7FF !important;
+  border-color: #18181B !important;
+  background: #FAFAFA !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Radio Button */
@@ -43657,7 +43658,7 @@ body #app-view .rail-item.active {
   width: 18px !important;
   height: 18px !important;
   border-radius: 50% !important;
-  border: 1.5px solid #CBD5E1 !important;
+  border: 1.5px solid #D4D4D8 !important;
   background: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
@@ -43668,8 +43669,8 @@ body #app-view .rail-item.active {
 }
 
 .scan-benchmark-card.is-active .scan-benchmark-radio {
-  border-color: #0066FF !important;
-  background: #0066FF !important;
+  border-color: #18181B !important;
+  background: #18181B !important;
 }
 
 .scan-benchmark-radio-dot {
@@ -43687,7 +43688,7 @@ body #app-view .rail-item.active {
 .scan-benchmark-card-label {
   font-size: 14.5px !important;
   font-weight: 700 !important;
-  color: #111827 !important;
+  color: #18181B !important;
   flex: 1 !important;
 }
 
@@ -43701,8 +43702,8 @@ body #app-view .rail-item.active {
 .scan-benchmark-pill-rec {
   font-size: 11px !important;
   font-weight: 700 !important;
-  color: #166534 !important;
-  background: #DCFCE7 !important;
+  color: #18181B !important;
+  background: #E4E4E7 !important;
   padding: 2px 8px !important;
   border-radius: 999px !important;
   letter-spacing: 0.01em !important;
@@ -43715,8 +43716,8 @@ body #app-view .rail-item.active {
   flex-direction: column !important;
   gap: 10px !important;
   width: 100% !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
   border-radius: 8px !important;
   padding: 12px 14px !important;
   box-sizing: border-box !important;
@@ -43734,21 +43735,21 @@ body #app-view .rail-item.active {
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  color: #64748B !important;
+  color: #71717A !important;
 }
 
 .scan-config-vselect {
   width: 100% !important;
   height: 34px !important;
   padding: 0 28px 0 10px !important;
-  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center !important;
+  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
-  border: 1px solid #CBD5E1 !important;
+  border: 1px solid #D4D4D8 !important;
   border-radius: 6px !important;
   font-size: 13px !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   outline: none !important;
@@ -43756,18 +43757,18 @@ body #app-view .rail-item.active {
 }
 
 .scan-config-vselect:hover {
-  border-color: #94A3B8 !important;
+  border-color: #A1A1AA !important;
 }
 
 .scan-config-vselect:focus {
-  border-color: #6366F1 !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+  border-color: #18181B !important;
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.12) !important;
 }
 
 /* Compact Configuration Box (Legacy) */
 .scan-modal-config-box {
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
   border-radius: 8px !important;
   padding: 8px 10px !important;
 }
@@ -43792,34 +43793,35 @@ body #app-view .rail-item.active {
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  color: #64748B !important;
+  color: #71717A !important;
 }
 
 .scan-modal-select-sm {
   width: 100% !important;
   height: 28px !important;
   padding: 0 18px 0 6px !important;
-  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 6px center !important;
+  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 6px center !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
-  border: 1px solid #CBD5E1 !important;
+  border: 1px solid #D4D4D8 !important;
   border-radius: 5px !important;
   font-size: 11.5px !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   outline: none !important;
 }
 
 .scan-modal-select-sm:hover {
-  border-color: #94A3B8 !important;
+  border-color: #A1A1AA !important;
 }
 
 /* Mint Summary & Feedback Box */
 .scan-benchmark-est-box {
-  background: #EEFAF3 !important;
+  background: #F4F4F5 !important;
   border-radius: 8px !important;
+  border: 1px solid #E4E4E7 !important;
   padding: 12px 14px !important;
   display: flex !important;
   flex-direction: column !important;
@@ -43830,7 +43832,7 @@ body #app-view .rail-item.active {
 .scan-benchmark-est-title {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #4B5563 !important;
+  color: #52525B !important;
 }
 
 .scan-benchmark-est-metrics {
@@ -43843,20 +43845,20 @@ body #app-view .rail-item.active {
 .scan-benchmark-est-new {
   font-size: 15px !important;
   font-weight: 800 !important;
-  color: #111827 !important;
+  color: #18181B !important;
 }
 
 .scan-benchmark-est-meta {
   font-size: 12.5px !important;
   font-weight: 550 !important;
-  color: #6B7280 !important;
+  color: #71717A !important;
 }
 
 .scan-benchmark-est-pct {
   font-size: 10.5px !important;
   font-weight: 700 !important;
-  color: #166534 !important;
-  background: #DCFCE7 !important;
+  color: #18181B !important;
+  background: #E4E4E7 !important;
   padding: 1px 6px !important;
   border-radius: 4px !important;
   margin-left: auto !important;
@@ -43865,7 +43867,7 @@ body #app-view .rail-item.active {
 .scan-benchmark-track {
   width: 100% !important;
   height: 5px !important;
-  background: #DCFCE7 !important;
+  background: #E4E4E7 !important;
   border-radius: 999px !important;
   overflow: hidden !important;
   margin-top: 2px !important;
@@ -43873,7 +43875,7 @@ body #app-view .rail-item.active {
 
 .scan-benchmark-bar {
   height: 100% !important;
-  background: #00C466 !important;
+  background: #18181B !important;
   border-radius: 999px !important;
   transition: width 0.2s ease !important;
 }
@@ -43883,7 +43885,7 @@ body #app-view .rail-item.active {
   position: relative !important;
   width: 100% !important;
   height: 44px !important;
-  background: #0066FF !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 8px !important;
@@ -43894,14 +43896,14 @@ body #app-view .rail-item.active {
   justify-content: center !important;
   gap: 8px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   transition: background 0.12s ease, transform 0.1s ease !important;
   overflow: hidden !important;
   margin-top: 2px !important;
 }
 
 .scan-benchmark-cta:hover:not(:disabled) {
-  background: #0052CC !important;
+  background: #27272A !important;
 }
 
 .scan-benchmark-cta:active:not(:disabled) {
@@ -44132,9 +44134,13 @@ body #app-view .rail-item.active {
    EXACT EXPORT PANEL MATCH (1-to-1 Pixel Fidelity with User Mockup)
    ══════════════════════════════════════════════════════════════════════════════ */
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   DEDICATED STUDIO EXPORT PANEL (Monochromatic Pure Charcoal & Zinc System)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 .scan-benchmark-panel {
   background: #FFFFFF !important;
-  border-left: 1px solid #E5EAF2 !important;
+  border-left: 1px solid #E4E4E7 !important;
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
@@ -44156,7 +44162,7 @@ body #app-view .rail-item.active {
 .scan-exact-icon {
   width: 34px !important;
   height: 34px !important;
-  background: #EF4444 !important;
+  background: #18181B !important;
   border-radius: 8px !important;
   display: flex !important;
   align-items: center !important;
@@ -44167,7 +44173,7 @@ body #app-view .rail-item.active {
 .scan-exact-title {
   font-size: 18.5px !important;
   font-weight: 700 !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   margin: 0 !important;
   letter-spacing: -0.01em !important;
 }
@@ -44181,7 +44187,7 @@ body #app-view .rail-item.active {
 
 .scan-exact-cards-stack .scan-benchmark-card {
   background: #FFFFFF !important;
-  border: 1.5px solid #E2E8F0 !important;
+  border: 1.5px solid #E4E4E7 !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   height: 44px !important;
@@ -44193,20 +44199,21 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-cards-stack .scan-benchmark-card:hover {
-  border-color: #CBD5E1 !important;
-  background: #F8FAFC !important;
+  border-color: #A1A1AA !important;
+  background: #F4F4F5 !important;
 }
 
 .scan-exact-cards-stack .scan-benchmark-card.is-active {
-  border-color: #0066FF !important;
-  background: #F4F8FF !important;
+  border-color: #18181B !important;
+  background: #FAFAFA !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
 }
 
 .scan-exact-cards-stack .scan-benchmark-radio {
   width: 18px !important;
   height: 18px !important;
   border-radius: 50% !important;
-  border: 1.5px solid #CBD5E1 !important;
+  border: 1.5px solid #D4D4D8 !important;
   background: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
@@ -44217,8 +44224,8 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-cards-stack .scan-benchmark-card.is-active .scan-benchmark-radio {
-  border-color: #0066FF !important;
-  background: #0066FF !important;
+  border-color: #18181B !important;
+  background: #18181B !important;
 }
 
 .scan-exact-cards-stack .scan-benchmark-radio-dot {
@@ -44236,15 +44243,15 @@ body #app-view .rail-item.active {
 .scan-exact-cards-stack .scan-benchmark-card-label {
   font-size: 14px !important;
   font-weight: 700 !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   flex: 1 !important;
 }
 
 .scan-exact-cards-stack .scan-benchmark-pill-rec {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #15803D !important;
-  background: #DCFCE7 !important;
+  color: #18181B !important;
+  background: #E4E4E7 !important;
   padding: 3px 9px !important;
   border-radius: 9999px !important;
   letter-spacing: 0.01em !important;
@@ -44252,8 +44259,8 @@ body #app-view .rail-item.active {
 
 /* 3-Column Settings Container */
 .scan-exact-settings-box {
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
   border-radius: 10px !important;
   padding: 10px 12px !important;
   box-sizing: border-box !important;
@@ -44278,21 +44285,21 @@ body #app-view .rail-item.active {
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  color: #64748B !important;
+  color: #71717A !important;
 }
 
 .scan-exact-select {
   width: 100% !important;
   height: 30px !important;
   padding: 0 16px 0 6px !important;
-  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 5px center !important;
+  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 5px center !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   appearance: none !important;
-  border: 1px solid #CBD5E1 !important;
+  border: 1px solid #D4D4D8 !important;
   border-radius: 6px !important;
   font-size: 11px !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   outline: none !important;
@@ -44303,17 +44310,17 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-select:hover {
-  border-color: #94A3B8 !important;
+  border-color: #A1A1AA !important;
 }
 
 .scan-exact-select:focus {
-  border-color: #0066FF !important;
+  border-color: #18181B !important;
 }
 
-/* Estimated Output Box */
+/* Estimated Output Box (Clean Neutral Zinc) */
 .scan-exact-est-box {
-  background: #F0FDF4 !important;
-  border: 1px solid #DCFCE7 !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
   border-radius: 10px !important;
   padding: 12px 14px !important;
   box-sizing: border-box !important;
@@ -44325,7 +44332,7 @@ body #app-view .rail-item.active {
 .scan-exact-est-title {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #334155 !important;
+  color: #52525B !important;
 }
 
 .scan-exact-est-row {
@@ -44335,21 +44342,21 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-est-metric {
-  font-size: 13.5px !important;
-  color: #475569 !important;
+  font-size: 13px !important;
+  color: #52525B !important;
 }
 
 .scan-exact-est-metric strong {
   font-weight: 700 !important;
-  color: #0F172A !important;
-  font-size: 14px !important;
+  color: #18181B !important;
+  font-size: 13.5px !important;
 }
 
 .scan-exact-yellow-badge {
-  background: #FEF08A !important;
-  color: #854D0E !important;
-  border: 1px solid #FDE047 !important;
-  font-size: 11px !important;
+  background: #E4E4E7 !important;
+  color: #18181B !important;
+  border: 1px solid #D4D4D8 !important;
+  font-size: 10.5px !important;
   font-weight: 700 !important;
   padding: 2px 7px !important;
   border-radius: 4px !important;
@@ -44358,7 +44365,7 @@ body #app-view .rail-item.active {
 .scan-exact-track {
   width: 100% !important;
   height: 4px !important;
-  background: #DCFCE7 !important;
+  background: #E4E4E7 !important;
   border-radius: 9999px !important;
   overflow: hidden !important;
   margin-top: 6px !important;
@@ -44367,14 +44374,14 @@ body #app-view .rail-item.active {
 .scan-exact-bar {
   width: 100% !important;
   height: 100% !important;
-  background: #00C853 !important;
+  background: #18181B !important;
   border-radius: 9999px !important;
 }
 
-/* Primary Action CTA Button */
+/* Primary Action CTA Button (Solid Charcoal Black) */
 .scan-exact-cta {
   height: 44px !important;
-  background: #0066FF !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 8px !important;
@@ -44386,15 +44393,15 @@ body #app-view .rail-item.active {
   gap: 8px !important;
   width: 100% !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   transition: all 0.14s ease !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
 .scan-exact-cta:hover {
-  background: #0052CC !important;
-  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35) !important;
+  background: #27272A !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22) !important;
 }
 
 .scan-exact-cta:active {
@@ -44402,8 +44409,7 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-/* ══════════════════════════════════════════════════════════════════════════════
-   MASTER TOP TOOLBAR (Apple / Linear Craft Polish — Hero Labels + Clean Segmented)
+   MASTER TOP TOOLBAR (Pure Charcoal Black Active States — Zero Blue)
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-unified-toolbar {
@@ -44494,17 +44500,17 @@ body #app-view .rail-item.active {
   transform: scale(0.96) !important;
 }
 
-/* Active / Selected Tool State (Clean Outlined Card with Blue Highlight, matching reference) */
+/* Active / Selected Tool State (Pure Charcoal Black Card with Zero Blue) */
 .scan-tb-btn.is-active {
   background: #FFFFFF !important;
-  border: 1.5px solid #2563EB !important;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15) !important;
-  color: #2563EB !important;
+  border: 1.5px solid #18181B !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  color: #18181B !important;
   font-weight: 600 !important;
 }
 
 .scan-tb-btn.is-active svg {
-  stroke: #2563EB !important;
+  stroke: #18181B !important;
 }
 
 /* Hero Extract Text Button — Guaranteed never to shrink */
