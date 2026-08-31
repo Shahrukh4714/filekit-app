@@ -3740,15 +3740,6 @@
                 ${ICONS.sparkle}<span>All (${pages.length})</span>
               </button>
 
-              ${pages.length > 1 ? `
-                <span class="scan-tb-sep" aria-hidden="true"></span>
-                <div class="scan-tb-page-stepper">
-                  <button type="button" class="scan-tb-page-btn" id="btn-top-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous Page">${ICONS.prev}</button>
-                  <span class="scan-tb-page-info">${selIdx + 1} / ${pages.length}</span>
-                  <button type="button" class="scan-tb-page-btn" id="btn-top-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next Page">${ICONS.next}</button>
-                </div>
-              ` : ''}
-
               <!-- Group 4: Right Actions -->
               <div class="scan-tb-group-right">
                 <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
@@ -3762,7 +3753,7 @@
               </div>
             </header>
 
-            <!-- Main Stage Body (Pure, Clean Full Canvas — Zero Side-Rails & Zero Bottom-Bars) -->
+            <!-- Main Stage Body -->
             <div class="scan-editor-body" id="scan-editor-body">
               <main class="etxt-canvas-wrap scan-canvas-stage" id="scan-canvas-wrap">
                 <!-- Floating Crop Bar -->
@@ -3792,6 +3783,76 @@
                   </div>
                 </div>
               </main>
+
+              <!-- Slide-out Thumbnail Drawer (Anchored to Right Rail) -->
+              <aside class="etxt-thumbs-drawer scan-thumbs-drawer ${thumbsDrawerOpen ? 'is-open' : ''}" id="scan-thumbs-drawer" aria-label="Page Thumbnails">
+                <div class="etxt-thumbs-head">
+                  <span class="etxt-thumbs-title">Pages (${pages.length})</span>
+                  <button type="button" class="etxt-thumbs-close" id="scan-thumbs-close" title="Close Drawer">${ICONS.cross}</button>
+                </div>
+                <div class="etxt-thumbs-scroll">
+                  ${pages.map((p, i) => `
+                    <div class="etxt-thumb-card ${i === selIdx ? 'is-on' : ''}" data-idx="${i}" draggable="true" title="Page ${i + 1} — Drag to reorder">
+                      <button type="button" class="etxt-thumb ${i === selIdx ? 'is-on' : ''}" data-idx="${i}">
+                        <div class="scan-thumb-paper-wrap">
+                          <canvas id="film-cv-${i}" width="160" height="220"></canvas>
+                        </div>
+                        <div class="scan-thumb-info-row">
+                          <span class="scan-thumb-num-label ${i === selIdx ? 'is-active' : ''}">Page ${i + 1}</span>
+                          ${p.ocrData ? '<span class="scan-thumb-ocr-pill" title="OCR Ready">OCR</span>' : ''}
+                        </div>
+                      </button>
+                      <div class="scan-thumb-quick-actions">
+                        <button type="button" class="scan-thumb-btn" data-del="${i}" title="Delete page">${ICONS.cross}</button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="scan-drawer-footer-actions">
+                  <button type="button" class="etxt-add-page" id="btn-drawer-add-cam" title="Scan with Camera">
+                    ${ICONS.camera}
+                    <span>Camera</span>
+                  </button>
+                  <button type="button" class="etxt-add-page" id="btn-drawer-add-file" title="Upload Files">
+                    ${ICONS.folder}
+                    <span>Upload</span>
+                  </button>
+                </div>
+              </aside>
+
+              <!-- Clean, Flat Side-Rail (Zero Pill Wrappers & Zero Boxed Containers) -->
+              <aside class="scan-right-rail" id="scan-right-rail" aria-label="Page & Zoom Controls">
+                <div class="scan-rail-top">
+                  <button type="button" class="scan-rail-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-toggle-thumbs" title="Page Thumbnails (${pages.length} pages)">
+                    ${ICONS.sidebar}
+                  </button>
+                  <span class="scan-rail-sep"></span>
+                  <button type="button" class="scan-rail-page-arrow" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page">${ICONS.prev}</button>
+                  <span class="scan-rail-page-text">${selIdx + 1}<span class="scan-rail-page-total">/${pages.length}</span></span>
+                  <button type="button" class="scan-rail-page-arrow" id="btn-rail-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next page">${ICONS.next}</button>
+                </div>
+
+                <div class="scan-rail-mid">
+                  <button type="button" class="scan-rail-btn" id="btn-zoom-in" title="Zoom In">${ICONS.zoomIn}</button>
+                  <span class="scan-rail-zoom-text" id="scan-zoom-badge">${zoom}%</span>
+                  <button type="button" class="scan-rail-btn" id="btn-zoom-out" title="Zoom Out">${ICONS.zoomOut}</button>
+                  <button type="button" class="scan-rail-btn scan-rail-btn-fit" id="btn-zoom-reset" title="Fit to Screen"><span>Fit</span></button>
+                </div>
+
+                <div class="scan-rail-bot">
+                  <span class="scan-rail-sep"></span>
+                  <span class="scan-rail-shield-icon" title="100% Local Processing">${ICONS.shield}</span>
+                </div>
+              </aside>
+            </div>
+
+            <!-- Clean, Flat Bottom Status Bar (Zero Pill Containers) -->
+            <div class="scan-stage-footer-row" id="scan-stage-footer-row">
+              <span class="scan-stage-fileinfo-text" id="scan-stage-fileinfo-text">Page ${selIdx + 1} of ${pages.length} · ${curPage.canvas ? `${curPage.canvas.width} × ${curPage.canvas.height} px` : ''}</span>
+              <button type="button" class="scan-stage-btn-add" id="btn-stage-add-more" title="Add more pages">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Add Page</span>
+              </button>
             </div>
           </div>
 
