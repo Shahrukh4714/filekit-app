@@ -610,6 +610,12 @@
 
         _ocrWorker = worker;
         _ocrLang = lang;
+        try {
+          await worker.setParameters({
+            tessedit_pageseg_mode: '1',
+            preserve_interword_spaces: '1',
+          });
+        } catch (e) {}
         _ocrNotify('Ready');
         return worker;
       } catch (err) {
@@ -4162,6 +4168,9 @@
 
           console.log('[OCR] Done — text length:', data.text?.length, 'words:', data.words?.length);
 
+          // Clean text immediately upon recognition so all consumers get pristine text
+          data.text = cleanExtractedText(data.text || '', lang);
+
           p.ocrData = data;
           p.ocrScaleFactor = {
             scaleX: p.canvas.width / prep.width,
@@ -4244,12 +4253,12 @@
     /* ════════════════════════════════════════════════════════════════
        ULTRA-FAST ENHANCED CANVAS & THUMBNAIL CACHING (< 0.1ms)
     ════════════════════════════════════════════════════════════════ */
-    function getPageEnhancedCanvas(p, maxDim = 2400) {
+    function getPageEnhancedCanvas(p) {
       if (!p || !p.canvas) return null;
-      const mode = p.enhanceMode || 'enhanced';
+      const mode = p.enhanceMode || 'original';
       const b = p.brightness ?? 100;
       const c = p.contrast ?? 100;
-      const baseKey = `${p.canvas.width}x${p.canvas.height}_${mode}_${maxDim}`;
+      const baseKey = `${p.canvas.width}x${p.canvas.height}_${mode}`;
       const fullKey = `${baseKey}_${b}_${c}`;
 
       if (p._enhCache && p._enhCache.key === fullKey && p._enhCache.canvas) {
@@ -4261,23 +4270,15 @@
 
       if (!baseCv) {
         let src = p.canvas;
-        if (maxDim && (src.width > maxDim || src.height > maxDim)) {
-          const sc = maxDim / Math.max(src.width, src.height);
-          const fitCv = document.createElement('canvas');
-          fitCv.width = Math.max(1, Math.round(src.width * sc));
-          fitCv.height = Math.max(1, Math.round(src.height * sc));
-          const fCtx = fitCv.getContext('2d');
-          fCtx.drawImage(src, 0, 0, fitCv.width, fitCv.height);
-          src = fitCv;
+        if (mode === 'original' && b === 100 && c === 100) {
+          baseCv = src;
         } else {
           src = A.copyCanvas(p.canvas);
+          try {
+            A.enhancePage(src, mode, { brightness: 100, contrast: 100 });
+          } catch (e) {}
+          baseCv = src;
         }
-
-        try {
-          A.enhancePage(src, mode, { brightness: 100, contrast: 100 });
-        } catch (e) {}
-
-        baseCv = src;
         p._baseCache = { key: baseKey, canvas: baseCv };
       }
 
@@ -4665,7 +4666,7 @@
       ctx.clearRect(0, 0, bufferW, bufferH);
 
       // Fast cached enhanced page rendering (< 0.1ms GPU blit)
-      const enhCv = getPageEnhancedCanvas(p, 2400) || source;
+      const enhCv = getPageEnhancedCanvas(p) || source;
 
       if (isCropping && cropState) {
         // Draw cached document base
@@ -4994,9 +4995,12 @@
 
         // 3. Language-specific script sanitization:
         if (lang === 'eng' || lang === 'spa' || lang === 'fra' || lang === 'deu' || lang === 'ita' || lang === 'por') {
-          // If English or Western Latin is selected, eliminate stray noise-hallucinated Indic, Arabic, Asian or mathematical symbols
-          t = t.replace(/[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/g, '');
-          t = t.replace(/[§¶©®™°±²³µ¿¡«»^~`|¤¥¢£]/g, ' ');
+          // If English or Western Latin is selected, eliminate stray noise-hallucinated Non-Latin scripts:
+          // Cyrillic (0400-04FF), Hebrew (0590-05FF), Arabic (0600-06FF, 0750-077F, FB50-FDFF, FE70-FEFF),
+          // Devanagari & Indic (0900-0D7F), Southeast Asian (0E00-109F), CJK (3040-30FF, 31F0-31FF, 4E00-9FFF, AC00-D7AF)
+          t = t.replace(/[\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u0900-\u0D7F\u0E00-\u109F\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uAC00-\uD7AF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
+          // Eliminate isolated mathematical/typographical/currency symbols hallucinated from noise
+          t = t.replace(/[§¶©®™°±²³µ¿¡«»^~`|¤¥¢£÷×¬¦]/g, ' ');
         } else if (lang === 'hin') {
           // Rejoin separated Devanagari vowels and combining marks
           t = t.replace(/([\u0900-\u097F])\s+([\u093E-\u094F\u0951-\u0957\u0962-\u0963])/g, '$1$2');
@@ -5013,10 +5017,14 @@
         });
 
         // 6. Remove repeated divider noise and lone punctuation artifacts
-        t = t.replace(/^[_\—\-•=~|`\.\*]{2,}\s*$/gm, '');
-        t = t.replace(/^[~|`_—\-•=\^\*\+\\\/]\s*$/gm, '');
+        t = t.replace(/^[_\—\-•=~|`\.\*\^\+\:\;]{2,}\s*$/gm, '');
+        t = t.replace(/^[~|`_—\-•=\^\*\+\\\/\:\;\'\"]\s*$/gm, '');
 
-        // 7. Normalize multiple spaces and blank lines
+        // 7. Strip leading/trailing lone vertical bars/slashes on lines from table/margin borders
+        t = t.replace(/^[|\\\/]\s*/gm, '');
+        t = t.replace(/\s*[|\\\/]$/gm, '');
+
+        // 8. Normalize multiple spaces and blank lines
         t = t.replace(/[ \t]+/g, ' ');
         t = t.replace(/\n{3,}/g, '\n\n');
         return t.trim();
