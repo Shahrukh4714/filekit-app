@@ -42004,7 +42004,7 @@ body #app-view .rail-item.active {
 .scan-live-text-selection-pill {
   position: absolute !important;
   z-index: 50 !important;
-  display: inline-flex !important;
+  display: none !important;
   align-items: center !important;
   gap: 2px !important;
   background: #0F172A !important;
@@ -42014,6 +42014,10 @@ body #app-view .rail-item.active {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
   pointer-events: auto !important;
   user-select: none !important;
+}
+
+.scan-live-text-selection-pill.is-visible {
+  display: inline-flex !important;
   animation: scanPillPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 

@@ -3896,9 +3896,9 @@
                 <div class="scan-exact-field" id="panel-field-dpi">
                   <label class="scan-exact-label" for="panel-export-dpi">RESOLUTION</label>
                   <select id="panel-export-dpi" class="scan-exact-select">
-                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High)</option>
-                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
-                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
+                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI</option>
+                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI</option>
+                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI</option>
                   </select>
                 </div>
 
@@ -4963,7 +4963,14 @@
 
       // Apple Live Text Floating Selection Pill Positioner
       const updateSelectionPill = () => {
-        if (!selectionPill || !paperWrap || !showOcrLayer) return;
+        if (!selectionPill || !paperWrap || !showOcrLayer) {
+          if (selectionPill) {
+            selectionPill.classList.remove('is-visible');
+            selectionPill.style.display = 'none';
+            selectionPill.setAttribute('aria-hidden', 'true');
+          }
+          return;
+        }
         const sel = window.getSelection();
         const selText = sel ? sel.toString().trim() : '';
         if (selText && sel.rangeCount > 0) {
@@ -4971,7 +4978,9 @@
           const r = range.getBoundingClientRect();
           const pr = paperWrap.getBoundingClientRect();
           if (r.width === 0 && r.height === 0) {
+            selectionPill.classList.remove('is-visible');
             selectionPill.style.display = 'none';
+            selectionPill.setAttribute('aria-hidden', 'true');
             return;
           }
           const pillW = 140;
@@ -4979,9 +4988,11 @@
           const topPos = Math.max(8, r.top - pr.top - 38);
           selectionPill.style.left = `${leftPos}px`;
           selectionPill.style.top = `${topPos}px`;
+          selectionPill.classList.add('is-visible');
           selectionPill.style.display = 'inline-flex';
           selectionPill.setAttribute('aria-hidden', 'false');
         } else {
+          selectionPill.classList.remove('is-visible');
           selectionPill.style.display = 'none';
           selectionPill.setAttribute('aria-hidden', 'true');
         }
