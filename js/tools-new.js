@@ -3697,9 +3697,9 @@
         <div class="scan-benchmark-workstation" id="scan-benchmark-workstation">
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
-            <!-- Flat, Clean Top Toolbar (Zero Scrolling, Auto-Fit Width) -->
+            <!-- Flat, Clean Top Toolbar (Ultra-Lean Zero-Scroll Architecture) -->
             <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
-              <!-- Group 1: Illumination Filters -->
+              <!-- Group 1: Illumination Filters & Batch -->
               <div class="scan-tb-group">
                 <button type="button" class="scan-tb-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -3713,6 +3713,9 @@
                 </button>
                 <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
                   ${ICONS.filterPhoto}<span>Photo</span>
+                </button>
+                <button type="button" class="scan-tb-btn scan-tb-btn-batch" id="btn-top-apply-all" title="Apply active filter to all ${pages.length} pages">
+                  ${ICONS.sparkle}<span>All (${pages.length})</span>
                 </button>
               </div>
 
@@ -3733,27 +3736,15 @@
 
               <span class="scan-tb-sep" aria-hidden="true"></span>
 
-              <!-- Group 3: OCR & Batch -->
+              <!-- Group 3: OCR Live Text -->
               <div class="scan-tb-group">
                 <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-toggle-live-text" title="Toggle Direct Live Text Selection on Document">
                   ${ICONS.ocr}<span>Live Text</span>
-                </button>
-                <button type="button" class="scan-tb-btn" id="btn-quick-copy-text" title="Copy recognized text on this page to clipboard">
-                  ${ICONS.copy}<span>Copy</span>
-                </button>
-                <button type="button" class="scan-tb-btn scan-tb-btn-batch" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
-                  ${ICONS.sparkle}<span>All (${pages.length})</span>
                 </button>
               </div>
 
               <!-- Group 4: Right Actions -->
               <div class="scan-tb-group-right">
-                <button type="button" class="scan-tb-icon-btn" id="tab-btn-hub" title="Add page via camera">
-                  ${ICONS.camera}
-                </button>
-                <button type="button" class="scan-tb-icon-btn" id="btn-global-import" title="Upload more pages">
-                  ${ICONS.folder}
-                </button>
                 <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
                 <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>
               </div>
