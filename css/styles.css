@@ -43648,8 +43648,8 @@ body #app-view .rail-item.active {
 }
 
 .scan-benchmark-card.is-active {
-  border-color: #0066FF !important;
-  background: #F0F7FF !important;
+  border-color: #7C3AED !important;
+  background: #FAF8FF !important;
 }
 
 /* Radio Button */
@@ -43668,8 +43668,8 @@ body #app-view .rail-item.active {
 }
 
 .scan-benchmark-card.is-active .scan-benchmark-radio {
-  border-color: #0066FF !important;
-  background: #0066FF !important;
+  border-color: #7C3AED !important;
+  background: #7C3AED !important;
 }
 
 .scan-benchmark-radio-dot {
@@ -43883,9 +43883,9 @@ body #app-view .rail-item.active {
   position: relative !important;
   width: 100% !important;
   height: 44px !important;
-  background: #0066FF !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
-  border: none !important;
+  border: 1px solid #18181B !important;
   border-radius: 8px !important;
   font-size: 14.5px !important;
   font-weight: 700 !important;
@@ -43894,22 +43894,30 @@ body #app-view .rail-item.active {
   justify-content: center !important;
   gap: 8px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
-  transition: background 0.12s ease, transform 0.1s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease !important;
   overflow: hidden !important;
   margin-top: 2px !important;
 }
 
+.scan-benchmark-cta svg {
+  stroke: #FFFFFF !important;
+}
+
 .scan-benchmark-cta:hover:not(:disabled) {
-  background: #0052CC !important;
+  background: #27272A !important;
+  border-color: #27272A !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .scan-benchmark-cta:active:not(:disabled) {
-  transform: scale(0.99) !important;
+  transform: scale(0.985) !important;
+  background: #09090B !important;
+  border-color: #09090B !important;
 }
 
 .scan-benchmark-cta:disabled {
-  opacity: 0.75 !important;
+  opacity: 0.65 !important;
   cursor: not-allowed !important;
 }
 
@@ -44198,8 +44206,8 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-cards-stack .scan-benchmark-card.is-active {
-  border-color: #0066FF !important;
-  background: #F4F8FF !important;
+  border-color: #7C3AED !important;
+  background: #FAF8FF !important;
 }
 
 .scan-exact-cards-stack .scan-benchmark-radio {
@@ -44217,8 +44225,8 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-cards-stack .scan-benchmark-card.is-active .scan-benchmark-radio {
-  border-color: #0066FF !important;
-  background: #0066FF !important;
+  border-color: #7C3AED !important;
+  background: #7C3AED !important;
 }
 
 .scan-exact-cards-stack .scan-benchmark-radio-dot {
@@ -44307,7 +44315,7 @@ body #app-view .rail-item.active {
 }
 
 .scan-exact-select:focus {
-  border-color: #0066FF !important;
+  border-color: #7C3AED !important;
 }
 
 /* Estimated Output Box */
@@ -44374,9 +44382,9 @@ body #app-view .rail-item.active {
 /* Primary Action CTA Button */
 .scan-exact-cta {
   height: 44px !important;
-  background: #0066FF !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
-  border: none !important;
+  border: 1px solid #18181B !important;
   border-radius: 8px !important;
   font-size: 14.5px !important;
   font-weight: 700 !important;
@@ -44386,19 +44394,26 @@ body #app-view .rail-item.active {
   gap: 8px !important;
   width: 100% !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
-  transition: all 0.14s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
+.scan-exact-cta svg {
+  stroke: #FFFFFF !important;
+}
+
 .scan-exact-cta:hover {
-  background: #0052CC !important;
-  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35) !important;
+  background: #27272A !important;
+  border-color: #27272A !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .scan-exact-cta:active {
-  transform: scale(0.98) !important;
+  background: #09090B !important;
+  border-color: #09090B !important;
+  transform: scale(0.985) !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -44800,11 +44815,25 @@ body #app-view .rail-item.active {
   flex-shrink: 0 !important;
 }
 
-/* Paper Canvas Shadow */
+/* Razor-Sharp Paper Document Canvas */
 #scan-paper-page,
 .scan-paper-page {
   border: none !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08) !important;
+  transform-origin: center center !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+#scan-studio-canvas,
+.scan-studio-canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: high-quality !important;
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
 }
 
 /* Thumbnail Card Active State: Clean Neutral Zinc Dark */

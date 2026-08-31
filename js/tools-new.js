@@ -2932,52 +2932,8 @@
               cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
               await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
 
-              // Instant native digital text extraction from PDF
-              let ocrData = null;
-              try {
-                const textContent = await page.getTextContent();
-                if (textContent && textContent.items && textContent.items.length) {
-                  const rawPieces = [];
-                  const words = [];
-                  for (let it of textContent.items) {
-                    if (!it.str) continue;
-                    rawPieces.push(it.str);
-                    const tx = it.transform[4] * sc;
-                    const ty = (vp1.height - it.transform[5]) * sc - (it.height || 12) * sc;
-                    const tw = Math.max(8, (it.width || 20) * sc);
-                    const th = Math.max(10, (it.height || 14) * sc);
-                    words.push({
-                      text: it.str,
-                      bbox: {
-                        x0: Math.max(0, tx),
-                        y0: Math.max(0, ty),
-                        x1: Math.min(cv.width, tx + tw),
-                        y1: Math.min(cv.height, ty + th),
-                      },
-                      confidence: 100,
-                    });
-                  }
-                  const fullText = rawPieces.join(' ').replace(/\s{2,}/g, ' ').trim();
-                  if (fullText.length > 5) {
-                    ocrData = {
-                      text: fullText,
-                      words: words,
-                      confidence: 100,
-                      isNativePdfText: true,
-                    };
-                  }
-                }
-              } catch (e) {
-                console.warn('[Scan PDF] Native text layer extraction notice:', e);
-              }
-
               const name = f.name + ` (P.${p})`;
-              const pageObj = await addPage(cv, name, null, false);
-              const targetPage = pageObj && typeof pageObj === 'object' ? pageObj : pages[pages.length - 1];
-              if (targetPage && ocrData) {
-                targetPage.ocrData = ocrData;
-                targetPage.ocrScaleFactor = { scaleX: 1, scaleY: 1 };
-              }
+              await addPage(cv, name, null, false);
             }
           } else {
             const canvas = await A.loadPhotoIntoCanvas(f);
@@ -4170,6 +4126,14 @@
 
           // Clean text immediately upon recognition so all consumers get pristine text
           data.text = cleanExtractedText(data.text || '', lang);
+
+          if (data && Array.isArray(data.words)) {
+            data.words = data.words.filter(w => {
+              if (!w || !w.text) return false;
+              const cleanW = cleanExtractedText(w.text, lang);
+              return cleanW && cleanW.length > 0 && /[\w\d]/.test(cleanW);
+            });
+          }
 
           p.ocrData = data;
           p.ocrScaleFactor = {
