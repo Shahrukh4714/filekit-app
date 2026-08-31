@@ -41417,7 +41417,7 @@ body #app-view .rail-item.active {
 .scan-ocr-sidebar {
   position: absolute !important;
   top: 0 !important;
-  right: 48px !important; /* Docks flush against the right rail */
+  right: 0 !important;
   bottom: 0 !important;
   width: 380px !important;
   background: #FFFFFF !important;
@@ -44789,9 +44789,10 @@ body #app-view .rail-item.active {
   box-shadow: 0 0 0 1.5px #0F172A, 0 3px 12px rgba(15, 23, 42, 0.14) !important;
 }
 
-.scan-thumbs-drawer .scan-thumb-num-label.is-active {
-  color: #0F172A !important;
-  font-weight: 800 !important;
+.scan-thumbs-drawer,
+.etxt-thumbs-drawer {
+  right: 0 !important;
+  margin-right: 0 !important;
 }
 
 /* Responsive Adaptive Toolbars (Zero Scroll On All Screens) */
