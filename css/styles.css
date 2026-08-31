@@ -44438,20 +44438,20 @@ body #app-view .rail-item.active {
   flex-shrink: 0 !important;
 }
 
-/* Individual Toolbar Action Buttons */
+/* Individual Toolbar Action Buttons (100% Neutral Monochrome) */
 .scan-tb-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 5px !important;
   height: 28px !important;
-  padding: 0 8px !important;
+  padding: 0 9px !important;
   background: transparent !important;
-  border: 1px solid transparent !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 6px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #334155 !important;
+  color: #0F172A !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -44469,7 +44469,7 @@ body #app-view .rail-item.active {
 .scan-tb-btn:hover {
   background: #F1F5F9 !important;
   color: #0F172A !important;
-  border-color: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
 }
 
 .scan-tb-btn:hover svg {
@@ -44480,37 +44480,34 @@ body #app-view .rail-item.active {
   transform: scale(0.97) !important;
 }
 
-/* Primary "+ Add" button */
+/* Primary "+ Add" button (Clean Neutral Slate) */
 .scan-tb-btn-primary {
-  background: #EEF2FF !important;
-  color: #0066FF !important;
-  border-color: #DBEAFE !important;
-}
-
-.scan-tb-btn-primary svg {
-  stroke: #0066FF !important;
-}
-
-.scan-tb-btn-primary:hover {
-  background: #0066FF !important;
-  color: #FFFFFF !important;
-  border-color: #0066FF !important;
-}
-
-.scan-tb-btn-primary:hover svg {
-  stroke: #FFFFFF !important;
-}
-
-/* Active State for toggle buttons (e.g. Crop, Drawer) - SOFT WHITE PILL, NO BLACK BOX */
-.scan-tb-btn.is-active {
-  background: #F1F5F9 !important;
-  color: #0066FF !important;
+  background: #F8FAFC !important;
+  color: #0F172A !important;
   border-color: #CBD5E1 !important;
   font-weight: 700 !important;
 }
 
+.scan-tb-btn-primary svg {
+  stroke: #0F172A !important;
+}
+
+.scan-tb-btn-primary:hover {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+  border-color: #94A3B8 !important;
+}
+
+/* Active State for toggle buttons (e.g. Crop, Drawer) - Clean Slate Border */
+.scan-tb-btn.is-active {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+  border-color: #0F172A !important;
+  font-weight: 700 !important;
+}
+
 .scan-tb-btn.is-active svg {
-  stroke: #0066FF !important;
+  stroke: #0F172A !important;
 }
 
 /* Toolbar Divider Separator */
@@ -44567,7 +44564,7 @@ body #app-view .rail-item.active {
   stroke: #0F172A !important;
 }
 
-/* ACTIVE FILTER STATE: Elegant White Card Pill, subtle shadow (NO BLACK BOX) */
+/* ACTIVE FILTER STATE: Elegant White Card Pill, Neutral Dark Slate (NO BLUE, NO LAVENDER) */
 .scan-seg-filter-btn.is-active {
   background: #FFFFFF !important;
   color: #0F172A !important;
@@ -44576,7 +44573,7 @@ body #app-view .rail-item.active {
 }
 
 .scan-seg-filter-btn.is-active svg {
-  stroke: #0066FF !important;
+  stroke: #0F172A !important;
 }
 
 .scan-seg-filter-btn:active {
@@ -44773,6 +44770,20 @@ body #app-view .rail-item.active {
   width: 10px !important;
   height: 10px !important;
   stroke: #059669 !important;
+}
+
+/* Paper Canvas Border Removal */
+#scan-paper-page,
+.scan-paper-page {
+  border: none !important;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Thumbnail Card Active State: Clean Dark Slate (NO Lavender/Purple) */
+.etxt-thumb-card.is-on {
+  border-color: #0F172A !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
 }
 
 /* Responsive Adaptive Toolbars (Zero Scroll On All Screens) */

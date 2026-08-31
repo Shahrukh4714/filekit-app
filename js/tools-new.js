@@ -4813,11 +4813,58 @@
       const p = pages[selIdx];
       if (!p) return;
 
-      // Page Navigation (Right Rail)
+      // High-Performance Instant Page Switcher (0ms, Zero DOM Thrashing)
+      function switchPage(newIdx) {
+        if (newIdx < 0 || newIdx >= pages.length) return;
+        selIdx = newIdx;
+        zoom = 100;
+        panX = 0;
+        panY = 0;
+
+        // 1. Instantly render canvas preview
+        updateStudioPreview();
+
+        // 2. Instantly update bottom dock page stepper text & disabled states
+        const dockPageText = parent.querySelector('.scan-dock-page-text');
+        if (dockPageText) dockPageText.innerHTML = `Page <strong>${selIdx + 1}</strong> of ${pages.length}`;
+
+        const railPrev = parent.querySelector('#btn-rail-prev');
+        const railNext = parent.querySelector('#btn-rail-next');
+        if (railPrev) railPrev.disabled = selIdx <= 0;
+        if (railNext) railNext.disabled = selIdx >= pages.length - 1;
+
+        // 3. Instantly update active thumbnail card in drawer
+        parent.querySelectorAll('.etxt-thumb-card').forEach((card) => {
+          const idx = +card.dataset.idx;
+          card.classList.toggle('is-on', idx === selIdx);
+        });
+
+        // 4. Instantly update segmented filter button active states for current page
+        const curP = pages[selIdx];
+        const mode = curP?.enhanceMode || 'enhanced';
+        parent.querySelectorAll('.scan-seg-filter-btn').forEach(btn => {
+          const tool = btn.dataset.tool;
+          const isActive = (tool === 'clean' && (mode === 'enhanced' || mode === 'clean' || mode === 'original')) ||
+                           (tool === 'bw' && mode === 'bw') ||
+                           (tool === 'photo' && mode === 'photo');
+          btn.classList.toggle('is-active', isActive);
+        });
+
+        // 5. Update Live Text layer if active
+        if (showOcrLayer) {
+          if (!curP.ocrData) {
+            runPageOcr(selIdx);
+          } else {
+            renderTextLayer();
+          }
+        }
+      }
+
+      // Page Navigation (Dock Stepper)
       const railPrev = parent.querySelector('#btn-rail-prev');
       const railNext = parent.querySelector('#btn-rail-next');
-      if (railPrev) railPrev.onclick = () => { if (selIdx > 0) { selIdx--; zoom = 100; panX = 0; panY = 0; refreshStudioUI(); } };
-      if (railNext) railNext.onclick = () => { if (selIdx < pages.length - 1) { selIdx++; zoom = 100; panX = 0; panY = 0; refreshStudioUI(); } };
+      if (railPrev) railPrev.onclick = () => switchPage(selIdx - 1);
+      if (railNext) railNext.onclick = () => switchPage(selIdx + 1);
 
       // Zoom Controls (Right Rail)
       const zoomIn = parent.querySelector('#btn-zoom-in');
@@ -5984,46 +6031,33 @@
         btn.onclick = (e) => {
           e.stopPropagation();
           const tool = btn.dataset.tool;
-          if (tool === 'orig' || tool === 'original') {
-            p.enhanceMode = 'original';
+          if (tool === 'clean' || tool === 'bw' || tool === 'photo' || tool === 'orig' || tool === 'original') {
+            p.enhanceMode = tool === 'bw' ? 'bw' : (tool === 'photo' ? 'photo' : (tool === 'orig' || tool === 'original' ? 'original' : 'enhanced'));
             p._baseCache = null;
             p._enhCache = null;
             p._thumbCache = null;
             activeFlyout = null;
-            p.ocrData = null;
-            refreshStudioUI();
-          } else if (tool === 'clean') {
-            p.enhanceMode = 'enhanced';
-            p._baseCache = null;
-            p._enhCache = null;
-            p._thumbCache = null;
-            activeFlyout = null;
-            p.ocrData = null;
-            refreshStudioUI();
-          } else if (tool === 'bw') {
-            p.enhanceMode = 'bw';
-            p._baseCache = null;
-            p._enhCache = null;
-            p._thumbCache = null;
-            activeFlyout = null;
-            p.ocrData = null;
-            refreshStudioUI();
-          } else if (tool === 'photo') {
-            p.enhanceMode = 'photo';
-            p._baseCache = null;
-            p._enhCache = null;
-            p._thumbCache = null;
-            activeFlyout = null;
-            p.ocrData = null;
-            refreshStudioUI();
+            
+            // Update active state in segmented filter
+            parent.querySelectorAll('.scan-seg-filter-btn').forEach(b => {
+              const bTool = b.dataset.tool;
+              const isAct = (bTool === 'clean' && (p.enhanceMode === 'enhanced' || p.enhanceMode === 'clean' || p.enhanceMode === 'original')) ||
+                            (bTool === 'bw' && p.enhanceMode === 'bw') ||
+                            (bTool === 'photo' && p.enhanceMode === 'photo');
+              b.classList.toggle('is-active', isAct);
+            });
+            
+            updateStudioPreview();
+            paintFilmstripThumbs();
+            setStatus(`Applied ${tool === 'clean' ? 'Clean' : (tool === 'bw' ? 'B&W' : (tool === 'photo' ? 'Color' : 'Original'))} filter to Page ${selIdx + 1}.`, 'ok');
           } else if (tool === 'form') {
             p.enhanceMode = 'form';
             p._baseCache = null;
             p._enhCache = null;
             p._thumbCache = null;
             activeFlyout = null;
-            p.ocrData = null;
-            refreshStudioUI();
+            updateStudioPreview();
+            paintFilmstripThumbs();
           } else if (tool === 'recrop') {
             openRecrop(selIdx);
           } else if (tool === 'rotate') {
@@ -6444,11 +6478,7 @@
       parent.querySelectorAll('.etxt-thumb').forEach((thumb) => {
         thumb.onclick = () => {
           const idx = +thumb.dataset.idx;
-          if (idx !== selIdx) {
-            selIdx = idx;
-            zoom = 100; panX = 0; panY = 0;
-            refreshStudioUI();
-          }
+          switchPage(idx);
         };
       });
 
