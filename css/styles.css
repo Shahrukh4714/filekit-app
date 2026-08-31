@@ -41819,13 +41819,13 @@ body #app-view .rail-item.active {
 }
 
 .scan-ocr-sidebar-head {
-  height: 48px !important;
-  padding: 0 12px !important;
+  height: 46px !important;
+  padding: 0 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   border-bottom: 1px solid #F1F5F9 !important;
-  background: #FAFAFA !important;
+  background: #FFFFFF !important;
   flex-shrink: 0 !important;
 }
 
@@ -41833,25 +41833,24 @@ body #app-view .rail-item.active {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
   color: #0F172A !important;
+  letter-spacing: -0.01em !important;
 }
 
-.scan-ocr-page-tag {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  background: #F1F5F9 !important;
-  color: #334155 !important;
-  padding: 1px 6px !important;
-  border-radius: 4px !important;
+.scan-ocr-sidebar-title svg {
+  stroke: #4F46E5 !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 .scan-ocr-close-btn {
   background: transparent !important;
   border: none !important;
-  color: #94A3B8 !important;
+  color: #64748B !important;
   cursor: pointer !important;
-  padding: 4px !important;
+  padding: 6px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -41859,9 +41858,18 @@ body #app-view .rail-item.active {
   transition: all 120ms ease !important;
 }
 
+.scan-ocr-close-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: #64748B !important;
+}
+
 .scan-ocr-close-btn:hover {
   background: #F1F5F9 !important;
   color: #0F172A !important;
+}
+.scan-ocr-close-btn:hover svg {
+  stroke: #0F172A !important;
 }
 
 .scan-ocr-subtabs {

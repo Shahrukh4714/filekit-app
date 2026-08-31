@@ -3888,57 +3888,45 @@
               </div>
             </main>
 
-            <!-- In-Studio Integrated OCR Text & Smart Insights Inspector Panel -->
+            <!-- In-Studio Integrated OCR Text Inspector Panel (Option A: Pure Dedicated Text Surface) -->
             <aside class="scan-ocr-sidebar ${ocrPanelOpen ? 'is-open' : ''}" id="scan-ocr-sidebar" aria-label="Extracted Text Inspector">
               <div class="scan-ocr-sidebar-head">
-                <div class="scan-ocr-subtabs" role="tablist">
-                  <button type="button" class="scan-ocr-subtab ${ocrSidebarTab === 'text' ? 'active' : ''}" id="subtab-ocr-text">
-                    ${ICONS.ocr}
-                    <span>Editor</span>
-                  </button>
-                  <button type="button" class="scan-ocr-subtab ${ocrSidebarTab === 'insights' ? 'active' : ''}" id="subtab-ocr-insights">
-                    ${ICONS.sparkle}
-                    <span>Smart Insights</span>
-                  </button>
+                <div class="scan-ocr-sidebar-title">
+                  ${ICONS.ocr}
+                  <span>Page ${selIdx + 1} Text</span>
                 </div>
-                <button type="button" class="scan-ocr-close-btn" id="btn-close-ocr-panel" title="Close OCR Panel">${ICONS.cross}</button>
+                <button type="button" class="scan-ocr-close-btn" id="btn-close-ocr-panel" title="Close Text Inspector" aria-label="Close Text Inspector">${ICONS.cross}</button>
               </div>
 
-              ${ocrSidebarTab === 'text' ? `
-                <div class="scan-ocr-quick-strip">
-                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-flow" title="Merge linebreaks into readable paragraphs">
-                    ${ICONS.flow}
-                    <span>Format Flow</span>
-                  </button>
-                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-clean" title="Clean extra spaces and dangling symbols">
-                    ${ICONS.clean}
-                    <span>Clean Text</span>
-                  </button>
-                  <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-md" title="Copy formatted as Markdown">
-                    ${ICONS.markdown}
-                    <span>Markdown</span>
-                  </button>
-                </div>
+              <div class="scan-ocr-quick-strip">
+                <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-flow" title="Merge linebreaks into readable paragraphs">
+                  ${ICONS.flow}
+                  <span>Format Flow</span>
+                </button>
+                <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-clean" title="Clean extra spaces and dangling symbols">
+                  ${ICONS.clean}
+                  <span>Clean Text</span>
+                </button>
+                <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-md" title="Copy formatted as Markdown">
+                  ${ICONS.markdown}
+                  <span>Markdown</span>
+                </button>
+              </div>
 
-                <div class="scan-ocr-sidebar-body">
-                  <div class="scan-ocr-sidebar-loading" id="ocr-sidebar-loading" ${isOcrRunning ? '' : 'style="display:none"'}>
-                    <div class="scan-ocr-progress-capsule">
-                      <div class="scan-ocr-spinner"></div>
-                      <div class="scan-ocr-progress-info">
-                        <span id="ocr-sidebar-progress-label">Recognizing text…</span>
-                        <div class="scan-ocr-progress-track">
-                          <div class="scan-ocr-progress-fill" id="ocr-sidebar-progress-bar" style="width: 0%"></div>
-                        </div>
+              <div class="scan-ocr-sidebar-body">
+                <div class="scan-ocr-sidebar-loading" id="ocr-sidebar-loading" ${isOcrRunning ? '' : 'style="display:none"'}>
+                  <div class="scan-ocr-progress-capsule">
+                    <div class="scan-ocr-spinner"></div>
+                    <div class="scan-ocr-progress-info">
+                      <span id="ocr-sidebar-progress-label">Recognizing text…</span>
+                      <div class="scan-ocr-progress-track">
+                        <div class="scan-ocr-progress-fill" id="ocr-sidebar-progress-bar" style="width: 0%"></div>
                       </div>
                     </div>
                   </div>
-                  <textarea class="scan-ocr-sidebar-textarea" id="scan-ocr-sidebar-textarea" placeholder="Recognized text for this page will appear here...">${esc(curPage.ocrData ? (curPage.ocrData.text || '') : '')}</textarea>
                 </div>
-              ` : `
-                <div class="scan-ocr-sidebar-body scan-insights-body">
-                  ${renderSmartInsightsPanel(curPage)}
-                </div>
-              `}
+                <textarea class="scan-ocr-sidebar-textarea" id="scan-ocr-sidebar-textarea" placeholder="Recognized text for this page will appear here...">${esc(curPage.ocrData ? (curPage.ocrData.text || '') : '')}</textarea>
+              </div>
 
               <div class="scan-ocr-sidebar-footer">
                 <button type="button" class="scan-btn-primary-sm scan-ocr-footer-copy-btn" id="btn-sidebar-copy-text" title="Copy text to clipboard">
