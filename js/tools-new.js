@@ -284,7 +284,7 @@
     const inv = 1 / det;
     return [A * inv, B * inv, C * inv, D * inv, E * inv, F * inv, G * inv, Hh * inv, I * inv];
   }
-  function warpQuad(srcCanvas, quad, maxDim = 1400) {
+  function warpQuad(srcCanvas, quad, maxDim = 3600) {
     const sw = srcCanvas.width, sh = srcCanvas.height;
     const q = quad.map((p) => ({ x: p.x, y: p.y }));
     const w1 = Math.hypot(q[1].x - q[0].x, q[1].y - q[0].y), w2 = Math.hypot(q[2].x - q[3].x, q[2].y - q[3].y);
@@ -332,7 +332,7 @@
   async function processPhoto(src, opts = {}) {
     const detect = opts.detect !== false;
     if (opts.quad && opts.quad.length === 4) {
-      const warped = warpQuad(src, opts.quad, opts.maxDim || 1400);
+      const warped = warpQuad(src, opts.quad, opts.maxDim || 3600);
       if (warped) return { canvas: warped, cropped: true, quad: opts.quad };
     }
     if (detect) {
@@ -346,7 +346,7 @@
       const quad = detectQuad(dctx.getImageData(0, 0, dw, dh), dw, dh);
       if (quad) {
         const full = quad.map((p) => ({ x: p.x * (src.width / dw), y: p.y * (src.height / dh) }));
-        const warped = warpQuad(src, full, opts.maxDim || 1400);
+        const warped = warpQuad(src, full, opts.maxDim || 3600);
         if (warped) return { canvas: warped, cropped: true, quad: full };
       }
     }
@@ -437,22 +437,19 @@
         out.data[p + 3] = 255;
       }
     } else if (mode === 'enhanced') {
-      // High-Fidelity Illumination Normalization: preserves razor-sharp text & whitens paper
-      const rArr = new Float32Array(w * h), gArr = new Float32Array(w * h), bArr = new Float32Array(w * h);
+      // Smart Document Clarifier: Preserves 100% native clarity, boosts ink contrast, and cleans paper tone
       for (let i = 0, p = 0; i < w * h; i++, p += 4) {
-        rArr[i] = d[p]; gArr[i] = d[p + 1]; bArr[i] = d[p + 2];
-      }
-      const radius = Math.max(18, Math.round(Math.min(w, h) / 32));
-      const rBg = boxBlur(rArr, w, h, radius), gBg = boxBlur(gArr, w, h, radius), bBg = boxBlur(bArr, w, h, radius);
-      for (let i = 0, p = 0; i < w * h; i++, p += 4) {
-        const lum = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2];
-        const nr = Math.min(255, (d[p] / Math.max(20, rBg[i])) * 250);
-        const ng = Math.min(255, (d[p + 1] / Math.max(20, gBg[i])) * 250);
-        const nb = Math.min(255, (d[p + 2] / Math.max(20, bBg[i])) * 250);
-        const isInk = lum < 155;
-        out.data[p] = Math.max(0, Math.min(255, isInk ? nr * 0.85 : nr * 1.04));
-        out.data[p + 1] = Math.max(0, Math.min(255, isInk ? ng * 0.85 : ng * 1.04));
-        out.data[p + 2] = Math.max(0, Math.min(255, isInk ? nb * 0.85 : nb * 1.04));
+        const r = d[p], gVal = d[p + 1], bVal = d[p + 2];
+        const lum = 0.299 * r + 0.587 * gVal + 0.114 * bVal;
+        let factor = 1.0;
+        if (lum > 190) {
+          factor = 1.0 + ((lum - 190) / 260) * 0.18;
+        } else if (lum < 120) {
+          factor = 0.94;
+        }
+        out.data[p] = Math.min(255, Math.max(0, r * factor));
+        out.data[p + 1] = Math.min(255, Math.max(0, gVal * factor));
+        out.data[p + 2] = Math.min(255, Math.max(0, bVal * factor));
         out.data[p + 3] = 255;
       }
     } else if (mode === 'whiteboard') {
@@ -4068,38 +4065,11 @@
 
     function prepareOcrCanvas(srcCv) {
       if (!srcCv) return srcCv;
-      // 1800px max dimension provides exceptional OCR clarity without memory lag
-      const cv = A.fitCanvas(srcCv, 1800);
-      try {
-        const ctx = cv.getContext('2d', { willReadFrequently: true });
-        const imgData = ctx.getImageData(0, 0, cv.width, cv.height);
-        const d = imgData.data;
-        const len = d.length;
-
-        // Quick histogram calculation for adaptive contrast stretching
-        let minLum = 255, maxLum = 0;
-        const lums = new Uint8Array(len >> 2);
-        for (let i = 0, j = 0; i < len; i += 4, j++) {
-          const lum = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
-          lums[j] = lum;
-          if (lum < minLum) minLum = lum;
-          if (lum > maxLum) maxLum = lum;
-        }
-
-        const range = Math.max(10, maxLum - minLum);
-        for (let i = 0, j = 0; i < len; i += 4, j++) {
-          const norm = ((lums[j] - minLum) * 255) / range;
-          // Apply gentle contrast S-curve to darken text strokes and brighten paper background
-          const sharpened = norm < 135 ? Math.max(0, norm * 0.78) : Math.min(255, norm * 1.12 + 10);
-          d[i] = sharpened;
-          d[i + 1] = sharpened;
-          d[i + 2] = sharpened;
-        }
-        ctx.putImageData(imgData, 0, 0);
-      } catch (e) {
-        console.warn('[prepareOcrCanvas]', e);
+      const maxDim = 3200;
+      if (srcCv.width <= maxDim && srcCv.height <= maxDim) {
+        return srcCv;
       }
-      return cv;
+      return A.fitCanvas(srcCv, maxDim);
     }
 
     async function runPageOcr(idx, isBackground = false) {
@@ -5012,25 +4982,42 @@
       }
 
       // ─── Extract Text Sheet Controls & Laser Sweep ───
-      function cleanExtractedText(raw) {
+      function cleanExtractedText(raw, lang = ocrLang || 'eng') {
         if (!raw) return '';
         let t = raw.replace(/\u00A0/g, ' ');
-        // Reconnect broken hyphenated line-breaks (e.g. "com- /nplete" -> "complete")
+
+        // 1. Remove non-printable / control unicode characters
+        t = t.replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '');
+
+        // 2. Reconnect broken hyphenated line-breaks (e.g. "docu-\nment" -> "document")
         t = t.replace(/(\b[a-zA-Z]{2,})-\s*\n\s*([a-zA-Z]{2,}\b)/g, '$1$2');
-        // Rejoin separated Devanagari / Indic vowels and combining marks
-        t = t.replace(/([\u0900-\u097F])\s+([\u093E-\u094F\u0951-\u0957\u0962-\u0963])/g, '$1$2');
-        // Collapse multi-single-character spaced runs (e.g. "क म चा री" -> "कर्मचारी" or "S u b j e c t" -> "Subject")
-        t = t.replace(/(?:^|\n|\s)((?:[\u0900-\u097Fa-zA-Z0-9]\s){2,}[\u0900-\u097Fa-zA-Z0-9])(?:\s|\n|$)/g, (m, g1) => {
+
+        // 3. Language-specific script sanitization:
+        if (lang === 'eng' || lang === 'spa' || lang === 'fra' || lang === 'deu' || lang === 'ita' || lang === 'por') {
+          // If English or Western Latin is selected, eliminate stray noise-hallucinated Indic, Arabic, Asian or mathematical symbols
+          t = t.replace(/[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/g, '');
+          t = t.replace(/[§¶©®™°±²³µ¿¡«»^~`|¤¥¢£]/g, ' ');
+        } else if (lang === 'hin') {
+          // Rejoin separated Devanagari vowels and combining marks
+          t = t.replace(/([\u0900-\u097F])\s+([\u093E-\u094F\u0951-\u0957\u0962-\u0963])/g, '$1$2');
+        }
+
+        // 4. Fix spaced single-character words (e.g. "S u b j e c t" -> "Subject")
+        t = t.replace(/(?:^|\n|\s)((?:[a-zA-Z0-9]\s){2,}[a-zA-Z0-9])(?:\s|\n|$)/g, (m, g1) => {
           return ' ' + g1.replace(/\s+/g, '') + ' ';
         });
-        // Fix broken URL formatting
+
+        // 5. Fix broken URL formatting
         t = t.replace(/https?\s*:\s*\/\s*\/\s*([^\s]+)/gi, (m, url) => {
           return 'https://' + url.replace(/\s+/g, '');
         });
-        // Remove repeated divider noise and lone punctuation artifacts
-        t = t.replace(/^[_—\-•=~|`]{3,}\s*$/gm, '');
-        t = t.replace(/^[~|`_—\-•=]\s*$/gm, '');
-        // Collapse multiple blank lines
+
+        // 6. Remove repeated divider noise and lone punctuation artifacts
+        t = t.replace(/^[_\—\-•=~|`\.\*]{2,}\s*$/gm, '');
+        t = t.replace(/^[~|`_—\-•=\^\*\+\\\/]\s*$/gm, '');
+
+        // 7. Normalize multiple spaces and blank lines
+        t = t.replace(/[ \t]+/g, ' ');
         t = t.replace(/\n{3,}/g, '\n\n');
         return t.trim();
       }
