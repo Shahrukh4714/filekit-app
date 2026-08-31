@@ -2991,6 +2991,7 @@
       }
       // Background pre-warm Tesseract worker to eliminate cold start latency
       A.getOrInitOcrWorker(ocrLang || 'eng').catch(() => {});
+      isTextSheetOpen = false;
       if (isOcrIntent || isReceiptIntent) {
         ocrPanelOpen = true;
         showOcrLayer = true;
@@ -3744,7 +3745,7 @@
                 <!-- Group 4: OCR Text Extractor Tool -->
                 <div class="scan-tb-group">
                   <button type="button" class="scan-tb-btn ${isTextSheetOpen ? 'is-active' : ''}" id="btn-top-extract-text" title="Extract Text & Copy [T]">
-                    ${ICONS.ocr}<span>Extract Text</span>
+                    ${ICONS.ocr}<span>Text</span>
                   </button>
                 </div>
               </div>
@@ -4959,12 +4960,12 @@
         const loadingLbl = parent.querySelector('#scan-sheet-loading-label');
 
         if (btnExtract) btnExtract.classList.add('is-active');
-        if (sheetEl) sheetEl.style.display = 'flex';
+        if (sheetEl) sheetEl.classList.add('is-visible');
         if (canvasEl) canvasEl.style.display = 'none';
         if (textLayer) textLayer.style.display = 'none';
 
         if (cur && cur.ocrData) {
-          if (loadingEl) loadingEl.style.display = 'none';
+          if (loadingEl) loadingEl.classList.remove('is-loading');
           updateSheetText();
           return;
         }
@@ -4975,7 +4976,7 @@
           laserBeam.classList.add('is-sweeping');
         }
         if (loadingEl) {
-          loadingEl.style.display = 'flex';
+          loadingEl.classList.add('is-loading');
           if (loadingLbl) loadingLbl.textContent = 'Scanning document text…';
         }
 
@@ -4988,7 +4989,7 @@
             laserBeam.classList.remove('is-sweeping');
             laserBeam.style.display = 'none';
           }
-          if (loadingEl) loadingEl.style.display = 'none';
+          if (loadingEl) loadingEl.classList.remove('is-loading');
           updateSheetText();
         }
       }
@@ -5000,15 +5001,17 @@
         const canvasEl = parent.querySelector('#scan-studio-canvas');
         const textLayer = parent.querySelector('#scan-text-layer');
         const laserBeam = parent.querySelector('#scan-laser-beam');
+        const loadingEl = parent.querySelector('#scan-sheet-loading');
 
         if (btnExtract) btnExtract.classList.remove('is-active');
-        if (sheetEl) sheetEl.style.display = 'none';
+        if (sheetEl) sheetEl.classList.remove('is-visible');
         if (canvasEl) canvasEl.style.display = 'block';
         if (textLayer && showOcrLayer) textLayer.style.display = 'block';
         if (laserBeam) {
           laserBeam.classList.remove('is-sweeping');
           laserBeam.style.display = 'none';
         }
+        if (loadingEl) loadingEl.classList.remove('is-loading');
       }
 
       const btnTopExtract = parent.querySelector('#btn-top-extract-text');

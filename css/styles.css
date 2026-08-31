@@ -44869,11 +44869,16 @@ body #app-view .rail-item.active {
   height: 100% !important;
   background: #FFFFFF !important;
   border-radius: 4px !important;
-  display: flex !important;
+  display: none !important;
   flex-direction: column !important;
   z-index: 25 !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
+}
+
+.scan-text-sheet.is-visible,
+.scan-text-sheet.is-open {
+  display: flex !important;
   animation: sheetFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -45058,7 +45063,7 @@ body #app-view .rail-item.active {
   inset: 0 !important;
   background: rgba(255, 255, 255, 0.94) !important;
   backdrop-filter: blur(4px) !important;
-  display: flex !important;
+  display: none !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
@@ -45067,6 +45072,10 @@ body #app-view .rail-item.active {
   color: #0F172A !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
+}
+
+.scan-sheet-loading-state.is-loading {
+  display: flex !important;
 }
 
 .scan-sheet-spinner {
