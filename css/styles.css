@@ -40034,9 +40034,23 @@ body #app-view .rail-item.active {
    SCAN STUDIO — EDIT PDF TOOL HARMONIZED WORKSPACE (Obsidian Black & Clean Stage)
    ══════════════════════════════════════════════════════════════════════════════ */
 
+.scan-workspace,
+#scan-viewport {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
 .scan-review-workspace {
   display: flex !important;
   flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
   width: 100% !important;
   height: 100% !important;
   background: #EEF2F6 !important;
@@ -42589,20 +42603,26 @@ body #app-view .rail-item.active {
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-canvas-stage {
+  flex: 1 1 auto !important;
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  padding: 28px 64px 56px 64px !important;
+  padding: 28px 64px 80px 64px !important;
   width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
   box-sizing: border-box !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  position: relative !important;
   transition: padding 280ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* When OCR Text Sidebar is open, shift canvas gracefully without covering paper */
 .scan-canvas-stage.ocr-panel-active {
-  padding: 28px 440px 56px 64px !important;
+  padding: 28px 440px 80px 64px !important;
 }
 
 
