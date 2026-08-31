@@ -3722,10 +3722,6 @@
               ${ICONS.search}
               <span>Search</span>
             </button>
-            <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-top-ocr-layer" title="Toggle Selectable OCR Text Layer">
-              ${ICONS.eye}
-              <span>Text</span>
-            </button>
             <button type="button" class="scan-tb-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout — Redact PII">
               ${ICONS.redact}
               <span>Redact</span>
@@ -3733,8 +3729,8 @@
 
             <span class="scan-tb-sep" aria-hidden="true"></span>
 
-            <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Toggle OCR Text Panel">
-              ${ICONS.ocr}<span>OCR</span>
+            <button type="button" class="scan-tb-btn ${ocrPanelOpen ? 'is-on' : ''}" id="btn-open-ocr-proofreader" title="Extract text & inspect document (OCR Text)">
+              ${ICONS.ocr}<span>OCR Text</span>
             </button>
 
             <select id="scan-top-ocr-lang" class="scan-tb-lang-compact" aria-label="OCR Language" title="OCR Language">
@@ -4990,10 +4986,16 @@
         ocrProofBtn.onclick = (e) => {
           e.stopPropagation();
           ocrPanelOpen = !ocrPanelOpen;
+          showOcrLayer = ocrPanelOpen;
           const sidebar = parent.querySelector('#scan-ocr-sidebar');
           const stage = parent.querySelector('#scan-canvas-wrap');
+          const txtLayer = parent.querySelector('#scan-text-layer');
           if (sidebar) sidebar.classList.toggle('is-open', ocrPanelOpen);
           if (stage) stage.classList.toggle('ocr-panel-active', ocrPanelOpen);
+          if (txtLayer) {
+            txtLayer.classList.toggle('is-active', showOcrLayer);
+            txtLayer.setAttribute('aria-hidden', (!showOcrLayer).toString());
+          }
           ocrProofBtn.classList.toggle('is-on', ocrPanelOpen);
 
           if (ocrPanelOpen) {
@@ -5007,10 +5009,13 @@
             const pageObj = pages[selIdx];
             if (pageObj && pageObj.ocrData) {
               if (sbTa) sbTa.value = (pageObj.ocrData.text || '').trim();
+              renderTextLayer();
             } else {
               if (sbTa) sbTa.value = '';
               runPageOcr(selIdx);
             }
+          } else {
+            renderTextLayer();
           }
           setTimeout(() => {
             updateStudioPreview();
@@ -5023,11 +5028,18 @@
         closeOcrPanelBtn.onclick = (e) => {
           e.stopPropagation();
           ocrPanelOpen = false;
+          showOcrLayer = false;
           const sidebar = parent.querySelector('#scan-ocr-sidebar');
           const stage = parent.querySelector('#scan-canvas-wrap');
+          const txtLayer = parent.querySelector('#scan-text-layer');
           if (sidebar) sidebar.classList.remove('is-open');
           if (stage) stage.classList.remove('ocr-panel-active');
+          if (txtLayer) {
+            txtLayer.classList.remove('is-active');
+            txtLayer.setAttribute('aria-hidden', 'true');
+          }
           if (ocrProofBtn) ocrProofBtn.classList.remove('is-on');
+          renderTextLayer();
           setTimeout(() => {
             updateStudioPreview();
             applyCanvasTransform();
@@ -6803,102 +6815,127 @@
       modalWrap.id = 'scan-export-modal-overlay';
       modalWrap.className = 'scan-modal-overlay';
 
+      const updateSummaryMeta = () => {
+        const metaEl = modalWrap.querySelector('#scan-modal-summary-meta');
+        if (!metaEl) return;
+        if (pdfFormat === 'zip') {
+          metaEl.textContent = '· High-Res Images';
+        } else if (pdfCompression === 'high') {
+          metaEl.textContent = '· 300 DPI High Quality';
+        } else if (pdfCompression === 'balanced') {
+          metaEl.textContent = '· 150 DPI Balanced';
+        } else {
+          metaEl.textContent = '· 72 DPI Compact';
+        }
+      };
+
       modalWrap.innerHTML = `
         <div class="scan-export-modal" role="dialog" aria-modal="true" aria-labelledby="scan-export-modal-title">
+          <!-- Branded Header: Icon Box + Bold Title -->
           <div class="scan-modal-head">
-            <div class="scan-modal-head-text">
-              <h3 id="scan-export-modal-title">Export Document</h3>
-              <p class="scan-modal-subtitle">${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · 100% on-device local processing</p>
+            <div class="scan-modal-title-wrap">
+              <div class="scan-modal-icon-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <h3 id="scan-export-modal-title" class="scan-modal-heading">Export</h3>
             </div>
             <button type="button" class="scan-modal-close" id="btn-modal-close" title="Close" aria-label="Close modal">${ICONS.cross}</button>
           </div>
 
           <div class="scan-modal-body">
-            <!-- Unified Grouped Format Picker -->
-            <div class="scan-modal-section">
-              <label class="scan-modal-section-title">Format</label>
-              <div class="scan-modal-group" role="radiogroup" aria-label="Output Format">
-                <label class="scan-modal-group-row ${pdfFormat === 'searchable' ? 'is-selected' : ''}">
-                  <input type="radio" name="modal_export_fmt" value="searchable" ${pdfFormat === 'searchable' ? 'checked' : ''}>
-                  <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
-                  <div class="scan-modal-row-content">
-                    <div class="scan-modal-row-header">
-                      <span class="scan-modal-row-title" style="display:inline-flex; align-items:center; gap:6px;">${ICONS.ocr} Searchable PDF</span>
-                      <span class="scan-modal-badge-rec">Recommended</span>
-                    </div>
-                    <p class="scan-modal-row-desc">Embedded invisible OCR text for text selection &amp; search</p>
-                  </div>
-                </label>
+            <!-- Discrete Separated Format Cards Stack -->
+            <div class="scan-modal-cards-stack" role="radiogroup" aria-label="Output Format">
+              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
+                <div class="scan-benchmark-radio">
+                  <div class="scan-benchmark-radio-dot"></div>
+                </div>
+                <span class="scan-benchmark-card-label">Searchable PDF</span>
+                <div class="scan-benchmark-card-right">
+                  <span class="scan-benchmark-pill-rec">Recommended</span>
+                </div>
+              </div>
 
-                <label class="scan-modal-group-row ${pdfFormat === 'image' ? 'is-selected' : ''}">
-                  <input type="radio" name="modal_export_fmt" value="image" ${pdfFormat === 'image' ? 'checked' : ''}>
-                  <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
-                  <div class="scan-modal-row-content">
-                    <div class="scan-modal-row-header">
-                      <span class="scan-modal-row-title" style="display:inline-flex; align-items:center; gap:6px;">${ICONS.pdf} Standard PDF</span>
-                    </div>
-                    <p class="scan-modal-row-desc">Clean visual PDF document without embedded text vectors</p>
-                  </div>
-                </label>
+              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
+                <div class="scan-benchmark-radio">
+                  <div class="scan-benchmark-radio-dot"></div>
+                </div>
+                <span class="scan-benchmark-card-label">Standard PDF</span>
+              </div>
 
-                <label class="scan-modal-group-row ${pdfFormat === 'zip' ? 'is-selected' : ''}">
-                  <input type="radio" name="modal_export_fmt" value="zip" ${pdfFormat === 'zip' ? 'checked' : ''}>
-                  <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
-                  <div class="scan-modal-row-content">
-                    <div class="scan-modal-row-header">
-                      <span class="scan-modal-row-title" style="display:inline-flex; align-items:center; gap:6px;">${ICONS.zip} Image ZIP</span>
-                    </div>
-                    <p class="scan-modal-row-desc">Individual high-resolution images in a ZIP bundle</p>
-                  </div>
-                </label>
+              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
+                <div class="scan-benchmark-radio">
+                  <div class="scan-benchmark-radio-dot"></div>
+                </div>
+                <span class="scan-benchmark-card-label">Image ZIP</span>
               </div>
             </div>
 
-            <!-- Configuration Grid: Quality + Page Size -->
-            <div class="scan-modal-grid">
-              <div class="scan-modal-field" id="modal-field-dpi">
-                <label for="modal-export-dpi">Resolution (DPI)</label>
-                <select id="modal-export-dpi" class="scan-modal-select">
-                  <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High Quality)</option>
-                  <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
-                  <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
-                </select>
-              </div>
+            <!-- Compact Configuration Row -->
+            <div class="scan-modal-config-box">
+              <div class="scan-modal-config-row">
+                <div class="scan-modal-config-field" id="modal-field-dpi">
+                  <span class="scan-modal-config-lbl">Resolution</span>
+                  <select id="modal-export-dpi" class="scan-modal-select-sm">
+                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI</option>
+                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI</option>
+                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI</option>
+                  </select>
+                </div>
 
-              <div class="scan-modal-field" id="modal-field-size">
-                <label for="modal-export-pagesize">Page Geometry</label>
-                <select id="modal-export-pagesize" class="scan-modal-select">
-                  <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210 × 297 mm)</option>
-                  <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter (8.5 × 11 in)</option>
-                  <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original (Fit to Content)</option>
-                </select>
+                <div class="scan-modal-config-field" id="modal-field-size">
+                  <span class="scan-modal-config-lbl">Geometry</span>
+                  <select id="modal-export-pagesize" class="scan-modal-select-sm">
+                    <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
+                    <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
+                    <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
+                  </select>
+                </div>
+
+                <div class="scan-modal-config-field" id="modal-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
+                  <span class="scan-modal-config-lbl">Language</span>
+                  <select id="modal-export-lang" class="scan-modal-select-sm">
+                    <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
+                    <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
+                    <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
+                    <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
+                    <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
+                    <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
+                    <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
+                    <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
+                    <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
+                    <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
+                    <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <!-- OCR Language Field -->
-            <div class="scan-modal-field" id="modal-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
-              <label for="modal-export-lang">OCR Language</label>
-              <select id="modal-export-lang" class="scan-modal-select">
-                <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
-                <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
-                <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
-                <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
-                <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
-                <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
-                <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
-                <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
-                <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
-                <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
-                <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
-              </select>
+            <!-- Mint Summary & Progress Box -->
+            <div class="scan-benchmark-est-box">
+              <div class="scan-benchmark-est-title">Estimated output</div>
+              <div class="scan-benchmark-est-metrics">
+                <strong class="scan-benchmark-est-new">${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong>
+                <span class="scan-benchmark-est-meta" id="scan-modal-summary-meta">· 300 DPI High Quality</span>
+                <span class="scan-benchmark-est-pct">100% Local</span>
+              </div>
+              <div class="scan-benchmark-track">
+                <div class="scan-benchmark-bar" style="width: 100%;"></div>
+              </div>
             </div>
-          </div>
 
-          <div class="scan-modal-footer">
-            <button type="button" class="scan-modal-btn-cancel" id="btn-modal-cancel">Cancel</button>
-            <button type="button" class="scan-modal-btn-confirm" id="btn-modal-confirm">
+            <!-- Full-Width Primary Action CTA Button -->
+            <button type="button" class="scan-benchmark-cta" id="btn-modal-confirm">
               <span id="modal-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
               <span id="modal-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : 'Export PDF'}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
               <div class="scan-modal-progress-track" id="modal-progress-track" style="display:none;">
                 <div class="scan-modal-progress-fill" id="modal-progress-fill"></div>
               </div>
@@ -6916,25 +6953,24 @@
       };
 
       const closeBtn = modalWrap.querySelector('#btn-modal-close');
-      const cancelBtn = modalWrap.querySelector('#btn-modal-cancel');
       const confirmBtn = modalWrap.querySelector('#btn-modal-confirm');
       const confirmText = modalWrap.querySelector('#modal-confirm-text');
       const langRow = modalWrap.querySelector('#modal-ocr-lang-row');
       const sizeField = modalWrap.querySelector('#modal-field-size');
 
       if (closeBtn) closeBtn.onclick = closeModal;
-      if (cancelBtn) cancelBtn.onclick = closeModal;
       modalWrap.onclick = (e) => {
         if (e.target === modalWrap && !busy) closeModal();
       };
 
-      const fmtRadios = modalWrap.querySelectorAll('input[name="modal_export_fmt"]');
-      fmtRadios.forEach(radio => {
-        radio.onchange = () => {
-          pdfFormat = radio.value;
-          modalWrap.querySelectorAll('.scan-modal-group-row').forEach(c => c.classList.remove('is-selected'));
-          const row = radio.closest('.scan-modal-group-row');
-          if (row) row.classList.add('is-selected');
+      const cards = modalWrap.querySelectorAll('.scan-benchmark-card');
+      cards.forEach(card => {
+        card.onclick = () => {
+          const fmt = card.getAttribute('data-fmt');
+          if (!fmt) return;
+          pdfFormat = fmt;
+          cards.forEach(c => c.classList.remove('is-active'));
+          card.classList.add('is-active');
 
           if (pdfFormat === 'zip') {
             if (confirmText) confirmText.textContent = 'Download Image ZIP';
@@ -6949,11 +6985,17 @@
             if (langRow) langRow.style.display = 'flex';
             if (sizeField) sizeField.style.display = 'flex';
           }
+          updateSummaryMeta();
         };
       });
 
       const dpiSel = modalWrap.querySelector('#modal-export-dpi');
-      if (dpiSel) dpiSel.onchange = () => { pdfCompression = dpiSel.value; };
+      if (dpiSel) {
+        dpiSel.onchange = () => {
+          pdfCompression = dpiSel.value;
+          updateSummaryMeta();
+        };
+      }
 
       const szSel = modalWrap.querySelector('#modal-export-pagesize');
       if (szSel) szSel.onchange = () => { pdfPageSize = szSel.value; };
@@ -6969,7 +7011,6 @@
         confirmBtn.onclick = async () => {
           if (busy) return;
           confirmBtn.disabled = true;
-          if (cancelBtn) cancelBtn.disabled = true;
           if (closeBtn) closeBtn.disabled = true;
           const spinner = modalWrap.querySelector('#modal-confirm-spinner');
           const track = modalWrap.querySelector('#modal-progress-track');
