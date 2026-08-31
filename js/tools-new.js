@@ -3874,9 +3874,12 @@
                     <button type="button" class="scan-dock-fit-btn" id="btn-zoom-reset" title="Fit to Screen">Fit</button>
                   </div>
                   <span class="scan-dock-sep"></span>
-                  <div class="scan-dock-privacy" title="100% On-Device Local Processing (Zero Cloud Uploads)">
-                    <span class="scan-dock-shield">${ICONS.shield}</span>
-                    <span class="scan-dock-privacy-text">Local</span>
+                  <div class="scan-dock-device-pill" title="100% On-Device Local Processing · Zero Cloud Uploads">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>On-Device</span>
                   </div>
                 </div>
               </main>
@@ -4596,7 +4599,7 @@
       const stageW = wrap?.clientWidth || 800;
       const stageH = wrap?.clientHeight || 600;
       const padX = 64;
-      const padY = 48;
+      const padY = 96;
       const availableW = Math.max(280, stageW - padX);
       const availableH = Math.max(280, stageH - padY);
       const scW = availableW / source.width;

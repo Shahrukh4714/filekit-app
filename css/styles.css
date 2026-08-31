@@ -44645,14 +44645,14 @@ body #app-view .rail-item.active {
 
 .scan-stage-dock {
   position: absolute !important;
-  bottom: 16px !important;
+  bottom: 22px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 40 !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
-  padding: 3px 8px !important;
+  padding: 4px 9px !important;
   background: rgba(255, 255, 255, 0.94) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -44773,22 +44773,23 @@ body #app-view .rail-item.active {
   color: #18181B !important;
 }
 
-.scan-dock-privacy {
-  display: flex !important;
+.scan-dock-device-pill {
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 4px !important;
   font-size: 10px !important;
-  font-weight: 600 !important;
-  color: #059669 !important;
-  background: #DCFCE7 !important;
-  padding: 1.5px 5px !important;
-  border-radius: 9999px !important;
+  font-weight: 500 !important;
+  color: #71717A !important;
+  padding: 0 4px !important;
+  cursor: default !important;
+  user-select: none !important;
 }
 
-.scan-dock-privacy svg {
-  width: 9px !important;
-  height: 9px !important;
-  stroke: #059669 !important;
+.scan-dock-device-pill svg {
+  width: 11px !important;
+  height: 11px !important;
+  stroke: #71717A !important;
+  flex-shrink: 0 !important;
 }
 
 /* Paper Canvas Shadow */
