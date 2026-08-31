@@ -3697,57 +3697,62 @@
         <div class="scan-benchmark-workstation" id="scan-benchmark-workstation">
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
-            <!-- Flat, Clean Top Toolbar: Zero container pills, zero nested boxes -->
+            <!-- Flat, Clean Top Toolbar (Zero Scrolling, Auto-Fit Width) -->
             <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
-              <!-- Group 1: Illumination Filters (Flat buttons with uniform leading icons) -->
-              <button type="button" class="scan-tb-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span>Original</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean Document Illumination [1]">
-                ${ICONS.filterDoc}<span>Clean</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
-                ${ICONS.filterBw}<span>B&amp;W</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
-                ${ICONS.filterPhoto}<span>Photo</span>
-              </button>
+              <!-- Group 1: Illumination Filters -->
+              <div class="scan-tb-group">
+                <button type="button" class="scan-tb-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <span>Original</span>
+                </button>
+                <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean Document Illumination [1]">
+                  ${ICONS.filterDoc}<span>Clean</span>
+                </button>
+                <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
+                  ${ICONS.filterBw}<span>B&amp;W</span>
+                </button>
+                <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
+                  ${ICONS.filterPhoto}<span>Photo</span>
+                </button>
+              </div>
 
               <span class="scan-tb-sep" aria-hidden="true"></span>
 
-              <!-- Group 2: Geometry & Crop -->
-              <button type="button" class="scan-tb-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">
-                ${ICONS.crop}<span>Crop</span>
-              </button>
-              <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">
-                ${ICONS.rotate}<span>Rotate</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
-                ${ICONS.split}<span>Compare</span>
-              </button>
+              <!-- Group 2: Geometry & Tools -->
+              <div class="scan-tb-group">
+                <button type="button" class="scan-tb-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">
+                  ${ICONS.crop}<span>Crop</span>
+                </button>
+                <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">
+                  ${ICONS.rotate}<span>Rotate</span>
+                </button>
+                <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
+                  ${ICONS.split}<span>Compare</span>
+                </button>
+              </div>
 
               <span class="scan-tb-sep" aria-hidden="true"></span>
 
-              <!-- Group 3: OCR Live Text -->
-              <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-toggle-live-text" title="Toggle Direct Live Text Selection on Document">
-                ${ICONS.ocr}<span>Live Text</span>
-              </button>
-              <button type="button" class="scan-tb-btn" id="btn-quick-copy-text" title="Copy recognized text on this page to clipboard">
-                ${ICONS.copy}<span>Copy Text</span>
-              </button>
-
-              <button type="button" class="scan-tb-btn scan-tb-btn-batch" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
-                ${ICONS.sparkle}<span>All (${pages.length})</span>
-              </button>
+              <!-- Group 3: OCR & Batch -->
+              <div class="scan-tb-group">
+                <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-toggle-live-text" title="Toggle Direct Live Text Selection on Document">
+                  ${ICONS.ocr}<span>Live Text</span>
+                </button>
+                <button type="button" class="scan-tb-btn" id="btn-quick-copy-text" title="Copy recognized text on this page to clipboard">
+                  ${ICONS.copy}<span>Copy</span>
+                </button>
+                <button type="button" class="scan-tb-btn scan-tb-btn-batch" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
+                  ${ICONS.sparkle}<span>All (${pages.length})</span>
+                </button>
+              </div>
 
               <!-- Group 4: Right Actions -->
               <div class="scan-tb-group-right">
-                <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
-                  ${ICONS.camera}<span>Camera</span>
+                <button type="button" class="scan-tb-icon-btn" id="tab-btn-hub" title="Add page via camera">
+                  ${ICONS.camera}
                 </button>
-                <button type="button" class="scan-tb-btn" id="btn-global-import" title="Upload more pages">
-                  ${ICONS.folder}<span>Upload</span>
+                <button type="button" class="scan-tb-icon-btn" id="btn-global-import" title="Upload more pages">
+                  ${ICONS.folder}
                 </button>
                 <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
                 <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Clear and restart">${ICONS.cross}</button>

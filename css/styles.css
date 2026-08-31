@@ -42545,19 +42545,28 @@ body #app-view .rail-item.active {
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-unified-toolbar {
-  height: 44px !important;
-  min-height: 44px !important;
+  height: 38px !important;
+  min-height: 38px !important;
   background: #FFFFFF !important;
   border-bottom: 1px solid #E5EAF2 !important;
-  padding: 0 12px !important;
+  padding: 0 10px !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
   position: relative !important;
   z-index: 40 !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.scan-tb-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-toolbar-cluster-left,
@@ -43404,13 +43413,13 @@ body #app-view .rail-item.active {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
-  padding: 0 7px !important;
-  height: 28px !important;
+  gap: 4px !important;
+  padding: 0 6px !important;
+  height: 26px !important;
   background: transparent !important;
   border: 1px solid transparent !important;
   border-radius: 4px !important;
-  font-size: 11.5px !important;
+  font-size: 11px !important;
   font-weight: 550 !important;
   font-family: inherit !important;
   color: #334155 !important;
@@ -43423,19 +43432,46 @@ body #app-view .rail-item.active {
 
 .scan-tb-sep {
   width: 1px !important;
-  height: 16px !important;
+  height: 14px !important;
   background: #E2E8F0 !important;
-  margin: 0 6px !important;
+  margin: 0 4px !important;
   flex-shrink: 0 !important;
 }
 
 .scan-tb-group-right {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 4px !important;
   margin-left: auto !important;
-  padding-right: 4px !important;
+  padding-right: 2px !important;
   flex-shrink: 0 !important;
+}
+
+.scan-tb-icon-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 120ms ease-out !important;
+}
+
+.scan-tb-icon-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-tb-icon-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: currentColor !important;
 }
 
 .scan-tb-btn-close {
