@@ -3699,16 +3699,17 @@
         <div class="scan-benchmark-workstation" id="scan-benchmark-workstation">
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
-            <!-- Icon Toolbar (Ultra-Clean, Matching Reference Screenshot) -->
+            <!-- Modern Balanced Toolbar (Hero Labels + Clean Segmented Filter) -->
             <header class="scan-unified-toolbar" id="scan-unified-toolbar" role="toolbar" aria-label="Scan Tools">
               <div class="scan-tb-left-cluster">
                 <!-- Group 1: Page Management -->
                 <div class="scan-tb-group">
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only" id="btn-top-add-page" title="Add Page (+)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                  <button type="button" class="scan-tb-btn" id="btn-top-add-page" title="Add Page (Upload or Camera)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Add</span>
                   </button>
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-top-toggle-drawer" title="Page Thumbnails (${pages.length})">
-                    ${ICONS.sidebar}
+                  <button type="button" class="scan-tb-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-top-toggle-drawer" title="Toggle Page Thumbnails">
+                    ${ICONS.sidebar}<span>Pages (${pages.length})</span>
                   </button>
                 </div>
 
@@ -3716,35 +3717,35 @@
 
                 <!-- Group 2: Geometry Tools -->
                 <div class="scan-tb-group">
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only ${isCropping ? 'is-active' : ''}" data-tool="recrop" title="Crop Page [C]">
-                    ${ICONS.crop}
+                  <button type="button" class="scan-tb-btn ${isCropping ? 'is-active' : ''}" data-tool="recrop" title="Crop Bounds [C]">
+                    ${ICONS.crop}<span>Crop</span>
                   </button>
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only" data-tool="rotate" title="Rotate 90° [R]">
-                    ${ICONS.rotate}
-                  </button>
-                </div>
-
-                <span class="scan-tb-sep" aria-hidden="true"></span>
-
-                <!-- Group 3: Document Filter Modes (Clean, B&W, Color) -->
-                <div class="scan-tb-group" role="radiogroup" aria-label="Filter Modes">
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only scan-seg-filter-btn ${curPage.enhanceMode === 'enhanced' || (!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-active' : ''}" data-tool="clean" title="Smart Clean Document [1]">
-                    ${ICONS.filterDoc}
-                  </button>
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only scan-seg-filter-btn ${curPage.enhanceMode === 'bw' ? 'is-active' : ''}" data-tool="bw" title="B&W High Contrast [2]">
-                    ${ICONS.filterBw}
-                  </button>
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only scan-seg-filter-btn ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Full Color Photo [3]">
-                    ${ICONS.filterPhoto}
+                  <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° [R]">
+                    ${ICONS.rotate}<span>Rotate</span>
                   </button>
                 </div>
 
                 <span class="scan-tb-sep" aria-hidden="true"></span>
 
-                <!-- Group 4: OCR Text Extractor -->
+                <!-- Group 3: Document Filter Segmented Switcher (Clean, B&W, Color) -->
+                <div class="scan-segmented-filter" role="radiogroup" aria-label="Filter Modes">
+                  <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'enhanced' || (!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-active' : ''}" data-tool="clean" title="Smart Clean Document [1]">
+                    ${ICONS.filterDoc}<span>Clean</span>
+                  </button>
+                  <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'bw' ? 'is-active' : ''}" data-tool="bw" title="B&W Contrast [2]">
+                    ${ICONS.filterBw}<span>B&W</span>
+                  </button>
+                  <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Full Color Photo [3]">
+                    ${ICONS.filterPhoto}<span>Color</span>
+                  </button>
+                </div>
+
+                <span class="scan-tb-sep" aria-hidden="true"></span>
+
+                <!-- Group 4: OCR Text Extractor (Hero Feature) -->
                 <div class="scan-tb-group">
-                  <button type="button" class="scan-tb-btn scan-tb-icon-only ${isTextSheetOpen ? 'is-active' : ''}" id="btn-top-extract-text" title="Extract Text & Copy [T]">
-                    ${ICONS.ocr}
+                  <button type="button" class="scan-tb-btn scan-tb-btn-extract ${isTextSheetOpen ? 'is-active' : ''}" id="btn-top-extract-text" title="Extract Text & Copy [T]">
+                    ${ICONS.ocr}<span>Extract Text</span>
                   </button>
                 </div>
               </div>
@@ -3752,7 +3753,7 @@
               <!-- Right: Close Button -->
               <div class="scan-tb-group-right">
                 <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
-                <button type="button" class="scan-tb-btn scan-tb-icon-only scan-tb-btn-close" id="btn-studio-close" title="Close and return to home">${ICONS.cross}</button>
+                <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Close and return to home">${ICONS.cross}</button>
               </div>
             </header>
 
