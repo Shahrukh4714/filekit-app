@@ -4938,12 +4938,18 @@
       function cleanExtractedText(raw) {
         if (!raw) return '';
         let t = raw.replace(/\u00A0/g, ' ');
-        // Fix single-character spaced words from OCR letter segmentation
+        // Rejoin separated Devanagari / Indic vowels and combining marks
+        t = t.replace(/([\u0900-\u097F])\s+([\u093E-\u094F\u0951-\u0957\u0962-\u0963])/g, '$1$2');
+        // Collapse multi-single-character spaced runs (e.g. "क म चा री" -> "कर्मचारी" or "S u b j e c t" -> "Subject")
         t = t.replace(/(?:^|\n|\s)((?:[\u0900-\u097Fa-zA-Z0-9]\s){2,}[\u0900-\u097Fa-zA-Z0-9])(?:\s|\n|$)/g, (m, g1) => {
           return ' ' + g1.replace(/\s+/g, '') + ' ';
         });
+        // Fix broken URL formatting
+        t = t.replace(/https?\s*:\s*\/\s*\/\s*([^\s]+)/gi, (m, url) => {
+          return 'https://' + url.replace(/\s+/g, '');
+        });
         // Remove lone punctuation artifacts
-        t = t.replace(/^[~|`_—\-•]\s*$/gm, '');
+        t = t.replace(/^[~|`_—\-•=]\s*$/gm, '');
         // Collapse multiple blank lines
         t = t.replace(/\n{3,}/g, '\n\n');
         return t.trim();

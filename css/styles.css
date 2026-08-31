@@ -44402,16 +44402,17 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   MASTER NON-SCROLLING TOP TOOLBAR (Apple / Linear Craft Polish)
+/* ══════════════════════════════════════════════════════════════════════════════
+   MASTER NON-SCROLLING TOP TOOLBAR (Neutral Zinc Craft Polish)
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-unified-toolbar {
-  height: 42px !important;
-  min-height: 42px !important;
-  max-height: 42px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
   background: #FFFFFF !important;
-  border-bottom: 1px solid #E5EAF2 !important;
-  padding: 0 14px !important;
+  border-bottom: 1px solid #E4E4E7 !important;
+  padding: 0 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -44419,7 +44420,7 @@ body #app-view .rail-item.active {
   flex-shrink: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
-  overflow: hidden !important; /* 100% GUARANTEED ZERO HORIZONTAL SCROLL */
+  overflow: visible !important;
   user-select: none !important;
   z-index: 30 !important;
 }
@@ -44427,55 +44428,57 @@ body #app-view .rail-item.active {
 .scan-tb-left-cluster {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 4px !important;
   flex: 1 1 auto !important;
   min-width: 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  flex-wrap: nowrap !important;
 }
 
 .scan-tb-group {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 2px !important;
   flex-shrink: 0 !important;
 }
 
-/* Individual Toolbar Action Buttons (100% Neutral Monochrome) */
+/* Individual Toolbar Action Buttons (100% Neutral Zinc Monochrome) */
 .scan-tb-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
-  height: 28px !important;
-  padding: 0 9px !important;
+  gap: 4px !important;
+  height: 26px !important;
+  padding: 0 7px !important;
   background: transparent !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  font-size: 12px !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 5px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
   outline: none !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-tb-btn svg {
-  width: 13px !important;
-  height: 13px !important;
-  stroke: #475569 !important;
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #52525B !important;
   flex-shrink: 0 !important;
   transition: stroke 0.12s ease !important;
 }
 
 .scan-tb-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
-  border-color: #CBD5E1 !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+  border-color: #D4D4D8 !important;
 }
 
 .scan-tb-btn:hover svg {
-  stroke: #0F172A !important;
+  stroke: #18181B !important;
 }
 
 .scan-tb-btn:active {
@@ -44484,40 +44487,40 @@ body #app-view .rail-item.active {
 
 /* Primary "+ Add" button (Clean Neutral Slate) */
 .scan-tb-btn-primary {
-  background: #F8FAFC !important;
-  color: #0F172A !important;
-  border-color: #CBD5E1 !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+  border-color: #D4D4D8 !important;
   font-weight: 700 !important;
 }
 
 .scan-tb-btn-primary svg {
-  stroke: #0F172A !important;
+  stroke: #18181B !important;
 }
 
 .scan-tb-btn-primary:hover {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
-  border-color: #94A3B8 !important;
+  background: #E4E4E7 !important;
+  color: #18181B !important;
+  border-color: #A1A1AA !important;
 }
 
-/* Active State for toggle buttons (e.g. Crop, Drawer) - Clean Slate Border */
+/* Active State for toggle buttons (e.g. Crop, Drawer, Extract Text) */
 .scan-tb-btn.is-active {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
-  border-color: #0F172A !important;
-  font-weight: 700 !important;
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border-color: #18181B !important;
+  font-weight: 600 !important;
 }
 
 .scan-tb-btn.is-active svg {
-  stroke: #0F172A !important;
+  stroke: #FFFFFF !important;
 }
 
 /* Toolbar Divider Separator */
 .scan-tb-sep {
   width: 1px !important;
-  height: 16px !important;
-  background: #E2E8F0 !important;
-  margin: 0 4px !important;
+  height: 14px !important;
+  background: #E4E4E7 !important;
+  margin: 0 2px !important;
   flex-shrink: 0 !important;
 }
 
@@ -44525,57 +44528,58 @@ body #app-view .rail-item.active {
 .scan-segmented-filter {
   display: inline-flex !important;
   align-items: center !important;
-  background: #F1F5F9 !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 7px !important;
-  padding: 2px !important;
-  gap: 2px !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 6px !important;
+  padding: 1.5px !important;
+  gap: 1.5px !important;
   flex-shrink: 0 !important;
 }
 
 .scan-seg-filter-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  height: 24px !important;
-  padding: 0 8px !important;
+  gap: 3px !important;
+  height: 22px !important;
+  padding: 0 6px !important;
   background: transparent !important;
   border: none !important;
-  border-radius: 5px !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  color: #475569 !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #52525B !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1) !important;
   outline: none !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-seg-filter-btn svg {
-  width: 12px !important;
-  height: 12px !important;
-  stroke: #64748B !important;
+  width: 11px !important;
+  height: 11px !important;
+  stroke: #71717A !important;
   transition: stroke 0.12s ease !important;
 }
 
 .scan-seg-filter-btn:hover {
-  color: #0F172A !important;
+  color: #18181B !important;
 }
 
 .scan-seg-filter-btn:hover svg {
-  stroke: #0F172A !important;
+  stroke: #18181B !important;
 }
 
-/* ACTIVE FILTER STATE: Elegant White Card Pill, Neutral Dark Slate (NO BLUE, NO LAVENDER) */
+/* ACTIVE FILTER STATE: Clean White Card Pill, Neutral Dark */
 .scan-seg-filter-btn.is-active {
   background: #FFFFFF !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   font-weight: 700 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
 }
 
 .scan-seg-filter-btn.is-active svg {
-  stroke: #0F172A !important;
+  stroke: #18181B !important;
 }
 
 .scan-seg-filter-btn:active {
@@ -44591,15 +44595,15 @@ body #app-view .rail-item.active {
 }
 
 .scan-tb-btn-close {
-  width: 28px !important;
-  height: 28px !important;
+  width: 26px !important;
+  height: 26px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: transparent !important;
   border: 1px solid transparent !important;
-  border-radius: 6px !important;
-  color: #64748B !important;
+  border-radius: 5px !important;
+  color: #71717A !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   outline: none !important;
@@ -44607,9 +44611,9 @@ body #app-view .rail-item.active {
 }
 
 .scan-tb-btn-close svg {
-  width: 14px !important;
-  height: 14px !important;
-  stroke: #64748B !important;
+  width: 13px !important;
+  height: 13px !important;
+  stroke: #71717A !important;
 }
 
 .scan-tb-btn-close:hover {
@@ -44623,25 +44627,25 @@ body #app-view .rail-item.active {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   APPLE-GRADE FROSTED GLASS FLOATING DOCK (Zero Lag, Perfectly Centered)
+   FROSTED GLASS FLOATING DOCK (Neutral Zinc Palette)
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-stage-dock {
   position: absolute !important;
-  bottom: 20px !important;
+  bottom: 16px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 40 !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 4px 10px !important;
-  background: rgba(255, 255, 255, 0.92) !important;
+  gap: 5px !important;
+  padding: 3px 8px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border: 1px solid rgba(228, 228, 231, 0.9) !important;
   border-radius: 9999px !important;
-  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
   user-select: none !important;
   pointer-events: auto !important;
   transition: transform 0.12s ease, opacity 0.12s ease !important;
@@ -44650,19 +44654,19 @@ body #app-view .rail-item.active {
 .scan-dock-stepper {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
 }
 
 .scan-dock-icon-btn {
-  width: 24px !important;
-  height: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: transparent !important;
   border: none !important;
   border-radius: 50% !important;
-  color: #475569 !important;
+  color: #52525B !important;
   cursor: pointer !important;
   padding: 0 !important;
   transition: all 0.1s ease !important;
@@ -44670,22 +44674,22 @@ body #app-view .rail-item.active {
 }
 
 .scan-dock-icon-btn svg {
-  width: 12px !important;
-  height: 12px !important;
-  stroke: #475569 !important;
+  width: 11px !important;
+  height: 11px !important;
+  stroke: #52525B !important;
 }
 
 .scan-dock-icon-btn:hover:not(:disabled) {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
 }
 
 .scan-dock-icon-btn:hover:not(:disabled) svg {
-  stroke: #0F172A !important;
+  stroke: #18181B !important;
 }
 
 .scan-dock-icon-btn:disabled {
-  opacity: 0.35 !important;
+  opacity: 0.3 !important;
   cursor: not-allowed !important;
 }
 
@@ -44694,99 +44698,99 @@ body #app-view .rail-item.active {
 }
 
 .scan-dock-page-text {
-  font-size: 11.5px !important;
-  color: #475569 !important;
+  font-size: 11px !important;
+  color: #52525B !important;
   font-weight: 500 !important;
-  padding: 0 4px !important;
+  padding: 0 3px !important;
   white-space: nowrap !important;
 }
 
 .scan-dock-page-text strong {
-  color: #0F172A !important;
+  color: #18181B !important;
   font-weight: 700 !important;
 }
 
 .scan-dock-sep {
   width: 1px !important;
-  height: 14px !important;
-  background: #E2E8F0 !important;
-  margin: 0 4px !important;
+  height: 12px !important;
+  background: #E4E4E7 !important;
+  margin: 0 3px !important;
 }
 
 .scan-dock-zoom-group {
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
 }
 
 .scan-dock-zoom-val {
-  font-size: 11px !important;
+  font-size: 10.5px !important;
   font-weight: 600 !important;
-  color: #334155 !important;
+  color: #3F3F46 !important;
   background: transparent !important;
   border: none !important;
   cursor: pointer !important;
-  padding: 2px 4px !important;
+  padding: 1px 3px !important;
   border-radius: 4px !important;
-  min-width: 36px !important;
+  min-width: 32px !important;
   text-align: center !important;
   transition: all 0.1s ease !important;
 }
 
 .scan-dock-zoom-val:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
 }
 
 .scan-dock-fit-btn {
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
-  color: #475569 !important;
-  background: #F1F5F9 !important;
-  border: 1px solid #E2E8F0 !important;
+  color: #52525B !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
   border-radius: 4px !important;
-  padding: 2px 6px !important;
+  padding: 1px 5px !important;
   cursor: pointer !important;
   transition: all 0.1s ease !important;
   margin-left: 2px !important;
 }
 
 .scan-dock-fit-btn:hover {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
+  background: #E4E4E7 !important;
+  color: #18181B !important;
 }
 
 .scan-dock-privacy {
   display: flex !important;
   align-items: center !important;
   gap: 3px !important;
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: #059669 !important;
   background: #DCFCE7 !important;
-  padding: 2px 6px !important;
+  padding: 1.5px 5px !important;
   border-radius: 9999px !important;
 }
 
 .scan-dock-privacy svg {
-  width: 10px !important;
-  height: 10px !important;
+  width: 9px !important;
+  height: 9px !important;
   stroke: #059669 !important;
 }
 
-/* Paper Canvas Border Removal */
+/* Paper Canvas Shadow */
 #scan-paper-page,
 .scan-paper-page {
   border: none !important;
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07) !important;
 }
 
-/* Thumbnail Card Active State: Clean Dark Slate (NO Lavender/Purple) */
+/* Thumbnail Card Active State: Clean Neutral Zinc Dark */
 .etxt-thumb-card.is-on,
 .scan-thumbs-drawer .etxt-thumb-card.is-on {
-  border-color: #0F172A !important;
+  border-color: #18181B !important;
   background: #FFFFFF !important;
-  box-shadow: 0 0 0 1.5px #0F172A, 0 3px 12px rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 0 0 1.5px #18181B, 0 3px 10px rgba(0, 0, 0, 0.1) !important;
 }
 
 .scan-thumbs-drawer,
@@ -44795,26 +44799,8 @@ body #app-view .rail-item.active {
   margin-right: 0 !important;
 }
 
-/* Responsive Adaptive Toolbars (Zero Scroll On All Screens) */
-@media (max-width: 1050px) {
-  .scan-unified-toolbar {
-    padding: 0 8px !important;
-  }
-  .scan-tb-left-cluster {
-    gap: 4px !important;
-  }
-  .scan-tb-btn {
-    padding: 0 6px !important;
-    font-size: 11px !important;
-  }
-  .scan-seg-filter-btn {
-    padding: 0 6px !important;
-    font-size: 11px !important;
-  }
-}
-
 /* ══════════════════════════════════════════════════════════════════════════════
-   LASER SCANNER BEAM SWEEP ANIMATION (Precision Blue/Cyan Pulse)
+   LASER SCANNER BEAM SWEEP ANIMATION
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .scan-laser-beam {
@@ -44835,46 +44821,36 @@ body #app-view .rail-item.active {
 }
 
 @keyframes laserScanSweep {
-  0% {
-    top: 0%;
-    opacity: 0.2;
-  }
-  15% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    top: 100%;
-    opacity: 0.2;
-  }
+  0% { top: 0%; opacity: 0.2; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 100%; opacity: 0.2; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   FULL-STAGE EXTRACTED TEXT SHEET — Neutral Zinc Color System, Zero Wrapping
+   FULL-STAGE EXTRACTED TEXT DOCUMENT WORKSPACE (Neutral Zinc — Zero Emojis)
    ══════════════════════════════════════════════════════════════════════════════ */
 
-/* Sheet lives inside scan-canvas-wrap, covers the whole stage area */
 .scan-text-sheet {
   position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: #FAFAFA !important;
+  inset: 12px 16px 56px 16px !important;
+  max-width: 820px !important;
+  width: calc(100% - 32px) !important;
+  margin: 0 auto !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
   display: none !important;
   flex-direction: column !important;
-  z-index: 40 !important;
+  z-index: 50 !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
 
 .scan-text-sheet.is-visible {
   display: flex !important;
-  animation: sheetSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: sheetSlideIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 @keyframes sheetSlideIn {
@@ -44882,26 +44858,25 @@ body #app-view .rail-item.active {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* ─── Tier 1: Title Bar ─────────────────────────────────────────── */
+/* Tier 1: Title Bar */
 .scan-sheet-topbar {
-  height: 44px !important;
-  min-height: 44px !important;
+  height: 42px !important;
+  min-height: 42px !important;
   border-bottom: 1px solid #E4E4E7 !important;
-  background: #FFFFFF !important;
-  padding: 0 16px !important;
+  background: #FAFAFA !important;
+  padding: 0 14px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   box-sizing: border-box !important;
   user-select: none !important;
   flex-shrink: 0 !important;
-  box-shadow: 0 1px 0 #E4E4E7 !important;
 }
 
 .scan-sheet-topbar-left {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   min-width: 0 !important;
   flex: 1 1 auto !important;
   overflow: hidden !important;
@@ -44911,9 +44886,9 @@ body #app-view .rail-item.active {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   font-weight: 700 !important;
-  color: #18181B !important; /* neutral zinc-900 */
+  color: #18181B !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
 }
@@ -44921,17 +44896,17 @@ body #app-view .rail-item.active {
 .scan-sheet-title-badge svg {
   width: 14px !important;
   height: 14px !important;
-  stroke: #3F3F46 !important; /* zinc-700 */
+  stroke: #18181B !important;
   flex-shrink: 0 !important;
 }
 
 .scan-sheet-stats-badge {
-  font-size: 11.5px !important;
-  color: #71717A !important; /* zinc-500 */
+  font-size: 11px !important;
+  color: #71717A !important;
   font-weight: 500 !important;
-  background: #F4F4F5 !important; /* zinc-100 */
-  border: 1px solid #E4E4E7 !important; /* zinc-200 */
-  padding: 2px 8px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  padding: 2px 7px !important;
   border-radius: 99px !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
@@ -44944,15 +44919,15 @@ body #app-view .rail-item.active {
 .scan-sheet-close-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  height: 28px !important;
-  padding: 0 10px !important;
+  gap: 4px !important;
+  height: 26px !important;
+  padding: 0 9px !important;
   background: #FFFFFF !important;
-  border: 1px solid #D4D4D8 !important; /* zinc-300 */
-  border-radius: 6px !important;
-  font-size: 12px !important;
+  border: 1px solid #D4D4D8 !important;
+  border-radius: 5px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
-  color: #3F3F46 !important; /* zinc-700 */
+  color: #3F3F46 !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   outline: none !important;
@@ -44962,26 +44937,26 @@ body #app-view .rail-item.active {
 .scan-sheet-close-btn svg {
   width: 11px !important;
   height: 11px !important;
-  stroke: #71717A !important; /* zinc-500 */
+  stroke: #71717A !important;
 }
 
 .scan-sheet-close-btn:hover {
   background: #F4F4F5 !important;
   color: #18181B !important;
-  border-color: #A1A1AA !important; /* zinc-400 */
+  border-color: #A1A1AA !important;
 }
 
 .scan-sheet-close-btn:hover svg {
-  stroke: #3F3F46 !important;
+  stroke: #18181B !important;
 }
 
-/* ─── Tier 2: Action Bar ─────────────────────────────────────────── */
+/* Tier 2: Action Bar */
 .scan-sheet-actionbar {
-  height: 42px !important;
-  min-height: 42px !important;
+  height: 40px !important;
+  min-height: 40px !important;
   border-bottom: 1px solid #E4E4E7 !important;
   background: #FFFFFF !important;
-  padding: 0 16px !important;
+  padding: 0 14px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -44996,9 +44971,9 @@ body #app-view .rail-item.active {
   gap: 5px !important;
   background: #F4F4F5 !important;
   border: 1px solid #E4E4E7 !important;
-  border-radius: 6px !important;
-  padding: 0 8px !important;
-  height: 28px !important;
+  border-radius: 5px !important;
+  padding: 0 7px !important;
+  height: 26px !important;
   cursor: pointer !important;
 }
 
@@ -45014,7 +44989,7 @@ body #app-view .rail-item.active {
   background: transparent !important;
   font-size: 11.5px !important;
   font-weight: 600 !important;
-  color: #3F3F46 !important; /* zinc-700 */
+  color: #3F3F46 !important;
   outline: none !important;
   cursor: pointer !important;
   padding: 0 !important;
@@ -45026,17 +45001,16 @@ body #app-view .rail-item.active {
   gap: 5px !important;
 }
 
-/* Secondary export buttons */
 .scan-sheet-act-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  height: 28px !important;
-  padding: 0 10px !important;
+  gap: 4px !important;
+  height: 26px !important;
+  padding: 0 9px !important;
   background: #FFFFFF !important;
   border: 1px solid #D4D4D8 !important;
-  border-radius: 6px !important;
-  font-size: 12px !important;
+  border-radius: 5px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
   color: #3F3F46 !important;
   cursor: pointer !important;
@@ -45059,16 +45033,16 @@ body #app-view .rail-item.active {
 }
 
 .scan-sheet-act-btn:hover svg {
-  stroke: #3F3F46 !important;
+  stroke: #18181B !important;
 }
 
 .scan-sheet-act-btn:active {
   transform: scale(0.97) !important;
 }
 
-/* Primary Copy CTA — filled dark */
+/* Primary Copy CTA — solid dark zinc */
 .scan-sheet-act-primary {
-  background: #18181B !important; /* zinc-900 */
+  background: #18181B !important;
   color: #FFFFFF !important;
   border-color: #18181B !important;
 }
@@ -45078,7 +45052,7 @@ body #app-view .rail-item.active {
 }
 
 .scan-sheet-act-primary:hover {
-  background: #27272A !important; /* zinc-800 */
+  background: #27272A !important;
   border-color: #27272A !important;
   color: #FFFFFF !important;
 }
@@ -45099,16 +45073,16 @@ body #app-view .rail-item.active {
   stroke: #FFFFFF !important;
 }
 
-/* ─── Body: Textarea ─────────────────────────────────────────── */
+/* Body: Textarea */
 .scan-text-sheet-body {
   flex: 1 1 auto !important;
   position: relative !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  padding: 24px 28px !important;
+  padding: 20px 24px !important;
   box-sizing: border-box !important;
-  background: #FAFAFA !important;
+  background: #FFFFFF !important;
 }
 
 .scan-sheet-textarea {
@@ -45120,21 +45094,21 @@ body #app-view .rail-item.active {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif !important;
   font-size: 14px !important;
   line-height: 1.75 !important;
-  color: #18181B !important; /* neutral zinc-900 */
+  color: #18181B !important;
   background: transparent !important;
   box-sizing: border-box !important;
   caret-color: #18181B !important;
 }
 
 .scan-sheet-textarea::placeholder {
-  color: #A1A1AA !important; /* zinc-400 */
+  color: #A1A1AA !important;
 }
 
-/* ─── Loading State ─────────────────────────────────────────── */
+/* Loading State */
 .scan-sheet-loading-state {
   position: absolute !important;
   inset: 0 !important;
-  background: rgba(250, 250, 250, 0.92) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
   backdrop-filter: blur(4px) !important;
   display: none !important;
   flex-direction: column !important;
@@ -45162,16 +45136,6 @@ body #app-view .rail-item.active {
 
 @keyframes sheetSpin {
   to { transform: rotate(360deg); }
-}
-
-/* ─── Toolbar: Remove overflow:hidden to stop button clipping ─── */
-.scan-tb-left-cluster {
-  overflow: visible !important;
-  flex-wrap: nowrap !important;
-}
-
-.scan-unified-toolbar {
-  overflow: visible !important;
 }
 
 
