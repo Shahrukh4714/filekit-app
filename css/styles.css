@@ -44471,6 +44471,15 @@ body #app-view .rail-item.active {
   transition: stroke 0.12s ease !important;
 }
 
+/* Compact Icon-Only Tool Buttons (30px x 30px) */
+.scan-tb-btn.scan-tb-icon-btn {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+}
+
 .scan-tb-btn:hover {
   background: #E5E7EB !important;
   color: #111827 !important;
@@ -44498,9 +44507,26 @@ body #app-view .rail-item.active {
   stroke: #2563EB !important;
 }
 
-/* Hero Extract Text Button */
+/* Hero Extract Text Button — Guaranteed never to shrink */
 .scan-tb-btn-extract {
   font-weight: 600 !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Compact Page Drawer Button & Badge */
+.scan-tb-btn-pages {
+  gap: 5px !important;
+  padding: 0 8px !important;
+}
+
+.scan-tb-page-badge {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  background: #E5E7EB !important;
+  padding: 1px 5px !important;
+  border-radius: 99px !important;
 }
 
 /* Toolbar Divider Separator (Vertical Hairline) */
@@ -44527,30 +44553,32 @@ body #app-view .rail-item.active {
 .scan-seg-filter-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  height: 24px !important;
-  padding: 0 8px !important;
+  justify-content: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  height: 26px !important;
+  padding: 0 !important;
   background: transparent !important;
   border: none !important;
   border-radius: 5px !important;
-  font-size: 11.5px !important;
-  font-weight: 500 !important;
   color: #4B5563 !important;
   cursor: pointer !important;
-  white-space: nowrap !important;
   transition: all 0.12s ease !important;
   outline: none !important;
+  flex-shrink: 0 !important;
 }
 
 .scan-seg-filter-btn svg {
-  width: 12px !important;
-  height: 12px !important;
+  width: 13px !important;
+  height: 13px !important;
   stroke: #6B7280 !important;
   transition: stroke 0.12s ease !important;
 }
 
 .scan-seg-filter-btn:hover {
   color: #111827 !important;
+  background: rgba(255, 255, 255, 0.5) !important;
 }
 
 .scan-seg-filter-btn:hover svg {
@@ -44561,7 +44589,6 @@ body #app-view .rail-item.active {
 .scan-seg-filter-btn.is-active {
   background: #FFFFFF !important;
   color: #111827 !important;
-  font-weight: 600 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 

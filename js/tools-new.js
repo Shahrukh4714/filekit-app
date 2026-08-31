@@ -3699,7 +3699,7 @@
         <div class="scan-benchmark-workstation" id="scan-benchmark-workstation">
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
-            <!-- Modern Balanced Toolbar (Hero Labels + Clean Segmented Filter) -->
+            <!-- Modern Balanced Toolbar (Hero Labels + Clean Compact Utility Icons) -->
             <header class="scan-unified-toolbar" id="scan-unified-toolbar" role="toolbar" aria-label="Scan Tools">
               <div class="scan-tb-left-cluster">
                 <!-- Group 1: Page Management -->
@@ -3708,41 +3708,41 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                     <span>Add</span>
                   </button>
-                  <button type="button" class="scan-tb-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-top-toggle-drawer" title="Toggle Page Thumbnails">
-                    ${ICONS.sidebar}<span>Pages (${pages.length})</span>
+                  <button type="button" class="scan-tb-btn scan-tb-btn-pages ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-top-toggle-drawer" title="Toggle Page Thumbnails (${pages.length} pages)">
+                    ${ICONS.sidebar}<span class="scan-tb-page-badge">${pages.length}</span>
                   </button>
                 </div>
 
                 <span class="scan-tb-sep" aria-hidden="true"></span>
 
-                <!-- Group 2: Geometry Tools -->
+                <!-- Group 2: Geometry Tools (Icon Only) -->
                 <div class="scan-tb-group">
-                  <button type="button" class="scan-tb-btn ${isCropping ? 'is-active' : ''}" data-tool="recrop" title="Crop Bounds [C]">
-                    ${ICONS.crop}<span>Crop</span>
+                  <button type="button" class="scan-tb-btn scan-tb-icon-btn ${isCropping ? 'is-active' : ''}" data-tool="recrop" title="Crop Page Bounds [C]">
+                    ${ICONS.crop}
                   </button>
-                  <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° [R]">
-                    ${ICONS.rotate}<span>Rotate</span>
+                  <button type="button" class="scan-tb-btn scan-tb-icon-btn" data-tool="rotate" title="Rotate 90° [R]">
+                    ${ICONS.rotate}
                   </button>
                 </div>
 
                 <span class="scan-tb-sep" aria-hidden="true"></span>
 
-                <!-- Group 3: Document Filter Segmented Switcher (Clean, B&W, Color) -->
+                <!-- Group 3: Document Filter Modes (Compact Segmented Icons) -->
                 <div class="scan-segmented-filter" role="radiogroup" aria-label="Filter Modes">
                   <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'enhanced' || (!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-active' : ''}" data-tool="clean" title="Smart Clean Document [1]">
-                    ${ICONS.filterDoc}<span>Clean</span>
+                    ${ICONS.filterDoc}
                   </button>
                   <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'bw' ? 'is-active' : ''}" data-tool="bw" title="B&W Contrast [2]">
-                    ${ICONS.filterBw}<span>B&W</span>
+                    ${ICONS.filterBw}
                   </button>
                   <button type="button" class="scan-seg-filter-btn ${curPage.enhanceMode === 'photo' ? 'is-active' : ''}" data-tool="photo" title="Full Color Photo [3]">
-                    ${ICONS.filterPhoto}<span>Color</span>
+                    ${ICONS.filterPhoto}
                   </button>
                 </div>
 
                 <span class="scan-tb-sep" aria-hidden="true"></span>
 
-                <!-- Group 4: OCR Text Extractor (Hero Feature) -->
+                <!-- Group 4: OCR Text Extractor (Hero Feature with Label) -->
                 <div class="scan-tb-group">
                   <button type="button" class="scan-tb-btn scan-tb-btn-extract ${isTextSheetOpen ? 'is-active' : ''}" id="btn-top-extract-text" title="Extract Text & Copy [T]">
                     ${ICONS.ocr}<span>Extract Text</span>
