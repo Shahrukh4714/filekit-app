@@ -3697,8 +3697,9 @@
         <div class="scan-benchmark-workstation" id="scan-benchmark-workstation">
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
-            <!-- Top Toolbar: All tools flat, text-labeled, zero scroll -->
+            <!-- Streamlined Top Toolbar: Clean, text-labeled, zero overcrowding -->
             <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
+              <!-- Group 1: Illumination Filters -->
               <div class="scan-segmented-modes" role="group" aria-label="Enhancement Filter">
                 <button type="button" class="scan-seg-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
                   <span>Original</span>
@@ -3716,20 +3717,20 @@
 
               <span class="scan-tb-sep" aria-hidden="true"></span>
 
+              <!-- Group 2: Geometry & Crop -->
+              <button type="button" class="scan-tb-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">
+                ${ICONS.crop}<span>Crop</span>
+              </button>
+              <button type="button" class="scan-tb-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">
+                ${ICONS.rotate}<span>Rotate</span>
+              </button>
               <button type="button" class="scan-tb-btn ${isSplitView ? 'is-on' : ''}" data-tool="compare" title="Before / After Split Compare [Space]">
                 ${ICONS.split}<span>Compare</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find text in document (Ctrl+F)">
-                ${ICONS.search}
-                <span>Search</span>
-              </button>
-              <button type="button" class="scan-tb-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout — Redact PII">
-                ${ICONS.redact}
-                <span>Redact</span>
               </button>
 
               <span class="scan-tb-sep" aria-hidden="true"></span>
 
+              <!-- Group 3: OCR Live Text -->
               <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-toggle-live-text" title="Toggle Direct Live Text Selection on Document">
                 ${ICONS.ocr}<span>Live Text</span>
               </button>
@@ -3737,11 +3738,11 @@
                 ${ICONS.copy}<span>Copy Text</span>
               </button>
 
-              <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply filter to all ${pages.length} pages">
+              <button type="button" class="scan-tb-btn scan-btn-apply-all" id="btn-top-apply-all" title="Apply current filter to all ${pages.length} pages">
                 ${ICONS.sparkle}<span>All (${pages.length})</span>
               </button>
 
-              <!-- Right group: push to far right via margin-left:auto -->
+              <!-- Group 4: Right Actions -->
               <div class="scan-tb-group-right">
                 <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
                   ${ICONS.camera}<span>Camera</span>
@@ -3754,101 +3755,10 @@
               </div>
             </header>
 
-            ${isRedacting ? `
-              <div class="scan-redact-subbar" id="scan-redact-subbar">
-                <div class="scan-redact-subbar-left">
-                  <span class="scan-redact-indicator"></span>
-                  <span class="scan-redact-subbar-title">Redaction Mode</span>
-                  <span class="scan-redact-subbar-divider"></span>
-                  <span class="scan-redact-subbar-hint">Click any word on canvas or drag a blackout box</span>
-                </div>
-                <div class="scan-redact-subbar-actions">
-                  <button type="button" class="scan-redact-subbar-btn-primary" id="btn-ribbon-auto-redact-pii" title="Automatically detect and blackout sensitive personal information">
-                    ${ICONS.shield}
-                    <span>Auto-Redact PII</span>
-                  </button>
-                  <div class="scan-redact-kw-wrap">
-                    <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact" title="Find and blackout specific keywords or phrases">
-                      ${ICONS.search}
-                      <span>Find &amp; Redact Words</span>
-                    </button>
-                    ${activeFlyout === 'keyword-redact' ? `
-                      <div class="scan-kw-popover" id="scan-kw-popover">
-                        <div class="scan-kw-popover-head">
-                          <div class="scan-flyout-title-row">
-                            ${ICONS.search}
-                            <strong>Find &amp; Redact Words</strong>
-                          </div>
-                          <button type="button" class="scan-flyout-reset-btn" id="btn-close-kw-flyout" title="Close">${ICONS.cross}</button>
-                        </div>
-                        <div class="scan-kw-body">
-                          <div class="scan-kw-input-wrap">
-                            <input type="text" id="scan-kw-input" placeholder="Type keyword or phrase to blackout..." value="${esc(keywordRedactQuery)}" autofocus>
-                          </div>
-                          <div class="scan-kw-options-grid">
-                            <div class="scan-kw-checks">
-                              <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-match-case" ${keywordMatchCase ? 'checked' : ''}><span>Match Case</span></label>
-                              <label class="scan-kw-opt"><input type="checkbox" id="scan-kw-whole-word" ${keywordWholeWord ? 'checked' : ''}><span>Whole Word</span></label>
-                            </div>
-                            <div class="scan-kw-scope-select">
-                              <span>Scope:</span>
-                              <select id="scan-kw-scope">
-                                <option value="all" ${keywordScope === 'all' ? 'selected' : ''}>All Pages (${pages.length})</option>
-                                <option value="current" ${keywordScope === 'current' ? 'selected' : ''}>Current Page</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div class="scan-kw-footer">
-                            <span class="scan-kw-counter" id="scan-kw-counter">Enter keyword to match</span>
-                            <button type="button" class="scan-kw-exec-btn" id="btn-exec-keyword-redact">Blackout Matches</button>
-                          </div>
-                        </div>
-                      </div>
-                    ` : ''}
-                  </div>
-                  <button type="button" class="scan-redact-subbar-done" id="btn-close-redact-ribbon" title="Exit Redaction Mode">Done</button>
-                </div>
-              </div>
-            ` : ''}
-
             <!-- Main Stage Body -->
             <div class="scan-editor-body" id="scan-editor-body">
-              <!-- Left Tool Dock: Geometric, Tune & Stamp Transforms -->
-              <div class="etxt-floating-dock-wrap">
-                <nav class="etxt-floating-dock" aria-label="Canvas & Page Tools">
-                  <button type="button" class="etxt-floating-dock-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">${ICONS.crop}</button>
-                  <button type="button" class="etxt-floating-dock-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">${ICONS.rotate}</button>
-                  <button type="button" class="etxt-floating-dock-btn" data-tool="rotccw" title="Rotate 90° Counter-Clockwise">${ICONS.rotccw}</button>
-                  <span class="etxt-dock-sep"></span>
-                  <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast [T]">
-                    ${ICONS.tune}
-                  </button>
-                  <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Add Stamp or Signature [S]">
-                    ${ICONS.stamp}
-                  </button>
-                  <span class="etxt-dock-sep"></span>
-                  <button type="button" class="etxt-floating-dock-btn" data-tool="copy" title="Copy image to clipboard">${ICONS.copy}</button>
-                  <button type="button" class="etxt-floating-dock-btn scan-dock-del" data-tool="delete" title="Delete page [Del]">${ICONS.trash}</button>
-                </nav>
-
-                <!-- Anchored Flyout Popover -->
-                <div class="etxt-dock-flyout scan-dock-flyout ${activeFlyout ? 'is-open' : ''}" id="scan-dock-flyout" ${activeFlyout ? '' : 'hidden'}>
-                  ${renderActiveFlyoutContent(curPage)}
-                </div>
-              </div>
-
               <!-- Centered Scrollable Document Canvas Stage -->
               <main class="etxt-canvas-wrap scan-canvas-stage" id="scan-canvas-wrap">
-                <!-- Floating Search Bar -->
-                ${showSearchBar ? `
-                  <div class="scan-floating-search-bar" id="scan-search-bar">
-                    ${ICONS.search}
-                    <input type="text" id="scan-search-input" placeholder="Find text in scan (press Enter)..." value="${esc(searchQuery)}" autofocus>
-                    <span class="scan-search-counter" id="scan-search-counter">0 matches</span>
-                    <button type="button" class="scan-search-close-btn" id="btn-close-search">${ICONS.cross}</button>
-                  </div>
-                ` : ''}
-
                 <!-- Floating Crop Bar -->
                 ${isCropping && cropState ? `
                   <div class="scan-crop-floating-bar" id="scan-crop-floating-bar">
@@ -3868,8 +3778,6 @@
                   <canvas id="scan-studio-canvas" class="scan-studio-canvas"></canvas>
                   <!-- Interactive Selectable OCR Text Layer (Apple Live Text) -->
                   <div class="scan-text-layer ${showOcrLayer ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer}"></div>
-                  <!-- Interactive Placed Overlay Elements (Signatures & Stamps) -->
-                  <div class="scan-overlays-layer" id="scan-overlays-layer"></div>
                   <!-- Apple Live Text Floating Selection Action Pill -->
                   <div class="scan-live-text-selection-pill" id="scan-selection-pill" style="display:none;" aria-hidden="true">
                     <button type="button" id="btn-pill-copy" title="Copy selected text">${ICONS.copy}<span>Copy</span></button>
@@ -4003,43 +3911,41 @@
               <span class="scan-benchmark-card-label">Image ZIP</span>
             </div>
 
-            <!-- Compact Configuration Settings Box -->
-            <div class="scan-modal-config-box">
-              <div class="scan-modal-config-row">
-                <div class="scan-modal-config-field" id="panel-field-dpi">
-                  <span class="scan-modal-config-lbl">Resolution</span>
-                  <select id="panel-export-dpi" class="scan-modal-select-sm">
-                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High)</option>
-                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
-                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
-                  </select>
-                </div>
+            <!-- Vertical Clean Configuration Fields -->
+            <div class="scan-config-vertical-stack">
+              <div class="scan-config-vfield" id="panel-field-dpi">
+                <label class="scan-config-vlabel" for="panel-export-dpi">Resolution</label>
+                <select id="panel-export-dpi" class="scan-config-vselect">
+                  <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High Quality)</option>
+                  <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
+                  <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact File)</option>
+                </select>
+              </div>
 
-                <div class="scan-modal-config-field" id="panel-field-size">
-                  <span class="scan-modal-config-lbl">Geometry</span>
-                  <select id="panel-export-pagesize" class="scan-modal-select-sm">
-                    <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
-                    <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
-                    <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
-                  </select>
-                </div>
+              <div class="scan-config-vfield" id="panel-field-size">
+                <label class="scan-config-vlabel" for="panel-export-pagesize">Geometry</label>
+                <select id="panel-export-pagesize" class="scan-config-vselect">
+                  <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210 × 297 mm)</option>
+                  <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter (8.5 × 11 in)</option>
+                  <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original Dimensions</option>
+                </select>
+              </div>
 
-                <div class="scan-modal-config-field" id="panel-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
-                  <span class="scan-modal-config-lbl">Language</span>
-                  <select id="panel-export-lang" class="scan-modal-select-sm">
-                    <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
-                    <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
-                    <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
-                    <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
-                    <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
-                    <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
-                    <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
-                    <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
-                    <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
-                    <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
-                    <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
-                  </select>
-                </div>
+              <div class="scan-config-vfield" id="panel-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
+                <label class="scan-config-vlabel" for="panel-export-lang">OCR Language</label>
+                <select id="panel-export-lang" class="scan-config-vselect">
+                  <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
+                  <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (Español)</option>
+                  <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (Français)</option>
+                  <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (Deutsch)</option>
+                  <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (Italiano)</option>
+                  <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (Português)</option>
+                  <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिन्दी)</option>
+                  <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (简体中文)</option>
+                  <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (日本語)</option>
+                  <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (العربية)</option>
+                  <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect Language</option>
+                </select>
               </div>
             </div>
 
@@ -4634,12 +4540,16 @@
       const rawSource = p.raw || p.canvas;
       const wrap = container.querySelector('#scan-canvas-wrap');
       const maxW = 3200;
-      const stageW = wrap?.parentElement?.clientWidth || wrap?.clientWidth || 1000;
-      const padLeft = 72;
-      const padRight = ocrPanelOpen ? 400 : 72;
-      const availableW = Math.max(340, stageW - padLeft - padRight);
-      const targetW = Math.min(availableW, 960);
-      const sc = Math.min(maxW / source.width, targetW / source.width, 1);
+      const stageW = wrap?.clientWidth || 800;
+      const stageH = wrap?.clientHeight || 600;
+      const padX = 64;
+      const padY = 48;
+      const availableW = Math.max(280, stageW - padX);
+      const availableH = Math.max(280, stageH - padY);
+      const scW = availableW / source.width;
+      const scH = availableH / source.height;
+      const baseFitScale = Math.min(scW, scH, 1);
+      const sc = Math.min(maxW / source.width, baseFitScale);
       const displayW = Math.max(1, Math.round(source.width * sc));
       const displayH = Math.max(1, Math.round(source.height * sc));
       const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));

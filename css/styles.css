@@ -43997,6 +43997,62 @@ body #app-view .rail-item.active {
 }
 
 /* Compact Configuration Box */
+/* Vertical Clean Configuration Fields */
+.scan-config-vertical-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  box-sizing: border-box !important;
+}
+
+.scan-config-vfield {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  width: 100% !important;
+}
+
+.scan-config-vlabel {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #64748B !important;
+}
+
+.scan-config-vselect {
+  width: 100% !important;
+  height: 34px !important;
+  padding: 0 28px 0 10px !important;
+  background: #FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  color: #0F172A !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: border-color 0.12s ease !important;
+}
+
+.scan-config-vselect:hover {
+  border-color: #94A3B8 !important;
+}
+
+.scan-config-vselect:focus {
+  border-color: #6366F1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Compact Configuration Box (Legacy) */
 .scan-modal-config-box {
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
