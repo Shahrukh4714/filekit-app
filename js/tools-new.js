@@ -4602,11 +4602,11 @@
       const rawSource = p.raw || p.canvas;
       const wrap = container.querySelector('#scan-canvas-wrap');
       const maxW = 3200;
-      const wrapW = wrap?.clientWidth || 900;
-      const wrapH = wrap?.clientHeight || 640;
-      const availableW = Math.max(300, wrapW - (ocrPanelOpen ? 48 : 80));
-      // Responsive document reading width (fits cleanly without left-dock collision)
-      const targetW = Math.min(availableW, Math.max(320, Math.round(availableW * 0.88)));
+      const stageW = wrap?.parentElement?.clientWidth || wrap?.clientWidth || 1000;
+      const padLeft = 72;
+      const padRight = ocrPanelOpen ? 400 : 72;
+      const availableW = Math.max(340, stageW - padLeft - padRight);
+      const targetW = Math.min(availableW, 960);
       const sc = Math.min(maxW / source.width, targetW / source.width, 1);
       const displayW = Math.max(1, Math.round(source.width * sc));
       const displayH = Math.max(1, Math.round(source.height * sc));
