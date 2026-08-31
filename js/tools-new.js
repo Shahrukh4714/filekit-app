@@ -595,7 +595,6 @@
           corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
           langPath:   lang === 'eng' ? base + 'vendor/tesseract' : 'https://tessdata.projectnaptha.com/4.0.0_fast',
           workerBlobURL: false,
-          cacheMethod: 'none',
           gzip: false,
           logger: (m) => {
             if (!m || !m.status) return;
@@ -635,8 +634,7 @@
     for (let i = 0; i < n; i++) {
       _ocrOnProgress = (p) => { if (typeof onProgress === 'function') onProgress((i + p) / n); };
       const cv = canvases[i];
-      const payload = cv.toDataURL ? cv.toDataURL('image/jpeg', 0.85) : cv;
-      const { data } = await worker.recognize(payload);
+      const { data } = await worker.recognize(cv);
       results.push(data);
       if (typeof onProgress === 'function') onProgress((i + 1) / n);
     }
@@ -3804,18 +3802,18 @@
 
                 <!-- In-Place Minimalist Extracted Text Paper Document Sheet -->
                 <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet">
-                  <!-- Single Unified Minimalist Top Bar -->
+                  <!-- Single Unified Minimalist Top Bar (Ultra-Compact) -->
                   <div class="scan-sheet-header">
                     <div class="scan-sheet-header-left">
-                      <span class="scan-sheet-title">${ICONS.ocr}<span>Extracted Text</span></span>
-                      <span class="scan-sheet-stats-pill" id="scan-sheet-stats">0 words · 0 chars</span>
+                      <span class="scan-sheet-title">${ICONS.ocr}<span>Text</span></span>
+                      <span class="scan-sheet-stats-pill" id="scan-sheet-stats">0w · 0c</span>
                     </div>
 
                     <div class="scan-sheet-header-center">
                       ${pages.length > 1 ? `
                         <!-- Multi-Page Scope Toggle Capsule -->
                         <div class="scan-sheet-scope-capsule" role="radiogroup" aria-label="OCR Scope">
-                          <button type="button" class="scan-sheet-scope-btn ${ocrScope === 'current' ? 'is-active' : ''}" id="btn-sheet-scope-current" data-scope="current" title="Extract current page only">Page ${selIdx + 1}</button>
+                          <button type="button" class="scan-sheet-scope-btn ${ocrScope === 'current' ? 'is-active' : ''}" id="btn-sheet-scope-current" data-scope="current" title="Extract current page only">P.${selIdx + 1}</button>
                           <button type="button" class="scan-sheet-scope-btn ${ocrScope === 'all' ? 'is-active' : ''}" id="btn-sheet-scope-all" data-scope="all" title="Extract all ${pages.length} pages into a single document">All (${pages.length})</button>
                         </div>
                         <span class="scan-sheet-sep" aria-hidden="true"></span>
@@ -3823,20 +3821,20 @@
 
                       <!-- Language Selector -->
                       <div class="scan-sheet-lang-pill" title="OCR Language">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
                         <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
-                          <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                          <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
-                          <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
-                          <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
-                          <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
-                          <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
-                          <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
-                          <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
-                          <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
-                          <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
-                          <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
-                          <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
+                          <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>EN</option>
+                          <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>HI (हिंदी)</option>
+                          <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>ES (Español)</option>
+                          <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>FR (Français)</option>
+                          <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>DE (Deutsch)</option>
+                          <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>ZH (中文)</option>
+                          <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>JA (日本語)</option>
+                          <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>AR (العربية)</option>
+                          <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>RU (Русский)</option>
+                          <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>PT (Português)</option>
+                          <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>IT (Italiano)</option>
+                          <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>KO (한국어)</option>
                         </select>
                       </div>
 
@@ -3844,14 +3842,14 @@
 
                       <!-- Action Buttons -->
                       <div class="scan-sheet-actions">
-                        <button type="button" class="scan-sheet-btn scan-sheet-btn-copy" id="btn-sheet-copy" title="Copy all text to clipboard">
-                          ${ICONS.copy}<span id="sheet-copy-label">Copy All</span>
+                        <button type="button" class="scan-sheet-btn scan-sheet-btn-copy" id="btn-sheet-copy" title="Copy text to clipboard">
+                          ${ICONS.copy}<span id="sheet-copy-label">Copy</span>
                         </button>
                         <button type="button" class="scan-sheet-btn" id="btn-sheet-download-txt" title="Download as .txt">
-                          ${ICONS.txt}<span>TXT</span>
+                          <span>TXT</span>
                         </button>
                         <button type="button" class="scan-sheet-btn" id="btn-sheet-download-doc" title="Download as .docx">
-                          ${ICONS.word}<span>DOCX</span>
+                          <span>DOCX</span>
                         </button>
                       </div>
                     </div>
@@ -4068,6 +4066,42 @@
       }
     }
 
+    function prepareOcrCanvas(srcCv) {
+      if (!srcCv) return srcCv;
+      // 1800px max dimension provides exceptional OCR clarity without memory lag
+      const cv = A.fitCanvas(srcCv, 1800);
+      try {
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        const imgData = ctx.getImageData(0, 0, cv.width, cv.height);
+        const d = imgData.data;
+        const len = d.length;
+
+        // Quick histogram calculation for adaptive contrast stretching
+        let minLum = 255, maxLum = 0;
+        const lums = new Uint8Array(len >> 2);
+        for (let i = 0, j = 0; i < len; i += 4, j++) {
+          const lum = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+          lums[j] = lum;
+          if (lum < minLum) minLum = lum;
+          if (lum > maxLum) maxLum = lum;
+        }
+
+        const range = Math.max(10, maxLum - minLum);
+        for (let i = 0, j = 0; i < len; i += 4, j++) {
+          const norm = ((lums[j] - minLum) * 255) / range;
+          // Apply gentle contrast S-curve to darken text strokes and brighten paper background
+          const sharpened = norm < 135 ? Math.max(0, norm * 0.78) : Math.min(255, norm * 1.12 + 10);
+          d[i] = sharpened;
+          d[i + 1] = sharpened;
+          d[i + 2] = sharpened;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } catch (e) {
+        console.warn('[prepareOcrCanvas]', e);
+      }
+      return cv;
+    }
+
     async function runPageOcr(idx, isBackground = false) {
       const p = pages[idx];
       if (!p) return;
@@ -4147,15 +4181,14 @@
       // Store the promise so concurrent calls can coalesce onto it
       const ocrTask = (async () => {
         try {
-          // Downscale to 1500px max — good balance of accuracy vs speed
-          const prep = A.fitCanvas(p.canvas, 1500);
+          // Pre-process canvas for high-contrast crisp text recognition
+          const prep = prepareOcrCanvas(p.canvas);
           const lang = (ocrLang && ocrLang !== 'auto') ? ocrLang : 'eng';
 
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
 
           const worker = await A.getOrInitOcrWorker(lang);
-          const payload = prep.toDataURL('image/jpeg', 0.92);
-          const { data } = await worker.recognize(payload);
+          const { data } = await worker.recognize(prep);
 
           console.log('[OCR] Done — text length:', data.text?.length, 'words:', data.words?.length);
 
@@ -4982,6 +5015,8 @@
       function cleanExtractedText(raw) {
         if (!raw) return '';
         let t = raw.replace(/\u00A0/g, ' ');
+        // Reconnect broken hyphenated line-breaks (e.g. "com- /nplete" -> "complete")
+        t = t.replace(/(\b[a-zA-Z]{2,})-\s*\n\s*([a-zA-Z]{2,}\b)/g, '$1$2');
         // Rejoin separated Devanagari / Indic vowels and combining marks
         t = t.replace(/([\u0900-\u097F])\s+([\u093E-\u094F\u0951-\u0957\u0962-\u0963])/g, '$1$2');
         // Collapse multi-single-character spaced runs (e.g. "क म चा री" -> "कर्मचारी" or "S u b j e c t" -> "Subject")
@@ -4992,7 +5027,8 @@
         t = t.replace(/https?\s*:\s*\/\s*\/\s*([^\s]+)/gi, (m, url) => {
           return 'https://' + url.replace(/\s+/g, '');
         });
-        // Remove lone punctuation artifacts
+        // Remove repeated divider noise and lone punctuation artifacts
+        t = t.replace(/^[_—\-•=~|`]{3,}\s*$/gm, '');
         t = t.replace(/^[~|`_—\-•=]\s*$/gm, '');
         // Collapse multiple blank lines
         t = t.replace(/\n{3,}/g, '\n\n');
@@ -5021,7 +5057,7 @@
         if (statsEl) {
           const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
           const chars = text.length;
-          statsEl.textContent = `${words} words · ${chars} chars`;
+          statsEl.textContent = `${words}w · ${chars}c`;
         }
         const pageLbl = parent.querySelector('.scan-sheet-page-label');
         const btnPrev = parent.querySelector('#btn-sheet-prev');
@@ -5045,6 +5081,9 @@
 
       async function openTextSheet() {
         isTextSheetOpen = true;
+        const wrapEl = parent.querySelector('#scan-canvas-wrap');
+        if (wrapEl) wrapEl.style.cursor = 'default';
+
         const btnExtract = parent.querySelector('#btn-top-extract-text');
         const sheetEl = parent.querySelector('#scan-text-sheet');
         const canvasEl = parent.querySelector('#scan-studio-canvas');
@@ -6722,6 +6761,9 @@
       const wrap = parent.querySelector('#scan-canvas-wrap');
       if (wrap) {
         wrap.onwheel = (e) => {
+          // If the text sheet overlay is open or event occurred inside it, allow free native scrolling
+          if (isTextSheetOpen || e.target.closest('#scan-text-sheet')) return;
+
           // Pinch-to-zoom (with Ctrl/Meta)
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
@@ -6745,6 +6787,8 @@
         };
 
         wrap.onmousedown = (e) => {
+          if (isTextSheetOpen || e.target.closest('#scan-text-sheet')) return;
+
           if (!e.target.closest('.scan-overlay-item, .scan-dock-flyout, .etxt-floating-dock, .scan-unified-toolbar, .scan-floating-search-bar, .scan-redact-subbar')) {
             if (selectedOverlayId) {
               selectedOverlayId = null;
