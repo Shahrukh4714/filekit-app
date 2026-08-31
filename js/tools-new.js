@@ -2168,6 +2168,7 @@
     let sigUploadedImg = null;
     let selectedOverlayId = null;
     let showOcrLayer = isOcrIntent || isRedactIntent;
+    let isTextSheetOpen = false;
 
     let ocrPanelOpen = isOcrIntent || isReceiptIntent;
     let ocrSidebarTab = isReceiptIntent ? 'insights' : 'text'; // 'text' | 'insights'
@@ -3737,6 +3738,15 @@
                     ${ICONS.filterPhoto}<span>Color</span>
                   </button>
                 </div>
+
+                <span class="scan-tb-sep" aria-hidden="true"></span>
+
+                <!-- Group 4: OCR Text Extractor Tool -->
+                <div class="scan-tb-group">
+                  <button type="button" class="scan-tb-btn ${isTextSheetOpen ? 'is-active' : ''}" id="btn-top-extract-text" title="Extract Text & Copy [T]">
+                    ${ICONS.ocr}<span>Extract Text</span>
+                  </button>
+                </div>
               </div>
 
               <!-- Right: Close Button -->
@@ -3762,17 +3772,65 @@
                   </div>
                 ` : ''}
 
-                <!-- Document Paper Container with Crisp Hairline Boundary & Dual Ambient Shadow -->
-                <div class="scan-paper-page" id="scan-paper-page">
-                  <div class="scan-canvas-scanline" id="scan-canvas-scanline" style="display:none;" aria-hidden="true"></div>
-                  <canvas id="scan-studio-canvas" class="scan-studio-canvas"></canvas>
+                <!-- Document Paper Container with In-Place Text Sheet -->
+                <div class="scan-paper-page ${isTextSheetOpen ? 'is-text-mode' : ''}" id="scan-paper-page">
+                  <div class="scan-laser-beam" id="scan-laser-beam" style="display:none;" aria-hidden="true"></div>
+                  <canvas id="scan-studio-canvas" class="scan-studio-canvas" style="${isTextSheetOpen ? 'display:none;' : ''}"></canvas>
                   <!-- Interactive Selectable OCR Text Layer (Apple Live Text) -->
-                  <div class="scan-text-layer ${showOcrLayer ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer}"></div>
+                  <div class="scan-text-layer ${showOcrLayer && !isTextSheetOpen ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer || isTextSheetOpen}"></div>
                   <!-- Apple Live Text Floating Selection Action Pill -->
                   <div class="scan-live-text-selection-pill" id="scan-selection-pill" style="display:none;" aria-hidden="true">
                     <button type="button" id="btn-pill-copy" title="Copy selected text">${ICONS.copy}<span>Copy</span></button>
                     <span class="scan-pill-sep"></span>
                     <button type="button" id="btn-pill-select-all" title="Select all text on this page">${ICONS.flow}<span>Select All</span></button>
+                  </div>
+
+                  <!-- In-Place Clean Extracted Text Sheet (Matching Rest of UI, Zero Emojis) -->
+                  <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet" style="${isTextSheetOpen ? 'display:flex;' : 'display:none;'}">
+                    <div class="scan-text-sheet-header">
+                      <div class="scan-text-sheet-meta">
+                        <span class="scan-text-sheet-title">${ICONS.ocr}<span>Text Extract</span></span>
+                        <span class="scan-text-sheet-stats" id="scan-sheet-stats">0 words · 0 chars</span>
+                      </div>
+                      <div class="scan-text-sheet-actions">
+                        <div class="scan-sheet-lang-wrap" title="Recognition Language">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                          <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
+                            <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
+                            <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
+                            <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
+                            <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
+                            <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
+                            <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
+                            <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
+                            <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
+                            <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
+                            <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
+                            <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
+                            <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
+                          </select>
+                        </div>
+                        <button type="button" class="scan-sheet-btn" id="btn-sheet-copy" title="Copy text to clipboard">
+                          ${ICONS.copy}<span id="sheet-copy-label">Copy</span>
+                        </button>
+                        <button type="button" class="scan-sheet-btn" id="btn-sheet-download-txt" title="Download Text File (.txt)">
+                          ${ICONS.txt}<span>TXT</span>
+                        </button>
+                        <button type="button" class="scan-sheet-btn" id="btn-sheet-download-doc" title="Download Word Document (.doc)">
+                          ${ICONS.word}<span>DOCX</span>
+                        </button>
+                        <button type="button" class="scan-sheet-btn scan-sheet-btn-close" id="btn-sheet-close" title="Return to Document">
+                          ${ICONS.cross}<span>Close</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="scan-text-sheet-body">
+                      <div class="scan-sheet-loading-state" id="scan-sheet-loading" style="display:none;">
+                        <div class="scan-sheet-spinner"></div>
+                        <span id="scan-sheet-loading-label">Scanning document text…</span>
+                      </div>
+                      <textarea id="scan-sheet-textarea" class="scan-sheet-textarea" placeholder="No text detected on this page." spellcheck="false"></textarea>
+                    </div>
                   </div>
                 </div>
 
@@ -4850,14 +4908,196 @@
           btn.classList.toggle('is-active', isActive);
         });
 
-        // 5. Update Live Text layer if active
-        if (showOcrLayer) {
+        // 5. Update Live Text layer or Extracted Text Sheet if active
+        if (isTextSheetOpen) {
+          if (!curP.ocrData) {
+            openTextSheet();
+          } else {
+            updateSheetText();
+          }
+        } else if (showOcrLayer) {
           if (!curP.ocrData) {
             runPageOcr(selIdx);
           } else {
             renderTextLayer();
           }
         }
+      }
+
+      // ─── Extract Text Sheet Controls & Laser Sweep ───
+      function cleanExtractedText(raw) {
+        if (!raw) return '';
+        return raw
+          .replace(/\u00A0/g, ' ')
+          .replace(/^[~|`_—\-•]\s*$/gm, '')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+      }
+
+      function updateSheetText() {
+        const cur = pages[selIdx];
+        const sheetTa = parent.querySelector('#scan-sheet-textarea');
+        const statsEl = parent.querySelector('#scan-sheet-stats');
+        const text = cur?.ocrData?.text ? cleanExtractedText(cur.ocrData.text) : '';
+        if (sheetTa) sheetTa.value = text;
+        if (statsEl) {
+          const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+          const chars = text.length;
+          statsEl.textContent = `${words} words · ${chars} chars`;
+        }
+      }
+
+      async function openTextSheet() {
+        isTextSheetOpen = true;
+        const cur = pages[selIdx];
+        const btnExtract = parent.querySelector('#btn-top-extract-text');
+        const sheetEl = parent.querySelector('#scan-text-sheet');
+        const canvasEl = parent.querySelector('#scan-studio-canvas');
+        const textLayer = parent.querySelector('#scan-text-layer');
+        const laserBeam = parent.querySelector('#scan-laser-beam');
+        const loadingEl = parent.querySelector('#scan-sheet-loading');
+        const loadingLbl = parent.querySelector('#scan-sheet-loading-label');
+
+        if (btnExtract) btnExtract.classList.add('is-active');
+        if (sheetEl) sheetEl.style.display = 'flex';
+        if (canvasEl) canvasEl.style.display = 'none';
+        if (textLayer) textLayer.style.display = 'none';
+
+        if (cur && cur.ocrData) {
+          if (loadingEl) loadingEl.style.display = 'none';
+          updateSheetText();
+          return;
+        }
+
+        // Trigger Laser Scanner Sweep Animation while OCR runs
+        if (laserBeam) {
+          laserBeam.style.display = 'block';
+          laserBeam.classList.add('is-sweeping');
+        }
+        if (loadingEl) {
+          loadingEl.style.display = 'flex';
+          if (loadingLbl) loadingLbl.textContent = 'Scanning document text…';
+        }
+
+        try {
+          await runPageOcr(selIdx);
+        } catch (e) {
+          console.error('[Extract Text OCR Error]', e);
+        } finally {
+          if (laserBeam) {
+            laserBeam.classList.remove('is-sweeping');
+            laserBeam.style.display = 'none';
+          }
+          if (loadingEl) loadingEl.style.display = 'none';
+          updateSheetText();
+        }
+      }
+
+      function closeTextSheet() {
+        isTextSheetOpen = false;
+        const btnExtract = parent.querySelector('#btn-top-extract-text');
+        const sheetEl = parent.querySelector('#scan-text-sheet');
+        const canvasEl = parent.querySelector('#scan-studio-canvas');
+        const textLayer = parent.querySelector('#scan-text-layer');
+        const laserBeam = parent.querySelector('#scan-laser-beam');
+
+        if (btnExtract) btnExtract.classList.remove('is-active');
+        if (sheetEl) sheetEl.style.display = 'none';
+        if (canvasEl) canvasEl.style.display = 'block';
+        if (textLayer && showOcrLayer) textLayer.style.display = 'block';
+        if (laserBeam) {
+          laserBeam.classList.remove('is-sweeping');
+          laserBeam.style.display = 'none';
+        }
+      }
+
+      const btnTopExtract = parent.querySelector('#btn-top-extract-text');
+      const btnSheetClose = parent.querySelector('#btn-sheet-close');
+      const btnSheetCopy = parent.querySelector('#btn-sheet-copy');
+      const btnSheetTxt = parent.querySelector('#btn-sheet-download-txt');
+      const btnSheetDoc = parent.querySelector('#btn-sheet-download-doc');
+      const sheetLangSel = parent.querySelector('#scan-sheet-ocr-lang');
+
+      if (btnTopExtract) {
+        btnTopExtract.onclick = () => {
+          if (isTextSheetOpen) closeTextSheet();
+          else openTextSheet();
+        };
+      }
+      if (btnSheetClose) btnSheetClose.onclick = closeTextSheet;
+
+      if (btnSheetCopy) {
+        btnSheetCopy.onclick = async () => {
+          const ta = parent.querySelector('#scan-sheet-textarea');
+          const text = ta ? ta.value : '';
+          if (!text) {
+            setStatus('No text to copy.', 'info');
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(text);
+            const copyLbl = parent.querySelector('#sheet-copy-label');
+            if (copyLbl) copyLbl.textContent = 'Copied';
+            btnSheetCopy.classList.add('is-active');
+            setStatus('Text copied to clipboard.', 'ok');
+            setTimeout(() => {
+              if (copyLbl) copyLbl.textContent = 'Copy';
+              btnSheetCopy.classList.remove('is-active');
+            }, 1800);
+          } catch {
+            setStatus('Could not access clipboard.', 'err');
+          }
+        };
+      }
+
+      if (btnSheetTxt) {
+        btnSheetTxt.onclick = () => {
+          const ta = parent.querySelector('#scan-sheet-textarea');
+          const text = ta ? ta.value : '';
+          if (!text) {
+            setStatus('No text to download.', 'info');
+            return;
+          }
+          const cur = pages[selIdx];
+          const name = (cur?.name || 'scanned-page').replace(/\.[^.]+$/, '') + '.txt';
+          const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = name; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          setStatus(`Downloaded ${name}`, 'ok');
+        };
+      }
+
+      if (btnSheetDoc) {
+        btnSheetDoc.onclick = () => {
+          const ta = parent.querySelector('#scan-sheet-textarea');
+          const text = ta ? ta.value : '';
+          if (!text) {
+            setStatus('No text to export.', 'info');
+            return;
+          }
+          const cur = pages[selIdx];
+          const name = (cur?.name || 'scanned-page').replace(/\.[^.]+$/, '') + '.doc';
+          const content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.6;color:#0F172A;margin:1in;}p{margin-bottom:0.8em;white-space:pre-wrap;}</style></head><body>${text.split('\n\n').map(p => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`).join('')}</body></html>`;
+          const blob = new Blob(['\ufeff' + content], { type: 'application/msword;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = name; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          setStatus(`Exported ${name}`, 'ok');
+        };
+      }
+
+      if (sheetLangSel) {
+        sheetLangSel.onchange = async () => {
+          ocrLang = sheetLangSel.value;
+          pages[selIdx].ocrData = null;
+          setStatus(`Switched recognition language to ${sheetLangSel.options[sheetLangSel.selectedIndex].text}`, 'info');
+          if (isTextSheetOpen) {
+            await openTextSheet();
+          }
+        };
       }
 
       // Page Navigation (Dock Stepper)
