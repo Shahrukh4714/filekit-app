@@ -2060,47 +2060,63 @@
     // clicks "OCR Text" — they never see the long cold-start delay.
     setTimeout(() => A.getOrInitOcrWorker('eng').catch(() => {}), 0);
 
-    /* ─── Vector SVG Icons (Zero Emojis) ────────────────────────── */
+    /* ─── Vector SVG Icons (Curated Reicon Style - Zero Emojis) ─── */
     const ICONS = {
-      scanBadge: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="2" y1="12" x2="22" y2="12" stroke-width="2.5"/><rect x="7" y="7" width="10" height="10" stroke-width="1.5"/></svg>`,
-      uploadGraphic: `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="38" y="98" width="144" height="36" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/><ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.4"/><ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.4"/><g transform="rotate(-9 66 74)"><rect x="46" y="48" width="40" height="52" fill="#fff"/><path d="M72 48h14v14z" fill="#F2F0F1"/><rect x="52" y="62" width="28" height="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/><circle cx="58" cy="67" r="2.2" fill="#EA580C"/><path d="M54 75l5-5 3 3 4-3 5 5" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="52" y="82" width="28" height="3" fill="#64748B" opacity="0.8"/><rect x="52" y="88" width="18" height="3" fill="#64748B" opacity="0.8"/></g><g transform="rotate(9 154 74)"><rect x="134" y="48" width="40" height="52" fill="#fff"/><path d="M160 48h14v14z" fill="#F2F0F1"/><rect x="140" y="62" width="28" height="3" fill="#10B981" opacity="0.9"/><rect x="140" y="68" width="20" height="3" fill="#10B981" opacity="0.9"/><rect x="140" y="74" width="28" height="3" fill="#10B981" opacity="0.9"/><rect x="140" y="80" width="24" height="10" fill="#ECFDF5" stroke="#10B981" stroke-width="1"/><text x="142.5" y="87.5" fill="#059669" font-size="5.5" font-weight="900" font-family="system-ui,sans-serif">OCR</text><circle cx="158" cy="85" r="2.5" stroke="#10B981" stroke-width="1"/><line x1="160" y1="87" x2="162" y2="89" stroke="#10B981" stroke-width="1"/></g><g><rect x="90" y="46" width="40" height="56" fill="#fff"/><path d="M116 46h14v14z" fill="#F2F0F1"/><rect x="96" y="58" width="28" height="3.5" fill="#7C3AED" opacity="0.95"/><rect x="96" y="65" width="28" height="2.5" fill="#2563EB" opacity="0.9"/><rect x="95" y="70" width="18" height="7" fill="rgba(124,58,237,0.12)" stroke="#7C3AED" stroke-width="1" stroke-dasharray="2 1"/><text x="97" y="75.5" fill="#7C3AED" font-size="5" font-weight="800" font-family="monospace">SCAN</text><rect x="115" y="70" width="9" height="7" fill="rgba(16,185,129,0.15)" stroke="#10B981" stroke-width="1"/><text x="116" y="75.5" fill="#10B981" font-size="4.5" font-weight="800" font-family="monospace">PDF</text><rect x="96" y="80" width="28" height="2.5" fill="#2563EB" opacity="0.9"/><rect x="96" y="86" width="20" height="2.5" fill="#2563EB" opacity="0.9"/><rect x="96" y="92" width="26" height="2.5" fill="#2563EB" opacity="0.9"/><line x1="84" y1="73.5" x2="136" y2="73.5" stroke="url(#scanLaserBar)" stroke-width="2.5" stroke-linecap="round"/><polygon points="86,73.5 134,73.5 128,68 92,68" fill="url(#scanLaserBeam)" opacity="0.35"/><path d="M87 52v-4h4" stroke="#10B981" stroke-width="1.8" stroke-linecap="round"/><path d="M133 48h4v4" stroke="#10B981" stroke-width="1.8" stroke-linecap="round"/><path d="M87 96v4h4" stroke="#10B981" stroke-width="1.8" stroke-linecap="round"/><path d="M133 100h4v-4" stroke="#10B981" stroke-width="1.8" stroke-linecap="round"/></g><path d="M110 8v22m0 0l-7-7m7 7l7-7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="110" cy="6" r="3.5" fill="#7C3AED" stroke="#fff" stroke-width="1.5"/><circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/><circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/><circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/><circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/><defs><linearGradient id="scanLaserBar" x1="84" y1="73.5" x2="136" y2="73.5" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7C3AED"/><stop offset="50%" stop-color="#10B981"/><stop offset="100%" stop-color="#38BDF8"/></linearGradient><linearGradient id="scanLaserBeam" x1="110" y1="68" x2="110" y2="73.5" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#7C3AED" stop-opacity="0"/><stop offset="100%" stop-color="#10B981" stop-opacity="0.8"/></linearGradient></defs></svg>`,
-      camera: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
-      folder: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
-      studio: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
-      crop: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
-      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
-      copy: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-      trash: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
-      add: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
-      prev: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>`,
-      next: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>`,
-      check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
-      download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
-      ocr: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
-      txt: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="10" y1="12" x2="14" y2="12"/><line x1="12" y1="12" x2="12" y2="18"/></svg>`,
-      word: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 12h8M8 16h8M8 20h5"/></svg>`,
-      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
-      pdf: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/></svg>`,
+      scanBadge: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10M9 8h6M9 16h6"/></svg>`,
+      camera: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="14" r="4"/></svg>`,
+      folder: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.6-.8L9.6 4a2 2 0 0 0-1.6-.8H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>`,
+      studio: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
+      crop: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
+      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
+      rotccw: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`,
+      tune: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>`,
+      stamp: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
+      search: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+      eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+      redact: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect x="8" y="11" width="8" height="3" rx="0.5" fill="currentColor"/></svg>`,
+      copy: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+      trash: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
+      add: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>`,
+      plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>`,
+      prev: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>`,
+      next: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>`,
+      check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+      download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
+      ocr: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/></svg>`,
+      txt: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M9 13h6M12 13v5"/></svg>`,
+      word: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M8 12h8M8 16h8M8 20h4"/></svg>`,
+      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
+      pdf: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M9 13h4a1.5 1.5 0 0 0 0-3H9v6"/></svg>`,
       shield: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-      torch: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-      switchLens: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 4l-3 3 3 3"/><path d="M4 17h9"/><path d="M10 20l3-3-3-3"/></svg>`,
-      reset: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>`,
-      filterOriginal: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-      filterDoc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+      torch: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+      switchLens: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9M14 4l-3 3 3 3M4 17h9M10 20l3-3-3-3"/></svg>`,
+      reset: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/></svg>`,
+      filterOriginal: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>`,
+      filterDoc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8M10 9H8"/></svg>`,
       filterBw: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
-      filterBoard: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
-      filterForm: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="11" y2="13"/><line x1="7" y1="17" x2="17" y2="17"/><circle cx="17" cy="13" r="1.5" fill="currentColor" stroke="none"/></svg>`,
-      filterPhoto: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
-      split: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>`,
-      zoomIn: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
-      zoomOut: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
-      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>`,
-      edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
-      organize: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+      filterBoard: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+      filterForm: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1ZM8 7h8M8 11h8M8 15h5"/></svg>`,
+      filterPhoto: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+      split: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
+      zoomIn: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>`,
+      zoomOut: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M8 11h6"/></svg>`,
+      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+      edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>`,
+      organize: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`,
       sparkle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>`,
-      arrowRight: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
-      arrowLeft: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`,
-      cross: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+      arrowRight: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
+      arrowLeft: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
+      cross: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+      sidebar: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
+      flow: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 6H3M17 12H3M21 18H3"/></svg>`,
+      clean: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 4-2 4 4 2-4 2 2 4-4-2-2 4-2-4-4 2 2-4-4-2 4-2-2-4 4 2 2-4 2 4 4-2Z"/></svg>`,
+      markdown: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 15V9l3 3 3-3v6M17 9v6"/></svg>`,
+      json: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>`,
+      receipt: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1ZM8 7h8M8 11h8M8 15h5"/></svg>`,
+      passport: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h2"/></svg>`,
+      vcard: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+      info: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`,
+      upload: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`
     };
 
     /* ─── Full-Bleed Viewport Transition ─── */
@@ -2560,40 +2576,33 @@
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Large Centered Document Paper Sheet (Compress benchmark) -->
             <div class="cpdf-benchmark-stage">
               <div class="cpdf-benchmark-paper" id="comp-result-thumb-box">
                 <canvas id="scan-result-canvas" class="scan-result-canvas"></canvas>
               </div>
 
-              <!-- Floating Info & Switcher Pill -->
               <div class="cpdf-benchmark-fileinfo-row">
                 ${r.pageCount > 1 ? `
-                  <button type="button" class="cpdf-res-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>‹</button>
+                  <button type="button" class="cpdf-res-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>${ICONS.prev}</button>
                   <span class="cpdf-res-step-badge" id="scan-res-step-status">${(r.resultPageIdx || 0) + 1} / ${r.pageCount}</span>
-                  <button type="button" class="cpdf-res-nav-btn" id="res-next-page" title="Next page" ${r.resultPageIdx < r.pageCount - 1 ? '' : 'disabled'}>›</button>
+                  <button type="button" class="cpdf-res-nav-btn" id="res-next-page" title="Next page" ${r.resultPageIdx < r.pageCount - 1 ? '' : 'disabled'}>${ICONS.next}</button>
                   <span style="color:#CBD5E1;margin:0 2px;">|</span>
                 ` : ''}
                 <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text">${esc(r.name)} (${bytes(r.blob.size)})</span>
                 <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-btn-add" id="scan-res-stage-dl" style="text-decoration:none;">
-                  <span>⬇ Download</span>
+                  <span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.download} Download</span>
                 </a>
               </div>
             </div>
 
-            <!-- Right Panel: Result Studio with Smart Tip Card (Compress benchmark) -->
             <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important; gap: 10px !important;">
-              <!-- Top Header: Green Check Badge -->
               <div class="cpdf-benchmark-header">
                 <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+                  ${ICONS.check}
                 </div>
                 <h2 class="cpdf-benchmark-title">Scan Complete</h2>
               </div>
 
-              <!-- Hero Document Specs Card -->
               <div class="cpdf-benchmark-est-box">
                 <div class="cpdf-benchmark-est-title">${esc(r.formatLabel)} · ${r.pageCount} ${r.pageCount === 1 ? 'Page' : 'Pages'}</div>
                 <div class="cpdf-benchmark-est-metrics">
@@ -2605,18 +2614,14 @@
                 </div>
               </div>
 
-              <!-- Primary Action CTA Button (Obsidian Black) -->
               <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta" style="text-decoration:none;margin-top:2px;">
                 <span>Download Scanned Document</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
+                ${ICONS.download}
               </a>
 
-              <!-- Smart Tip Card with Bespoke Tool Links -->
               <div class="conv-smart-tip-card" style="margin-top: 4px;">
                 <div class="conv-smart-tip-header">
-                  <span>Smart tip! 💡</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;">${ICONS.sparkle} Smart tip!</span>
                 </div>
                 <p class="conv-smart-tip-desc">What would you like to do next with your scanned document?</p>
                 <div class="conv-smart-tools-list">
@@ -2644,12 +2649,11 @@
                 </div>
               </div>
 
-              <!-- Secondary Actions Row -->
               <button type="button" class="cpdf-result-btn-secondary-full" id="res-btn-back" style="margin-top: 4px;">
-                ‹ Back to Review Studio
+                <span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">${ICONS.arrowLeft} Back to Review Studio</span>
               </button>
               <button type="button" class="cpdf-result-btn-secondary-full" id="res-btn-new" style="margin-top: 2px; color: #64748B;">
-                + Scan another document
+                <span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">${ICONS.add} Scan another document</span>
               </button>
             </div>
           </div>
@@ -2709,7 +2713,6 @@
         newBtn.onclick = () => { clearResult(); pages = []; selIdx = 0; switchView('hub'); };
       }
 
-      // Wire Smart Tool Clicks
       container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
         item.onclick = () => {
           const tid = item.dataset.toolId;
@@ -2742,60 +2745,12 @@
       enterBleed();
       container.innerHTML = `
         <div class="scan-app-shell ${viewMode === 'review' ? 'scan-review-shell' : ''}">
-          ${viewMode !== 'review' ? `
-            <header class="scan-header-bar">
-              <div class="scan-title-group">
-                <span class="scan-tool-badge">${ICONS.scanBadge}</span>
-                <div>
-                  <h2 class="scan-heading">Scan documents</h2>
-                  <p class="scan-subheading">${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · Local processing</p>
-                </div>
-              </div>
-
-              <div class="scan-header-actions">
-                <div class="scan-view-tabs" role="tablist">
-                  <button type="button" class="scan-tab-btn active" id="tab-btn-hub">
-                    ${ICONS.camera}
-                    <span>Capture</span>
-                    ${pages.length ? `<span class="scan-tab-badge">${pages.length}</span>` : ''}
-                  </button>
-                  <button type="button" class="scan-tab-btn" id="tab-btn-review" ${pages.length ? '' : 'disabled'}>
-                    ${ICONS.studio}
-                    <span>Review</span>
-                  </button>
-                </div>
-
-                <button type="button" class="scan-btn-import" id="btn-global-import">
-                  ${ICONS.folder}
-                  <span>Import Files</span>
-                </button>
-                <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
-
-                <div class="scan-privacy-tag" title="Zero network requests. Processed directly in your browser.">
-                  ${ICONS.shield}
-                  <span>Processed locally</span>
-                </div>
-              </div>
-            </header>
-          ` : ''}
-
-          <main class="scan-viewport" id="scan-viewport"></main>
+          <div class="scan-workspace" id="scan-viewport"></div>
         </div>
       `;
 
       const vp = container.querySelector('#scan-viewport');
-      const fileInp = container.querySelector('#scan-file-input');
-      const importBtn = container.querySelector('#btn-global-import');
-      const tabHub = container.querySelector('#tab-btn-hub');
-      const tabRev = container.querySelector('#tab-btn-review');
-
-      if (importBtn && fileInp) {
-        importBtn.onclick = () => fileInp.click();
-        bindFileInput(fileInp);
-      }
-
-      if (tabHub) tabHub.onclick = () => switchView('hub');
-      if (tabRev) tabRev.onclick = () => { if (pages.length) switchView('review'); };
+      if (!vp) return;
 
       if (viewMode === 'hub') {
         renderCaptureHub(vp);
@@ -2846,7 +2801,7 @@
 
             <div class="drop-action-group scan-entry-actions">
               <button type="button" class="select-files-main-btn" id="scan-import-docs-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
                 <span>${isOcrIntent ? 'Select PDF or Image to OCR' : (isReceiptIntent ? 'Select Receipt / Invoice' : (isRedactIntent ? 'Select PDF to Redact' : 'Select PDF or images'))}</span>
               </button>
               <span class="scan-entry-or">or</span>
@@ -3158,7 +3113,8 @@
                 ${pages.length ? `
                   <button type="button" class="scan-btn-studio-jump" id="btn-jump-studio">
                     ${ICONS.studio}
-                    <span>Open Review Studio (${pages.length} page${pages.length === 1 ? '' : 's'} ready) →</span>
+                    <span>Open Review Studio (${pages.length} page${pages.length === 1 ? '' : 's'} ready)</span>
+                    ${ICONS.arrowRight}
                   </button>
                 ` : ''}
               </div>
@@ -3322,7 +3278,8 @@
 
           <button type="button" class="scan-tray-review-btn" id="btn-tray-review">
             ${ICONS.studio}
-            <span>Review &amp; Export (${pages.length}) →</span>
+            <span>Review &amp; Export (${pages.length})</span>
+            ${ICONS.arrowRight}
           </button>
         </div>
       `;
@@ -3447,7 +3404,10 @@
         return `
           <div class="scan-flyout-card scan-flyout-stamp-pro">
             <div class="scan-flyout-head">
-              <strong>✍️ Sign &amp; Stamp</strong>
+              <div style="display:flex; align-items:center; gap:6px;">
+                ${ICONS.stamp}
+                <strong>Sign &amp; Stamp</strong>
+              </div>
               <button type="button" class="scan-flyout-reset-btn" id="btn-close-sig-flyout">${ICONS.cross}</button>
             </div>
 
@@ -3500,7 +3460,7 @@
             <div class="scan-sig-panel" id="panel-sig-upload" ${sigTab !== 'upload' ? 'hidden' : ''}>
               <div class="scan-sig-upload-box" id="scan-sig-dropzone">
                 <input type="file" id="scan-sig-file-input" accept="image/png,image/jpeg,image/webp" hidden>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                ${ICONS.upload}
                 <span>Click to pick signature image</span>
               </div>
               <label class="scan-sig-knockout-label">
@@ -3570,7 +3530,7 @@
       if (!text.trim()) {
         return `
           <div class="scan-insights-empty">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            ${ICONS.info}
             <p>No text extracted yet.<br>Click "OCR Text" to extract and analyze this document.</p>
           </div>
         `;
@@ -3588,8 +3548,8 @@
         cardsHtml += `
           <div class="scan-insight-card pii-card" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.04);">
             <div class="scan-insight-card-head">
-              <span class="insight-badge pii" style="background:#fee2e2; color:#b91c1c; font-weight:700;">🛡️ ${pii.count} Sensitive PII Found</span>
-              <button type="button" class="insight-dl-btn" id="btn-insight-auto-redact-pii" style="background:#dc2626; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">⚡ 1-Click Redact</button>
+              <span class="insight-badge pii" style="background:#fee2e2; color:#b91c1c; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${ICONS.shield} ${pii.count} Sensitive PII Found</span>
+              <button type="button" class="insight-dl-btn" id="btn-insight-auto-redact-pii" style="background:#dc2626; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">${ICONS.redact} 1-Click Redact</button>
             </div>
             <div class="scan-insight-grid" style="font-size:11px; margin-top:8px;">
               ${pii.foundItems.email.length ? `<div class="insight-row"><span class="label">Emails (${pii.foundItems.email.length})</span><b class="val" style="color:#ef4444;">${esc(pii.foundItems.email.join(', '))}</b></div>` : ''}
@@ -3606,7 +3566,7 @@
         cardsHtml += `
           <div class="scan-insight-card receipt-card">
             <div class="scan-insight-card-head">
-              <span class="insight-badge receipt">🧾 Receipt / Invoice</span>
+              <span class="insight-badge receipt" style="display:inline-flex; align-items:center; gap:4px;">${ICONS.receipt} Receipt / Invoice</span>
               <div style="display:flex; gap:6px;">
                 <button type="button" class="insight-copy-btn" id="btn-copy-receipt-json">Copy JSON</button>
                 <button type="button" class="insight-dl-btn" id="btn-dl-receipt-csv" style="background:#059669; color:#fff; border:none; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:600; cursor:pointer;">Export CSV</button>
@@ -3628,7 +3588,7 @@
         cardsHtml += `
           <div class="scan-insight-card passport-card">
             <div class="scan-insight-card-head">
-              <span class="insight-badge passport">🛂 Passport / ID (MRZ)</span>
+              <span class="insight-badge passport" style="display:inline-flex; align-items:center; gap:4px;">${ICONS.passport} Passport / ID (MRZ)</span>
               <button type="button" class="insight-copy-btn" id="btn-copy-passport-json">Copy Info</button>
             </div>
             <div class="scan-insight-grid">
@@ -3647,7 +3607,7 @@
         cardsHtml += `
           <div class="scan-insight-card vcard-card">
             <div class="scan-insight-card-head">
-              <span class="insight-badge vcard">📇 Business Card</span>
+              <span class="insight-badge vcard" style="display:inline-flex; align-items:center; gap:4px;">${ICONS.vcard} Business Card</span>
               <button type="button" class="insight-dl-btn" id="btn-dl-vcf">Download .VCF</button>
             </div>
             <div class="scan-insight-grid">
@@ -3665,7 +3625,7 @@
         cardsHtml += `
           <div class="scan-insight-card table-card">
             <div class="scan-insight-card-head">
-              <span class="insight-badge table">📊 Table Data</span>
+              <span class="insight-badge table" style="display:inline-flex; align-items:center; gap:4px;">${ICONS.filterForm} Table Data</span>
               <button type="button" class="insight-dl-btn" id="btn-dl-csv">Export .CSV Table</button>
             </div>
             <pre class="insight-csv-preview">${esc(csv.slice(0, 240))}${csv.length > 240 ? '...' : ''}</pre>
@@ -3680,10 +3640,10 @@
           cardsHtml += `
             <div class="scan-insight-card barcode-card" style="border-color: #8b5cf6; background: rgba(139, 92, 246, 0.04);">
               <div class="scan-insight-card-head">
-                <span class="insight-badge barcode" style="background:#ede9fe; color:#6d28d9; font-weight:700;">📷 ${esc(bc.format)}</span>
+                <span class="insight-badge barcode" style="background:#ede9fe; color:#6d28d9; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${ICONS.scanBadge} ${esc(bc.format)}</span>
                 <div style="display:flex; gap:6px;">
                   <button type="button" class="insight-copy-btn btn-copy-barcode" data-bc-val="${esc(bc.rawValue)}">Copy Data</button>
-                  ${isUrl ? `<a href="${esc(bc.rawValue)}" target="_blank" rel="noopener" class="insight-dl-btn" style="background:#8b5cf6; color:#fff; text-decoration:none; display:inline-block; font-size:11px; padding:3px 8px; border-radius:5px;">🔗 Open</a>` : ''}
+                  ${isUrl ? `<a href="${esc(bc.rawValue)}" target="_blank" rel="noopener" class="insight-dl-btn" style="background:#8b5cf6; color:#fff; text-decoration:none; display:inline-block; font-size:11px; padding:3px 8px; border-radius:5px;">Open &rsaquo;</a>` : ''}
                 </div>
               </div>
               <div style="margin-top:8px;">
@@ -3702,7 +3662,7 @@
       cardsHtml += `
         <div class="scan-insight-card metrics-card">
           <div class="scan-insight-card-head">
-            <span class="insight-badge metrics">📈 Document Metrics</span>
+            <span class="insight-badge metrics" style="display:inline-flex; align-items:center; gap:4px;">${ICONS.studio} Document Metrics</span>
           </div>
           <div class="scan-metrics-grid">
             <div class="metric-box"><span class="metric-num">${wordsCount}</span><span class="metric-lbl">Words</span></div>
@@ -3713,8 +3673,8 @@
 
         <div class="scan-insight-card compare-card" style="border-color: #6366f1; background: rgba(99, 102, 241, 0.04);">
           <div class="scan-insight-card-head">
-            <span class="insight-badge compare" style="background:#e0e7ff; color:#4338ca; font-weight:700;">⚖️ Compare Document</span>
-            <button type="button" class="insight-dl-btn" id="btn-launch-diff-station" style="background:#4f46e5; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">🔀 Launch Diff</button>
+            <span class="insight-badge compare" style="background:#e0e7ff; color:#4338ca; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${ICONS.split} Compare Document</span>
+            <button type="button" class="insight-dl-btn" id="btn-launch-diff-station" style="background:#4f46e5; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">Launch Diff &rsaquo;</button>
           </div>
           <p style="font-size:11px; color:#64748b; margin:6px 0 0 0;">Compare this page side-by-side with another PDF draft to highlight changes &amp; visual diffs.</p>
         </div>
@@ -3759,15 +3719,15 @@
               ${ICONS.split}<span>Compare</span>
             </button>
             <button type="button" class="scan-tb-btn ${showSearchBar ? 'is-on' : ''}" id="btn-top-search" title="Find text in document (Ctrl+F)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              ${ICONS.search}
               <span>Search</span>
             </button>
             <button type="button" class="scan-tb-btn ${showOcrLayer ? 'is-on' : ''}" id="btn-top-ocr-layer" title="Toggle Selectable OCR Text Layer">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              ${ICONS.eye}
               <span>Text</span>
             </button>
             <button type="button" class="scan-tb-btn ${isRedacting ? 'is-on' : ''}" id="btn-top-redact" title="Permanent Privacy Blackout — Redact PII">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect width="8" height="4" x="8" y="11" rx="1" fill="currentColor"/></svg>
+              ${ICONS.redact}
               <span>Redact</span>
             </button>
 
@@ -3822,19 +3782,19 @@
               </div>
               <div class="scan-redact-subbar-actions">
                 <button type="button" class="scan-redact-subbar-btn-primary" id="btn-ribbon-auto-redact-pii" title="Automatically detect and blackout sensitive personal information">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  ${ICONS.shield}
                   <span>Auto-Redact PII</span>
                 </button>
                 <div class="scan-redact-kw-wrap">
                   <button type="button" class="scan-redact-subbar-btn ${activeFlyout === 'keyword-redact' ? 'active' : ''}" id="btn-open-keyword-redact" title="Find and blackout specific keywords or phrases">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    ${ICONS.search}
                     <span>Find &amp; Redact Words</span>
                   </button>
                   ${activeFlyout === 'keyword-redact' ? `
                     <div class="scan-kw-popover" id="scan-kw-popover">
                       <div class="scan-kw-popover-head">
                         <div class="scan-flyout-title-row">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                          ${ICONS.search}
                           <strong>Find &amp; Redact Words</strong>
                         </div>
                         <button type="button" class="scan-flyout-reset-btn" id="btn-close-kw-flyout" title="Close">${ICONS.cross}</button>
@@ -3877,13 +3837,13 @@
               <nav class="etxt-floating-dock" aria-label="Canvas & Page Tools">
                 <button type="button" class="etxt-floating-dock-btn ${isCropping ? 'is-on' : ''}" data-tool="recrop" title="Crop Page [C]">${ICONS.crop}</button>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="rotate" title="Rotate 90° Clockwise [R]">${ICONS.rotate}</button>
-                <button type="button" class="etxt-floating-dock-btn" data-tool="rotccw" title="Rotate 90° Counter-Clockwise"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                <button type="button" class="etxt-floating-dock-btn" data-tool="rotccw" title="Rotate 90° Counter-Clockwise">${ICONS.rotccw}</button>
                 <span class="etxt-dock-sep"></span>
                 <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'tune' ? 'is-on' : ''}" data-tool="tune" title="Fine-Tune Brightness &amp; Contrast [T]">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  ${ICONS.tune}
                 </button>
                 <button type="button" class="etxt-floating-dock-btn ${activeFlyout === 'stamp' ? 'is-on' : ''}" data-tool="stamp" title="Add Stamp or Signature [S]">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                  ${ICONS.stamp}
                 </button>
                 <span class="etxt-dock-sep"></span>
                 <button type="button" class="etxt-floating-dock-btn" data-tool="copy" title="Copy image to clipboard">${ICONS.copy}</button>
@@ -3901,7 +3861,7 @@
               <!-- Floating Search Bar -->
               ${showSearchBar ? `
                 <div class="scan-floating-search-bar" id="scan-search-bar">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  ${ICONS.search}
                   <input type="text" id="scan-search-input" placeholder="Find text in scan (press Enter)..." value="${esc(searchQuery)}" autofocus>
                   <span class="scan-search-counter" id="scan-search-counter">0 matches</span>
                   <button type="button" class="scan-search-close-btn" id="btn-close-search">${ICONS.cross}</button>
@@ -3937,11 +3897,11 @@
               <div class="scan-ocr-sidebar-head">
                 <div class="scan-ocr-subtabs" role="tablist">
                   <button type="button" class="scan-ocr-subtab ${ocrSidebarTab === 'text' ? 'active' : ''}" id="subtab-ocr-text">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                    ${ICONS.ocr}
                     <span>Editor</span>
                   </button>
                   <button type="button" class="scan-ocr-subtab ${ocrSidebarTab === 'insights' ? 'active' : ''}" id="subtab-ocr-insights">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                    ${ICONS.sparkle}
                     <span>Smart Insights</span>
                   </button>
                 </div>
@@ -3951,15 +3911,15 @@
               ${ocrSidebarTab === 'text' ? `
                 <div class="scan-ocr-quick-strip">
                   <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-flow" title="Merge linebreaks into readable paragraphs">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10H3"/><path d="M21 6H3"/><path d="M11 14H3"/><path d="M11 18H3"/><polygon points="15 13 18 19 21 13 15 13"/></svg>
+                    ${ICONS.flow}
                     <span>Format Flow</span>
                   </button>
                   <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-clean" title="Clean extra spaces and dangling symbols">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                    ${ICONS.clean}
                     <span>Clean Text</span>
                   </button>
                   <button type="button" class="scan-ocr-tool-chip" id="ocr-chip-md" title="Copy formatted as Markdown">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 15V9l3 3 3-3v6"/><path d="M17 9v6"/></svg>
+                    ${ICONS.markdown}
                     <span>Markdown</span>
                   </button>
                 </div>
@@ -3998,7 +3958,7 @@
                   <span>.DOC</span>
                 </button>
                 <button type="button" class="scan-btn-ghost-sm" id="btn-sidebar-dl-json" title="Download structured OCR words &amp; positions as .json">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/></svg>
+                  ${ICONS.json}
                   <span>.JSON</span>
                 </button>
               </div>
@@ -4045,7 +4005,7 @@
               <!-- Top Group: Page Thumbnails Drawer Toggle & Page Navigation -->
               <div class="scan-rail-top">
                 <button type="button" class="scan-rail-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-toggle-thumbs" title="Page Thumbnails (${pages.length} pages)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                  ${ICONS.sidebar}
                 </button>
                 <span class="scan-rail-sep"></span>
                 <div class="scan-rail-page-pill" title="Current Page (Page Up/Down)">
@@ -4058,11 +4018,11 @@
               <!-- Mid Group: Zoom Stepper, Live Value & Reset -->
               <div class="scan-rail-mid">
                 <button type="button" class="scan-rail-btn" id="btn-zoom-in" title="Zoom In (Ctrl +)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  ${ICONS.zoomIn}
                 </button>
                 <button type="button" class="scan-rail-zoom-badge" id="scan-zoom-badge" title="Click to Reset Zoom (100%)">${zoom}%</button>
                 <button type="button" class="scan-rail-btn" id="btn-zoom-out" title="Zoom Out (Ctrl -)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  ${ICONS.zoomOut}
                 </button>
                 <button type="button" class="scan-rail-btn scan-rail-btn-fit" id="btn-zoom-reset" title="Fit to Screen (Double Click Canvas)">
                   <span>Fit</span>
@@ -4455,7 +4415,7 @@
                style="left: ${(o.x || 0) * 100}%; top: ${(o.y || 0) * 100}%; width: ${(o.w || 0.3) * 100}%; height: ${(o.h || 0.1) * 100}%;">
             ${isSel ? `
               <button type="button" class="scan-overlay-delete-btn" data-act="del" title="Delete signature (Del)">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                ${ICONS.cross}
               </button>
               <div class="scan-overlay-handle nw" data-handle="nw"></div>
               <div class="scan-overlay-handle ne" data-handle="ne"></div>
@@ -6863,7 +6823,7 @@
                   <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
                   <div class="scan-modal-row-content">
                     <div class="scan-modal-row-header">
-                      <span class="scan-modal-row-title">Searchable PDF</span>
+                      <span class="scan-modal-row-title" style="display:inline-flex; align-items:center; gap:6px;">${ICONS.ocr} Searchable PDF</span>
                       <span class="scan-modal-badge-rec">Recommended</span>
                     </div>
                     <p class="scan-modal-row-desc">Embedded invisible OCR text for text selection &amp; search</p>
@@ -6875,7 +6835,7 @@
                   <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
                   <div class="scan-modal-row-content">
                     <div class="scan-modal-row-header">
-                      <span class="scan-modal-row-title">Standard PDF</span>
+                      <span class="scan-modal-row-title" style="display:inline-flex; align-items:center; gap:6px;">${ICONS.pdf} Standard PDF</span>
                     </div>
                     <p class="scan-modal-row-desc">Clean visual PDF document without embedded text vectors</p>
                   </div>
@@ -6886,7 +6846,7 @@
                   <div class="scan-modal-radio-ring"><div class="scan-modal-radio-dot"></div></div>
                   <div class="scan-modal-row-content">
                     <div class="scan-modal-row-header">
-                      <span class="scan-modal-row-title">Image ZIP</span>
+                      <span class="scan-modal-row-title" style="display:inline-flex; align-items:center; gap:6px;">${ICONS.zip} Image ZIP</span>
                     </div>
                     <p class="scan-modal-row-desc">Individual high-resolution images in a ZIP bundle</p>
                   </div>
