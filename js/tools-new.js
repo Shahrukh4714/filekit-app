@@ -610,12 +610,6 @@
 
         _ocrWorker = worker;
         _ocrLang = lang;
-        try {
-          await worker.setParameters({
-            tessedit_pageseg_mode: '1',
-            preserve_interword_spaces: '1',
-          });
-        } catch (e) {}
         _ocrNotify('Ready');
         return worker;
       } catch (err) {
@@ -3920,30 +3914,39 @@
               <h2 class="scan-exact-title">Export Scan</h2>
             </div>
 
-            <!-- Format Option Cards Stack (Exact Match) -->
-            <div class="scan-exact-cards-stack">
-              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
+            <!-- Format Option Cards Stack -->
+            <div class="scan-exact-cards-stack" role="radiogroup" aria-label="Output Format">
+              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable" tabindex="0" role="radio" aria-checked="${pdfFormat === 'searchable'}">
                 <div class="scan-benchmark-radio">
                   <div class="scan-benchmark-radio-dot"></div>
                 </div>
-                <span class="scan-benchmark-card-label">Searchable PDF</span>
+                <div class="scan-benchmark-card-text">
+                  <span class="scan-benchmark-card-label">Searchable PDF</span>
+                  <span class="scan-benchmark-card-sub">Selectable text + OCR layer</span>
+                </div>
                 <div class="scan-benchmark-card-right">
                   <span class="scan-benchmark-pill-rec">Recommended</span>
                 </div>
               </div>
 
-              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
+              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image" tabindex="0" role="radio" aria-checked="${pdfFormat === 'image'}">
                 <div class="scan-benchmark-radio">
                   <div class="scan-benchmark-radio-dot"></div>
                 </div>
-                <span class="scan-benchmark-card-label">Standard PDF</span>
+                <div class="scan-benchmark-card-text">
+                  <span class="scan-benchmark-card-label">Standard PDF</span>
+                  <span class="scan-benchmark-card-sub">Flattened visual scan · Fast</span>
+                </div>
               </div>
 
-              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
+              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip" tabindex="0" role="radio" aria-checked="${pdfFormat === 'zip'}">
                 <div class="scan-benchmark-radio">
                   <div class="scan-benchmark-radio-dot"></div>
                 </div>
-                <span class="scan-benchmark-card-label">Image ZIP</span>
+                <div class="scan-benchmark-card-text">
+                  <span class="scan-benchmark-card-label">Image ZIP</span>
+                  <span class="scan-benchmark-card-sub">Individual full-resolution JPGs</span>
+                </div>
               </div>
             </div>
 
@@ -3987,21 +3990,27 @@
               </div>
             </div>
 
-            <!-- Estimated Output Box (Light Mint Box with Yellow 100% Local Pill & Solid Green Bar) -->
+            <!-- Estimated Output Box (Light Mint Box with Neutral Privacy Pill & Solid Green Bar) -->
             <div class="scan-exact-est-box">
               <div class="scan-exact-est-title">Estimated output</div>
               <div class="scan-exact-est-row">
                 <span class="scan-exact-est-metric">
-                  <strong>${pages.length} Pages</strong> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res Images' : (pdfCompression === 'high' ? '300 DPI High Quality' : '150 DPI Balanced')}</span>
+                  <strong>${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong> · <span class="scan-est-size-tag" id="scan-panel-est-size">~${((pages.length || 1) * (pdfFormat === 'zip' ? 1.1 : (pdfCompression === 'high' ? 0.72 : (pdfCompression === 'balanced' ? 0.34 : 0.15)))).toFixed(1)} MB</span> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res' : (pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI'))}</span>
                 </span>
-                <span class="scan-exact-yellow-badge">100% Local</span>
+                <span class="scan-exact-privacy-badge">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  100% Local
+                </span>
               </div>
               <div class="scan-exact-track">
                 <div class="scan-exact-bar"></div>
               </div>
             </div>
 
-            <!-- Primary Action CTA Button (Vibrant Royal Blue) -->
+            <!-- Primary Action CTA Button (Solid Obsidian Black) -->
             <button type="button" class="scan-exact-cta" id="btn-panel-confirm-export">
               <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
               <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
@@ -4566,8 +4575,11 @@
       if (!cv || !pageWrap) return;
 
       const scaleVal = zoom / 100;
-      if (scaleVal > 1) {
-        pageWrap.style.transform = `translate(${panX}px, ${panY}px) scale(${scaleVal})`;
+      if (scaleVal === 1 && panX === 0 && panY === 0) {
+        pageWrap.style.transform = 'none';
+        if (wrap) wrap.style.cursor = isSplitView ? 'ew-resize' : 'default';
+      } else if (scaleVal > 1 || panX !== 0 || panY !== 0) {
+        pageWrap.style.transform = `translate3d(${Math.round(panX)}px, ${Math.round(panY)}px, 0) scale(${scaleVal})`;
         if (wrap) wrap.style.cursor = isPanning ? 'grabbing' : 'grab';
       } else {
         pageWrap.style.transform = `scale(${scaleVal})`;
@@ -4600,15 +4612,15 @@
       const scH = availableH / source.height;
       const baseFitScale = Math.min(scW, scH, 1);
       const sc = Math.min(maxW / source.width, baseFitScale);
-      const displayW = Math.max(1, Math.round(source.width * sc));
-      const displayH = Math.max(1, Math.round(source.height * sc));
+      const displayW = Math.max(2, Math.round(source.width * sc) & ~1);
+      const displayH = Math.max(2, Math.round(source.height * sc) & ~1);
       const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
 
       if (isCropping && cropState) {
         cropState.displayScale = sc;
       }
 
-      // High-DPI internal buffer dimensions
+      // High-DPI internal buffer dimensions: Match physical retina display pixels cleanly
       const bufferW = Math.round(displayW * dpr);
       const bufferH = Math.round(displayH * dpr);
 
@@ -4818,7 +4830,7 @@
         ctx.restore();
 
         // Right "Enhanced" pill (showing active mode label)
-        const modeLabel = curPage.enhanceMode === 'bw' ? 'B&W' : (curPage.enhanceMode === 'photo' ? 'Photo' : 'Cleaned');
+        const modeLabel = p.enhanceMode === 'bw' ? 'B&W' : (p.enhanceMode === 'photo' ? 'Photo' : 'Cleaned');
         const enhW = ctx.measureText(modeLabel).width + 16 * dpr;
         ctx.save();
         ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
@@ -4981,12 +4993,12 @@
         });
 
         // 6. Remove repeated divider noise and lone punctuation artifacts
-        t = t.replace(/^[_\—\-•=~|`\.\*\^\+\:\;]{2,}\s*$/gm, '');
-        t = t.replace(/^[~|`_—\-•=\^\*\+\\\/\:\;\'\"]\s*$/gm, '');
+        t = t.replace(/^[-_—•=~`.*^+:;]{2,}\s*$/gm, '');
+        t = t.replace(/^[-~`_—•=*+\\/:;'\"]\s*$/gm, '');
 
         // 7. Strip leading/trailing lone vertical bars/slashes on lines from table/margin borders
-        t = t.replace(/^[|\\\/]\s*/gm, '');
-        t = t.replace(/\s*[|\\\/]$/gm, '');
+        t = t.replace(/^[|\\/]\s*/gm, '');
+        t = t.replace(/\s*[|\\/]$/gm, '');
 
         // 8. Normalize multiple spaces and blank lines
         t = t.replace(/[ \t]+/g, ' ');
@@ -6591,9 +6603,20 @@
       const panelLang = parent.querySelector('#panel-export-lang');
       const panelLangRow = parent.querySelector('#panel-ocr-lang-row');
       const panelMeta = parent.querySelector('#scan-panel-summary-meta');
+      const panelSizeTag = parent.querySelector('#scan-panel-est-size');
       const panelConfirmBtn = parent.querySelector('#btn-panel-confirm-export');
       const panelConfirmText = parent.querySelector('#panel-confirm-text');
       const stageAddMoreBtn = parent.querySelector('#btn-stage-add-more');
+
+      const calcEstSize = (count, fmt, comp) => {
+        const c = count || 1;
+        let mb = 0;
+        if (fmt === 'zip') mb = c * 1.1;
+        else if (comp === 'high') mb = c * 0.72;
+        else if (comp === 'balanced') mb = c * 0.34;
+        else mb = c * 0.15;
+        return mb < 1 ? `~${Math.round(mb * 1024)} KB` : `~${mb.toFixed(1)} MB`;
+      };
 
       if (stageAddMoreBtn) {
         stageAddMoreBtn.onclick = () => {
@@ -6603,33 +6626,61 @@
       }
 
       const updatePanelMeta = () => {
+        if (panelSizeTag) {
+          panelSizeTag.textContent = calcEstSize(pages.length, pdfFormat, pdfCompression);
+        }
         if (!panelMeta) return;
         if (pdfFormat === 'zip') {
-          panelMeta.textContent = '· High-Res Images';
+          panelMeta.textContent = 'High-Res';
         } else if (pdfCompression === 'high') {
-          panelMeta.textContent = '· 300 DPI High Quality';
+          panelMeta.textContent = '300 DPI';
         } else if (pdfCompression === 'balanced') {
-          panelMeta.textContent = '· 150 DPI Balanced';
+          panelMeta.textContent = '150 DPI';
         } else {
-          panelMeta.textContent = '· 72 DPI Compact';
+          panelMeta.textContent = '72 DPI';
         }
       };
 
-      panelCards.forEach(card => {
-        card.onclick = () => {
-          const fmt = card.getAttribute('data-fmt');
-          if (!fmt) return;
-          pdfFormat = fmt;
-          panelCards.forEach(c => c.classList.remove('is-active'));
-          card.classList.add('is-active');
+      const panelFmtList = ['searchable', 'image', 'zip'];
+      const selectPanelFormat = (fmt) => {
+        if (!fmt) return;
+        pdfFormat = fmt;
+        panelCards.forEach(c => {
+          const isThis = c.getAttribute('data-fmt') === fmt;
+          c.classList.toggle('is-active', isThis);
+          c.setAttribute('aria-checked', isThis ? 'true' : 'false');
+        });
 
-          if (panelConfirmText) {
-            panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF');
+        if (panelConfirmText) {
+          panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF');
+        }
+        if (panelLangRow) {
+          panelLangRow.style.display = pdfFormat === 'searchable' ? '' : 'none';
+        }
+        updatePanelMeta();
+      };
+
+      panelCards.forEach(card => {
+        card.onclick = () => selectPanelFormat(card.getAttribute('data-fmt'));
+        card.onkeydown = (e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            selectPanelFormat(card.getAttribute('data-fmt'));
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const idx = panelFmtList.indexOf(pdfFormat);
+            const nextFmt = panelFmtList[(idx + 1) % panelFmtList.length];
+            selectPanelFormat(nextFmt);
+            const nextCard = parent.querySelector(`.scan-benchmark-card[data-fmt="${nextFmt}"]`);
+            if (nextCard) nextCard.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const idx = panelFmtList.indexOf(pdfFormat);
+            const prevFmt = panelFmtList[(idx - 1 + panelFmtList.length) % panelFmtList.length];
+            selectPanelFormat(prevFmt);
+            const prevCard = parent.querySelector(`.scan-benchmark-card[data-fmt="${prevFmt}"]`);
+            if (prevCard) prevCard.focus();
           }
-          if (panelLangRow) {
-            panelLangRow.style.display = pdfFormat === 'searchable' ? '' : 'none';
-          }
-          updatePanelMeta();
         };
       });
 
@@ -7413,8 +7464,22 @@
       modalWrap.id = 'scan-export-modal-overlay';
       modalWrap.className = 'scan-modal-overlay';
 
+      const calcModalEstSize = (count, fmt, comp) => {
+        const c = count || 1;
+        let mb = 0;
+        if (fmt === 'zip') mb = c * 1.1;
+        else if (comp === 'high') mb = c * 0.72;
+        else if (comp === 'balanced') mb = c * 0.34;
+        else mb = c * 0.15;
+        return mb < 1 ? `~${Math.round(mb * 1024)} KB` : `~${mb.toFixed(1)} MB`;
+      };
+
       const updateSummaryMeta = () => {
         const metaEl = modalWrap.querySelector('#scan-modal-summary-meta');
+        const sizeTag = modalWrap.querySelector('#scan-modal-est-size');
+        if (sizeTag) {
+          sizeTag.textContent = calcModalEstSize(pages.length, pdfFormat, pdfCompression);
+        }
         if (!metaEl) return;
         if (pdfFormat === 'zip') {
           metaEl.textContent = '· High-Res Images';
@@ -7449,28 +7514,37 @@
           <div class="scan-modal-body">
             <!-- Discrete Separated Format Cards Stack -->
             <div class="scan-modal-cards-stack" role="radiogroup" aria-label="Output Format">
-              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
+              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable" tabindex="0" role="radio" aria-checked="${pdfFormat === 'searchable'}">
                 <div class="scan-benchmark-radio">
                   <div class="scan-benchmark-radio-dot"></div>
                 </div>
-                <span class="scan-benchmark-card-label">Searchable PDF</span>
+                <div class="scan-benchmark-card-text">
+                  <span class="scan-benchmark-card-label">Searchable PDF</span>
+                  <span class="scan-benchmark-card-sub">Selectable text + OCR layer</span>
+                </div>
                 <div class="scan-benchmark-card-right">
                   <span class="scan-benchmark-pill-rec">Recommended</span>
                 </div>
               </div>
 
-              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
+              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image" tabindex="0" role="radio" aria-checked="${pdfFormat === 'image'}">
                 <div class="scan-benchmark-radio">
                   <div class="scan-benchmark-radio-dot"></div>
                 </div>
-                <span class="scan-benchmark-card-label">Standard PDF</span>
+                <div class="scan-benchmark-card-text">
+                  <span class="scan-benchmark-card-label">Standard PDF</span>
+                  <span class="scan-benchmark-card-sub">Flattened visual scan · Fast</span>
+                </div>
               </div>
 
-              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
+              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip" tabindex="0" role="radio" aria-checked="${pdfFormat === 'zip'}">
                 <div class="scan-benchmark-radio">
                   <div class="scan-benchmark-radio-dot"></div>
                 </div>
-                <span class="scan-benchmark-card-label">Image ZIP</span>
+                <div class="scan-benchmark-card-text">
+                  <span class="scan-benchmark-card-label">Image ZIP</span>
+                  <span class="scan-benchmark-card-sub">Individual full-resolution JPGs</span>
+                </div>
               </div>
             </div>
 
@@ -7519,15 +7593,22 @@
               <div class="scan-benchmark-est-title">Estimated output</div>
               <div class="scan-benchmark-est-metrics">
                 <strong class="scan-benchmark-est-new">${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong>
+                <span class="scan-est-size-tag" id="scan-modal-est-size">~${((pages.length || 1) * (pdfFormat === 'zip' ? 1.1 : (pdfCompression === 'high' ? 0.72 : (pdfCompression === 'balanced' ? 0.34 : 0.15)))).toFixed(1)} MB</span>
                 <span class="scan-benchmark-est-meta" id="scan-modal-summary-meta">· 300 DPI High Quality</span>
-                <span class="scan-benchmark-est-pct">100% Local</span>
+                <span class="scan-exact-privacy-badge">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  100% Local
+                </span>
               </div>
               <div class="scan-benchmark-track">
                 <div class="scan-benchmark-bar" style="width: 100%;"></div>
               </div>
             </div>
 
-            <!-- Full-Width Primary Action CTA Button -->
+            <!-- Full-Width Primary Action CTA Button (Solid Obsidian Black) -->
             <button type="button" class="scan-benchmark-cta" id="btn-modal-confirm">
               <span id="modal-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
               <span id="modal-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : 'Export PDF'}</span>
@@ -7561,29 +7642,54 @@
         if (e.target === modalWrap && !busy) closeModal();
       };
 
+      const modalFmtList = ['searchable', 'image', 'zip'];
+      const selectModalFormat = (fmt) => {
+        if (!fmt) return;
+        pdfFormat = fmt;
+        cards.forEach(c => {
+          const isThis = c.getAttribute('data-fmt') === fmt;
+          c.classList.toggle('is-active', isThis);
+          c.setAttribute('aria-checked', isThis ? 'true' : 'false');
+        });
+
+        if (pdfFormat === 'zip') {
+          if (confirmText) confirmText.textContent = 'Download Image ZIP';
+          if (langRow) langRow.style.display = 'none';
+          if (sizeField) sizeField.style.display = 'none';
+        } else if (pdfFormat === 'image') {
+          if (confirmText) confirmText.textContent = 'Export PDF';
+          if (langRow) langRow.style.display = 'none';
+          if (sizeField) sizeField.style.display = 'flex';
+        } else {
+          if (confirmText) confirmText.textContent = 'Export PDF';
+          if (langRow) langRow.style.display = 'flex';
+          if (sizeField) sizeField.style.display = 'flex';
+        }
+        updateSummaryMeta();
+      };
+
       const cards = modalWrap.querySelectorAll('.scan-benchmark-card');
       cards.forEach(card => {
-        card.onclick = () => {
-          const fmt = card.getAttribute('data-fmt');
-          if (!fmt) return;
-          pdfFormat = fmt;
-          cards.forEach(c => c.classList.remove('is-active'));
-          card.classList.add('is-active');
-
-          if (pdfFormat === 'zip') {
-            if (confirmText) confirmText.textContent = 'Download Image ZIP';
-            if (langRow) langRow.style.display = 'none';
-            if (sizeField) sizeField.style.display = 'none';
-          } else if (pdfFormat === 'image') {
-            if (confirmText) confirmText.textContent = 'Export PDF';
-            if (langRow) langRow.style.display = 'none';
-            if (sizeField) sizeField.style.display = 'flex';
-          } else {
-            if (confirmText) confirmText.textContent = 'Export PDF';
-            if (langRow) langRow.style.display = 'flex';
-            if (sizeField) sizeField.style.display = 'flex';
+        card.onclick = () => selectModalFormat(card.getAttribute('data-fmt'));
+        card.onkeydown = (e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            selectModalFormat(card.getAttribute('data-fmt'));
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const idx = modalFmtList.indexOf(pdfFormat);
+            const nextFmt = modalFmtList[(idx + 1) % modalFmtList.length];
+            selectModalFormat(nextFmt);
+            const nextCard = modalWrap.querySelector(`.scan-benchmark-card[data-fmt="${nextFmt}"]`);
+            if (nextCard) nextCard.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const idx = modalFmtList.indexOf(pdfFormat);
+            const prevFmt = modalFmtList[(idx - 1 + modalFmtList.length) % modalFmtList.length];
+            selectModalFormat(prevFmt);
+            const prevCard = modalWrap.querySelector(`.scan-benchmark-card[data-fmt="${prevFmt}"]`);
+            if (prevCard) prevCard.focus();
           }
-          updateSummaryMeta();
         };
       });
 
