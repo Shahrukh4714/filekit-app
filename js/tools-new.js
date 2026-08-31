@@ -3697,23 +3697,21 @@
         <div class="scan-benchmark-workstation" id="scan-benchmark-workstation">
           <!-- LEFT COLUMN: Studio Canvas & Visual Editing Controls -->
           <div class="scan-benchmark-stage-col" id="scan-benchmark-stage-col">
-            <!-- Streamlined Top Toolbar: Clean, text-labeled, zero overcrowding -->
+            <!-- Flat, Clean Top Toolbar: Zero container pills, zero nested boxes -->
             <header class="scan-unified-toolbar" role="toolbar" aria-label="Scan Review Tools">
-              <!-- Group 1: Illumination Filters -->
-              <div class="scan-segmented-modes" role="group" aria-label="Enhancement Filter">
-                <button type="button" class="scan-seg-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
-                  <span>Original</span>
-                </button>
-                <button type="button" class="scan-seg-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean Document Illumination [1]">
-                  ${ICONS.filterDoc}<span>Clean</span>
-                </button>
-                <button type="button" class="scan-seg-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
-                  ${ICONS.filterBw}<span>B&amp;W</span>
-                </button>
-                <button type="button" class="scan-seg-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
-                  ${ICONS.filterPhoto}<span>Photo</span>
-                </button>
-              </div>
+              <!-- Group 1: Illumination Filters (Flat buttons) -->
+              <button type="button" class="scan-tb-btn ${(!curPage.enhanceMode || curPage.enhanceMode === 'original') ? 'is-on' : ''}" data-tool="orig" title="Original Unprocessed Document [0]">
+                <span>Original</span>
+              </button>
+              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'enhanced' ? 'is-on' : ''}" data-tool="clean" title="Clean Document Illumination [1]">
+                ${ICONS.filterDoc}<span>Clean</span>
+              </button>
+              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'bw' ? 'is-on' : ''}" data-tool="bw" title="High-Contrast B&amp;W [2]">
+                ${ICONS.filterBw}<span>B&amp;W</span>
+              </button>
+              <button type="button" class="scan-tb-btn ${curPage.enhanceMode === 'photo' ? 'is-on' : ''}" data-tool="photo" title="Vivid Color Photo [3]">
+                ${ICONS.filterPhoto}<span>Photo</span>
+              </button>
 
               <span class="scan-tb-sep" aria-hidden="true"></span>
 
@@ -3742,6 +3740,15 @@
                 ${ICONS.sparkle}<span>All (${pages.length})</span>
               </button>
 
+              ${pages.length > 1 ? `
+                <span class="scan-tb-sep" aria-hidden="true"></span>
+                <div class="scan-tb-page-stepper">
+                  <button type="button" class="scan-tb-page-btn" id="btn-top-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous Page">${ICONS.prev}</button>
+                  <span class="scan-tb-page-info">${selIdx + 1} / ${pages.length}</span>
+                  <button type="button" class="scan-tb-page-btn" id="btn-top-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next Page">${ICONS.next}</button>
+                </div>
+              ` : ''}
+
               <!-- Group 4: Right Actions -->
               <div class="scan-tb-group-right">
                 <button type="button" class="scan-tb-btn" id="tab-btn-hub" title="Add page via camera">
@@ -3755,9 +3762,8 @@
               </div>
             </header>
 
-            <!-- Main Stage Body -->
+            <!-- Main Stage Body (Pure, Clean Full Canvas — Zero Side-Rails & Zero Bottom-Bars) -->
             <div class="scan-editor-body" id="scan-editor-body">
-              <!-- Centered Scrollable Document Canvas Stage -->
               <main class="etxt-canvas-wrap scan-canvas-stage" id="scan-canvas-wrap">
                 <!-- Floating Crop Bar -->
                 ${isCropping && cropState ? `
@@ -3786,89 +3792,6 @@
                   </div>
                 </div>
               </main>
-
-              <!-- Slide-out Thumbnail Drawer (Anchored to Right Rail) -->
-              <aside class="etxt-thumbs-drawer scan-thumbs-drawer ${thumbsDrawerOpen ? 'is-open' : ''}" id="scan-thumbs-drawer" aria-label="Page Thumbnails">
-                <div class="etxt-thumbs-head">
-                  <span class="etxt-thumbs-title">Pages (${pages.length})</span>
-                  <button type="button" class="etxt-thumbs-close" id="scan-thumbs-close" title="Close Drawer">${ICONS.cross}</button>
-                </div>
-                <div class="etxt-thumbs-scroll">
-                  ${pages.map((p, i) => `
-                    <div class="etxt-thumb-card ${i === selIdx ? 'is-on' : ''}" data-idx="${i}" draggable="true" title="Page ${i + 1} — Drag to reorder">
-                      <button type="button" class="etxt-thumb ${i === selIdx ? 'is-on' : ''}" data-idx="${i}">
-                        <div class="scan-thumb-paper-wrap">
-                          <canvas id="film-cv-${i}" width="160" height="220"></canvas>
-                        </div>
-                        <div class="scan-thumb-info-row">
-                          <span class="scan-thumb-num-label ${i === selIdx ? 'is-active' : ''}">Page ${i + 1}</span>
-                          ${p.ocrData ? '<span class="scan-thumb-ocr-pill" title="OCR Ready">OCR</span>' : ''}
-                        </div>
-                      </button>
-                      <div class="scan-thumb-quick-actions">
-                        <button type="button" class="scan-thumb-btn" data-del="${i}" title="Delete page">${ICONS.cross}</button>
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-                <div class="scan-drawer-footer-actions">
-                  <button type="button" class="etxt-add-page" id="btn-drawer-add-cam" title="Scan with Camera">
-                    ${ICONS.camera}
-                    <span>Camera</span>
-                  </button>
-                  <button type="button" class="etxt-add-page" id="btn-drawer-add-file" title="Upload Files">
-                    ${ICONS.folder}
-                    <span>Upload</span>
-                  </button>
-                </div>
-              </aside>
-
-              <!-- Fixed Full-Height Docked Right Side-Rail (Zero Document Overlap) -->
-              <aside class="scan-right-rail" id="scan-right-rail" aria-label="Page & Zoom Controls">
-                <!-- Top Group: Page Thumbnails Drawer Toggle & Page Navigation -->
-                <div class="scan-rail-top">
-                  <button type="button" class="scan-rail-btn ${thumbsDrawerOpen ? 'is-active' : ''}" id="btn-toggle-thumbs" title="Page Thumbnails (${pages.length} pages)">
-                    ${ICONS.sidebar}
-                  </button>
-                  <span class="scan-rail-sep"></span>
-                  <div class="scan-rail-page-pill" title="Current Page (Page Up/Down)">
-                    <button type="button" class="scan-rail-page-arrow" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page (Left Arrow)">${ICONS.prev}</button>
-                    <span class="scan-rail-page-text">${selIdx + 1}<span class="scan-rail-page-total">/${pages.length}</span></span>
-                    <button type="button" class="scan-rail-page-arrow" id="btn-rail-next" ${selIdx >= pages.length - 1 ? 'disabled' : ''} title="Next page (Right Arrow)">${ICONS.next}</button>
-                  </div>
-                </div>
-
-                <!-- Mid Group: Zoom Stepper, Live Value & Reset -->
-                <div class="scan-rail-mid">
-                  <button type="button" class="scan-rail-btn" id="btn-zoom-in" title="Zoom In (Ctrl +)">
-                    ${ICONS.zoomIn}
-                  </button>
-                  <button type="button" class="scan-rail-zoom-badge" id="scan-zoom-badge" title="Click to Reset Zoom (100%)">${zoom}%</button>
-                  <button type="button" class="scan-rail-btn" id="btn-zoom-out" title="Zoom Out (Ctrl -)">
-                    ${ICONS.zoomOut}
-                  </button>
-                  <button type="button" class="scan-rail-btn scan-rail-btn-fit" id="btn-zoom-reset" title="Fit to Screen (Double Click Canvas)">
-                    <span>Fit</span>
-                  </button>
-                </div>
-
-                <!-- Bottom Group: Privacy & Security Badge -->
-                <div class="scan-rail-bot">
-                  <span class="scan-rail-sep"></span>
-                  <div class="scan-rail-privacy-pill" title="100% On-Device Local Processing (Zero Cloud Uploads)">
-                    ${ICONS.shield}
-                  </div>
-                </div>
-              </aside>
-            </div>
-
-            <!-- Single Bottom-Attached Footer Toolbar (Matching Compress PDF) -->
-            <div class="cpdf-benchmark-fileinfo-row scan-stage-footer-row">
-              <span class="cpdf-benchmark-fileinfo-text" id="scan-stage-fileinfo-text">Page ${selIdx + 1} of ${pages.length} · ${curPage.canvas ? `${curPage.canvas.width} × ${curPage.canvas.height} px` : ''}</span>
-              <button type="button" class="cpdf-benchmark-btn-add" id="btn-stage-add-more" title="Add more pages">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                <span>Add Page</span>
-              </button>
             </div>
           </div>
 
@@ -6126,6 +6049,26 @@
             paintFilmstripThumbs();
           };
         }
+      }
+
+      // Topbar Page Stepper
+      const topPrevBtn = parent.querySelector('#btn-top-prev');
+      const topNextBtn = parent.querySelector('#btn-top-next');
+      if (topPrevBtn) {
+        topPrevBtn.onclick = () => {
+          if (selIdx > 0) {
+            selIdx--;
+            refreshStudioUI();
+          }
+        };
+      }
+      if (topNextBtn) {
+        topNextBtn.onclick = () => {
+          if (selIdx < pages.length - 1) {
+            selIdx++;
+            refreshStudioUI();
+          }
+        };
       }
 
       // Right Benchmark Export Panel Controls (Matching Compress PDF)

@@ -42608,6 +42608,53 @@ body #app-view .rail-item.active {
   font-weight: 700 !important;
 }
 
+/* Clean Flat Topbar Page Stepper */
+.scan-tb-page-stepper {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  user-select: none !important;
+}
+
+.scan-tb-page-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.12s ease !important;
+}
+
+.scan-tb-page-btn:hover:not(:disabled) {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.scan-tb-page-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+.scan-tb-page-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: currentColor !important;
+}
+
+.scan-tb-page-info {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  padding: 0 4px !important;
+  white-space: nowrap !important;
+}
+
 /* Center Tool Group Buttons */
 .scan-unified-toolbar .etxt-tool-group {
   display: flex !important;
