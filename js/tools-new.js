@@ -3745,7 +3745,7 @@
                 <!-- Group 4: OCR Text Extractor Tool -->
                 <div class="scan-tb-group">
                   <button type="button" class="scan-tb-btn ${isTextSheetOpen ? 'is-active' : ''}" id="btn-top-extract-text" title="Extract Text & Copy [T]">
-                    ${ICONS.ocr}<span>Text</span>
+                    ${ICONS.ocr}<span>Extract Text</span>
                   </button>
                 </div>
               </div>
@@ -3786,47 +3786,57 @@
                     <button type="button" id="btn-pill-select-all" title="Select all text on this page">${ICONS.flow}<span>Select All</span></button>
                   </div>
 
-                  <!-- In-Place Clean Extracted Text Sheet (Matching Rest of UI, Zero Emojis) -->
-                  <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet" style="${isTextSheetOpen ? 'display:flex;' : 'display:none;'}">
-                    <div class="scan-text-sheet-header">
-                      <div class="scan-text-sheet-meta">
-                        <span class="scan-text-sheet-title">${ICONS.ocr}<span>Text Extract</span></span>
-                        <span class="scan-text-sheet-stats" id="scan-sheet-stats">0 words · 0 chars</span>
+                  <!-- In-Place Clean Extracted Text Sheet (2-Tier Clean Layout) -->
+                  <div class="scan-text-sheet ${isTextSheetOpen ? 'is-visible' : ''}" id="scan-text-sheet">
+                    <!-- Top Bar: Title & Return Button -->
+                    <div class="scan-sheet-topbar">
+                      <div class="scan-sheet-topbar-left">
+                        <span class="scan-sheet-title-badge">${ICONS.ocr} <strong>Extracted Text</strong></span>
+                        <span class="scan-sheet-stats-badge" id="scan-sheet-stats">0 words · 0 chars</span>
                       </div>
-                      <div class="scan-text-sheet-actions">
-                        <div class="scan-sheet-lang-wrap" title="Recognition Language">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-                          <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
-                            <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                            <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
-                            <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
-                            <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
-                            <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
-                            <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
-                            <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
-                            <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
-                            <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
-                            <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
-                            <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
-                            <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
-                          </select>
-                        </div>
-                        <button type="button" class="scan-sheet-btn" id="btn-sheet-copy" title="Copy text to clipboard">
-                          ${ICONS.copy}<span id="sheet-copy-label">Copy</span>
-                        </button>
-                        <button type="button" class="scan-sheet-btn" id="btn-sheet-download-txt" title="Download Text File (.txt)">
-                          ${ICONS.txt}<span>TXT</span>
-                        </button>
-                        <button type="button" class="scan-sheet-btn" id="btn-sheet-download-doc" title="Download Word Document (.doc)">
-                          ${ICONS.word}<span>DOCX</span>
-                        </button>
-                        <button type="button" class="scan-sheet-btn scan-sheet-btn-close" id="btn-sheet-close" title="Return to Document">
-                          ${ICONS.cross}<span>Close</span>
+                      <div class="scan-sheet-topbar-right">
+                        <button type="button" class="scan-sheet-close-btn" id="btn-sheet-close" title="Return to Document View">
+                          ${ICONS.cross}<span>Back to Page</span>
                         </button>
                       </div>
                     </div>
+
+                    <!-- Action Bar: Language Selector & One-Click Exports -->
+                    <div class="scan-sheet-actionbar">
+                      <div class="scan-sheet-lang-box" title="Recognition Language">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                        <select id="scan-sheet-ocr-lang" class="scan-sheet-lang-select" title="Change Language">
+                          <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
+                          <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिंदी)</option>
+                          <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish</option>
+                          <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French</option>
+                          <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German</option>
+                          <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese</option>
+                          <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese</option>
+                          <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic</option>
+                          <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian</option>
+                          <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese</option>
+                          <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian</option>
+                          <option value="kor" ${ocrLang === 'kor' ? 'selected' : ''}>Korean</option>
+                        </select>
+                      </div>
+
+                      <div class="scan-sheet-export-group">
+                        <button type="button" class="scan-sheet-act-btn" id="btn-sheet-copy" title="Copy text to clipboard">
+                          ${ICONS.copy}<span id="sheet-copy-label">Copy</span>
+                        </button>
+                        <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-txt" title="Download Text File (.txt)">
+                          ${ICONS.txt}<span>TXT</span>
+                        </button>
+                        <button type="button" class="scan-sheet-act-btn" id="btn-sheet-download-doc" title="Download Word Document (.doc)">
+                          ${ICONS.word}<span>DOCX</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Editor Body Area -->
                     <div class="scan-text-sheet-body">
-                      <div class="scan-sheet-loading-state" id="scan-sheet-loading" style="display:none;">
+                      <div class="scan-sheet-loading-state" id="scan-sheet-loading">
                         <div class="scan-sheet-spinner"></div>
                         <span id="scan-sheet-loading-label">Scanning document text…</span>
                       </div>
@@ -4928,11 +4938,16 @@
       // ─── Extract Text Sheet Controls & Laser Sweep ───
       function cleanExtractedText(raw) {
         if (!raw) return '';
-        return raw
-          .replace(/\u00A0/g, ' ')
-          .replace(/^[~|`_—\-•]\s*$/gm, '')
-          .replace(/\n{3,}/g, '\n\n')
-          .trim();
+        let t = raw.replace(/\u00A0/g, ' ');
+        // Fix single-character spaced words from OCR letter segmentation
+        t = t.replace(/(?:^|\n|\s)((?:[\u0900-\u097Fa-zA-Z0-9]\s){2,}[\u0900-\u097Fa-zA-Z0-9])(?:\s|\n|$)/g, (m, g1) => {
+          return ' ' + g1.replace(/\s+/g, '') + ' ';
+        });
+        // Remove lone punctuation artifacts
+        t = t.replace(/^[~|`_—\-•]\s*$/gm, '');
+        // Collapse multiple blank lines
+        t = t.replace(/\n{3,}/g, '\n\n');
+        return t.trim();
       }
 
       function updateSheetText() {
