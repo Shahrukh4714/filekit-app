@@ -3869,54 +3869,58 @@
 
             <!-- Scrollable Content Body -->
             <div class="scan-panel-scroll-body">
-              <!-- Format Option Cards Stack (Unified Radio Design) -->
-              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
-                <div class="scan-benchmark-radio">
-                  <div class="scan-benchmark-radio-dot"></div>
+              <!-- Format Option Cards Stack (Ultra-Compact 32px Cards) -->
+              <div class="scan-format-cards-stack">
+                <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <span class="scan-benchmark-card-label">Searchable PDF</span>
+                  <div class="scan-benchmark-card-right">
+                    <span class="scan-benchmark-pill-rec">Rec.</span>
+                  </div>
                 </div>
-                <span class="scan-benchmark-card-label">Searchable PDF</span>
-                <div class="scan-benchmark-card-right">
-                  <span class="scan-benchmark-pill-rec">Recommended</span>
+
+                <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <span class="scan-benchmark-card-label">Standard PDF</span>
+                </div>
+
+                <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <span class="scan-benchmark-card-label">Image ZIP</span>
                 </div>
               </div>
 
-              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image">
-                <div class="scan-benchmark-radio">
-                  <div class="scan-benchmark-radio-dot"></div>
-                </div>
-                <span class="scan-benchmark-card-label">Standard PDF</span>
-              </div>
+              <!-- 2-Column Compact Configuration Grid -->
+              <div class="scan-config-grid-box">
+                <div class="scan-config-2col-row">
+                  <div class="scan-config-cfield" id="panel-field-dpi">
+                    <label class="scan-config-clabel" for="panel-export-dpi">Resolution</label>
+                    <select id="panel-export-dpi" class="scan-config-cselect">
+                      <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High Quality)</option>
+                      <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced)</option>
+                      <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact)</option>
+                    </select>
+                  </div>
 
-              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip">
-                <div class="scan-benchmark-radio">
-                  <div class="scan-benchmark-radio-dot"></div>
-                </div>
-                <span class="scan-benchmark-card-label">Image ZIP</span>
-              </div>
-
-              <!-- Vertical Clean Configuration Fields -->
-              <div class="scan-config-vertical-stack">
-                <div class="scan-config-vfield" id="panel-field-dpi">
-                  <label class="scan-config-vlabel" for="panel-export-dpi">Resolution</label>
-                  <select id="panel-export-dpi" class="scan-config-vselect">
-                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI (High Quality · Print)</option>
-                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI (Balanced · Web & Email)</option>
-                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI (Compact · Smallest Size)</option>
-                  </select>
+                  <div class="scan-config-cfield" id="panel-field-size">
+                    <label class="scan-config-clabel" for="panel-export-pagesize">Geometry</label>
+                    <select id="panel-export-pagesize" class="scan-config-cselect">
+                      <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297 mm)</option>
+                      <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
+                      <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div class="scan-config-vfield" id="panel-field-size">
-                  <label class="scan-config-vlabel" for="panel-export-pagesize">Geometry</label>
-                  <select id="panel-export-pagesize" class="scan-config-vselect">
-                    <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210 × 297 mm)</option>
-                    <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter (8.5 × 11 in)</option>
-                    <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original Dimensions</option>
-                  </select>
-                </div>
-
-                <div class="scan-config-vfield" id="panel-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
-                  <label class="scan-config-vlabel" for="panel-export-lang">OCR Language</label>
-                  <select id="panel-export-lang" class="scan-config-vselect">
+                <div class="scan-config-cfield scan-config-lang-row" id="panel-ocr-lang-row" ${pdfFormat === 'searchable' ? '' : 'style="display:none;"'}>
+                  <label class="scan-config-clabel" for="panel-export-lang">OCR Language</label>
+                  <select id="panel-export-lang" class="scan-config-cselect">
                     <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
                     <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (Español)</option>
                     <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (Français)</option>
@@ -3933,26 +3937,21 @@
               </div>
             </div>
 
-            <!-- Sticky Pinned Action Footer (100% First-Fold Visibility) -->
+            <!-- Sticky Pinned Action Footer (100% Zero-Scroll Fold) -->
             <div class="scan-panel-sticky-footer">
-              <!-- Output Estimated Summary Box -->
-              <div class="cpdf-benchmark-est-box scan-benchmark-est-box">
-                <div class="cpdf-benchmark-est-title">Estimated output</div>
-                <div class="cpdf-benchmark-est-metrics">
-                  <strong class="cpdf-benchmark-est-new">${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong>
-                  <span class="scan-benchmark-est-meta" id="scan-panel-summary-meta">· ${pdfCompression === 'high' ? '300 DPI High Quality' : (pdfCompression === 'balanced' ? '150 DPI Balanced' : '72 DPI Compact')}</span>
-                  <span class="cpdf-benchmark-est-pct">100% Local</span>
-                </div>
-                <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar" style="width: 100%;"></div>
-                </div>
+              <!-- Compact 1-Line Metadata Status -->
+              <div class="scan-panel-compact-status">
+                <span class="scan-status-dot"></span>
+                <span class="scan-status-pages"><strong>${pages.length}</strong> ${pages.length === 1 ? 'Page' : 'Pages'}</span>
+                <span class="scan-status-meta" id="scan-panel-summary-meta">· ${pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI')}</span>
+                <span class="scan-status-badge">100% Local</span>
               </div>
 
               <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="cpdf-benchmark-cta scan-benchmark-cta" id="btn-panel-confirm-export">
                 <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
                 <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
                 <div class="scan-modal-progress-track" id="panel-progress-track" style="display:none;">
