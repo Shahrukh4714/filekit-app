@@ -44782,10 +44782,16 @@ body #app-view .rail-item.active {
 }
 
 /* Thumbnail Card Active State: Clean Dark Slate (NO Lavender/Purple) */
-.etxt-thumb-card.is-on {
+.etxt-thumb-card.is-on,
+.scan-thumbs-drawer .etxt-thumb-card.is-on {
   border-color: #0F172A !important;
   background: #FFFFFF !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 0 0 1.5px #0F172A, 0 3px 12px rgba(15, 23, 42, 0.14) !important;
+}
+
+.scan-thumbs-drawer .scan-thumb-num-label.is-active {
+  color: #0F172A !important;
+  font-weight: 800 !important;
 }
 
 /* Responsive Adaptive Toolbars (Zero Scroll On All Screens) */

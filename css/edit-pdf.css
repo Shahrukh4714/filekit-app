@@ -373,9 +373,9 @@
 }
 
 .etxt-thumb-card.is-on {
-  border-color: #8B5CF6 !important;
-  background: rgba(139, 92, 246, 0.04) !important;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15) !important;
+  border-color: #0F172A !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0F172A, 0 2px 8px rgba(15, 23, 42, 0.12) !important;
 }
 
 .etxt-thumb {
@@ -803,9 +803,9 @@
 }
 
 .etxt-thumb-card.is-on {
-  border-color: #8B5CF6 !important;
-  background: rgba(139, 92, 246, 0.04) !important;
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15) !important;
+  border-color: #0F172A !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0F172A, 0 2px 8px rgba(15, 23, 42, 0.12) !important;
 }
 
 .etxt-thumb {
