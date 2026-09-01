@@ -4105,6 +4105,19 @@
       }
     }
 
+    let _ocrMutex = Promise.resolve();
+    async function runExclusiveOcr(taskFn) {
+      const prev = _ocrMutex;
+      let release;
+      _ocrMutex = new Promise(resolve => { release = resolve; });
+      try {
+        await prev;
+        return await taskFn();
+      } finally {
+        release();
+      }
+    }
+
     function cleanExtractedText(raw, lang = ocrLang || 'eng') {
       if (!raw) return '';
       let t = String(raw).replace(/\u00A0/g, ' ');
@@ -4233,11 +4246,11 @@
         }
       };
 
-      // If already computed, show immediately
-      if (p.ocrData) {
+      // If already computed and valid, show immediately
+      if (p.ocrData && !p.ocrData.error && p.ocrData.text) {
         setSidebarText((p.ocrData.text || '').trim() || '(No text detected)');
         if (idx === selIdx) renderTextLayer();
-        return;
+        return p.ocrData;
       }
 
       // If OCR is already running for this page, wait for it
@@ -4270,22 +4283,25 @@
 
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
 
-          const worker = await A.getOrInitOcrWorker(lang);
+          const data = await runExclusiveOcr(async () => {
+            const worker = await A.getOrInitOcrWorker(lang);
 
-          // Convert to Blob for reliable cross-thread transmission
-          const blob = await new Promise((resolve) => prep.toBlob(resolve, 'image/png'));
-          let { data } = await worker.recognize(blob || prep);
+            // Convert to Blob for reliable cross-thread transmission
+            const blob = await new Promise((resolve) => prep.toBlob(resolve, 'image/png'));
+            let res = await worker.recognize(blob || prep);
 
-          // Auto-contrast fallback pass if initial recognition returned empty
-          if (!data || !data.text || !data.text.trim()) {
-            console.log('[OCR] First pass returned empty, running auto-contrast fallback pass...');
-            const contrastPrep = createHighContrastOcrCanvas(prep);
-            const contrastBlob = await new Promise((resolve) => contrastPrep.toBlob(resolve, 'image/png'));
-            const fallback = await worker.recognize(contrastBlob || contrastPrep);
-            if (fallback?.data?.text?.trim()) {
-              data = fallback.data;
+            // Auto-contrast fallback pass if initial recognition returned empty
+            if (!res?.data?.text || !res.data.text.trim()) {
+              console.log('[OCR] First pass returned empty, running auto-contrast fallback pass...');
+              const contrastPrep = createHighContrastOcrCanvas(prep);
+              const contrastBlob = await new Promise((resolve) => contrastPrep.toBlob(resolve, 'image/png'));
+              const fallback = await worker.recognize(contrastBlob || contrastPrep);
+              if (fallback?.data?.text?.trim()) {
+                res = fallback;
+              }
             }
-          }
+            return res?.data;
+          });
 
           console.log('[OCR] Done — text length:', data?.text?.length, 'words:', data?.words?.length);
 
@@ -4307,6 +4323,8 @@
           console.error('[OCR] Recognition failed:', err);
           p.ocrData = { text: '', error: err?.message || String(err), words: [] };
           throw err;
+        } finally {
+          p.ocrPromise = null;
         }
       })();
 
@@ -4321,16 +4339,6 @@
             paintFilmstripThumbs();
           }
         }
-
-        // Background Pre-OCR: Silently prepare adjacent pages in background for zero latency switching
-        setTimeout(() => {
-          if (pages[idx + 1] && !pages[idx + 1].ocrData && !pages[idx + 1].ocrPromise) {
-            runPageOcr(idx + 1, true).catch(() => {});
-          } else if (pages[idx - 1] && !pages[idx - 1].ocrData && !pages[idx - 1].ocrPromise) {
-            runPageOcr(idx - 1, true).catch(() => {});
-          }
-        }, 120);
-
       } catch (err) {
         if (!isBackground) setSidebarText(`OCR failed: ${err.message || 'Unknown error'}.`);
       } finally {
@@ -5220,8 +5228,8 @@
         }
 
         // Single page extraction:
-        if (cur && cur.ocrData) {
-          // If already extracted, open overlay instantly
+        if (cur && cur.ocrData && !cur.ocrData.error && cur.ocrData.text) {
+          // If already extracted with valid text, open overlay instantly
           showSheetOverlay();
           return;
         }
