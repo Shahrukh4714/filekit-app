@@ -4005,30 +4005,45 @@
               </div>
             </div>
 
-            <!-- 3-Column Settings Container Box (Resolution, Geometry, Language) -->
-            <div class="scan-exact-settings-box">
-              <div class="scan-exact-3col-grid">
-                <div class="scan-exact-field" id="panel-field-dpi">
-                  <label class="scan-exact-label" for="panel-export-dpi">RESOLUTION</label>
-                  <select id="panel-export-dpi" class="scan-exact-select">
+            <!-- Unified Segmented Settings Strip (Option 1: Linear / Apple Style) -->
+            <div class="scan-segmented-settings-strip">
+              <!-- Segment 1: Resolution -->
+              <div class="scan-segment-item" id="panel-field-dpi">
+                <label class="scan-segment-label" for="panel-export-dpi">Resolution</label>
+                <div class="scan-segment-select-wrap">
+                  <select id="panel-export-dpi" class="scan-segment-select">
                     <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI</option>
                     <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI</option>
                     <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI</option>
                   </select>
+                  <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
+              </div>
 
-                <div class="scan-exact-field" id="panel-field-size">
-                  <label class="scan-exact-label" for="panel-export-pagesize">GEOMETRY</label>
-                  <select id="panel-export-pagesize" class="scan-exact-select">
+              <!-- Divider 1 -->
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+
+              <!-- Segment 2: Geometry -->
+              <div class="scan-segment-item" id="panel-field-size">
+                <label class="scan-segment-label" for="panel-export-pagesize">Geometry</label>
+                <div class="scan-segment-select-wrap">
+                  <select id="panel-export-pagesize" class="scan-segment-select">
                     <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
                     <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
                     <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
                   </select>
+                  <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
+              </div>
 
-                <div class="scan-exact-field" id="panel-ocr-lang-row">
-                  <label class="scan-exact-label" for="panel-export-lang">LANGUAGE</label>
-                  <select id="panel-export-lang" class="scan-exact-select">
+              <!-- Divider 2 -->
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+
+              <!-- Segment 3: Language -->
+              <div class="scan-segment-item" id="panel-ocr-lang-row">
+                <label class="scan-segment-label" for="panel-export-lang">Language</label>
+                <div class="scan-segment-select-wrap">
+                  <select id="panel-export-lang" class="scan-segment-select">
                     <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
                     <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
                     <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
@@ -4041,6 +4056,7 @@
                     <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
                     <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
                   </select>
+                  <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
               </div>
             </div>
@@ -4092,7 +4108,14 @@
     function prepareOcrCanvas(srcCv) {
       if (!srcCv) return srcCv;
       const maxDim = 2800;
-      const sc = Math.min(1, maxDim / Math.max(srcCv.width, srcCv.height));
+      const minDim = 1600;
+      const maxOriginal = Math.max(srcCv.width, srcCv.height);
+      let sc = 1;
+      if (maxOriginal > maxDim) {
+        sc = maxDim / maxOriginal;
+      } else if (maxOriginal < minDim && maxOriginal > 0) {
+        sc = Math.min(3, minDim / maxOriginal);
+      }
       const w = Math.max(1, Math.round(srcCv.width * sc));
       const h = Math.max(1, Math.round(srcCv.height * sc));
       const c = document.createElement('canvas');
@@ -4105,6 +4128,39 @@
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(srcCv, 0, 0, w, h);
+      return c;
+    }
+
+    function createHighContrastOcrCanvas(srcCv) {
+      const c = document.createElement('canvas');
+      c.width = srcCv.width;
+      c.height = srcCv.height;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(srcCv, 0, 0);
+      try {
+        const imgData = ctx.getImageData(0, 0, c.width, c.height);
+        const d = imgData.data;
+        const len = d.length;
+
+        let minL = 255, maxL = 0;
+        for (let i = 0; i < len; i += 16) {
+          const l = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+          if (l < minL) minL = l;
+          if (l > maxL) maxL = l;
+        }
+
+        const range = Math.max(1, maxL - minL);
+        for (let i = 0; i < len; i += 4) {
+          const l = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+          let norm = Math.round(((l - minL) / range) * 255);
+          if (norm < 120) norm = Math.max(0, norm - 30);
+          else if (norm > 140) norm = Math.min(255, norm + 30);
+          d[i] = norm;
+          d[i + 1] = norm;
+          d[i + 2] = norm;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } catch (e) {}
       return c;
     }
 
@@ -4198,19 +4254,26 @@
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
 
           const worker = await A.getOrInitOcrWorker(lang);
-          const { data } = await worker.recognize(prep);
+          let { data } = await worker.recognize(prep);
 
-          console.log('[OCR] Done — text length:', data.text?.length, 'words:', data.words?.length);
+          // Auto-contrast fallback pass if initial recognition returned empty
+          if (!data || !data.text || !data.text.trim()) {
+            console.log('[OCR] First pass returned empty, running auto-contrast fallback pass...');
+            const contrastPrep = createHighContrastOcrCanvas(prep);
+            const fallback = await worker.recognize(contrastPrep);
+            if (fallback?.data?.text?.trim()) {
+              data = fallback.data;
+            }
+          }
+
+          console.log('[OCR] Done — text length:', data?.text?.length, 'words:', data?.words?.length);
 
           // Clean text immediately upon recognition so all consumers get pristine text
-          data.text = cleanExtractedText(data.text || '', lang);
-
-          if (data && Array.isArray(data.words)) {
-            data.words = data.words.filter(w => {
-              if (!w || !w.text) return false;
-              const cleanW = cleanExtractedText(w.text, lang);
-              return cleanW && cleanW.length > 0 && /[\w\d]/.test(cleanW);
-            });
+          if (data) {
+            data.text = cleanExtractedText(data.text || '', lang);
+            if (Array.isArray(data.words)) {
+              data.words = data.words.filter(w => w && w.text && String(w.text).trim().length > 0);
+            }
           }
 
           p.ocrData = data;
