@@ -4105,6 +4105,22 @@
       }
     }
 
+    function cleanExtractedText(raw, lang = ocrLang || 'eng') {
+      if (!raw) return '';
+      let t = String(raw).replace(/\u00A0/g, ' ');
+
+      // 1. Remove non-printable control unicode characters only
+      t = t.replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '');
+
+      // 2. Reconnect broken hyphenated line-breaks (e.g. "docu-\nment" -> "document")
+      t = t.replace(/(\b[a-zA-Z]{2,})-\s*\n\s*([a-zA-Z]{2,}\b)/g, '$1$2');
+
+      // 3. Normalize multiple spaces and blank lines
+      t = t.replace(/[ \t]+/g, ' ');
+      t = t.replace(/\n{3,}/g, '\n\n');
+      return t.trim();
+    }
+
     function prepareOcrCanvas(srcCv) {
       if (!srcCv) return srcCv;
       const maxDim = 2800;
@@ -5096,21 +5112,6 @@
       }
 
       // ─── Extract Text Sheet Controls & Laser Sweep ───
-      function cleanExtractedText(raw, lang = ocrLang || 'eng') {
-        if (!raw) return '';
-        let t = raw.replace(/\u00A0/g, ' ');
-
-        // 1. Remove non-printable control unicode characters only
-        t = t.replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '');
-
-        // 2. Reconnect broken hyphenated line-breaks (e.g. "docu-\nment" -> "document")
-        t = t.replace(/(\b[a-zA-Z]{2,})-\s*\n\s*([a-zA-Z]{2,}\b)/g, '$1$2');
-
-        // 3. Normalize multiple spaces and blank lines
-        t = t.replace(/[ \t]+/g, ' ');
-        t = t.replace(/\n{3,}/g, '\n\n');
-        return t.trim();
-      }
 
       function getCombinedAllPagesText() {
         return pages.map((p, i) => {
