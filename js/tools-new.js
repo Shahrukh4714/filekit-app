@@ -2618,71 +2618,73 @@
               </div>
             </div>
 
-            <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important;">
-              <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
-                  ${ICONS.check}
-                </div>
-                <h2 class="cpdf-benchmark-title">Scan Complete</h2>
-              </div>
-
-              <div class="cpdf-benchmark-est-box">
-                <div class="cpdf-benchmark-est-title">${esc(r.formatLabel)} · ${r.pageCount} ${r.pageCount === 1 ? 'Page' : 'Pages'}</div>
-                <div class="cpdf-benchmark-est-metrics">
-                  <strong class="cpdf-benchmark-est-new">${bytes(r.blob.size)}</strong>
-                  <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">300 DPI Archival</span>
-                </div>
-                <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A !important;"></div>
-                </div>
-              </div>
-
-              <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
-                <span>Download Scanned Document</span>
-                ${ICONS.download}
-              </a>
-
-              <div class="conv-smart-tip-card">
-                <div class="conv-smart-tip-header">
-                  <span style="display:inline-flex;align-items:center;gap:6px;">${ICONS.sparkle} Smart recommendation</span>
-                </div>
-                <p class="conv-smart-tip-desc">What would you like to do next with this document?</p>
-                <div class="conv-smart-tools-list">
-                  <div class="conv-smart-tool-item" data-tool-id="pdf-compress" tabindex="0" role="button">
-                    <div class="conv-smart-tool-left">
-                      <span class="conv-smart-tool-icon" style="background:#0284C7;">${ICONS.compress}</span>
-                      <div class="conv-smart-tool-info">
-                        <span class="conv-smart-tool-title">Compress &amp; Shrink PDF</span>
-                        <span class="conv-smart-tool-sub">Reduce size for easy emailing</span>
-                      </div>
-                    </div>
-                    <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
+            <div class="cpdf-benchmark-panel scan-result-panel">
+              <div class="scan-result-panel-top">
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                    ${ICONS.check}
                   </div>
-                  <div class="conv-smart-tool-item" data-tool-id="pdf-sign" tabindex="0" role="button">
-                    <div class="conv-smart-tool-left">
-                      <span class="conv-smart-tool-icon" style="background:#0D9488;">${ICONS.edit}</span>
-                      <div class="conv-smart-tool-info">
-                        <span class="conv-smart-tool-title">Sign Document</span>
-                        <span class="conv-smart-tool-sub">Add signature or initials</span>
-                      </div>
-                    </div>
-                    <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
+                  <h2 class="cpdf-benchmark-title">Scan Complete</h2>
+                </div>
+
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">${esc(r.formatLabel)} · ${r.pageCount} ${r.pageCount === 1 ? 'Page' : 'Pages'}</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new">${bytes(r.blob.size)}</strong>
+                    <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">300 DPI Archival</span>
                   </div>
-                  <div class="conv-smart-tool-item" data-tool-id="organize" tabindex="0" role="button">
-                    <div class="conv-smart-tool-left">
-                      <span class="conv-smart-tool-icon" style="background:#7C3AED;">${ICONS.organize}</span>
-                      <div class="conv-smart-tool-info">
-                        <span class="conv-smart-tool-title">Organize &amp; Merge PDF</span>
-                        <span class="conv-smart-tool-sub">Reorder, rotate, or combine</span>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A !important;"></div>
+                  </div>
+                </div>
+
+                <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
+                  <span>Download Scanned Document</span>
+                  ${ICONS.download}
+                </a>
+
+                <div class="conv-smart-tip-card">
+                  <div class="conv-smart-tip-header">
+                    <span style="display:inline-flex;align-items:center;gap:6px;">${ICONS.sparkle} Smart recommendation</span>
+                  </div>
+                  <p class="conv-smart-tip-desc">What would you like to do next with this document?</p>
+                  <div class="conv-smart-tools-list">
+                    <div class="conv-smart-tool-item" data-tool-id="pdf-compress" tabindex="0" role="button">
+                      <div class="conv-smart-tool-left">
+                        <span class="conv-smart-tool-icon" style="background:#0284C7;">${ICONS.compress}</span>
+                        <div class="conv-smart-tool-info">
+                          <span class="conv-smart-tool-title">Compress &amp; Shrink PDF</span>
+                          <span class="conv-smart-tool-sub">Reduce size for easy emailing</span>
+                        </div>
                       </div>
+                      <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
                     </div>
-                    <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
+                    <div class="conv-smart-tool-item" data-tool-id="pdf-sign" tabindex="0" role="button">
+                      <div class="conv-smart-tool-left">
+                        <span class="conv-smart-tool-icon" style="background:#0D9488;">${ICONS.edit}</span>
+                        <div class="conv-smart-tool-info">
+                          <span class="conv-smart-tool-title">Sign Document</span>
+                          <span class="conv-smart-tool-sub">Add signature or initials</span>
+                        </div>
+                      </div>
+                      <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </div>
+                    <div class="conv-smart-tool-item" data-tool-id="organize" tabindex="0" role="button">
+                      <div class="conv-smart-tool-left">
+                        <span class="conv-smart-tool-icon" style="background:#7C3AED;">${ICONS.organize}</span>
+                        <div class="conv-smart-tool-info">
+                          <span class="conv-smart-tool-title">Organize &amp; Merge PDF</span>
+                          <span class="conv-smart-tool-sub">Reorder, rotate, or combine</span>
+                        </div>
+                      </div>
+                      <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4141,11 +4143,13 @@
         }
       };
 
-      // Connect live status updates from the OCR engine to the sidebar label
+      // Connect live status updates from the OCR engine to the sidebar and sheet label
       _ocrStatusCallback = (msg) => {
         if (idx === selIdx) {
           const lbl = document.querySelector('#ocr-sidebar-progress-label');
           if (lbl) lbl.textContent = msg;
+          const sheetLbl = document.querySelector('#scan-sheet-loading-label');
+          if (sheetLbl) sheetLbl.textContent = msg;
         }
       };
 
@@ -4153,6 +4157,8 @@
         if (idx === selIdx) {
           const pct = Math.round(progressRatio * 100);
           setSidebarLoading(true, `Recognizing characters… ${pct}%`, pct);
+          const sheetLbl = document.querySelector('#scan-sheet-loading-label');
+          if (sheetLbl) sheetLbl.textContent = `Recognizing characters… ${pct}%`;
         }
       };
 
@@ -5089,39 +5095,34 @@
         const sheetEl = parent.querySelector('#scan-text-sheet');
         const canvasEl = parent.querySelector('#scan-studio-canvas');
         const textLayer = parent.querySelector('#scan-text-layer');
-        const laserBeam = parent.querySelector('#scan-laser-beam');
         const stageDock = parent.querySelector('#scan-stage-dock');
+        const sheetLoading = parent.querySelector('#scan-sheet-loading');
+        const sheetLoadingLabel = parent.querySelector('#scan-sheet-loading-label');
 
-        // Helper to reveal the text sheet overlay ONLY AFTER laser & OCR are completely finished
-        const showSheetOverlay = () => {
-          isTextSheetOpen = true;
-          if (wrapEl) wrapEl.style.cursor = 'default';
-          if (btnExtract) btnExtract.classList.add('is-active');
-          if (sheetEl) sheetEl.classList.add('is-visible');
-          if (canvasEl) canvasEl.style.display = 'none';
-          if (textLayer) textLayer.style.display = 'none';
-          if (stageDock) stageDock.style.display = 'none';
-          updateSheetText();
-        };
+        isTextSheetOpen = true;
+        if (wrapEl) wrapEl.style.cursor = 'default';
+        if (btnExtract) btnExtract.classList.add('is-active');
+        if (sheetEl) sheetEl.classList.add('is-visible');
+        if (canvasEl) canvasEl.style.display = 'none';
+        if (textLayer) textLayer.style.display = 'none';
+        if (stageDock) stageDock.style.display = 'none';
+
+        const cur = pages[selIdx];
 
         if (ocrScope === 'all') {
-          // Check if any pages need OCR
           let anyMissing = false;
           for (let i = 0; i < pages.length; i++) {
             if (!pages[i].ocrData) { anyMissing = true; break; }
           }
           if (anyMissing) {
-            // Keep canvas visible on screen and start laser sweep
-            if (laserBeam) {
-              laserBeam.style.display = 'block';
-              laserBeam.classList.add('is-sweeping');
+            if (sheetLoading) {
+              sheetLoading.classList.add('is-loading');
+              if (sheetLoadingLabel) sheetLoadingLabel.textContent = 'Extracting text from all pages…';
             }
-            if (btnExtract) btnExtract.classList.add('is-active');
-
             try {
               for (let i = 0; i < pages.length; i++) {
                 if (!pages[i].ocrData) {
-                  setStatus(`Scanning page ${i + 1} of ${pages.length}…`, 'ok');
+                  if (sheetLoadingLabel) sheetLoadingLabel.textContent = `Extracting page ${i + 1} of ${pages.length}…`;
                   await runPageOcr(i);
                 }
               }
@@ -5130,49 +5131,34 @@
               console.error('[Extract All Pages OCR Error]', e);
               setStatus('OCR text recognition error.', 'err');
             } finally {
-              if (laserBeam) {
-                laserBeam.classList.remove('is-sweeping');
-                laserBeam.style.display = 'none';
-              }
+              if (sheetLoading) sheetLoading.classList.remove('is-loading');
             }
           }
-
-          // Open the sheet overlay now that laser & OCR are done
-          showSheetOverlay();
+          updateSheetText();
           return;
         }
 
-        const cur = pages[selIdx];
         if (cur && cur.ocrData) {
-          // OCR already completed for this page: open overlay immediately
-          showSheetOverlay();
+          if (sheetLoading) sheetLoading.classList.remove('is-loading');
+          updateSheetText();
           return;
         }
 
-        // Keep canvas visible on screen and trigger laser scanner beam while OCR runs
-        if (laserBeam) {
-          laserBeam.style.display = 'block';
-          laserBeam.classList.add('is-sweeping');
+        if (sheetLoading) {
+          sheetLoading.classList.add('is-loading');
+          if (sheetLoadingLabel) sheetLoadingLabel.textContent = 'Scanning document text…';
         }
-        if (btnExtract) btnExtract.classList.add('is-active');
-        setStatus('Scanning document text…', 'ok');
 
         try {
-          const minLaserDuration = new Promise(resolve => setTimeout(resolve, 800));
-          await Promise.all([runPageOcr(selIdx), minLaserDuration]);
+          await runPageOcr(selIdx);
           setStatus('Text extracted successfully', 'ok');
         } catch (e) {
           console.error('[Extract Text OCR Error]', e);
           setStatus('OCR text recognition failed.', 'err');
         } finally {
-          if (laserBeam) {
-            laserBeam.classList.remove('is-sweeping');
-            laserBeam.style.display = 'none';
-          }
+          if (sheetLoading) sheetLoading.classList.remove('is-loading');
+          updateSheetText();
         }
-
-        // Open the text sheet overlay ONLY AFTER laser has finished sweeping and OCR is complete!
-        showSheetOverlay();
       }
 
       function closeTextSheet() {
