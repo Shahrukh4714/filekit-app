@@ -31588,53 +31588,281 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   color: #4B4B4B !important;
 }
 
-.cpdf-result-btn-secondary-full {
-  width: 100% !important;
-  height: 38px !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #4B4B4B !important;
-  cursor: pointer !important;
-  margin-top: 4px !important;
-  transition: background 0.15s ease !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   Result Stage Stepper & Uncompressed Button Ergonomics
+═══════════════════════════════════════════════════════════════════════════ */
+.cpdf-benchmark-panel {
+  padding: 22px 24px !important;
+  gap: 11px !important;
 }
 
-.cpdf-result-btn-secondary-full:hover {
+.cpdf-benchmark-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 11px !important;
+  margin-bottom: 2px !important;
+}
+
+.cpdf-benchmark-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #FFFFFF !important;
+  flex-shrink: 0 !important;
+}
+
+.cpdf-benchmark-title {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  margin: 0 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Primary Result Download CTA Button */
+.cpdf-benchmark-cta.scan-result-main-cta {
+  height: 48px !important;
+  min-height: 48px !important;
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border: 1px solid #18181B !important;
+  border-radius: 10px !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 18px !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+  box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12) !important;
+  box-sizing: border-box !important;
+}
+
+.cpdf-benchmark-cta.scan-result-main-cta:hover {
+  background: #27272A !important;
+  border-color: #27272A !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(24, 24, 27, 0.18) !important;
+}
+
+.cpdf-benchmark-cta.scan-result-main-cta:active {
+  background: #09090B !important;
+  transform: scale(0.985) !important;
+}
+
+/* Smart Recommendation Card & Uncompressed Items */
+.conv-smart-tip-card {
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  padding: 12px 13px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 3px !important;
+  box-sizing: border-box !important;
+}
+
+.conv-smart-tip-header {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.conv-smart-tip-desc {
+  font-size: 11.5px !important;
+  color: #64748B !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.conv-smart-tools-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.conv-smart-tool-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 8px !important;
+  padding: 8px 11px !important;
+  min-height: 48px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+
+.conv-smart-tool-item:hover {
+  background: #FAF8FF !important;
+  border-color: #DDD6FE !important;
+  transform: translateX(3px) !important;
+}
+
+.conv-smart-tool-item:hover .conv-smart-tool-arrow {
+  color: #7C3AED !important;
+  transform: translateX(2px) !important;
+}
+
+.conv-smart-tool-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.conv-smart-tool-icon {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #FFFFFF !important;
+  flex-shrink: 0 !important;
+}
+
+.conv-smart-tool-icon svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.conv-smart-tool-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+
+.conv-smart-tool-title {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  line-height: 1.2 !important;
+}
+
+.conv-smart-tool-sub {
+  font-size: 11px !important;
+  color: #64748B !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+.conv-smart-tool-arrow {
+  color: #94A3B8 !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+}
+
+/* Secondary Actions Container */
+.scan-result-secondary-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-top: 2px !important;
+}
+
+.cpdf-result-btn-secondary-full.scan-result-btn-back {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  color: #1E293B !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.12s ease !important;
+  box-sizing: border-box !important;
+}
+
+.cpdf-result-btn-secondary-full.scan-result-btn-back:hover {
+  background: #F8FAFC !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+
+.scan-result-btn-ghost {
+  width: 100% !important;
+  height: 36px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.12s ease !important;
+}
+
+.scan-result-btn-ghost:hover {
   background: #F1F5F9 !important;
   color: #0F172A !important;
 }
 
+/* Stage Bottom Stepper & File Info */
+.scan-res-stepper-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Result Stage Stepper Styles
-═══════════════════════════════════════════════════════════════════════════ */
 .cpdf-res-nav-btn {
-  width: 22px !important;
-  height: 22px !important;
-  background: #F1F5F9 !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 6px !important;
   color: #334155 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   padding: 0 !important;
+  transition: all 0.12s ease !important;
 }
 
-.cpdf-res-nav-btn:hover {
-  background: #E2E8F0 !important;
+.cpdf-res-nav-btn:hover:not(:disabled) {
+  background: #F1F5F9 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+
+.cpdf-res-nav-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
 }
 
 .cpdf-res-step-badge {
-  font-size: 11.5px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
-  color: #64748B !important;
+  color: #475569 !important;
+  padding: 0 4px !important;
+}
+
+.cpdf-benchmark-btn-add.scan-res-quick-dl {
+  height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
 }
 
 
