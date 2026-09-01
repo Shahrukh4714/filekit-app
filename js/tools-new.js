@@ -2598,19 +2598,27 @@
 
               <div class="cpdf-benchmark-fileinfo-row">
                 ${r.pageCount > 1 ? `
-                  <button type="button" class="cpdf-res-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>${ICONS.prev}</button>
-                  <span class="cpdf-res-step-badge" id="scan-res-step-status">${(r.resultPageIdx || 0) + 1} / ${r.pageCount}</span>
-                  <button type="button" class="cpdf-res-nav-btn" id="res-next-page" title="Next page" ${r.resultPageIdx < r.pageCount - 1 ? '' : 'disabled'}>${ICONS.next}</button>
-                  <span style="color:#CBD5E1;margin:0 2px;">|</span>
+                  <div class="scan-res-stepper-wrap">
+                    <button type="button" class="cpdf-res-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <span class="cpdf-res-step-badge" id="scan-res-step-status">${(r.resultPageIdx || 0) + 1} / ${r.pageCount}</span>
+                    <button type="button" class="cpdf-res-nav-btn" id="res-next-page" title="Next page" ${r.resultPageIdx < r.pageCount - 1 ? '' : 'disabled'}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                  </div>
+                  <span style="color:#E2E8F0;margin:0 4px;">|</span>
                 ` : ''}
-                <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text">${esc(r.name)} (${bytes(r.blob.size)})</span>
-                <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-btn-add" id="scan-res-stage-dl" style="text-decoration:none;">
-                  <span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.download} Download</span>
-                </a>
+                <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text">📄 ${esc(r.name)} (${bytes(r.blob.size)})</span>
+                <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                  <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-btn-add scan-res-quick-dl" id="scan-res-stage-dl" style="text-decoration:none;">
+                    <span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.download} Download</span>
+                  </a>
+                </div>
               </div>
             </div>
 
-            <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important; gap: 10px !important;">
+            <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important;">
               <div class="cpdf-benchmark-header">
                 <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
                   ${ICONS.check}
@@ -2622,54 +2630,71 @@
                 <div class="cpdf-benchmark-est-title">${esc(r.formatLabel)} · ${r.pageCount} ${r.pageCount === 1 ? 'Page' : 'Pages'}</div>
                 <div class="cpdf-benchmark-est-metrics">
                   <strong class="cpdf-benchmark-est-new">${bytes(r.blob.size)}</strong>
-                  <span class="cpdf-benchmark-est-pct" style="color:#16A34A; background:#DCFCE7;">300 DPI Archival</span>
+                  <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">300 DPI Archival</span>
                 </div>
                 <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A;"></div>
+                  <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A !important;"></div>
                 </div>
               </div>
 
-              <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta" style="text-decoration:none;margin-top:2px;">
+              <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
                 <span>Download Scanned Document</span>
                 ${ICONS.download}
               </a>
 
-              <div class="conv-smart-tip-card" style="margin-top: 4px;">
+              <div class="conv-smart-tip-card">
                 <div class="conv-smart-tip-header">
-                  <span style="display:inline-flex;align-items:center;gap:5px;">${ICONS.sparkle} Smart tip!</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">${ICONS.sparkle} Smart recommendation</span>
                 </div>
-                <p class="conv-smart-tip-desc">What would you like to do next with your scanned document?</p>
+                <p class="conv-smart-tip-desc">What would you like to do next with this document?</p>
                 <div class="conv-smart-tools-list">
-                  <div class="conv-smart-tool-item" data-tool-id="pdf-compress">
+                  <div class="conv-smart-tool-item" data-tool-id="pdf-compress" tabindex="0" role="button">
                     <div class="conv-smart-tool-left">
                       <span class="conv-smart-tool-icon" style="background:#0284C7;">${ICONS.compress}</span>
-                      <span>Compress &amp; Shrink PDF</span>
+                      <div class="conv-smart-tool-info">
+                        <span class="conv-smart-tool-title">Compress &amp; Shrink PDF</span>
+                        <span class="conv-smart-tool-sub">Reduce size for easy emailing</span>
+                      </div>
                     </div>
-                    <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                    <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                   </div>
-                  <div class="conv-smart-tool-item" data-tool-id="pdf-sign">
+                  <div class="conv-smart-tool-item" data-tool-id="pdf-sign" tabindex="0" role="button">
                     <div class="conv-smart-tool-left">
                       <span class="conv-smart-tool-icon" style="background:#0D9488;">${ICONS.edit}</span>
-                      <span>Sign Document</span>
+                      <div class="conv-smart-tool-info">
+                        <span class="conv-smart-tool-title">Sign Document</span>
+                        <span class="conv-smart-tool-sub">Add signature or initials</span>
+                      </div>
                     </div>
-                    <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                    <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                   </div>
-                  <div class="conv-smart-tool-item" data-tool-id="organize">
+                  <div class="conv-smart-tool-item" data-tool-id="organize" tabindex="0" role="button">
                     <div class="conv-smart-tool-left">
                       <span class="conv-smart-tool-icon" style="background:#7C3AED;">${ICONS.organize}</span>
-                      <span>Organize &amp; Merge PDF</span>
+                      <div class="conv-smart-tool-info">
+                        <span class="conv-smart-tool-title">Organize &amp; Merge PDF</span>
+                        <span class="conv-smart-tool-sub">Reorder, rotate, or combine</span>
+                      </div>
                     </div>
-                    <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                    <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                   </div>
                 </div>
               </div>
 
-              <button type="button" class="cpdf-result-btn-secondary-full" id="res-btn-back" style="margin-top: 4px;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">${ICONS.arrowLeft} Back to Review Studio</span>
-              </button>
-              <button type="button" class="cpdf-result-btn-secondary-full" id="res-btn-new" style="margin-top: 2px; color: #64748B;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">${ICONS.add} Scan another document</span>
-              </button>
+              <div class="scan-result-secondary-actions">
+                <button type="button" class="cpdf-result-btn-secondary-full scan-result-btn-back" id="res-btn-back">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">${ICONS.arrowLeft} Back to Review Studio</span>
+                </button>
+                <button type="button" class="scan-result-btn-ghost" id="res-btn-new">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">${ICONS.add} Scan another document</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -5214,7 +5239,7 @@
       if (btnSheetPrev) {
         btnSheetPrev.onclick = async () => {
           if (selIdx > 0 && ocrScope !== 'all') {
-            selectPage(selIdx - 1);
+            switchPage(selIdx - 1);
             if (isTextSheetOpen) await openTextSheet();
           }
         };
@@ -5223,7 +5248,7 @@
       if (btnSheetNext) {
         btnSheetNext.onclick = async () => {
           if (selIdx < pages.length - 1 && ocrScope !== 'all') {
-            selectPage(selIdx + 1);
+            switchPage(selIdx + 1);
             if (isTextSheetOpen) await openTextSheet();
           }
         };
