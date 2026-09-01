@@ -2496,6 +2496,15 @@
       if (modalProgressFill) {
         modalProgressFill.style.width = `${Math.round(processingState.progress * 100)}%`;
       }
+
+      const panelBtnText = container.querySelector('#panel-confirm-text');
+      if (panelBtnText) {
+        panelBtnText.textContent = `${phase} (${Math.round(processingState.progress * 100)}%)...`;
+      }
+      const panelProgressFill = container.querySelector('#panel-progress-fill');
+      if (panelProgressFill) {
+        panelProgressFill.style.width = `${Math.round(processingState.progress * 100)}%`;
+      }
     }
 
     function renderProcessingView() {
@@ -2559,7 +2568,13 @@
         pageCount: pages.length,
         ocrLabel: ocrLabel || 'Local Processing',
         ocrText: ocrText || ocrResultText || '',
-        previewCanvases: pages.map(p => A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast })),
+        previewCanvases: pages.map(p => {
+          try {
+            return getPageExportCanvas(p);
+          } catch {
+            return p.canvas;
+          }
+        }),
         resultPageIdx: 0,
       };
       busy = false;
@@ -4124,12 +4139,13 @@
         try {
           // Pre-process canvas for high-contrast crisp text recognition
           const prep = prepareOcrCanvas(p.canvas);
+          const prepUrl = prep.toDataURL ? prep.toDataURL('image/jpeg', 0.92) : prep;
           const lang = (ocrLang && ocrLang !== 'auto') ? ocrLang : 'eng';
 
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
 
           const worker = await A.getOrInitOcrWorker(lang);
-          const { data } = await worker.recognize(prep);
+          const { data } = await worker.recognize(prepUrl);
 
           console.log('[OCR] Done — text length:', data.text?.length, 'words:', data.words?.length);
 
@@ -4601,17 +4617,16 @@
       const source = p.canvas;
       const rawSource = p.raw || p.canvas;
       const wrap = container.querySelector('#scan-canvas-wrap');
-      const maxW = 3200;
-      const stageW = wrap?.clientWidth || 800;
-      const stageH = wrap?.clientHeight || 600;
-      const padX = 64;
-      const padY = 96;
+      const stageW = wrap?.clientWidth || (window.innerWidth ? window.innerWidth - 300 : 800);
+      const stageH = wrap?.clientHeight || (window.innerHeight ? window.innerHeight - 160 : 600);
+      const padX = 40;
+      const padY = 48;
       const availableW = Math.max(280, stageW - padX);
       const availableH = Math.max(280, stageH - padY);
       const scW = availableW / source.width;
       const scH = availableH / source.height;
       const baseFitScale = Math.min(scW, scH, 1);
-      const sc = Math.min(maxW / source.width, baseFitScale);
+      const sc = baseFitScale;
       const displayW = Math.max(2, Math.round(source.width * sc) & ~1);
       const displayH = Math.max(2, Math.round(source.height * sc) & ~1);
       const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
@@ -6730,33 +6745,10 @@
           panelConfirmBtn.disabled = true;
 
           try {
-            if (pdfFormat === 'zip') {
-              if (panelConfirmText) panelConfirmText.textContent = 'Archiving ZIP…';
-              const zip = new JSZip();
-              const baseTitle = getScanSourceName();
-              for (let i = 0; i < pages.length; i++) {
-                if (pFill) pFill.style.width = `${Math.round(((i + 1) / pages.length) * 80)}%`;
-                const pg = pages[i];
-                const highResCv = await renderEnhancedCanvasAsync(pg);
-                const blob = await new Promise(r => highResCv.toBlob(r, 'image/png'));
-                const ext = 'png';
-                zip.file(`${baseTitle}-page-${String(i + 1).padStart(2, '0')}.${ext}`, blob);
-              }
-              if (pFill) pFill.style.width = '95%';
-              const zipBlob = await zip.generateAsync({ type: 'blob' });
-              U.downloadBlob(zipBlob, `${baseTitle}-scanned-images.zip`);
-              setStatus('Downloaded high-resolution image ZIP archive.', 'ok');
-            } else {
-              if (panelConfirmText) panelConfirmText.textContent = pdfFormat === 'searchable' ? 'Generating Searchable PDF…' : 'Compiling PDF…';
-              await compileAndDownloadPdf((progressVal, statusText) => {
-                if (pFill) pFill.style.width = `${Math.round(progressVal * 100)}%`;
-                if (panelConfirmText && statusText) panelConfirmText.textContent = statusText;
-              });
-              setStatus('PDF exported successfully!', 'ok');
-            }
+            await handleExport();
           } catch (err) {
             console.error('[Export Error]', err);
-            setStatus('Export failed: ' + (err.message || 'Unknown error'), 'error');
+            setStatus('Export failed: ' + (err.message || 'Unknown error'), 'err');
           } finally {
             if (spinner) spinner.style.display = 'none';
             if (pTrack) pTrack.style.display = 'none';
@@ -7047,8 +7039,11 @@
       if (topUploadBtn) topUploadBtn.onclick = triggerUpload;
       if (drawerAddFile) drawerAddFile.onclick = triggerUpload;
 
-      if (inp) {
-        bindFileInput(inp);
+      if (wrap && typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+          scheduleStudioPreview();
+        });
+        ro.observe(wrap);
       }
 
       renderOverlaysLayer();
@@ -7812,7 +7807,7 @@
           const blob = new Blob([pdfBytes], { type: 'application/pdf' });
           U.downloadBlob(blob, fileName);
 
-          const modal = container.querySelector('.scan-export-modal-wrap');
+          const modal = container.querySelector('.scan-export-modal-wrap, #scan-export-modal-overlay, .scan-modal-overlay');
           if (modal) modal.remove();
 
           const allText = pages.map((pg, i) => `── Page ${i + 1} ──\n` + (pg.ocrData?.text || '').trim()).join('\n\n');
@@ -7856,7 +7851,7 @@
           const blob = new Blob([await doc.save()], { type: 'application/pdf' });
           U.downloadBlob(blob, fileName);
 
-          const modal = container.querySelector('.scan-export-modal-wrap');
+          const modal = container.querySelector('.scan-export-modal-wrap, #scan-export-modal-overlay, .scan-modal-overlay');
           if (modal) modal.remove();
 
           showScanResult(blob, 'Standard PDF Export');
@@ -7882,7 +7877,7 @@
         const blob = new Blob([zipped], { type: 'application/zip' });
         U.downloadBlob(blob, fileName);
 
-        const modal = container.querySelector('.scan-export-modal-wrap');
+        const modal = container.querySelector('.scan-export-modal-wrap, #scan-export-modal-overlay, .scan-modal-overlay');
         if (modal) modal.remove();
 
         showScanResult(blob, 'Image ZIP Bundle');
