@@ -2891,7 +2891,7 @@
               <span class="fmt-badge fmt-doc">WEBP</span>
             </div>
           </div>
-          <input id="scan-file-input" type="file" accept="image/*,application/pdf" multiple hidden>
+          <input id="scan-file-input" type="file" accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.heic,.heif,.bmp,.tiff,.tif,.gif,.svg,.avif" multiple hidden>
           <input id="scan-native-cam-input" type="file" accept="image/*" capture="environment" hidden>
         </div>
       `;
@@ -3774,7 +3774,7 @@
 
               <!-- Right: Close Button -->
               <div class="scan-tb-group-right">
-                <input id="scan-file-input" type="file" accept="image/*,.pdf,application/pdf" multiple hidden>
+                <input id="scan-file-input" type="file" accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.heic,.heif,.bmp,.tiff,.tif,.gif,.svg,.avif" multiple hidden>
                 <button type="button" class="scan-tb-btn-close" id="btn-studio-close" title="Close and return to home">${ICONS.cross}</button>
               </div>
             </header>
