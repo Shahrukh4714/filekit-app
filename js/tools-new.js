@@ -2609,12 +2609,11 @@
                   </div>
                   <span style="color:#E2E8F0;margin:0 4px;">|</span>
                 ` : ''}
-                <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text">📄 ${esc(r.name)} (${bytes(r.blob.size)})</span>
-                <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-                  <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-btn-add scan-res-quick-dl" id="scan-res-stage-dl" style="text-decoration:none;">
-                    <span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.download} Download</span>
-                  </a>
-                </div>
+                <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>${esc(r.name)}</span>
+                  <span style="color:#94A3B8;font-weight:500;">(${bytes(r.blob.size)})</span>
+                </span>
               </div>
             </div>
 
@@ -4194,13 +4193,12 @@
         try {
           // Pre-process canvas for high-contrast crisp text recognition
           const prep = prepareOcrCanvas(p.canvas);
-          const prepUrl = prep.toDataURL ? prep.toDataURL('image/png') : prep;
           const lang = (ocrLang && ocrLang !== 'auto') ? ocrLang : 'eng';
 
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
 
           const worker = await A.getOrInitOcrWorker(lang);
-          const { data } = await worker.recognize(prepUrl);
+          const { data } = await worker.recognize(prep);
 
           console.log('[OCR] Done — text length:', data.text?.length, 'words:', data.words?.length);
 
