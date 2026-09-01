@@ -5095,17 +5095,20 @@
         const sheetEl = parent.querySelector('#scan-text-sheet');
         const canvasEl = parent.querySelector('#scan-studio-canvas');
         const textLayer = parent.querySelector('#scan-text-layer');
+        const laserBeam = parent.querySelector('#scan-laser-beam');
         const stageDock = parent.querySelector('#scan-stage-dock');
-        const sheetLoading = parent.querySelector('#scan-sheet-loading');
-        const sheetLoadingLabel = parent.querySelector('#scan-sheet-loading-label');
 
-        isTextSheetOpen = true;
-        if (wrapEl) wrapEl.style.cursor = 'default';
-        if (btnExtract) btnExtract.classList.add('is-active');
-        if (sheetEl) sheetEl.classList.add('is-visible');
-        if (canvasEl) canvasEl.style.display = 'none';
-        if (textLayer) textLayer.style.display = 'none';
-        if (stageDock) stageDock.style.display = 'none';
+        // Helper to reveal the text sheet overlay ONLY AFTER laser & OCR are completely finished
+        const showSheetOverlay = () => {
+          isTextSheetOpen = true;
+          if (wrapEl) wrapEl.style.cursor = 'default';
+          if (btnExtract) btnExtract.classList.add('is-active');
+          if (sheetEl) sheetEl.classList.add('is-visible');
+          if (canvasEl) canvasEl.style.display = 'none';
+          if (textLayer) textLayer.style.display = 'none';
+          if (stageDock) stageDock.style.display = 'none';
+          updateSheetText();
+        };
 
         const cur = pages[selIdx];
 
@@ -5115,14 +5118,17 @@
             if (!pages[i].ocrData) { anyMissing = true; break; }
           }
           if (anyMissing) {
-            if (sheetLoading) {
-              sheetLoading.classList.add('is-loading');
-              if (sheetLoadingLabel) sheetLoadingLabel.textContent = 'Extracting text from all pages…';
+            // Keep canvas visible on stage and sweep laser beam across document
+            if (laserBeam) {
+              laserBeam.style.display = 'block';
+              laserBeam.classList.add('is-sweeping');
             }
+            if (btnExtract) btnExtract.classList.add('is-active');
+
             try {
               for (let i = 0; i < pages.length; i++) {
                 if (!pages[i].ocrData) {
-                  if (sheetLoadingLabel) sheetLoadingLabel.textContent = `Extracting page ${i + 1} of ${pages.length}…`;
+                  setStatus(`Scanning page ${i + 1} of ${pages.length}…`, 'ok');
                   await runPageOcr(i);
                 }
               }
@@ -5131,34 +5137,47 @@
               console.error('[Extract All Pages OCR Error]', e);
               setStatus('OCR text recognition error.', 'err');
             } finally {
-              if (sheetLoading) sheetLoading.classList.remove('is-loading');
+              if (laserBeam) {
+                laserBeam.classList.remove('is-sweeping');
+                laserBeam.style.display = 'none';
+              }
             }
           }
-          updateSheetText();
+          showSheetOverlay();
           return;
         }
 
+        // Single page extraction:
         if (cur && cur.ocrData) {
-          if (sheetLoading) sheetLoading.classList.remove('is-loading');
-          updateSheetText();
+          // If already extracted, open overlay instantly
+          showSheetOverlay();
           return;
         }
 
-        if (sheetLoading) {
-          sheetLoading.classList.add('is-loading');
-          if (sheetLoadingLabel) sheetLoadingLabel.textContent = 'Scanning document text…';
+        // Keep canvas visible on screen and sweep laser beam for the exact duration of the OCR recognition
+        if (laserBeam) {
+          laserBeam.style.display = 'block';
+          laserBeam.classList.add('is-sweeping');
         }
+        if (btnExtract) btnExtract.classList.add('is-active');
+        setStatus('Scanning document text…', 'ok');
 
         try {
+          // Connect laser sweep directly to the OCR extraction task
           await runPageOcr(selIdx);
           setStatus('Text extracted successfully', 'ok');
         } catch (e) {
           console.error('[Extract Text OCR Error]', e);
           setStatus('OCR text recognition failed.', 'err');
         } finally {
-          if (sheetLoading) sheetLoading.classList.remove('is-loading');
-          updateSheetText();
+          if (laserBeam) {
+            laserBeam.classList.remove('is-sweeping');
+            laserBeam.style.display = 'none';
+          }
         }
+
+        // Smoothly reveal the text sheet overlay now that laser scan & OCR are complete
+        showSheetOverlay();
       }
 
       function closeTextSheet() {
