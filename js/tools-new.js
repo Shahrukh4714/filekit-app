@@ -4248,19 +4248,24 @@
       const ocrTask = (async () => {
         try {
           // Pre-process canvas for high-contrast crisp text recognition
-          const prep = prepareOcrCanvas(p.canvas);
+          const src = getPageEnhancedCanvas(p) || p.canvas;
+          const prep = prepareOcrCanvas(src);
           const lang = (ocrLang && ocrLang !== 'auto') ? ocrLang : 'eng';
 
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
 
           const worker = await A.getOrInitOcrWorker(lang);
-          let { data } = await worker.recognize(prep);
+
+          // Convert to Blob for reliable cross-thread transmission
+          const blob = await new Promise((resolve) => prep.toBlob(resolve, 'image/png'));
+          let { data } = await worker.recognize(blob || prep);
 
           // Auto-contrast fallback pass if initial recognition returned empty
           if (!data || !data.text || !data.text.trim()) {
             console.log('[OCR] First pass returned empty, running auto-contrast fallback pass...');
             const contrastPrep = createHighContrastOcrCanvas(prep);
-            const fallback = await worker.recognize(contrastPrep);
+            const contrastBlob = await new Promise((resolve) => contrastPrep.toBlob(resolve, 'image/png'));
+            const fallback = await worker.recognize(contrastBlob || contrastPrep);
             if (fallback?.data?.text?.trim()) {
               data = fallback.data;
             }
@@ -4284,6 +4289,7 @@
           return data;
         } catch (err) {
           console.error('[OCR] Recognition failed:', err);
+          p.ocrData = { text: '', error: err?.message || String(err), words: [] };
           throw err;
         }
       })();
@@ -5122,7 +5128,11 @@
           text = getCombinedAllPagesText();
         } else {
           const cur = pages[selIdx];
-          text = cur?.ocrData?.text ? cleanExtractedText(cur.ocrData.text) : '';
+          if (cur?.ocrData?.error) {
+            text = `Error during OCR recognition: ${cur.ocrData.error}\n\nPlease check browser console or try adjusting page contrast.`;
+          } else {
+            text = cur?.ocrData?.text ? cleanExtractedText(cur.ocrData.text) : '';
+          }
         }
         if (sheetTa) sheetTa.value = text;
         if (statsEl) {
