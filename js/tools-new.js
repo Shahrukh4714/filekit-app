@@ -2591,9 +2591,9 @@
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <div class="cpdf-benchmark-stage">
-              <div class="cpdf-benchmark-paper" id="comp-result-thumb-box">
-                <canvas id="scan-result-canvas" class="scan-result-canvas"></canvas>
+            <div class="cpdf-benchmark-stage scan-result-stage" id="scan-result-stage-wrap">
+              <div class="scan-paper-page" id="scan-result-paper-page" style="margin: auto;">
+                <canvas id="scan-result-canvas" class="scan-studio-canvas"></canvas>
               </div>
 
               <div class="cpdf-benchmark-fileinfo-row">
@@ -2702,23 +2702,37 @@
 
       function drawResultPreview() {
         const cv = container.querySelector('#scan-result-canvas');
+        const paper = container.querySelector('#scan-result-paper-page');
+        const stageWrap = container.querySelector('#scan-result-stage-wrap');
         if (!cv || !r.previewCanvases || !r.previewCanvases.length) return;
         const src = r.previewCanvases[r.resultPageIdx || 0];
-        if (!src) return;
+        if (!src || !src.width || !src.height) return;
+
+        const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 380 : 700);
+        const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;
+        const padX = 40;
+        const padY = 48;
+        const availW = Math.max(180, stageW - padX);
+        const availH = Math.max(180, stageH - padY);
+
+        const scW = availW / src.width;
+        const scH = availH / src.height;
+        const sc = Math.min(scW, scH, 1);
+
+        const displayW = Math.max(2, Math.round(src.width * sc));
+        const displayH = Math.max(2, Math.round(src.height * sc));
         const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
-        const maxW = Math.min(480, src.width);
-        const scale = maxW / src.width;
-        const displayW = Math.round(src.width * scale);
-        const displayH = Math.round(src.height * scale);
+
         cv.width = Math.round(displayW * dpr);
         cv.height = Math.round(displayH * dpr);
         cv.style.width = `${displayW}px`;
         cv.style.height = `${displayH}px`;
-        cv.style.maxWidth = '100%';
-        cv.style.maxHeight = 'calc(100vh - 220px)';
-        cv.style.borderRadius = '4px';
-        cv.style.display = 'block';
-        cv.style.boxShadow = '0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05)';
+
+        if (paper) {
+          paper.style.width = `${displayW}px`;
+          paper.style.height = `${displayH}px`;
+        }
+
         const ctx = cv.getContext('2d');
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
@@ -4076,11 +4090,21 @@
 
     function prepareOcrCanvas(srcCv) {
       if (!srcCv) return srcCv;
-      const maxDim = 3200;
-      if (srcCv.width <= maxDim && srcCv.height <= maxDim) {
-        return srcCv;
-      }
-      return A.fitCanvas(srcCv, maxDim);
+      const maxDim = 2800;
+      const sc = Math.min(1, maxDim / Math.max(srcCv.width, srcCv.height));
+      const w = Math.max(1, Math.round(srcCv.width * sc));
+      const h = Math.max(1, Math.round(srcCv.height * sc));
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      // Solid pure white background prevents transparent PDFs and PNGs from turning black
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, w, h);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(srcCv, 0, 0, w, h);
+      return c;
     }
 
     async function runPageOcr(idx, isBackground = false) {
@@ -4164,7 +4188,7 @@
         try {
           // Pre-process canvas for high-contrast crisp text recognition
           const prep = prepareOcrCanvas(p.canvas);
-          const prepUrl = prep.toDataURL ? prep.toDataURL('image/jpeg', 0.92) : prep;
+          const prepUrl = prep.toDataURL ? prep.toDataURL('image/png') : prep;
           const lang = (ocrLang && ocrLang !== 'auto') ? ocrLang : 'eng';
 
           console.log('[OCR] Starting recognition — canvas:', prep.width, 'x', prep.height, 'lang:', lang);
@@ -5003,44 +5027,13 @@
         if (!raw) return '';
         let t = raw.replace(/\u00A0/g, ' ');
 
-        // 1. Remove non-printable / control unicode characters
+        // 1. Remove non-printable control unicode characters only
         t = t.replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/g, '');
 
         // 2. Reconnect broken hyphenated line-breaks (e.g. "docu-\nment" -> "document")
         t = t.replace(/(\b[a-zA-Z]{2,})-\s*\n\s*([a-zA-Z]{2,}\b)/g, '$1$2');
 
-        // 3. Language-specific script sanitization:
-        if (lang === 'eng' || lang === 'spa' || lang === 'fra' || lang === 'deu' || lang === 'ita' || lang === 'por') {
-          // If English or Western Latin is selected, eliminate stray noise-hallucinated Non-Latin scripts:
-          // Cyrillic (0400-04FF), Hebrew (0590-05FF), Arabic (0600-06FF, 0750-077F, FB50-FDFF, FE70-FEFF),
-          // Devanagari & Indic (0900-0D7F), Southeast Asian (0E00-109F), CJK (3040-30FF, 31F0-31FF, 4E00-9FFF, AC00-D7AF)
-          t = t.replace(/[\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u0900-\u0D7F\u0E00-\u109F\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uAC00-\uD7AF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '');
-          // Eliminate isolated mathematical/typographical/currency symbols hallucinated from noise
-          t = t.replace(/[§¶©®™°±²³µ¿¡«»^~`|¤¥¢£÷×¬¦]/g, ' ');
-        } else if (lang === 'hin') {
-          // Rejoin separated Devanagari vowels and combining marks
-          t = t.replace(/([\u0900-\u097F])\s+([\u093E-\u094F\u0951-\u0957\u0962-\u0963])/g, '$1$2');
-        }
-
-        // 4. Fix spaced single-character words (e.g. "S u b j e c t" -> "Subject")
-        t = t.replace(/(?:^|\n|\s)((?:[a-zA-Z0-9]\s){2,}[a-zA-Z0-9])(?:\s|\n|$)/g, (m, g1) => {
-          return ' ' + g1.replace(/\s+/g, '') + ' ';
-        });
-
-        // 5. Fix broken URL formatting
-        t = t.replace(/https?\s*:\s*\/\s*\/\s*([^\s]+)/gi, (m, url) => {
-          return 'https://' + url.replace(/\s+/g, '');
-        });
-
-        // 6. Remove repeated divider noise and lone punctuation artifacts
-        t = t.replace(/^[-_—•=~`.*^+:;]{2,}\s*$/gm, '');
-        t = t.replace(/^[-~`_—•=*+\\/:;'\"]\s*$/gm, '');
-
-        // 7. Strip leading/trailing lone vertical bars/slashes on lines from table/margin borders
-        t = t.replace(/^[|\\/]\s*/gm, '');
-        t = t.replace(/\s*[|\\/]$/gm, '');
-
-        // 8. Normalize multiple spaces and blank lines
+        // 3. Normalize multiple spaces and blank lines
         t = t.replace(/[ \t]+/g, ' ');
         t = t.replace(/\n{3,}/g, '\n\n');
         return t.trim();
