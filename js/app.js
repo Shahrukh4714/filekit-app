@@ -112,10 +112,9 @@
     t.className = `fk-toast fk-toast-${type}`;
     const bg = type === 'error' ? '#FEF2F2' : type === 'success' ? '#F0FDF4' : type === 'warn' ? '#FFFBEB' : '#FFFFFF';
     const border = type === 'error' ? '#FCA5A5' : type === 'success' ? '#86EFAC' : type === 'warn' ? '#FDE68A' : '#E2E8F0';
-    const color = type === 'error' ? '#991B1B' : type === 'success' ? '#166534' : type === 'warn' ? '#92400E' : '#0F172A';
-    const icon = type === 'error' ? '⚠️' : type === 'success' ? '✓' : type === 'warn' ? 'ℹ️' : '💡';
+    const icon = type === 'error' ? '⚠️' : type === 'success' ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="20 6 9 17 4 12"/></svg>' : type === 'warn' ? 'ℹ️' : '💡';
     t.style.cssText = `background:${bg};border:1px solid ${border};color:${color};padding:12px 16px;border-radius:10px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.12),0 8px 10px -6px rgba(0,0,0,0.06);font-size:13.5px;line-height:1.45;font-weight:500;display:flex;align-items:flex-start;gap:10px;pointer-events:auto;opacity:0;transform:translateY(12px);transition:all 0.22s cubic-bezier(0.16,1,0.3,1);font-family:Inter,system-ui,sans-serif;`;
-    t.innerHTML = `<span style="font-size:15px;line-height:1;flex-shrink:0;">${icon}</span><span style="flex:1;">${escapeHtml(message)}</span>`;
+    t.innerHTML = `<span style="font-size:15px;line-height:1;flex-shrink:0;display:inline-flex;align-items:center;">${icon}</span><span style="flex:1;">${escapeHtml(message)}</span>`;
     _toastContainer.appendChild(t);
     requestAnimationFrame(() => {
       t.style.opacity = '1';

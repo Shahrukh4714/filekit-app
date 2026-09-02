@@ -2705,9 +2705,20 @@
         const cv = container.querySelector('#scan-result-canvas');
         const paper = container.querySelector('#scan-result-paper-page');
         const stageWrap = container.querySelector('#scan-result-stage-wrap');
-        if (!cv || !r.previewCanvases || !r.previewCanvases.length) return;
+        if (!r.previewCanvases || !r.previewCanvases.length) {
+          if (paper && window.FF && window.FF.buildHandcraftedIllustration) {
+            paper.innerHTML = window.FF.buildHandcraftedIllustration((r.name || '').split('.').pop() || 'pdf', r.name, bytes(r.blob.size), 'stage');
+          }
+          return;
+        }
+        if (!cv) return;
         const src = r.previewCanvases[r.resultPageIdx || 0];
-        if (!src || !src.width || !src.height) return;
+        if (!src || !src.width || !src.height) {
+          if (paper && window.FF && window.FF.buildHandcraftedIllustration) {
+            paper.innerHTML = window.FF.buildHandcraftedIllustration((r.name || '').split('.').pop() || 'pdf', r.name, bytes(r.blob.size), 'stage');
+          }
+          return;
+        }
 
         const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 380 : 700);
         const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;

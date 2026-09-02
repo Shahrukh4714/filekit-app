@@ -1694,6 +1694,209 @@
     return 'pdf';
   };
 
+  function buildHandcraftedIllustration(fmt, name, size, mode = false) {
+    const f = (fmt || '').toLowerCase().replace(/^\./, '');
+    const escName = _esc(name || 'Document');
+    const escSize = _esc(size || '');
+    
+    const isCompact = mode === 'compact' || mode === true || mode === 'card';
+    const isFillStage = mode === 'stage' || mode === 'fill';
+
+    let cardStyle = '';
+    if (isCompact) {
+      cardStyle = 'width: 100%; height: 100%; min-height: 120px; padding: 12px 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: transparent; font-family: Inter, system-ui, sans-serif;';
+    } else if (isFillStage) {
+      cardStyle = 'width: 320px; height: 420px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.32; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: #FFFFFF; border-radius: 4px; font-family: Inter, system-ui, sans-serif; margin: auto;';
+    } else {
+      cardStyle = 'width: 320px; height: 420px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.32; background: #FFFFFF; border-radius: 4px; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05); margin: auto; font-family: Inter, system-ui, sans-serif;';
+    }
+
+    // 1. Microsoft Word & Text Documents
+    if (/docx|doc|odt|rtf|word|document/i.test(f)) {
+      return `
+        <div style="${cardStyle}">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '16px'};">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '11px' : '13px'}; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">W</div>
+              <div>
+                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
+                <div style="font-size: 9.5px; color: #64748B;">Word Document</div>
+              </div>
+            </div>
+            <span style="font-size: 9px; font-weight: 700; background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; padding: 2px 6px; border-radius: 4px;">DOCX</span>
+          </div>
+          <div style="width: 55%; height: ${isCompact ? '6px' : '8px'}; background: #2563EB; border-radius: 3px; margin-bottom: ${isCompact ? '8px' : '12px'}; opacity: 0.9;"></div>
+          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'}; margin-bottom: ${isCompact ? '8px' : '14px'};">
+            <div style="width: 100%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 92%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 96%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 80%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+          </div>
+          <div style="width: 40%; height: ${isCompact ? '5px' : '7px'}; background: #94A3B8; border-radius: 3px; margin-bottom: ${isCompact ? '6px' : '10px'};"></div>
+          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'};">
+            <div style="width: 98%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 88%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 94%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            ${!isCompact ? `<div style="width: 70%; height: 6px; background: #E2E8F0; border-radius: 3px;"></div>` : ''}
+          </div>
+          <div style="margin-top: auto; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94A3B8;">
+            <span>Microsoft Word</span>
+            <span>${escSize}</span>
+          </div>
+        </div>`;
+    }
+
+    // 2. Excel & Spreadsheets
+    if (/xlsx|xls|ods|csv|tsv|excel|sheet/i.test(f)) {
+      return `
+        <div style="${cardStyle}">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '14px'};">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #16A34A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '11px' : '13px'}; box-shadow: 0 2px 6px rgba(22,163,74,0.3);">X</div>
+              <div>
+                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
+                <div style="font-size: 9.5px; color: #64748B;">Spreadsheet Workbook</div>
+              </div>
+            </div>
+            <span style="font-size: 9px; font-weight: 700; background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; padding: 2px 6px; border-radius: 4px;">XLSX</span>
+          </div>
+          <div style="border: 1px solid #CBD5E1; border-radius: 4px; overflow: hidden; margin-bottom: ${isCompact ? '8px' : '12px'};">
+            <div style="display: grid; grid-template-columns: 24px 1fr 1fr 1fr; background: #F1F5F9; border-bottom: 1px solid #CBD5E1; font-size: 9.5px; font-weight: 700; color: #475569; text-align: center; height: ${isCompact ? '18px' : '22px'}; align-items: center;">
+              <span style="border-right: 1px solid #CBD5E1;">#</span>
+              <span style="border-right: 1px solid #CBD5E1;">A</span>
+              <span style="border-right: 1px solid #CBD5E1;">B</span>
+              <span>C</span>
+            </div>
+            ${(isCompact ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6]).map(i => `
+              <div style="display: grid; grid-template-columns: 24px 1fr 1fr 1fr; border-bottom: ${i < (isCompact ? 4 : 6) ? '1px solid #E2E8F0' : 'none'}; font-size: 9.5px; height: ${isCompact ? '17px' : '21px'}; align-items: center; background: ${i % 2 === 0 ? '#F8FAFC' : '#FFFFFF'};">
+                <span style="color: #94A3B8; font-weight: 600; text-align: center; border-right: 1px solid #E2E8F0;">${i}</span>
+                <div style="padding: 0 6px; border-right: 1px solid #E2E8F0;"><div style="width: ${50 + (i*7)%40}%; height: 5px; background: #94A3B8; border-radius: 2px;"></div></div>
+                <div style="padding: 0 6px; border-right: 1px solid #E2E8F0;"><div style="width: ${40 + (i*11)%45}%; height: 5px; background: #CBD5E1; border-radius: 2px;"></div></div>
+                <div style="padding: 0 6px;"><div style="width: ${60 + (i*5)%30}%; height: 5px; background: #86EFAC; border-radius: 2px;"></div></div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top: auto; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94A3B8;">
+            <span>Structured Data</span>
+            <span>${escSize}</span>
+          </div>
+        </div>`;
+    }
+
+    // 3. PowerPoint Presentations
+    if (/pptx|ppt|odp|presentation|keynote/i.test(f)) {
+      return `
+        <div style="${cardStyle}">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '14px'};">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '11px' : '13px'}; box-shadow: 0 2px 6px rgba(234,88,12,0.3);">P</div>
+              <div>
+                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
+                <div style="font-size: 9.5px; color: #64748B;">Slide Presentation</div>
+              </div>
+            </div>
+            <span style="font-size: 9px; font-weight: 700; background: #FFEDD5; color: #C2410C; border: 1px solid #FED7AA; padding: 2px 6px; border-radius: 4px;">PPTX</span>
+          </div>
+          <div style="border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 6px; padding: ${isCompact ? '8px' : '14px'}; flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 8px;">
+            <div style="width: 55%; height: ${isCompact ? '6px' : '8px'}; background: #EA580C; border-radius: 3px;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin: 8px 0;">
+              <div style="width: 85%; height: 5px; background: #FDBA74; border-radius: 2px;"></div>
+              <div style="width: 65%; height: 5px; background: #FED7AA; border-radius: 2px;"></div>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: flex-end; height: ${isCompact ? '40px' : '65px'};">
+              <div style="flex: 1; height: 40%; background: #FDBA74; border-radius: 2px 2px 0 0;"></div>
+              <div style="flex: 1; height: 75%; background: #FB923C; border-radius: 2px 2px 0 0;"></div>
+              <div style="flex: 1; height: 95%; background: #EA580C; border-radius: 2px 2px 0 0;"></div>
+              <div style="flex: 1; height: 60%; background: #FDBA74; border-radius: 2px 2px 0 0;"></div>
+            </div>
+          </div>
+          <div style="margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; color: #94A3B8;">
+            <span>Slide Deck</span>
+            <span>${escSize}</span>
+          </div>
+        </div>`;
+    }
+
+    // 4. ZIP & Archive Bundles
+    if (/zip|tar|gz|7z|rar|bz2|archive/i.test(f)) {
+      return `
+        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
+          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #FAF5FF; border: 1.5px solid #E9D5FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(124,58,237,0.12);">
+            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>
+          </div>
+          <span style="font-size: 9.5px; font-weight: 700; background: #F3E8FF; color: #7E22CE; border: 1px solid #E9D5FF; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">ZIP ARCHIVE</span>
+          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '230px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
+          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Compressed Bundle</div>
+        </div>`;
+    }
+
+    // 5. EPUB & eBooks
+    if (/epub|mobi|ebook|azw3/i.test(f)) {
+      return `
+        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
+          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #FFFBEB; border: 1.5px solid #FDE68A; color: #D97706; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(217,119,6,0.12);">
+            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+          </div>
+          <span style="font-size: 9.5px; font-weight: 700; background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">EPUB EBOOK</span>
+          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '220px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
+          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Digital Book</div>
+        </div>`;
+    }
+
+    // 6. Audio Tracks
+    if (/mp3|wav|m4a|ogg|flac|aac|wma|audio/i.test(f)) {
+      return `
+        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
+          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #FAF5FF; border: 1.5px solid #DDD6FE; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(124,58,237,0.12);">
+            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <span style="font-size: 9.5px; font-weight: 700; background: #F3E8FF; color: #6D28D9; border: 1px solid #DDD6FE; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">AUDIO TRACK</span>
+          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '220px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
+          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Audio Media</div>
+        </div>`;
+    }
+
+    // 7. Video Clips
+    if (/mp4|webm|mov|mkv|avi|flv|video/i.test(f)) {
+      return `
+        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
+          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #2563EB; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.12);">
+            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m10 8 6 4-6 4V8z"/></svg>
+          </div>
+          <span style="font-size: 9.5px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">VIDEO CLIP</span>
+          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '220px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
+          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Video Media</div>
+        </div>`;
+    }
+
+    // 8. Code & Developer Files
+    if (/json|xml|html|css|js|ts|py|sql|yaml|yml|code/i.test(f)) {
+      return `
+        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
+          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #CBD5E1; color: #0F172A; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <span style="font-size: 9.5px; font-weight: 700; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px; text-transform: uppercase;">${_esc(f)}</span>
+          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '210px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
+          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Source Code</div>
+        </div>`;
+    }
+
+    // 9. Generic Fallback Document Sheet
+    return `
+      <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
+        <div style="width: ${isCompact ? '44px' : '60px'}; height: ${isCompact ? '44px' : '60px'}; border-radius: 12px; background: #F1F5F9; border: 1.5px solid #CBD5E1; color: #475569; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+          <svg width="${isCompact ? '22' : '30'}" height="${isCompact ? '22' : '30'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        </div>
+        <span style="font-size: 9.5px; font-weight: 700; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px; text-transform: uppercase;">${_esc(f || 'FILE')}</span>
+        <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '210px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
+        <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Document</div>
+      </div>`;
+  }
+
+  if (window.FF) window.FF.buildHandcraftedIllustration = buildHandcraftedIllustration;
+  window.__ffBuildIllustration = buildHandcraftedIllustration;
+
   async function generateFileThumbnail(f, fam) {
     if (window.FF) window.FF.generateFileThumbnail = generateFileThumbnail;
     if (!f) return null;
@@ -1977,50 +2180,65 @@
                 <h2 class="cpdf-benchmark-title">${isBatch ? `Compress ${files.length} Files` : 'Compress'}</h2>
               </div>
 
-              <!-- Option 1: Basic -->
-              <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
-                <div class="cpdf-benchmark-radio">
-                  <div class="cpdf-benchmark-radio-dot"></div>
-                </div>
-                <span class="cpdf-benchmark-card-label">Basic</span>
-              </div>
-
-              <!-- Option 2: Moderate -->
-              <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
-                <div class="cpdf-benchmark-radio">
-                  <div class="cpdf-benchmark-radio-dot"></div>
-                </div>
-                <span class="cpdf-benchmark-card-label">Moderate</span>
-              </div>
-
-              <!-- Option 3: Strong -->
-              <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
-                <div class="cpdf-benchmark-radio">
-                  <div class="cpdf-benchmark-radio-dot"></div>
-                </div>
-                <span class="cpdf-benchmark-card-label">Strong</span>
-                <div class="cpdf-benchmark-card-right">
-                  <span class="cpdf-benchmark-pill-smallest">Smallest</span>
-                </div>
-              </div>
-
-              <!-- Option 4: Exact Target Size Mode -->
-              <div class="cpdf-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom">
-                <div class="cpdf-target-row-top">
+              <!-- Option Cards Stack -->
+              <div class="cpdf-cards-stack" role="radiogroup" aria-label="Compression Tier">
+                <!-- Option 1: Basic -->
+                <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
                   <div class="cpdf-benchmark-radio">
                     <div class="cpdf-benchmark-radio-dot"></div>
                   </div>
-                  <span class="cpdf-benchmark-card-label">Exact Target Size</span>
-                </div>
-                ${selectedTier === 'custom' ? `
-                  <div class="cpdf-target-input-wrap">
-                    <input type="number" min="1" max="9999" id="cpdf-target-val-inp" class="cpdf-target-inp" value="${customTargetKB}" />
-                    <select id="cpdf-target-unit-sel" class="cpdf-target-unit-sel">
-                      <option value="KB" ${customUnit === 'KB' ? 'selected' : ''}>KB</option>
-                      <option value="MB" ${customUnit === 'MB' ? 'selected' : ''}>MB</option>
-                    </select>
+                  <div class="cpdf-benchmark-card-text">
+                    <span class="cpdf-benchmark-card-label">Basic</span>
+                    <span class="cpdf-benchmark-card-sub">Medium compression · High quality</span>
                   </div>
-                ` : ''}
+                </div>
+
+                <!-- Option 2: Moderate -->
+                <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
+                  <div class="cpdf-benchmark-radio">
+                    <div class="cpdf-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="cpdf-benchmark-card-text">
+                    <span class="cpdf-benchmark-card-label">Moderate</span>
+                    <span class="cpdf-benchmark-card-sub">Balanced compression · Good quality</span>
+                  </div>
+                </div>
+
+                <!-- Option 3: Strong -->
+                <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
+                  <div class="cpdf-benchmark-radio">
+                    <div class="cpdf-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="cpdf-benchmark-card-text">
+                    <span class="cpdf-benchmark-card-label">Strong</span>
+                    <span class="cpdf-benchmark-card-sub">Maximum compression · Smallest file size</span>
+                  </div>
+                  <div class="cpdf-benchmark-card-right">
+                    <span class="cpdf-benchmark-pill-smallest">Smallest</span>
+                  </div>
+                </div>
+
+                <!-- Option 4: Exact Target Size Mode -->
+                <div class="cpdf-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom">
+                  <div class="cpdf-target-row-top">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="cpdf-benchmark-card-text">
+                      <span class="cpdf-benchmark-card-label">Exact Target Size</span>
+                      <span class="cpdf-benchmark-card-sub">Specify exact custom output size</span>
+                    </div>
+                  </div>
+                  ${selectedTier === 'custom' ? `
+                    <div class="cpdf-target-input-wrap">
+                      <input type="number" min="1" max="9999" id="cpdf-target-val-inp" class="cpdf-target-inp" value="${customTargetKB}" />
+                      <select id="cpdf-target-unit-sel" class="cpdf-target-unit-sel">
+                        <option value="KB" ${customUnit === 'KB' ? 'selected' : ''}>KB</option>
+                        <option value="MB" ${customUnit === 'MB' ? 'selected' : ''}>MB</option>
+                      </select>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
 
               <!-- Compact Estimated New File Size Box -->
@@ -2074,15 +2292,15 @@
               thumbBox.innerHTML = '';
               thumbBox.append(c);
             } catch (e) {
-              thumbBox.innerHTML = `<div style="padding:40px;text-align:center;color:#64748B;">📄 ${_esc(activeFile.name)}</div>`;
+              const ext = (activeFile?.name || '').split('.').pop() || 'pdf';
+              thumbBox.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
             }
+          } else if (fam === 'image') {
+            const u = URL.createObjectURL(activeFile);
+            thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;"/>`;
           } else {
-            const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
-            if (typeof getThumb === 'function') {
-              getThumb(activeFile, fam).then((u) => {
-                if (u && thumbBox) thumbBox.innerHTML = `<img src="${u}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;"/>`;
-              }).catch(() => {});
-            }
+            const ext = (activeFile?.name || '').split('.').pop() || fam || '';
+            thumbBox.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
           }
         })();
       } else {
@@ -2106,7 +2324,13 @@
               c.style.maxWidth = '100%'; c.style.maxHeight = '100%'; c.style.objectFit = 'contain'; c.style.borderRadius = '2px';
               tb.innerHTML = '';
               tb.append(c);
-            } catch (e) {}
+            } catch (e) {
+              const ext = (f?.name || '').split('.').pop() || 'pdf';
+              tb.innerHTML = buildHandcraftedIllustration(ext, f.name, _bytes(f.size), 'compact');
+            }
+          } else {
+            const ext = (f?.name || '').split('.').pop() || fam || '';
+            tb.innerHTML = buildHandcraftedIllustration(ext, f.name, _bytes(f.size), 'compact');
           }
         });
       }
@@ -2224,24 +2448,24 @@
             </div>
 
             <!-- Right Panel: Processing Progress Studio -->
-            <div class="cpdf-benchmark-panel">
+            <div class="cpdf-benchmark-panel cpdf-compress-proc-panel">
               <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon cpdf-benchmark-icon--spin">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <div class="cpdf-benchmark-icon cpdf-benchmark-icon--spin cpdf-benchmark-icon--blue">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006DFE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
                   </svg>
                 </div>
-                <h2 class="cpdf-benchmark-title">Compressing…</h2>
+                <h2 class="cpdf-benchmark-title">Compressing PDF…</h2>
               </div>
 
-              <!-- Processing Box -->
+              <!-- Processing Box with Uiverse.io Royal Blue Candy-Stripe LoaderBar -->
               <div class="cpdf-benchmark-proc-box">
                 <div class="cpdf-benchmark-proc-head">
                   <span class="cpdf-benchmark-proc-status" id="cpdf-prog-msg">Optimizing file streams…</span>
-                  <span class="cpdf-benchmark-proc-pct" id="cpdf-prog-pct">0%</span>
+                  <span class="cpdf-benchmark-proc-pct" id="cpdf-prog-pct" style="color: #006DFE; font-weight: 700;">0%</span>
                 </div>
-                <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar cpdf-benchmark-bar--purple" id="cpdf-prog-fill" style="width: 0%;"></div>
+                <div class="loaderBar cpdf-compress-loaderBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div class="loaderBar-fill" id="cpdf-prog-fill" style="width: 0%;"></div>
                 </div>
               </div>
 
@@ -2483,17 +2707,47 @@
       // Smart Suggestions based on family
       let smartTip = 'What would you like to do next with your compressed file?';
       let smartTools = [
-        { id: 'pdf-sign', name: 'Sign Document' },
-        { id: 'organize', name: 'Organize & Split' },
-        { id: 'pdf-convert', name: 'Convert PDF' }
+        {
+          id: 'pdf-sign',
+          name: 'Sign Document',
+          sub: 'Add signature or initials',
+          color: '#0D9488',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>'
+        },
+        {
+          id: 'organize',
+          name: 'Organize & Split PDF',
+          sub: 'Reorder, rotate, or combine',
+          color: '#7C3AED',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>'
+        },
+        {
+          id: 'pdf-convert',
+          name: 'Convert PDF',
+          sub: 'Export to Word, Excel, or JPG',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+        }
       ];
 
       const fam = firstRes.family;
       if (fam === 'image') {
-        smartTip = 'Enhance or crop your compressed image with these tools:';
+        smartTip = 'What would you like to do next with your image?';
         smartTools = [
-          { id: 'bg-remover', name: 'Remove Background' },
-          { id: 'image-crop', name: 'Crop & Resize' }
+          {
+            id: 'bg-remover',
+            name: 'Remove Background',
+            sub: 'AI-powered background cutout',
+            color: '#8B5CF6',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>'
+          },
+          {
+            id: 'image-crop',
+            name: 'Crop & Resize',
+            sub: 'Adjust dimensions and aspect ratio',
+            color: '#0284C7',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>'
+          }
         ];
       }
 
@@ -2505,15 +2759,14 @@
         const curUrl = urls[currentResultIndex];
         const thumbBox = container.querySelector('#comp-result-thumb-box');
         const fileInfoText = container.querySelector('#comp-res-fileinfo-text');
-        const dlBtn = container.querySelector('#comp-res-stage-dl');
         const stepStatus = container.querySelector('#comp-res-step-status');
 
         if (fileInfoText) {
-          fileInfoText.textContent = `${curName} (${_bytes(curBlob.size)})`;
-        }
-        if (dlBtn) {
-          dlBtn.href = curUrl;
-          dlBtn.download = curName;
+          fileInfoText.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            <span>${_esc(curName)}</span>
+            <span style="color:#94A3B8;font-weight:500;">(${_bytes(curBlob.size)})</span>
+          `;
         }
         if (stepStatus) {
           stepStatus.textContent = `${currentResultIndex + 1} / ${results.length}`;
@@ -2527,26 +2780,44 @@
                 const pdfjs = await loadJs();
                 const doc = await pdfjs.getDocument({ data: new Uint8Array(await curBlob.arrayBuffer()) }).promise;
                 const page = await doc.getPage(1);
-                const vp = page.getViewport({ scale: 0.85 });
+                const vp1 = page.getViewport({ scale: 1 });
+                const stageWrap = container.querySelector('#comp-result-stage-wrap');
+                const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 380 : 700);
+                const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;
+                const padX = 40, padY = 48;
+                const availW = Math.max(180, stageW - padX);
+                const availH = Math.max(180, stageH - padY);
+                const scW = availW / vp1.width;
+                const scH = availH / vp1.height;
+                const sc = Math.min(scW, scH, 1);
+                const displayW = Math.max(2, Math.round(vp1.width * sc));
+                const displayH = Math.max(2, Math.round(vp1.height * sc));
+                const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+                const vp = page.getViewport({ scale: sc * dpr });
                 const c = document.createElement('canvas');
-                c.width = Math.max(1, Math.round(vp.width));
-                c.height = Math.max(1, Math.round(vp.height));
+                c.width = Math.round(displayW * dpr);
+                c.height = Math.round(displayH * dpr);
+                c.style.width = `${displayW}px`;
+                c.style.height = `${displayH}px`;
+                c.className = 'scan-studio-canvas';
                 const ctx = c.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
                 await page.render({ canvasContext: ctx, viewport: vp }).promise;
-                c.style.display = 'block';
-                c.style.maxWidth = '100%';
-                c.style.maxHeight = 'calc(100vh - 220px)';
-                c.style.borderRadius = '4px';
+                thumbBox.style.width = `${displayW}px`;
+                thumbBox.style.height = `${displayH}px`;
                 thumbBox.innerHTML = '';
                 thumbBox.append(c);
               } catch (e) {
-                thumbBox.innerHTML = `<div style="padding:40px;text-align:center;color:#64748B;font-weight:600;">📄 ${_esc(curName)}</div>`;
+                const ext = (curName || '').split('.').pop() || 'pdf';
+                thumbBox.innerHTML = buildHandcraftedIllustration(ext, curName, _bytes(curBlob.size), 'stage');
               }
             })();
           } else if (curFam === 'image') {
             thumbBox.innerHTML = `<img src="${curUrl}" alt="" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;" />`;
           } else {
-            thumbBox.innerHTML = `<div style="padding:60px 40px;text-align:center;"><div style="font-size:32px;margin-bottom:8px;">📄</div><div style="font-size:14px;font-weight:700;color:#1E293B;">${_esc(curName)}</div><div style="font-size:12px;color:#64748B;margin-top:4px;">${_bytes(curBlob.size)} · Compressed</div></div>`;
+            const ext = (curName || '').split('.').pop() || curFam || '';
+            thumbBox.innerHTML = buildHandcraftedIllustration(ext, curName, _bytes(curBlob.size), 'stage');
           }
         }
       }
@@ -2554,95 +2825,114 @@
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Always Same Large Centered Document Paper Sheet -->
-            <div class="cpdf-benchmark-stage">
-              <div class="cpdf-benchmark-paper" id="comp-result-thumb-box">
+            <!-- Left Stage: Always Same Large Centered Document Paper Sheet on Slate #EEF2F6 -->
+            <div class="cpdf-benchmark-stage scan-result-stage" id="comp-result-stage-wrap">
+              <div class="scan-paper-page" id="comp-result-thumb-box" style="margin: auto;">
                 <div style="padding: 60px 40px; color: #94A3B8;">Loading compressed document…</div>
               </div>
 
-              <!-- Floating Info & Switcher Pill -->
+              <!-- Floating Info & Switcher Pill (No emoji, No purple duplicate button, Vector steppers) -->
               <div class="cpdf-benchmark-fileinfo-row">
                 ${isBatch ? `
-                  <button type="button" class="cpdf-res-nav-btn" id="comp-res-prev" title="Previous file">‹</button>
-                  <span class="cpdf-res-step-badge" id="comp-res-step-status">1 / ${results.length}</span>
-                  <button type="button" class="cpdf-res-nav-btn" id="comp-res-next" title="Next file">›</button>
-                  <span style="color:#CBD5E1;margin:0 2px;">|</span>
+                  <div class="scan-res-stepper-wrap">
+                    <button type="button" class="cpdf-res-nav-btn" id="comp-res-prev" title="Previous file">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <span class="cpdf-res-step-badge" id="comp-res-step-status">1 / ${results.length}</span>
+                    <button type="button" class="cpdf-res-nav-btn" id="comp-res-next" title="Next file">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                  </div>
+                  <span style="color:#E2E8F0;margin:0 4px;">|</span>
                 ` : ''}
-                <span class="cpdf-benchmark-fileinfo-text" id="comp-res-fileinfo-text">${_esc(firstRes.result.filename)} (${_bytes(firstRes.result.blob.size)})</span>
-                <a href="${urls[0]}" download="${_esc(firstRes.result.filename)}" class="cpdf-benchmark-btn-add" id="comp-res-stage-dl" style="text-decoration:none;">
-                  <span>⬇ Download</span>
-                </a>
+                <span class="cpdf-benchmark-fileinfo-text" id="comp-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>${_esc(firstRes.result.filename)}</span>
+                  <span style="color:#94A3B8;font-weight:500;">(${_bytes(firstRes.result.blob.size)})</span>
+                </span>
               </div>
             </div>
 
-            <!-- Right Panel: Result Studio with Smart Tip Card -->
-            <div class="cpdf-benchmark-panel" style="overflow-y: auto !important; max-height: calc(100vh - 60px) !important; gap: 8px !important;">
-              <!-- Top Header: Green Check Badge -->
-              <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+            <!-- Right Panel: Dynamic Full-Space Zero-Scroll Result Studio -->
+            <div class="cpdf-benchmark-panel scan-result-panel">
+              <div class="scan-result-panel-top">
+                <!-- Top Header: Green Check Badge -->
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <h2 class="cpdf-benchmark-title">Compression Complete</h2>
                 </div>
-                <h2 class="cpdf-benchmark-title">Compression Complete</h2>
-              </div>
 
-              <!-- Hero Reduction Metrics Card -->
-              <div class="cpdf-benchmark-est-box">
-                <div class="cpdf-benchmark-est-title">${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Optimized successfully'}</div>
-                <div class="cpdf-benchmark-est-metrics">
-                  <strong class="cpdf-benchmark-est-new">${_bytes(cTot)}</strong>
-                  <del class="cpdf-benchmark-est-old">${_bytes(oTot)}</del>
-                  <span class="cpdf-benchmark-est-pct">${win ? `(-${redPct}% Saved)` : 'Optimal'}</span>
+                <!-- Hero Reduction Metrics Card -->
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'Optimized successfully'}</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new">${_bytes(cTot)}</strong>
+                    <del class="cpdf-benchmark-est-old" style="font-size:12.5px; color:#94A3B8; margin:0 4px;">${_bytes(oTot)}</del>
+                    <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">${win ? `-${redPct}% Saved` : 'Optimal'}</span>
+                  </div>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" style="width: ${win ? Math.max(15, Math.round((cTot / oTot) * 100)) : 100}%; background:#16A34A !important;"></div>
+                  </div>
                 </div>
-                <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar" style="width: ${win ? Math.max(15, Math.round((cTot / oTot) * 100)) : 100}%;"></div>
-                </div>
-              </div>
 
-              <!-- Primary Action CTA Button (Obsidian Black) -->
-              ${!isBatch ? `
-                <a href="${urls[0]}" download="${_esc(outName)}" class="cpdf-benchmark-cta" style="text-decoration:none;margin-top:2px;">
-                  <span>Download Compressed File</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                </a>
-              ` : `
-                <button type="button" class="cpdf-benchmark-cta" id="comp-zip-dl-btn" style="margin-top:2px;">
-                  <span>Download All as ZIP (${_bytes(cTot)})</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                </button>
-              `}
+                <!-- Primary Action CTA Button (Obsidian Black) -->
+                ${!isBatch ? `
+                  <a href="${urls[0]}" download="${_esc(outName)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
+                    <span>Download Compressed File</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </a>
+                ` : `
+                  <button type="button" class="cpdf-benchmark-cta scan-result-main-cta" id="comp-zip-dl-btn">
+                    <span>Download All as ZIP (${_bytes(cTot)})</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                `}
 
-              <!-- Smart Tip Card with Bespoke Tool Links -->
-              <div class="conv-smart-tip-card" style="margin-top: 4px;">
-                <div class="conv-smart-tip-header">
-                  <span>Smart tip! 💡</span>
-                </div>
-                <p class="conv-smart-tip-desc">${smartTip}</p>
-                <div class="conv-smart-tools-list">
-                  ${smartTools.map(st => {
-                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
-                    return `
-                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
+                <!-- Smart Recommendation Card with 2-Line Tools & SVG Chevrons -->
+                <div class="conv-smart-tip-card">
+                  <div class="conv-smart-tip-header">
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+                      Smart recommendation
+                    </span>
+                  </div>
+                  <p class="conv-smart-tip-desc">${smartTip}</p>
+                  <div class="conv-smart-tools-list">
+                    ${smartTools.map(st => `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}" tabindex="0" role="button">
                         <div class="conv-smart-tool-left">
-                          <span class="conv-smart-tool-icon">${iconSvg}</span>
-                          <span>${st.name}</span>
+                          <span class="conv-smart-tool-icon" style="background:${st.color || '#7C3AED'};">${st.icon || ''}</span>
+                          <div class="conv-smart-tool-info">
+                            <span class="conv-smart-tool-title">${st.name}</span>
+                            <span class="conv-smart-tool-sub">${st.sub || ''}</span>
+                          </div>
                         </div>
-                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
+                        <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
                       </div>
-                    `;
-                  }).join('')}
+                    `).join('')}
+                  </div>
                 </div>
               </div>
 
               <!-- Secondary Actions Row -->
-              <button type="button" class="cpdf-result-btn-secondary-full" id="comp-again-trigger" style="margin-top: 4px;">
-                + Compress another file
-              </button>
+              <div class="scan-result-secondary-actions">
+                <button type="button" class="cpdf-result-btn-secondary-full scan-result-btn-back" id="comp-again-trigger">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg>
+                    Compress another file
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -9969,15 +10259,43 @@ async function paintResultPreview(blob) {
       if (box) { box.textContent = msg; box.hidden = false; }
     }
 
-    async function pickFile(f) {
-      if (!f) return;
-      if (f.size > 200 * 1024 * 1024) { showErr('Files up to 200 MB are supported.'); return; }
-      const fam = detectFamily(f);
-      if (!fam) { showErr('Couldn\u2019t detect that file type. Supported: ' + ALL_FORMATS); return; }
-      file = f; family = fam;
-      const list = TARGETS[fam];
-      formatId = preset && preset.family === fam && list.some((x) => x.id === preset.target.id) ? preset.target.id : list[0].id;
+    let files = [];
+    let activeIndex = 0;
+
+    async function pickFiles(fileList) {
+      if (!fileList || !fileList.length) return;
+      const valid = [];
+      for (const f of fileList) {
+        if (f.size > 200 * 1024 * 1024) continue;
+        const fam = detectFamily(f);
+        if (fam) valid.push({ file: f, family: fam });
+      }
+      if (!valid.length) {
+        showErr('Couldn\u2019t detect supported files. Supported: ' + ALL_FORMATS);
+        return;
+      }
+      if (!files.length) {
+        files = valid.map(v => v.file);
+        file = files[0];
+        family = valid[0].family;
+        activeIndex = 0;
+      } else {
+        for (const v of valid) {
+          if (!files.some(existing => existing.name === v.file.name && existing.size === v.file.size)) {
+            files.push(v.file);
+          }
+        }
+        file = files[activeIndex] || files[0];
+      }
+      const list = TARGETS[family];
+      if (!formatId || !list.some(x => x.id === formatId)) {
+        formatId = preset && preset.family === family && list.some((x) => x.id === preset.target.id) ? preset.target.id : list[0].id;
+      }
       renderConfigure();
+    }
+
+    async function pickFile(f) {
+      if (f) pickFiles([f]);
     }
 
     function renderUpload() {
@@ -9985,7 +10303,7 @@ async function paintResultPreview(blob) {
       const stage = container.closest('.app-stage-container');
       if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
       container.innerHTML = `
-        <div class="cpdf-dropzone drop-hero-box" id="conv-dz" tabindex="0" role="button" aria-label="Drop any file to convert">
+        <div class="cpdf-dropzone drop-hero-box" id="conv-dz" tabindex="0" role="button" aria-label="Drop any files to convert">
           <div class="dropzone-idle">
             <div class="drop-illustration">
               <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
@@ -10043,16 +10361,16 @@ async function paintResultPreview(blob) {
               <span class="fmt-badge fmt-jpg">JPG</span>
             </div>
           </div>
-          <input id="conv-inp" type="file" accept="${ACCEPT}" hidden>
+          <input id="conv-inp" type="file" accept="${ACCEPT}" multiple hidden>
         </div>`;
       const dz = container.querySelector('#conv-dz');
       const inp = container.querySelector('#conv-inp');
-      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
+      inp.onchange = () => inp.files && inp.files.length && pickFiles(Array.from(inp.files));
       dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
       dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
       dz.addEventListener('drop', e => {
         e.preventDefault(); dz.classList.remove('cpdf-dz--over');
-        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
+        const fList = e.dataTransfer?.files; if (fList && fList.length) pickFiles(Array.from(fList));
       });
       dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
       dz.addEventListener('keydown', e => {
@@ -10061,12 +10379,19 @@ async function paintResultPreview(blob) {
     }
 
     let isSettingsOpen = false;
-    let isMenuOpen = true;
-
+    let isMenuOpen = false;
 
     function renderConfigure() {
+      if (!files.length) { renderUpload(); return; }
+      if (activeIndex >= files.length) activeIndex = files.length - 1;
+      if (activeIndex < 0) activeIndex = 0;
+
+      const currentFile = files[activeIndex] || files[0];
+      file = currentFile;
+      const totalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
+
       const t = target();
-      const famLabel = FAMILIES[family].label;
+      const famLabel = family && FAMILIES[family] ? FAMILIES[family].label : 'Files';
       const list = targets();
       const groupsShown = GROUPS.filter((g) => list.some((x) => x.g === g));
       const fields = cfgFields();
@@ -10077,64 +10402,115 @@ async function paintResultPreview(blob) {
         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
       </svg>`;
 
+      function _midTrunc(name, maxLen = 24) {
+        if (!name || name.length <= maxLen) return name || '';
+        const extIdx = name.lastIndexOf('.');
+        const ext = extIdx !== -1 ? name.slice(extIdx) : '';
+        const base = extIdx !== -1 ? name.slice(0, extIdx) : name;
+        const avail = maxLen - ext.length - 3;
+        if (avail <= 4) return name.slice(0, maxLen - 3) + '…';
+        const front = Math.ceil(avail / 2);
+        const back = Math.floor(avail / 2);
+        return `${base.slice(0, front)}…${base.slice(-back)}${ext}`;
+      }
+
+      function _targetName(sourceName, outExt) {
+        if (!sourceName) return 'converted_file.' + (outExt || 'pdf').toLowerCase();
+        const extIdx = sourceName.lastIndexOf('.');
+        const base = extIdx !== -1 ? sourceName.slice(0, extIdx) : sourceName;
+        const targetExt = (outExt || 'pdf').toLowerCase().replace(/^\./, '');
+        return base + '.' + targetExt;
+      }
+
+      const buttonLabel = files.length > 1 ? `Convert ${files.length} files to ${t.out}` : `Convert to ${t.out}`;
+      const fileInfoMain = files.length > 1 ? `${files.length} files queued` : `File 1: ${_esc(_midTrunc(currentFile.name, 22))}`;
+      const fileInfoSub = files.length > 1 ? `${_bytes(totalBytes)} total &nbsp;&middot;&nbsp; <span id="conv-proc-status" class="conv-trust-dot">● 100% In-Browser</span>` : `${_bytes(currentFile.size)} &nbsp;&middot;&nbsp; <span id="conv-proc-status" class="conv-trust-dot">● 100% In-Browser</span>`;
+
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow-y: auto;">
-          <div class="conv-studio-wrapper">
+        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow-y: auto; background: #FFFFFF !important;">
+          <div class="conv-studio-wrapper" id="conv-studio-wrapper">
             <div class="conv-studio-stage-row">
               
-              <!-- LEFT: Loaded Physical File Card with Live Preview -->
-              <div class="conv-studio-file-card" id="conv-studio-file-card" title="Click or drop file to change">
+              <!-- LEFT: Source Document Preview Card with Batch Carousel Navigation -->
+              <div class="conv-studio-file-card" id="conv-studio-file-card" title="Click or drop files to add/change">
+                
+                ${files.length > 1 ? `
+                <div class="conv-batch-nav">
+                  <button type="button" class="conv-batch-nav-btn" id="conv-prev-file" ${activeIndex === 0 ? 'disabled style="opacity:0.35;"' : ''} title="Previous file">‹</button>
+                  <span class="conv-batch-counter">File <strong>${activeIndex + 1}</strong> of <strong>${files.length}</strong></span>
+                  <button type="button" class="conv-batch-nav-btn" id="conv-next-file" ${activeIndex === files.length - 1 ? 'disabled style="opacity:0.35;"' : ''} title="Next file">›</button>
+                  <button type="button" class="conv-batch-del-btn" id="conv-del-file" title="Remove this file">✕</button>
+                </div>
+                ` : ''}
+
                 <div class="conv-studio-thumb-container" id="conv-studio-thumb-box">
                   <div class="conv-studio-badge">
                     ${badgeSvg}
                   </div>
                 </div>
-                <strong class="conv-studio-title" title="${_esc(file.name)}">${_esc(file.name)}</strong>
-                <span class="conv-studio-meta">${_bytes(file.size)} &middot; ${famLabel}</span>
-                <div class="conv-studio-actions">
-                  <button type="button" class="conv-studio-btn-add" id="conv-replace-btn">⟲ Replace file</button>
+                
+                <div class="conv-studio-file-footer">
+                  <strong class="conv-studio-title" title="${_esc(currentFile.name)}">${_esc(_midTrunc(currentFile.name, 20))}</strong>
+                  <button type="button" class="conv-studio-crop-btn" id="conv-add-btn" title="Add or replace files">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                  </button>
                 </div>
-                <input id="conv-replace-input" type="file" accept="${ACCEPT}" hidden>
+                <input id="conv-add-input" type="file" accept="${ACCEPT}" multiple hidden>
               </div>
 
-              <!-- CENTER: Action Group -->
-              <div class="conv-studio-action-group">
+              <!-- CENTER: Action & Pipeline Controls Hub with 3D Pushable Button -->
+              <div class="conv-studio-center-column">
                 <button type="button" class="conv-studio-btn-convert" id="conv-run">
-                  <span>Convert to ${t.out}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
-                  </svg>
+                  <span class="shadow"></span>
+                  <span class="edge"></span>
+                  <span class="front">
+                    <span class="conv-btn-normal-content">
+                      <span>${buttonLabel}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" width="18" height="18">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                      </svg>
+                    </span>
+                    <span class="conv-btn-proc-content" style="display: none;">
+                      <span class="conv-proc-spinner"></span>
+                      <span>Converting <strong id="conv-pct">6%</strong></span>
+                    </span>
+                  </span>
                 </button>
+
+                <div class="conv-studio-file-info-chip">
+                  <div class="conv-info-main">${fileInfoMain}</div>
+                  <div class="conv-info-sub">${fileInfoSub}</div>
+                </div>
+
                 ${fields.length > 0 ? `
                 <button type="button" class="conv-studio-btn-gear ${isSettingsOpen ? 'active' : ''}" id="conv-gear-btn" title="Conversion Settings">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" width="18" height="18">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="18" height="18">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
                   </svg>
                 </button>` : ''}
               </div>
 
-              <!-- RIGHT: Golden Yellow Format Dropdown Box -->
-              <div class="conv-studio-format-box">
-                <button type="button" class="conv-studio-select-trigger ${isMenuOpen ? '' : 'is-collapsed'}" id="conv-format-trigger">
-                  <span class="conv-studio-cursor-blink">|</span>
-                  <span class="conv-studio-selected-val">${t.out || t.label}</span>
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                  </svg>
-                </button>
-
-                <div class="conv-studio-select-menu" id="conv-format-menu" ${isMenuOpen ? '' : 'hidden'}>
+              <!-- RIGHT: Open Format Selection Panel Directly -->
+              <div class="conv-studio-target-card conv-studio-format-panel" id="conv-studio-target-card">
+                <div class="conv-format-panel-header">
+                  <span class="conv-format-panel-title">SELECT FORMAT</span>
+                  <span class="conv-format-panel-active-tag">${(t.out || t.label).toUpperCase()}</span>
+                </div>
+                <div class="conv-studio-select-menu" id="conv-format-menu">
                   ${groupsShown.map(g => {
                     const items = list.filter((x) => x.g === g);
                     return `
                       <div class="conv-studio-menu-header">${g.toUpperCase()}</div>
                       ${items.map(item => {
                         const displayLabel = item.label !== item.out && item.out ? `${item.label} (${item.out})` : (item.label || item.out);
+                        const isActive = item.id === formatId;
                         return `
-                        <div class="conv-studio-menu-item ${item.id === formatId ? 'active' : ''}" data-fid="${item.id}">
+                        <div class="conv-studio-menu-item ${isActive ? 'active' : ''}" data-fid="${item.id}">
                           <span>${_esc(displayLabel)}</span>
-                          ${item.id === formatId ? `<span class="conv-check-icon">✓</span>` : ''}
+                          ${isActive ? `<span class="conv-check-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
                         </div>`;
                       }).join('')}
                     `;
@@ -10159,42 +10535,100 @@ async function paintResultPreview(blob) {
               </div>
             </div>` : ''}
 
-            <!-- Bottom Hint -->
-            <div class="conv-studio-bottom-hint">
-              <span>Select the output format and click <strong style="color: #0F172A;">Convert</strong> &nbsp;&middot;&nbsp; 100% Local &amp; Private</span>
-            </div>
           </div>
         </div>`;
 
-      // Asynchronously render live file thumbnail (PDF page 1, image, or video)
-      const getThumb = (typeof generateFileThumbnail === 'function') ? generateFileThumbnail : (window.FF && window.FF.generateFileThumbnail);
-      if (typeof getThumb === 'function') {
-        getThumb(file, family).then((thumbUrl) => {
-          if (!thumbUrl) return;
+      // Asynchronously render live file thumbnail (Image preview, PDF page 1, audio card, or handcrafted illustration)
+      const fileExt = (currentFile?.name || '').split('.').pop() || family || '';
+      if (currentFile && (currentFile.type?.startsWith('image/') || family === 'image' || /\.(png|jpe?g|webp|gif|svg|bmp|ico|avif)$/i.test(currentFile.name))) {
+        try {
+          const imgUrl = URL.createObjectURL(currentFile);
           const thumbBox = container.querySelector('#conv-studio-thumb-box');
           if (thumbBox) {
-            thumbBox.innerHTML = `<img src="${thumbUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
+            thumbBox.innerHTML = `<img src="${imgUrl}" alt="Preview" class="conv-studio-thumb-img"/>`;
           }
-        }).catch(() => {});
+        } catch (_) {}
+      } else if (currentFile && (currentFile.type === 'application/pdf' || /\.pdf$/i.test(currentFile.name))) {
+        (async () => {
+          try {
+            const pdfjs = await loadJs();
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(await currentFile.arrayBuffer()) }).promise;
+            const page = await doc.getPage(1);
+            const vp1 = page.getViewport({ scale: 1 });
+            const sc = Math.min(200 / vp1.width, 240 / vp1.height, 1);
+            const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+            const vp = page.getViewport({ scale: sc * dpr });
+            const c = document.createElement('canvas');
+            c.width = Math.round(vp.width);
+            c.height = Math.round(vp.height);
+            c.style.width = '100%';
+            c.style.height = '100%';
+            c.style.objectFit = 'contain';
+            c.style.borderRadius = '4px';
+            const ctx = c.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            const thumbBox = container.querySelector('#conv-studio-thumb-box');
+            if (thumbBox) {
+              thumbBox.innerHTML = '';
+              thumbBox.append(c);
+            }
+          } catch (e) {
+            console.warn('[Convert] PDF thumb error:', e);
+          }
+        })();
+      } else {
+        const thumbBox = container.querySelector('#conv-studio-thumb-box');
+        if (thumbBox) {
+          thumbBox.innerHTML = buildHandcraftedIllustration(fileExt, currentFile?.name || 'Document', _bytes(currentFile?.size || 0), 'compact');
+        }
       }
 
-      // Event Listeners
+      // Event Listeners for Batch Carousel Navigation
+      container.querySelector('#conv-prev-file')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activeIndex > 0) {
+          activeIndex--;
+          renderConfigure();
+        }
+      });
+
+      container.querySelector('#conv-next-file')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activeIndex < files.length - 1) {
+          activeIndex++;
+          renderConfigure();
+        }
+      });
+
+      container.querySelector('#conv-del-file')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        files.splice(activeIndex, 1);
+        if (activeIndex >= files.length) activeIndex = files.length - 1;
+        if (!files.length) {
+          family = null; formatId = null;
+          renderUpload();
+        } else {
+          renderConfigure();
+        }
+      });
+
+      // Add more files listeners
       const fileCard = container.querySelector('#conv-studio-file-card');
-      const replaceInp = container.querySelector('#conv-replace-input');
+      const addInp = container.querySelector('#conv-add-input');
       
-      container.querySelector('#conv-change-btn')?.addEventListener('click', (e) => {
+      container.querySelector('#conv-add-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        file = null; family = null; formatId = null; renderUpload();
+        addInp.click();
       });
 
-      container.querySelector('#conv-replace-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        replaceInp.click();
+      fileCard?.addEventListener('click', (e) => {
+        if (e.target.closest('#conv-add-btn') || e.target.closest('.conv-batch-nav')) return;
+        addInp.click();
       });
-
-      fileCard?.addEventListener('click', () => replaceInp.click());
-      replaceInp?.addEventListener('change', () => {
-        if (replaceInp.files && replaceInp.files[0]) pickFile(replaceInp.files[0]);
+      addInp?.addEventListener('change', () => {
+        if (addInp.files && addInp.files.length) pickFiles(Array.from(addInp.files));
       });
 
       fileCard?.addEventListener('dragover', (e) => { e.preventDefault(); fileCard.classList.add('cpdf-dz--over'); });
@@ -10202,22 +10636,16 @@ async function paintResultPreview(blob) {
       fileCard?.addEventListener('drop', (e) => {
         e.preventDefault();
         fileCard.classList.remove('cpdf-dz--over');
-        const f = e.dataTransfer?.files?.[0];
-        if (f) pickFile(f);
+        const fList = e.dataTransfer?.files;
+        if (fList && fList.length) pickFiles(Array.from(fList));
       });
 
-      // Format menu toggle & select
-      const trigger = container.querySelector('#conv-format-trigger');
-      const menu = container.querySelector('#conv-format-menu');
-      trigger?.addEventListener('click', () => {
-        isMenuOpen = !isMenuOpen;
-        if (menu) menu.hidden = !isMenuOpen;
-        trigger.classList.toggle('is-collapsed', !isMenuOpen);
-      });
-
+      // Format item select
       container.querySelectorAll('.conv-studio-menu-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
           formatId = item.dataset.fid;
+          userClosedSettings = false; // Reset so newly selected format options are visible
           renderConfigure();
         });
       });
@@ -10226,10 +10654,12 @@ async function paintResultPreview(blob) {
       const gearBtn = container.querySelector('#conv-gear-btn');
       gearBtn?.addEventListener('click', () => {
         isSettingsOpen = !isSettingsOpen;
+        userClosedSettings = !isSettingsOpen;
         renderConfigure();
       });
       container.querySelector('#conv-settings-close')?.addEventListener('click', () => {
         isSettingsOpen = false;
+        userClosedSettings = true;
         renderConfigure();
       });
 
@@ -10242,7 +10672,10 @@ async function paintResultPreview(blob) {
           if (f.type === 'number' && v !== '') v = Number(v);
           cfg[f.key] = v;
           const valEl = container.querySelector(`#cfg-${f.key}-val`);
-          if (valEl) valEl.textContent = String(v);
+          if (valEl) {
+            const isPct = f.key === 'quality' || f.unit === '%';
+            valEl.textContent = isPct ? `${v}%` : String(v);
+          }
         };
         el.addEventListener((f.type === 'range' || f.type === 'number' || f.type === 'text') ? 'input' : 'change', commit);
       }
@@ -10250,51 +10683,65 @@ async function paintResultPreview(blob) {
       container.querySelector('#conv-run')?.addEventListener('click', () => runConvert());
     }
 
-    function renderProcessing() {
-      const t = target();
-      container.innerHTML = `
-        <header class="cpdf-hdr">
-          <div class="cpdf-hdr-icon">${I.convert}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Convert</h2>
-            <p class="cpdf-hdr-sub">Converting to ${t.out}…</p>
-          </div>
-        </header>
-        <div class="cpdf-body cpdf-body--center">
-          <div class="cpdf-spinner" aria-hidden="true">
-            <div class="cpdf-spin-outer"></div>
-            <div class="cpdf-spin-inner">${I.convert}</div>
-          </div>
-          <p class="cpdf-proc-title">Converting ${_esc(file.name)}</p>
-          <p class="cpdf-proc-sub" id="conv-msg">Preparing ${_esc(t.label)}…</p>
-          <div class="cpdf-prog-track"><div class="cpdf-prog-fill" id="conv-fill" style="width:6%"></div></div>
-          <div class="cpdf-prog-foot">
-            <span id="conv-pct">6%</span>
-            <span class="cpdf-proc-local">${I.shield} Converted locally</span>
-          </div>
-        </div>`;
-    }
-
     async function runConvert() {
       const t = target();
-      renderProcessing();
-      const fill = container.querySelector('#conv-fill');
-      const pct = container.querySelector('#conv-pct');
-      const msg = container.querySelector('#conv-msg');
-      const update = (p, label) => {
-        if (!fill) return;
-        const v = Math.max(6, Math.min(100, Math.round((p || 0) * 100)));
-        fill.style.width = v + '%';
-        if (pct) pct.textContent = v + '%';
-        if (label && msg) msg.textContent = label;
-      };
+      const studioWrap = container.querySelector('#conv-studio-wrapper');
+      const normalContent = container.querySelector('.conv-btn-normal-content');
+      const procContent = container.querySelector('.conv-btn-proc-content');
+      const pctEl = container.querySelector('#conv-pct');
+      const statusEl = container.querySelector('#conv-proc-status');
+      const btn = container.querySelector('#conv-run');
+
+      if (studioWrap) {
+        studioWrap.classList.add('is-processing');
+        if (normalContent) normalContent.style.display = 'none';
+        if (procContent) procContent.style.display = 'inline-flex';
+        if (btn) btn.disabled = true;
+      }
+
+      const results = [];
+      const total = files.length;
+      let extra = {};
+      for (const f of cfgFields()) if (cfg[f.key] !== undefined) extra[f.key] = cfg[f.key];
+
       try {
-        let extra = {};
-        for (const f of cfgFields()) if (cfg[f.key] !== undefined) extra[f.key] = cfg[f.key];
-        const out = await runTarget(t, file, extra, update);
-        update(1, 'Done');
-        renderResult(out, t);
+        for (let i = 0; i < total; i++) {
+          const curFile = files[i];
+          const filePctBase = i / total;
+          const filePctWeight = 1 / total;
+
+          const update = (subP, label) => {
+            const overall = filePctBase + (subP || 0) * filePctWeight;
+            const v = Math.max(6, Math.min(100, Math.round(overall * 100)));
+            if (pctEl) pctEl.textContent = total > 1 ? `${i + 1}/${total} (${v}%)` : `${v}%`;
+            if (statusEl) statusEl.textContent = `● Converting ${curFile.name}...`;
+          };
+
+          const out = await runTarget(t, curFile, extra, update);
+          results.push({
+            sourceFile: curFile,
+            targetName: (out.filename) || _targetName(curFile.name, t.out),
+            out: out
+          });
+        }
+
+        if (pctEl) pctEl.textContent = '100%';
+        if (statusEl) statusEl.textContent = '● Done!';
+
+        setTimeout(() => {
+          if (results.length === 1) {
+            renderResult(results[0].out, t);
+          } else {
+            renderBatchResult(results, t);
+          }
+        }, 350);
       } catch (e) {
+        if (studioWrap) {
+          studioWrap.classList.remove('is-processing');
+          if (normalContent) normalContent.style.display = 'inline-flex';
+          if (procContent) procContent.style.display = 'none';
+          if (btn) btn.disabled = false;
+        }
         const message = e && e.message ? e.message : 'Something went wrong while converting.';
         container.innerHTML = `
           <div class="cpdf-body cpdf-body--center">
@@ -10312,6 +10759,104 @@ async function paintResultPreview(blob) {
       }
     }
 
+    async function renderBatchResult(results, t) {
+      container.innerHTML = `
+        <div class="cpdf-body cpdf-body--center" style="padding: 24px 0; background: #FFFFFF !important;">
+          <div class="conv-batch-results-wrapper">
+            
+            <div style="text-align: center; margin-bottom: 8px;">
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; margin-bottom: 8px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>${results.length} files converted to ${(t.out || 'TARGET').toUpperCase()}</span>
+              </div>
+              <h2 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Batch Conversion Complete</h2>
+            </div>
+
+            <!-- Hero ZIP Download Button -->
+            <button type="button" class="conv-studio-btn-convert" id="conv-download-zip-btn" style="min-width: 240px;">
+              <span class="shadow"></span>
+              <span class="edge"></span>
+              <span class="front" style="padding: 14px 32px; font-size: 1.15rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Download All (ZIP)</span>
+              </span>
+            </button>
+
+            <!-- Converted Files List -->
+            <div class="conv-batch-results-list">
+              ${results.map((r, idx) => {
+                const blobSize = r.out.blob ? _bytes(r.out.blob.size) : (r.out.text ? _bytes(new TextEncoder().encode(r.out.text).length) : '');
+                const dlUrl = r.out.blob ? URL.createObjectURL(r.out.blob) : (r.out.text ? URL.createObjectURL(new Blob([r.out.text], { type: 'text/plain' })) : '#');
+                return `
+                  <div class="conv-batch-item-row">
+                    <div class="conv-batch-item-info">
+                      <div class="conv-batch-item-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div class="conv-batch-item-title" title="${_esc(r.targetName)}">${_esc(r.targetName)}</div>
+                        <div class="conv-batch-item-size">${blobSize} &middot; ${_esc(r.sourceFile.name)}</div>
+                      </div>
+                    </div>
+                    <a href="${dlUrl}" download="${_esc(r.targetName)}" class="conv-batch-item-dl-btn">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <span>Download</span>
+                    </a>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 12px; margin-top: 6px;">
+              <button type="button" class="cpdf-btn-ghost" id="conv-batch-more-btn" style="padding: 10px 20px; font-weight: 600;">Convert more files</button>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      // Handle ZIP download on hero button
+      const zipBtn = container.querySelector('#conv-download-zip-btn');
+      zipBtn?.addEventListener('click', async () => {
+        try {
+          const zipMap = {};
+          for (const r of results) {
+            if (r.out && r.out.blob) {
+              zipMap[r.targetName] = new Uint8Array(await r.out.blob.arrayBuffer());
+            } else if (r.out && r.out.text) {
+              zipMap[r.targetName] = new TextEncoder().encode(r.out.text);
+            }
+          }
+          const F = window.fflate || (window.FF && window.FF.fflate);
+          if (F && F.zipSync) {
+            const zipped = F.zipSync(zipMap, { level: 6 });
+            const zipBlob = new Blob([zipped], { type: 'application/zip' });
+            const zipUrl = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = zipUrl;
+            a.download = `converted_${results.length}_files_${(t.out || 'out').toLowerCase()}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        } catch (err) {
+          console.error('ZIP creation error:', err);
+        }
+      });
+
+      container.querySelector('#conv-batch-more-btn')?.addEventListener('click', () => {
+        files = [];
+        family = null;
+        formatId = null;
+        renderUpload();
+      });
+    }
+
     function resultPreview(out, t) {
       if (out.preview === 'image' && out.blob) {
         const url = URL.createObjectURL(out.blob);
@@ -10325,138 +10870,276 @@ async function paintResultPreview(blob) {
         const url = URL.createObjectURL(out.blob);
         return `<div class="conv-preview"><video class="conv-preview-media" src="${url}" controls preload="metadata"></video><span class="conv-preview-tag" style="--c:${t.color}">${t.out}</span></div>`;
       }
-      if (out.preview === 'text') {
-        return `<div class="conv-preview-text" data-copy="${_esc(out.text || '')}"><pre>${_esc(out.text || '')}</pre></div>`;
-      }
-      return `<div class="conv-preview"><div class="conv-preview-fallback">${t.out}</div><span class="conv-preview-tag" style="--c:${t.color}">${t.out}</span><span class="conv-preview-spark conv-preview-spark--1">✦</span><span class="conv-preview-spark conv-preview-spark--2">✦</span><span class="conv-preview-spark conv-preview-spark--3">✦</span></div>`;
+      const curFile = file || (files && files.length ? files[0] : null);
+      return buildHandcraftedIllustration((t.out || '').toLowerCase(), out.filename || (curFile ? `${U.baseName(curFile.name)}.${(t.out || 'out').toLowerCase()}` : 'Output'), out.blob ? _bytes(out.blob.size) : '', 'stage');
     }
 
     function renderResult(out, t) {
       const isCollection = !!(out.files && out.files.length);
+      const curFile = file || (files && files.length ? files[0] : null);
       const sizeLine = out.blob ? _bytes(out.blob.size) : (out.files ? out.files.reduce((a, f) => a + (f.blob ? f.blob.size : 0), 0) + ' total' : '');
-      const outName = isCollection ? (out.files.length + ' files') : (out.filename || `${U.baseName(file.name)}.${(t.out || 'out').toLowerCase()}`);
+      const outName = isCollection ? (out.files.length + ' files') : (out.filename || (curFile ? `${U.baseName(curFile.name)}.${(t.out || 'out').toLowerCase()}` : `converted_file.${(t.out || 'pdf').toLowerCase()}`));
       const url = out.blob ? URL.createObjectURL(out.blob) : '';
-      
-      const bannerColorMap = {
-        'docx': '#2563EB', 'word': '#2563EB', 'odt': '#2563EB', 'rtf': '#2563EB',
-        'pdf': '#DC2626', 'pdfa': '#DC2626',
-        'xlsx': '#16A34A', 'csv': '#16A34A', 'excel': '#16A34A',
-        'webp': '#D97706', 'png': '#7C3AED', 'jpg': '#EA580C', 'jpeg': '#EA580C', 'gif': '#E11D48', 'svg': '#F59E0B',
-        'mp3': '#7C3AED', 'wav': '#7C3AED', 'm4a': '#7C3AED',
-        'mp4': '#9333EA', 'webm': '#9333EA'
-      };
       const fmtKey = (t.out || '').toLowerCase();
-      const bannerBg = bannerColorMap[fmtKey] || '#2563EB';
+      const isPdf = /pdf|pdfa/i.test(fmtKey) || (out.blob && out.blob.type === 'application/pdf');
 
       // Suggestions with authentic bespoke icons
       let smartTip = 'Did you know you can edit and organize PDFs directly in FileKit?';
       let smartTools = [
-        { id: 'pdf-compress', name: 'Compress PDF' },
-        { id: 'pdf-edit-text', name: 'Edit Text' }
+        {
+          id: 'pdf-compress',
+          name: 'Compress PDF',
+          sub: 'Reduce file size without quality loss',
+          color: '#DC2626',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>'
+        },
+        {
+          id: 'pdf-edit-text',
+          name: 'Edit PDF Text',
+          sub: 'Directly modify text, add annotations',
+          color: '#7C3AED',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>'
+        }
       ];
 
       if (/docx|word|odt/i.test(fmtKey)) {
-        smartTip = 'Did you know you can edit text in PDFs directly without converting to Word? Check out:';
+        smartTip = 'Did you know you can edit text in PDFs directly without converting to Word?';
         smartTools = [
-          { id: 'pdf-edit-text', name: 'Edit Text' },
-          { id: 'pdf-sign', name: 'Sign Document' }
+          {
+            id: 'pdf-edit-text',
+            name: 'Edit Text',
+            sub: 'Directly modify text in PDF',
+            color: '#2563EB',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>'
+          },
+          {
+            id: 'pdf-sign',
+            name: 'Sign Document',
+            sub: 'Add signature or initials',
+            color: '#0D9488',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>'
+          }
         ];
       } else if (/png|jpg|jpeg|webp|gif|avif/i.test(fmtKey)) {
         smartTip = 'Enhance or crop your converted image with these tools:';
         smartTools = [
-          { id: 'bg-remover', name: 'Remove Background' },
-          { id: 'image-crop', name: 'Crop & Resize' }
+          {
+            id: 'bg-remover',
+            name: 'Remove Background',
+            sub: 'AI-powered background cutout',
+            color: '#8B5CF6',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>'
+          },
+          {
+            id: 'image-crop',
+            name: 'Crop & Resize',
+            sub: 'Adjust dimensions and aspect ratio',
+            color: '#0284C7',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>'
+          }
         ];
       } else if (/xlsx|csv/i.test(fmtKey)) {
         smartTip = 'Spreadsheet ready! You can also convert to PDF or inspect data:';
         smartTools = [
-          { id: 'excel-to-pdf', name: 'Excel to PDF' },
-          { id: 'csv-to-excel', name: 'Excel & CSV Studio' }
+          {
+            id: 'excel-to-pdf',
+            name: 'Excel to PDF',
+            sub: 'Convert spreadsheet to PDF document',
+            color: '#16A34A',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+          },
+          {
+            id: 'csv-to-excel',
+            name: 'Excel & CSV Studio',
+            sub: 'Analyze and format spreadsheet rows',
+            color: '#0D9488',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>'
+          }
         ];
       }
 
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 10px 0; overflow: hidden;">
-          <div class="conv-result-studio">
-            
-            <!-- LEFT: Output Preview -->
-            <div class="conv-result-preview-col" id="conv-result-preview-box">
-              ${out.preview === 'image' && out.blob ? `
-                <img src="${url}" alt="Converted Preview" style="max-width:180px;max-height:190px;object-fit:contain;border-radius:4px;border:1px solid #CBD5E1;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03);" />
-              ` : `
-                <div class="conv-doc-illustration">
-                  <div class="conv-doc-lines">
-                    <div class="conv-doc-line"></div>
-                    <div class="conv-doc-line"></div>
-                    <div class="conv-doc-line" style="width: 70%;"></div>
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Unified Slate Canvas (#EEF2F6) with Document Paper Sheet -->
+            <div class="cpdf-benchmark-stage scan-result-stage" id="conv-result-stage-wrap">
+              <div class="scan-paper-page" id="conv-result-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center;">
+                ${isPdf ? `
+                  <div style="padding: 60px 40px; color: #94A3B8;">Rendering PDF document preview…</div>
+                ` : out.preview === 'image' && out.blob ? `
+                  <img src="${url}" alt="Converted Preview" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px;" />
+                ` : out.preview === 'audio' && out.blob ? `
+                  <div style="width: 300px; padding: 24px 20px; text-align: center; box-sizing: border-box;">
+                    <div style="width: 52px; height: 52px; border-radius: 12px; background: #FAF5FF; border: 1.5px solid #E9D5FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    </div>
+                    <!-- Audio Equalizer Bars Mockup -->
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 28px; margin-bottom: 12px;">
+                      <div style="width: 4px; height: 16px; background: #C4B5FD; border-radius: 2px;"></div>
+                      <div style="width: 4px; height: 24px; background: #8B5CF6; border-radius: 2px;"></div>
+                      <div style="width: 4px; height: 12px; background: #A78BFA; border-radius: 2px;"></div>
+                      <div style="width: 4px; height: 28px; background: #7C3AED; border-radius: 2px;"></div>
+                      <div style="width: 4px; height: 18px; background: #8B5CF6; border-radius: 2px;"></div>
+                      <div style="width: 4px; height: 22px; background: #C4B5FD; border-radius: 2px;"></div>
+                    </div>
+                    <audio src="${url}" controls preload="metadata" style="width: 100%; height: 32px; margin-bottom: 10px;"></audio>
+                    <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 auto 2px;">${_esc(outName)}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: 500;">${sizeLine} · Audio File</div>
                   </div>
-                  <div class="conv-doc-banner" style="background: ${bannerBg};">${_esc(t.out || 'FILE')}</div>
-                </div>
-              `}
-              <span class="conv-result-name-sub" title="${_esc(outName)}">${_esc(outName)}</span>
-              <span style="font-size:11px;color:#94A3B8;margin-top:2px;">${sizeLine}</span>
+                ` : out.preview === 'video' && out.blob ? `
+                  <video src="${url}" controls preload="metadata" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px;"></video>
+                ` : out.preview === 'text' ? `
+                  <div style="padding: 20px; max-height: calc(100vh - 220px); overflow: auto; width: 100%; max-width: 380px; box-sizing: border-box; background: #F8FAFC; border-radius: 4px;">
+                    <pre style="margin: 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11.5px; color: #1E293B; white-space: pre-wrap; word-break: break-word; line-height: 1.5;">${_esc(out.text || '')}</pre>
+                  </div>
+                ` : buildHandcraftedIllustration(fmtKey, outName, sizeLine, 'stage')}
+              </div>
+
+              <!-- Stage Bottom Toolbar (No emoji, No duplicate button, Vector SVG icon) -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text" id="conv-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>${_esc(outName)}</span>
+                  <span style="color:#94A3B8;font-weight:500;">(${sizeLine})</span>
+                </span>
+              </div>
             </div>
 
-            <!-- RIGHT: Actions & Smart Tips -->
-            <div class="conv-result-action-col">
-              
-              <div class="conv-result-done-header">
-                <div class="conv-result-done-badge">✓</div>
-                <h3 class="conv-result-done-title">Done</h3>
+            <!-- Right Panel: Dynamic Full-Space Zero-Scroll Result Studio -->
+            <div class="cpdf-benchmark-panel scan-result-panel">
+              <div class="scan-result-panel-top">
+                <!-- Top Header: Green Check Badge -->
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <h2 class="cpdf-benchmark-title">Conversion Complete</h2>
+                </div>
+
+                <!-- Hero Status Box -->
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">${_esc(t.label || t.out || 'Document')} · Ready to Download</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new">${sizeLine}</strong>
+                    <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">${_esc(t.out || 'CONVERTED')}</span>
+                  </div>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A !important;"></div>
+                  </div>
+                </div>
+
+                <!-- Primary Action CTA Button (Obsidian Black) -->
+                ${!isCollection && out.blob ? `
+                  <a href="${url}" download="${_esc(out.filename || outName)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
+                    <span>Download Converted File</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </a>
+                ` : `
+                  <button type="button" class="cpdf-benchmark-cta scan-result-main-cta" id="conv-zip">
+                    <span>Download All (.zip)</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                `}
+
+                <!-- Smart Recommendation Card with 2-Line Tools & SVG Chevrons -->
+                <div class="conv-smart-tip-card">
+                  <div class="conv-smart-tip-header">
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+                      Smart recommendation
+                    </span>
+                  </div>
+                  <p class="conv-smart-tip-desc">${smartTip}</p>
+                  <div class="conv-smart-tools-list">
+                    ${smartTools.map(st => `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}" tabindex="0" role="button">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon" style="background:${st.color || '#7C3AED'};">${st.icon || ''}</span>
+                          <div class="conv-smart-tool-info">
+                            <span class="conv-smart-tool-title">${st.name}</span>
+                            <span class="conv-smart-tool-sub">${st.sub || ''}</span>
+                          </div>
+                        </div>
+                        <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
               </div>
-              <p class="conv-result-filename-title" title="${_esc(outName)}">${_esc(outName)}</p>
 
-              <!-- Main Download Button -->
-              ${!isCollection && out.blob ? `
-                <a class="conv-result-btn-download" href="${url}" download="${_esc(out.filename || outName)}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download ${_esc(out.filename || outName)} (${sizeLine})</span>
-                </a>
-              ` : `
-                <button class="conv-result-btn-download" id="conv-zip" type="button">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  <span>Download All (.zip)</span>
+              <!-- Secondary Actions Row -->
+              <div class="scan-result-secondary-actions">
+                <button type="button" class="cpdf-result-btn-secondary-full scan-result-btn-back" id="conv-again">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg>
+                    Convert another file
+                  </span>
                 </button>
-              `}
-
-              <!-- Secondary Actions -->
-              <div class="conv-result-btn-row">
-                <button type="button" class="conv-result-btn-secondary" id="conv-again">
-                  <span>+ Convert another</span>
-                </button>
-                <button type="button" class="conv-result-btn-secondary" id="conv-back">
+                <button type="button" class="scan-result-btn-ghost" id="conv-back">
                   <span>Change format</span>
                 </button>
-                ${!isCollection && out.preview === 'text' ? `<button type="button" class="conv-result-btn-secondary" id="conv-copy">Copy text</button>` : ''}
+                ${!isCollection && out.preview === 'text' ? `<button type="button" class="scan-result-btn-ghost" id="conv-copy">Copy text</button>` : ''}
               </div>
-
-              <!-- Smart Tip Card with Authentic Bespoke SVG Icons -->
-              <div class="conv-smart-tip-card">
-                <div class="conv-smart-tip-header">
-                  <span>Smart tip! 💡</span>
-                </div>
-                <p class="conv-smart-tip-desc">${smartTip}</p>
-                <div class="conv-smart-tools-list">
-                  ${smartTools.map(st => {
-                    const iconSvg = (window.FF && typeof window.FF.getToolIconSvg === 'function') ? window.FF.getToolIconSvg(st.id) : '';
-                    return `
-                      <div class="conv-smart-tool-item" data-tool-id="${st.id}">
-                        <div class="conv-smart-tool-left">
-                          <span class="conv-smart-tool-icon">${iconSvg}</span>
-                          <span>${st.name}</span>
-                        </div>
-                        <span style="font-size: 14px; color: #94A3B8;">&rsaquo;</span>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-
             </div>
-
           </div>
         </div>
       `;
+
+      // Live PDF page 1 preview rendering
+      if (isPdf && out.blob) {
+        (async () => {
+          try {
+            const pdfjs = await loadJs();
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(await out.blob.arrayBuffer()) }).promise;
+            const page = await doc.getPage(1);
+            const vp1 = page.getViewport({ scale: 1 });
+            const stageWrap = container.querySelector('#conv-result-stage-wrap');
+            const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 380 : 700);
+            const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;
+            const padX = 40, padY = 48;
+            const availW = Math.max(180, stageW - padX);
+            const availH = Math.max(180, stageH - padY);
+            const scW = availW / vp1.width;
+            const scH = availH / vp1.height;
+            const sc = Math.min(scW, scH, 1);
+            const displayW = Math.max(2, Math.round(vp1.width * sc));
+            const displayH = Math.max(2, Math.round(vp1.height * sc));
+            const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+            const vp = page.getViewport({ scale: sc * dpr });
+            const c = document.createElement('canvas');
+            c.width = Math.round(displayW * dpr);
+            c.height = Math.round(displayH * dpr);
+            c.style.width = `${displayW}px`;
+            c.style.height = `${displayH}px`;
+            c.className = 'scan-studio-canvas';
+            const ctx = c.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            const thumbBox = container.querySelector('#conv-result-thumb-box');
+            if (thumbBox) {
+              thumbBox.style.width = `${displayW}px`;
+              thumbBox.style.height = `${displayH}px`;
+              thumbBox.innerHTML = '';
+              thumbBox.append(c);
+            }
+          } catch (e) {
+            console.warn('[Convert] PDF preview error:', e);
+            const thumbBox = container.querySelector('#conv-result-thumb-box');
+            if (thumbBox) {
+              thumbBox.innerHTML = buildHandcraftedIllustration('pdf', outName, sizeLine, 'stage');
+            }
+          }
+        })();
+      }
 
       // Smart tool clicks with instant file pass-through!
       container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
@@ -11005,49 +11688,182 @@ async function paintResultPreview(blob) {
 
     function renderResult(out) {
       const url = URL.createObjectURL(out.blob);
-      const panel = container.querySelector('.cpdf-benchmark-panel');
-      if (!panel) return;
+      const smartTip = 'Interactive forms and layers baked into static ink. You can also compress or sign it:';
+      const smartTools = [
+        {
+          id: 'pdf-compress',
+          name: 'Compress PDF',
+          sub: 'Reduce file size of flattened document',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4 4 4-4"/></svg>'
+        },
+        {
+          id: 'pdf-sign',
+          name: 'Sign PDF',
+          sub: 'Certify and apply digital signatures',
+          color: '#D97706',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-10 10H7v-4L17 3z"/><path d="M3 21h18"/></svg>'
+        },
+        {
+          id: 'pdf-protect',
+          name: 'Protect PDF',
+          sub: 'Encrypt flattened PDF with password',
+          color: '#059669',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+        }
+      ];
 
-      panel.innerHTML = `
-        <div class="prot-result-box">
-          <div class="cpdf-benchmark-header prot-res-header">
-            <div class="cpdf-benchmark-icon prot-res-badge-ok">
-              ${I.check}
-            </div>
-            <div class="prot-hdr-texts">
-              <h2 class="cpdf-benchmark-title">Flattening Complete</h2>
-              <span class="prot-studio-sub">All interactive elements baked into static ink</span>
-            </div>
-          </div>
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Unified Slate Canvas (#EEF2F6) with Document Paper Sheet -->
+            <div class="cpdf-benchmark-stage scan-result-stage" id="flat-result-stage-wrap">
+              <div class="scan-paper-page" id="flat-result-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center;">
+                <div style="padding: 60px 40px; color: #94A3B8;">Loading flattened document…</div>
+              </div>
 
-          <div class="prot-res-stats-card">
-            <div class="prot-res-file-row">
-              <span class="prot-res-tag">FLATTENED</span>
-              <div class="prot-res-names">
-                <strong class="prot-res-outname" title="${_esc(out.filename)}">${_esc(out.filename)}</strong>
-                <span class="prot-res-outmeta">${_bytes(out.blob.size)} · Source: ${_esc(file.name)}</span>
+              <!-- Floating Info & Bottom Toolbar -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text" id="flat-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>${_esc(out.filename)}</span>
+                  <span style="color:#94A3B8;font-weight:500;">(${_bytes(out.blob.size)})</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Right Panel: Dynamic Full-Space Zero-Scroll Result Studio -->
+            <div class="cpdf-benchmark-panel scan-result-panel">
+              <div class="scan-result-panel-top">
+                <!-- Top Header: Green Check Badge -->
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <h2 class="cpdf-benchmark-title">Flattening Complete</h2>
+                </div>
+
+                <!-- Hero Status & Security Metrics Card -->
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">Flattened PDF · ${_bytes(out.blob.size)}</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new">${_bytes(out.blob.size)}</strong>
+                    <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">Static Ink Baked</span>
+                  </div>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" style="width: 100%; background:#16A34A !important;"></div>
+                  </div>
+                </div>
+
+                <!-- Primary Action CTA Button (Obsidian Black) -->
+                <a href="${url}" download="${_esc(out.filename)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
+                  <span>Download ${_esc(out.filename)}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </a>
+
+                <!-- Smart Recommendation Card with 2-Line Tools & SVG Chevrons -->
+                <div class="conv-smart-tip-card">
+                  <div class="conv-smart-tip-header">
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+                      Smart recommendation
+                    </span>
+                  </div>
+                  <p class="conv-smart-tip-desc">${smartTip}</p>
+                  <div class="conv-smart-tools-list">
+                    ${smartTools.map(st => `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}" tabindex="0" role="button">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon" style="background:${st.color || '#7C3AED'};">${st.icon || ''}</span>
+                          <div class="conv-smart-tool-info">
+                            <span class="conv-smart-tool-title">${st.name}</span>
+                            <span class="conv-smart-tool-sub">${st.sub || ''}</span>
+                          </div>
+                        </div>
+                        <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Secondary Actions Row -->
+              <div class="scan-result-secondary-actions">
+                <button type="button" class="cpdf-result-btn-secondary-full scan-result-btn-back" id="flat-again">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg>
+                    Flatten another file
+                  </span>
+                </button>
+                <button type="button" class="scan-result-btn-ghost" id="flat-back">
+                  <span>Adjust options</span>
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      `;
 
-          <div class="prot-res-actions">
-            <a class="cpdf-benchmark-cta" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none;">
-              <span>Download ${_esc(out.filename)}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </a>
+      // Live Left Stage Preview Render
+      const thumbBox = container.querySelector('#flat-result-thumb-box');
+      if (thumbBox) {
+        (async () => {
+          try {
+            const pdfjs = await loadJs();
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(await out.blob.arrayBuffer()) }).promise;
+            const page = await doc.getPage(1);
+            const vp1 = page.getViewport({ scale: 1 });
+            const stageWrap = container.querySelector('#flat-result-stage-wrap');
+            const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 380 : 700);
+            const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;
+            const padX = 40, padY = 48;
+            const availW = Math.max(180, stageW - padX);
+            const availH = Math.max(180, stageH - padY);
+            const scW = availW / vp1.width;
+            const scH = availH / vp1.height;
+            const sc = Math.min(scW, scH, 1);
+            const displayW = Math.max(2, Math.round(vp1.width * sc));
+            const displayH = Math.max(2, Math.round(vp1.height * sc));
+            const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+            const vp = page.getViewport({ scale: sc * dpr });
+            const c = document.createElement('canvas');
+            c.width = Math.round(displayW * dpr);
+            c.height = Math.round(displayH * dpr);
+            c.style.width = `${displayW}px`;
+            c.style.height = `${displayH}px`;
+            c.className = 'scan-studio-canvas';
+            const ctx = c.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            thumbBox.style.width = `${displayW}px`;
+            thumbBox.style.height = `${displayH}px`;
+            thumbBox.innerHTML = '';
+            thumbBox.append(c);
+          } catch (e) {
+            thumbBox.innerHTML = buildHandcraftedIllustration('pdf', out.filename, _bytes(out.blob.size), 'stage');
+          }
+        })();
+      }
 
-            <div class="prot-res-btn-grid">
-              <button type="button" class="cpdf-btn-ghost prot-ghost-btn" id="flat-again">
-                ${I.replace}&nbsp; Another File
-              </button>
-              <button type="button" class="cpdf-btn-ghost cpdf-btn-ghost--tinted prot-ghost-btn" id="flat-back">
-                ${I.edit}&nbsp; Adjust Options
-              </button>
-            </div>
-          </div>
-        </div>`;
+      // Wire Smart Tool Handoff
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const tid = item.dataset.toolId;
+          const targetFile = new File([out.blob], out.filename, { type: 'application/pdf' });
+          if (tid && window.FF?.app?.openTool) {
+            window.FF.app.openTool(tid, true, [targetFile]);
+          } else if (typeof window.openTool === 'function') {
+            window.openTool(tid, true, [targetFile]);
+          }
+        });
+      });
 
       container.querySelector('#flat-again')?.addEventListener('click', () => {
         URL.revokeObjectURL(url); file = null; pdfDoc = null; renderUpload();
@@ -11207,8 +12023,7 @@ async function paintResultPreview(blob) {
       if (mode === 'flatten') return true;
       if (!password || password.length < 1) return false;
       if (mode === 'protect') {
-        if (password.length < 4) return false;
-        if (confirmPw !== password) return false;
+        if (password.length < 1) return false;
       }
       return true;
     }
@@ -11249,6 +12064,10 @@ async function paintResultPreview(blob) {
           syncModeCards();
         } else {
           console.warn('[Protect] PDF preview loader', err);
+          const stage = container.querySelector('#prot-paper-container');
+          if (stage) {
+            stage.innerHTML = buildHandcraftedIllustration('pdf', file.name, _bytes(file.size), 'stage');
+          }
         }
       }
     }
@@ -11272,34 +12091,43 @@ async function paintResultPreview(blob) {
         statusPill.innerHTML = `${I.lock} Password Encrypted`;
         statusPill.className = 'prot-meta-status is-locked';
       }
-    }
-
-    async function renderPagePreview(pageNum) {
+    }    async function renderPagePreview(pageNum) {
       if (!pdfDoc) return;
       const stage = container.querySelector('#prot-paper-container');
-      const pageInfo = container.querySelector('#prot-page-counter');
-      const prevBtn = container.querySelector('#prot-prev-page');
-      const nextBtn = container.querySelector('#prot-next-page');
-
-      if (pageInfo) pageInfo.textContent = `Page ${pageNum} of ${totalPages}`;
-      if (prevBtn) prevBtn.disabled = pageNum <= 1;
-      if (nextBtn) nextBtn.disabled = pageNum >= totalPages;
+      if (!stage) return;
 
       try {
         if (renderTask) renderTask.cancel();
         const page = await pdfDoc.getPage(pageNum);
-        const vp = page.getViewport({ scale: 0.95 });
+        const vp1 = page.getViewport({ scale: 1 });
+        const stageWrap = container.querySelector('.cpdf-benchmark-stage');
+        const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 420 : 700);
+        const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;
+        const padX = 40, padY = 48;
+        const availW = Math.max(180, stageW - padX);
+        const availH = Math.max(180, stageH - padY);
+        const scW = availW / vp1.width;
+        const scH = availH / vp1.height;
+        const sc = Math.min(scW, scH, 0.88);
+        const displayW = Math.max(2, Math.round(vp1.width * sc));
+        const displayH = Math.max(2, Math.round(vp1.height * sc));
+        const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+        const vp = page.getViewport({ scale: sc * dpr });
         const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(vp.width));
-        canvas.height = Math.max(1, Math.round(vp.height));
-        canvas.className = 'prot-canvas-sheet';
+        canvas.width = Math.round(displayW * dpr);
+        canvas.height = Math.round(displayH * dpr);
+        canvas.style.width = `${displayW}px`;
+        canvas.style.height = `${displayH}px`;
+        canvas.className = 'scan-studio-canvas';
         const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         renderTask = page.render({ canvasContext: ctx, viewport: vp });
         await renderTask.promise;
-        if (stage) {
-          stage.innerHTML = '';
-          stage.appendChild(canvas);
-        }
+        stage.style.width = `${displayW}px`;
+        stage.style.height = `${displayH}px`;
+        stage.innerHTML = '';
+        stage.appendChild(canvas);
       } catch (e) {
         if (e?.name !== 'RenderingCancelledException') {
           console.warn('[Protect] render page error', e);
@@ -11414,12 +12242,12 @@ async function paintResultPreview(blob) {
         const ctaTxt = ctaBtn.querySelector('span');
         if (ctaTxt) {
           ctaTxt.textContent = fam === 'image'
-            ? 'Scrub & Secure Image'
+            ? 'Scrub & Secure'
             : isFlatten
-              ? 'Flatten PDF Document'
+              ? 'Flatten PDF'
               : isProtect
-                ? 'Protect PDF Document'
-                : 'Unlock PDF Document';
+                ? 'Protect PDF'
+                : 'Unlock PDF';
         }
         ctaBtn.disabled = !canRun();
       }
@@ -11427,21 +12255,21 @@ async function paintResultPreview(blob) {
       const summarySpec = container.querySelector('#prot-summary-spec');
       if (summarySpec) {
         summarySpec.textContent = fam === 'image'
-          ? '100% Client-Side'
+          ? 'EXIF Scrubbing'
           : isFlatten
-            ? 'Permanent Static Page Ink'
+            ? 'Permanent Ink'
             : isProtect
-              ? '256-Bit AES Encryption'
-              : 'Access Unlocked';
+              ? '256-Bit AES'
+              : 'Open Access';
       }
 
       const summaryBadge = container.querySelector('#prot-summary-badge');
       if (summaryBadge) {
         summaryBadge.textContent = isFlatten
-          ? 'Immutable Output'
+          ? 'Static Output'
           : isProtect
-            ? (entropy.score > 0 ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key')
-            : 'Verified';
+            ? (password ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key')
+            : 'Decrypted';
       }
 
       const summaryBar = container.querySelector('#prot-summary-bar');
@@ -11449,22 +12277,15 @@ async function paintResultPreview(blob) {
         summaryBar.style.width = isFlatten
           ? '100%'
           : isProtect
-            ? `${Math.min(100, Math.max(15, entropy.bits * 1.1))}%`
+            ? (password ? `${Math.min(100, Math.max(20, entropy.bits * 1.2))}%` : '20%')
             : '100%';
-        summaryBar.style.background = (isProtect && entropy.score < 2) ? '#94A3B8' : '#18181B';
-      }
-
-      const statusPill = container.querySelector('#prot-status-pill');
-      if (statusPill && !isLockedDoc) {
-        statusPill.innerHTML = isFlatten
-          ? `${I.flatten} Ready to Flatten`
-          : isProtect
-            ? `${I.shield} Ready to Protect`
-            : `${I.unlock} Decrypt Mode`;
+        summaryBar.style.background = (isProtect && !password) ? '#94A3B8' : '#16A34A';
       }
     }
 
     function renderConfigure() {
+      container.className = 'cpdf-root';
+      container.classList.remove('spdf-shell');
       const fam = fileFamily(file);
       const entropy = computeEntropy(password);
       const isProtect = mode === 'protect';
@@ -11482,7 +12303,7 @@ async function paintResultPreview(blob) {
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Calm Neutral Stage with Elevated Paper Sheet -->
+            <!-- Left Stage: Calm Slate Canvas with Standard Document Paper Sheet -->
             <div class="cpdf-benchmark-stage">
               <div class="cpdf-benchmark-paper" id="prot-paper-container">
                 ${fam === 'pdf' ? `
@@ -11494,120 +12315,97 @@ async function paintResultPreview(blob) {
                   <div class="prot-image-frame">
                     <img src="${URL.createObjectURL(file)}" alt="Preview" class="prot-image-view" />
                   </div>
-                ` : `
-                  <div class="prot-generic-file-card">
-                    <span class="prot-generic-icon">${I.doc}</span>
-                    <strong class="prot-generic-name">${_esc(file.name)}</strong>
-                    <span class="prot-generic-size">${_bytes(file.size)}</span>
-                    <span class="prot-generic-badge">SHA-256 AES Ready</span>
-                  </div>
-                `}
+                ` : buildHandcraftedIllustration((file.name || '').split('.').pop() || 'pdf', file.name, _bytes(file.size), 'stage')}
               </div>
 
-              <!-- Bottom-Attached Precision Status Bar -->
+              <!-- Bottom-Attached Precision Status Bar (Identical to Compress) -->
               <div class="cpdf-benchmark-fileinfo-row">
-                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-                  ${fam === 'pdf' ? `
-                    <button type="button" class="prot-nav-arrow" id="prot-prev-page" title="Previous page">${I.prev}</button>
-                    <span class="prot-page-text" id="prot-page-counter">Page 1 of ${totalPages}</span>
-                    <button type="button" class="prot-nav-arrow" id="prot-next-page" title="Next page">${I.next}</button>
-                    <span style="color:#CBD5E1;margin:0 2px;">|</span>
-                  ` : ''}
-                  <span class="cpdf-benchmark-fileinfo-text" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    ${_esc(file.name)} (${_bytes(file.size)})
-                  </span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-                  <span class="prot-meta-status ${isLockedDoc ? 'is-locked' : 'is-open'}" id="prot-status-pill">
-                    ${isLockedDoc ? `${I.lock} Password Encrypted` : isFlatten ? `${I.flatten} Ready to Flatten` : isProtect ? `${I.shield} Ready to Protect` : `${I.unlock} Decrypt Mode`}
-                  </span>
-                  <button type="button" class="cpdf-benchmark-btn-add" id="prot-replace-file" title="Replace file">
-                    ${I.replace}&nbsp; Change
-                  </button>
-                </div>
+                <span class="cpdf-benchmark-fileinfo-text">${_esc(file.name)} (${_bytes(file.size)})</span>
+                <button type="button" class="cpdf-benchmark-btn-add" id="prot-replace-file" title="Change file">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Change File</span>
+                </button>
               </div>
             </div>
 
-            <!-- Right Panel: Precision Studio Inspector (Clean Compress Style) -->
+            <!-- Right Panel: Studio Inspector (Identical to Compress) -->
             <div class="cpdf-benchmark-panel">
               <!-- Top Header -->
               <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon prot-header-badge">
-                  ${I.shieldCheck}
+                <div class="cpdf-benchmark-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                 </div>
-                <h2 class="cpdf-benchmark-title">${fam === 'image' ? 'Image Privacy' : 'Document Security'}</h2>
+                <h2 class="cpdf-benchmark-title">Protect</h2>
               </div>
 
               ${fam === 'image' ? `
                 <!-- Image Mode Options -->
-                <div class="prot-card-list">
-                  <div class="cpdf-benchmark-card ${stripExif ? 'is-active' : ''}" id="prot-card-exif" role="button" tabindex="0">
+                <div class="cpdf-cards-stack" role="radiogroup" aria-label="Image Security Mode">
+                  <div class="cpdf-benchmark-card ${stripExif ? 'is-active' : ''}" id="prot-card-exif">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
-                    <div class="prot-card-info">
-                      <strong>Strip EXIF & Location Tags</strong>
-                      <span>Wipe GPS, camera details & timestamps</span>
+                    <div class="cpdf-benchmark-card-text">
+                      <span class="cpdf-benchmark-card-label">Strip EXIF & Location Tags</span>
+                      <span class="cpdf-benchmark-card-sub">Wipe GPS, camera details & timestamps</span>
                     </div>
                   </div>
-                  <div class="cpdf-benchmark-card ${addWatermark ? 'is-active' : ''}" id="prot-card-wm" role="button" tabindex="0">
+                  <div class="cpdf-benchmark-card ${addWatermark ? 'is-active' : ''}" id="prot-card-wm">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
-                    <div class="prot-card-info">
-                      <strong>Security Watermark</strong>
-                      <span>Overlay confidentiality stamp</span>
+                    <div class="cpdf-benchmark-card-text">
+                      <span class="cpdf-benchmark-card-label">Security Watermark</span>
+                      <span class="cpdf-benchmark-card-sub">Overlay confidentiality stamp</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="prot-context-box" id="prot-wm-wrap" style="${addWatermark ? '' : 'display:none;'}">
-                  <div class="prot-field-top">
-                    <span class="prot-field-title">Watermark Text</span>
-                  </div>
-                  <input type="text" id="prot-wm-text" class="prot-input" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
+                  <input type="text" id="prot-wm-text" class="cpdf-target-inp" style="width:100%;height:36px;box-sizing:border-box;" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
                 </div>
               ` : `
-                <!-- Stacked Option Cards (Identical to Compress) -->
-                <div class="prot-card-list">
-                  <div class="cpdf-benchmark-card ${isProtect ? 'is-active' : ''}" data-mode="protect" role="button" tabindex="0">
+                <!-- Option Cards Stack (Identical to Compress) -->
+                <div class="cpdf-cards-stack" role="radiogroup" aria-label="Security Mode">
+                  <!-- Option 1: Protect -->
+                  <div class="cpdf-benchmark-card ${isProtect ? 'is-active' : ''}" data-mode="protect">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
-                    <div class="prot-card-info">
-                      <strong>Encrypt with Password</strong>
-                      <span>256-bit AES cryptographic protection</span>
+                    <div class="cpdf-benchmark-card-text">
+                      <span class="cpdf-benchmark-card-label">Encrypt with Password</span>
+                      <span class="cpdf-benchmark-card-sub">256-bit AES cryptographic protection</span>
                     </div>
                   </div>
 
-                  <div class="cpdf-benchmark-card ${isUnlock ? 'is-active' : ''}" data-mode="unlock" role="button" tabindex="0">
+                  <!-- Option 2: Unlock -->
+                  <div class="cpdf-benchmark-card ${isUnlock ? 'is-active' : ''}" data-mode="unlock">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
-                    <div class="prot-card-info">
-                      <strong>Remove Password & Unlock</strong>
-                      <span>Decrypt document for open sharing</span>
+                    <div class="cpdf-benchmark-card-text">
+                      <span class="cpdf-benchmark-card-label">Remove Password &amp; Unlock</span>
+                      <span class="cpdf-benchmark-card-sub">Decrypt document for open sharing</span>
                     </div>
                   </div>
 
-                  <div class="cpdf-benchmark-card ${isFlatten ? 'is-active' : ''}" data-mode="flatten" role="button" tabindex="0">
+                  <!-- Option 3: Flatten -->
+                  <div class="cpdf-benchmark-card ${isFlatten ? 'is-active' : ''}" data-mode="flatten">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
-                    <div class="prot-card-info">
-                      <strong>Flatten Forms & Layers</strong>
-                      <span>Bake interactive fields into static ink</span>
+                    <div class="cpdf-benchmark-card-text">
+                      <span class="cpdf-benchmark-card-label">Flatten Forms &amp; Layers</span>
+                      <span class="cpdf-benchmark-card-sub">Bake interactive fields into static ink</span>
                     </div>
                   </div>
                 </div>
 
-                <!-- Dynamic Context Area (Shows ONLY what relates to active card) -->
+                <!-- Dynamic Context Area -->
                 <div class="prot-context-box" id="prot-context-area">
                   ${isFlatten ? `
-                    <div class="prot-field-top">
-                      <span class="prot-field-title">Bake Targets</span>
-                      <span class="prot-entropy-tag" id="prot-flatten-summary">All Targets Active</span>
-                    </div>
                     <div class="prot-flatten-grid">
                       <div class="prot-perm-chip ${optForms ? 'is-allowed' : 'is-blocked'}" id="prot-flat-forms" role="button" tabindex="0">
                         <div class="prot-chip-top">
@@ -11628,7 +12426,7 @@ async function paintResultPreview(blob) {
                       <div class="prot-perm-chip ${optLayers ? 'is-allowed' : 'is-blocked'}" id="prot-flat-layers" role="button" tabindex="0">
                         <div class="prot-chip-top">
                           <span class="prot-chip-icon">${I.doc}</span>
-                          <strong>OCG Layers</strong>
+                          <strong>Layers</strong>
                         </div>
                         <span class="prot-chip-badge">${optLayers ? 'Bake Ink' : 'Ignore'}</span>
                       </div>
@@ -11636,19 +12434,15 @@ async function paintResultPreview(blob) {
                       <div class="prot-perm-chip ${optAppearances ? 'is-allowed' : 'is-blocked'}" id="prot-flat-apps" role="button" tabindex="0">
                         <div class="prot-chip-top">
                           <span class="prot-chip-icon">${I.eye}</span>
-                          <strong>Widget Look</strong>
+                          <strong>Widgets</strong>
                         </div>
                         <span class="prot-chip-badge">${optAppearances ? 'Bake Ink' : 'Ignore'}</span>
                       </div>
                     </div>
                   ` : `
-                    <div class="prot-field-top">
-                      <span class="prot-field-title">${isProtect ? 'Encryption Password' : 'Decryption Password'}</span>
-                      <span class="prot-entropy-tag score-${entropy.score}" id="prot-entropy-badge">${isProtect ? entropy.label : 'Unlock Mode'}</span>
-                    </div>
-                    <div class="prot-input-wrap">
-                      <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Enter encryption password…' : 'Enter password to unlock…'}" value="${_esc(password)}">
-                      <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
+                    <div class="prot-input-wrap" style="position:relative;display:flex;align-items:center;">
+                      <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Enter encryption password…' : 'Enter password to unlock…'}" value="${_esc(password)}" style="width:100%;height:38px;padding:0 36px 0 12px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:13px;color:#111827;background:#FFFFFF;outline:none;box-sizing:border-box;">
+                      <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility" style="position:absolute;right:8px;background:none;border:none;padding:4px;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;">
                         ${showPw ? I.eyeOff : I.eye}
                       </button>
                     </div>
@@ -11656,20 +12450,21 @@ async function paintResultPreview(blob) {
                 </div>
               `}
 
-              <!-- Streamlined Security Summary Strip -->
-              <div class="prot-security-strip">
-                <div class="prot-strip-row">
-                  <strong id="prot-summary-spec">${fam === 'image' ? '100% Client-Side' : isFlatten ? 'Permanent Static Page Ink' : isProtect ? '256-Bit AES Encryption' : 'Access Unlocked'}</strong>
-                  <span id="prot-summary-badge">${isFlatten ? 'Immutable Output' : isProtect ? (entropy.score > 0 ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key') : 'Verified'}</span>
+              <!-- Compact Estimated Security Specification Box (Identical to Compress) -->
+              <div class="cpdf-benchmark-est-box">
+                <div class="cpdf-benchmark-est-title">${isProtect ? 'Security Specification' : isFlatten ? 'Flattening Specification' : 'Decryption Status'}</div>
+                <div class="cpdf-benchmark-est-metrics">
+                  <strong class="cpdf-benchmark-est-new" id="prot-summary-spec">${fam === 'image' ? 'EXIF Strip' : isFlatten ? 'Permanent Ink' : isProtect ? '256-Bit AES' : 'Open Access'}</strong>
+                  <span class="cpdf-benchmark-est-pct" id="prot-summary-badge" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">${isFlatten ? 'Static Output' : isProtect ? (password ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key') : 'Open Access'}</span>
                 </div>
-                <div class="prot-strip-track">
-                  <div class="prot-strip-bar" id="prot-summary-bar" style="width: ${isFlatten ? 100 : isProtect ? Math.min(100, Math.max(15, entropy.bits * 1.1)) : 100}%; background: ${(isProtect && entropy.score < 2) ? '#94A3B8' : '#18181B'};"></div>
+                <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-bar" id="prot-summary-bar" style="width: ${isFlatten ? 100 : isProtect ? (password ? Math.min(100, Math.max(20, entropy.bits * 1.2)) : 20) : 100}%; background: ${(isProtect && !password) ? '#94A3B8' : '#16A34A'} !important;"></div>
                 </div>
               </div>
 
-              <!-- FileKit Signature Obsidian Black CTA Button -->
+              <!-- Primary Action CTA Button (Obsidian Black) -->
               <button type="button" class="cpdf-benchmark-cta" id="prot-studio-run" ${canRun() ? '' : 'disabled'}>
-                <span>${fam === 'image' ? 'Scrub & Secure Image' : isFlatten ? 'Flatten PDF Document' : isProtect ? 'Protect PDF Document' : 'Unlock PDF Document'}</span>
+                <span>${fam === 'image' ? 'Scrub & Secure' : isFlatten ? 'Flatten PDF' : isProtect ? 'Protect PDF' : 'Unlock PDF'}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -11681,19 +12476,13 @@ async function paintResultPreview(blob) {
       // Wire interactive events
       if (fam === 'pdf') {
         loadPdfDocument();
-        container.querySelector('#prot-prev-page')?.addEventListener('click', () => {
-          if (currentPage > 1) { currentPage--; renderPagePreview(currentPage); }
-        });
-        container.querySelector('#prot-next-page')?.addEventListener('click', () => {
-          if (currentPage < totalPages) { currentPage++; renderPagePreview(currentPage); }
-        });
       }
 
       container.querySelector('#prot-replace-file')?.addEventListener('click', () => {
         file = null; pdfDoc = null; renderUpload();
       });
 
-      // Mode Selection Cards (Rerender context cleanly on switch)
+      // Mode Selection Cards
       container.querySelectorAll('.cpdf-benchmark-card[data-mode]').forEach(card => {
         card.addEventListener('click', () => {
           mode = card.dataset.mode;
@@ -11708,22 +12497,8 @@ async function paintResultPreview(blob) {
       if (pwInp) {
         pwInp.addEventListener('input', () => {
           password = pwInp.value;
-          const ent = computeEntropy(password);
-          const tag = container.querySelector('#prot-entropy-badge');
-          if (tag && mode === 'protect') {
-            tag.textContent = ent.label;
-            tag.className = `prot-entropy-tag score-${ent.score}`;
-          }
-          const summaryBadge = container.querySelector('#prot-summary-badge');
-          if (summaryBadge && mode === 'protect') {
-            summaryBadge.textContent = ent.score > 0 ? `${ent.bits} bits (${ent.label})` : 'Waiting for Key';
-          }
-          const summaryBar = container.querySelector('#prot-summary-bar');
-          if (summaryBar && mode === 'protect') {
-            summaryBar.style.width = `${Math.min(100, Math.max(15, ent.bits * 1.1))}%`;
-            summaryBar.style.background = ent.score < 2 ? '#94A3B8' : '#18181B';
-          }
-          if (ctaBtn) ctaBtn.disabled = !canRun();
+          confirmPw = password;
+          syncModeCards();
         });
       }
 
@@ -11745,9 +12520,6 @@ async function paintResultPreview(blob) {
           chip.className = `prot-perm-chip ${newVal ? 'is-allowed' : 'is-blocked'}`;
           const badge = chip.querySelector('.prot-chip-badge');
           if (badge) badge.textContent = newVal ? 'Bake Ink' : 'Ignore';
-          const count = [optForms, optAnnots, optLayers, optAppearances].filter(Boolean).length;
-          const summaryTag = container.querySelector('#prot-flatten-summary');
-          if (summaryTag) summaryTag.textContent = count === 4 ? 'All Targets Active' : `${count} Targets Active`;
         });
       };
 
@@ -11921,59 +12693,258 @@ async function paintResultPreview(blob) {
       const url = URL.createObjectURL(out.blob);
       const isProtect = mode === 'protect';
       const isFlatten = mode === 'flatten';
+      const isUnlock = mode === 'unlock';
       const fam = fileFamily(file);
 
-      const panel = container.querySelector('.cpdf-benchmark-panel');
-      if (!panel) return;
+      const title = fam === 'image' 
+        ? 'Image Scrubbing Complete' 
+        : isFlatten 
+          ? 'Flattening Complete' 
+          : isProtect 
+            ? 'Protection Applied' 
+            : 'Document Unlocked';
 
-      panel.innerHTML = `
-        <div class="prot-result-box">
-          <div class="cpdf-benchmark-header prot-res-header">
-            <div class="cpdf-benchmark-icon prot-res-badge-ok">
-              ${I.check}
-            </div>
-            <div class="prot-hdr-texts">
-              <h2 class="cpdf-benchmark-title">${fam === 'image' ? 'Image Scrubbing Complete' : isFlatten ? 'Flattening Complete' : isProtect ? 'Protection Applied' : 'Document Unlocked'}</h2>
-              <span class="prot-studio-sub">${fam === 'image' ? 'All metadata and location tags removed' : isFlatten ? 'All interactive elements baked into static ink' : isProtect ? '256-bit AES Cipher Enforced' : 'Encryption & Password Removed'}</span>
-            </div>
-          </div>
+      const tagLabel = isFlatten ? 'Flattened PDF' : isProtect ? 'Protected PDF' : isUnlock ? 'Unlocked PDF' : 'Clean Image';
+      const badgeText = isProtect ? '256-bit AES Encrypted' : isUnlock ? 'Decrypted & Open' : isFlatten ? 'Static Ink Baked' : 'EXIF Cleaned';
 
-          <div class="prot-res-stats-card">
-            <div class="prot-res-file-row">
-              <span class="prot-res-tag">${isFlatten ? 'FLATTENED' : isProtect ? 'PROTECTED' : 'UNLOCKED'}</span>
-              <div class="prot-res-names">
-                <strong class="prot-res-outname" title="${_esc(out.filename)}">${_esc(out.filename)}</strong>
-                <span class="prot-res-outmeta">${_bytes(out.blob.size)} · Source: ${_esc(file.name)}</span>
+      const smartTip = isProtect 
+        ? 'Your file is encrypted with 256-bit AES. You can also optimize or sign it:' 
+        : isFlatten 
+          ? 'Interactive layers baked into static ink. Ready for archiving or sharing:' 
+          : isUnlock 
+            ? 'Document decrypted and open. You can convert, edit, or compress it:' 
+            : 'Image metadata wiped. Ready for web sharing or compression:';
+
+      const smartTools = fam === 'image' ? [
+        {
+          id: 'image-compress',
+          name: 'Compress Image',
+          sub: 'Reduce file size with smart lossy/lossless compression',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4 4 4-4"/></svg>'
+        },
+        {
+          id: 'image-convert',
+          name: 'Convert Image',
+          sub: 'Convert format to WebP, PNG, JPG, or PDF',
+          color: '#7C3AED',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>'
+        }
+      ] : isProtect ? [
+        {
+          id: 'pdf-compress',
+          name: 'Compress PDF',
+          sub: 'Reduce file size of encrypted document',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4 4 4-4"/></svg>'
+        },
+        {
+          id: 'pdf-organize',
+          name: 'Organize PDF',
+          sub: 'Reorder, rotate, or combine pages',
+          color: '#0891B2',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>'
+        }
+      ] : isFlatten ? [
+        {
+          id: 'pdf-compress',
+          name: 'Compress PDF',
+          sub: 'Reduce file size of flattened document',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4 4 4-4"/></svg>'
+        },
+        {
+          id: 'pdf-sign',
+          name: 'Sign PDF',
+          sub: 'Certify and apply digital signatures',
+          color: '#D97706',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-10 10H7v-4L17 3z"/><path d="M3 21h18"/></svg>'
+        }
+      ] : [
+        {
+          id: 'pdf-compress',
+          name: 'Compress PDF',
+          sub: 'Reduce file size for fast sharing',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9m-4-4 4 4 4-4"/></svg>'
+        },
+        {
+          id: 'pdf-to-word',
+          name: 'PDF to Word',
+          sub: 'Convert to editable Microsoft Word (.docx)',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+        }
+      ];
+
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Unified Slate Canvas (#EEF2F6) with Document Paper Sheet -->
+            <div class="cpdf-benchmark-stage scan-result-stage" id="prot-result-stage-wrap">
+              <div class="scan-paper-page" id="prot-result-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center;">
+                <div style="padding: 60px 40px; color: #94A3B8;">Loading secured document…</div>
+              </div>
+
+              <!-- Floating Info & Bottom Toolbar -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text" id="prot-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>${_esc(out.filename)}</span>
+                  <span style="color:#94A3B8;font-weight:500;">(${_bytes(out.blob.size)})</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Right Panel: Dynamic Full-Space Zero-Scroll Result Studio -->
+            <div class="cpdf-benchmark-panel scan-result-panel">
+              <div class="scan-result-panel-top">
+                <!-- Top Header: Green Check Badge -->
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <h2 class="cpdf-benchmark-title">${title}</h2>
+                </div>
+
+                <!-- Hero Status & Security Metrics Card -->
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">${tagLabel} · ${_bytes(out.blob.size)}</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new">${_bytes(out.blob.size)}</strong>
+                    <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">${badgeText}</span>
+                  </div>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" style="width: 100%; background:#16A34A !important;"></div>
+                  </div>
+                </div>
+
+                <!-- Primary Action CTA Button (Obsidian Black) -->
+                <a href="${url}" download="${_esc(out.filename)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
+                  <span>Download ${_esc(out.filename)}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </a>
+
+                <!-- Smart Recommendation Card with 2-Line Tools & SVG Chevrons -->
+                <div class="conv-smart-tip-card">
+                  <div class="conv-smart-tip-header">
+                    <span style="display:inline-flex;align-items:center;gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+                      Smart recommendation
+                    </span>
+                  </div>
+                  <p class="conv-smart-tip-desc">${smartTip}</p>
+                  <div class="conv-smart-tools-list">
+                    ${smartTools.map(st => `
+                      <div class="conv-smart-tool-item" data-tool-id="${st.id}" tabindex="0" role="button">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon" style="background:${st.color || '#7C3AED'};">${st.icon || ''}</span>
+                          <div class="conv-smart-tool-info">
+                            <span class="conv-smart-tool-title">${st.name}</span>
+                            <span class="conv-smart-tool-sub">${st.sub || ''}</span>
+                          </div>
+                        </div>
+                        <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Secondary Actions Row -->
+              <div class="scan-result-secondary-actions">
+                <button type="button" class="cpdf-result-btn-secondary-full scan-result-btn-back" id="prot-again-btn">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg>
+                    Protect another file
+                  </span>
+                </button>
+                <button type="button" class="scan-result-btn-ghost" id="prot-adjust-btn">
+                  <span>Adjust settings</span>
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      `;
 
-          <div class="prot-res-actions">
-            <a class="cpdf-benchmark-cta" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none;">
-              <span>Download ${_esc(out.filename)}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </a>
+      // Live Left Stage Preview Render
+      const thumbBox = container.querySelector('#prot-result-thumb-box');
+      if (thumbBox) {
+        if (fam === 'pdf' && !isProtect) {
+          // If unlocked/flattened, render live PDF page 1 canvas
+          (async () => {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await out.blob.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp1 = page.getViewport({ scale: 1 });
+              const stageWrap = container.querySelector('#prot-result-stage-wrap');
+              const stageW = stageWrap?.clientWidth || (window.innerWidth ? window.innerWidth - 380 : 700);
+              const stageH = (stageWrap?.clientHeight || (window.innerHeight ? window.innerHeight - 120 : 600)) - 52;
+              const padX = 40, padY = 48;
+              const availW = Math.max(180, stageW - padX);
+              const availH = Math.max(180, stageH - padY);
+              const scW = availW / vp1.width;
+              const scH = availH / vp1.height;
+              const sc = Math.min(scW, scH, 1);
+              const displayW = Math.max(2, Math.round(vp1.width * sc));
+              const displayH = Math.max(2, Math.round(vp1.height * sc));
+              const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+              const vp = page.getViewport({ scale: sc * dpr });
+              const c = document.createElement('canvas');
+              c.width = Math.round(displayW * dpr);
+              c.height = Math.round(displayH * dpr);
+              c.style.width = `${displayW}px`;
+              c.style.height = `${displayH}px`;
+              c.className = 'scan-studio-canvas';
+              const ctx = c.getContext('2d');
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              await page.render({ canvasContext: ctx, viewport: vp }).promise;
+              thumbBox.style.width = `${displayW}px`;
+              thumbBox.style.height = `${displayH}px`;
+              thumbBox.innerHTML = '';
+              thumbBox.append(c);
+            } catch (e) {
+              thumbBox.innerHTML = buildHandcraftedIllustration('pdf', out.filename, _bytes(out.blob.size), 'stage');
+            }
+          })();
+        } else if (fam === 'image') {
+          thumbBox.innerHTML = `<img src="${url}" alt="" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;" />`;
+        } else {
+          // Encrypted PDF or fallback: handcrafted stage sheet
+          thumbBox.innerHTML = buildHandcraftedIllustration('pdf', out.filename, _bytes(out.blob.size), 'stage');
+        }
+      }
 
-            <div class="prot-res-btn-grid">
-              <button type="button" class="cpdf-btn-ghost prot-ghost-btn" id="prot-restart-btn">
-                ${I.replace}&nbsp; Another File
-              </button>
-              <button type="button" class="cpdf-btn-ghost cpdf-btn-ghost--tinted prot-ghost-btn" id="prot-reconfigure-btn">
-                ${I.edit}&nbsp; Adjust Settings
-              </button>
-            </div>
-          </div>
-        </div>`;
+      // Wire Smart Tool Handoff
+      container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const tid = item.dataset.toolId;
+          const targetFile = new File([out.blob], out.filename, { type: out.blob.type || 'application/pdf' });
+          if (tid && window.FF?.app?.openTool) {
+            window.FF.app.openTool(tid, true, [targetFile]);
+          } else if (typeof window.openTool === 'function') {
+            window.openTool(tid, true, [targetFile]);
+          }
+        });
+      });
 
-      container.querySelector('#prot-restart-btn')?.addEventListener('click', () => {
+      // Wire Secondary Actions
+      container.querySelector('#prot-again-btn')?.addEventListener('click', () => {
         URL.revokeObjectURL(url);
         file = null; pdfDoc = null; password = ''; confirmPw = '';
         renderUpload();
       });
 
-      container.querySelector('#prot-reconfigure-btn')?.addEventListener('click', () => {
+      container.querySelector('#prot-adjust-btn')?.addEventListener('click', () => {
         URL.revokeObjectURL(url);
         renderConfigure();
       });
@@ -14487,7 +15458,7 @@ trailer<</Root 1 0 R>>`;
                   <div class="doc-route-chip"><b>${target()}</b><span>Output</span></div>
                 </div>
                 ${file && !source
-                  ? `<div class="doc-src-preview">📄 ${_esc(file.name)} — a ${_esc(meta.accept || 'FILE').replace(/\./g, '').toUpperCase()} document. Content is parsed locally when you convert.</div>`
+                  ? `<div class="doc-src-preview" style="padding: 0; background: transparent; border: none; width: 100%; display: flex; justify-content: center;">${buildHandcraftedIllustration(file.name.split('.').pop() || 'docx', file.name, _bytes(file.size), true)}</div>`
                   : `<div class="doc-src-preview">${_esc(snippet(source, 900))}</div>`}
               </div>
               <div class="doc-stage-bar"><span id="doc-stage-msg">Ready to convert</span><span class="doc-local">${I.shield} Local only</span></div>
@@ -14532,7 +15503,7 @@ trailer<</Root 1 0 R>>`;
           <div class="doc-done-badge">${I.check}</div>
           <strong class="doc-result-name">${_esc(outCache.filename)}</strong>
           <span class="doc-result-meta">${_bytes(outCache.blob.size)} · ${_esc(outCache.mime || 'file')}</span>
-          ${outCache.text ? `<div class="doc-src-preview">${_esc(snippet(outCache.text, 700))}</div>` : ''}
+          ${outCache.text ? `<div class="doc-src-preview">${_esc(snippet(outCache.text, 700))}</div>` : `<div style="margin-top: 12px; display: flex; justify-content: center; width: 100%;">${buildHandcraftedIllustration((outCache.filename || '').split('.').pop() || 'file', outCache.filename, _bytes(outCache.blob.size), false)}</div>`}
           <div class="doc-result-actions">
             <a class="cpdf-btn-primary" href="${url}" download="${_esc(outCache.filename)}" style="text-decoration:none">${I.dl}&nbsp; Download</a>
             <button class="cpdf-btn-ghost" id="doc-again" type="button">Another file</button>
@@ -18251,7 +19222,9 @@ trailer<</Root 1 0 R>>`;
             <div class="conv-result-action-col">
               
               <div class="conv-result-done-header">
-                <div class="conv-result-done-badge" style="background:#16A34A; color:#FFFFFF;">✓</div>
+                <div class="conv-result-done-badge" style="background:#16A34A; color:#FFFFFF; display:inline-flex; align-items:center; justify-content:center;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
                 <h3 class="conv-result-done-title">Done</h3>
               </div>
               <p class="conv-result-filename-title" title="${_esc(res.name)}">
@@ -18363,6 +19336,7 @@ trailer<</Root 1 0 R>>`;
           await updateFlipPage(1);
         } catch (e) {
           console.warn('[Organize] Flip preview error:', e);
+          if (stage) stage.innerHTML = buildHandcraftedIllustration(res.name.split('.').pop() || 'pdf', res.name, outSize, 'compact');
         }
       } else if (isZipOut) {
         try {
@@ -18396,10 +19370,15 @@ trailer<</Root 1 0 R>>`;
             if (prevBtn) prevBtn.onclick = () => { if (curPage > 1) updateZipPart(curPage - 2); };
             if (nextBtn) nextBtn.onclick = () => { if (curPage < pageTotal) updateZipPart(curPage); };
             await updateZipPart(0);
+          } else {
+            if (stage) stage.innerHTML = buildHandcraftedIllustration('zip', res.name, outSize, 'compact');
           }
         } catch (e) {
           console.warn('[Organize] ZIP preview error:', e);
+          if (stage) stage.innerHTML = buildHandcraftedIllustration('zip', res.name, outSize, 'compact');
         }
+      } else {
+        if (stage) stage.innerHTML = buildHandcraftedIllustration(res.name.split('.').pop() || 'file', res.name, outSize, 'compact');
       }
     }
 
