@@ -18686,6 +18686,8 @@ trailer<</Root 1 0 R>>`;
 
           host.innerHTML = '';
           host.append(clone);
+        } else if (host) {
+          host.innerHTML = buildHandcraftedIllustration((it.name || '').split('.').pop() || 'pdf', it.name, '', 'compact');
         }
       }
       // Re-fit now that real canvas sizes are known (height/aspect no longer guessed).
