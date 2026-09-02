@@ -1711,6 +1711,40 @@
       cardStyle = 'width: 320px; height: 420px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.32; background: #FFFFFF; border-radius: 4px; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05); margin: auto; font-family: Inter, system-ui, sans-serif;';
     }
 
+    // 0. PDF Documents
+    if (/pdf|pdfa/i.test(f)) {
+      return `
+        <div style="${cardStyle}">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '16px'};">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #DC2626; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '10px' : '12px'}; box-shadow: 0 2px 6px rgba(220,38,38,0.3);">PDF</div>
+              <div>
+                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
+                <div style="font-size: 9.5px; color: #64748B;">Portable Document</div>
+              </div>
+            </div>
+            <span style="font-size: 9px; font-weight: 700; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 2px 6px; border-radius: 4px;">PDF</span>
+          </div>
+          <div style="width: 55%; height: ${isCompact ? '6px' : '8px'}; background: #DC2626; border-radius: 3px; margin-bottom: ${isCompact ? '8px' : '12px'}; opacity: 0.9;"></div>
+          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'}; margin-bottom: ${isCompact ? '8px' : '14px'};">
+            <div style="width: 100%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 92%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 96%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 80%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+          </div>
+          <div style="width: 40%; height: ${isCompact ? '5px' : '7px'}; background: #94A3B8; border-radius: 3px; margin-bottom: ${isCompact ? '6px' : '10px'};"></div>
+          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'};">
+            <div style="width: 98%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 88%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+            <div style="width: 94%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
+          </div>
+          <div style="margin-top: auto; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94A3B8;">
+            <span>PDF Document</span>
+            <span>${escSize}</span>
+          </div>
+        </div>`;
+    }
+
     // 1. Microsoft Word & Text Documents
     if (/docx|doc|odt|rtf|word|document/i.test(f)) {
       return `
@@ -10014,6 +10048,7 @@ async function paintResultPreview(blob) {
     return `${(n / 1048576).toFixed(1)} MB`;
   };
   const U = window.FF.util;
+  const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => { if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
 
   const I = {
     convert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>`,
@@ -10576,6 +10611,10 @@ async function paintResultPreview(blob) {
             }
           } catch (e) {
             console.warn('[Convert] PDF thumb error:', e);
+            const thumbBox = container.querySelector('#conv-studio-thumb-box');
+            if (thumbBox) {
+              thumbBox.innerHTML = buildHandcraftedIllustration('pdf', currentFile?.name || 'Document', _bytes(currentFile?.size || 0), 'compact');
+            }
           }
         })();
       } else {
