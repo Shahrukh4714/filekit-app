@@ -10050,7 +10050,10 @@ async function paintResultPreview(blob) {
   };
   const U = window.FF.util;
   const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => { if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
-  const buildHandcraftedIllustration = (fmt, name, size, mode) => (window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration)(fmt, name, size, mode);
+  const buildHandcraftedIllustration = (fmt, name, size, mode) => {
+    const fn = window.buildHandcraftedIllustration || window.__ffBuildIllustration || (window.FF && window.FF.buildHandcraftedIllustration);
+    return typeof fn === 'function' ? fn(fmt, name, size, mode) : '';
+  };
 
   const I = {
     convert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>`,
@@ -10417,6 +10420,7 @@ async function paintResultPreview(blob) {
 
     let isSettingsOpen = false;
     let isMenuOpen = false;
+    let userClosedSettings = false;
 
     function renderConfigure() {
       if (!files.length) { renderUpload(); return; }
