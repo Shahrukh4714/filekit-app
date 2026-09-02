@@ -1930,6 +1930,7 @@
 
   if (window.FF) window.FF.buildHandcraftedIllustration = buildHandcraftedIllustration;
   window.__ffBuildIllustration = buildHandcraftedIllustration;
+  window.buildHandcraftedIllustration = buildHandcraftedIllustration;
 
   async function generateFileThumbnail(f, fam) {
     if (window.FF) window.FF.generateFileThumbnail = generateFileThumbnail;
@@ -10049,6 +10050,7 @@ async function paintResultPreview(blob) {
   };
   const U = window.FF.util;
   const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z').then(() => { if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
+  const buildHandcraftedIllustration = (fmt, name, size, mode) => (window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration)(fmt, name, size, mode);
 
   const I = {
     convert: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>`,
@@ -11935,6 +11937,7 @@ async function paintResultPreview(blob) {
     if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / 1048576).toFixed(1)} MB`;
   };
+  const buildHandcraftedIllustration = (fmt, name, size, mode) => (window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration)(fmt, name, size, mode);
 
   const I = {
     lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
@@ -13013,6 +13016,7 @@ async function paintResultPreview(blob) {
     if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / 1048576).toFixed(1)} MB`;
   };
+  const buildHandcraftedIllustration = (fmt, name, size, mode) => (window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration)(fmt, name, size, mode);
 
   const ACCEPT = 'image/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif';
   const isImg = f => {
@@ -15136,6 +15140,7 @@ async function paintResultPreview(blob) {
     if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / 1048576).toFixed(1)} MB`;
   };
+  const buildHandcraftedIllustration = (fmt, name, size, mode) => (window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration)(fmt, name, size, mode);
 
   const I = {
     dl: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>',
@@ -18023,6 +18028,7 @@ trailer<</Root 1 0 R>>`;
     };
     const U = window.FF?.util || {};
     const bytesU8 = async (blob) => new Uint8Array(await blob.arrayBuffer());
+    const buildHandcraftedIllustration = (fmt, name, size, mode) => (window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration)(fmt, name, size, mode);
 
     const ICONS = {
       reorder: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.446 3.25c-1.133 0-2.058 0-2.789.098-.764.103-1.426.325-1.955.854-.529.529-.751 1.191-.854 1.955-.098.731-.098 1.657-.098 2.789v5.31c-.148.004-.286.011-.413.022-.33.03-.655.096-.962.273-.342.198-.626.482-.824.824-.177.307-.243.633-.273.962-.028.311-.028.691-.028 1.13v.064c0 .44 0 .82.028 1.13.03.33.096.656.273.963.198.342.482.626.824.824.307.177.633.243.962.273.311.028.691.028 1.13.028h.065c.44 0 .819 0 1.13-.028.33-.03.655-.096.962-.273.342-.198.626-.482.824-.824.177-.307.243-.633.273-.962.028-.311.028-.691.028-1.13v-.064c0-.44 0-.82-.028-1.13-.03-.33-.096-.655-.273-.962-.198-.342-.482-.626-.824-.824-.307-.177-.633-.243-.962-.273-.127-.011-.264-.018-.413-.022V9c0-1.2.002-2.024.085-2.643.08-.598.224-.891.428-1.094.203-.204.496-.348 1.094-.428.619-.083 1.443-.085 2.643-.085h5c1.2 0 2.024.002 2.643.085.598.08.891.224 1.094.428.204.203.348.496.428 1.094.083.619.085 1.443.085 2.643v1.189l-.72-.719a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l2-2a.75.75 0 0 0-1.06-1.06l-.72.719V8.946c0-1.133 0-2.058-.098-2.789a3.61 3.61 0 0 0-.854-1.955 3.61 3.61 0 0 0-1.955-.854c-.731-.098-1.657-.098-2.79-.098ZM4.5 15.75c-.481 0-.792.001-1.027.022-.225.02-.307.055-.348.079a.75.75 0 0 0-.275.274c-.024.041-.057.123-.078.348-.021.235-.022.546-.022 1.027s.001.792.022 1.027c.021.225.054.307.078.348a.75.75 0 0 0 .275.274c.041.024.123.058.348.079.235.021.546.022 1.027.022s.792-.001 1.027-.022c.225-.021.307-.055.348-.079a.75.75 0 0 0 .275-.274c.024-.041.058-.123.078-.348.021-.235.022-.546.022-1.027s-.001-.792-.022-1.027c-.02-.225-.054-.307-.078-.348a.75.75 0 0 0-.275-.274c-.04-.024-.123-.058-.348-.079-.235-.021-.546-.022-1.027-.022Zm7.468-1.5c-.44 0-.819 0-1.13.028-.33.03-.655.096-.963.273a1.94 1.94 0 0 0-.823.824c-.177.307-.243.633-.273.962-.028.311-.028.691-.028 1.13v.065c0 .44 0 .819.028 1.13.03.33.096.656.273.962.198.342.482.626.823.824.307.177.633.243.963.273.311.028.691.028 1.13.028h.065c.44 0 .819 0 1.13-.028.33-.03.655-.096.962-.273.342-.198.626-.482.824-.824.177-.307.243-.633.273-.962.028-.311.028-.691.028-1.13v-.065c0-.44 0-.819-.028-1.13-.03-.33-.096-.655-.273-.962a1.94 1.94 0 0 0-.824-.824c-.307-.177-.633-.243-.962-.273-.311-.028-.691-.028-1.13-.028H11.968Zm8.5 0h.064c.44 0 .82 0 1.13.028.33.03.656.096.963.273a1.94 1.94 0 0 1 .823.824c.177.307.243.633.273.962.028.311.028.69.028 1.13v.065c0 .44 0 .819-.028 1.13-.03.33-.096.655-.273.962a1.94 1.94 0 0 1-.823.824c-.307.177-.633.243-.963.273-.311.028-.691.028-1.13.028h-.064c-.44 0-.82 0-1.13-.028-.33-.03-.656-.096-.963-.273a1.94 1.94 0 0 1-.823-.824 1.85 1.85 0 0 1-.273-.962c-.028-.311-.028-.691-.028-1.13v-.065c0-.44 0-.819.028-1.13.03-.33.096-.655.273-.962a1.94 1.94 0 0 1 .823-.824c.307-.177.633-.243.963-.273.31-.028.69-.028 1.13-.028Z"/></svg>',
