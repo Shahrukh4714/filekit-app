@@ -9352,9 +9352,9 @@
           <div class="wf-cfg-row">
             <span class="wf-cfg-label">Angle</span>
             <div class="wf-cfg-pills">
-              <button type="button" class="wf-cfg-pill wf-cfg-rot-deg ${step.config.degrees === 90 || !step.config.degrees ? 'is-active' : ''}" data-step-idx="${idx}" data-val="90">90° CW</button>
-              <button type="button" class="wf-cfg-pill wf-cfg-rot-deg ${step.config.degrees === 180 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="180">180° Flip</button>
-              <button type="button" class="wf-cfg-pill wf-cfg-rot-deg ${step.config.degrees === 270 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="270">270° CCW</button>
+              <button type="button" class="wf-cfg-rot-deg ${step.config.degrees === 90 || !step.config.degrees ? 'is-active' : ''}" data-step-idx="${idx}" data-val="90">90° CW</button>
+              <button type="button" class="wf-cfg-rot-deg ${step.config.degrees === 180 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="180">180° Flip</button>
+              <button type="button" class="wf-cfg-rot-deg ${step.config.degrees === 270 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="270">270° CCW</button>
             </div>
           </div>
         `;
@@ -9393,23 +9393,34 @@
         `;
       }
 
+      // ── EMERALD GREEN REVIEW CARD (Benchmark from Compress Tool) ──
       if (state.resultBlob) {
+        const activeStepsCount = state.steps.filter((s) => s.enabled !== false).length;
         return `
           <div class="wf-result-view">
-            <div class="wf-result-ok-badge">${ICONS.check}</div>
-            <h3 class="wf-result-title">Pipeline Execution Complete</h3>
-            <p class="wf-result-sub">Finished in ${state.durationMs}ms across ${state.steps.filter((s) => s.enabled !== false).length} steps.</p>
-            <div class="wf-result-file-box">
-              <span class="wf-result-filename">${esc(state.resultFileName)}</span>
-              <span class="wf-result-meta">${formatBytes(state.resultFileSize)}</span>
-            </div>
-            <button type="button" class="wf-result-dl-btn" id="wf-download-result-btn">
-              ${ICONS.download}
-              <span>Download Processed File</span>
-            </button>
-            <div class="wf-result-actions">
-              <button type="button" class="wf-result-ghost-btn" id="wf-restart-btn">New File</button>
-              <button type="button" class="wf-result-ghost-btn" id="wf-open-editor-btn">Open in PDF Editor</button>
+            <div class="wf-result-card">
+              <div class="wf-result-ok-badge">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <h3 class="wf-result-title">Pipeline Execution Complete</h3>
+              <p class="wf-result-summary">Finished in ${state.durationMs}ms · All ${activeStepsCount} steps executed on-device</p>
+              <div class="wf-result-file-box">
+                <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+                  <span class="wf-result-filename">${esc(state.resultFileName)}</span>
+                  <span class="wf-result-meta">${formatBytes(state.resultFileSize)} · Processed</span>
+                </div>
+                <span class="wf-result-tag">✓ Ready</span>
+              </div>
+              <button type="button" class="wf-result-dl-btn" id="wf-download-result-btn">
+                ${ICONS.download}
+                <span>Download Processed File</span>
+              </button>
+              <div class="wf-result-actions">
+                <button type="button" class="wf-result-ghost-btn" id="wf-restart-btn">New Document</button>
+                <button type="button" class="wf-result-ghost-btn" id="wf-open-editor-btn">Open in PDF Editor</button>
+              </div>
             </div>
           </div>
         `;
@@ -9507,9 +9518,9 @@
         });
       }
 
-      // 3. OUTPUT NODE (Symmetrical, Semantic Status Colors)
+      // 3. OUTPUT NODE (Symmetrical, Semantic Status Colors & Green Accent)
       html += `
-        <div class="wf-output-node">
+        <div class="wf-output-node ${hasFile ? 'is-ready-border' : ''}">
           <div class="wf-output-left">
             <div class="wf-output-icon">${ICONS.package}</div>
             <div class="wf-output-texts">
@@ -9517,7 +9528,7 @@
               <span class="wf-output-sub">${activeCount} step${activeCount === 1 ? '' : 's'} applied · Formatted as ${outputExt.toUpperCase()}</span>
             </div>
           </div>
-          <span class="wf-output-badge ${hasFile ? 'is-ready' : 'is-waiting'}">${hasFile ? 'Ready to Process' : 'Awaiting Document'}</span>
+          <span class="wf-output-badge ${hasFile ? 'is-ready' : 'is-waiting'}">${hasFile ? '✓ Ready to Process' : 'Awaiting Document'}</span>
         </div>
       `;
 
@@ -9575,7 +9586,7 @@
             </button>
             <div class="wf-ops-footer-meta">
               <span>${hasFile ? esc(state.file.name) : 'No document selected'}</span>
-              <span>${hasFile ? formatBytes(state.file.size) : 'Ready'}</span>
+              <span>${hasFile ? `<span style="color:#16A34A;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A;display:inline-block;"></span> Ready</span>` : 'Ready'}</span>
             </div>
           </div>
         </aside>
