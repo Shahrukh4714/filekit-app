@@ -17315,8 +17315,8 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Studio -- Pro Workbench (v5 Studio)
-   520px Spine + 320px Right Panel with Bottom CTA + Toolbar Presets & Icons
+   Workflow Studio -- Pro Workbench (v6 Master Craft)
+   Fixed Scroll Collision + Continuous Spine + Symmetrical Nodes + Balanced Toolbar
 =============================================================== */
 
 /* Global container overrides for Workflow Studio */
@@ -17354,12 +17354,12 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-family: inherit !important;
 }
 
-/* ── Studio Toolbar: 48px pinned ── */
+/* ── Studio Toolbar: 48px pinned, clean 3-zone layout ── */
 .wf-toolbar {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 12px !important;
+  gap: 16px !important;
   height: 48px !important;
   min-height: 48px !important;
   flex-shrink: 0 !important;
@@ -17373,7 +17373,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-toolbar-left {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 10px !important;
   flex-shrink: 0 !important;
 }
 
@@ -17392,9 +17392,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-tb-upload-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   padding: 4px 10px !important;
-  font-size: 11.5px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
   color: #0F172A !important;
   background: #F1F5F9 !important;
@@ -17411,7 +17411,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-tb-upload-btn svg { color: #EC4899 !important; }
 
-/* Center: Presets OUT in the open (Segmented tab group) */
+/* Center: Presets OUT in the open (Clean Segmented Tab Group) */
 .wf-toolbar-center {
   display: flex !important;
   align-items: center !important;
@@ -17423,21 +17423,23 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-preset-pills {
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
   background: #F1F5F9 !important;
-  padding: 3px !important;
-  border-radius: 8px !important;
+  padding: 2.5px !important;
+  border-radius: 7px !important;
   border: 1px solid #E2E8F0 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
 }
 
 .wf-preset-pill {
-  padding: 4px 10px !important;
-  font-size: 11.5px !important;
+  padding: 3.5px 9px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
   color: #64748B !important;
   background: transparent !important;
   border: none !important;
-  border-radius: 6px !important;
+  border-radius: 5px !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   font-family: inherit !important;
@@ -17450,25 +17452,32 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   background: #FFFFFF !important;
   color: #0F172A !important;
   font-weight: 700 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Right: Utility action icons */
+/* Right: Utility action icons with distinct border separator */
 .wf-toolbar-right {
   display: flex !important;
   align-items: center !important;
+  gap: 8px !important;
   flex-shrink: 0 !important;
+}
+
+.wf-tb-divider {
+  width: 1px !important;
+  height: 20px !important;
+  background: #E2E8F0 !important;
 }
 
 .wf-tb-icon-group {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
 }
 
 .wf-tb-icon-btn {
-  width: 30px !important;
-  height: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
   border-radius: 6px !important;
   border: 1px solid transparent !important;
   background: transparent !important;
@@ -17487,14 +17496,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   color: #0F172A !important;
 }
 .wf-tb-icon-btn:disabled {
-  opacity: 0.35 !important;
+  opacity: 0.3 !important;
   cursor: not-allowed !important;
-}
-.wf-tb-vsep {
-  width: 1px !important;
-  height: 18px !important;
-  background: #E2E8F0 !important;
-  margin: 0 3px !important;
 }
 
 /* ── Body: fills remaining height ── */
@@ -17511,7 +17514,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   min-width: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 20px 24px 48px !important;
+  padding: 24px 24px 60px !important;
   box-sizing: border-box !important;
   background: #FAFAFA !important;
   display: flex !important;
@@ -17539,11 +17542,11 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   gap: 10px !important;
   transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
   cursor: pointer !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
 }
 .wf-input-node:hover {
   border-color: #CBD5E1 !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06) !important;
 }
 
 .wf-input-left {
@@ -17606,36 +17609,41 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   color: #FFFFFF !important;
 }
 
-/* ── Flow Connector with Arrow ── */
+/* ── Continuous Solid Connector Spine ── */
 .wf-step-connector {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 22px !important;
+  height: 28px !important;
   margin: -1px 0 !important;
   position: relative !important;
   z-index: 1 !important;
 }
 .wf-connector-line {
   width: 2px !important;
-  height: 6px !important;
-  background: #CBD5E1 !important;
+  height: 10px !important;
+  background: #E2E8F0 !important;
 }
 .wf-connector-badge {
-  width: 16px !important;
-  height: 16px !important;
+  width: 18px !important;
+  height: 18px !important;
   border-radius: 50% !important;
   background: #FFFFFF !important;
   border: 1.5px solid #CBD5E1 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #64748B !important;
+  color: #94A3B8 !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  transition: border-color 0.12s ease, color 0.12s ease !important;
+}
+.wf-step-connector:hover .wf-connector-badge {
+  border-color: #EC4899 !important;
+  color: #EC4899 !important;
 }
 
-/* ── Rich Step Card (520px snug spine) ── */
+/* ── Rich Step Card (Unified Badge, 520px) ── */
 .wf-step-card {
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
@@ -17667,7 +17675,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   opacity: 0.92 !important;
 }
 
-/* Row 1: Identity & Primary Actions */
+/* Row 1: Unified Identity & Primary Actions */
 .wf-sc-row-header {
   display: flex !important;
   align-items: center !important;
@@ -17696,19 +17704,14 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-sc-drag:hover { color: #64748B !important; }
 .wf-sc-drag:active { cursor: grabbing !important; }
 
-.wf-sc-badge {
-  width: 20px !important;
-  height: 20px !important;
-  border-radius: 5px !important;
-  background: #0F172A !important;
-  color: #FFFFFF !important;
-  font-size: 10px !important;
+/* Clean quiet step counter without double-badge clutter */
+.wf-sc-num {
+  font-size: 11px !important;
   font-weight: 700 !important;
+  color: #64748B !important;
   font-family: ui-monospace, 'SFMono-Regular', monospace !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
+  min-width: 14px !important;
+  text-align: right !important;
 }
 
 .wf-sc-icon {
@@ -17798,7 +17801,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 0 14px 10px 44px !important;
+  padding: 0 14px 10px 48px !important;
   gap: 8px !important;
   cursor: pointer !important;
 }
@@ -17917,9 +17920,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: color 0.11s ease !important; font-family: inherit !important;
 }
 .wf-cfg-eye:hover { color: #475569 !important; }
-.wf-cfg-auto-note { font-size: 11px !important; color: #94A3B8 !important; font-style: italic !important; }
 
-/* ── Output Node (Termination of pipeline, 520px) ── */
+/* ── Output Node (Symmetrical, 520px) ── */
 .wf-output-node {
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
@@ -17930,7 +17932,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 10px !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
 }
 .wf-output-left {
   display: flex !important;
@@ -17971,18 +17973,51 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
+
+/* Status Badge with Proper Semantic Colors */
 .wf-output-badge {
-  font-size: 10.5px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
-  color: #16A34A !important;
-  background: #DCFCE7 !important;
   padding: 3px 8px !important;
   border-radius: 5px !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
 }
+.wf-output-badge.is-waiting {
+  color: #64748B !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+}
+.wf-output-badge.is-ready {
+  color: #16A34A !important;
+  background: #DCFCE7 !important;
+  border: 1px solid #BBF7D0 !important;
+}
 
-/* ── Operations Sidebar: 320px with Pinned Bottom Action ── */
+/* ── Canvas Bottom Dropzone (Eliminates empty void) ── */
+.wf-canvas-add-dropzone {
+  margin-top: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 10px 16px !important;
+  border: 1.5px dashed #CBD5E1 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #64748B !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+}
+.wf-canvas-add-dropzone:hover {
+  border-color: #EC4899 !important;
+  color: #EC4899 !important;
+  background: #FDF2F8 !important;
+}
+
+/* ── Operations Sidebar: 320px with FIXED PADDING & NON-COLLIDING FOOTER ── */
 .wf-ops-sidebar {
   width: 320px !important;
   flex-shrink: 0 !important;
@@ -18016,14 +18051,17 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   margin: 0 !important;
 }
 
+/* Inner scroll area with bottom padding so items never collide with footer */
 .wf-ops-inner {
-  flex: 1 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 10px 12px 14px !important;
+  padding: 10px 12px 32px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 12px !important;
+  box-sizing: border-box !important;
 }
 
 .wf-canvas::-webkit-scrollbar,
@@ -18046,7 +18084,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   letter-spacing: 0.08em !important; color: #94A3B8 !important; padding: 0 4px !important; margin-bottom: 2px !important;
 }
 
-/* Rich operation item: Icon + Name + Description + Add button */
+/* Rich operation item: Icon + Name + Description + High-contrast Add button */
 .wf-ops-item {
   display: flex !important;
   align-items: center !important;
@@ -18096,14 +18134,16 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   text-overflow: ellipsis !important;
 }
 
+/* High-contrast tactile Add button */
 .wf-ops-add-btn {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 50% !important;
-  border: 1.5px solid #E2E8F0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  border: 1px solid #CBD5E1 !important;
   background: #FFFFFF !important;
-  color: #94A3B8 !important;
-  font-size: 13px !important;
+  color: #475569 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
   line-height: 1 !important;
   cursor: pointer !important;
   display: flex !important;
@@ -18114,19 +18154,28 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 0 !important;
   font-family: inherit !important;
 }
-.wf-ops-item:hover .wf-ops-add-btn { border-color: #EC4899 !important; color: #EC4899 !important; background: #FDF2F8 !important; }
-.wf-ops-add-btn.is-added { border-color: #16A34A !important; color: #16A34A !important; background: #DCFCE7 !important; }
-.wf-ops-add-btn:active { transform: scale(0.88) !important; }
+.wf-ops-item:hover .wf-ops-add-btn {
+  border-color: #EC4899 !important;
+  color: #FFFFFF !important;
+  background: #EC4899 !important;
+}
+.wf-ops-add-btn.is-added {
+  border-color: #16A34A !important;
+  color: #FFFFFF !important;
+  background: #16A34A !important;
+}
+.wf-ops-add-btn:active { transform: scale(0.9) !important; }
 
-/* ── Operations Pinned Footer: Run Pipeline CTA at the downside ── */
+/* ── Pinned Footer: Run Pipeline CTA ── */
 .wf-ops-footer {
-  padding: 14px 16px !important;
+  padding: 12px 16px !important;
   background: #FFFFFF !important;
   border-top: 1px solid #E2E8F0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 6px !important;
   flex-shrink: 0 !important;
+  z-index: 2 !important;
 }
 
 .wf-ops-run-btn {

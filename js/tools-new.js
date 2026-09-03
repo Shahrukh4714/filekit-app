@@ -9261,6 +9261,7 @@
     function renderToolbar() {
       const canUndo = state.historyIndex > 0;
       const canRedo = state.historyIndex < state.historyStack.length - 1;
+      const hasFile = !!state.file;
 
       return `
         <header class="wf-toolbar">
@@ -9268,7 +9269,7 @@
             <span class="wf-toolbar-title">${ICONS.flow} Workflow Studio</span>
             <button type="button" class="wf-tb-upload-btn" id="wf-tb-upload-btn">
               ${ICONS.upload}
-              <span>Upload More</span>
+              <span>${hasFile ? 'Replace Document' : 'Upload Document'}</span>
             </button>
           </div>
 
@@ -9282,14 +9283,15 @@
           </div>
 
           <div class="wf-toolbar-right">
+            <span class="wf-tb-divider"></span>
             <div class="wf-tb-icon-group">
               <button type="button" class="wf-tb-icon-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} aria-label="Undo">${ICONS.undo}</button>
               <button type="button" class="wf-tb-icon-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} aria-label="Forward / Redo">${ICONS.redo}</button>
-              <span class="wf-tb-vsep"></span>
+              <span class="wf-tb-divider" style="height:14px;margin:0 2px;"></span>
               <button type="button" class="wf-tb-icon-btn" id="wf-btn-history" aria-label="History">${ICONS.history}</button>
               <button type="button" class="wf-tb-icon-btn" id="wf-btn-save" aria-label="Save Pipeline">${ICONS.save}</button>
               <button type="button" class="wf-tb-icon-btn" id="wf-btn-download" aria-label="Download">${ICONS.download}</button>
-              <span class="wf-tb-vsep"></span>
+              <span class="wf-tb-divider" style="height:14px;margin:0 2px;"></span>
               <button type="button" class="wf-tb-icon-btn" id="wf-btn-settings" aria-label="Settings">${ICONS.settings}</button>
             </div>
           </div>
@@ -9373,12 +9375,7 @@
           </div>
         `;
       }
-      // Grayscale & Flatten
-      return `
-        <div class="wf-cfg-row">
-          <span class="wf-cfg-auto-note">⚡ Automatic execution — no manual parameters needed</span>
-        </div>
-      `;
+      return '';
     }
 
     function renderCanvas() {
@@ -9467,13 +9464,14 @@
         state.steps.forEach((step, idx) => {
           const isDisabled = step.enabled === false;
           const isExpanded = step.isExpanded === true;
+          const hasConfig = (step.type !== 'flatten' && step.type !== 'grayscale');
 
           html += `
             <div class="wf-step-card ${isDisabled ? 'is-disabled' : ''} ${isExpanded ? 'is-expanded' : ''}" data-step-idx="${idx}">
               <div class="wf-sc-row-header" data-step-idx="${idx}">
                 <div class="wf-sc-id-group">
                   <div class="wf-sc-drag" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
-                  <span class="wf-sc-badge">${String(idx + 1).padStart(2, '0')}</span>
+                  <span class="wf-sc-num">${idx + 1}</span>
                   <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
                   <span class="wf-sc-name">${esc(step.name)}</span>
                 </div>
@@ -9484,13 +9482,15 @@
               </div>
               <div class="wf-sc-row-summary" data-step-idx="${idx}">
                 ${renderParamChips(step)}
-                <span class="wf-sc-edit-btn" data-step-idx="${idx}">${isExpanded ? 'Done' : 'Configure'} ${ICONS.chevron}</span>
+                ${hasConfig ? `<span class="wf-sc-edit-btn" data-step-idx="${idx}">${isExpanded ? 'Done' : 'Configure'} ${ICONS.chevron}</span>` : ''}
               </div>
-              <div class="wf-sc-config">
-                <div class="wf-sc-config-inner">
-                  ${renderStepConfig(step, idx)}
+              ${hasConfig ? `
+                <div class="wf-sc-config">
+                  <div class="wf-sc-config-inner">
+                    ${renderStepConfig(step, idx)}
+                  </div>
                 </div>
-              </div>
+              ` : ''}
             </div>
           `;
 
@@ -9507,7 +9507,7 @@
         });
       }
 
-      // 3. OUTPUT NODE
+      // 3. OUTPUT NODE (Symmetrical, Semantic Status Colors)
       html += `
         <div class="wf-output-node">
           <div class="wf-output-left">
@@ -9517,8 +9517,15 @@
               <span class="wf-output-sub">${activeCount} step${activeCount === 1 ? '' : 's'} applied · Formatted as ${outputExt.toUpperCase()}</span>
             </div>
           </div>
-          <span class="wf-output-badge">${hasFile ? 'Ready to Run' : 'Awaiting File'}</span>
+          <span class="wf-output-badge ${hasFile ? 'is-ready' : 'is-waiting'}">${hasFile ? 'Ready to Process' : 'Awaiting Document'}</span>
         </div>
+      `;
+
+      // 4. Grounding Dropzone (solves empty canvas void)
+      html += `
+        <button type="button" class="wf-canvas-add-dropzone" id="wf-canvas-add-dropzone">
+          <span>＋ Add Operation from Library</span>
+        </button>
       `;
 
       return html;
@@ -9558,7 +9565,7 @@
             <span class="wf-ops-sub">Click any tool to append to pipeline</span>
           </div>
 
-          <div class="wf-ops-inner">
+          <div class="wf-ops-inner" id="wf-ops-inner-scroll">
             ${catHtml}
           </div>
 
@@ -9651,7 +9658,7 @@
       const btnHistory = container.querySelector('#wf-btn-history');
       if (btnHistory) {
         btnHistory.onclick = () => {
-          showToast(`History: ${state.historyStack.length} snapshots · Current state at #${state.historyIndex + 1}`);
+          showToast(`History: ${state.historyStack.length} snapshots recorded`);
         };
       }
 
@@ -9679,7 +9686,7 @@
             a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
           } else {
-            showToast('Run pipeline first to generate download');
+            showToast('Run pipeline first to generate output');
           }
         };
       }
@@ -9687,7 +9694,7 @@
       const btnSettings = container.querySelector('#wf-btn-settings');
       if (btnSettings) {
         btnSettings.onclick = () => {
-          showToast('Workflow Studio: 100% Client-Side Engine · Zero Uploads');
+          showToast('Engine: 100% On-Device WebAssembly · Zero Cloud Uploads');
         };
       }
 
@@ -9722,10 +9729,24 @@
         };
       });
 
-      // 6. Step Card Header & Edit Trigger (Expand/Collapse drawer)
+      // 6. Grounding Dropzone at bottom of canvas
+      const addDropzone = container.querySelector('#wf-canvas-add-dropzone');
+      if (addDropzone) {
+        addDropzone.onclick = () => {
+          const opsScroll = container.querySelector('#wf-ops-inner-scroll');
+          if (opsScroll) {
+            opsScroll.scrollTo({ top: 0, behavior: 'smooth' });
+            opsScroll.style.outline = '2px solid #EC4899';
+            setTimeout(() => { opsScroll.style.outline = 'none'; }, 800);
+          }
+        };
+      }
+
+      // 7. Step Card Header & Edit Trigger (Expand/Collapse drawer)
       const toggleExpand = (idx) => {
-        if (state.steps[idx]) {
-          state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
+        const step = state.steps[idx];
+        if (step && step.type !== 'flatten' && step.type !== 'grayscale') {
+          step.isExpanded = !step.isExpanded;
           render();
         }
       };
@@ -9745,7 +9766,7 @@
         };
       });
 
-      // 7. Step Toggle Switch (Enable / Disable)
+      // 8. Step Toggle Switch (Enable / Disable)
       container.querySelectorAll('.wf-sc-toggle').forEach((toggle) => {
         toggle.onclick = (e) => {
           e.stopPropagation();
@@ -9764,7 +9785,7 @@
         };
       });
 
-      // 8. Step Remove
+      // 9. Step Remove
       container.querySelectorAll('.wf-sc-remove').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
@@ -9776,7 +9797,7 @@
         };
       });
 
-      // 9. Drag & Drop Reorder
+      // 10. Drag & Drop Reorder
       let draggedIdx = null;
       container.querySelectorAll('.wf-sc-drag').forEach((handle) => {
         handle.ondragstart = (e) => {
@@ -9809,7 +9830,7 @@
         };
       });
 
-      // 10. Config Inputs
+      // 11. Config Inputs
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
@@ -9909,7 +9930,7 @@
         };
       });
 
-      // 11. Result Actions
+      // 12. Result Actions
       const dlBtn = container.querySelector('#wf-download-result-btn');
       if (dlBtn && state.resultBlob) {
         dlBtn.onclick = () => {
