@@ -9158,11 +9158,15 @@
               </div>
             </div>
           ` : `
-            <div class="wf-flat-row is-empty drop-hero-box" id="wf-input-dropzone" tabindex="0" role="button" aria-label="Drop input file here">
-              <div class="wf-empty-illus">
-                ${ICONS.upload}
-                <span class="wf-empty-title">Choose or drop input file</span>
-                <span class="wf-empty-sub">PDF or Image supported · 100% on-device</span>
+            <div class="wf-flat-row wf-input-drop-row" id="wf-input-dropzone" tabindex="0" role="button" aria-label="Choose or drop input file">
+              <div class="wf-row-idx">IN</div>
+              <div class="wf-row-icon is-pink">${ICONS.upload}</div>
+              <div class="wf-row-body">
+                <span class="wf-row-title">Choose or drop input file</span>
+                <span class="wf-row-sub">PDF or Image supported · 100% on-device</span>
+              </div>
+              <div class="wf-row-actions">
+                <button type="button" class="wf-row-action-btn is-primary" id="wf-browse-trigger-btn">Browse</button>
               </div>
             </div>
           `}
