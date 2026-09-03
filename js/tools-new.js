@@ -9064,40 +9064,40 @@
     };
 
     const STEP_TEMPLATES = {
-      watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Add text stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
-      protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password', catType: 'security', defaultConfig: () => ({ password: '' }) },
-      compress: { type: 'compress', name: 'Compress PDF', desc: 'Reduce size', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
-      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add page counters', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
-      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'Convert to black & white', catType: 'visual', defaultConfig: () => ({}) },
-      rotate: { type: 'rotate', name: 'Rotate Pages', desc: 'Rotate in 90° increments', catType: 'structure', defaultConfig: () => ({ degrees: 90 }) },
-      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', desc: 'Lock forms & annotations', catType: 'structure', defaultConfig: () => ({}) },
-      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export specific pages', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
-      zip: { type: 'zip', name: 'Create ZIP Archive', desc: 'Bundle into ZIP', catType: 'compress', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
+      watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Add diagonal text stamp', tag: 'Stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
+      protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password', tag: 'Security', catType: 'security', defaultConfig: () => ({ password: '' }) },
+      compress: { type: 'compress', name: 'Compress PDF', desc: 'Reduce document size', tag: 'Optimize', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
+      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add page counters', tag: 'Stamp', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
+      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'Convert to black & white', tag: 'Visual', catType: 'visual', defaultConfig: () => ({}) },
+      rotate: { type: 'rotate', name: 'Rotate Pages', desc: 'Rotate in 90° increments', tag: 'Transform', catType: 'structure', defaultConfig: () => ({ degrees: 90 }) },
+      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', desc: 'Lock forms & annotations', tag: 'Structure', catType: 'structure', defaultConfig: () => ({}) },
+      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export specific pages', tag: 'Transform', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
+      zip: { type: 'zip', name: 'Create ZIP Archive', desc: 'Bundle into compressed ZIP', tag: 'Package', catType: 'compress', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
     };
 
     const OPS_CATEGORIES = [
       {
-        title: 'PDF Operations',
+        title: 'Document Operations',
         items: [
-          { type: 'watermark', label: 'Watermark Stamp' },
-          { type: 'protect', label: 'Protect & Encrypt' },
-          { type: 'compress', label: 'Compress PDF' },
-          { type: 'page_numbers', label: 'Page Numbers' }
+          { type: 'watermark', label: 'Watermark Stamp', tag: 'Stamp' },
+          { type: 'protect', label: 'Protect & Encrypt', tag: 'Security' },
+          { type: 'compress', label: 'Compress PDF', tag: 'Optimization' },
+          { type: 'page_numbers', label: 'Page Numbers', tag: 'Pagination' }
         ]
       },
       {
-        title: 'Transforms',
+        title: 'Page Transforms',
         items: [
-          { type: 'grayscale', label: 'Monochrome Grayscale' },
-          { type: 'rotate', label: 'Rotate Pages' },
-          { type: 'flatten', label: 'Flatten Forms & Fields' },
-          { type: 'extract', label: 'Extract Page Range' }
+          { type: 'grayscale', label: 'Monochrome Grayscale', tag: 'Color' },
+          { type: 'rotate', label: 'Rotate Pages', tag: 'Orientation' },
+          { type: 'flatten', label: 'Flatten Forms & Fields', tag: 'Structure' },
+          { type: 'extract', label: 'Extract Page Range', tag: 'Pages' }
         ]
       },
       {
-        title: 'Output',
+        title: 'Packaging & Export',
         items: [
-          { type: 'zip', label: 'Create ZIP Archive' }
+          { type: 'zip', label: 'Create ZIP Archive', tag: 'Bundle' }
         ]
       }
     ];
@@ -9109,6 +9109,7 @@
       stepPassVisibility: {},
       historyStack: [JSON.stringify(RECIPES.confidential)],
       historyIndex: 0,
+      searchQuery: '',
       isProcessing: false,
       progressPercent: 0,
       currentStepIndex: -1,
@@ -9224,19 +9225,32 @@
       return 'Automatic';
     }
 
+    // ── 1. PRO 3-ZONE TOOLBAR ──
     function renderToolbar() {
       const canUndo = state.historyIndex > 0;
       const canRedo = state.historyIndex < state.historyStack.length - 1;
       const hasFile = !!state.file;
+      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
 
       return `
         <header class="wf-toolbar">
           <div class="wf-toolbar-left">
-            <div class="wf-preset-pills" role="tablist">
-              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
-              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign &amp; Compress</button>
-              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean Monochrome</button>
-              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish Package</button>
+            <div class="wf-tb-identity">
+              <div class="wf-tb-icon-badge">${ICONS.flow}</div>
+              <div class="wf-tb-title-group">
+                <span>Pipeline</span>
+                <span class="wf-tb-sep">/</span>
+                <span class="wf-tb-count-badge">${activeCount} Active</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="wf-toolbar-center">
+            <div class="wf-preset-track" role="tablist">
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign &amp; Compress</button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean Monochrome</button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish Package</button>
             </div>
           </div>
 
@@ -9246,11 +9260,11 @@
               <span>${hasFile ? 'Replace Document' : 'Upload Document'}</span>
             </button>
             <span class="wf-tb-divider"></span>
-            <div class="wf-tb-icon-group">
-              <button type="button" class="wf-tb-icon-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} title="Undo">${ICONS.undo}</button>
-              <button type="button" class="wf-tb-icon-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} title="Redo">${ICONS.redo}</button>
-              <button type="button" class="wf-tb-icon-btn" id="wf-btn-save" title="Save Preset locally">${ICONS.save}</button>
-              <button type="button" class="wf-tb-icon-btn" id="wf-btn-download" title="Download output">${ICONS.download}</button>
+            <div class="wf-tb-icon-cluster">
+              <button type="button" class="wf-tb-action-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} title="Undo">${ICONS.undo}</button>
+              <button type="button" class="wf-tb-action-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} title="Redo">${ICONS.redo}</button>
+              <button type="button" class="wf-tb-action-btn" id="wf-btn-save" title="Save Preset locally">${ICONS.save}</button>
+              <button type="button" class="wf-tb-action-btn" id="wf-btn-download" title="Download output">${ICONS.download}</button>
             </div>
           </div>
         </header>
@@ -9351,7 +9365,7 @@
         `;
       }
 
-      // ── Emerald Green Review Screen (Benchmarked from Compress Tool) ──
+      // ── Emerald Green Review Screen ──
       if (state.resultBlob) {
         const activeStepsCount = state.steps.filter((s) => s.enabled !== false).length;
         return `
@@ -9392,7 +9406,7 @@
 
       let html = '';
 
-      // 1. INPUT NODE (Serene, Single browse button + sample text link)
+      // 1. INPUT NODE
       html += `
         <div class="wf-input-node ${hasFile ? 'has-file' : ''}" id="wf-input-trigger">
           <div class="wf-input-left">
@@ -9417,7 +9431,7 @@
         </div>
       `;
 
-      // 2. STEP NODES (Unified single-line card)
+      // 2. STEP NODES
       if (!state.steps.length) {
         html += `
           <div class="wf-empty-state" style="padding: 32px; text-align: center; color: #94A3B8;">
@@ -9466,7 +9480,7 @@
         });
       }
 
-      // 3. OUTPUT NODE (Symmetrical, Clean, No truncation)
+      // 3. OUTPUT NODE
       html += `
         <div class="wf-output-node ${hasFile ? 'is-ready-border' : ''}">
           <div class="wf-output-left">
@@ -9483,37 +9497,75 @@
       return html;
     }
 
+    // ── 2. PRO OPERATIONS PALETTE (With Live Filter & Tactile '+ Add' Pills) ──
     function renderOpsSidebar() {
       const activeCount = state.steps.filter((s) => s.enabled !== false).length;
       const hasFile = !!state.file;
+      const query = (state.searchQuery || '').trim().toLowerCase();
 
       let catHtml = '';
+      let totalVisible = 0;
+
       OPS_CATEGORIES.forEach((cat) => {
-        let itemsHtml = '';
-        cat.items.forEach((item) => {
-          itemsHtml += `
-            <div class="wf-ops-item" data-op-type="${item.type}">
-              <div class="wf-ops-item-left">
-                <div class="wf-ops-item-icon">${ICONS[item.type] || ICONS.flow}</div>
-                <span class="wf-ops-item-name">${esc(item.label)}</span>
+        const filteredItems = cat.items.filter((item) => {
+          if (!query) return true;
+          return item.label.toLowerCase().includes(query) || (item.tag && item.tag.toLowerCase().includes(query));
+        });
+
+        if (filteredItems.length) {
+          totalVisible += filteredItems.length;
+          let itemsHtml = '';
+          filteredItems.forEach((item) => {
+            itemsHtml += `
+              <div class="wf-ops-item" data-op-type="${item.type}">
+                <div class="wf-ops-item-left">
+                  <div class="wf-ops-item-icon">${ICONS[item.type] || ICONS.flow}</div>
+                  <div class="wf-ops-item-texts">
+                    <span class="wf-ops-item-name">${esc(item.label)}</span>
+                    <span class="wf-ops-item-tag">${esc(item.tag || 'Tool')}</span>
+                  </div>
+                </div>
+                <button type="button" class="wf-ops-add-pill" data-op-type="${item.type}">
+                  <span>+</span>
+                  <span>Add</span>
+                </button>
               </div>
-              <button type="button" class="wf-ops-add-btn" data-op-type="${item.type}">+</button>
+            `;
+          });
+          catHtml += `
+            <div class="wf-ops-section">
+              <div class="wf-ops-sec-head">
+                <span class="wf-ops-sec-label">${esc(cat.title)}</span>
+                <span class="wf-ops-sec-count">${filteredItems.length}</span>
+              </div>
+              ${itemsHtml}
             </div>
           `;
-        });
-        catHtml += `
-          <div class="wf-ops-section">
-            <span class="wf-ops-section-label">${esc(cat.title)}</span>
-            ${itemsHtml}
+        }
+      });
+
+      if (!totalVisible && query) {
+        catHtml = `
+          <div style="padding: 24px 12px; text-align: center; color: #94A3B8;">
+            <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #64748B;">No operations found</p>
+            <span style="font-size: 11px;">Try searching for "compress", "watermark", or "stamp"</span>
           </div>
         `;
-      });
+      }
 
       return `
         <aside class="wf-ops-sidebar">
-          <div class="wf-ops-title-bar">
-            <h4 class="wf-ops-title">Operations Library</h4>
-            <span class="wf-ops-sub">Click any tool to append</span>
+          <div class="wf-ops-header">
+            <div class="wf-ops-headline">
+              <h4 class="wf-ops-title">Operations Library</h4>
+              <span class="wf-ops-total-count">9 Tools</span>
+            </div>
+            <div class="wf-ops-search-box">
+              <span class="wf-ops-search-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </span>
+              <input type="text" class="wf-ops-search-inp" id="wf-ops-search-inp" value="${esc(state.searchQuery)}" placeholder="Search operations... (e.g. compress)" />
+            </div>
           </div>
 
           <div class="wf-ops-inner" id="wf-ops-inner-scroll">
@@ -9521,12 +9573,24 @@
           </div>
 
           <div class="wf-ops-footer">
+            <div class="wf-footer-status-row">
+              <div class="wf-footer-ops-summary">
+                <span>Pipeline:</span>
+                <span style="color:#0F172A;font-weight:700;">${activeCount} Active</span>
+              </div>
+              <div class="wf-footer-readiness ${hasFile ? 'is-ready' : 'is-waiting'}">
+                <span class="wf-readiness-dot"></span>
+                <span>${hasFile ? 'Ready to Run' : 'Awaiting Document'}</span>
+              </div>
+            </div>
+
             <button type="button" class="wf-ops-run-btn" id="wf-run-pipeline-btn">
-              <span>Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+              <span>▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
             </button>
-            <div class="wf-ops-footer-meta">
+
+            <div class="wf-ops-footer-docinfo">
               <span>${hasFile ? esc(state.file.name) : 'No document selected'}</span>
-              <span>${hasFile ? `<span style="color:#16A34A;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#16A34A;display:inline-block;"></span> Ready</span>` : 'Ready'}</span>
+              <span style="font-family:ui-monospace,monospace;">${hasFile ? formatBytes(state.file.size) : 'Ready'}</span>
             </div>
           </div>
         </aside>
@@ -9599,10 +9663,10 @@
         };
       }
 
-      // 2. Presets Segmented Pills
-      container.querySelectorAll('.wf-preset-pill').forEach((pill) => {
-        pill.onclick = () => {
-          const rId = pill.dataset.recipe;
+      // 2. Presets Segmented Tabs
+      container.querySelectorAll('.wf-preset-tab').forEach((tab) => {
+        tab.onclick = () => {
+          const rId = tab.dataset.recipe;
           if (RECIPES[rId]) {
             state.activeRecipe = rId;
             const newSteps = JSON.parse(JSON.stringify(RECIPES[rId]));
@@ -9610,7 +9674,7 @@
             state.steps = newSteps;
             recordHistory();
             render();
-            showToast(`Applied ${pill.textContent} preset`);
+            showToast(`Applied ${tab.textContent} preset`);
           }
         };
       });
@@ -9627,7 +9691,7 @@
         btnSave.onclick = () => {
           try {
             localStorage.setItem('filekit_wf_saved_recipe', JSON.stringify(state.steps));
-            showToast('✓ Workflow pipeline saved locally');
+            showToast('✓ Custom pipeline saved locally');
           } catch (e) {
             showToast('Unable to save pipeline');
           }
@@ -9651,38 +9715,34 @@
         };
       }
 
-      // 4. Run Pipeline CTA
-      const runBtn = container.querySelector('#wf-run-pipeline-btn');
-      if (runBtn) {
-        runBtn.onclick = () => {
-          if (!state.file) {
-            if (fileInp) fileInp.click();
-            return;
+      // 4. Operations Search Real-Time Filter
+      const searchInp = container.querySelector('#wf-ops-search-inp');
+      if (searchInp) {
+        searchInp.oninput = (e) => {
+          state.searchQuery = e.target.value;
+          // Re-render sidebar without reloading full canvas
+          const oldScroll = container.querySelector('#wf-ops-inner-scroll')?.scrollTop || 0;
+          const sidebarEl = container.querySelector('.wf-ops-sidebar');
+          if (sidebarEl) {
+            const temp = document.createElement('div');
+            temp.innerHTML = renderOpsSidebar();
+            const newSidebar = temp.firstElementChild;
+            sidebarEl.replaceWith(newSidebar);
+            wireSidebarEvents();
+            const newInp = container.querySelector('#wf-ops-search-inp');
+            if (newInp) {
+              newInp.focus();
+              newInp.setSelectionRange(newInp.value.length, newInp.value.length);
+            }
+            const newScroll = container.querySelector('#wf-ops-inner-scroll');
+            if (newScroll) newScroll.scrollTop = oldScroll;
           }
-          runPipeline();
         };
       }
 
-      // 5. Operations Sidebar Add Buttons
-      container.querySelectorAll('.wf-ops-item').forEach((row) => {
-        row.onclick = () => {
-          const opType = row.dataset.opType;
-          if (opType) {
-            const btn = row.querySelector('.wf-ops-add-btn');
-            if (btn) {
-              btn.innerHTML = ICONS.check;
-              btn.classList.add('is-added');
-              setTimeout(() => {
-                btn.innerHTML = '+';
-                btn.classList.remove('is-added');
-              }, 500);
-            }
-            addStep(opType);
-          }
-        };
-      });
+      wireSidebarEvents();
 
-      // 6. Step Card Expand/Collapse
+      // 5. Step Card Expand/Collapse
       const toggleExpand = (idx) => {
         const step = state.steps[idx];
         if (step && step.type !== 'flatten' && step.type !== 'grayscale') {
@@ -9699,7 +9759,7 @@
         };
       });
 
-      // 7. Step Toggle Switch (Enable / Disable)
+      // 6. Step Toggle Switch (Enable / Disable)
       container.querySelectorAll('.wf-sc-toggle').forEach((toggle) => {
         toggle.onclick = (e) => {
           e.stopPropagation();
@@ -9712,13 +9772,17 @@
             if (card) card.classList.toggle('is-disabled', !isNowEnabled);
             const activeCount = state.steps.filter((s) => s.enabled !== false).length;
             const runCta = container.querySelector('#wf-run-pipeline-btn');
-            if (runCta) runCta.querySelector('span').textContent = `Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
+            if (runCta) runCta.querySelector('span').textContent = `▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
+            const countBadge = container.querySelector('.wf-tb-count-badge');
+            if (countBadge) countBadge.textContent = `${activeCount} Active`;
+            const opsSummary = container.querySelector('.wf-footer-ops-summary');
+            if (opsSummary) opsSummary.innerHTML = `<span>Pipeline:</span><span style="color:#0F172A;font-weight:700;">${activeCount} Active</span>`;
             recordHistory();
           }
         };
       });
 
-      // 8. Step Remove
+      // 7. Step Remove
       container.querySelectorAll('.wf-sc-trash-btn').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
@@ -9730,7 +9794,7 @@
         };
       });
 
-      // 9. Drag & Drop Reorder
+      // 8. Drag & Drop Reorder
       let draggedIdx = null;
       container.querySelectorAll('.wf-sc-drag').forEach((handle) => {
         handle.ondragstart = (e) => {
@@ -9763,7 +9827,7 @@
         };
       });
 
-      // 10. Config Inputs
+      // 9. Config Inputs
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
@@ -9863,7 +9927,7 @@
         };
       });
 
-      // 11. Result Actions
+      // 10. Result Actions
       const dlBtn = container.querySelector('#wf-download-result-btn');
       if (dlBtn && state.resultBlob) {
         dlBtn.onclick = () => {
@@ -9900,6 +9964,40 @@
           } catch (e) {
             console.error('Handoff error', e);
           }
+        };
+      }
+    }
+
+    function wireSidebarEvents() {
+      // Operations Add Buttons
+      container.querySelectorAll('.wf-ops-item').forEach((row) => {
+        row.onclick = () => {
+          const opType = row.dataset.opType;
+          if (opType) {
+            const btn = row.querySelector('.wf-ops-add-pill');
+            if (btn) {
+              btn.innerHTML = `${ICONS.check} <span>Added</span>`;
+              btn.classList.add('is-added');
+              setTimeout(() => {
+                btn.innerHTML = `<span>+</span> <span>Add</span>`;
+                btn.classList.remove('is-added');
+              }, 500);
+            }
+            addStep(opType);
+          }
+        };
+      });
+
+      // Run Pipeline CTA
+      const runBtn = container.querySelector('#wf-run-pipeline-btn');
+      if (runBtn) {
+        runBtn.onclick = () => {
+          if (!state.file) {
+            const fileInp = container.querySelector('#wf-file-inp');
+            if (fileInp) fileInp.click();
+            return;
+          }
+          runPipeline();
         };
       }
     }
