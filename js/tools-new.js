@@ -9067,11 +9067,11 @@
       watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Add diagonal text stamp', tag: 'Stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
       protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password', tag: 'Security', catType: 'security', defaultConfig: () => ({ password: '' }) },
       compress: { type: 'compress', name: 'Compress PDF', desc: 'Reduce document size', tag: 'Optimize', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
-      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add page counters', tag: 'Stamp', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
-      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'Convert to black & white', tag: 'Visual', catType: 'visual', defaultConfig: () => ({}) },
+      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add page counters', tag: 'Pagination', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
+      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'Convert to black & white', tag: 'Color', catType: 'visual', defaultConfig: () => ({}) },
       rotate: { type: 'rotate', name: 'Rotate Pages', desc: 'Rotate in 90° increments', tag: 'Transform', catType: 'structure', defaultConfig: () => ({ degrees: 90 }) },
       flatten: { type: 'flatten', name: 'Flatten Forms & Fields', desc: 'Lock forms & annotations', tag: 'Structure', catType: 'structure', defaultConfig: () => ({}) },
-      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export specific pages', tag: 'Transform', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
+      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export specific pages', tag: 'Pages', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
       zip: { type: 'zip', name: 'Create ZIP Archive', desc: 'Bundle into compressed ZIP', tag: 'Package', catType: 'compress', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
     };
 
@@ -9081,7 +9081,7 @@
         items: [
           { type: 'watermark', label: 'Watermark Stamp', tag: 'Stamp' },
           { type: 'protect', label: 'Protect & Encrypt', tag: 'Security' },
-          { type: 'compress', label: 'Compress PDF', tag: 'Optimization' },
+          { type: 'compress', label: 'Compress PDF', tag: 'Optimize' },
           { type: 'page_numbers', label: 'Page Numbers', tag: 'Pagination' }
         ]
       },
@@ -9089,7 +9089,7 @@
         title: 'Page Transforms',
         items: [
           { type: 'grayscale', label: 'Monochrome Grayscale', tag: 'Color' },
-          { type: 'rotate', label: 'Rotate Pages', tag: 'Orientation' },
+          { type: 'rotate', label: 'Rotate Pages', tag: 'Transform' },
           { type: 'flatten', label: 'Flatten Forms & Fields', tag: 'Structure' },
           { type: 'extract', label: 'Extract Page Range', tag: 'Pages' }
         ]
@@ -9097,7 +9097,7 @@
       {
         title: 'Packaging & Export',
         items: [
-          { type: 'zip', label: 'Create ZIP Archive', tag: 'Bundle' }
+          { type: 'zip', label: 'Create ZIP Archive', tag: 'Package' }
         ]
       }
     ];
@@ -9225,46 +9225,54 @@
       return 'Automatic';
     }
 
-    // ── 1. PRO 3-ZONE TOOLBAR ──
+    // ── 1. STUDIO TOOLBAR (Craft-Grade 3-Zone Architecture) ──
     function renderToolbar() {
       const canUndo = state.historyIndex > 0;
       const canRedo = state.historyIndex < state.historyStack.length - 1;
       const hasFile = !!state.file;
-      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
 
       return `
         <header class="wf-toolbar">
-          <div class="wf-toolbar-left">
-            <div class="wf-tb-identity">
-              <div class="wf-tb-icon-badge">${ICONS.flow}</div>
-              <div class="wf-tb-title-group">
-                <span>Pipeline</span>
-                <span class="wf-tb-sep">/</span>
-                <span class="wf-tb-count-badge">${activeCount} Active</span>
-              </div>
+          <div class="wf-tb-left">
+            <div class="wf-tb-studio-pill">
+              <span class="wf-tb-pill-icon">${ICONS.flow}</span>
+              <span class="wf-tb-pill-name">Pipeline Studio</span>
+              <span class="wf-tb-pill-sep">/</span>
+              <span class="wf-tb-pill-state ${hasFile ? 'is-ready' : ''}">
+                <span class="wf-pulse-dot"></span>
+                <span>${hasFile ? 'Ready' : 'Draft'}</span>
+              </span>
             </div>
           </div>
 
-          <div class="wf-toolbar-center">
+          <div class="wf-tb-center">
             <div class="wf-preset-track" role="tablist">
-              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
-              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign &amp; Compress</button>
-              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean Monochrome</button>
-              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish Package</button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">
+                <span>Confidential</span>
+              </button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">
+                <span>Sign &amp; Compress</span>
+              </button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">
+                <span>Monochrome</span>
+              </button>
+              <button type="button" class="wf-preset-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">
+                <span>Publish ZIP</span>
+              </button>
             </div>
           </div>
 
-          <div class="wf-toolbar-right">
+          <div class="wf-tb-right">
             <button type="button" class="wf-tb-upload-btn" id="wf-tb-upload-btn">
               ${ICONS.upload}
-              <span>${hasFile ? 'Replace Document' : 'Upload Document'}</span>
+              <span>${hasFile ? 'Replace PDF' : 'Upload Document'}</span>
             </button>
-            <span class="wf-tb-divider"></span>
-            <div class="wf-tb-icon-cluster">
-              <button type="button" class="wf-tb-action-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} title="Undo">${ICONS.undo}</button>
-              <button type="button" class="wf-tb-action-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} title="Redo">${ICONS.redo}</button>
-              <button type="button" class="wf-tb-action-btn" id="wf-btn-save" title="Save Preset locally">${ICONS.save}</button>
-              <button type="button" class="wf-tb-action-btn" id="wf-btn-download" title="Download output">${ICONS.download}</button>
+            <div class="wf-tb-divider"></div>
+            <div class="wf-tb-icon-group">
+              <button type="button" class="wf-tb-tool-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} title="Undo (Ctrl+Z)">${ICONS.undo}</button>
+              <button type="button" class="wf-tb-tool-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} title="Redo (Ctrl+Y)">${ICONS.redo}</button>
+              <button type="button" class="wf-tb-tool-btn" id="wf-btn-save" title="Save Preset">${ICONS.save}</button>
+              <button type="button" class="wf-tb-tool-btn" id="wf-btn-download" title="Export Pipeline Output">${ICONS.download}</button>
             </div>
           </div>
         </header>
@@ -9497,9 +9505,10 @@
       return html;
     }
 
-    // ── 2. PRO OPERATIONS PALETTE (With Live Filter & Tactile '+ Add' Pills) ──
+    // ── 2. OPERATIONS PALETTE (Raycast / Linear Grade Workbench) ──
     function renderOpsSidebar() {
-      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
+      const activeSteps = state.steps.filter((s) => s.enabled !== false);
+      const activeCount = activeSteps.length;
       const hasFile = !!state.file;
       const query = (state.searchQuery || '').trim().toLowerCase();
 
@@ -9553,44 +9562,59 @@
         `;
       }
 
+      // Format queue summary: e.g. "1. Stamp → 2. Encrypt → 3. Flatten"
+      const flowText = activeSteps.length
+        ? activeSteps.map((s, i) => `${i + 1}. ${s.name.split(' ')[0]}`).join(' → ')
+        : 'Empty queue — click any tool to append';
+
       return `
         <aside class="wf-ops-sidebar">
-          <div class="wf-ops-header">
+          <div class="wf-ops-head">
             <div class="wf-ops-headline">
-              <h4 class="wf-ops-title">Operations Library</h4>
-              <span class="wf-ops-total-count">9 Tools</span>
+              <div class="wf-ops-title-cluster">
+                <span class="wf-ops-title">Operations</span>
+                <span class="wf-ops-count">${totalVisible} available</span>
+              </div>
+              <span class="wf-ops-badge">On-Device WASM</span>
             </div>
-            <div class="wf-ops-search-box">
-              <span class="wf-ops-search-icon">
+
+            <div class="wf-ops-search-wrap">
+              <span class="wf-ops-search-svg">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </span>
               <input type="text" class="wf-ops-search-inp" id="wf-ops-search-inp" value="${esc(state.searchQuery)}" placeholder="Search operations... (e.g. compress)" />
+              ${state.searchQuery
+                ? '<button type="button" class="wf-ops-search-clear" id="wf-ops-search-clear">×</button>'
+                : '<span class="wf-ops-search-kbd">⌘K</span>'}
             </div>
           </div>
 
-          <div class="wf-ops-inner" id="wf-ops-inner-scroll">
+          <div class="wf-ops-list" id="wf-ops-inner-scroll">
             ${catHtml}
           </div>
 
           <div class="wf-ops-footer">
-            <div class="wf-footer-status-row">
-              <div class="wf-footer-ops-summary">
-                <span>Pipeline:</span>
-                <span style="color:#0F172A;font-weight:700;">${activeCount} Active</span>
+            <div class="wf-footer-summary-card">
+              <div class="wf-fsc-top">
+                <span class="wf-fsc-label">Pipeline Queue</span>
+                <span class="wf-fsc-count">${activeCount} Steps</span>
               </div>
-              <div class="wf-footer-readiness ${hasFile ? 'is-ready' : 'is-waiting'}">
-                <span class="wf-readiness-dot"></span>
-                <span>${hasFile ? 'Ready to Run' : 'Awaiting Document'}</span>
+              <div class="wf-fsc-flow-pill" title="${esc(flowText)}">
+                ${esc(flowText)}
               </div>
             </div>
 
-            <button type="button" class="wf-ops-run-btn" id="wf-run-pipeline-btn">
-              <span>▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+            <button type="button" class="wf-ops-run-btn ${hasFile ? 'is-ready' : ''}" id="wf-run-pipeline-btn">
+              <div class="wf-run-btn-left">
+                <span class="wf-run-btn-icon">${ICONS.play}</span>
+                <span class="wf-run-btn-label">Execute Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+              </div>
+              <span class="wf-run-btn-kbd">⌘↵</span>
             </button>
 
-            <div class="wf-ops-footer-docinfo">
-              <span>${hasFile ? esc(state.file.name) : 'No document selected'}</span>
-              <span style="font-family:ui-monospace,monospace;">${hasFile ? formatBytes(state.file.size) : 'Ready'}</span>
+            <div class="wf-footer-doc-meta">
+              <span class="wf-fdm-name">${hasFile ? esc(state.file.name) : 'No document selected — drop or browse'}</span>
+              <span class="wf-fdm-size">${hasFile ? formatBytes(state.file.size) : 'Ready'}</span>
             </div>
           </div>
         </aside>
@@ -9674,7 +9698,7 @@
             state.steps = newSteps;
             recordHistory();
             render();
-            showToast(`Applied ${tab.textContent} preset`);
+            showToast(`Applied ${tab.textContent.trim()} preset`);
           }
         };
       });
@@ -9720,23 +9744,15 @@
       if (searchInp) {
         searchInp.oninput = (e) => {
           state.searchQuery = e.target.value;
-          // Re-render sidebar without reloading full canvas
-          const oldScroll = container.querySelector('#wf-ops-inner-scroll')?.scrollTop || 0;
-          const sidebarEl = container.querySelector('.wf-ops-sidebar');
-          if (sidebarEl) {
-            const temp = document.createElement('div');
-            temp.innerHTML = renderOpsSidebar();
-            const newSidebar = temp.firstElementChild;
-            sidebarEl.replaceWith(newSidebar);
-            wireSidebarEvents();
-            const newInp = container.querySelector('#wf-ops-search-inp');
-            if (newInp) {
-              newInp.focus();
-              newInp.setSelectionRange(newInp.value.length, newInp.value.length);
-            }
-            const newScroll = container.querySelector('#wf-ops-inner-scroll');
-            if (newScroll) newScroll.scrollTop = oldScroll;
-          }
+          refreshSidebarOnly();
+        };
+      }
+
+      const searchClear = container.querySelector('#wf-ops-search-clear');
+      if (searchClear) {
+        searchClear.onclick = () => {
+          state.searchQuery = '';
+          refreshSidebarOnly();
         };
       }
 
@@ -9770,14 +9786,8 @@
             toggle.setAttribute('aria-checked', isNowEnabled);
             const card = toggle.closest('.wf-step-card');
             if (card) card.classList.toggle('is-disabled', !isNowEnabled);
-            const activeCount = state.steps.filter((s) => s.enabled !== false).length;
-            const runCta = container.querySelector('#wf-run-pipeline-btn');
-            if (runCta) runCta.querySelector('span').textContent = `▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
-            const countBadge = container.querySelector('.wf-tb-count-badge');
-            if (countBadge) countBadge.textContent = `${activeCount} Active`;
-            const opsSummary = container.querySelector('.wf-footer-ops-summary');
-            if (opsSummary) opsSummary.innerHTML = `<span>Pipeline:</span><span style="color:#0F172A;font-weight:700;">${activeCount} Active</span>`;
             recordHistory();
+            refreshSidebarOnly();
           }
         };
       });
@@ -9968,6 +9978,25 @@
       }
     }
 
+    function refreshSidebarOnly() {
+      const oldScroll = container.querySelector('#wf-ops-inner-scroll')?.scrollTop || 0;
+      const sidebarEl = container.querySelector('.wf-ops-sidebar');
+      if (sidebarEl) {
+        const temp = document.createElement('div');
+        temp.innerHTML = renderOpsSidebar();
+        const newSidebar = temp.firstElementChild;
+        sidebarEl.replaceWith(newSidebar);
+        wireSidebarEvents();
+        const newInp = container.querySelector('#wf-ops-search-inp');
+        if (newInp && state.searchQuery) {
+          newInp.focus();
+          newInp.setSelectionRange(newInp.value.length, newInp.value.length);
+        }
+        const newScroll = container.querySelector('#wf-ops-inner-scroll');
+        if (newScroll) newScroll.scrollTop = oldScroll;
+      }
+    }
+
     function wireSidebarEvents() {
       // Operations Add Buttons
       container.querySelectorAll('.wf-ops-item').forEach((row) => {
@@ -9998,6 +10027,22 @@
             return;
           }
           runPipeline();
+        };
+      }
+
+      const searchInp = container.querySelector('#wf-ops-search-inp');
+      if (searchInp) {
+        searchInp.oninput = (e) => {
+          state.searchQuery = e.target.value;
+          refreshSidebarOnly();
+        };
+      }
+
+      const searchClear = container.querySelector('#wf-ops-search-clear');
+      if (searchClear) {
+        searchClear.onclick = () => {
+          state.searchQuery = '';
+          refreshSidebarOnly();
         };
       }
     }

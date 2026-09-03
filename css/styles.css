@@ -17315,14 +17315,12 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Studio -- Professional Executive Workstation
-   Figma / Linear / Raycast grade Toolbar & Operations Palette
-   - 3-Zone Balanced Toolbar (Identity Breadcrumb | Center Segmented Presets | Action Suite)
-   - Interactive Operations Palette (Live Search, Category Counts, Tactile +Add Pills)
-   - Action Center Footer with Document Readiness & Signature Pure Black CTA
+   Workflow Studio -- Interface Design System Specification
+   Crafted under strict .interface-design skill standards
+   (Linear / Vercel / Apple Workbench Benchmark)
 =============================================================== */
 
-/* Global container overrides for Workflow Studio */
+/* Global Stage Resets */
 body #app-view #app-canvas.app-canvas:has(.wf-layout-root),
 body #app-view .app-canvas.ff-tool-active:has(.wf-layout-root),
 html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
@@ -17346,11 +17344,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   overflow: hidden !important;
 }
 
-/* Root shell */
+/* Root layout container with antialiasing */
 .wf-layout-root {
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: optimizeLegibility !important;
   width: 100% !important;
   height: 100% !important;
   display: flex !important;
@@ -17358,10 +17353,14 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   overflow: hidden !important;
   background: #FFFFFF !important;
   font-family: inherit !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  color: #0F172A !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   1. PROFESSIONALLY ENGINEERED TOOLBAR (46px, 3-Zone Balanced)
+   1. STUDIO TOOLBAR (46px Optical Height, 3 Balanced Zones)
    ══════════════════════════════════════════════════════════════════ */
 .wf-toolbar {
   display: flex !important;
@@ -17371,32 +17370,36 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   height: 46px !important;
   min-height: 46px !important;
   flex-shrink: 0 !important;
-  padding: 0 18px !important;
+  padding: 0 16px !important;
   background: #FFFFFF !important;
-  border-bottom: 1px solid #E2E8F0 !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
   box-sizing: border-box !important;
   z-index: 20 !important;
 }
 
-/* Left: Identity Breadcrumb */
-.wf-toolbar-left {
+/* Left: Studio Identity & Session State */
+.wf-tb-left {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
   flex-shrink: 0 !important;
-  min-width: 200px !important;
+  min-width: 220px !important;
 }
 
-.wf-tb-identity {
+.wf-tb-studio-pill {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 7px !important;
+  padding: 3px 8px 3px 4px !important;
+  border-radius: 7px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
 }
 
-.wf-tb-icon-badge {
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 6px !important;
+.wf-tb-pill-icon {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 5px !important;
   background: #0F172A !important;
   color: #FFFFFF !important;
   display: flex !important;
@@ -17405,36 +17408,43 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   flex-shrink: 0 !important;
 }
 
-.wf-tb-title-group {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  font-size: 12.5px !important;
-  color: #0F172A !important;
+.wf-tb-pill-name {
+  font-size: 12px !important;
   font-weight: 700 !important;
+  color: #0F172A !important;
   letter-spacing: -0.01em !important;
-  white-space: nowrap !important;
 }
 
-.wf-tb-sep {
+.wf-tb-pill-sep {
   color: #CBD5E1 !important;
-  font-weight: 400 !important;
   font-size: 11px !important;
 }
 
-.wf-tb-count-badge {
-  font-variant-numeric: tabular-nums !important;
+.wf-tb-pill-state {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4.5px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #64748B !important;
-  background: #F1F5F9 !important;
-  padding: 1.5px 7px !important;
-  border-radius: 9999px !important;
-  border: 1px solid #E2E8F0 !important;
+}
+.wf-tb-pill-state.is-ready {
+  color: #15803D !important;
 }
 
-/* Center: Apple/macOS-grade Segmented Recipe Control */
-.wf-toolbar-center {
+.wf-pulse-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #94A3B8 !important;
+}
+.is-ready .wf-pulse-dot {
+  background: #16A34A !important;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2) !important;
+}
+
+/* Center: macOS/Apple Segmented Recipe Switcher */
+.wf-tb-center {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -17449,12 +17459,11 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   background: #F1F5F9 !important;
   padding: 3px !important;
   border-radius: 8px !important;
-  border: 1px solid #E2E8F0 !important;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  border: 1px solid rgba(15, 23, 42, 0.06) !important;
 }
 
 .wf-preset-tab {
-  padding: 4px 12px !important;
+  padding: 3.5px 12px !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;
   color: #64748B !important;
@@ -17462,38 +17471,37 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   border: none !important;
   border-radius: 6px !important;
   cursor: pointer !important;
-  transition: all 0.14s cubic-bezier(0.23,1,0.32,1) !important;
+  transition: all 0.12s cubic-bezier(0.23, 1, 0.32, 1) !important;
   font-family: inherit !important;
   white-space: nowrap !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
 }
-.wf-preset-tab:active { transform: scale(0.97) !important; }
 .wf-preset-tab:hover {
   color: #0F172A !important;
+}
+.wf-preset-tab:active {
+  transform: scale(0.97) !important;
 }
 .wf-preset-tab.is-active {
   background: #FFFFFF !important;
   color: #0F172A !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
-/* Right: Actions Suite */
-.wf-toolbar-right {
+/* Right: Unified Action & Tools Cluster */
+.wf-tb-right {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   flex-shrink: 0 !important;
-  min-width: 200px !important;
+  min-width: 220px !important;
   justify-content: flex-end !important;
 }
 
 .wf-tb-upload-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   height: 28px !important;
   padding: 0 10px !important;
   font-size: 11.5px !important;
@@ -17508,10 +17516,12 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   white-space: nowrap !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
-.wf-tb-upload-btn:active { transform: scale(0.97) !important; }
 .wf-tb-upload-btn:hover {
   background: #F8FAFC !important;
   border-color: #94A3B8 !important;
+}
+.wf-tb-upload-btn:active {
+  transform: scale(0.97) !important;
 }
 
 .wf-tb-divider {
@@ -17521,13 +17531,13 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   margin: 0 2px !important;
 }
 
-.wf-tb-icon-cluster {
+.wf-tb-icon-group {
   display: flex !important;
   align-items: center !important;
   gap: 2px !important;
 }
 
-.wf-tb-action-btn {
+.wf-tb-tool-btn {
   width: 28px !important;
   height: 28px !important;
   border-radius: 6px !important;
@@ -17542,19 +17552,21 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: all 0.12s ease !important;
   font-family: inherit !important;
 }
-.wf-tb-action-btn:active:not(:disabled) { transform: scale(0.95) !important; }
-.wf-tb-action-btn:hover:not(:disabled) {
+.wf-tb-tool-btn:hover:not(:disabled) {
   background: #F1F5F9 !important;
   border-color: #E2E8F0 !important;
   color: #0F172A !important;
 }
-.wf-tb-action-btn:disabled {
-  opacity: 0.3 !important;
+.wf-tb-tool-btn:active:not(:disabled) {
+  transform: scale(0.95) !important;
+}
+.wf-tb-tool-btn:disabled {
+  opacity: 0.35 !important;
   cursor: not-allowed !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   2. BODY & CANVAS
+   2. BODY & WORKBENCH CANVAS
    ══════════════════════════════════════════════════════════════════ */
 .wf-body {
   display: flex !important;
@@ -17568,7 +17580,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   min-width: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 24px 24px 48px !important;
+  padding: 24px 24px 54px !important;
   box-sizing: border-box !important;
   background: #FAFAFA !important;
   display: flex !important;
@@ -17577,7 +17589,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 
 .wf-pipeline-chain {
   width: 100% !important;
-  max-width: 540px !important;
+  max-width: 530px !important;
   margin: 0 auto !important;
   display: flex !important;
   flex-direction: column !important;
@@ -17586,7 +17598,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 /* Input Node */
 .wf-input-node {
   background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   box-sizing: border-box !important;
@@ -17595,7 +17607,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   justify-content: space-between !important;
   gap: 12px !important;
   cursor: pointer !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
   transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
 }
 .wf-input-node:hover {
@@ -17659,6 +17671,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: color 0.12s ease !important;
 }
 .wf-link-btn:hover { color: #0F172A !important; text-decoration: underline !important; }
+.wf-link-btn:active { transform: scale(0.97) !important; }
+
 .wf-input-action-btn {
   display: inline-flex !important;
   align-items: center !important;
@@ -17679,8 +17693,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   border-color: #0F172A !important;
   color: #FFFFFF !important;
 }
+.wf-input-action-btn:active { transform: scale(0.97) !important; }
 
-/* Hairline Flow Spine */
+/* Hairline Spine Connector */
 .wf-step-connector {
   display: flex !important;
   align-items: center !important;
@@ -17689,18 +17704,18 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   position: relative !important;
 }
 .wf-connector-line {
-  width: 2px !important;
+  width: 1.5px !important;
   height: 100% !important;
   background: #E2E8F0 !important;
 }
 
-/* Single-Line Step Cards */
+/* Linear / Apple Style Single-Line Step Card */
 .wf-step-card {
   background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
   border-radius: 10px !important;
   box-sizing: border-box !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
   transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
   position: relative !important;
   display: flex !important;
@@ -17718,6 +17733,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   text-decoration: line-through !important;
   color: #94A3B8 !important;
 }
+
 .wf-sc-main-row {
   display: flex !important;
   align-items: center !important;
@@ -17729,6 +17745,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   cursor: pointer !important;
   user-select: none !important;
 }
+
 .wf-sc-left {
   display: flex !important;
   align-items: center !important;
@@ -17736,6 +17753,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   min-width: 0 !important;
   flex: 1 !important;
 }
+
 .wf-sc-drag {
   color: #CBD5E1 !important;
   cursor: grab !important;
@@ -17747,15 +17765,17 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-sc-drag:hover { color: #64748B !important; }
 .wf-sc-drag:active { cursor: grabbing !important; }
+
 .wf-sc-num {
-  font-variant-numeric: tabular-nums !important;
   font-size: 11px !important;
   font-weight: 700 !important;
   color: #94A3B8 !important;
   font-family: ui-monospace, 'SFMono-Regular', monospace !important;
+  font-variant-numeric: tabular-nums !important;
   min-width: 14px !important;
   text-align: right !important;
 }
+
 .wf-sc-icon {
   width: 24px !important;
   height: 24px !important;
@@ -17768,6 +17788,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   justify-content: center !important;
   flex-shrink: 0 !important;
 }
+
 .wf-sc-name {
   font-size: 13px !important;
   font-weight: 700 !important;
@@ -17775,6 +17796,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   white-space: nowrap !important;
   letter-spacing: -0.01em !important;
 }
+
 .wf-sc-summary-pill {
   font-size: 11px !important;
   color: #64748B !important;
@@ -17788,12 +17810,14 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-sc-summary-pill b { font-weight: 600 !important; color: #334155 !important; }
 .wf-sc-summary-dot { color: #CBD5E1 !important; }
+
 .wf-sc-right {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   flex-shrink: 0 !important;
 }
+
 .wf-sc-toggle {
   position: relative !important;
   width: 28px !important;
@@ -17808,6 +17832,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   outline: none !important;
 }
 .wf-sc-toggle[aria-checked="true"] { background: #0F172A !important; }
+.wf-sc-toggle:active { transform: scale(0.95) !important; }
 .wf-sc-toggle::after {
   content: '' !important;
   position: absolute !important;
@@ -17821,6 +17846,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: transform 0.18s cubic-bezier(0.23,1,0.32,1) !important;
 }
 .wf-sc-toggle[aria-checked="true"]::after { transform: translateX(12px) !important; }
+
 .wf-sc-expand-btn {
   width: 24px !important;
   height: 24px !important;
@@ -17837,7 +17863,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-family: inherit !important;
 }
 .wf-sc-expand-btn:hover { background: #F1F5F9 !important; color: #0F172A !important; }
+.wf-sc-expand-btn:active { transform: scale(0.95) !important; }
 .wf-sc-expand-btn.is-open { color: #0F172A !important; transform: rotate(180deg) !important; }
+
 .wf-sc-trash-btn {
   width: 24px !important;
   height: 24px !important;
@@ -17854,8 +17882,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-family: inherit !important;
 }
 .wf-sc-trash-btn:hover { background: #FEF2F2 !important; border-color: #FECACA !important; color: #DC2626 !important; }
+.wf-sc-trash-btn:active { transform: scale(0.95) !important; }
 
-/* Config Drawer */
+/* Inset Parameter Drawer */
 .wf-sc-drawer { overflow: hidden !important; max-height: 0 !important; transition: max-height 0.2s ease-out !important; }
 .wf-step-card.is-expanded .wf-sc-drawer { max-height: 220px !important; transition: max-height 0.22s ease-in !important; }
 .wf-sc-drawer-inner {
@@ -17885,6 +17914,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   border-radius: 4px !important; cursor: pointer !important; transition: all 0.11s ease !important; font-family: inherit !important;
 }
 .wf-cfg-pill:hover { color: #0F172A !important; border-color: #CBD5E1 !important; }
+.wf-cfg-pill:active { transform: scale(0.96) !important; }
 .wf-cfg-pill.is-active { background: #0F172A !important; border-color: #0F172A !important; color: #FFFFFF !important; }
 .wf-cfg-eye {
   width: 24px !important; height: 24px !important; border: none !important;
@@ -17898,7 +17928,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 /* Output Node */
 .wf-output-node {
   background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   box-sizing: border-box !important;
@@ -17906,7 +17936,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 10px !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
   transition: all 0.16s ease !important;
 }
 .wf-output-node.is-ready-border { border-left: 3.5px solid #16A34A !important; }
@@ -17919,26 +17949,26 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-output-texts { display: flex !important; flex-direction: column !important; gap: 1px !important; min-width: 0 !important; }
 .wf-output-title { font-size: 13px !important; font-weight: 700 !important; color: #0F172A !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .wf-output-sub { font-size: 11px !important; color: #64748B !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-.wf-output-badge { font-size: 11px !important; font-weight: 600 !important; padding: 3px 8px !important; border-radius: 5px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
+.wf-output-badge { font-size: 11px !important; font-weight: 600 !important; padding: 3px 8px !important; border-radius: 5px !important; white-space: nowrap !important; flex-shrink: 0 !important; font-variant-numeric: tabular-nums !important; }
 .wf-output-badge.is-waiting { color: #64748B !important; background: #F1F5F9 !important; border: 1px solid #E2E8F0 !important; }
 .wf-output-badge.is-ready { color: #15803D !important; background: #DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight: 700 !important; }
 
 /* ══════════════════════════════════════════════════════════════════
-   3. PROFESSIONALLY ENGINEERED OPERATIONS PALETTE (Right Sidebar)
+   3. RAYCAST / LINEAR GRADE OPERATIONS PALETTE (Right Sidebar)
    ══════════════════════════════════════════════════════════════════ */
 .wf-ops-sidebar {
   width: 320px !important;
   flex-shrink: 0 !important;
   background: #FFFFFF !important;
-  border-left: 1px solid #E2E8F0 !important;
+  border-left: 1px solid rgba(15, 23, 42, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
 
-/* Header & Search Bar */
-.wf-ops-header {
+/* Sidebar Head */
+.wf-ops-head {
   padding: 12px 14px 10px !important;
   border-bottom: 1px solid #F1F5F9 !important;
   display: flex !important;
@@ -17953,6 +17983,12 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   justify-content: space-between !important;
 }
 
+.wf-ops-title-cluster {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+}
+
 .wf-ops-title {
   font-size: 11px !important;
   font-weight: 700 !important;
@@ -17962,28 +17998,32 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   margin: 0 !important;
 }
 
-.wf-ops-total-count {
-  font-variant-numeric: tabular-nums !important;
+.wf-ops-count {
   font-size: 10.5px !important;
+  color: #94A3B8 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.wf-ops-badge {
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: #64748B !important;
   background: #F1F5F9 !important;
-  padding: 1px 6px !important;
-  border-radius: 9999px !important;
-  border: 1px solid #E2E8F0 !important;
+  padding: 1.5px 6px !important;
+  border-radius: 4px !important;
 }
 
-/* Real-Time Filter Search Input */
-.wf-ops-search-box {
+/* Search Box */
+.wf-ops-search-wrap {
   position: relative !important;
   display: flex !important;
   align-items: center !important;
   width: 100% !important;
 }
 
-.wf-ops-search-icon {
+.wf-ops-search-svg {
   position: absolute !important;
-  left: 8px !important;
+  left: 9px !important;
   color: #94A3B8 !important;
   pointer-events: none !important;
   display: flex !important;
@@ -17992,8 +18032,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 
 .wf-ops-search-inp {
   width: 100% !important;
-  height: 28px !important;
-  padding: 0 8px 0 28px !important;
+  height: 30px !important;
+  padding: 0 28px 0 28px !important;
   font-size: 11.5px !important;
   color: #0F172A !important;
   background: #F8FAFC !important;
@@ -18011,8 +18051,38 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-ops-search-inp::placeholder { color: #94A3B8 !important; }
 
-/* Scroll List */
-.wf-ops-inner {
+.wf-ops-search-kbd {
+  position: absolute !important;
+  right: 8px !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  color: #94A3B8 !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 3px !important;
+  padding: 1px 4px !important;
+  pointer-events: none !important;
+}
+
+.wf-ops-search-clear {
+  position: absolute !important;
+  right: 6px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #94A3B8 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+.wf-ops-search-clear:hover { color: #0F172A !important; }
+
+/* Scrollable Category & Operations List */
+.wf-ops-list {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   overflow-y: auto !important;
@@ -18025,20 +18095,15 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 
 .wf-canvas::-webkit-scrollbar,
-.wf-ops-inner::-webkit-scrollbar {
+.wf-ops-list::-webkit-scrollbar {
   width: 4px !important;
 }
 .wf-canvas::-webkit-scrollbar-thumb,
-.wf-ops-inner::-webkit-scrollbar-thumb {
+.wf-ops-list::-webkit-scrollbar-thumb {
   background: #E2E8F0 !important;
   border-radius: 4px !important;
 }
-.wf-canvas::-webkit-scrollbar-track,
-.wf-ops-inner::-webkit-scrollbar-track {
-  background: transparent !important;
-}
 
-/* Category Sections */
 .wf-ops-section {
   display: flex !important;
   flex-direction: column !important;
@@ -18064,9 +18129,10 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-size: 9.5px !important;
   color: #CBD5E1 !important;
   font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
-/* Pro Raycast/Linear Operation Row */
+/* Operation Item */
 .wf-ops-item {
   display: flex !important;
   align-items: center !important;
@@ -18080,6 +18146,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-ops-item:hover {
   background: #F8FAFC !important;
+}
+.wf-ops-item:active {
+  transform: scale(0.99) !important;
 }
 
 .wf-ops-item-left {
@@ -18138,7 +18207,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   text-overflow: ellipsis !important;
 }
 
-/* Tactile '+ Add' Pill */
+/* Tactile Add Pill */
 .wf-ops-add-pill {
   display: inline-flex !important;
   align-items: center !important;
@@ -18171,12 +18240,12 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-ops-add-pill:active { transform: scale(0.92) !important; }
 
 /* ══════════════════════════════════════════════════════════════════
-   4. WORKSTATION ACTION CENTER (Pinned Footer)
+   4. WORKSTATION ACTION CENTER (The Crown Jewel Footer)
    ══════════════════════════════════════════════════════════════════ */
 .wf-ops-footer {
   padding: 12px 14px 14px !important;
   background: #FFFFFF !important;
-  border-top: 1px solid #E2E8F0 !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 8px !important;
@@ -18184,51 +18253,43 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   z-index: 10 !important;
 }
 
-.wf-footer-status-row {
+.wf-footer-summary-card {
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 7px !important;
+  padding: 6px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.wf-fsc-top {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  font-size: 11px !important;
-}
-
-.wf-footer-ops-summary {
-  font-weight: 600 !important;
-  color: #0F172A !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-
-.wf-footer-readiness {
   font-size: 10.5px !important;
   font-weight: 600 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
 }
-.wf-footer-readiness.is-ready {
-  color: #15803D !important;
-}
-.wf-footer-readiness.is-waiting {
-  color: #94A3B8 !important;
-}
-.wf-readiness-dot {
-  width: 6px !important;
-  height: 6px !important;
-  border-radius: 50% !important;
-  display: inline-block !important;
-}
-.is-ready .wf-readiness-dot { background: #16A34A !important; }
-.is-waiting .wf-readiness-dot { background: #CBD5E1 !important; }
+.wf-fsc-label { color: #64748B !important; text-transform: uppercase !important; font-size: 9.5px !important; letter-spacing: 0.04em !important; }
+.wf-fsc-count { color: #0F172A !important; font-variant-numeric: tabular-nums !important; }
 
-/* FileKit Signature Pure Black CTA Button */
+.wf-fsc-flow-pill {
+  font-size: 11px !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* FileKit Signature Pure Black CTA */
 .wf-ops-run-btn {
   display: inline-flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
+  justify-content: space-between !important;
+  padding: 0 14px !important;
   width: 100% !important;
-  height: 40px !important;
+  height: 42px !important;
   background: #000000 !important;
   color: #FFFFFF !important;
   font-size: 13px !important;
@@ -18248,7 +18309,25 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-ops-run-btn:active { transform: scale(0.98) !important; }
 
-.wf-ops-footer-docinfo {
+.wf-run-btn-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+.wf-run-btn-icon { display: flex !important; align-items: center; }
+.wf-run-btn-icon svg { width: 14px; height: 14px; fill: currentColor; }
+
+.wf-run-btn-kbd {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-radius: 4px !important;
+  padding: 2px 5px !important;
+  font-family: ui-monospace, monospace !important;
+}
+
+.wf-footer-doc-meta {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -18257,11 +18336,15 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-weight: 500 !important;
   padding: 0 2px !important;
 }
-.wf-ops-footer-docinfo span:first-child {
-  max-width: 180px !important;
+.wf-fdm-name {
+  max-width: 190px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+}
+.wf-fdm-size {
+  font-family: ui-monospace, monospace !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 /* Toast */
@@ -18306,8 +18389,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   background: #F1F5F9 !important; border-radius: 2px !important; overflow: hidden !important;
 }
 .wf-proc-bar-fill { height: 100% !important; background: #0F172A !important; border-radius: 2px !important; transition: width 0.22s ease !important; }
-.wf-proc-pct {
-  font-variant-numeric: tabular-nums !important; font-size: 11px !important; color: #94A3B8 !important; font-weight: 600 !important; }
+.wf-proc-pct { font-size: 11px !important; color: #94A3B8 !important; font-weight: 600 !important; font-variant-numeric: tabular-nums !important; }
 
 /* Emerald Green Review Screen */
 .wf-result-view {
@@ -18321,7 +18403,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-result-card {
   background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
   border-radius: 12px !important;
   padding: 36px 40px !important;
   max-width: 480px !important;
@@ -18440,7 +18522,6 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   border-color: #CBD5E1 !important;
   color: #0F172A !important;
 }
-.wf-result-ghost-btn:active { transform: scale(0.98) !important; }
 .wf-result-ghost-btn:active { transform: scale(0.98) !important; }
    Images suite — thin senior form (preview · options · actions)
 ═══════════════════════════════════════════════════════════════════════════ */
