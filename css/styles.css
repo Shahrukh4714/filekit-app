@@ -17957,7 +17957,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
    3. RAYCAST / LINEAR GRADE OPERATIONS PALETTE (Right Sidebar)
    ══════════════════════════════════════════════════════════════════ */
 .wf-ops-sidebar {
-  width: 320px !important;
+  width: 420px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
   flex-shrink: 0 !important;
   background: #FFFFFF !important;
   border-left: 1px solid rgba(15, 23, 42, 0.08) !important;
@@ -18137,9 +18139,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 10px !important;
-  padding: 6px 8px !important;
-  border-radius: 7px !important;
+  gap: 12px !important;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   background: transparent !important;
@@ -18337,7 +18339,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 0 2px !important;
 }
 .wf-fdm-name {
-  max-width: 190px !important;
+  max-width: 280px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
@@ -18522,6 +18524,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   border-color: #CBD5E1 !important;
   color: #0F172A !important;
 }
+.wf-result-ghost-btn:active { transform: scale(0.98) !important; }
 .wf-result-ghost-btn:active { transform: scale(0.98) !important; }
    Images suite — thin senior form (preview · options · actions)
 ═══════════════════════════════════════════════════════════════════════════ */
