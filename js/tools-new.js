@@ -8982,7 +8982,7 @@
     container.innerHTML = '';
     container.className = 'wf-layout-root';
 
-    // Full-bleed stage, canvas, and workspace overrides (matching Organize & Edit tools)
+    // Full-bleed stage, canvas, and workspace overrides
     const stageEl = container.closest('.app-stage-container');
     if (stageEl) {
       stageEl.classList.add('wf-stage-active');
@@ -9011,25 +9011,30 @@
     }
 
     const ICONS = {
-      flow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
-      upload: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
-      doc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-      package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>`,
-      watermark: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
-      protect: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
-      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
-      page_numbers: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
-      flatten: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
-      grayscale: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
-      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
-      extract: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
-      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
-      check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
-      trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
-      eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
-      download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
-      chevron: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
-      grip: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
+      flow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
+      upload: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
+      doc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>`,
+      watermark: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
+      protect: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
+      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+      page_numbers: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
+      flatten: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
+      grayscale: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
+      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
+      extract: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
+      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
+      check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+      trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+      eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+      download: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
+      chevron: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+      grip: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
+      undo: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6M3 13a9 9 0 0 1 15.36-6.36L21 9"/></svg>`,
+      redo: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6M21 13a9 9 0 0 0-15.36-6.36L3 9"/></svg>`,
+      history: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+      save: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
+      settings: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`
     };
 
     const RECIPES = {
@@ -9100,6 +9105,8 @@
       activeRecipe: 'confidential',
       steps: JSON.parse(JSON.stringify(RECIPES.confidential)),
       stepPassVisibility: {},
+      historyStack: [JSON.stringify(RECIPES.confidential)],
+      historyIndex: 0,
       isProcessing: false,
       progressPercent: 0,
       currentStepIndex: -1,
@@ -9110,6 +9117,49 @@
       durationMs: 0,
       errorMsg: null
     };
+
+    function showToast(msg) {
+      let toast = container.querySelector('.wf-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'wf-toast';
+        container.appendChild(toast);
+      }
+      toast.innerHTML = msg;
+      toast.classList.add('is-visible');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.classList.remove('is-visible');
+      }, 2200);
+    }
+
+    function recordHistory() {
+      const snap = JSON.stringify(state.steps);
+      if (state.historyStack[state.historyIndex] === snap) return;
+      state.historyStack = state.historyStack.slice(0, state.historyIndex + 1);
+      state.historyStack.push(snap);
+      state.historyIndex = state.historyStack.length - 1;
+    }
+
+    function undo() {
+      if (state.historyIndex > 0) {
+        state.historyIndex--;
+        state.steps = JSON.parse(state.historyStack[state.historyIndex]);
+        state.activeRecipe = 'custom';
+        render();
+        showToast('Undo applied');
+      }
+    }
+
+    function redo() {
+      if (state.historyIndex < state.historyStack.length - 1) {
+        state.historyIndex++;
+        state.steps = JSON.parse(state.historyStack[state.historyIndex]);
+        state.activeRecipe = 'custom';
+        render();
+        showToast('Redo applied');
+      }
+    }
 
     function parsePageRange(str, max) {
       const set = new Set();
@@ -9141,6 +9191,7 @@
         config: tmpl.defaultConfig()
       });
       state.activeRecipe = 'custom';
+      recordHistory();
       render();
     }
 
@@ -9208,31 +9259,39 @@
     }
 
     function renderToolbar() {
-      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
+      const canUndo = state.historyIndex > 0;
+      const canRedo = state.historyIndex < state.historyStack.length - 1;
+
       return `
         <header class="wf-toolbar">
           <div class="wf-toolbar-left">
             <span class="wf-toolbar-title">${ICONS.flow} Workflow Studio</span>
-            <span class="wf-toolbar-badge">${activeCount} Step${activeCount === 1 ? '' : 's'} Active</span>
+            <button type="button" class="wf-tb-upload-btn" id="wf-tb-upload-btn">
+              ${ICONS.upload}
+              <span>Upload More</span>
+            </button>
           </div>
 
           <div class="wf-toolbar-center">
-            <div class="wf-preset-select-wrap">
-              <span class="wf-preset-label">Preset:</span>
-              <select class="wf-preset-select" id="wf-preset-select">
-                <option value="confidential" ${state.activeRecipe === 'confidential' ? 'selected' : ''}>Confidential PDF</option>
-                <option value="sign_compress" ${state.activeRecipe === 'sign_compress' ? 'selected' : ''}>Sign &amp; Compress</option>
-                <option value="clean_gray" ${state.activeRecipe === 'clean_gray' ? 'selected' : ''}>Clean Monochrome</option>
-                <option value="publish_zip" ${state.activeRecipe === 'publish_zip' ? 'selected' : ''}>Publish Package</option>
-                ${state.activeRecipe === 'custom' ? '<option value="custom" selected>Custom Pipeline</option>' : ''}
-              </select>
+            <div class="wf-preset-pills" role="tablist">
+              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
+              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign &amp; Compress</button>
+              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean Monochrome</button>
+              <button type="button" class="wf-preset-pill ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish Package</button>
             </div>
           </div>
 
           <div class="wf-toolbar-right">
-            <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn">
-              <span>▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
-            </button>
+            <div class="wf-tb-icon-group">
+              <button type="button" class="wf-tb-icon-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} aria-label="Undo">${ICONS.undo}</button>
+              <button type="button" class="wf-tb-icon-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} aria-label="Forward / Redo">${ICONS.redo}</button>
+              <span class="wf-tb-vsep"></span>
+              <button type="button" class="wf-tb-icon-btn" id="wf-btn-history" aria-label="History">${ICONS.history}</button>
+              <button type="button" class="wf-tb-icon-btn" id="wf-btn-save" aria-label="Save Pipeline">${ICONS.save}</button>
+              <button type="button" class="wf-tb-icon-btn" id="wf-btn-download" aria-label="Download">${ICONS.download}</button>
+              <span class="wf-tb-vsep"></span>
+              <button type="button" class="wf-tb-icon-btn" id="wf-btn-settings" aria-label="Settings">${ICONS.settings}</button>
+            </div>
           </div>
         </header>
       `;
@@ -9359,7 +9418,7 @@
         `;
       }
 
-      // ── Pipeline Chain: Input Node -> Steps -> Output Node ──
+      // ── Pipeline Chain (520px compact spine): Input Node -> Steps -> Output Node ──
       const hasFile = !!state.file;
       const baseName = state.file ? state.file.name.replace(/\.[^/.]+$/, '') : 'document';
       const hasZip = state.steps.some((s) => s.enabled !== false && s.type === 'zip');
@@ -9466,6 +9525,9 @@
     }
 
     function renderOpsSidebar() {
+      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
+      const hasFile = !!state.file;
+
       let catHtml = '';
       OPS_CATEGORIES.forEach((cat) => {
         let itemsHtml = '';
@@ -9495,8 +9557,19 @@
             <h4 class="wf-ops-title">Operations Library</h4>
             <span class="wf-ops-sub">Click any tool to append to pipeline</span>
           </div>
+
           <div class="wf-ops-inner">
             ${catHtml}
+          </div>
+
+          <div class="wf-ops-footer">
+            <button type="button" class="wf-ops-run-btn" id="wf-run-pipeline-btn">
+              <span>▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+            </button>
+            <div class="wf-ops-footer-meta">
+              <span>${hasFile ? esc(state.file.name) : 'No document selected'}</span>
+              <span>${hasFile ? formatBytes(state.file.size) : 'Ready'}</span>
+            </div>
           </div>
         </aside>
       `;
@@ -9521,9 +9594,13 @@
       // 1. File Input & Input Node Trigger
       const fileInp = container.querySelector('#wf-file-inp');
       const inputTrigger = container.querySelector('#wf-input-trigger');
+      const tbUploadBtn = container.querySelector('#wf-tb-upload-btn');
 
       if (inputTrigger && fileInp) {
         inputTrigger.onclick = () => fileInp.click();
+      }
+      if (tbUploadBtn && fileInp) {
+        tbUploadBtn.onclick = () => fileInp.click();
       }
 
       if (fileInp) {
@@ -9548,22 +9625,73 @@
         };
       }
 
-      // 2. Preset Dropdown in Toolbar
-      const presetSelect = container.querySelector('#wf-preset-select');
-      if (presetSelect) {
-        presetSelect.onchange = () => {
-          const rId = presetSelect.value;
+      // 2. Presets Segmented Pills in Toolbar (All out in the open)
+      container.querySelectorAll('.wf-preset-pill').forEach((pill) => {
+        pill.onclick = () => {
+          const rId = pill.dataset.recipe;
           if (RECIPES[rId]) {
             state.activeRecipe = rId;
             const newSteps = JSON.parse(JSON.stringify(RECIPES[rId]));
             newSteps.forEach((s) => s.isExpanded = false);
             state.steps = newSteps;
+            recordHistory();
             render();
+            showToast(`Applied ${pill.textContent} preset`);
+          }
+        };
+      });
+
+      // 3. Toolbar Utility Icons
+      const btnUndo = container.querySelector('#wf-btn-undo');
+      if (btnUndo) btnUndo.onclick = undo;
+
+      const btnRedo = container.querySelector('#wf-btn-redo');
+      if (btnRedo) btnRedo.onclick = redo;
+
+      const btnHistory = container.querySelector('#wf-btn-history');
+      if (btnHistory) {
+        btnHistory.onclick = () => {
+          showToast(`History: ${state.historyStack.length} snapshots · Current state at #${state.historyIndex + 1}`);
+        };
+      }
+
+      const btnSave = container.querySelector('#wf-btn-save');
+      if (btnSave) {
+        btnSave.onclick = () => {
+          try {
+            localStorage.setItem('filekit_wf_saved_recipe', JSON.stringify(state.steps));
+            showToast('✓ Workflow pipeline saved locally');
+          } catch (e) {
+            showToast('Unable to save pipeline');
           }
         };
       }
 
-      // 3. Run Pipeline CTA
+      const btnDownload = container.querySelector('#wf-btn-download');
+      if (btnDownload) {
+        btnDownload.onclick = () => {
+          if (state.resultBlob) {
+            const url = URL.createObjectURL(state.resultBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = state.resultFileName || 'workflow_result.pdf';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+          } else {
+            showToast('Run pipeline first to generate download');
+          }
+        };
+      }
+
+      const btnSettings = container.querySelector('#wf-btn-settings');
+      if (btnSettings) {
+        btnSettings.onclick = () => {
+          showToast('Workflow Studio: 100% Client-Side Engine · Zero Uploads');
+        };
+      }
+
+      // 4. Run Pipeline CTA (Inside right panel at the downside)
       const runBtn = container.querySelector('#wf-run-pipeline-btn');
       if (runBtn) {
         runBtn.onclick = () => {
@@ -9575,9 +9703,9 @@
         };
       }
 
-      // 4. Operations Sidebar Add Buttons
+      // 5. Operations Sidebar Add Buttons
       container.querySelectorAll('.wf-ops-item').forEach((row) => {
-        row.onclick = (e) => {
+        row.onclick = () => {
           const opType = row.dataset.opType;
           if (opType) {
             const btn = row.querySelector('.wf-ops-add-btn');
@@ -9594,7 +9722,7 @@
         };
       });
 
-      // 5. Step Card Header & Edit Trigger (Expand/Collapse drawer)
+      // 6. Step Card Header & Edit Trigger (Expand/Collapse drawer)
       const toggleExpand = (idx) => {
         if (state.steps[idx]) {
           state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
@@ -9617,7 +9745,7 @@
         };
       });
 
-      // 6. Step Toggle Switch (Enable / Disable)
+      // 7. Step Toggle Switch (Enable / Disable)
       container.querySelectorAll('.wf-sc-toggle').forEach((toggle) => {
         toggle.onclick = (e) => {
           e.stopPropagation();
@@ -9629,26 +9757,26 @@
             const card = toggle.closest('.wf-step-card');
             if (card) card.classList.toggle('is-disabled', !isNowEnabled);
             const activeCount = state.steps.filter((s) => s.enabled !== false).length;
-            const badge = container.querySelector('.wf-toolbar-badge');
-            if (badge) badge.textContent = `${activeCount} Step${activeCount === 1 ? '' : 's'} Active`;
             const runCta = container.querySelector('#wf-run-pipeline-btn');
             if (runCta) runCta.querySelector('span').textContent = `Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
+            recordHistory();
           }
         };
       });
 
-      // 7. Step Remove
+      // 8. Step Remove
       container.querySelectorAll('.wf-sc-remove').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
           state.steps.splice(idx, 1);
           state.activeRecipe = 'custom';
+          recordHistory();
           render();
         };
       });
 
-      // 8. Drag & Drop Reorder
+      // 9. Drag & Drop Reorder
       let draggedIdx = null;
       container.querySelectorAll('.wf-sc-drag').forEach((handle) => {
         handle.ondragstart = (e) => {
@@ -9675,12 +9803,13 @@
             const item = state.steps.splice(draggedIdx, 1)[0];
             state.steps.splice(targetIdx, 0, item);
             state.activeRecipe = 'custom';
+            recordHistory();
             render();
           }
         };
       });
 
-      // 9. Config Inputs
+      // 10. Config Inputs
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
@@ -9698,6 +9827,7 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            recordHistory();
           }
         };
       });
@@ -9730,6 +9860,7 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            recordHistory();
           }
         };
       });
@@ -9744,6 +9875,7 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            recordHistory();
           }
         };
       });
@@ -9758,6 +9890,7 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            recordHistory();
           }
         };
       });
@@ -9776,7 +9909,7 @@
         };
       });
 
-      // 10. Result Actions
+      // 11. Result Actions
       const dlBtn = container.querySelector('#wf-download-result-btn');
       if (dlBtn && state.resultBlob) {
         dlBtn.onclick = () => {
