@@ -2041,7 +2041,7 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `rail-item ${idx === 0 ? 'active' : ''}${tool.isMore ? ' rail-item-more' : ''}`;
-        btn.title = tool.fullTitle || tool.title;
+        btn.setAttribute('aria-label', tool.fullTitle || tool.title);
         if (tool.isMore) btn.setAttribute('aria-haspopup', 'menu');
 
         btn.innerHTML = `<span class="rail-icon">${tool.svg}</span><span class="rail-label">${tool.title}</span>`;
@@ -2411,7 +2411,11 @@
       localStorage.setItem(PINNED_RAIL_KEY, JSON.stringify(list));
     }
     function countForCat(cat) {
-      if (cat.task) return tools.filter(t => (taskToolIds.workflow || []).includes(t.id)).length;
+      // Task-scoped categories that ship a taskToolIds map count their own tools;
+      // otherwise fall back to a category count so every row is honest.
+      if (cat.task && taskToolIds[cat.task]?.length) {
+        return tools.filter(t => taskToolIds[cat.task].includes(t.id)).length;
+      }
       return tools.filter(t => t.category === cat.cat).length;
     }
     function openFlyoutCat(cat) {
@@ -2446,7 +2450,7 @@
         // Category-based pins get data-rail-cat so the browse view's active-state
         // sync highlights them; task-based pins (e.g. Workflow) launch a tool.
         if (cat.cat) btn.dataset.railCat = cat.cat;
-        btn.title = cat.label + ' tools';
+        btn.setAttribute('aria-label', cat.label + ' tools');
         btn.innerHTML = `<span class="rail-icon">${cat.icon}</span><span class="rail-label">${cat.label}</span>`;
         btn.addEventListener('click', () => openFlyoutCat(cat));
         railNav.insertBefore(btn, moreBtn);
@@ -2579,152 +2583,132 @@
       });
     }
     // ═══════════════════════════════════════════════════════════════════════
-    // Siderail Hover Intelligence: Capability Flyout Cards
+    // Siderail Pro Capability Popover (Linear / Raycast Craft)
     // ═══════════════════════════════════════════════════════════════════════
     const RAIL_HOVER_DATA = {
       compress: {
-        title: 'Compress Studio',
-        subtitle: 'File Size Optimization',
-        count: '20 Tools',
-        color: '#10B981',
-        bgColor: 'rgba(16, 185, 129, 0.15)',
-        borderColor: 'rgba(16, 185, 129, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg>',
-        desc: 'Shrink PDFs, images, videos & audio up to 90% with zero visible quality loss.',
-        capabilities: ['Lossless PDF Shrink', 'WebP & JPEG Compress', 'Video Bitrate Tune', 'Audio Resampling'],
-        trust: '100% In-Browser · No Uploads'
+        title: 'Compress',
+        count: '20 tools',
+        hint: 'Lossless',
+        items: [
+          { name: 'PDF Shrink', detail: 'Up to 90% reduction' },
+          { name: 'Images', detail: 'WebP · JPEG · PNG' },
+          { name: 'Video / Audio', detail: 'Bitrate · Resolution' }
+        ]
       },
       convert: {
-        title: 'Convert Studio',
-        subtitle: 'Universal Format Hub',
-        count: '54 Formats',
-        color: '#3B82F6',
-        bgColor: 'rgba(59, 130, 246, 0.15)',
-        borderColor: 'rgba(59, 130, 246, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 16.15V18.85C11 21.1 10.1 22 7.85 22H5.15C2.9 22 2 21.1 2 18.85V16.15C2 13.9 2.9 13 5.15 13H7.85C10.1 13 11 13.9 11 16.15Z"/><path d="M22 15C22 18.87 18.87 22 15 22L16.05 20.25"/><path d="M2 9C2 5.13 5.13 2 9 2L7.95 3.75"/></svg>',
-        desc: 'Batch transform between 180+ document, image, video, audio, ebook & sheet formats.',
-        capabilities: ['DOCX ⇄ PDF', 'Image Transcoding', 'Video to MP4/GIF', 'Excel to PDF/CSV'],
-        trust: '180+ Formats · Zero Uploads'
+        title: 'Convert',
+        count: '54 tools',
+        hint: 'Universal',
+        items: [
+          { name: 'Documents', detail: 'DOCX · PDF · XLSX' },
+          { name: 'Images', detail: 'HEIC · PNG · WebP' },
+          { name: 'Media & Audio', detail: 'MP4 · GIF · MP3' }
+        ]
       },
       organize: {
-        title: 'Organize Studio',
-        subtitle: 'Page & Structure Manager',
-        count: '23 Tools',
-        color: '#06B6D4',
-        bgColor: 'rgba(6, 182, 212, 0.15)',
-        borderColor: 'rgba(6, 182, 212, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"/><path d="M10.18 17.15L7.14 14.11M10.18 6.85v10.3M13.82 6.85l3.04 3.04M13.82 17.15V6.85"/></svg>',
-        desc: 'Merge files, split PDF chapters, visually reorder pages, rotate & extract ranges.',
-        capabilities: ['Merge PDF / Audio', 'Split & Extract Ranges', 'Visual Reorder Grid', 'Crop & Rotate Pages'],
-        trust: 'Interactive · Instant Processing'
+        title: 'Organize',
+        count: '23 tools',
+        hint: 'Interactive',
+        items: [
+          { name: 'Pages', detail: 'Merge · Split · Reorder' },
+          { name: 'Geometry', detail: 'Rotate · Crop · Extract' },
+          { name: 'Archives', detail: 'ZIP · 7Z · TAR.GZ' }
+        ]
       },
       edit: {
         title: 'Edit & Annotate',
-        subtitle: 'Direct Canvas Workspace',
-        count: '31 Tools',
-        color: '#8B5CF6',
-        bgColor: 'rgba(139, 92, 246, 0.15)',
-        borderColor: 'rgba(139, 92, 246, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13.26 3.6L5.05 12.29c-.31.33-.61.98-.67 1.43l-.37 3.24c-.13 1.17.71 1.97 1.87 1.77l3.22-.55c.45-.08 1.08-.41 1.39-.75l8.21-8.69c1.42-1.5 2.06-3.21-.15-5.3-2.2-2.07-3.87-1.34-5.29.16z"/></svg>',
-        desc: 'Modify PDF text, insert headers & page numbers, apply watermarks, and trim media.',
-        capabilities: ['Live Text Editing', 'Page Numbers & Headers', 'Watermarks & Stamps', 'Video/Audio Trimmer'],
-        trust: 'WYSIWYG · 100% Local'
+        count: '31 tools',
+        hint: 'Canvas',
+        items: [
+          { name: 'Text & Form', detail: 'Live Text · Redact · Sign' },
+          { name: 'Page Elements', detail: 'Numbers · Watermark' },
+          { name: 'Media Tools', detail: 'Trim · Speed · Mute' }
+        ]
       },
       protect: {
-        title: 'Protect & Security',
-        subtitle: 'Cryptographic Privacy',
-        count: '12 Tools',
-        color: '#F43F5E',
-        bgColor: 'rgba(244, 63, 94, 0.15)',
-        borderColor: 'rgba(244, 63, 94, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.49 2.23L5.5 4.11C4.35 4.54 3.41 5.9 3.41 7.12v7.43c0 1.18.78 2.73 1.73 3.44l4.3 3.21c1.41 1.06 3.73 1.06 5.14 0l4.3-3.21c.95-.71 1.73-2.26 1.73-3.44V7.12c0-1.23-.94-2.59-2.09-3.02l-4.99-1.87c-.85-.31-2.21-.31-3.04 0z"/><circle cx="12" cy="10.5" r="2"/><path d="M12 12.5v3"/></svg>',
-        desc: 'AES-256 password encrypt, remove restrictions, sign PDFs, and redact sensitive PII.',
-        capabilities: ['AES-256 PDF Encrypt', 'Unlock & Decrypt', 'Digital Signatures', 'Redact & Sanitize PII'],
-        trust: 'Client-Side Cryptography'
+        title: 'Protect & Sign',
+        count: '12 tools',
+        hint: 'AES-256',
+        items: [
+          { name: 'Encryption', detail: 'Password Lock · Unlock' },
+          { name: 'Sanitization', detail: 'Redact PII · Flatten' },
+          { name: 'Signatures', detail: 'Digital Sign · Seals' }
+        ]
       },
       scan: {
         title: 'Scan & OCR',
-        subtitle: 'On-Device Text Intelligence',
-        count: '10 Tools',
-        color: '#F59E0B',
-        bgColor: 'rgba(245, 158, 11, 0.15)',
-        borderColor: 'rgba(245, 158, 11, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/></svg>',
-        desc: 'Extract selectable text from scanned PDFs & images, extract tables, and summarize docs.',
-        capabilities: ['Tesseract Local OCR', 'Extract Table / CSV', 'PDF to Audio Voice', 'Document Scanner'],
-        trust: 'Private On-Device OCR'
+        count: '10 tools',
+        hint: 'On-Device',
+        items: [
+          { name: 'OCR Engine', detail: 'PDF / Image to Text' },
+          { name: 'Extraction', detail: 'Tables to CSV · Audio' },
+          { name: 'Scanner', detail: 'Camera Doc Scanner' }
+        ]
       },
       workflow: {
-        title: 'Automated Workflows',
-        subtitle: 'Multi-Step Pipelines',
+        title: 'Workflows',
         count: 'Automator',
-        color: '#6366F1',
-        bgColor: 'rgba(99, 102, 241, 0.15)',
-        borderColor: 'rgba(99, 102, 241, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>',
-        desc: 'Chain multiple file tools together into custom automated batch processing pipelines.',
-        capabilities: ['Bulk Automation', 'Multi-tool Pipelines', 'Custom Export Presets'],
-        trust: '1-Click Batch Engine'
+        hint: 'Pipelines',
+        items: [
+          { name: 'Pipelines', detail: 'Convert + Compress + Sign' },
+          { name: 'Batch', detail: 'Bulk Multi-File Runs' }
+        ]
+      },
+      more: {
+        title: 'All Studios',
+        count: '187 tools',
+        hint: 'Directory',
+        items: [
+          { name: 'Developer', detail: 'JSON · Base64 · QR' },
+          { name: 'Forensics', detail: 'EXIF & GPS Wiper' },
+          { name: 'E-Books', detail: 'EPUB Reader · Split' }
+        ]
       },
       account: {
-        title: 'Local Privacy & Storage',
-        subtitle: 'Client-Side Control',
-        count: 'Offline Mode',
-        color: '#14B8A6',
-        bgColor: 'rgba(20, 184, 166, 0.15)',
-        borderColor: 'rgba(20, 184, 166, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-        desc: 'Manage browser memory, storage cache, offline status, and zero-telemetry settings.',
-        capabilities: ['Zero Server Tracking', 'Offline PWA Cache', 'Clear In-Memory Cache'],
-        trust: 'Zero Data Collection'
+        title: 'Privacy & Storage',
+        count: 'Local Storage',
+        hint: 'Zero Logs',
+        items: [
+          { name: 'Client Engine', detail: 'Files never leave device' },
+          { name: 'Offline Cache', detail: 'Manage storage & quota' }
+        ]
       },
       business: {
         title: 'Business & Office',
-        subtitle: 'Document Management',
         count: 'Office Suite',
-        color: '#059669',
-        bgColor: 'rgba(5, 150, 105, 0.15)',
-        borderColor: 'rgba(5, 150, 105, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6V4.5C9 3.67 9.67 3 10.5 3h3c.83 0 1.5.67 1.5 1.5V6"/><rect x="3" y="6" width="18" height="15" rx="3"/><path d="M3 11c5 2 13 2 18 0M10 13h4"/></svg>',
-        desc: 'Process invoices, contracts, spreadsheets, presentations, and billing forms.',
-        capabilities: ['Invoices & Forms', 'Spreadsheet Transcode', 'Document Redaction', 'Digital Signature'],
-        trust: '100% In-Browser'
+        hint: 'Local Forms',
+        items: [
+          { name: 'Invoices & Forms', detail: 'GST · Receipts · Contracts' },
+          { name: 'Spreadsheets', detail: 'CSV · Excel Transcode' }
+        ]
       },
       developer: {
-        title: 'Developer & Data',
-        subtitle: 'Data Transformation',
-        count: 'Data Tools',
-        color: '#6366F1',
-        bgColor: 'rgba(99, 102, 241, 0.15)',
-        borderColor: 'rgba(99, 102, 241, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6M14 4.5l-4 15"/></svg>',
-        desc: 'Parse JSON, format code, generate Base64, unpack archives, and transcode data.',
-        capabilities: ['JSON & XML Validator', 'Base64 Transcoder', 'Archive Extractor', 'Hash Generator'],
-        trust: 'Instant & Private'
+        title: 'Developer Tools',
+        count: 'Data Suite',
+        hint: 'Client-Side',
+        items: [
+          { name: 'Formatters', detail: 'JSON · XML · Base64' },
+          { name: 'Codes & Hash', detail: 'QR · Barcode · SHA-256' }
+        ]
       },
       ebooks: {
-        title: 'Education & E-Books',
-        subtitle: 'EPUB & Reading Hub',
+        title: 'E-Books & Reading',
         count: 'E-Books',
-        color: '#8B5CF6',
-        bgColor: 'rgba(139, 92, 246, 0.15)',
-        borderColor: 'rgba(139, 92, 246, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M10 6h6M10 10h4"/></svg>',
-        desc: 'Read EPUBs, split into chapters, convert to PDF/MOBI, and extract book covers.',
-        capabilities: ['EPUB Reader', 'Chapter Splitter', 'Cover Extractor', 'EPUB to PDF'],
-        trust: 'Offline Reading'
+        hint: 'Reader',
+        items: [
+          { name: 'Reader & Edit', detail: 'EPUB Reader · Chapters' },
+          { name: 'Conversion', detail: 'EPUB to PDF · Mobi' }
+        ]
       },
       security: {
         title: 'Forensics & Privacy',
-        subtitle: 'Metadata & GPS Wiper',
-        count: 'Forensics',
-        color: '#0F766E',
-        bgColor: 'rgba(15, 118, 110, 0.15)',
-        borderColor: 'rgba(15, 118, 110, 0.35)',
-        iconSvg: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.53 9.47A3.5 3.5 0 0 0 9.47 14.53"/><path d="M17.82 5.77C16.07 4.45 14.07 3.73 12 3.73c-3.53 0-6.82 2.08-9.11 5.68a5.7 5.7 0 0 0 0 5.19c.79 1.24 1.71 2.31 2.71 3.17M8.42 19.53c1.14.48 2.35.74 3.58.74 3.53 0 6.82-2.08 9.11-5.68a5.7 5.7 0 0 0 0-5.19c-.33-.52-.69-1.01-1.06-1.47"/><path d="m2 2 20 20"/></svg>',
-        desc: 'Inspect and strip EXIF photo tags, GPS locations, author names, and camera metadata.',
-        capabilities: ['EXIF Metadata Wiper', 'GPS Remover', 'PII Sanitizer', 'Camera Data Wiper'],
-        trust: 'Zero Data Leak'
+        count: 'Privacy Suite',
+        hint: 'Sanitize',
+        items: [
+          { name: 'Metadata', detail: 'Strip EXIF · Camera Data' },
+          { name: 'Geo Privacy', detail: 'Remove GPS Coordinates' }
+        ]
       }
     };
 
@@ -2742,8 +2726,7 @@
 
       function showHoverCard(btn) {
         if (!btn || !document.body.contains(btn)) return;
-        
-        // Find key from multiple fallback attributes
+
         const keyRaw = (
           btn.dataset.taskRail || 
           btn.dataset.pinnedCat || 
@@ -2772,31 +2755,25 @@
         const rect = btn.getBoundingClientRect();
         if (rect.width === 0 && rect.height === 0) return;
 
-        const top = Math.max(20, Math.min(window.innerHeight - 170, rect.top + (rect.height / 2)));
-        const left = rect.right + 12;
+        const top = Math.max(16, Math.min(window.innerHeight - 140, rect.top + (rect.height / 2)));
+        const left = rect.right + 10;
 
         railHoverCardEl.innerHTML = `
           <div class="rail-hover-card-inner">
-            <div class="rail-hover-card-arrow"></div>
-            <div class="rail-hover-header">
-              <div class="rail-hover-icon" style="color:${data.color};background:${data.bgColor};border:1px solid ${data.borderColor};">
-                ${data.iconSvg}
+            <div class="rail-popover-head">
+              <div class="rail-popover-title-wrap">
+                <span class="rail-popover-title">${data.title}</span>
+                <span class="rail-popover-count">${data.count}</span>
               </div>
-              <div class="rail-hover-title-box">
-                <div class="rail-hover-title-row">
-                  <strong class="rail-hover-title">${data.title}</strong>
-                  <span class="rail-hover-badge" style="color:${data.color};background:${data.bgColor};border:1px solid ${data.borderColor};">${data.count}</span>
+              <span class="rail-popover-hint">${data.hint}</span>
+            </div>
+            <div class="rail-popover-list">
+              ${data.items.map(it => `
+                <div class="rail-popover-row">
+                  <span class="rail-popover-row-name">${it.name}</span>
+                  <span class="rail-popover-row-ext">${it.detail}</span>
                 </div>
-                <div class="rail-hover-sub">${data.subtitle}</div>
-              </div>
-            </div>
-            <p class="rail-hover-desc">${data.desc}</p>
-            <div class="rail-hover-pills">
-              ${data.capabilities.map(cap => `<span class="rail-hover-pill">${cap}</span>`).join('')}
-            </div>
-            <div class="rail-hover-foot">
-              <span class="rail-hover-dot" style="background:${data.color};box-shadow:0 0 6px ${data.color};"></span>
-              <span class="rail-hover-trust">${data.trust}</span>
+              `).join('')}
             </div>
           </div>
         `;
@@ -2805,7 +2782,6 @@
         railHoverCardEl.style.left = `${left}px`;
 
         if (btn.hasAttribute('title')) {
-          btn.dataset.originalTitle = btn.getAttribute('title');
           btn.removeAttribute('title');
         }
 
@@ -2818,21 +2794,26 @@
           if (railHoverCardEl) {
             railHoverCardEl.classList.remove('is-visible');
           }
-          if (activeHoveredRailBtn && activeHoveredRailBtn.dataset.originalTitle) {
-            activeHoveredRailBtn.setAttribute('title', activeHoveredRailBtn.dataset.originalTitle);
-          }
           activeHoveredRailBtn = null;
-        }, 50);
+        }, 40);
       }
 
-      // Delegate on document so dynamically rendered rail buttons work instantly
+      function stripAllRailTitles() {
+        document.querySelectorAll('.app-sidebar-rail, .app-sidebar-rail *').forEach(el => {
+          if (el.hasAttribute('title')) {
+            const val = el.getAttribute('title');
+            if (val && !el.hasAttribute('aria-label')) el.setAttribute('aria-label', val);
+            el.removeAttribute('title');
+          }
+        });
+      }
+
       if (!window._railHoverDelegated) {
         window._railHoverDelegated = true;
         document.addEventListener('mouseover', (e) => {
+          stripAllRailTitles();
           const btn = e.target.closest('.app-sidebar-rail .rail-item, .rail-item, [data-task-rail]');
-          if (btn) {
-            showHoverCard(btn);
-          }
+          if (btn) showHoverCard(btn);
         }, true);
 
         document.addEventListener('mouseout', (e) => {
@@ -2847,6 +2828,7 @@
           hideHoverCard();
         }, true);
       }
+      stripAllRailTitles();
     }
     window.initRailHoverIntelligence = initRailHoverIntelligence;
 

@@ -3967,142 +3967,144 @@
 
           <!-- RIGHT COLUMN: Dedicated Studio Export & Options Panel (Exact Mockup Match) -->
           <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="scan-benchmark-panel" aria-label="Export Settings">
-            <!-- Header: Red/Coral Document Badge & Title -->
-            <div class="scan-exact-header">
-              <div class="scan-exact-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                </svg>
-              </div>
-              <h2 class="scan-exact-title">Export Scan</h2>
-            </div>
-
-            <!-- Format Option Cards Stack -->
-            <div class="scan-exact-cards-stack" role="radiogroup" aria-label="Output Format">
-              <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable" tabindex="0" role="radio" aria-checked="${pdfFormat === 'searchable'}">
-                <div class="scan-benchmark-radio">
-                  <div class="scan-benchmark-radio-dot"></div>
-                </div>
-                <div class="scan-benchmark-card-text">
-                  <span class="scan-benchmark-card-label">Searchable PDF</span>
-                  <span class="scan-benchmark-card-sub">Selectable text + OCR layer</span>
-                </div>
-                <div class="scan-benchmark-card-right">
-                  <span class="scan-benchmark-pill-rec">Recommended</span>
-                </div>
-              </div>
-
-              <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image" tabindex="0" role="radio" aria-checked="${pdfFormat === 'image'}">
-                <div class="scan-benchmark-radio">
-                  <div class="scan-benchmark-radio-dot"></div>
-                </div>
-                <div class="scan-benchmark-card-text">
-                  <span class="scan-benchmark-card-label">Standard PDF</span>
-                  <span class="scan-benchmark-card-sub">Flattened visual scan · Fast</span>
-                </div>
-              </div>
-
-              <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip" tabindex="0" role="radio" aria-checked="${pdfFormat === 'zip'}">
-                <div class="scan-benchmark-radio">
-                  <div class="scan-benchmark-radio-dot"></div>
-                </div>
-                <div class="scan-benchmark-card-text">
-                  <span class="scan-benchmark-card-label">Image ZIP</span>
-                  <span class="scan-benchmark-card-sub">Individual full-resolution JPGs</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Unified Segmented Settings Strip (Option 1: Linear / Apple Style) -->
-            <div class="scan-segmented-settings-strip">
-              <!-- Segment 1: Resolution -->
-              <div class="scan-segment-item" id="panel-field-dpi">
-                <label class="scan-segment-label" for="panel-export-dpi">Resolution</label>
-                <div class="scan-segment-select-wrap">
-                  <select id="panel-export-dpi" class="scan-segment-select">
-                    <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI</option>
-                    <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI</option>
-                    <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI</option>
-                  </select>
-                  <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-              </div>
-
-              <!-- Divider 1 -->
-              <div class="scan-segment-divider" aria-hidden="true"></div>
-
-              <!-- Segment 2: Geometry -->
-              <div class="scan-segment-item" id="panel-field-size">
-                <label class="scan-segment-label" for="panel-export-pagesize">Geometry</label>
-                <div class="scan-segment-select-wrap">
-                  <select id="panel-export-pagesize" class="scan-segment-select">
-                    <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
-                    <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
-                    <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
-                  </select>
-                  <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-              </div>
-
-              <!-- Divider 2 -->
-              <div class="scan-segment-divider" aria-hidden="true"></div>
-
-              <!-- Segment 3: Language -->
-              <div class="scan-segment-item" id="panel-ocr-lang-row">
-                <label class="scan-segment-label" for="panel-export-lang">Language</label>
-                <div class="scan-segment-select-wrap">
-                  <select id="panel-export-lang" class="scan-segment-select">
-                    <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
-                    <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
-                    <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
-                    <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
-                    <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
-                    <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
-                    <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
-                    <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
-                    <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
-                    <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
-                    <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
-                  </select>
-                  <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Estimated Output Box (Light Mint Box with Neutral Privacy Pill & Solid Green Bar) -->
-            <div class="scan-exact-est-box">
-              <div class="scan-exact-est-title">Estimated output</div>
-              <div class="scan-exact-est-row">
-                <span class="scan-exact-est-metric">
-                  <strong>${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong> · <span class="scan-est-size-tag" id="scan-panel-est-size">~${((pages.length || 1) * (pdfFormat === 'zip' ? 1.1 : (pdfCompression === 'high' ? 0.72 : (pdfCompression === 'balanced' ? 0.34 : 0.15)))).toFixed(1)} MB</span> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res' : (pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI'))}</span>
-                </span>
-                <span class="scan-exact-privacy-badge">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            <div class="cpdf-benchmark-panel-inner">
+              <!-- Header: Red/Coral Document Badge & Title -->
+              <div class="scan-exact-header">
+                <div class="scan-exact-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
                   </svg>
-                  100% Local
-                </span>
+                </div>
+                <h2 class="scan-exact-title">Export Scan</h2>
               </div>
-              <div class="scan-exact-track">
-                <div class="scan-exact-bar"></div>
-              </div>
-            </div>
 
-            <!-- Primary Action CTA Button (Solid Obsidian Black) -->
-            <button type="button" class="scan-exact-cta" id="btn-panel-confirm-export">
-              <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
-              <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-              </svg>
-              <div class="scan-modal-progress-track" id="panel-progress-track" style="display:none;">
-                <div class="scan-modal-progress-fill" id="panel-progress-fill"></div>
+              <!-- Format Option Cards Stack -->
+              <div class="scan-exact-cards-stack" role="radiogroup" aria-label="Output Format">
+                <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable" tabindex="0" role="radio" aria-checked="${pdfFormat === 'searchable'}">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="scan-benchmark-card-text">
+                    <span class="scan-benchmark-card-label">Searchable PDF</span>
+                    <span class="scan-benchmark-card-sub">Selectable text + OCR layer</span>
+                  </div>
+                  <div class="scan-benchmark-card-right">
+                    <span class="scan-benchmark-pill-rec">Recommended</span>
+                  </div>
+                </div>
+
+                <div class="scan-benchmark-card ${pdfFormat === 'image' ? 'is-active' : ''}" data-fmt="image" tabindex="0" role="radio" aria-checked="${pdfFormat === 'image'}">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="scan-benchmark-card-text">
+                    <span class="scan-benchmark-card-label">Standard PDF</span>
+                    <span class="scan-benchmark-card-sub">Flattened visual scan · Fast</span>
+                  </div>
+                </div>
+
+                <div class="scan-benchmark-card ${pdfFormat === 'zip' ? 'is-active' : ''}" data-fmt="zip" tabindex="0" role="radio" aria-checked="${pdfFormat === 'zip'}">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="scan-benchmark-card-text">
+                    <span class="scan-benchmark-card-label">Image ZIP</span>
+                    <span class="scan-benchmark-card-sub">Individual full-resolution JPGs</span>
+                  </div>
+                </div>
               </div>
-            </button>
+
+              <!-- Unified Segmented Settings Strip (Option 1: Linear / Apple Style) -->
+              <div class="scan-segmented-settings-strip">
+                <!-- Segment 1: Resolution -->
+                <div class="scan-segment-item" id="panel-field-dpi">
+                  <label class="scan-segment-label" for="panel-export-dpi">Resolution</label>
+                  <div class="scan-segment-select-wrap">
+                    <select id="panel-export-dpi" class="scan-segment-select">
+                      <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI</option>
+                      <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI</option>
+                      <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI</option>
+                    </select>
+                    <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
+                </div>
+
+                <!-- Divider 1 -->
+                <div class="scan-segment-divider" aria-hidden="true"></div>
+
+                <!-- Segment 2: Geometry -->
+                <div class="scan-segment-item" id="panel-field-size">
+                  <label class="scan-segment-label" for="panel-export-pagesize">Geometry</label>
+                  <div class="scan-segment-select-wrap">
+                    <select id="panel-export-pagesize" class="scan-segment-select">
+                      <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
+                      <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
+                      <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
+                    </select>
+                    <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
+                </div>
+
+                <!-- Divider 2 -->
+                <div class="scan-segment-divider" aria-hidden="true"></div>
+
+                <!-- Segment 3: Language -->
+                <div class="scan-segment-item" id="panel-ocr-lang-row">
+                  <label class="scan-segment-label" for="panel-export-lang">Language</label>
+                  <div class="scan-segment-select-wrap">
+                    <select id="panel-export-lang" class="scan-segment-select">
+                      <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
+                      <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
+                      <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
+                      <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
+                      <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
+                      <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
+                      <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
+                      <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
+                      <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
+                      <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
+                      <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
+                    </select>
+                    <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Estimated Output Box (Light Mint Box with Neutral Privacy Pill & Solid Green Bar) -->
+              <div class="scan-exact-est-box">
+                <div class="scan-exact-est-title">Estimated output</div>
+                <div class="scan-exact-est-row">
+                  <span class="scan-exact-est-metric">
+                    <strong>${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong> · <span class="scan-est-size-tag" id="scan-panel-est-size">~${((pages.length || 1) * (pdfFormat === 'zip' ? 1.1 : (pdfCompression === 'high' ? 0.72 : (pdfCompression === 'balanced' ? 0.34 : 0.15)))).toFixed(1)} MB</span> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res' : (pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI'))}</span>
+                  </span>
+                  <span class="scan-exact-privacy-badge">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    100% Local
+                  </span>
+                </div>
+                <div class="scan-exact-track">
+                  <div class="scan-exact-bar"></div>
+                </div>
+              </div>
+
+              <!-- Primary Action CTA Button (Solid Obsidian Black) -->
+              <button type="button" class="scan-exact-cta" id="btn-panel-confirm-export">
+                <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
+                <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+                <div class="scan-modal-progress-track" id="panel-progress-track" style="display:none;">
+                  <div class="scan-modal-progress-fill" id="panel-progress-fill"></div>
+                </div>
+              </button>
+            </div>
           </aside>
         </div>
       `;
@@ -8372,273 +8374,17 @@
   };
 
 
-  /* ================================================================
-     Workflow Builder  (Benchmark 2-Column Workstation)
-  ================================================================ */
-  window.__ffMountWorkflow = function mountWorkflow(container) {
-    container.innerHTML = '';
-    container.className = 'cpdf-root prot-root wf-root';
-
-    const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
-      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const _bytes = n => {
-      n = Number(n) || 0;
-      if (n < 1024) return `${n} B`;
-      if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
-      return `${(n / 1048576).toFixed(1)} MB`;
+    const TOOL_TYPE_MAP = {
+      'pdf-compress': 'wf-type-compress',
+      'pdf-flatten': 'wf-type-structure',
+      'pdf-redact-pii': 'wf-type-security',
+      'pdf-protect': 'wf-type-security',
+      'exif-strip': 'wf-type-security',
+      'pdf-watermark': 'wf-type-stamp',
+      'pdf-headers-footers': 'wf-type-stamp',
+      'pdf-invert': 'wf-type-visual',
+      'pdf-repair': 'wf-type-structure',
     };
-
-    const I = {
-      workflow: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h6a4 4 0 0 1 4 4V14"/><path d="M14 17.5H8a4 4 0 0 1-4-4V10"/></svg>`,
-      lock: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-      shield: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-      layers: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
-      compress: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`,
-      eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
-      doc: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-      check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-      arrowRight: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`,
-      replace: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>`,
-      prev: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
-      next: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
-      plus: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
-      up: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`,
-      down: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`,
-      cross: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-      shieldCheck: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
-    };
-
-    const TOOL_META = {
-      'pdf-compress': { name: 'Compress PDF', short: 'Compress', icon: I.compress, desc: 'Reduce size (-65%)' },
-      'pdf-flatten': { name: 'Flatten Forms & Layers', short: 'Flatten Ink', icon: I.layers, desc: 'Bake static ink' },
-      'pdf-redact-pii': { name: 'Auto-Redact PII', short: 'Redact PII', icon: I.shield, desc: 'Scrub sensitive data' },
-      'pdf-protect': { name: '256-Bit Protect', short: 'Password Lock', icon: I.lock, desc: 'AES-256 cipher' },
-      'pdf-watermark': { name: 'Watermark Stamp', short: 'Watermark', icon: I.doc, desc: 'Overlay stamp' },
-      'pdf-invert': { name: 'Invert Colours', short: 'Invert Colors', icon: I.eye, desc: 'Dark mode' },
-      'pdf-headers-footers': { name: 'Page Numbers', short: 'Page Numbers', icon: I.doc, desc: 'Add header stamps' },
-      'exif-strip': { name: 'Strip EXIF Metadata', short: 'Strip EXIF', icon: I.shield, desc: 'Wipe GPS tags' },
-      'pdf-repair': { name: 'Repair PDF Structure', short: 'Repair PDF', icon: I.replace, desc: 'Rebuild xref table' },
-    };
-
-    const RECIPES = {
-      'privacy': {
-        name: 'Privacy & Sanitize',
-        desc: 'Auto-Redact PII → Strip EXIF → Flatten Ink',
-        steps: ['pdf-redact-pii', 'exif-strip', 'pdf-flatten'],
-      },
-      'web-opt': {
-        name: 'Web & Email Optimization',
-        desc: 'Flatten Forms → Compress PDF (-65%)',
-        steps: ['pdf-flatten', 'pdf-compress'],
-      },
-      'lockdown': {
-        name: 'Document Lockdown',
-        desc: 'Flatten Forms → 256-Bit AES Encryption',
-        steps: ['pdf-flatten', 'pdf-protect'],
-      },
-      'custom': {
-        name: 'Custom Sequence',
-        desc: 'Build your own step pipeline',
-        steps: ['pdf-compress', 'pdf-watermark'],
-      }
-    };
-
-    let file = null;
-    let pdfDoc = null;
-    let currentPage = 1;
-    let totalPages = 1;
-    let renderTask = null;
-    let selectedRecipe = 'privacy';
-    let customSteps = ['pdf-compress', 'pdf-watermark'];
-
-    const getActiveSteps = () => {
-      if (selectedRecipe === 'custom') return customSteps;
-      return RECIPES[selectedRecipe]?.steps || [];
-    };
-
-    const isPdf = f => {
-      const n = (f?.name || '').toLowerCase();
-      return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
-    };
-
-    const base = () => (file?.name || 'document.pdf').replace(/\.[^/.]+$/, '') || 'document';
-
-    function defaultsFor(tool) {
-      const inputs = {};
-      (tool.fields || []).forEach(f => { inputs[f.key] = f.default; });
-      return inputs;
-    }
-
-    async function pickFile(f) {
-      if (!f) return;
-      if (f.size > 500 * 1024 * 1024) return;
-      file = f;
-      currentPage = 1;
-      totalPages = 1;
-      pdfDoc = null;
-      renderConfigure();
-    }
-
-    async function loadPdfDocument() {
-      if (!file || !isPdf(file)) return;
-      try {
-        const loadScript = window.FF?.util?.loadScript || (src => new Promise((resolve, reject) => {
-          const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
-        }));
-        if (!window.pdfjsLib) {
-          await loadScript('vendor/pdfjs.min.js');
-        }
-        if (window.pdfjsLib && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
-        }
-        const buf = await file.arrayBuffer();
-        const loadingTask = window.pdfjsLib.getDocument({ data: new Uint8Array(buf) });
-        pdfDoc = await loadingTask.promise;
-        totalPages = pdfDoc.numPages || 1;
-        renderPagePreview(currentPage);
-      } catch (err) {
-        console.warn('[Workflow] PDF preview loader', err);
-      }
-    }
-
-    async function renderPagePreview(pageNum) {
-      if (!pdfDoc) return;
-      const stage = container.querySelector('#wf-paper-container');
-      const pageInfo = container.querySelector('#wf-page-counter');
-      const prevBtn = container.querySelector('#wf-prev-page');
-      const nextBtn = container.querySelector('#wf-next-page');
-
-      if (pageInfo) pageInfo.textContent = `Page ${pageNum} of ${totalPages}`;
-      if (prevBtn) prevBtn.disabled = pageNum <= 1;
-      if (nextBtn) nextBtn.disabled = pageNum >= totalPages;
-
-      try {
-        if (renderTask) renderTask.cancel();
-        const page = await pdfDoc.getPage(pageNum);
-        const vp = page.getViewport({ scale: 0.95 });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(vp.width));
-        canvas.height = Math.max(1, Math.round(vp.height));
-        canvas.className = 'prot-canvas-sheet';
-        const ctx = canvas.getContext('2d');
-        renderTask = page.render({ canvasContext: ctx, viewport: vp });
-        await renderTask.promise;
-        if (stage) {
-          stage.innerHTML = '';
-          stage.appendChild(canvas);
-        }
-      } catch (e) {
-        if (e?.name !== 'RenderingCancelledException') {
-          console.warn('[Workflow] render page error', e);
-        }
-      }
-    }
-
-    function renderPipelineBreadcrumb(activeIdx = -1) {
-      const el = container.querySelector('#wf-flow-breadcrumb');
-      if (!el) return;
-      const steps = getActiveSteps();
-      if (!steps.length) {
-        el.innerHTML = '<span class="wf-bc-step" style="color:#94A3B8;">No steps</span>';
-        return;
-      }
-      el.innerHTML = steps.map((stepId, idx) => {
-        const meta = TOOL_META[stepId] || { short: stepId, name: stepId };
-        const isCurrent = activeIdx === idx;
-        const isDone = activeIdx > idx;
-        const cls = isDone ? 'is-done' : isCurrent ? 'is-active' : '';
-        return `<span class="wf-bc-step ${cls}" title="${_esc(meta.name)}">${_esc(meta.short || meta.name)}</span>`;
-      }).join('<span class="wf-bc-arrow">→</span>');
-    }
-
-    function renderUpload() {
-      container.className = 'cpdf-root prot-root wf-root';
-      const stage = container.closest('.app-stage-container');
-      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
-
-      container.innerHTML = `
-        <header class="cpdf-hdr prot-hdr">
-          <div class="cpdf-hdr-icon prot-hdr-icon">
-            ${I.workflow}
-          </div>
-          <div>
-            <h2 class="cpdf-hdr-title">Workflow Pipeline</h2>
-            <p class="cpdf-hdr-sub">Automate multi-step file processing — 1-click recipes or custom sequential chains</p>
-          </div>
-        </header>
-        <div class="cpdf-dropzone drop-hero-box" id="wf-dz" tabindex="0" role="button" aria-label="Add file to run through pipeline">
-          <div class="dropzone-idle">
-            <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
-              </svg>
-            </div>
-
-            <div class="drop-action-group">
-              <label for="wf-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="wf-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
-            </div>
-
-            <p class="drop-sub-text">Add <strong>PDF</strong>, <strong>Image</strong>, or document to run pipeline</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-img">PNG</span>
-              <span class="fmt-badge fmt-img">JPG</span>
-              <span class="fmt-badge fmt-doc">ALL FILES</span>
-            </div>
-          </div>
-          <input id="wf-inp" type="file" accept="*/*" hidden>
-        </div>`;
-
-      const dz = container.querySelector('#wf-dz');
-      const inp = container.querySelector('#wf-inp');
-      inp.onchange = () => inp.files[0] && pickFile(inp.files[0]);
-      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
-      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
-      dz.addEventListener('drop', e => {
-        e.preventDefault(); dz.classList.remove('cpdf-dz--over');
-        const f = e.dataTransfer?.files?.[0]; if (f) pickFile(f);
-      });
-      dz.addEventListener('click', e => { if (!e.target.closest('label')) inp.click(); });
-      dz.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
-      });
-    }
 
     function renderConfigure() {
       const isCustom = selectedRecipe === 'custom';
@@ -8651,202 +8397,197 @@
         stageEl.style.margin = '0';
         stageEl.classList.add('spdf-stage-active');
       }
+      const canvasEl = container.closest('.app-canvas');
+      if (canvasEl) canvasEl.classList.add('spdf-stage-active');
+      const mainContent = container.closest('.app-main-content');
+      if (mainContent) mainContent.classList.add('spdf-stage-active');
 
       container.innerHTML = `
-        <div class="cpdf-benchmark-body">
-          <div class="cpdf-benchmark-workstation">
-            <!-- Left Stage: Calm Neutral Stage with Elevated Paper Sheet -->
-            <div class="cpdf-benchmark-stage">
-              <div class="cpdf-benchmark-paper" id="wf-paper-container">
-                ${isPdf(file) ? `
-                  <div class="prot-loading-sheet">
-                    <div class="prot-loading-spin"></div>
-                    <span>Rendering document preview…</span>
-                  </div>
-                ` : `
-                  <div class="prot-generic-file-card">
-                    <span class="prot-generic-icon">${I.doc}</span>
-                    <strong class="prot-generic-name">${_esc(file.name)}</strong>
-                    <span class="prot-generic-size">${_bytes(file.size)}</span>
-                    <span class="prot-generic-badge">Pipeline Ready</span>
-                  </div>
-                `}
-              </div>
+        <div class="wf-single-studio">
+          <div class="wf-studio-header">
+            <div class="wf-studio-badge">
+              ${I.workflow}
+              <span>Workflow Studio</span>
+            </div>
+            <div class="wf-recipe-nav" role="tablist" aria-label="Workflow Recipes">
+              ${['privacy', 'web-opt', 'lockdown', 'custom'].map(r => `
+                <button type="button" class="wf-recipe-tab ${selectedRecipe === r ? 'is-active' : ''}" data-recipe="${r}" role="tab" aria-selected="${selectedRecipe === r}">
+                  <span>${RECIPES[r]?.name || r}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
 
-              <!-- Bottom-Attached Precision Status Bar -->
-              <div class="cpdf-benchmark-fileinfo-row">
-                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-                  ${isPdf(file) ? `
-                    <button type="button" class="prot-nav-arrow" id="wf-prev-page" title="Previous page">${I.prev}</button>
-                    <span class="prot-page-text" id="wf-page-counter">Page 1 of ${totalPages}</span>
-                    <button type="button" class="prot-nav-arrow" id="wf-next-page" title="Next page">${I.next}</button>
-                    <span style="color:#CBD5E1;margin:0 2px;">|</span>
-                  ` : ''}
-                  <span class="cpdf-benchmark-fileinfo-text" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    ${_esc(file.name)} (${_bytes(file.size)})
-                  </span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-                  <span class="prot-meta-status is-open" id="wf-status-pill">
-                    ${I.workflow} ${steps.length} Steps Armed
-                  </span>
-                  <button type="button" class="cpdf-benchmark-btn-add" id="wf-replace-file" title="Replace file">
+          <div class="wf-track-wrap">
+            <div class="wf-pipeline-track">
+              <!-- Node 0: Source Input -->
+              ${file ? `
+                <div class="wf-flat-row wf-doc-row" role="group" aria-label="Source Document">
+                  <span class="wf-row-idx">IN</span>
+                  <span class="wf-row-icon is-pink" aria-hidden="true">${I.doc}</span>
+                  <div class="wf-row-body">
+                    <strong class="wf-row-title" title="${_esc(file.name)}">${_esc(file.name)}</strong>
+                    <span class="wf-row-sub">${_bytes(file.size)}${totalPages > 1 ? ` · ${totalPages} Pages` : ''}</span>
+                  </div>
+                  <button type="button" class="wf-row-action-btn" id="wf-canvas-change-doc" title="Change file">
                     ${I.replace}&nbsp; Change
                   </button>
                 </div>
+              ` : `
+                <div class="wf-flat-row wf-doc-row is-empty" id="wf-canvas-dz" role="button" tabindex="0" aria-label="Select or drop document to run pipeline">
+                  <input type="file" id="wf-canvas-file-inp" accept=".pdf,image/*,application/pdf" style="display:none;">
+                  <div class="wf-empty-illus">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="12" y1="18" x2="12" y2="12"/>
+                      <polyline points="9 15 12 12 15 15"/>
+                    </svg>
+                    <strong class="wf-empty-title">Drop document to arm pipeline</strong>
+                    <span class="wf-empty-sub">PDF or image files · processed directly in your browser</span>
+                  </div>
+                  <button type="button" class="wf-row-action-btn is-primary" id="wf-browse-trigger" style="margin-top:2px;">
+                    Browse File
+                  </button>
+                </div>
+              `}
+
+              <!-- Sequential Steps -->
+              ${steps.map((stepId, i) => {
+                const meta = TOOL_META[stepId] || { name: stepId, desc: '', icon: I.doc };
+                const typeClass = TOOL_TYPE_MAP[stepId] || '';
+                return `
+                  <div class="wf-hairline-connector" aria-hidden="true">
+                    <div class="wf-hairline-line"></div>
+                    <svg class="wf-hairline-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+
+                  <div class="wf-step-block" data-step-id="${stepId}" data-step-index="${i}" style="animation-delay: ${i * 40}ms;">
+                    <div class="wf-flat-row wf-step-row ${typeClass}">
+                      <span class="wf-row-idx">${String(i + 1).padStart(2, '0')}</span>
+                      <span class="wf-row-icon" aria-hidden="true">${meta.icon}</span>
+                      <div class="wf-row-body">
+                        <span class="wf-row-title">${meta.name}</span>
+                        <span class="wf-row-sub">${meta.desc || 'Sequential operation'}</span>
+                      </div>
+                      <div class="wf-row-actions" role="toolbar" aria-label="Step controls">
+                        <button type="button" class="wf-icon-btn" data-move-up="${i}" title="Move step up" ${i === 0 ? 'disabled' : ''}>${I.up}</button>
+                        <button type="button" class="wf-icon-btn" data-move-down="${i}" title="Move step down" ${i === steps.length - 1 ? 'disabled' : ''}>${I.down}</button>
+                        <button type="button" class="wf-icon-btn is-danger" data-remove="${i}" title="Remove step" ${steps.length <= 1 ? 'disabled' : ''}>${I.cross}</button>
+                      </div>
+                    </div>
+                    ${renderStepConfigInline(stepId, i)}
+                  </div>
+                `;
+              }).join('')}
+
+              <!-- Connector to Quick Add -->
+              <div class="wf-hairline-connector" aria-hidden="true">
+                <div class="wf-hairline-line"></div>
+                <svg class="wf-hairline-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+
+              <!-- Quick Add Row -->
+              <div class="wf-add-block">
+                <div class="wf-add-strip" role="toolbar" aria-label="Add operation">
+                  <span class="wf-add-label">${I.plus}&nbsp; Add step:</span>
+                  <button type="button" class="wf-add-btn" data-quick-add="pdf-compress">${I.compress} Compress</button>
+                  <button type="button" class="wf-add-btn" data-quick-add="pdf-flatten">${I.layers} Flatten</button>
+                  <button type="button" class="wf-add-btn" data-quick-add="pdf-redact-pii">${I.shield} Redact</button>
+                  <button type="button" class="wf-add-btn" data-quick-add="pdf-protect">${I.lock} Protect</button>
+                  <button type="button" class="wf-add-btn" data-quick-add="pdf-watermark">${I.doc} Watermark</button>
+                  <button type="button" class="wf-add-btn" data-quick-add="pdf-invert">${I.eye} Invert</button>
+                  <button type="button" class="wf-add-btn" data-quick-add="exif-strip">${I.shield} EXIF</button>
+                </div>
+              </div>
+
+              <!-- Connector to Output -->
+              <div class="wf-hairline-connector" aria-hidden="true">
+                <div class="wf-hairline-line"></div>
+                <svg class="wf-hairline-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+
+              <!-- Output Node -->
+              <div class="wf-flat-row wf-out-row">
+                <span class="wf-row-idx">OUT</span>
+                <span class="wf-row-icon is-green" aria-hidden="true">${I.check}</span>
+                <div class="wf-row-body">
+                  <span class="wf-row-title">Final Document</span>
+                  <span class="wf-row-sub">Client-side stream · ready for instant export</span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Right Panel: Precision Studio Inspector (Compress Style Cards) -->
-            <div class="cpdf-benchmark-panel">
-              <!-- Top Header -->
-              <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon prot-header-badge">
-                  ${I.workflow}
-                </div>
-                <h2 class="cpdf-benchmark-title">Workflow Pipeline</h2>
-              </div>
-
-              <!-- 4 Stacked Option Cards (Presets + Custom) -->
-              <div class="prot-card-list">
-                <div class="cpdf-benchmark-card ${selectedRecipe === 'privacy' ? 'is-active' : ''}" data-recipe="privacy" role="button" tabindex="0">
-                  <div class="cpdf-benchmark-radio"><div class="cpdf-benchmark-radio-dot"></div></div>
-                  <div class="prot-card-info">
-                    <strong>Privacy & Sanitize</strong>
-                    <span>Auto-Redact PII → Strip EXIF → Flatten</span>
-                  </div>
-                </div>
-
-                <div class="cpdf-benchmark-card ${selectedRecipe === 'web-opt' ? 'is-active' : ''}" data-recipe="web-opt" role="button" tabindex="0">
-                  <div class="cpdf-benchmark-radio"><div class="cpdf-benchmark-radio-dot"></div></div>
-                  <div class="prot-card-info">
-                    <strong>Web & Email Optimization</strong>
-                    <span>Flatten Forms → Compress PDF (-65%)</span>
-                  </div>
-                </div>
-
-                <div class="cpdf-benchmark-card ${selectedRecipe === 'lockdown' ? 'is-active' : ''}" data-recipe="lockdown" role="button" tabindex="0">
-                  <div class="cpdf-benchmark-radio"><div class="cpdf-benchmark-radio-dot"></div></div>
-                  <div class="prot-card-info">
-                    <strong>Document Lockdown</strong>
-                    <span>Flatten Forms → 256-Bit AES Encryption</span>
-                  </div>
-                </div>
-
-                <div class="cpdf-benchmark-card ${selectedRecipe === 'custom' ? 'is-active' : ''}" data-recipe="custom" role="button" tabindex="0">
-                  <div class="cpdf-benchmark-radio"><div class="cpdf-benchmark-radio-dot"></div></div>
-                  <div class="prot-card-info">
-                    <strong>Custom Sequence</strong>
-                    <span>Build your own step pipeline</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Dynamic Context Area -->
-              <div class="prot-context-box" id="wf-context-area">
-                ${isCustom ? `
-                  <div class="prot-field-top">
-                    <span class="prot-field-title">Pipeline Chain</span>
-                    <span class="prot-entropy-tag">${customSteps.length} Custom Steps</span>
-                  </div>
-                  <div class="wf-custom-chain">
-                    ${customSteps.map((stepId, i) => {
-                      const meta = TOOL_META[stepId] || { name: stepId, icon: I.doc };
-                      return `
-                        <div class="wf-step-item">
-                          <span class="wf-step-idx">${i + 1}</span>
-                          <span class="wf-step-name">${meta.name}</span>
-                          <div class="wf-step-actions">
-                            <button type="button" class="wf-mini-btn" data-move-up="${i}" title="Move up">${I.up}</button>
-                            <button type="button" class="wf-mini-btn" data-move-down="${i}" title="Move down">${I.down}</button>
-                            <button type="button" class="wf-mini-btn is-danger" data-remove="${i}" title="Remove step">${I.cross}</button>
-                          </div>
-                        </div>`;
-                    }).join('')}
-                  </div>
-
-                  <div class="prot-field-top" style="margin-top:2px;">
-                    <span class="prot-field-title">+ Add Step</span>
-                  </div>
-                  <div class="wf-quick-add">
-                    <button type="button" class="wf-add-chip" data-quick-add="pdf-compress">${I.plus} Compress</button>
-                    <button type="button" class="wf-add-chip" data-quick-add="pdf-flatten">${I.plus} Flatten</button>
-                    <button type="button" class="wf-add-chip" data-quick-add="pdf-redact-pii">${I.plus} Redact PII</button>
-                    <button type="button" class="wf-add-chip" data-quick-add="pdf-protect">${I.plus} Protect</button>
-                    <button type="button" class="wf-add-chip" data-quick-add="pdf-watermark">${I.plus} Watermark</button>
-                    <button type="button" class="wf-add-chip" data-quick-add="pdf-invert">${I.plus} Invert</button>
-                    <button type="button" class="wf-add-chip" data-quick-add="exif-strip">${I.plus} Strip EXIF</button>
-                  </div>
-                ` : `
-                  <div class="prot-field-top">
-                    <span class="prot-field-title">Preset Sequence</span>
-                    <span class="prot-entropy-tag">Automatic Chain</span>
-                  </div>
-                  <div class="wf-custom-chain" style="max-height:75px;">
-                    ${steps.map((stepId, i) => {
-                      const meta = TOOL_META[stepId] || { name: stepId, icon: I.doc };
-                      return `
-                        <div class="wf-step-item" style="background:#F8FAFC;">
-                          <span class="wf-step-idx">${i + 1}</span>
-                          <span class="wf-step-name">${meta.name}</span>
-                          <span class="prot-chip-badge" style="font-size:9.5px;color:#64748B;">${meta.desc || 'Active'}</span>
-                        </div>`;
-                    }).join('')}
-                  </div>
-                `}
-              </div>
-
-              <!-- Streamlined Security Summary Strip -->
-              <div class="prot-security-strip">
-                <div class="prot-strip-row">
-                  <strong id="wf-summary-spec">${steps.length} In-Memory Steps</strong>
-                  <span id="wf-summary-badge">100% Offline Stream</span>
-                </div>
-                <div class="prot-strip-track">
-                  <div class="prot-strip-bar" style="width: 100%; background: #18181B;"></div>
-                </div>
-              </div>
-
-              <!-- Primary Action Obsidian Button -->
-              <button type="button" class="cpdf-benchmark-cta" id="wf-studio-run" ${steps.length ? '' : 'disabled'}>
-                <span>Run Pipeline (${steps.length} Step${steps.length === 1 ? '' : 's'})</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
+          <!-- Bottom Command Bar -->
+          <div class="wf-bottom-bar">
+            <div class="wf-bottom-meta">
+              <span class="wf-telemetry-badge">${I.shieldCheck}&nbsp; Runs in your browser</span>
+              <span class="wf-telemetry-dot">·</span>
+              <span class="wf-telemetry-steps">${steps.length} Sequential Steps</span>
             </div>
+            <button type="button" class="wf-primary-cta" id="wf-studio-run">
+              <span>${file ? `Run Pipeline (${steps.length} Steps)` : `Select File to Run (${steps.length} Steps)`}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </button>
           </div>
         </div>`;
 
-      // Render Left Stage Elements
-      if (isPdf(file)) loadPdfDocument();
       renderPipelineBreadcrumb();
 
-      // Page Stepper
-      container.querySelector('#wf-prev-page')?.addEventListener('click', () => {
-        if (currentPage > 1) { currentPage--; renderPagePreview(currentPage); }
-      });
-      container.querySelector('#wf-next-page')?.addEventListener('click', () => {
-        if (currentPage < totalPages) { currentPage++; renderPagePreview(currentPage); }
-      });
+      const fileInp = container.querySelector('#wf-canvas-file-inp');
+      if (fileInp) {
+        fileInp.onchange = () => fileInp.files[0] && pickFile(fileInp.files[0]);
+      }
+      const browseTrigger = container.querySelector('#wf-browse-trigger');
+      if (browseTrigger && fileInp) {
+        browseTrigger.onclick = (e) => { e.stopPropagation(); fileInp.click(); };
+      }
+      const emptyNode = container.querySelector('#wf-canvas-dz');
+      if (emptyNode && fileInp) {
+        emptyNode.onclick = (e) => { if (!e.target.closest('button')) fileInp.click(); };
+      }
 
-      container.querySelector('#wf-replace-file')?.addEventListener('click', () => {
-        file = null; pdfDoc = null; renderUpload();
-      });
+      const studio = container.querySelector('.wf-single-studio');
+      if (studio) {
+        studio.ondragover = (e) => { e.preventDefault(); studio.classList.add('is-dragover'); };
+        studio.ondragleave = () => studio.classList.remove('is-dragover');
+        studio.ondrop = (e) => {
+          e.preventDefault();
+          studio.classList.remove('is-dragover');
+          const f = e.dataTransfer?.files?.[0];
+          if (f) pickFile(f);
+        };
+      }
 
-      // Recipe Card Selection
-      container.querySelectorAll('.cpdf-benchmark-card[data-recipe]').forEach(card => {
+      const replaceDoc = () => {
+        if (fileInp) {
+          fileInp.click();
+        } else {
+          file = null; pdfDoc = null; renderConfigure();
+        }
+      };
+      container.querySelector('#wf-replace-file')?.addEventListener('click', replaceDoc);
+      container.querySelector('#wf-canvas-change-doc')?.addEventListener('click', replaceDoc);
+
+      container.querySelectorAll('.wf-recipe-tab[data-recipe]').forEach(card => {
         card.addEventListener('click', () => {
           selectedRecipe = card.dataset.recipe;
           renderConfigure();
         });
       });
 
-      // Custom Step Actions (Move / Delete)
       container.querySelectorAll('[data-move-up]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const i = parseInt(btn.dataset.moveUp, 10);
           if (i > 0) {
+            if (selectedRecipe !== 'custom') {
+              customSteps = [...getActiveSteps()];
+              selectedRecipe = 'custom';
+            }
             const tmp = customSteps[i - 1];
             customSteps[i - 1] = customSteps[i];
             customSteps[i] = tmp;
@@ -8856,9 +8597,15 @@
       });
 
       container.querySelectorAll('[data-move-down]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const i = parseInt(btn.dataset.moveDown, 10);
-          if (i < customSteps.length - 1) {
+          const active = getActiveSteps();
+          if (i < active.length - 1) {
+            if (selectedRecipe !== 'custom') {
+              customSteps = [...active];
+              selectedRecipe = 'custom';
+            }
             const tmp = customSteps[i + 1];
             customSteps[i + 1] = customSteps[i];
             customSteps[i] = tmp;
@@ -8868,51 +8615,100 @@
       });
 
       container.querySelectorAll('[data-remove]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const i = parseInt(btn.dataset.remove, 10);
+          if (selectedRecipe !== 'custom') {
+            customSteps = [...getActiveSteps()];
+            selectedRecipe = 'custom';
+          }
           customSteps.splice(i, 1);
           renderConfigure();
         });
       });
 
-      // Quick Add Chips
       container.querySelectorAll('[data-quick-add]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const toolId = btn.dataset.quickAdd;
-          if (customSteps.length < 6) {
+          if (selectedRecipe !== 'custom') {
+            customSteps = [...getActiveSteps()];
+            selectedRecipe = 'custom';
+          }
+          if (customSteps.length < 8) {
             customSteps.push(toolId);
             renderConfigure();
           }
         });
       });
 
-      // Action CTA
+      container.querySelectorAll('input[data-step-param]').forEach(inp => {
+        inp.addEventListener('input', e => {
+          const tool = inp.dataset.tool;
+          const param = inp.dataset.stepParam;
+          if (tool && param) {
+            if (!stepConfig[tool]) stepConfig[tool] = {};
+            stepConfig[tool][param] = e.target.value;
+          }
+        });
+      });
+
+      container.querySelectorAll('[data-toggle-pw]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetId = btn.dataset.togglePw;
+          const targetInp = container.querySelector(`#${targetId}`);
+          if (targetInp) {
+            targetInp.type = targetInp.type === 'password' ? 'text' : 'password';
+          }
+        });
+      });
+
+      container.querySelectorAll('[data-step-tier]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tool = btn.dataset.tool;
+          const tier = btn.dataset.stepTier;
+          if (tool && tier) {
+            if (!stepConfig[tool]) stepConfig[tool] = {};
+            stepConfig[tool].tier = tier;
+            const parent = btn.closest('.wf-config-btn-group');
+            if (parent) {
+              parent.querySelectorAll('.wf-config-btn').forEach(b => b.classList.remove('is-active'));
+              btn.classList.add('is-active');
+            }
+          }
+        });
+      });
+
       container.querySelector('#wf-studio-run')?.addEventListener('click', () => {
+        if (!file) {
+          const hiddenInp = container.querySelector('#wf-canvas-file-inp');
+          if (hiddenInp) hiddenInp.click();
+          return;
+        }
         if (getActiveSteps().length) runWorkflow();
       });
     }
 
     function renderProcessing(currentStepIdx = 0, totalSteps = 1, currentToolName = '') {
-      const panel = container.querySelector('.cpdf-benchmark-panel');
-      if (!panel) return;
-
+      const track = container.querySelector('.wf-track-wrap');
+      if (!track) return;
       const pct = Math.round(((currentStepIdx + 1) / totalSteps) * 100);
-
-      panel.innerHTML = `
-        <div class="prot-processing-view">
-          <div class="prot-pulse-shield">
-            <div class="prot-shield-ring"></div>
-            <div class="prot-shield-icon">${I.workflow}</div>
+      track.innerHTML = `
+        <div class="wf-processing-card">
+          <div class="wf-proc-ring-box">
+            <div class="wf-proc-ring"></div>
+            <div class="wf-proc-icon">${I.workflow}</div>
           </div>
-          <h3 class="prot-proc-title">Executing Pipeline</h3>
-          <p class="prot-proc-step">Step ${currentStepIdx + 1} of ${totalSteps}: ${currentToolName}…</p>
-
-          <div class="prot-progress-track">
-            <div class="prot-progress-fill" style="width: ${pct}%;"></div>
+          <h3 class="wf-proc-title">Executing Pipeline</h3>
+          <p class="wf-proc-sub">Step ${currentStepIdx + 1} of ${totalSteps}: ${currentToolName}…</p>
+          <div class="wf-proc-bar-wrap">
+            <div class="wf-proc-bar-fill" style="width: ${pct}%;"></div>
           </div>
-          <div class="prot-proc-foot">
-            <span>${pct}%</span>
-            <span class="prot-engine-tag">${I.shieldCheck}&nbsp; In-Memory Stream</span>
+          <div class="wf-proc-telemetry">
+            <span>${pct}% complete</span>
+            <span class="wf-telemetry-badge">${I.shieldCheck}&nbsp; Private & Local</span>
           </div>
         </div>`;
     }
@@ -8920,24 +8716,32 @@
     async function runWorkflow() {
       const steps = getActiveSteps();
       let cur = { file, files: file ? [file] : [] };
-
       try {
         for (let i = 0; i < steps.length; i++) {
           const stepId = steps[i];
           const toolMeta = TOOL_META[stepId] || { name: stepId };
           renderProcessing(i, steps.length, toolMeta.name);
           renderPipelineBreadcrumb(i);
-
           await new Promise(r => setTimeout(r, 180));
-
           const toolDef = window.FF?.registry?.get?.(stepId);
           if (toolDef && typeof toolDef.run === 'function') {
             const engine = toolDef.engine ? await toolDef.engine() : null;
+            const toolInputs = Object.assign({}, defaultsFor(toolDef));
+            if (stepId === 'pdf-protect' && stepConfig['pdf-protect']?.password) {
+              toolInputs.password = stepConfig['pdf-protect'].password;
+            }
+            if (stepId === 'pdf-watermark' && stepConfig['pdf-watermark']?.text) {
+              toolInputs.text = stepConfig['pdf-watermark'].text;
+            }
+            if (stepId === 'pdf-compress' && stepConfig['pdf-compress']?.tier) {
+              toolInputs.dpi = stepConfig['pdf-compress'].tier === 'compact' ? 72 : (stepConfig['pdf-compress'].tier === 'high' ? 300 : 150);
+            }
+
             const out = await toolDef.run({
               file: cur.file,
               files: cur.files,
               engine,
-              inputs: defaultsFor(toolDef),
+              inputs: toolInputs,
             });
             if (out?.blob) {
               cur.blob = out.blob;
@@ -8974,44 +8778,40 @@
     function renderResult(out) {
       const url = URL.createObjectURL(out.blob);
       const steps = getActiveSteps();
-      const panel = container.querySelector('.cpdf-benchmark-panel');
-      if (!panel) return;
+      const track = container.querySelector('.wf-track-wrap');
+      const bottomBar = container.querySelector('.wf-bottom-bar');
+      if (bottomBar) bottomBar.style.display = 'none';
+      if (!track) return;
 
-      panel.innerHTML = `
-        <div class="prot-result-box">
-          <div class="cpdf-benchmark-header prot-res-header">
-            <div class="cpdf-benchmark-icon prot-res-badge-ok">
-              ${I.check}
-            </div>
-            <div class="prot-hdr-texts">
-              <h2 class="cpdf-benchmark-title">Pipeline Complete</h2>
-              <span class="prot-studio-sub">${steps.length} sequential operations applied in-memory</span>
+      track.innerHTML = `
+        <div class="wf-result-card">
+          <div class="wf-res-badge-ok">
+            ${I.check}
+          </div>
+          <h2 class="wf-res-title">Pipeline Complete</h2>
+          <p class="wf-res-sub">${steps.length} operations completed in browser memory</p>
+
+          <div class="wf-res-file-box">
+            <span class="wf-res-pill">READY</span>
+            <div class="wf-res-file-details">
+              <strong class="wf-res-filename" title="${_esc(out.filename)}">${_esc(out.filename)}</strong>
+              <span class="wf-res-meta">${_bytes(out.blob.size)} · Source: ${_esc(file ? file.name : 'document')}</span>
             </div>
           </div>
 
-          <div class="prot-res-stats-card">
-            <div class="prot-res-file-row">
-              <span class="prot-res-tag">PIPELINE DONE</span>
-              <div class="prot-res-names">
-                <strong class="prot-res-outname" title="${_esc(out.filename)}">${_esc(out.filename)}</strong>
-                <span class="prot-res-outmeta">${_bytes(out.blob.size)} · Source: ${_esc(file.name)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="prot-res-actions">
-            <a class="cpdf-benchmark-cta" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none;">
+          <div class="wf-res-btn-stack">
+            <a class="wf-primary-cta wf-res-download" href="${url}" download="${_esc(out.filename)}" style="text-decoration:none;">
               <span>Download ${_esc(out.filename)}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
             </a>
 
-            <div class="prot-res-btn-grid">
-              <button type="button" class="cpdf-btn-ghost prot-ghost-btn" id="wf-restart-btn">
+            <div class="wf-res-btn-row">
+              <button type="button" class="wf-ghost-btn" id="wf-restart-btn">
                 ${I.replace}&nbsp; Another File
               </button>
-              <button type="button" class="cpdf-btn-ghost cpdf-btn-ghost--tinted prot-ghost-btn" id="wf-reconfigure-btn">
+              <button type="button" class="wf-ghost-btn" id="wf-reconfigure-btn">
                 ${I.workflow}&nbsp; Edit Recipe
               </button>
             </div>
@@ -9021,7 +8821,7 @@
       container.querySelector('#wf-restart-btn')?.addEventListener('click', () => {
         URL.revokeObjectURL(url);
         file = null; pdfDoc = null;
-        renderUpload();
+        renderConfigure();
       });
 
       container.querySelector('#wf-reconfigure-btn')?.addEventListener('click', () => {
@@ -9030,11 +8830,8 @@
       });
     }
 
-    renderUpload();
-  };
 
-
-  /* ════════════════════════════════════════════════════════════════
+    /* ════════════════════════════════════════════════════════════════
      PDF to Audio  (TTS playback workspace)
   ════════════════════════════════════════════════════════════════ */
   window.__ffMountPdfAudio = function mountPdfAudio(container) {

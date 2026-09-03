@@ -2163,7 +2163,7 @@
         : Math.max(1000, Math.round(totalOriginalBytes * currentEst.factor));
       const estNewFormatted = `~${_bytes(estBytes)}`;
       const estOldFormatted = _bytes(totalOriginalBytes);
-      const estPctFormatted = `(${currentEst.pct} Saved)`;
+      const estPctFormatted = `(${currentEst.pct})`;
 
       const fileInfoText = !isBatch 
         ? `${_esc(activeFile.name)} (${_bytes(activeFile.size)})`
@@ -2205,97 +2205,87 @@
 
             <!-- Right Panel: Studio Panel with Options -->
             <div class="cpdf-benchmark-panel">
-              <!-- Top Header -->
-              <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
-                  </svg>
-                </div>
-                <h2 class="cpdf-benchmark-title">${isBatch ? `Compress ${files.length} Files` : 'Compress'}</h2>
-              </div>
-
-              <!-- Option Cards Stack -->
-              <div class="cpdf-cards-stack" role="radiogroup" aria-label="Compression Tier">
-                <!-- Option 1: Basic -->
-                <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
-                  <div class="cpdf-benchmark-radio">
-                    <div class="cpdf-benchmark-radio-dot"></div>
+              <div class="cpdf-benchmark-panel-inner">
+                <!-- Top Header -->
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
+                    </svg>
                   </div>
-                  <div class="cpdf-benchmark-card-text">
-                    <span class="cpdf-benchmark-card-label">Basic</span>
-                    <span class="cpdf-benchmark-card-sub">Medium compression · High quality</span>
-                  </div>
+                  <h2 class="cpdf-benchmark-title">${isBatch ? `Compress ${files.length} Files` : 'Compress'}</h2>
                 </div>
 
-                <!-- Option 2: Moderate -->
-                <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
-                  <div class="cpdf-benchmark-radio">
-                    <div class="cpdf-benchmark-radio-dot"></div>
-                  </div>
-                  <div class="cpdf-benchmark-card-text">
-                    <span class="cpdf-benchmark-card-label">Moderate</span>
-                    <span class="cpdf-benchmark-card-sub">Balanced compression · Good quality</span>
-                  </div>
-                </div>
-
-                <!-- Option 3: Strong -->
-                <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
-                  <div class="cpdf-benchmark-radio">
-                    <div class="cpdf-benchmark-radio-dot"></div>
-                  </div>
-                  <div class="cpdf-benchmark-card-text">
-                    <span class="cpdf-benchmark-card-label">Strong</span>
-                    <span class="cpdf-benchmark-card-sub">Maximum compression · Smallest file size</span>
-                  </div>
-                  <div class="cpdf-benchmark-card-right">
-                    <span class="cpdf-benchmark-pill-smallest">Smallest</span>
-                  </div>
-                </div>
-
-                <!-- Option 4: Exact Target Size Mode -->
-                <div class="cpdf-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom">
-                  <div class="cpdf-target-row-top">
+                <!-- Option Cards Stack -->
+                <div class="cpdf-cards-stack" role="radiogroup" aria-label="Compression Tier">
+                  <!-- Option 1: Basic -->
+                  <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Exact Target Size</span>
-                      <span class="cpdf-benchmark-card-sub">Specify exact custom output size</span>
+                    <span class="cpdf-benchmark-card-label">Basic</span>
+                  </div>
+
+                  <!-- Option 2: Moderate -->
+                  <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <span class="cpdf-benchmark-card-label">Moderate</span>
+                  </div>
+
+                  <!-- Option 3: Strong -->
+                  <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
+                    <div class="cpdf-benchmark-radio">
+                      <div class="cpdf-benchmark-radio-dot"></div>
+                    </div>
+                    <span class="cpdf-benchmark-card-label">Strong</span>
+                    <div class="cpdf-benchmark-card-right">
+                      <span class="cpdf-benchmark-pill-smallest">Smallest</span>
                     </div>
                   </div>
-                  ${selectedTier === 'custom' ? `
-                    <div class="cpdf-target-input-wrap">
-                      <input type="number" min="1" max="9999" id="cpdf-target-val-inp" class="cpdf-target-inp" value="${customTargetKB}" />
-                      <select id="cpdf-target-unit-sel" class="cpdf-target-unit-sel">
-                        <option value="KB" ${customUnit === 'KB' ? 'selected' : ''}>KB</option>
-                        <option value="MB" ${customUnit === 'MB' ? 'selected' : ''}>MB</option>
-                      </select>
+
+                  <!-- Option 4: Exact Target Size Mode -->
+                  <div class="cpdf-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom">
+                    <div class="cpdf-target-row-top">
+                      <div class="cpdf-benchmark-radio">
+                        <div class="cpdf-benchmark-radio-dot"></div>
+                      </div>
+                      <span class="cpdf-benchmark-card-label">Exact Target Size</span>
                     </div>
-                  ` : ''}
+                    ${selectedTier === 'custom' ? `
+                      <div class="cpdf-target-input-wrap">
+                        <input type="number" min="1" max="9999" id="cpdf-target-val-inp" class="cpdf-target-inp" value="${customTargetKB}" />
+                        <select id="cpdf-target-unit-sel" class="cpdf-target-unit-sel">
+                          <option value="KB" ${customUnit === 'KB' ? 'selected' : ''}>KB</option>
+                          <option value="MB" ${customUnit === 'MB' ? 'selected' : ''}>MB</option>
+                        </select>
+                      </div>
+                    ` : ''}
+                  </div>
                 </div>
-              </div>
 
-              <!-- Compact Estimated New File Size Box -->
-              <div class="cpdf-benchmark-est-box">
-                <div class="cpdf-benchmark-est-title">${isBatch ? 'Total estimated output' : 'Estimated new file size'}</div>
-                <div class="cpdf-benchmark-est-metrics">
-                  <strong class="cpdf-benchmark-est-new" id="comp-est-new-size">${estNewFormatted}</strong>
-                  <del class="cpdf-benchmark-est-old" id="comp-est-old-size">${estOldFormatted}</del>
-                  <span class="cpdf-benchmark-est-pct" id="comp-est-pct">${estPctFormatted}</span>
+                <!-- Compact Estimated New File Size Box -->
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">${isBatch ? 'Total estimated output' : 'Estimated new file size'}</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new" id="comp-est-new-size">${estNewFormatted}</strong>
+                    <del class="cpdf-benchmark-est-old" id="comp-est-old-size">${estOldFormatted}</del>
+                    <span class="cpdf-benchmark-est-pct" id="comp-est-pct">${estPctFormatted}</span>
+                  </div>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
+                  </div>
                 </div>
-                <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
-                </div>
-              </div>
 
-              <!-- Primary Action CTA Button (Obsidian Black) -->
-              <button type="button" class="cpdf-benchmark-cta" id="comp-studio-run">
-                <span>${isBatch ? `Compress ${files.length} Files` : 'Compress'}</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
+                <!-- Primary Action CTA Button -->
+                <button type="button" class="cpdf-benchmark-cta" id="comp-studio-run">
+                  <span>${isBatch ? `Compress ${files.length} Files` : 'Compress'}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2397,7 +2387,7 @@
           const barEl = container.querySelector('#comp-est-bar');
           
           if (newSizeEl) newSizeEl.textContent = `~${_bytes(estB)}`;
-          if (pctEl) pctEl.textContent = `(${pct} Saved)`;
+          if (pctEl) pctEl.textContent = `(${pct})`;
           if (barEl) barEl.style.width = `${Math.round(Math.min(1, estB / totalOriginalBytes) * 100)}%`;
         };
       }
@@ -5308,6 +5298,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
+    function updateExportBadge() {
+      const finishBtn = container.querySelector('#etxt-finish');
+      if (finishBtn) {
+        const count = edits.length;
+        finishBtn.innerHTML = `<span>Export PDF</span>${count > 0 ? `<span class="etxt-export-badge">${count}</span>` : ''} ${I.arrow}`;
+      }
+    }
+
     function openEditor(item, geom) {
       commitEditor();
       const layer = container.querySelector('.etxt-text-layer');
@@ -5328,10 +5326,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       inner.innerText = existing ? existing.replacement : item.str;
       box.append(inner);
 
-      const fontSize = geom ? geom.fontSize : Math.max(8, (item.height || 12) * P);
-      const fontFamily = geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", sans-serif';
-      const fontWeight = geom?.fontWeight || '400';
-      const fontStyle = geom?.fontStyle || 'normal';
+      let curFontSize = geom ? geom.fontSize : Math.max(8, (item.height || 12) * P);
+      let curFontFamily = geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", sans-serif';
+      let curFontWeight = geom?.fontWeight || '400';
+      let curFontStyle = geom?.fontStyle || 'normal';
+      let curTextColor = geom?.textColor || '#0F172A';
 
       const left = geom ? geom.left : Math.max(0, item.transform[4] * P);
       const top = geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P);
@@ -5339,25 +5338,109 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const minH = geom ? Math.max(geom.height, 14) : 18;
       const bgColor = sampleCanvasBgColor(left, top, minW, minH);
 
-      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background-color:${bgColor};font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};`;
-      inner.style.cssText = `font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};line-height:1.15;`;
+      const applyBoxStyles = () => {
+        box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background-color:${bgColor};font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};`;
+        inner.style.cssText = `font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};line-height:1.25;`;
+        if (geom) {
+          geom.fontSize = curFontSize;
+          geom.fontWeight = curFontWeight;
+          geom.fontStyle = curFontStyle;
+          geom.isBold = curFontWeight === '700';
+          geom.isItalic = curFontStyle === 'italic';
+          geom.textColor = curTextColor;
+        }
+      };
+      applyBoxStyles();
+
+      // ── Contextual Floating Micro-Bar (Anchored directly to text box) ──
+      const microbar = document.createElement('div');
+      microbar.className = 'etxt-inline-microbar ' + (top < 38 ? 'etxt-inline-microbar--below' : 'etxt-inline-microbar--above');
+      
+      const updateMicrobarState = () => {
+        microbar.innerHTML = `
+          <button type="button" class="etxt-micro-btn" id="etxt-m-dec" title="Decrease font size">-</button>
+          <span class="etxt-micro-size-val">${Math.round(curFontSize / P)}</span>
+          <button type="button" class="etxt-micro-btn" id="etxt-m-inc" title="Increase font size">+</button>
+          <span class="etxt-micro-sep"></span>
+          <button type="button" class="etxt-micro-btn${curFontWeight === '700' ? ' is-active' : ''}" id="etxt-m-bold" title="Toggle Bold"><b>B</b></button>
+          <button type="button" class="etxt-micro-btn${curFontStyle === 'italic' ? ' is-active' : ''}" id="etxt-m-italic" title="Toggle Italic"><i>I</i></button>
+          <span class="etxt-micro-sep"></span>
+          ${['#0F172A', '#1E3A8A', '#475569', '#DC2626', '#059669'].map(c => `
+            <button type="button" class="etxt-micro-swatch${curTextColor === c ? ' is-active' : ''}" data-mc="${c}" style="background:${c}"></button>
+          `).join('')}
+          <span class="etxt-micro-sep"></span>
+          <button type="button" class="etxt-micro-btn etxt-micro-btn--commit" id="etxt-m-ok" title="Save Edit (Ctrl+Enter)">✓</button>
+          <button type="button" class="etxt-micro-btn etxt-micro-btn--delete" id="etxt-m-del" title="Discard">${I.trash || '✕'}</button>
+        `;
+
+        microbar.querySelector('#etxt-m-dec').onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          curFontSize = Math.max(6 * P, curFontSize - 1 * P);
+          applyBoxStyles();
+          updateMicrobarState();
+        };
+        microbar.querySelector('#etxt-m-inc').onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          curFontSize = Math.min(72 * P, curFontSize + 1 * P);
+          applyBoxStyles();
+          updateMicrobarState();
+        };
+        microbar.querySelector('#etxt-m-bold').onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          curFontWeight = curFontWeight === '700' ? '400' : '700';
+          applyBoxStyles();
+          updateMicrobarState();
+        };
+        microbar.querySelector('#etxt-m-italic').onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          curFontStyle = curFontStyle === 'italic' ? 'normal' : 'italic';
+          applyBoxStyles();
+          updateMicrobarState();
+        };
+        microbar.querySelectorAll('[data-mc]').forEach(btn => {
+          btn.onclick = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            curTextColor = btn.dataset.mc;
+            applyBoxStyles();
+            updateMicrobarState();
+          };
+        });
+        microbar.querySelector('#etxt-m-ok').onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          commitEditor();
+        };
+        microbar.querySelector('#etxt-m-del').onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (existing) {
+            pushUndo();
+            edits = edits.filter(x => x !== existing);
+          }
+          activeEdit = null;
+          box.remove();
+          attachTextHits();
+          updateExportBadge();
+        };
+      };
+      updateMicrobarState();
+      box.append(microbar);
 
       layer.append(box);
       activeEdit = { item, box, geom };
 
-      // ── Focus & select all on open ──────────────────────────────────────
+      // ── Focus without wiping caret ──
       setTimeout(() => {
         inner.focus();
         const range = document.createRange();
         range.selectNodeContents(inner);
+        range.collapse(false);
         const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
       }, 20);
 
-      // ── Keyboard: Enter = commit, Esc = discard ────────────────────────
+      // ── Keyboard: Ctrl/Cmd+Enter = commit, Esc = discard, Enter = newline ──
       inner.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' && !ev.shiftKey) {
+        if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
           ev.preventDefault();
           lastCommitTime = Date.now();
           commitEditor();
@@ -5370,24 +5453,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       });
 
-      // ── Blur = commit (with guard: don't fire if click went to optbar) ─
+      // ── Blur = commit (guarded: don't commit if clicking inside microbar or toolbar) ─
       const openTime = Date.now();
       inner.addEventListener('blur', (ev) => {
+        if (window.__debugKeepEditorOpen) return;
         if (Date.now() - openTime < 200) return;
-        const optbar = document.querySelector('#etxt-optbar');
-        if (optbar && ev.relatedTarget && optbar.contains(ev.relatedTarget)) return;
+        if (ev.relatedTarget && (microbar.contains(ev.relatedTarget) || ev.relatedTarget.closest('#etxt-optbar, .etxt-inline-microbar'))) return;
         setTimeout(() => {
           if (document.body.contains(box) && activeEdit) commitEditor();
         }, 150);
       });
 
-      // Update optbar to reflect "editing" state with edit count
       renderOptbar();
     }
 
     function commitEditor() {
       if (!activeEdit) return;
       const { item, box, geom } = activeEdit;
+      const bgColor = box.style.backgroundColor || sampleCanvasBgColor(geom?.left ?? 0, geom?.top ?? 0, geom?.width ?? 40, geom?.height ?? 14);
       activeEdit = null;
       lastCommitTime = Date.now();
       const inner = box.querySelector('.etxt-text-inner');
@@ -5396,14 +5479,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const idx = edits.findIndex(e => e.pageIdx === page - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
       if (replacement && replacement !== item.str) {
         pushUndo();
-        const edit = { pageIdx: page - 1, item, target: item.str, replacement, geom };
+        const edit = { pageIdx: page - 1, item, target: item.str, replacement, geom, bgColor, textColor: geom?.textColor || '#0F172A' };
         if (idx >= 0) edits[idx] = edit; else edits.push(edit);
       } else if (idx >= 0) {
         pushUndo();
-        edits.splice(idx, 1);   // cleared back to original → drop the edit
+        edits.splice(idx, 1);
       }
       box.remove();
       attachTextHits();
+      updateExportBadge();
     }
 
     function renderCommittedBox(e) {
@@ -5411,7 +5495,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (!layer) return;
       const P = pageScale > 0 ? pageScale : 1;
       const box = document.createElement('div');
-      box.className = 'etxt-committed';
+      box.className = 'etxt-committed etxt-pulse';
       box.innerText = e.replacement;
       const left = e.geom?.left ?? (e.item.transform[4] * P);
       const top = e.geom?.top ?? ((curPageH - e.item.transform[5] - 12) * P);
@@ -5421,9 +5505,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const fontFamily = e.geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", sans-serif';
       const fontWeight = e.geom?.fontWeight || '400';
       const fontStyle = e.geom?.fontStyle || 'normal';
+      const textColor = e.textColor || e.geom?.textColor || '#0F172A';
       const bgColor = sampleCanvasBgColor(left, top, minW, minH);
 
-      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background-color:${bgColor};font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};line-height:1.15;`;
+      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background-color:${bgColor};font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};color:${textColor};line-height:1.25;`;
       
       const xBtn = document.createElement('button');
       xBtn.type = 'button';
@@ -5437,6 +5522,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         pushUndo();
         edits = edits.filter(x => !(x.pageIdx === e.pageIdx && (x.target === e.target || (x.geom && e.geom && Math.abs(x.geom.left - e.geom.left) < 5))));
         attachTextHits();
+        updateExportBadge();
       };
       box.append(xBtn);
       box.onclick = (ev) => {
@@ -8126,19 +8212,85 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       page.node.set(L.PDFName.of('Contents'), page.doc.context.register(stream));
     }
 
-    async function resolveStdFont(pageNode, fontName) {
+    async function resolveStdFont(pageNode, fontName, geom) {
       const L = window.PDFLib;
       try {
-        if (!fontName) return null;
-        const fonts = pageNode.Resources() && pageNode.Resources().lookup(L.PDFName.of('Font'));
-        const fd = fonts && fonts.lookup(L.PDFName.of(String(fontName).replace(/^\//, '')));
-        const bf = fd && fd.get(L.PDFName.of('BaseFont'));
-        const name = bf && typeof bf.decodeText === 'function' ? bf.decodeText() : String(bf || '');
-        if (/Helvetica/i.test(name)) return L.StandardFonts.Helvetica;
-        if (/Times/i.test(name)) return L.StandardFonts.TimesRoman;
-        if (/Courier/i.test(name)) return L.StandardFonts.Courier;
-        return null;
-      } catch { return null; }
+        let name = '';
+        let isBold = !!(geom?.isBold || geom?.fontWeight === '700' || geom?.fontWeight === '800' || geom?.fontWeight === '900');
+        let isItalic = !!(geom?.isItalic || geom?.fontStyle === 'italic' || geom?.fontStyle === 'oblique');
+
+        if (fontName && pageNode) {
+          try {
+            const res = pageNode.Resources();
+            const fonts = res && typeof res.lookup === 'function' ? res.lookup(L.PDFName.of('Font')) : null;
+            const fd = fonts && typeof fonts.lookup === 'function' ? fonts.lookup(L.PDFName.of(String(fontName).replace(/^\//, ''))) : null;
+            const bf = fd && typeof fd.get === 'function' ? fd.get(L.PDFName.of('BaseFont')) : null;
+            name = bf && typeof bf.decodeText === 'function' ? bf.decodeText() : String(bf || '');
+          } catch { /* noop */ }
+        }
+        if (!name && geom?.fontName) name = String(geom.fontName);
+        if (!name && fontName) name = String(fontName);
+
+        const fnLower = (name + ' ' + (geom?.fontFamily || '')).toLowerCase();
+        if (/bold|heavy|black|demi|700|800|900/.test(fnLower)) isBold = true;
+        if (/italic|oblique|slant|kursiv/.test(fnLower)) isItalic = true;
+
+        const isSerif = /times|roman|serif|georgia|garamond|cambria|palatino|minion|baskerville|playfair/.test(fnLower);
+        const isMono = /courier|mono|typewriter|consolas|menlo|monaco|source\s*code|ubuntu\s*mono/.test(fnLower);
+
+        if (isMono) {
+          if (isBold && isItalic) return L.StandardFonts.CourierBoldOblique;
+          if (isBold) return L.StandardFonts.CourierBold;
+          if (isItalic) return L.StandardFonts.CourierOblique;
+          return L.StandardFonts.Courier;
+        }
+
+        if (isSerif) {
+          if (isBold && isItalic) return L.StandardFonts.TimesRomanBoldItalic;
+          if (isBold) return L.StandardFonts.TimesRomanBold;
+          if (isItalic) return L.StandardFonts.TimesRomanItalic;
+          return L.StandardFonts.TimesRoman;
+        }
+
+        // Default to Sans-Serif (Helvetica / Arial / Roboto / Inter / Outfit / Poppins)
+        if (isBold && isItalic) return L.StandardFonts.HelveticaBoldOblique;
+        if (isBold) return L.StandardFonts.HelveticaBold;
+        if (isItalic) return L.StandardFonts.HelveticaOblique;
+        return L.StandardFonts.Helvetica;
+      } catch {
+        return L.StandardFonts.Helvetica;
+      }
+    }
+
+    function wrapTextToLines(text, font, fontSize, maxWidth) {
+      const rawParagraphs = String(text || '').split('\n');
+      const lines = [];
+
+      for (const p of rawParagraphs) {
+        const trimmed = p.trim();
+        if (!trimmed) {
+          lines.push('');
+          continue;
+        }
+
+        const words = trimmed.split(/\s+/);
+        let curLine = '';
+
+        for (const w of words) {
+          const testLine = curLine ? curLine + ' ' + w : w;
+          const testW = font ? font.widthOfTextAtSize(testLine, fontSize) : testLine.length * (fontSize * 0.55);
+
+          if (testW <= maxWidth || !curLine) {
+            curLine = testLine;
+          } else {
+            lines.push(curLine);
+            curLine = w;
+          }
+        }
+        if (curLine) lines.push(curLine);
+      }
+
+      return lines.length ? lines : [''];
     }
 
     /* ── Genuine annotation drawing via pdf-lib ── */
@@ -8341,64 +8493,73 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const page = doc.getPage(pageIdx);
         let content = await getPageContentString(page);
         const fallbacks = [];
-        let stdFontObj = null;
+        
         for (const e of list) {
           const ops = csToOps(content);
           const runs = csExtractRuns(ops);
           const match = findRun(runs, e.target);
-          if (!match) { fallbacks.push(e); continue; }
-          if (!stdFontObj) {
-            const std = await resolveStdFont(page.node, match.font);
-            stdFontObj = std ? await doc.embedFont(std) : null;
-          }
-          let tzScale = 1;
-          if (stdFontObj) {
+          const hasNewlines = String(e.replacement || '').includes('\n');
+          
+          let stdFontChoice = await resolveStdFont(page.node, match?.font || e.item?.fontName, e.geom);
+          let stdFontObj = stdFontChoice ? await doc.embedFont(stdFontChoice) : null;
+          let canStreamRewrite = false;
+
+          if (match && !hasNewlines && stdFontObj) {
             const oldW = stdFontObj.widthOfTextAtSize(e.target, match.size);
             const newW = stdFontObj.widthOfTextAtSize(e.replacement, match.size);
-            if (oldW > 0.5) tzScale = Math.max(0.1, Math.min(4, oldW / newW));
+            const ratio = oldW > 0.5 ? oldW / newW : 1;
+            
+            // If replacement fits cleanly within ±20% width without wrapping
+            if (ratio >= 0.82 && ratio <= 1.22) {
+              const tzScale = Math.max(0.75, Math.min(1.25, ratio));
+              rewriteRunOps(ops, runs, match, e.replacement, tzScale);
+              content = csOpsToString(ops);
+              applied++;
+              canStreamRewrite = true;
+            }
           }
-          rewriteRunOps(ops, runs, match, e.replacement, tzScale);
-          content = csOpsToString(ops);
-          applied++;
+
+          if (!canStreamRewrite) {
+            fallbacks.push({ ...e, stdFontChoice, stdFontObj });
+          }
         }
         setPageContentString(page, content);
+
         for (const e of fallbacks) {
-          const fontChoice = (await resolveStdFont(page.node, e.item?.fontName)) || L.StandardFonts.Helvetica;
-          const targetFont = await doc.embedFont(fontChoice);
-          const rawH = e.geom?.pdfH || e.item.height || 12;
-          const fontSize = Math.max(6, rawH * 0.95);
+          const targetFont = e.stdFontObj || (await doc.embedFont(e.stdFontChoice || (await resolveStdFont(page.node, e.item?.fontName, e.geom)) || L.StandardFonts.Helvetica));
+          const rawH = e.geom?.pdfH || e.item?.height || 12;
+          const fontSize = Math.max(6, (e.geom?.fontSize ? e.geom.fontSize / (pageScale || 1) : rawH * 0.95));
           const lineHeight = fontSize * 1.25;
-          const minW = Math.max(20, e.geom?.pdfW || e.item.width || 40);
+          const minW = Math.max(30, e.geom?.pdfW || e.item?.width || 50);
           
-          const rawLines = String(e.replacement || '').split('\n');
-          const lines = [];
-          for (const raw of rawLines) {
-            lines.push(raw);
-          }
-          if (!lines.length) lines.push('');
+          const originX = e.geom?.pdfX ?? (e.item?.transform ? e.item.transform[4] : 50);
+          const originY = e.geom?.pdfY ?? (e.item?.transform ? e.item.transform[5] : 700);
+          const availWidth = Math.max(minW, (curPageW || 612) - originX - 40);
+          const wrapWidth = (minW > 140) ? minW * 1.08 : availWidth;
 
+          const lines = wrapTextToLines(e.replacement, targetFont, fontSize, wrapWidth);
           const maxLineW = Math.max(...lines.map(ln => targetFont.widthOfTextAtSize(ln, fontSize)), minW);
-          const totalBoxW = Math.max(minW, maxLineW);
-          const totalBoxH = Math.max(rawH * 1.05, lines.length * lineHeight);
-          const originX = e.geom?.pdfX ?? e.item.transform[4];
-          const originY = e.geom?.pdfY ?? e.item.transform[5];
+          const totalBoxW = Math.max(minW, maxLineW + 4);
+          const totalBoxH = Math.max(rawH * 1.05, lines.length * lineHeight + 2);
 
+          const bgRgb = hexToRgbObj(e.bgColor || '#FFFFFF');
           page.drawRectangle({
-            x: originX,
-            y: originY - rawH * 0.22,
+            x: originX - 1,
+            y: originY - (lines.length - 1) * lineHeight - (rawH * 0.22),
             width: totalBoxW,
             height: totalBoxH,
-            color: L.rgb(1, 1, 1),
+            color: L.rgb(bgRgb.r, bgRgb.g, bgRgb.b),
             borderWidth: 0,
           });
 
+          const textColor = hexToRgbObj(e.textColor || '#111827');
           lines.forEach((ln, idx) => {
             page.drawText(ln, {
               x: originX,
               y: originY - (idx * lineHeight),
               size: fontSize,
               font: targetFont,
-              color: L.rgb(0.07, 0.1, 0.17),
+              color: L.rgb(textColor.r, textColor.g, textColor.b),
             });
           });
           overlaid++;
@@ -8559,7 +8720,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       paintResultPreview(blob);
     }
-async function paintResultPreview(blob) {
+    async function paintResultPreview(blob) {
       const canvas = container.querySelector('#etxt-result-canvas');
       try {
         const pdfjs = await loadJs();
@@ -10249,10 +10410,18 @@ async function paintResultPreview(blob) {
     let family = null;
     let formatId = null;
     let cfg = {};
+    let families = [];   // per-file family, parallel to files[]
+    let formatIds = [];  // per-file chosen target id, parallel to files[]
     const preset = tool?.id && TOOL_INDEX[tool.id] ? TOOL_INDEX[tool.id] : null;
 
-    const targets = () => (family ? TARGETS[family] : []);
-    const target = () => targets().find((x) => x.id === formatId) || targets()[0];
+    // Targets are resolved per active file so each queued file can convert to its own format.
+    const targets = () => { const fam = families[activeIndex]; return fam ? TARGETS[fam] : []; };
+    const target = () => { const list = targets(); return list.find((x) => x.id === formatIds[activeIndex]) || list[0]; };
+    function syncActive() {
+      const fam = families[activeIndex];
+      if (fam) family = fam;
+      formatId = formatIds[activeIndex] || '';
+    }
 
     // Engine-declared config fields for the current target, minus the ones the
     // target select already decides (format / targetFormat / source-from-file).
@@ -10316,21 +10485,28 @@ async function paintResultPreview(blob) {
       }
       if (!files.length) {
         files = valid.map(v => v.file);
-        file = files[0];
-        family = valid[0].family;
+        families = valid.map(v => v.family);
+        formatIds = valid.map(() => null);
         activeIndex = 0;
       } else {
         for (const v of valid) {
           if (!files.some(existing => existing.name === v.file.name && existing.size === v.file.size)) {
-            files.push(v.file);
+            const idx = files.push(v.file) - 1;
+            families[idx] = v.family;
+            formatIds[idx] = null;
           }
         }
-        file = files[activeIndex] || files[0];
+        activeIndex = Math.min(activeIndex, files.length - 1);
       }
-      const list = TARGETS[family];
-      if (!formatId || !list.some(x => x.id === formatId)) {
-        formatId = preset && preset.family === family && list.some((x) => x.id === preset.target.id) ? preset.target.id : list[0].id;
-      }
+      file = files[activeIndex] || files[0];
+      // Seed a default target for every queued file that doesn't have one yet.
+      families.forEach((fam, i) => {
+        if (!formatIds[i]) {
+          const list = TARGETS[fam] || [];
+          formatIds[i] = (preset && preset.family === fam && list.some((x) => x.id === preset.target.id)) ? preset.target.id : (list[0] && list[0].id);
+        }
+      });
+      syncActive();
       renderConfigure();
     }
 
@@ -10426,6 +10602,7 @@ async function paintResultPreview(blob) {
       if (!files.length) { renderUpload(); return; }
       if (activeIndex >= files.length) activeIndex = files.length - 1;
       if (activeIndex < 0) activeIndex = 0;
+      syncActive();
 
       const currentFile = files[activeIndex] || files[0];
       file = currentFile;
@@ -10650,6 +10827,8 @@ async function paintResultPreview(blob) {
       container.querySelector('#conv-del-file')?.addEventListener('click', (e) => {
         e.stopPropagation();
         files.splice(activeIndex, 1);
+        families.splice(activeIndex, 1);
+        formatIds.splice(activeIndex, 1);
         if (activeIndex >= files.length) activeIndex = files.length - 1;
         if (!files.length) {
           family = null; formatId = null;
@@ -10690,6 +10869,7 @@ async function paintResultPreview(blob) {
         item.addEventListener('click', (e) => {
           e.stopPropagation();
           formatId = item.dataset.fid;
+          formatIds[activeIndex] = formatId;
           userClosedSettings = false; // Reset so newly selected format options are visible
           renderConfigure();
         });
@@ -10755,6 +10935,10 @@ async function paintResultPreview(blob) {
           const filePctBase = i / total;
           const filePctWeight = 1 / total;
 
+          // Per-file target: uses each queued file's own chosen format.
+          const famTargets = families[i] ? (TARGETS[families[i]] || []) : [];
+          const ti = famTargets.find((x) => x.id === formatIds[i]) || famTargets[0];
+
           const update = (subP, label) => {
             const overall = filePctBase + (subP || 0) * filePctWeight;
             const v = Math.max(6, Math.min(100, Math.round(overall * 100)));
@@ -10762,10 +10946,10 @@ async function paintResultPreview(blob) {
             if (statusEl) statusEl.textContent = `● Converting ${curFile.name}...`;
           };
 
-          const out = await runTarget(t, curFile, extra, update);
+          const out = await runTarget(ti, curFile, extra, update);
           results.push({
             sourceFile: curFile,
-            targetName: (out.filename) || _targetName(curFile.name, t.out),
+            targetName: (out.filename) || _targetName(curFile.name, ti.out),
             out: out
           });
         }
@@ -12376,145 +12560,132 @@ async function paintResultPreview(blob) {
 
             <!-- Right Panel: Studio Inspector (Identical to Compress) -->
             <div class="cpdf-benchmark-panel">
-              <!-- Top Header -->
-              <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
-                <h2 class="cpdf-benchmark-title">Protect</h2>
-              </div>
-
-              ${fam === 'image' ? `
-                <!-- Image Mode Options -->
-                <div class="cpdf-cards-stack" role="radiogroup" aria-label="Image Security Mode">
-                  <div class="cpdf-benchmark-card ${stripExif ? 'is-active' : ''}" id="prot-card-exif">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
-                    </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Strip EXIF & Location Tags</span>
-                      <span class="cpdf-benchmark-card-sub">Wipe GPS, camera details & timestamps</span>
-                    </div>
+              <div class="cpdf-benchmark-panel-inner">
+                <!-- Top Header -->
+                <div class="cpdf-benchmark-header">
+                  <div class="cpdf-benchmark-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
                   </div>
-                  <div class="cpdf-benchmark-card ${addWatermark ? 'is-active' : ''}" id="prot-card-wm">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
+                  <h2 class="cpdf-benchmark-title">Protect</h2>
+                </div>
+
+                ${fam === 'image' ? `
+                  <!-- Image Mode Options -->
+                  <div class="cpdf-cards-stack" role="radiogroup" aria-label="Image Security Mode">
+                    <div class="cpdf-benchmark-card ${stripExif ? 'is-active' : ''}" id="prot-card-exif">
+                      <div class="cpdf-benchmark-radio">
+                        <div class="cpdf-benchmark-radio-dot"></div>
+                      </div>
+                      <span class="cpdf-benchmark-card-label">Strip EXIF &amp; Location</span>
                     </div>
-                    <div class="cpdf-benchmark-card-text">
+                    <div class="cpdf-benchmark-card ${addWatermark ? 'is-active' : ''}" id="prot-card-wm">
+                      <div class="cpdf-benchmark-radio">
+                        <div class="cpdf-benchmark-radio-dot"></div>
+                      </div>
                       <span class="cpdf-benchmark-card-label">Security Watermark</span>
-                      <span class="cpdf-benchmark-card-sub">Overlay confidentiality stamp</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="prot-context-box" id="prot-wm-wrap" style="${addWatermark ? '' : 'display:none;'}">
-                  <input type="text" id="prot-wm-text" class="cpdf-target-inp" style="width:100%;height:36px;box-sizing:border-box;" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
-                </div>
-              ` : `
-                <!-- Option Cards Stack (Identical to Compress) -->
-                <div class="cpdf-cards-stack" role="radiogroup" aria-label="Security Mode">
-                  <!-- Option 1: Protect -->
-                  <div class="cpdf-benchmark-card ${isProtect ? 'is-active' : ''}" data-mode="protect">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
-                    </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Encrypt with Password</span>
-                      <span class="cpdf-benchmark-card-sub">256-bit AES cryptographic protection</span>
                     </div>
                   </div>
 
-                  <!-- Option 2: Unlock -->
-                  <div class="cpdf-benchmark-card ${isUnlock ? 'is-active' : ''}" data-mode="unlock">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
+                  <div class="prot-context-box" id="prot-wm-wrap" style="${addWatermark ? '' : 'display:none;'}">
+                    <input type="text" id="prot-wm-text" class="cpdf-target-inp" style="width:100%;height:38px;box-sizing:border-box;border-radius:6px;" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
+                  </div>
+                ` : `
+                  <!-- Option Cards Stack (Identical to Compress) -->
+                  <div class="cpdf-cards-stack" role="radiogroup" aria-label="Security Mode">
+                    <!-- Option 1: Protect -->
+                    <div class="cpdf-benchmark-card ${isProtect ? 'is-active' : ''}" data-mode="protect">
+                      <div class="cpdf-benchmark-radio">
+                        <div class="cpdf-benchmark-radio-dot"></div>
+                      </div>
+                      <span class="cpdf-benchmark-card-label">Protect &amp; Encrypt</span>
                     </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Remove Password &amp; Unlock</span>
-                      <span class="cpdf-benchmark-card-sub">Decrypt document for open sharing</span>
+
+                    <!-- Option 2: Unlock -->
+                    <div class="cpdf-benchmark-card ${isUnlock ? 'is-active' : ''}" data-mode="unlock">
+                      <div class="cpdf-benchmark-radio">
+                        <div class="cpdf-benchmark-radio-dot"></div>
+                      </div>
+                      <span class="cpdf-benchmark-card-label">Unlock &amp; Decrypt</span>
+                    </div>
+
+                    <!-- Option 3: Flatten -->
+                    <div class="cpdf-benchmark-card ${isFlatten ? 'is-active' : ''}" data-mode="flatten">
+                      <div class="cpdf-benchmark-radio">
+                        <div class="cpdf-benchmark-radio-dot"></div>
+                      </div>
+                      <span class="cpdf-benchmark-card-label">Flatten PDF</span>
                     </div>
                   </div>
 
-                  <!-- Option 3: Flatten -->
-                  <div class="cpdf-benchmark-card ${isFlatten ? 'is-active' : ''}" data-mode="flatten">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
-                    </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Flatten Forms &amp; Layers</span>
-                      <span class="cpdf-benchmark-card-sub">Bake interactive fields into static ink</span>
-                    </div>
+                  <!-- Dynamic Context Area -->
+                  <div class="prot-context-box" id="prot-context-area">
+                    ${isFlatten ? `
+                      <div class="prot-flatten-grid">
+                        <div class="prot-perm-chip ${optForms ? 'is-allowed' : 'is-blocked'}" id="prot-flat-forms" role="button" tabindex="0">
+                          <div class="prot-chip-top">
+                            <span class="prot-chip-icon">${I.edit}</span>
+                            <strong>Form Fields</strong>
+                          </div>
+                          <span class="prot-chip-badge">${optForms ? 'Bake Ink' : 'Ignore'}</span>
+                        </div>
+
+                        <div class="prot-perm-chip ${optAnnots ? 'is-allowed' : 'is-blocked'}" id="prot-flat-annots" role="button" tabindex="0">
+                          <div class="prot-chip-top">
+                            <span class="prot-chip-icon">${I.edit}</span>
+                            <strong>Annotations</strong>
+                          </div>
+                          <span class="prot-chip-badge">${optAnnots ? 'Bake Ink' : 'Ignore'}</span>
+                        </div>
+
+                        <div class="prot-perm-chip ${optLayers ? 'is-allowed' : 'is-blocked'}" id="prot-flat-layers" role="button" tabindex="0">
+                          <div class="prot-chip-top">
+                            <span class="prot-chip-icon">${I.doc}</span>
+                            <strong>Layers</strong>
+                          </div>
+                          <span class="prot-chip-badge">${optLayers ? 'Bake Ink' : 'Ignore'}</span>
+                        </div>
+
+                        <div class="prot-perm-chip ${optAppearances ? 'is-allowed' : 'is-blocked'}" id="prot-flat-apps" role="button" tabindex="0">
+                          <div class="prot-chip-top">
+                            <span class="prot-chip-icon">${I.eye}</span>
+                            <strong>Widgets</strong>
+                          </div>
+                          <span class="prot-chip-badge">${optAppearances ? 'Bake Ink' : 'Ignore'}</span>
+                        </div>
+                      </div>
+                    ` : `
+                      <div class="prot-input-wrap" style="position:relative;display:flex;align-items:center;">
+                        <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Enter encryption password…' : 'Enter password to unlock…'}" value="${_esc(password)}" style="width:100%;height:38px;padding:0 36px 0 12px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:13.5px;color:#111827;background:#FFFFFF;outline:none;box-sizing:border-box;">
+                        <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility" style="position:absolute;right:8px;background:none;border:none;padding:4px;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                          ${showPw ? I.eyeOff : I.eye}
+                        </button>
+                      </div>
+                    `}
+                  </div>
+                `}
+
+                <!-- Compact Estimated Security Specification Box (Identical to Compress) -->
+                <div class="cpdf-benchmark-est-box">
+                  <div class="cpdf-benchmark-est-title">${isProtect ? 'Security Specification' : isFlatten ? 'Flattening Specification' : 'Decryption Status'}</div>
+                  <div class="cpdf-benchmark-est-metrics">
+                    <strong class="cpdf-benchmark-est-new" id="prot-summary-spec">${fam === 'image' ? 'EXIF Strip' : isFlatten ? 'Permanent Ink' : isProtect ? '256-Bit AES' : 'Open Access'}</strong>
+                    <span class="cpdf-benchmark-est-pct" id="prot-summary-badge">${isFlatten ? 'Static Output' : isProtect ? (password ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key') : 'Open Access'}</span>
+                  </div>
+                  <div class="cpdf-benchmark-track">
+                    <div class="cpdf-benchmark-bar" id="prot-summary-bar" style="width: ${isFlatten ? 100 : isProtect ? (password ? Math.min(100, Math.max(20, entropy.bits * 1.2)) : 20) : 100}%; background: ${(isProtect && !password) ? '#94A3B8' : '#00C466'} !important;"></div>
                   </div>
                 </div>
 
-                <!-- Dynamic Context Area -->
-                <div class="prot-context-box" id="prot-context-area">
-                  ${isFlatten ? `
-                    <div class="prot-flatten-grid">
-                      <div class="prot-perm-chip ${optForms ? 'is-allowed' : 'is-blocked'}" id="prot-flat-forms" role="button" tabindex="0">
-                        <div class="prot-chip-top">
-                          <span class="prot-chip-icon">${I.edit}</span>
-                          <strong>Form Fields</strong>
-                        </div>
-                        <span class="prot-chip-badge">${optForms ? 'Bake Ink' : 'Ignore'}</span>
-                      </div>
-
-                      <div class="prot-perm-chip ${optAnnots ? 'is-allowed' : 'is-blocked'}" id="prot-flat-annots" role="button" tabindex="0">
-                        <div class="prot-chip-top">
-                          <span class="prot-chip-icon">${I.edit}</span>
-                          <strong>Annotations</strong>
-                        </div>
-                        <span class="prot-chip-badge">${optAnnots ? 'Bake Ink' : 'Ignore'}</span>
-                      </div>
-
-                      <div class="prot-perm-chip ${optLayers ? 'is-allowed' : 'is-blocked'}" id="prot-flat-layers" role="button" tabindex="0">
-                        <div class="prot-chip-top">
-                          <span class="prot-chip-icon">${I.doc}</span>
-                          <strong>Layers</strong>
-                        </div>
-                        <span class="prot-chip-badge">${optLayers ? 'Bake Ink' : 'Ignore'}</span>
-                      </div>
-
-                      <div class="prot-perm-chip ${optAppearances ? 'is-allowed' : 'is-blocked'}" id="prot-flat-apps" role="button" tabindex="0">
-                        <div class="prot-chip-top">
-                          <span class="prot-chip-icon">${I.eye}</span>
-                          <strong>Widgets</strong>
-                        </div>
-                        <span class="prot-chip-badge">${optAppearances ? 'Bake Ink' : 'Ignore'}</span>
-                      </div>
-                    </div>
-                  ` : `
-                    <div class="prot-input-wrap" style="position:relative;display:flex;align-items:center;">
-                      <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Enter encryption password…' : 'Enter password to unlock…'}" value="${_esc(password)}" style="width:100%;height:38px;padding:0 36px 0 12px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:13px;color:#111827;background:#FFFFFF;outline:none;box-sizing:border-box;">
-                      <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility" style="position:absolute;right:8px;background:none;border:none;padding:4px;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                        ${showPw ? I.eyeOff : I.eye}
-                      </button>
-                    </div>
-                  `}
-                </div>
-              `}
-
-              <!-- Compact Estimated Security Specification Box (Identical to Compress) -->
-              <div class="cpdf-benchmark-est-box">
-                <div class="cpdf-benchmark-est-title">${isProtect ? 'Security Specification' : isFlatten ? 'Flattening Specification' : 'Decryption Status'}</div>
-                <div class="cpdf-benchmark-est-metrics">
-                  <strong class="cpdf-benchmark-est-new" id="prot-summary-spec">${fam === 'image' ? 'EXIF Strip' : isFlatten ? 'Permanent Ink' : isProtect ? '256-Bit AES' : 'Open Access'}</strong>
-                  <span class="cpdf-benchmark-est-pct" id="prot-summary-badge" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">${isFlatten ? 'Static Output' : isProtect ? (password ? `${entropy.bits} bits (${entropy.label})` : 'Waiting for Key') : 'Open Access'}</span>
-                </div>
-                <div class="cpdf-benchmark-track">
-                  <div class="cpdf-benchmark-bar" id="prot-summary-bar" style="width: ${isFlatten ? 100 : isProtect ? (password ? Math.min(100, Math.max(20, entropy.bits * 1.2)) : 20) : 100}%; background: ${(isProtect && !password) ? '#94A3B8' : '#16A34A'} !important;"></div>
-                </div>
+                <!-- Primary Action CTA Button (Tailwind Black) -->
+                <button type="button" class="cpdf-benchmark-cta" id="prot-studio-run" ${canRun() ? '' : 'disabled'}>
+                  <span>${fam === 'image' ? 'Scrub & Secure' : isFlatten ? 'Flatten PDF' : isProtect ? 'Protect PDF' : 'Unlock PDF'}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
               </div>
-
-              <!-- Primary Action CTA Button (Obsidian Black) -->
-              <button type="button" class="cpdf-benchmark-cta" id="prot-studio-run" ${canRun() ? '' : 'disabled'}>
-                <span>${fam === 'image' ? 'Scrub & Secure' : isFlatten ? 'Flatten PDF' : isProtect ? 'Protect PDF' : 'Unlock PDF'}</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
             </div>
           </div>
         </div>`;
@@ -18043,6 +18214,7 @@ trailer<</Root 1 0 R>>`;
       delete: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5.98c-3.33-.33-6.68-.5-10.02-.5-1.98 0-3.96.1-5.94.3L3 5.98"/><path d="M8.5 4.97l.22-1.31C8.88 2.71 9 2 10.69 2h2.62c1.69 0 1.82.75 1.97 1.67l.22 1.3"/><path d="M18.85 9.14l-.65 10.07C18.09 20.78 18 22 15.21 22H8.79c-2.79 0-2.88-1.22-2.99-2.79L5.15 9.14"/><path d="M10.33 16.5h3.33"/><path d="M9.5 12.5h5"/></svg>',
       extract: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.47 7.53a.75.75 0 0 1 1.06-1.06L12.53 3.47a.75.75 0 0 0-1.06 0L8.47 6.47a.75.75 0 0 0 1.06 1.06l1.72-1.72V14a.75.75 0 0 0 1.5 0V5.81l1.72 1.72Z"/><path d="M20.75 12a.75.75 0 0 0-1.5 0 7.25 7.25 0 0 1-14.5 0 .75.75 0 0 0-1.5 0 8.75 8.75 0 0 0 8.75 8.75 8.75 8.75 0 0 0 8.75-8.75Z"/></svg>',
       duplicate: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 12.9v4.2c0 3.5-1.4 4.9-4.9 4.9H6.9c-3.5 0-4.9-1.4-4.9-4.9v-4.2c0-3.5 1.4-4.9 4.9-4.9h4.2c3.5 0 4.9 1.4 4.9 4.9Z"/><path d="M22 6.9v4.2c0 3.5-1.4 4.9-4.9 4.9H16v-3.1c0-3.5-1.4-4.9-4.9-4.9H8V6.9C8 3.4 9.4 2 12.9 2h4.2C20.6 2 22 3.4 22 6.9Z"/></svg>',
+      crop: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
       blank: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.25 2.834c-.46-.078-1.088-.084-2.22-.084-1.917 0-3.279.002-4.312.14-1.012.135-1.593.39-2.016.812-.423.423-.677 1.003-.812 2.009-.138 1.028-.14 2.382-.14 4.289v4c0 1.907.002 3.261.14 4.289.135 1.006.389 1.586.812 2.009.423.423 1.003.677 2.009.812 1.028.138 2.382.14 4.289.14h4.001c1.907 0 3.261-.002 4.289-.14 1.006-.135 1.586-.389 2.009-.812.423-.423.677-1.003.812-2.009.138-1.028.14-2.382.14-4.289v-.327c0-1.536-.011-2.264-.174-2.813h-3.13a7 7 0 0 1-2.789-.098 4.23 4.23 0 0 1-1.955-.854 4.23 4.23 0 0 1-.854-1.955 7 7 0 0 1-.098-2.789v-2.219Z"/></svg>',
       add: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/><path d="M12 18V6"/></svg>',
       undo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.13 18.31h8A4.9 4.9 0 0 0 20.13 13.3a4.9 4.9 0 0 0-4.9-5H4.13"/><path d="m6.43 10.81-2.56-2.56 2.56-2.56"/></svg>',
@@ -18070,7 +18242,7 @@ trailer<</Root 1 0 R>>`;
     let rawFiles = [];             // original File objects
     let pdfBlobs = [];            // converted PDF Blobs per file
     let pdfDocs = [];             // pdfjs Document proxies
-    let items = [];               // linear list of page objects: { id, fileIdx, origPageIdx, rotation, isDeleted, isBlank, canvas, name }
+    let items = [];               // linear list of page objects: { id, fileIdx, origPageIdx, rotation, isDeleted, isBlank, canvas, name, origFile, crop }
     let selectedIds = new Set();  // Set of selected item IDs
     let lastSelectedIdx = -1;     // Shift-click range anchor
     let mode = 'organize';        // 'organize' | 'merge' | 'split' | 'rotate' | 'delete' | 'extract'
@@ -18085,6 +18257,7 @@ trailer<</Root 1 0 R>>`;
     let isProcessing = false;
     let renderToken = 0;
     let draggedId = null;
+    let thumbObserver = null;
 
     const extOf = f => String(f?.name || '').split('.').pop().toLowerCase();
     const isPdf = f => f && (f.type === 'application/pdf' || extOf(f) === 'pdf');
@@ -18162,7 +18335,8 @@ trailer<</Root 1 0 R>>`;
     function recordState() {
       const snap = JSON.stringify(items.map(it => ({
         id: it.id, fileIdx: it.fileIdx, origPageIdx: it.origPageIdx,
-        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name
+        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name,
+        crop: it.crop ? { ...it.crop } : null
       })));
       undoStack.push(snap);
       if (undoStack.length > 40) undoStack.shift();
@@ -18173,7 +18347,8 @@ trailer<</Root 1 0 R>>`;
       if (!undoStack.length) return;
       const currentSnap = JSON.stringify(items.map(it => ({
         id: it.id, fileIdx: it.fileIdx, origPageIdx: it.origPageIdx,
-        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name
+        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name,
+        crop: it.crop ? { ...it.crop } : null
       })));
       redoStack.push(currentSnap);
       const prev = JSON.parse(undoStack.pop());
@@ -18184,7 +18359,8 @@ trailer<</Root 1 0 R>>`;
       if (!redoStack.length) return;
       const currentSnap = JSON.stringify(items.map(it => ({
         id: it.id, fileIdx: it.fileIdx, origPageIdx: it.origPageIdx,
-        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name
+        rotation: it.rotation, isDeleted: it.isDeleted, isBlank: it.isBlank, name: it.name,
+        crop: it.crop ? { ...it.crop } : null
       })));
       undoStack.push(currentSnap);
       const next = JSON.parse(redoStack.pop());
@@ -18197,7 +18373,8 @@ trailer<</Root 1 0 R>>`;
         return {
           ...s,
           canvas: existing?.canvas || null,
-          origFile: rawFiles[s.fileIdx] || null
+          origFile: rawFiles[s.fileIdx] || null,
+          crop: s.crop || null
         };
       });
       syncSplitCuts();
@@ -18213,11 +18390,56 @@ trailer<</Root 1 0 R>>`;
       }
     }
 
+    function cutsToRanges() {
+      const activeCount = items.filter(it => !it.isDeleted).length;
+      if (!activeCount) return '';
+      if (!customCuts.size) return activeCount === 1 ? '1' : `1-${activeCount}`;
+      const sortedCuts = [...customCuts].filter(c => c > 0 && c < activeCount).sort((a, b) => a - b);
+      if (!sortedCuts.length) return activeCount === 1 ? '1' : `1-${activeCount}`;
+      const ranges = [];
+      let start = 1;
+      for (const cut of sortedCuts) {
+        if (cut === start) {
+          ranges.push(`${start}`);
+        } else {
+          ranges.push(`${start}-${cut}`);
+        }
+        start = cut + 1;
+      }
+      if (start === activeCount) {
+        ranges.push(`${start}`);
+      } else if (start <= activeCount) {
+        ranges.push(`${start}-${activeCount}`);
+      }
+      return ranges.join(', ');
+    }
+
+    function rangesToCuts(str) {
+      const activeCount = items.filter(it => !it.isDeleted).length;
+      if (!activeCount || !str || !str.trim()) {
+        customCuts.clear();
+        return;
+      }
+      const parts = str.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+      const newCuts = new Set();
+      for (const part of parts) {
+        const match = part.match(/^(\d+)(?:-(\d+))?$/);
+        if (match) {
+          const end = match[2] ? parseInt(match[2], 10) : parseInt(match[1], 10);
+          if (end >= 1 && end < activeCount) {
+            newCuts.add(end);
+          }
+        }
+      }
+      customCuts = newCuts;
+    }
+
     function resetAll() {
       rawFiles = []; pdfBlobs = []; pdfDocs = []; items = [];
       selectedIds.clear(); lastSelectedIdx = -1;
       undoStack = []; redoStack = []; customCuts.clear();
       renderToken++; seq = 0; zoom = 100;
+      if (thumbObserver) { thumbObserver.disconnect(); thumbObserver = null; }
     }
 
     /* ── Render Step 1: Upload Dropzone ── */
@@ -18329,7 +18551,8 @@ trailer<</Root 1 0 R>>`;
               isBlank: false,
               canvas: null,
               name: file.name,
-              origFile: file
+              origFile: file,
+              crop: null
             });
           }
 
@@ -18468,6 +18691,8 @@ trailer<</Root 1 0 R>>`;
                   <span class="org-step-val" id="org-step-val">${splitEvery}</span>
                   <button type="button" class="org-step-btn" id="org-step-inc">+</button>
                 </div>
+                <span class="org-ctrl-label" style="margin-left:4px;">Range:</span>
+                <input type="text" class="org-range-input" id="org-split-range" placeholder="e.g. 1-3, 4-6" value="${_esc(cutsToRanges())}" title="Split into custom page ranges">
                 <button type="button" class="org-mini-btn" id="org-burst-btn" title="Split into single 1-page PDFs">Burst All</button>
               </div>
             ` : mode === 'rotate' ? `
@@ -18563,6 +18788,7 @@ trailer<</Root 1 0 R>>`;
               <div class="org-card-hover-actions">
                 <button type="button" class="org-card-act-btn" data-act="rot-ccw" data-id="${it.id}" title="Rotate left 90°">${ICONS.rotLeft}</button>
                 <button type="button" class="org-card-act-btn" data-act="rot-cw" data-id="${it.id}" title="Rotate right 90°">${ICONS.rotate}</button>
+                <button type="button" class="org-card-act-btn" data-act="crop" data-id="${it.id}" title="Trim margins">${ICONS.crop}</button>
                 <button type="button" class="org-card-act-btn" data-act="dup" data-id="${it.id}" title="Duplicate page">${ICONS.duplicate}</button>
                 <button type="button" class="org-card-act-btn" data-act="del" data-id="${it.id}" title="${it.isDeleted ? 'Restore' : 'Delete'}">${ICONS.trash}</button>
               </div>
@@ -18570,7 +18796,11 @@ trailer<</Root 1 0 R>>`;
 
             <div class="org-pg-meta">
               <span class="org-pg-num">${it.isBlank ? 'Blank' : `Page ${i + 1}`}</span>
-              ${partTag}
+              <div class="org-meta-badges">
+                ${rot ? `<span class="org-meta-badge org-badge-rot" title="Rotated ${rot}°">⟳ ${rot}°</span>` : ''}
+                ${it.crop ? `<span class="org-meta-badge org-badge-crop" title="Margins cropped">✂ Crop</span>` : ''}
+                ${partTag}
+              </div>
             </div>
           </div>`);
 
@@ -18613,6 +18843,7 @@ trailer<</Root 1 0 R>>`;
             <span class="org-batch-count">${count} selected</span>
             <button type="button" class="org-batch-btn" id="org-b-rot-ccw" title="Rotate selected 90° CCW">${ICONS.rotLeft}<span>-90°</span></button>
             <button type="button" class="org-batch-btn" id="org-b-rot-cw" title="Rotate selected 90° CW">${ICONS.rotate}<span>+90°</span></button>
+            <button type="button" class="org-batch-btn" id="org-b-crop" title="Trim margins of selected pages">${ICONS.crop}<span>Trim 5%</span></button>
             <button type="button" class="org-batch-btn" id="org-b-dup" title="Duplicate selected">${ICONS.duplicate}<span>Duplicate</span></button>
             <button type="button" class="org-batch-btn org-batch-btn--danger" id="org-b-del" title="Delete selected">${ICONS.trash}<span>Delete</span></button>
             <button type="button" class="org-batch-btn org-batch-btn--ghost" id="org-b-clear" title="Clear selection">✕</button>
@@ -18714,15 +18945,25 @@ trailer<</Root 1 0 R>>`;
       }
     }
 
-    async function mountThumbnails() {
-      for (const it of items) {
-        if (it.isBlank) continue;
-        const host = container.querySelector(`#org-thumb-host-${it.id}`);
-        if (!host) continue;
+    function mountThumbnails() {
+      if (thumbObserver) {
+        thumbObserver.disconnect();
+        thumbObserver = null;
+      }
 
+      const hostMap = new Map();
+      items.forEach(it => {
+        if (it.isBlank) return;
+        const host = container.querySelector(`#org-thumb-host-${it.id}`);
+        if (host) hostMap.set(it.id, { it, host });
+      });
+
+      const renderItemThumb = async (it, host) => {
+        if (!host || host.dataset.rendered === 'true') return;
         let c = it.canvas;
         if (!c) c = await renderThumbnail(it);
         if (c && host) {
+          host.dataset.rendered = 'true';
           const clone = document.createElement('canvas');
           clone.width = c.width; clone.height = c.height;
           clone.style.width = '100%'; clone.style.height = 'auto';
@@ -18732,14 +18973,58 @@ trailer<</Root 1 0 R>>`;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(c, 0, 0);
           if (it.rotation) clone.style.transform = `rotate(${it.rotation}deg)`;
-
+          if (it.crop) {
+            const { top = 0, right = 0, bottom = 0, left = 0 } = it.crop;
+            clone.style.clipPath = `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+          }
           host.innerHTML = '';
           host.append(clone);
-        } else if (host) {
+        } else if (host && !host.dataset.rendered) {
           host.innerHTML = buildHandcraftedIllustration((it.name || '').split('.').pop() || 'pdf', it.name, '', 'compact');
         }
+      };
+
+      // 1. Render first visible batch immediately (first 12 items)
+      const initialBatch = items.slice(0, 12);
+      for (const it of initialBatch) {
+        const entry = hostMap.get(it.id);
+        if (entry) renderItemThumb(entry.it, entry.host);
       }
-      // Re-fit now that real canvas sizes are known (height/aspect no longer guessed).
+
+      // 2. Observe all items with IntersectionObserver for lazy scrolling
+      const wrapEl = container.querySelector('#org-canvas-wrap');
+      if (window.IntersectionObserver && wrapEl) {
+        thumbObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const id = entry.target.dataset.id;
+              const itemEntry = hostMap.get(id);
+              if (itemEntry) {
+                renderItemThumb(itemEntry.it, itemEntry.host);
+                thumbObserver.unobserve(entry.target);
+              }
+            }
+          });
+        }, {
+          root: wrapEl,
+          rootMargin: '350px 0px',
+          threshold: 0.01
+        });
+
+        container.querySelectorAll('.org-pg-tile').forEach(tile => {
+          const id = tile.dataset.id;
+          const it = items.find(x => x.id === id);
+          if (it && (!it.canvas || !tile.querySelector('canvas'))) {
+            thumbObserver.observe(tile);
+          }
+        });
+      } else {
+        for (const it of items) {
+          const entry = hostMap.get(it.id);
+          if (entry) renderItemThumb(entry.it, entry.host);
+        }
+      }
+
       requestAnimationFrame(() => applyAdaptiveTiles());
     }
 
@@ -18751,7 +19036,6 @@ trailer<</Root 1 0 R>>`;
       if (!it || it.isBlank) return;
 
       const src = it.canvas;
-      const rot = it.rotation || 0;
       const pageNum = items.findIndex(x => x.id === id) + 1;
       const label = it.name ? `${it.name} — Page ${pageNum}` : `Page ${pageNum}`;
 
@@ -18764,7 +19048,16 @@ trailer<</Root 1 0 R>>`;
       overlay.innerHTML = `
         <div class="org-preview-sheet" role="document">
           <div class="org-preview-top">
-            <span class="org-preview-title">${_esc(label)}</span>
+            <div style="display:flex;align-items:center;gap:10px;overflow:hidden;">
+              <span class="org-preview-title">${_esc(label)}</span>
+              <div class="org-preview-ctrls">
+                <button type="button" class="org-preview-tool-btn" id="org-prev-crop-5" title="Trim 5% Margins">${ICONS.crop} <span>Trim 5%</span></button>
+                <button type="button" class="org-preview-tool-btn" id="org-prev-crop-10" title="Trim 10% Margins"><span>Trim 10%</span></button>
+                <button type="button" class="org-preview-tool-btn" id="org-prev-crop-reset" title="Reset Crop"><span>Reset</span></button>
+                <span class="org-vsep" style="height:14px;margin:0 2px;"></span>
+                <button type="button" class="org-preview-tool-btn" id="org-prev-rot" title="Rotate 90° CW">${ICONS.rotate} <span>Rotate</span></button>
+              </div>
+            </div>
             <button type="button" class="org-preview-close" title="Close (Esc)">${ICONS.x}</button>
           </div>
           <div class="org-preview-stage"></div>
@@ -18774,31 +19067,72 @@ trailer<</Root 1 0 R>>`;
           </div>
         </div>`;
 
-      // Append the real canvas node so its drawn pixels survive (innerHTML would
-      // have forged a fresh, empty canvas).
       const stage = overlay.querySelector('.org-preview-stage');
+      let previewCanvas = null;
       if (src && src.getContext) {
-        const c = document.createElement('canvas');
-        c.width = src.width; c.height = src.height;
-        c.className = 'org-preview-canvas';
-        const ctx = c.getContext('2d');
+        previewCanvas = document.createElement('canvas');
+        previewCanvas.width = src.width; previewCanvas.height = src.height;
+        previewCanvas.className = 'org-preview-canvas';
+        const ctx = previewCanvas.getContext('2d');
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(src, 0, 0);
-        if (rot) c.style.transform = `rotate(${rot}deg)`;
-        stage.appendChild(c);
+        if (it.rotation) previewCanvas.style.transform = `rotate(${it.rotation}deg)`;
+        if (it.crop) {
+          const { top = 0, right = 0, bottom = 0, left = 0 } = it.crop;
+          previewCanvas.style.clipPath = `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+        }
+        stage.appendChild(previewCanvas);
       } else {
         stage.innerHTML = `<div class="org-preview-ph">[Blank Page]</div>`;
       }
 
       container.appendChild(overlay);
-      // Force a frame, then add the "in" state so the enter transition plays.
       requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('is-open')));
+
+      const updatePreviewVisuals = () => {
+        if (!previewCanvas) return;
+        previewCanvas.style.transform = it.rotation ? `rotate(${it.rotation}deg)` : 'none';
+        if (it.crop && (it.crop.top || it.crop.bottom || it.crop.left || it.crop.right)) {
+          const { top = 0, right = 0, bottom = 0, left = 0 } = it.crop;
+          previewCanvas.style.clipPath = `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+        } else {
+          previewCanvas.style.clipPath = 'none';
+        }
+      };
+
+      const btnCrop5 = overlay.querySelector('#org-prev-crop-5');
+      const btnCrop10 = overlay.querySelector('#org-prev-crop-10');
+      const btnCropReset = overlay.querySelector('#org-prev-crop-reset');
+      const btnRot = overlay.querySelector('#org-prev-rot');
+
+      if (btnCrop5) btnCrop5.onclick = () => {
+        recordState();
+        it.crop = { top: 5, right: 5, bottom: 5, left: 5 };
+        updatePreviewVisuals();
+      };
+      if (btnCrop10) btnCrop10.onclick = () => {
+        recordState();
+        it.crop = { top: 10, right: 10, bottom: 10, left: 10 };
+        updatePreviewVisuals();
+      };
+      if (btnCropReset) btnCropReset.onclick = () => {
+        recordState();
+        it.crop = null;
+        updatePreviewVisuals();
+      };
+      if (btnRot) btnRot.onclick = () => {
+        recordState();
+        it.rotation = ((it.rotation || 0) + 90) % 360;
+        updatePreviewVisuals();
+      };
 
       const close = () => {
         overlay.classList.remove('is-open');
-        const done = () => overlay.remove();
-        // Exit should be snappy (200ms ease-out), not mirrored-slow.
+        const done = () => {
+          overlay.remove();
+          renderWorkbench();
+        };
         overlay.addEventListener('transitionend', done, { once: true });
         setTimeout(done, 260);
       };
@@ -18844,11 +19178,24 @@ trailer<</Root 1 0 R>>`;
       if (zout) zout.onclick = () => updateZoom(zoom - 10);
       if (zfit) zfit.onclick = () => updateZoom(100);
 
-      // 3. Sub-Mode Split Stepper & Burst
+      // 3. Sub-Mode Split Stepper, Range Input & Burst
       const sDec = container.querySelector('#org-step-dec');
       const sInc = container.querySelector('#org-step-inc');
       if (sDec) sDec.onclick = () => { if (splitEvery > 1) { splitEvery--; syncSplitCuts(); renderWorkbench(); } };
       if (sInc) sInc.onclick = () => { if (splitEvery < items.length) { splitEvery++; syncSplitCuts(); renderWorkbench(); } };
+      const rangeInp = container.querySelector('#org-split-range');
+      if (rangeInp) {
+        rangeInp.addEventListener('change', () => {
+          rangesToCuts(rangeInp.value);
+          renderWorkbench();
+        });
+        rangeInp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            rangesToCuts(rangeInp.value);
+            renderWorkbench();
+          }
+        });
+      }
       const burstBtn = container.querySelector('#org-burst-btn');
       if (burstBtn) burstBtn.onclick = () => { splitEvery = 1; syncSplitCuts(); renderWorkbench(); };
       const togSep = container.querySelector('#org-tog-sep');
@@ -18869,7 +19216,7 @@ trailer<</Root 1 0 R>>`;
         items.push({
           id: 'pg_' + (++seq),
           fileIdx: -1, origPageIdx: 0,
-          rotation: 0, isDeleted: false, isBlank: true, canvas: null, name: 'Blank Page'
+          rotation: 0, isDeleted: false, isBlank: true, canvas: null, name: 'Blank Page', crop: null
         });
         renderWorkbench();
       };
@@ -18944,8 +19291,18 @@ trailer<</Root 1 0 R>>`;
 
           if (act === 'rot-cw') items[idx].rotation = ((items[idx].rotation || 0) + 90) % 360;
           else if (act === 'rot-ccw') items[idx].rotation = ((items[idx].rotation || 0) + 270) % 360;
+          else if (act === 'crop') {
+            const it = items[idx];
+            if (!it.crop || it.crop.top === 0) {
+              it.crop = { top: 5, right: 5, bottom: 5, left: 5 };
+            } else if (it.crop.top === 5) {
+              it.crop = { top: 10, right: 10, bottom: 10, left: 10 };
+            } else {
+              it.crop = null;
+            }
+          }
           else if (act === 'dup') {
-            const clone = { ...items[idx], id: 'pg_' + (++seq), canvas: items[idx].canvas };
+            const clone = { ...items[idx], id: 'pg_' + (++seq), canvas: items[idx].canvas, crop: items[idx].crop ? { ...items[idx].crop } : null };
             items.splice(idx + 1, 0, clone);
           } else if (act === 'del') {
             items[idx].isDeleted = !items[idx].isDeleted;
@@ -18963,11 +19320,18 @@ trailer<</Root 1 0 R>>`;
         });
       });
 
-      // 10. Drag and Drop Reordering
+      // 10. Multi-Page Drag and Drop Reordering
       container.querySelectorAll('.org-pg-tile').forEach(tile => {
         tile.addEventListener('dragstart', (e) => {
           draggedId = tile.dataset.id;
-          tile.classList.add('is-dragging');
+          const isMulti = selectedIds.has(draggedId) && selectedIds.size > 1;
+          if (isMulti) {
+            container.querySelectorAll('.org-pg-tile').forEach(t => {
+              if (selectedIds.has(t.dataset.id)) t.classList.add('is-dragging');
+            });
+          } else {
+            tile.classList.add('is-dragging');
+          }
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', draggedId);
         });
@@ -18992,26 +19356,43 @@ trailer<</Root 1 0 R>>`;
 
         tile.addEventListener('drop', (e) => {
           e.preventDefault();
-          tile.classList.remove('is-drag-over-left', 'is-drag-over-right');
+          container.querySelectorAll('.org-pg-tile').forEach(t => {
+            t.classList.remove('is-drag-over-left', 'is-drag-over-right');
+          });
           const targetId = tile.dataset.id;
           if (!draggedId || draggedId === targetId) return;
 
-          const fromIdx = items.findIndex(x => x.id === draggedId);
-          let toIdx = items.findIndex(x => x.id === targetId);
-          if (fromIdx < 0 || toIdx < 0) return;
-
           const rect = tile.getBoundingClientRect();
-          if (e.clientX >= rect.left + rect.width / 2) toIdx++;
-          if (fromIdx < toIdx) toIdx--;
+          const isAfter = e.clientX >= rect.left + rect.width / 2;
+          const isMulti = selectedIds.has(draggedId) && selectedIds.size > 1;
 
           recordState();
-          const [moved] = items.splice(fromIdx, 1);
-          items.splice(toIdx, 0, moved);
+
+          if (isMulti) {
+            const movingItems = items.filter(it => selectedIds.has(it.id));
+            const targetItem = items.find(it => it.id === targetId);
+            items = items.filter(it => !selectedIds.has(it.id));
+            let targetIdx = items.indexOf(targetItem);
+            if (targetIdx < 0) targetIdx = items.length;
+            if (isAfter) targetIdx++;
+            items.splice(targetIdx, 0, ...movingItems);
+          } else {
+            const fromIdx = items.findIndex(x => x.id === draggedId);
+            let toIdx = items.findIndex(x => x.id === targetId);
+            if (fromIdx < 0 || toIdx < 0) return;
+            if (isAfter) toIdx++;
+            if (fromIdx < toIdx) toIdx--;
+            const [moved] = items.splice(fromIdx, 1);
+            items.splice(toIdx, 0, moved);
+          }
+
           renderWorkbench();
         });
 
         tile.addEventListener('dragend', () => {
-          tile.classList.remove('is-dragging', 'is-drag-over-left', 'is-drag-over-right');
+          container.querySelectorAll('.org-pg-tile').forEach(t => {
+            t.classList.remove('is-dragging', 'is-drag-over-left', 'is-drag-over-right');
+          });
           draggedId = null;
         });
       });
@@ -19019,6 +19400,7 @@ trailer<</Root 1 0 R>>`;
       // 11. Batch Action Dock
       const bRotCcw = container.querySelector('#org-b-rot-ccw');
       const bRotCw = container.querySelector('#org-b-rot-cw');
+      const bCrop = container.querySelector('#org-b-crop');
       const bDup = container.querySelector('#org-b-dup');
       const bDel = container.querySelector('#org-b-del');
       const bClear = container.querySelector('#org-b-clear');
@@ -19033,12 +19415,27 @@ trailer<</Root 1 0 R>>`;
         items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + 90) % 360; });
         renderWorkbench();
       };
+      if (bCrop) bCrop.onclick = () => {
+        recordState();
+        items.forEach(it => {
+          if (selectedIds.has(it.id)) {
+            if (!it.crop || it.crop.top === 0) {
+              it.crop = { top: 5, right: 5, bottom: 5, left: 5 };
+            } else if (it.crop.top === 5) {
+              it.crop = { top: 10, right: 10, bottom: 10, left: 10 };
+            } else {
+              it.crop = null;
+            }
+          }
+        });
+        renderWorkbench();
+      };
       if (bDup) bDup.onclick = () => {
         recordState();
         const toAdd = [];
         items.forEach((it, idx) => {
           if (selectedIds.has(it.id)) {
-            toAdd.push({ idx, clone: { ...it, id: 'pg_' + (++seq), canvas: it.canvas } });
+            toAdd.push({ idx, clone: { ...it, id: 'pg_' + (++seq), canvas: it.canvas, crop: it.crop ? { ...it.crop } : null } });
           }
         });
         toAdd.reverse().forEach(({ idx, clone }) => items.splice(idx + 1, 0, clone));
@@ -19090,6 +19487,25 @@ trailer<</Root 1 0 R>>`;
     window.removeEventListener('keydown', onKeyDown);
     window.addEventListener('keydown', onKeyDown);
 
+    /* ── Non-Destructive Vector Page Transformation Helper ── */
+    function applyPageTransforms(page, it, L) {
+      if (it.rotation) {
+        page.setRotation(L.degrees((page.getRotation().angle + it.rotation + 360) % 360));
+      }
+      if (it.crop && (it.crop.top || it.crop.bottom || it.crop.left || it.crop.right)) {
+        const { width, height } = page.getSize();
+        const leftPts = ((it.crop.left || 0) / 100) * width;
+        const rightPts = ((it.crop.right || 0) / 100) * width;
+        const topPts = ((it.crop.top || 0) / 100) * height;
+        const bottomPts = ((it.crop.bottom || 0) / 100) * height;
+        const newX = leftPts;
+        const newY = bottomPts;
+        const newWidth = Math.max(10, width - leftPts - rightPts);
+        const newHeight = Math.max(10, height - topPts - bottomPts);
+        page.setCropBox(newX, newY, newWidth, newHeight);
+      }
+    }
+
     /* ── Step 3: Hardware Action Execution ── */
     async function runAction() {
       if (isProcessing) return;
@@ -19131,11 +19547,12 @@ trailer<</Root 1 0 R>>`;
             const partDoc = await L.PDFDocument.create();
             for (const it of partItems) {
               if (it.isBlank) {
-                partDoc.addPage([612, 792]);
+                const bPg = partDoc.addPage([612, 792]);
+                applyPageTransforms(bPg, it, L);
               } else {
                 const sDoc = loadedSourceDocs[it.fileIdx];
                 const [copied] = await partDoc.copyPages(sDoc, [it.origPageIdx - 1]);
-                if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+                applyPageTransforms(copied, it, L);
                 partDoc.addPage(copied);
               }
             }
@@ -19168,11 +19585,12 @@ trailer<</Root 1 0 R>>`;
               const it = extItems[idx];
               const singleDoc = await L.PDFDocument.create();
               if (it.isBlank) {
-                singleDoc.addPage([612, 792]);
+                const bPg = singleDoc.addPage([612, 792]);
+                applyPageTransforms(bPg, it, L);
               } else {
                 const sDoc = loadedSourceDocs[it.fileIdx];
                 const [copied] = await singleDoc.copyPages(sDoc, [it.origPageIdx - 1]);
-                if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+                applyPageTransforms(copied, it, L);
                 singleDoc.addPage(copied);
               }
               const bytes = await singleDoc.save();
@@ -19185,11 +19603,12 @@ trailer<</Root 1 0 R>>`;
             const combinedDoc = await L.PDFDocument.create();
             for (const it of extItems) {
               if (it.isBlank) {
-                combinedDoc.addPage([612, 792]);
+                const bPg = combinedDoc.addPage([612, 792]);
+                applyPageTransforms(bPg, it, L);
               } else {
                 const sDoc = loadedSourceDocs[it.fileIdx];
                 const [copied] = await combinedDoc.copyPages(sDoc, [it.origPageIdx - 1]);
-                if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+                applyPageTransforms(copied, it, L);
                 combinedDoc.addPage(copied);
               }
             }
@@ -19204,11 +19623,12 @@ trailer<</Root 1 0 R>>`;
           const outDoc = await L.PDFDocument.create();
           for (const it of activeItems) {
             if (it.isBlank) {
-              outDoc.addPage([612, 792]);
+              const bPg = outDoc.addPage([612, 792]);
+              applyPageTransforms(bPg, it, L);
             } else {
               const sDoc = loadedSourceDocs[it.fileIdx];
               const [copied] = await outDoc.copyPages(sDoc, [it.origPageIdx - 1]);
-              if (it.rotation) copied.setRotation(L.degrees((copied.getRotation().angle + it.rotation + 360) % 360));
+              applyPageTransforms(copied, it, L);
               outDoc.addPage(copied);
             }
           }
