@@ -9017,7 +9017,7 @@
       trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
       eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
       download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
-      chevron: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
+      chevron: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
       grip: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
       plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
     };
@@ -9085,13 +9085,6 @@
       }
     ];
 
-    const PRESETS = [
-      { id: 'confidential', name: 'Confidential PDF' },
-      { id: 'sign_compress', name: 'Sign & Compress' },
-      { id: 'clean_gray', name: 'Clean Monochrome' },
-      { id: 'publish_zip', name: 'Publish Package' }
-    ];
-
     let state = {
       file: null,
       activeRecipe: 'confidential',
@@ -9134,11 +9127,36 @@
         name: tmpl.name,
         catType: tmpl.catType,
         enabled: true,
-        isExpanded: true,
+        isExpanded: false,
         config: tmpl.defaultConfig()
       });
       state.activeRecipe = 'custom';
       render();
+    }
+
+    function getStepSummary(step) {
+      if (step.type === 'watermark') {
+        return `"${step.config.text || 'CONFIDENTIAL'}"`;
+      }
+      if (step.type === 'protect') {
+        return step.config.password ? 'Password set' : 'No password';
+      }
+      if (step.type === 'compress') {
+        return step.config.level === 'extreme' ? 'Extreme' : (step.config.level === 'low' ? 'Lossless' : 'Recommended');
+      }
+      if (step.type === 'page_numbers') {
+        return step.config.position === 'bottom-right' ? 'Bottom Right' : (step.config.position === 'top-right' ? 'Top Right' : 'Bottom Center');
+      }
+      if (step.type === 'rotate') {
+        return `${step.config.degrees || 90}° CW`;
+      }
+      if (step.type === 'extract') {
+        return `Pages ${step.config.range || '1-5'}`;
+      }
+      if (step.type === 'zip') {
+        return step.config.zipName || 'archive.zip';
+      }
+      return 'Automatic';
     }
 
     function renderToolbar() {
@@ -9146,24 +9164,40 @@
       const canRun = !!state.file && activeCount > 0;
       return `
         <header class="wf-toolbar">
-          <div class="wf-toolbar-file">
+          <div class="wf-toolbar-left">
             ${state.file ? `
               <div class="wf-toolbar-file-icon">${ICONS.doc}</div>
               <div class="wf-toolbar-file-name" title="${esc(state.file.name)}">${esc(state.file.name)}</div>
               <div class="wf-toolbar-file-size">${formatBytes(state.file.size)}</div>
-              <button type="button" class="wf-toolbar-change-btn" id="wf-change-file-btn">Change Document</button>
+              <button type="button" class="wf-toolbar-change-btn" id="wf-change-file-btn">Change</button>
             ` : `
               <label for="wf-file-inp" class="wf-toolbar-choose-btn">
                 ${ICONS.upload}
                 <span>Choose Document</span>
               </label>
-              <span style="font-size:11.5px;color:#94A3B8;margin-left:4px;">Supports PDF, Images, Office docs</span>
+              <span style="font-size:11.5px;color:#94A3B8;margin-left:4px;">Supports PDF, Images, Office</span>
             `}
             <input type="file" id="wf-file-inp" accept=".pdf,image/*,.docx,.xlsx,.pptx" style="display:none;" />
           </div>
-          <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn" ${canRun ? '' : 'disabled'} title="${!state.file ? 'Please choose a document first' : (activeCount === 0 ? 'Enable at least one step' : 'Execute pipeline')}">
-            <span>Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
-          </button>
+
+          <div class="wf-toolbar-center">
+            <div class="wf-preset-select-wrap">
+              <span class="wf-preset-label">Preset:</span>
+              <select class="wf-preset-select" id="wf-preset-select">
+                <option value="confidential" ${state.activeRecipe === 'confidential' ? 'selected' : ''}>Confidential PDF</option>
+                <option value="sign_compress" ${state.activeRecipe === 'sign_compress' ? 'selected' : ''}>Sign &amp; Compress</option>
+                <option value="clean_gray" ${state.activeRecipe === 'clean_gray' ? 'selected' : ''}>Clean Monochrome</option>
+                <option value="publish_zip" ${state.activeRecipe === 'publish_zip' ? 'selected' : ''}>Publish Package</option>
+                ${state.activeRecipe === 'custom' ? '<option value="custom" selected>Custom Pipeline</option>' : ''}
+              </select>
+            </div>
+          </div>
+
+          <div class="wf-toolbar-right">
+            <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn" ${canRun ? '' : 'disabled'} title="${!state.file ? 'Please choose a document first' : (activeCount === 0 ? 'Enable at least one step' : 'Execute pipeline')}">
+              <span>Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+            </button>
+          </div>
         </header>
       `;
     }
@@ -9303,21 +9337,23 @@
       state.steps.forEach((step, idx) => {
         const isLast = idx === state.steps.length - 1;
         const isDisabled = step.enabled === false;
-        const isExpanded = step.isExpanded !== false;
+        const isExpanded = step.isExpanded === true;
+        const summary = getStepSummary(step);
 
         html += `
           <div class="wf-step-card ${isDisabled ? 'is-disabled' : ''} ${isExpanded ? 'is-expanded' : ''}" data-step-idx="${idx}">
             <div class="wf-sc-header" data-step-idx="${idx}">
               <div class="wf-sc-drag" title="Drag to reorder" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
-              <span class="wf-sc-badge">${String(idx + 1).padStart(2, '0')}</span>
+              <span class="wf-sc-badge">${idx + 1}</span>
               <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
               <span class="wf-sc-name">${esc(step.name)}</span>
+              <span class="wf-sc-summary">${esc(summary)}</span>
               <div class="wf-sc-controls">
                 <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}" title="${!isDisabled ? 'Step active (click to skip)' : 'Step disabled (skipped)'}"></button>
-                <button type="button" class="wf-sc-move-up" data-step-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move step up">${ICONS.up}</button>
-                <button type="button" class="wf-sc-move-down" data-step-idx="${idx}" ${isLast ? 'disabled' : ''} title="Move step down">${ICONS.down}</button>
-                <div class="wf-sc-chevron" data-step-idx="${idx}" title="Toggle configuration">${ICONS.chevron}</div>
-                <button type="button" class="wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
+                <button type="button" class="wf-sc-action-btn wf-sc-move-up" data-step-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move up">${ICONS.up}</button>
+                <button type="button" class="wf-sc-action-btn wf-sc-move-down" data-step-idx="${idx}" ${isLast ? 'disabled' : ''} title="Move down">${ICONS.down}</button>
+                <button type="button" class="wf-sc-action-btn wf-sc-chevron" data-step-idx="${idx}" title="Configure step">${ICONS.chevron}</button>
+                <button type="button" class="wf-sc-action-btn is-danger wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
               </div>
             </div>
             <div class="wf-sc-config">
@@ -9329,7 +9365,14 @@
         `;
 
         if (!isLast) {
-          html += `<div class="wf-step-connector"></div>`;
+          html += `
+            <div class="wf-step-connector">
+              <div class="wf-step-connector-line"></div>
+              <div class="wf-step-connector-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+          `;
         }
       });
 
@@ -9357,24 +9400,14 @@
         `;
       });
 
-      let presetsHtml = '';
-      PRESETS.forEach((p) => {
-        const isActive = state.activeRecipe === p.id;
-        presetsHtml += `
-          <button type="button" class="wf-preset-btn ${isActive ? 'is-active' : ''}" data-recipe-id="${p.id}">
-            <span style="flex:1;">${esc(p.name)}</span>
-          </button>
-        `;
-      });
-
       return `
         <aside class="wf-ops-sidebar">
+          <div class="wf-ops-title-bar">
+            <h4 class="wf-ops-title">Operations</h4>
+            <span class="wf-ops-sub">Click any tool to append to pipeline</span>
+          </div>
           <div class="wf-ops-inner">
             ${catHtml}
-          </div>
-          <div class="wf-ops-presets">
-            <span class="wf-ops-presets-label">Workflow Presets</span>
-            ${presetsHtml}
           </div>
         </aside>
       `;
@@ -9385,7 +9418,9 @@
         ${renderToolbar()}
         <div class="wf-body">
           <main class="wf-canvas" id="wf-pipeline-canvas">
-            ${renderCanvas()}
+            <div class="wf-pipeline-chain">
+              ${renderCanvas()}
+            </div>
           </main>
           ${renderOpsSidebar()}
         </div>
@@ -9423,13 +9458,26 @@
         };
       }
 
-      // 2. Run Pipeline CTA
+      // 2. Preset Dropdown in Toolbar
+      const presetSelect = container.querySelector('#wf-preset-select');
+      if (presetSelect) {
+        presetSelect.onchange = () => {
+          const rId = presetSelect.value;
+          if (RECIPES[rId]) {
+            state.activeRecipe = rId;
+            state.steps = JSON.parse(JSON.stringify(RECIPES[rId]));
+            render();
+          }
+        };
+      }
+
+      // 3. Run Pipeline CTA
       const runBtn = container.querySelector('#wf-run-pipeline-btn');
       if (runBtn) {
         runBtn.onclick = () => runPipeline();
       }
 
-      // 3. Operations Sidebar Add Buttons
+      // 4. Operations Sidebar Add Buttons
       container.querySelectorAll('.wf-ops-item').forEach((row) => {
         row.onclick = (e) => {
           const opType = row.dataset.opType;
@@ -9448,23 +9496,11 @@
         };
       });
 
-      // 4. Presets Selection
-      container.querySelectorAll('.wf-preset-btn').forEach((btn) => {
-        btn.onclick = () => {
-          const rId = btn.dataset.recipeId;
-          if (RECIPES[rId]) {
-            state.activeRecipe = rId;
-            state.steps = JSON.parse(JSON.stringify(RECIPES[rId]));
-            render();
-          }
-        };
-      });
-
-      // 5. Step Card Header (Expand/Collapse on row click)
+      // 5. Step Card Header (Expand/Collapse on row or chevron click)
       container.querySelectorAll('.wf-sc-header').forEach((header) => {
         header.onclick = (e) => {
-          // Don't toggle expansion if user clicked an explicit action control
-          if (e.target.closest('.wf-sc-controls') || e.target.closest('.wf-sc-drag')) return;
+          // Don't toggle expansion if user clicked an explicit action control (toggle, move, remove)
+          if (e.target.closest('.wf-sc-toggle') || e.target.closest('.wf-sc-move-up') || e.target.closest('.wf-sc-move-down') || e.target.closest('.wf-sc-remove') || e.target.closest('.wf-sc-drag')) return;
           const idx = Number(header.dataset.stepIdx);
           if (state.steps[idx]) {
             state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
@@ -9574,7 +9610,11 @@
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) state.steps[idx].config.text = e.target.value;
+          if (state.steps[idx]) {
+            state.steps[idx].config.text = e.target.value;
+            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
+          }
         };
       });
 
@@ -9588,6 +9628,8 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9595,7 +9637,11 @@
       container.querySelectorAll('.wf-cfg-protect-pass').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) state.steps[idx].config.password = e.target.value;
+          if (state.steps[idx]) {
+            state.steps[idx].config.password = e.target.value;
+            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
+          }
         };
       });
 
@@ -9620,6 +9666,8 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9634,6 +9682,8 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9648,6 +9698,8 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
+            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9655,14 +9707,22 @@
       container.querySelectorAll('.wf-cfg-extract-range').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) state.steps[idx].config.range = e.target.value;
+          if (state.steps[idx]) {
+            state.steps[idx].config.range = e.target.value;
+            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
+          }
         };
       });
 
       container.querySelectorAll('.wf-cfg-zip-name').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) state.steps[idx].config.zipName = e.target.value;
+          if (state.steps[idx]) {
+            state.steps[idx].config.zipName = e.target.value;
+            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
+            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
+          }
         };
       });
 

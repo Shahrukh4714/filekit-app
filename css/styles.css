@@ -17315,18 +17315,23 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Builder -- Three-Zone Pipeline Tool
-   Toolbar (pinned) + Pipeline Canvas (internal scroll) + Ops Sidebar
+   Workflow Builder -- Pro Three-Zone Pipeline Tool
+   Toolbar (pinned) + Centered Pipeline Chain + Sleek Ops Sidebar
 =============================================================== */
 
-/* Stage container override: scoped only to workflow via :has() */
+/* Stage & Workspace container overrides: scoped strictly to workflow via :has() */
+#app-workspace-tool-view:has(.wf-layout-root),
+#app-workspace-tool-view #app-tool-stage:has(.wf-layout-root),
 .app-stage-container:has(.wf-layout-root) {
   padding: 0 !important;
   margin: 0 !important;
   max-width: 100% !important;
+  width: 100% !important;
   height: 100% !important;
-  align-items: stretch !important;
-  justify-content: stretch !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   overflow: hidden !important;
 }
 
@@ -17341,19 +17346,20 @@ div.app-main-content,
   font-family: inherit !important;
 }
 
-/* Toolbar: 52px pinned, Run CTA lives here always */
+/* ── Toolbar: 52px pinned, Run CTA lives here always ── */
 .wf-toolbar {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 12px !important;
+  gap: 14px !important;
   height: 52px !important;
   min-height: 52px !important;
   flex-shrink: 0 !important;
-  padding: 0 16px !important;
+  padding: 0 18px !important;
   background: #FFFFFF !important;
   border-bottom: 1px solid #E2E8F0 !important;
   box-sizing: border-box !important;
+  z-index: 10 !important;
 }
 
 .wf-toolbar-file {
@@ -17361,7 +17367,6 @@ div.app-main-content,
   align-items: center !important;
   gap: 8px !important;
   min-width: 0 !important;
-  flex: 1 !important;
 }
 
 .wf-toolbar-file-icon {
@@ -17383,7 +17388,7 @@ div.app-main-content,
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  max-width: 260px !important;
+  max-width: 220px !important;
 }
 
 .wf-toolbar-file-size {
@@ -17434,6 +17439,37 @@ div.app-main-content,
 .wf-toolbar-choose-btn:hover { background: #DB2777 !important; transform: translateY(-1px) !important; }
 .wf-toolbar-choose-btn:active { transform: scale(0.97) !important; }
 
+/* Preset Selector in Toolbar */
+.wf-preset-select-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 7px !important;
+  padding: 0 8px 0 10px !important;
+  height: 32px !important;
+}
+
+.wf-preset-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  white-space: nowrap !important;
+}
+
+.wf-preset-select {
+  border: none !important;
+  background: transparent !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  cursor: pointer !important;
+  outline: none !important;
+  font-family: inherit !important;
+  padding: 0 4px !important;
+}
+
 /* Run Pipeline CTA -- always in toolbar, structurally cannot scroll away */
 .wf-toolbar-run {
   display: inline-flex !important;
@@ -17467,7 +17503,7 @@ div.app-main-content,
   box-shadow: none !important;
 }
 
-/* Body: fills remaining height, min-height:0 is CRITICAL for internal scroll */
+/* ── Body: fills remaining height, min-height:0 is CRITICAL for internal scroll ── */
 .wf-body {
   display: flex !important;
   flex: 1 !important;
@@ -17475,18 +17511,25 @@ div.app-main-content,
   overflow: hidden !important;
 }
 
-/* Pipeline Canvas: internally scrollable */
+/* ── Pipeline Canvas: internally scrollable, centered chain ── */
 .wf-canvas {
   flex: 1 !important;
   min-width: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 20px 24px !important;
+  padding: 24px 24px 48px !important;
   box-sizing: border-box !important;
   background: #F8FAFC !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 0 !important;
+}
+
+.wf-pipeline-chain {
+  width: 100% !important;
+  max-width: 680px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 /* Empty state */
@@ -17497,13 +17540,13 @@ div.app-main-content,
   align-items: center !important;
   justify-content: center !important;
   gap: 10px !important;
-  padding: 40px 20px !important;
+  padding: 60px 20px !important;
   text-align: center !important;
 }
 .wf-empty-state-icon {
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 10px !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
   background: #F1F5F9 !important;
   color: #CBD5E1 !important;
   display: flex !important;
@@ -17511,36 +17554,37 @@ div.app-main-content,
   justify-content: center !important;
   margin-bottom: 4px !important;
 }
-.wf-empty-state-title { font-size: 13px !important; font-weight: 600 !important; color: #64748B !important; margin: 0 !important; }
-.wf-empty-state-sub { font-size: 11.5px !important; color: #94A3B8 !important; margin: 0 !important; line-height: 1.5 !important; }
+.wf-empty-state-title { font-size: 14px !important; font-weight: 600 !important; color: #475569 !important; margin: 0 !important; }
+.wf-empty-state-sub { font-size: 12px !important; color: #94A3B8 !important; margin: 0 !important; line-height: 1.5 !important; max-width: 320px !important; }
 
-/* Step card */
+/* ── Step card ── */
 .wf-step-card {
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   box-sizing: border-box !important;
-  transition: border-color 0.13s ease, box-shadow 0.13s ease !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.12s ease !important;
   position: relative !important;
 }
-.wf-step-card:hover { border-color: #CBD5E1 !important; box-shadow: 0 2px 8px rgba(15,23,42,0.05) !important; }
-.wf-step-card.is-disabled { opacity: 0.5 !important; }
+.wf-step-card:hover { border-color: #CBD5E1 !important; box-shadow: 0 3px 10px rgba(15,23,42,0.06) !important; }
+.wf-step-card.is-disabled { opacity: 0.55 !important; background: #FAFAFA !important; }
 .wf-step-card.is-disabled .wf-sc-name { text-decoration: line-through !important; color: #94A3B8 !important; }
 .wf-step-card.is-dragging {
-  box-shadow: 0 8px 24px rgba(15,23,42,0.13) !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.14) !important;
   transform: scale(1.015) !important;
   z-index: 100 !important;
   border-color: #EC4899 !important;
-  opacity: 0.9 !important;
+  opacity: 0.92 !important;
 }
 
-/* Step card header (44px min -- WCAG touch target) */
+/* Step card header (48px min -- WCAG touch target) */
 .wf-sc-header {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  min-height: 44px !important;
-  padding: 0 10px !important;
+  gap: 10px !important;
+  min-height: 48px !important;
+  padding: 0 14px !important;
   cursor: pointer !important;
   user-select: none !important;
 }
@@ -17554,20 +17598,22 @@ div.app-main-content,
   padding: 4px 2px !important;
   transition: color 0.12s ease !important;
 }
-.wf-sc-drag:hover { color: #94A3B8 !important; }
+.wf-sc-drag:hover { color: #64748B !important; }
 .wf-sc-drag:active { cursor: grabbing !important; }
 
 .wf-sc-badge {
-  font-size: 10px !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   font-family: ui-monospace, 'SFMono-Regular', monospace !important;
-  color: #64748B !important;
-  background: #F1F5F9 !important;
-  padding: 2px 5px !important;
-  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   flex-shrink: 0 !important;
-  min-width: 20px !important;
-  text-align: center !important;
 }
 
 .wf-sc-icon {
@@ -17586,11 +17632,22 @@ div.app-main-content,
   font-size: 13px !important;
   font-weight: 600 !important;
   color: #0F172A !important;
-  flex: 1 1 0 !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.01em !important;
+}
+
+.wf-sc-summary {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #64748B !important;
+  background: #F1F5F9 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  margin-left: 6px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  letter-spacing: -0.01em !important;
+  max-width: 170px !important;
 }
 
 .wf-sc-controls {
@@ -17604,8 +17661,8 @@ div.app-main-content,
 /* Toggle switch: proper CSS sliding pill */
 .wf-sc-toggle {
   position: relative !important;
-  width: 30px !important;
-  height: 17px !important;
+  width: 32px !important;
+  height: 18px !important;
   background: #E2E8F0 !important;
   border-radius: 9px !important;
   border: none !important;
@@ -17619,71 +17676,56 @@ div.app-main-content,
 .wf-sc-toggle::after {
   content: '' !important;
   position: absolute !important;
-  top: 2.5px !important;
+  top: 2px !important;
   left: 2.5px !important;
-  width: 12px !important;
-  height: 12px !important;
+  width: 14px !important;
+  height: 14px !important;
   border-radius: 50% !important;
   background: #FFFFFF !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
   transition: transform 0.18s cubic-bezier(0.23,1,0.32,1) !important;
 }
 .wf-sc-toggle[aria-checked="true"]::after { transform: translateX(13px) !important; }
 .wf-sc-toggle:focus-visible { outline: 2px solid #EC4899 !important; outline-offset: 2px !important; }
 
-/* Expand chevron */
-.wf-sc-chevron {
-  width: 20px !important;
-  height: 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: #CBD5E1 !important;
-  flex-shrink: 0 !important;
-  transition: transform 0.16s ease-out, color 0.12s ease !important;
-}
-.wf-step-card.is-expanded .wf-sc-chevron { transform: rotate(180deg) !important; color: #94A3B8 !important; }
-
-/* Remove button */
-.wf-sc-remove {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 4px !important;
+/* Action buttons: Move up/down, expand, remove */
+.wf-sc-action-btn {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 5px !important;
   border: 1px solid transparent !important;
   background: transparent !important;
-  color: #CBD5E1 !important;
+  color: #64748B !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  flex-shrink: 0 !important;
+  padding: 0 !important;
   transition: all 0.12s ease !important;
-  padding: 0 !important;
   font-family: inherit !important;
 }
-.wf-sc-remove:hover { background: #FEF2F2 !important; border-color: #FECACA !important; color: #DC2626 !important; }
-.wf-sc-remove:active { transform: scale(0.92) !important; }
+.wf-sc-action-btn:hover:not(:disabled) {
+  background: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+.wf-sc-action-btn.is-danger:hover {
+  background: #FEF2F2 !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
+}
+.wf-sc-action-btn:disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed !important;
+}
 
-/* Move up/down (WCAG 2.2 non-drag alternative) */
-.wf-sc-move-up, .wf-sc-move-down {
-  width: 20px !important;
-  height: 20px !important;
-  border: 1px solid transparent !important;
-  background: transparent !important;
-  color: #CBD5E1 !important;
-  border-radius: 3px !important;
-  cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  transition: all 0.11s ease !important;
-  font-family: inherit !important;
+/* Expand chevron rotation */
+.wf-sc-action-btn.wf-sc-chevron svg {
+  transition: transform 0.16s ease-out !important;
 }
-.wf-sc-move-up:hover:not(:disabled), .wf-sc-move-down:hover:not(:disabled) {
-  background: #F1F5F9 !important; border-color: #E2E8F0 !important; color: #64748B !important;
+.wf-step-card.is-expanded .wf-sc-action-btn.wf-sc-chevron svg {
+  transform: rotate(180deg) !important;
 }
-.wf-sc-move-up:disabled, .wf-sc-move-down:disabled { opacity: 0.2 !important; cursor: not-allowed !important; }
 
 /* Inline config strip */
 .wf-sc-config {
@@ -17692,14 +17734,17 @@ div.app-main-content,
   transition: max-height 0.2s ease-out !important;
 }
 .wf-step-card.is-expanded .wf-sc-config {
-  max-height: 200px !important;
+  max-height: 220px !important;
   transition: max-height 0.22s ease-in !important;
 }
 .wf-sc-config-inner {
-  padding: 0 10px 10px 10px !important;
+  padding: 0 14px 12px 14px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
+  border-top: 1px dashed #F1F5F9 !important;
+  margin-top: 2px !important;
+  padding-top: 10px !important;
 }
 .wf-cfg-row {
   display: flex !important;
@@ -17708,8 +17753,8 @@ div.app-main-content,
   background: #F8FAFC !important;
   border: 1px solid #F1F5F9 !important;
   border-radius: 6px !important;
-  padding: 5px 8px !important;
-  min-height: 30px !important;
+  padding: 6px 10px !important;
+  min-height: 32px !important;
 }
 .wf-cfg-label {
   font-size: 10px !important;
@@ -17722,12 +17767,12 @@ div.app-main-content,
 }
 .wf-cfg-input {
   flex: 1 1 0 !important;
-  height: 22px !important;
+  height: 24px !important;
   background: #FFFFFF !important;
   border: 1px solid #CBD5E1 !important;
   border-radius: 4px !important;
   padding: 0 8px !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   color: #0F172A !important;
   outline: none !important;
   font-family: inherit !important;
@@ -17735,10 +17780,10 @@ div.app-main-content,
   box-sizing: border-box !important;
 }
 .wf-cfg-input:focus { border-color: #EC4899 !important; box-shadow: 0 0 0 2px rgba(236,72,153,0.14) !important; }
-.wf-cfg-pills { display: flex !important; gap: 3px !important; flex-wrap: wrap !important; }
+.wf-cfg-pills { display: flex !important; gap: 4px !important; flex-wrap: wrap !important; }
 .wf-cfg-pill {
-  padding: 2px 7px !important;
-  font-size: 10px !important;
+  padding: 3px 8px !important;
+  font-size: 10.5px !important;
   font-weight: 600 !important;
   border: 1px solid #E2E8F0 !important;
   background: #FFFFFF !important;
@@ -17751,33 +17796,46 @@ div.app-main-content,
 .wf-cfg-pill:hover { color: #0F172A !important; border-color: #CBD5E1 !important; }
 .wf-cfg-pill.is-active { background: #EC4899 !important; border-color: #EC4899 !important; color: #FFFFFF !important; }
 .wf-cfg-eye {
-  width: 22px !important; height: 22px !important; border: none !important;
+  width: 24px !important; height: 24px !important; border: none !important;
   background: transparent !important; color: #94A3B8 !important; cursor: pointer !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  border-radius: 3px !important; flex-shrink: 0 !important; padding: 0 !important;
+  border-radius: 4px !important; flex-shrink: 0 !important; padding: 0 !important;
   transition: color 0.11s ease !important; font-family: inherit !important;
 }
 .wf-cfg-eye:hover { color: #475569 !important; }
-.wf-cfg-auto-note { font-size: 10.5px !important; color: #94A3B8 !important; font-style: italic !important; }
+.wf-cfg-auto-note { font-size: 11px !important; color: #94A3B8 !important; font-style: italic !important; }
 
-/* Connector dot between step cards */
+/* Pipeline Flow Connector with Arrow */
 .wf-step-connector {
   display: flex !important;
+  flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 14px !important;
+  height: 22px !important;
   flex-shrink: 0 !important;
+  position: relative !important;
 }
-.wf-step-connector::before {
-  content: '' !important;
-  width: 1px !important;
+.wf-step-connector-line {
+  width: 2px !important;
   height: 100% !important;
   background: #E2E8F0 !important;
 }
+.wf-step-connector-arrow {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 16px !important;
+  height: 16px !important;
+  background: #F8FAFC !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #94A3B8 !important;
+}
 
-/* Operations Sidebar: 252px fixed */
+/* ── Operations Sidebar: 260px fixed ── */
 .wf-ops-sidebar {
-  width: 252px !important;
+  width: 260px !important;
   flex-shrink: 0 !important;
   background: #FFFFFF !important;
   border-left: 1px solid #E2E8F0 !important;
@@ -17786,42 +17844,84 @@ div.app-main-content,
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
+
+.wf-ops-title-bar {
+  padding: 14px 14px 10px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+}
+.wf-ops-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: #0F172A !important;
+  margin: 0 !important;
+}
+.wf-ops-sub {
+  font-size: 11px !important;
+  color: #94A3B8 !important;
+  margin: 0 !important;
+}
+
 .wf-ops-inner {
   flex: 1 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 14px 12px !important;
+  padding: 12px 10px 20px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 16px !important;
+  gap: 14px !important;
 }
+
+.wf-canvas::-webkit-scrollbar,
+.wf-ops-inner::-webkit-scrollbar {
+  width: 4px !important;
+}
+.wf-canvas::-webkit-scrollbar-thumb,
+.wf-ops-inner::-webkit-scrollbar-thumb {
+  background: #E2E8F0 !important;
+  border-radius: 4px !important;
+}
+.wf-canvas::-webkit-scrollbar-track,
+.wf-ops-inner::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
 .wf-ops-section { display: flex !important; flex-direction: column !important; gap: 2px !important; }
 .wf-ops-section-label {
   font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important;
-  letter-spacing: 0.08em !important; color: #94A3B8 !important; padding: 0 4px !important; margin-bottom: 4px !important;
+  letter-spacing: 0.08em !important; color: #94A3B8 !important; padding: 0 4px !important; margin-bottom: 3px !important;
 }
+
 .wf-ops-item {
   display: flex !important; align-items: center !important; gap: 8px !important;
-  padding: 6px 8px !important; border-radius: 6px !important; cursor: pointer !important;
-  transition: background 0.12s ease !important; min-height: 36px !important;
+  padding: 5px 8px !important; border-radius: 6px !important; cursor: pointer !important;
+  transition: background 0.12s ease !important; min-height: 34px !important;
 }
 .wf-ops-item:hover { background: #FDF2F8 !important; }
+
 .wf-ops-item-icon {
-  width: 24px !important; height: 24px !important; border-radius: 5px !important;
+  width: 22px !important; height: 22px !important; border-radius: 5px !important;
   background: #F1F5F9 !important; color: #64748B !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
   flex-shrink: 0 !important; transition: background 0.12s ease, color 0.12s ease !important;
 }
 .wf-ops-item:hover .wf-ops-item-icon { background: #FCE7F3 !important; color: #EC4899 !important; }
+
 .wf-ops-item-name {
-  font-size: 12px !important; font-weight: 600 !important; color: #334155 !important;
+  font-size: 11.5px !important; font-weight: 600 !important; color: #334155 !important;
   flex: 1 !important; transition: color 0.12s ease !important;
 }
 .wf-ops-item:hover .wf-ops-item-name { color: #0F172A !important; }
+
 .wf-ops-add-btn {
-  width: 22px !important; height: 22px !important; border-radius: 50% !important;
+  width: 20px !important; height: 20px !important; border-radius: 50% !important;
   border: 1.5px solid #E2E8F0 !important; background: #FFFFFF !important; color: #94A3B8 !important;
-  font-size: 14px !important; line-height: 1 !important; cursor: pointer !important;
+  font-size: 13px !important; line-height: 1 !important; cursor: pointer !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
   flex-shrink: 0 !important; transition: all 0.13s cubic-bezier(0.23,1,0.32,1) !important;
   padding: 0 !important; font-family: inherit !important;
@@ -17830,26 +17930,7 @@ div.app-main-content,
 .wf-ops-add-btn.is-added { border-color: #16A34A !important; color: #16A34A !important; background: #DCFCE7 !important; }
 .wf-ops-add-btn:active { transform: scale(0.88) !important; }
 
-/* Recipe presets at bottom of sidebar */
-.wf-ops-presets {
-  flex-shrink: 0 !important; padding: 10px 12px !important; border-top: 1px solid #F1F5F9 !important;
-  display: flex !important; flex-direction: column !important; gap: 4px !important;
-}
-.wf-ops-presets-label {
-  font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important;
-  letter-spacing: 0.08em !important; color: #94A3B8 !important; margin-bottom: 6px !important;
-}
-.wf-preset-btn {
-  width: 100% !important; display: flex !important; align-items: center !important;
-  gap: 6px !important; padding: 5px 8px !important; font-size: 11px !important;
-  font-weight: 600 !important; color: #475569 !important; background: transparent !important;
-  border: 1px solid #E2E8F0 !important; border-radius: 5px !important; cursor: pointer !important;
-  transition: all 0.12s ease !important; font-family: inherit !important; text-align: left !important;
-}
-.wf-preset-btn:hover { background: #FDF2F8 !important; border-color: #EC4899 !important; color: #EC4899 !important; }
-.wf-preset-btn.is-active { background: #FDF2F8 !important; border-color: #EC4899 !important; color: #EC4899 !important; font-weight: 700 !important; }
-
-/* Processing view */
+/* ── Processing view ── */
 .wf-processing-view {
   flex: 1 !important; display: flex !important; flex-direction: column !important;
   align-items: center !important; justify-content: center !important;
@@ -17870,7 +17951,7 @@ div.app-main-content,
 .wf-proc-bar-fill { height: 100% !important; background: #EC4899 !important; border-radius: 2px !important; transition: width 0.22s ease !important; }
 .wf-proc-pct { font-size: 11px !important; color: #94A3B8 !important; font-weight: 600 !important; }
 
-/* Result view */
+/* ── Result view ── */
 .wf-result-view {
   flex: 1 !important; display: flex !important; flex-direction: column !important;
   align-items: center !important; justify-content: center !important;
@@ -17912,7 +17993,6 @@ div.app-main-content,
 }
 .wf-result-ghost-btn:hover { background: #F8FAFC !important; border-color: #CBD5E1 !important; color: #0F172A !important; }
 .wf-result-ghost-btn:active { transform: scale(0.97) !important; }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    Images suite — thin senior form (preview · options · actions)
 ═══════════════════════════════════════════════════════════════════════════ */
