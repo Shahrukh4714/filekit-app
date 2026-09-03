@@ -9758,7 +9758,7 @@
           const opsScroll = container.querySelector('#wf-ops-inner-scroll');
           if (opsScroll) {
             opsScroll.scrollTo({ top: 0, behavior: 'smooth' });
-            opsScroll.style.outline = '2px solid #EC4899';
+            opsScroll.style.outline = '2px solid #0F172A';
             setTimeout(() => { opsScroll.style.outline = 'none'; }, 800);
           }
         };
@@ -10100,7 +10100,7 @@
                 y: (height - fontSize) / 2,
                 size: fontSize,
                 font,
-                color: PDFLib.rgb(0.75, 0.15, 0.35),
+                color: PDFLib.rgb(0.15, 0.18, 0.25),
                 opacity,
                 rotate: PDFLib.degrees(45)
               });

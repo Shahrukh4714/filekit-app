@@ -17315,9 +17315,9 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Studio -- Pro Workbench (v7 Emerald Review Stage)
-   Emerald Green Success Review Stage (matching Compress Tool) +
-   Continuous Spine + 520px Spine + 320px Right Panel
+   Workflow Studio -- FileKit Signature Pro Workbench
+   Neutral Obsidian Black (#000000 / #0F172A) + Clean Slate + Emerald Green Review
+   Zero intrusive pink; 100% harmonized with FileKit design system
 =============================================================== */
 
 /* Global container overrides for Workflow Studio */
@@ -17388,17 +17388,17 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   gap: 6px !important;
   white-space: nowrap !important;
 }
-.wf-toolbar-title svg { color: #EC4899 !important; }
+.wf-toolbar-title svg { color: #0F172A !important; }
 
 .wf-tb-upload-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 6px !important;
   padding: 4px 10px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #0F172A !important;
-  background: #F1F5F9 !important;
+  background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 6px !important;
   cursor: pointer !important;
@@ -17407,10 +17407,10 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   white-space: nowrap !important;
 }
 .wf-tb-upload-btn:hover {
-  background: #E2E8F0 !important;
+  background: #F1F5F9 !important;
   border-color: #CBD5E1 !important;
 }
-.wf-tb-upload-btn svg { color: #EC4899 !important; }
+.wf-tb-upload-btn svg { color: #0F172A !important; }
 
 /* Center: Presets OUT in the open (Clean Segmented Tab Group) */
 .wf-toolbar-center {
@@ -17561,8 +17561,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   width: 32px !important;
   height: 32px !important;
   border-radius: 8px !important;
-  background: #FDF2F8 !important;
-  color: #EC4899 !important;
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -17596,9 +17596,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 4px 10px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #EC4899 !important;
-  background: #FDF2F8 !important;
-  border: 1px solid #FCE7F3 !important;
+  color: #0F172A !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 6px !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
@@ -17606,7 +17606,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-family: inherit !important;
 }
 .wf-input-action-btn:hover {
-  background: #EC4899 !important;
+  background: #0F172A !important;
+  border-color: #0F172A !important;
   color: #FFFFFF !important;
 }
 
@@ -17640,8 +17641,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: border-color 0.12s ease, color 0.12s ease !important;
 }
 .wf-step-connector:hover .wf-connector-badge {
-  border-color: #EC4899 !important;
-  color: #EC4899 !important;
+  border-color: #0F172A !important;
+  color: #0F172A !important;
 }
 
 /* ── Rich Step Card (Unified Badge, 520px) ── */
@@ -17672,7 +17673,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   box-shadow: 0 8px 24px rgba(15,23,42,0.14) !important;
   transform: scale(1.015) !important;
   z-index: 100 !important;
-  border-color: #EC4899 !important;
+  border-color: #0F172A !important;
   opacity: 0.92 !important;
 }
 
@@ -17705,7 +17706,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-sc-drag:hover { color: #64748B !important; }
 .wf-sc-drag:active { cursor: grabbing !important; }
 
-/* Clean quiet step counter without double-badge clutter */
+/* Clean quiet step counter */
 .wf-sc-num {
   font-size: 11px !important;
   font-weight: 700 !important;
@@ -17719,8 +17720,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   width: 24px !important;
   height: 24px !important;
   border-radius: 6px !important;
-  background: #FDF2F8 !important;
-  color: #EC4899 !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #334155 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -17742,7 +17744,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   flex-shrink: 0 !important;
 }
 
-/* Sliding pill switch */
+/* Sliding pill switch -- Obsidian Black */
 .wf-sc-toggle {
   position: relative !important;
   width: 30px !important;
@@ -17756,7 +17758,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 0 !important;
   outline: none !important;
 }
-.wf-sc-toggle[aria-checked="true"] { background: #EC4899 !important; }
+.wf-sc-toggle[aria-checked="true"] { background: #0F172A !important; }
 .wf-sc-toggle::after {
   content: '' !important;
   position: absolute !important;
@@ -17834,7 +17836,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-sc-edit-btn {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #EC4899 !important;
+  color: #475569 !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 3px !important;
@@ -17843,7 +17845,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   margin-left: auto !important;
   transition: color 0.12s ease !important;
 }
-.wf-sc-edit-btn:hover { color: #DB2777 !important; }
+.wf-sc-edit-btn:hover { color: #0F172A !important; }
 .wf-step-card.is-expanded .wf-sc-edit-btn svg { transform: rotate(180deg) !important; }
 
 /* Inline config drawer */
@@ -17897,7 +17899,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: border-color 0.12s ease !important;
   box-sizing: border-box !important;
 }
-.wf-cfg-input:focus { border-color: #EC4899 !important; box-shadow: 0 0 0 2px rgba(236,72,153,0.14) !important; }
+.wf-cfg-input:focus { border-color: #0F172A !important; box-shadow: 0 0 0 2px rgba(15,23,42,0.10) !important; }
 .wf-cfg-pills { display: flex !important; gap: 4px !important; flex-wrap: wrap !important; }
 .wf-cfg-pill {
   padding: 3px 8px !important;
@@ -17912,7 +17914,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-family: inherit !important;
 }
 .wf-cfg-pill:hover { color: #0F172A !important; border-color: #CBD5E1 !important; }
-.wf-cfg-pill.is-active { background: #EC4899 !important; border-color: #EC4899 !important; color: #FFFFFF !important; }
+.wf-cfg-pill.is-active { background: #0F172A !important; border-color: #0F172A !important; color: #FFFFFF !important; }
 .wf-cfg-eye {
   width: 24px !important; height: 24px !important; border: none !important;
   background: transparent !important; color: #94A3B8 !important; cursor: pointer !important;
@@ -17920,7 +17922,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   border-radius: 4px !important; flex-shrink: 0 !important; padding: 0 !important;
   transition: color 0.11s ease !important; font-family: inherit !important;
 }
-.wf-cfg-eye:hover { color: #475569 !important; }
+.wf-cfg-eye:hover { color: #0F172A !important; }
 
 /* ── Output Node (Symmetrical, 520px) ── */
 .wf-output-node {
@@ -18019,9 +18021,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   transition: all 0.14s ease !important;
 }
 .wf-canvas-add-dropzone:hover {
-  border-color: #EC4899 !important;
-  color: #EC4899 !important;
-  background: #FDF2F8 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+  background: #F8FAFC !important;
 }
 
 /* ── Operations Sidebar: 320px with FIXED PADDING & NON-COLLIDING FOOTER ── */
@@ -18091,7 +18093,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   letter-spacing: 0.08em !important; color: #94A3B8 !important; padding: 0 4px !important; margin-bottom: 2px !important;
 }
 
-/* Rich operation item: Icon + Name + Description + High-contrast Add button */
+/* Rich operation item: Clean Neutral */
 .wf-ops-item {
   display: flex !important;
   align-items: center !important;
@@ -18101,7 +18103,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   cursor: pointer !important;
   transition: background 0.12s ease !important;
 }
-.wf-ops-item:hover { background: #FDF2F8 !important; }
+.wf-ops-item:hover { background: #F8FAFC !important; }
 
 .wf-ops-item-icon {
   width: 26px !important;
@@ -18115,7 +18117,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   flex-shrink: 0 !important;
   transition: background 0.12s ease, color 0.12s ease !important;
 }
-.wf-ops-item:hover .wf-ops-item-icon { background: #FCE7F3 !important; color: #EC4899 !important; }
+.wf-ops-item:hover .wf-ops-item-icon { background: #F1F5F9 !important; color: #0F172A !important; }
 
 .wf-ops-item-texts {
   display: flex !important;
@@ -18162,9 +18164,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   font-family: inherit !important;
 }
 .wf-ops-item:hover .wf-ops-add-btn {
-  border-color: #EC4899 !important;
+  border-color: #0F172A !important;
   color: #FFFFFF !important;
-  background: #EC4899 !important;
+  background: #0F172A !important;
 }
 .wf-ops-add-btn.is-added {
   border-color: #16A34A !important;
@@ -18173,7 +18175,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-ops-add-btn:active { transform: scale(0.9) !important; }
 
-/* ── Pinned Footer: Run Pipeline CTA ── */
+/* ── Pinned Footer: FileKit Signature Pure Black CTA Button ── */
 .wf-ops-footer {
   padding: 12px 16px !important;
   background: #FFFFFF !important;
@@ -18192,22 +18194,22 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   gap: 7px !important;
   width: 100% !important;
   height: 40px !important;
-  background: #EC4899 !important;
+  background: #000000 !important;
   color: #FFFFFF !important;
   font-size: 12.5px !important;
   font-weight: 700 !important;
-  border: 1px solid #EC4899 !important;
+  border: 1px solid #000000 !important;
   border-radius: 8px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(236,72,153,0.3) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14) !important;
   transition: all 0.14s cubic-bezier(0.23,1,0.32,1) !important;
   white-space: nowrap !important;
   font-family: inherit !important;
 }
 .wf-ops-run-btn:hover {
-  background: #DB2777 !important;
-  border-color: #DB2777 !important;
-  box-shadow: 0 4px 14px rgba(236,72,153,0.42) !important;
+  background: #18181B !important;
+  border-color: #18181B !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22) !important;
   transform: translateY(-1px) !important;
 }
 .wf-ops-run-btn:active { transform: scale(0.98) !important; }
@@ -18262,7 +18264,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-proc-spinner {
   width: 40px !important; height: 40px !important;
-  border: 3px solid #FCE7F3 !important; border-top-color: #EC4899 !important;
+  border: 3px solid #E2E8F0 !important; border-top-color: #0F172A !important;
   border-radius: 50% !important; animation: wf-spin 0.72s linear infinite !important; flex-shrink: 0 !important;
 }
 @keyframes wf-spin { to { transform: rotate(360deg); } }
@@ -18272,7 +18274,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   width: 100% !important; max-width: 300px !important; height: 4px !important;
   background: #F1F5F9 !important; border-radius: 2px !important; overflow: hidden !important;
 }
-.wf-proc-bar-fill { height: 100% !important; background: #EC4899 !important; border-radius: 2px !important; transition: width 0.22s ease !important; }
+.wf-proc-bar-fill { height: 100% !important; background: #0F172A !important; border-radius: 2px !important; transition: width 0.22s ease !important; }
 .wf-proc-pct { font-size: 11px !important; color: #94A3B8 !important; font-weight: 600 !important; }
 
 /* ── EMERALD GREEN REVIEW STAGE (Benchmark from Compress Tool) ── */
