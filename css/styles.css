@@ -17315,23 +17315,27 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Builder -- Pro Three-Zone Pipeline Studio (v4 Complete)
-   Unified Toolbar + Aligned Baselines + Input/Output Nodes + Rich Cards
+   Workflow Studio -- Systematically Scaled Workbench
+   Zero Gutters + 640px Optical Spine + 280px Operations Library
 =============================================================== */
 
-/* Stage & Workspace container overrides: eliminates outer gutters */
+/* Global container overrides for Workflow Studio */
 body #app-view #app-canvas.app-canvas:has(.wf-layout-root),
 body #app-view .app-canvas.ff-tool-active:has(.wf-layout-root),
 html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
+body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 #app-workspace-tool-view:has(.wf-layout-root),
 #app-workspace-tool-view #app-tool-stage:has(.wf-layout-root),
 .app-stage-container:has(.wf-layout-root),
-#app-tool-stage:has(.wf-layout-root) {
+.app-stage-container.wf-stage-active,
+#app-tool-stage:has(.wf-layout-root),
+#app-tool-stage.wf-stage-active {
   padding: 0 !important;
   margin: 0 !important;
   max-width: 100% !important;
   width: 100% !important;
   height: calc(100vh - 60px) !important;
+  max-height: calc(100vh - 60px) !important;
   background: #FFFFFF !important;
   border: none !important;
   border-radius: 0 !important;
@@ -17350,16 +17354,15 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   font-family: inherit !important;
 }
 
-/* ── Unified Studio Toolbar: 48px pinned, balanced 3-zone ── */
+/* ── Studio Toolbar: 48px pinned, axial column alignment ── */
 .wf-toolbar {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 16px !important;
   height: 48px !important;
   min-height: 48px !important;
   flex-shrink: 0 !important;
-  padding: 0 16px !important;
+  padding: 0 0 0 16px !important;
   background: #FFFFFF !important;
   border-bottom: 1px solid #E2E8F0 !important;
   box-sizing: border-box !important;
@@ -17433,22 +17436,26 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   padding: 0 4px !important;
 }
 
+/* Right toolbar zone: 280px wide to match the operations sidebar exactly! */
 .wf-toolbar-right {
+  width: 280px !important;
+  flex-shrink: 0 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  flex: 1 !important;
   justify-content: flex-end !important;
-  flex-shrink: 0 !important;
+  padding-right: 14px !important;
+  box-sizing: border-box !important;
+  border-left: 1px solid #E2E8F0 !important;
+  height: 100% !important;
 }
 
 .wf-toolbar-run {
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
-  padding: 0 16px !important;
+  width: 100% !important;
   height: 32px !important;
-  flex-shrink: 0 !important;
   background: #EC4899 !important;
   color: #FFFFFF !important;
   font-size: 12px !important;
@@ -17469,7 +17476,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 }
 .wf-toolbar-run:active { transform: scale(0.97) !important; }
 
-/* ── Body: fills remaining height, internal scroll only ── */
+/* ── Body: fills remaining height ── */
 .wf-body {
   display: flex !important;
   flex: 1 !important;
@@ -17477,13 +17484,13 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   overflow: hidden !important;
 }
 
-/* ── Pipeline Canvas: perfectly aligned with sidebar (Y = 16px) ── */
+/* ── Pipeline Canvas: perfectly centered 640px spine ── */
 .wf-canvas {
   flex: 1 !important;
   min-width: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 16px 20px 48px !important;
+  padding: 20px 24px 48px !important;
   box-sizing: border-box !important;
   background: #F8FAFC !important;
   display: flex !important;
@@ -17492,7 +17499,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 
 .wf-pipeline-chain {
   width: 100% !important;
-  max-width: 580px !important;
+  max-width: 640px !important;
   margin: 0 auto !important;
   display: flex !important;
   flex-direction: column !important;
@@ -17551,7 +17558,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   min-width: 0 !important;
 }
 .wf-input-title {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
   color: #0F172A !important;
   white-space: nowrap !important;
@@ -17559,7 +17566,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   text-overflow: ellipsis !important;
 }
 .wf-input-sub {
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   color: #64748B !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -17569,9 +17576,9 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 .wf-input-action-btn {
   display: inline-flex !important;
   align-items: center !important;
-  padding: 4px 10px !important;
+  padding: 5px 12px !important;
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   color: #EC4899 !important;
   background: #FDF2F8 !important;
   border: 1px solid #FCE7F3 !important;
@@ -17592,14 +17599,14 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 22px !important;
+  height: 24px !important;
   margin: -1px 0 !important;
   position: relative !important;
   z-index: 1 !important;
 }
 .wf-connector-line {
   width: 2px !important;
-  height: 6px !important;
+  height: 7px !important;
   background: #CBD5E1 !important;
 }
 .wf-connector-badge {
@@ -17615,7 +17622,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-/* ── Rich Step Card (2-row structured layout) ── */
+/* ── Rich Step Card (2-row structured layout, 640px) ── */
 .wf-step-card {
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
@@ -17647,12 +17654,12 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   opacity: 0.92 !important;
 }
 
-/* Row 1: Identity & Primary Actions (40px) */
+/* Row 1: Identity & Primary Actions */
 .wf-sc-row-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 10px 12px 6px 12px !important;
+  padding: 10px 14px 6px 14px !important;
   cursor: pointer !important;
   user-select: none !important;
 }
@@ -17714,7 +17721,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 .wf-sc-controls {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 8px !important;
   flex-shrink: 0 !important;
 }
 
@@ -17773,12 +17780,12 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   color: #DC2626 !important;
 }
 
-/* Row 2: Parameter summary chips & edit toggle (28px) */
+/* Row 2: Parameter summary chips & edit toggle */
 .wf-sc-row-summary {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 0 12px 9px 42px !important;
+  padding: 0 14px 10px 44px !important;
   gap: 8px !important;
   cursor: pointer !important;
 }
@@ -17938,7 +17945,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   min-width: 0 !important;
 }
 .wf-output-title {
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
   color: #0F172A !important;
   white-space: nowrap !important;
@@ -17946,7 +17953,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   text-overflow: ellipsis !important;
 }
 .wf-output-sub {
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   color: #64748B !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -17963,9 +17970,9 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   flex-shrink: 0 !important;
 }
 
-/* ── Operations Sidebar: 252px, aligned to Y = 16px ── */
+/* ── Operations Sidebar: 280px, axial alignment with toolbar right zone ── */
 .wf-ops-sidebar {
-  width: 252px !important;
+  width: 280px !important;
   flex-shrink: 0 !important;
   background: #FFFFFF !important;
   border-left: 1px solid #E2E8F0 !important;
@@ -18032,7 +18039,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  padding: 5px 8px !important;
+  padding: 6px 8px !important;
   border-radius: 6px !important;
   cursor: pointer !important;
   transition: background 0.12s ease !important;
@@ -18040,8 +18047,8 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 .wf-ops-item:hover { background: #FDF2F8 !important; }
 
 .wf-ops-item-icon {
-  width: 22px !important;
-  height: 22px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 5px !important;
   background: #F1F5F9 !important;
   color: #64748B !important;
@@ -18078,8 +18085,8 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 }
 
 .wf-ops-add-btn {
-  width: 20px !important;
-  height: 20px !important;
+  width: 22px !important;
+  height: 22px !important;
   border-radius: 50% !important;
   border: 1.5px solid #E2E8F0 !important;
   background: #FFFFFF !important;
@@ -24085,7 +24092,7 @@ body #app-view .drop-hero-box,
 .app-stage-container:has(.conv-root),
 .app-stage-container:has(.doc-root),
 .app-stage-container.cpdf-root,
-#app-tool-stage.app-stage-container:not(:has(.org-shell)):not(.stage-theme-organize) {
+#app-tool-stage.app-stage-container:not(:has(.org-shell)):not(.stage-theme-organize):not(:has(.wf-layout-root)):not(.wf-stage-active) {
   border-top: 4px solid var(--tool-theme-color, #E5252A) !important;
   border-left: 1.5px solid var(--tool-card-border, #FECACA) !important;
   border-right: 1.5px solid var(--tool-card-border, #FECACA) !important;
@@ -24096,6 +24103,10 @@ body #app-view .drop-hero-box,
 }
 
 #app-tool-stage:has(.org-shell),
+#app-tool-stage:has(.wf-layout-root),
+#app-tool-stage.wf-stage-active,
+.app-stage-container:has(.wf-layout-root),
+.app-stage-container.wf-stage-active,
 #app-tool-stage.stage-theme-organize,
 .app-stage-container:has(.org-shell),
 .app-stage-container.stage-theme-organize {
@@ -28326,6 +28337,12 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active {
   flex: 1 1 auto !important;
 }
 
+body #app-view #app-canvas.app-canvas:has(.wf-layout-root),
+body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
+body #app-view .app-canvas.ff-tool-active:has(.wf-layout-root),
+body #app-view .app-canvas.ff-tool-active.wf-canvas-fullbleed,
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
+html body #app-view #app-canvas.app-canvas.ff-tool-active.wf-canvas-fullbleed,
 body #app-view #app-canvas.app-canvas:has(.org-shell),
 body #app-view #app-canvas.app-canvas:has(.spdf-shell),
 body #app-view #app-canvas.app-canvas:has(.sign-shell),
@@ -46423,7 +46440,6 @@ input[type="checkbox"]:not(.native-checkbox):focus-visible {
   outline: 2px solid rgba(24, 24, 27, 0.3) !important;
   outline-offset: 2px !important;
 }
-
 
 
 

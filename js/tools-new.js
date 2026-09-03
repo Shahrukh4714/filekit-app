@@ -8981,9 +8981,21 @@
   window.__ffMountWorkflow = function mountWorkflow(container, initialTool) {
     container.innerHTML = '';
     container.className = 'wf-layout-root';
+
+    // Full-bleed stage, canvas, and workspace overrides (matching Organize & Edit tools)
     const stageEl = container.closest('.app-stage-container');
     if (stageEl) {
       stageEl.classList.add('wf-stage-active');
+      stageEl.style.cssText = 'padding:0!important;margin:0!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:#FFFFFF!important;max-width:none!important;width:100%!important;height:100%!important;';
+    }
+    const canvasEl = container.closest('#app-canvas');
+    if (canvasEl) {
+      canvasEl.classList.add('wf-canvas-fullbleed');
+      canvasEl.style.cssText = 'padding:0!important;margin:0!important;';
+    }
+    const wtvEl = container.closest('#app-workspace-tool-view');
+    if (wtvEl) {
+      wtvEl.style.cssText = 'padding:0!important;margin:0!important;width:100%!important;height:100%!important;';
     }
 
     function formatBytes(b) {
@@ -9001,7 +9013,7 @@
     const ICONS = {
       flow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
       upload: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
-      doc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      doc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
       package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>`,
       watermark: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
       protect: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
@@ -9046,14 +9058,14 @@
 
     const STEP_TEMPLATES = {
       watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Add diagonal text stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
-      protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password encryption', catType: 'security', defaultConfig: () => ({ password: '' }) },
-      compress: { type: 'compress', name: 'Compress PDF', desc: 'Streamline PDF streams', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
-      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add footer or header counters', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
-      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'High-contrast black & white', catType: 'visual', defaultConfig: () => ({}) },
-      rotate: { type: 'rotate', name: 'Rotate Pages', desc: 'Rotate orientation in 90° steps', catType: 'structure', defaultConfig: () => ({ degrees: 90 }) },
-      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', desc: 'Lock form fields & drawings', catType: 'structure', defaultConfig: () => ({}) },
-      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export selected page numbers', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
-      zip: { type: 'zip', name: 'Create ZIP Archive', desc: 'Bundle into compressed archive', catType: 'compress', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
+      protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password', catType: 'security', defaultConfig: () => ({ password: '' }) },
+      compress: { type: 'compress', name: 'Compress PDF', desc: 'Reduce document size', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
+      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add page counters', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
+      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'Convert to black & white', catType: 'visual', defaultConfig: () => ({}) },
+      rotate: { type: 'rotate', name: 'Rotate Pages', desc: 'Rotate in 90° increments', catType: 'structure', defaultConfig: () => ({ degrees: 90 }) },
+      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', desc: 'Lock forms and annotations', catType: 'structure', defaultConfig: () => ({}) },
+      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export specific pages', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
+      zip: { type: 'zip', name: 'Create ZIP Archive', desc: 'Bundle into compressed ZIP', catType: 'compress', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
     };
 
     const OPS_CATEGORIES = [
@@ -9147,7 +9159,7 @@
           : `<span class="wf-param-chip" style="color:#94A3B8;">No password set</span>`;
       }
       if (step.type === 'compress') {
-        const lvl = step.config.level === 'extreme' ? 'Extreme compression' : (step.config.level === 'low' ? 'Lossless' : 'Recommended quality');
+        const lvl = step.config.level === 'extreme' ? 'Extreme' : (step.config.level === 'low' ? 'Lossless' : 'Recommended');
         return `<span class="wf-param-chip">Level: <strong>${lvl}</strong></span>`;
       }
       if (step.type === 'page_numbers') {
@@ -9161,7 +9173,7 @@
         return `<span class="wf-param-chip">Pages: <strong>${esc(step.config.range || '1-5')}</strong></span>`;
       }
       if (step.type === 'zip') {
-        return `<span class="wf-param-chip">File: <strong>${esc(step.config.zipName || 'output.zip')}</strong></span>`;
+        return `<span class="wf-param-chip">Archive: <strong>${esc(step.config.zipName || 'output.zip')}</strong></span>`;
       }
       return `<span class="wf-param-chip" style="color:#64748B;">⚡ Automatic on-device execution</span>`;
     }
