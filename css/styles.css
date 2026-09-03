@@ -17315,12 +17315,17 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Studio -- Interface Design System Specification
-   Crafted under strict .interface-design skill standards
-   (Linear / Vercel / Apple Workbench Benchmark)
+   Workflow Studio -- Master Executive Workstation
+   Crafted to highest senior UI/UX benchmarks:
+   - 3-Slot Rigid Control Column Grid (zero trash jitter)
+   - Receptive Input Well & Adaptive Document Card
+   - Conditional Semantic Output Node (Neutral -> Emerald)
+   - Truthful CTA State Machine (Receptive -> Obsidian Play)
+   - Symmetrical Toolbar Spine Balancing
+   - Inset Micro-Chips & 6-Dot Textured Drag Grips
 =============================================================== */
 
-/* Global Stage Resets */
+/* Global container overrides */
 body #app-view #app-canvas.app-canvas:has(.wf-layout-root),
 body #app-view .app-canvas.ff-tool-active:has(.wf-layout-root),
 html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
@@ -17344,7 +17349,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   overflow: hidden !important;
 }
 
-/* Root layout container with antialiasing */
+/* Root shell */
 .wf-layout-root {
   width: 100% !important;
   height: 100% !important;
@@ -17360,7 +17365,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   1. STUDIO TOOLBAR (46px Optical Height, 3 Balanced Zones)
+   1. STUDIO TOOLBAR (Optically Balanced & Centered)
    ══════════════════════════════════════════════════════════════════ */
 .wf-toolbar {
   display: flex !important;
@@ -17377,13 +17382,13 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   z-index: 20 !important;
 }
 
-/* Left: Studio Identity & Session State */
+/* Left & Right Flex-Balanced to keep center perfectly on-axis */
 .wf-tb-left {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
-  flex-shrink: 0 !important;
-  min-width: 220px !important;
+  flex: 1 1 0 !important;
+  min-width: 200px !important;
 }
 
 .wf-tb-studio-pill {
@@ -17437,6 +17442,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   height: 6px !important;
   border-radius: 50% !important;
   background: #94A3B8 !important;
+  display: inline-block !important;
 }
 .is-ready .wf-pulse-dot {
   background: #16A34A !important;
@@ -17448,8 +17454,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  flex: 1 !important;
-  min-width: 0 !important;
+  flex-shrink: 0 !important;
 }
 
 .wf-preset-track {
@@ -17488,13 +17493,13 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
-/* Right: Unified Action & Tools Cluster */
+/* Right Actions Suite */
 .wf-tb-right {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  flex-shrink: 0 !important;
-  min-width: 220px !important;
+  flex: 1 1 0 !important;
+  min-width: 200px !important;
   justify-content: flex-end !important;
 }
 
@@ -17566,7 +17571,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   2. BODY & WORKBENCH CANVAS
+   2. BODY & ELEVATED CANVAS (#F8FAFC Stage)
    ══════════════════════════════════════════════════════════════════ */
 .wf-body {
   display: flex !important;
@@ -17580,9 +17585,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   min-width: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 24px 24px 54px !important;
+  padding: 24px 24px 60px !important;
   box-sizing: border-box !important;
-  background: #FAFAFA !important;
+  background: #F8FAFC !important;
   display: flex !important;
   flex-direction: column !important;
 }
@@ -17595,35 +17600,44 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   flex-direction: column !important;
 }
 
-/* Input Node */
+/* ── Input Node (Receptive Well in Empty State; Solid Card when Loaded) ── */
 .wf-input-node {
-  background: #FFFFFF !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
-  border-radius: 10px !important;
-  padding: 10px 14px !important;
   box-sizing: border-box !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
   cursor: pointer !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+  transition: all 0.15s ease !important;
 }
-.wf-input-node:hover {
-  border-color: #CBD5E1 !important;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06) !important;
+.wf-input-node:not(.has-file) {
+  background: #FFFFFF !important;
+  border: 1.5px dashed #CBD5E1 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
 }
+.wf-input-node:not(.has-file):hover {
+  border-color: #0F172A !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05) !important;
+}
+.wf-input-node.has-file {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
 .wf-input-left {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 12px !important;
   min-width: 0 !important;
   flex: 1 !important;
 }
 .wf-input-icon {
-  width: 32px !important;
-  height: 32px !important;
+  width: 34px !important;
+  height: 34px !important;
   border-radius: 7px !important;
   background: #F1F5F9 !important;
   color: #0F172A !important;
@@ -17635,7 +17649,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-input-texts {
   display: flex !important;
   flex-direction: column !important;
-  gap: 1px !important;
+  gap: 1.5px !important;
   min-width: 0 !important;
 }
 .wf-input-title {
@@ -17695,27 +17709,27 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-input-action-btn:active { transform: scale(0.97) !important; }
 
-/* Hairline Spine Connector */
+/* ── Continuous Conveyor Spine ── */
 .wf-step-connector {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 18px !important;
+  height: 20px !important;
   position: relative !important;
 }
 .wf-connector-line {
-  width: 1.5px !important;
+  width: 2px !important;
   height: 100% !important;
-  background: #E2E8F0 !important;
+  background: #CBD5E1 !important;
 }
 
-/* Linear / Apple Style Single-Line Step Card */
+/* ── Single-Line Step Card with Strict 3-Slot Control Grid ── */
 .wf-step-card {
   background: #FFFFFF !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 10px !important;
   box-sizing: border-box !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
   transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
   position: relative !important;
   display: flex !important;
@@ -17754,13 +17768,17 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   flex: 1 !important;
 }
 
+/* 6-Dot Textured Drag Grip */
 .wf-sc-drag {
   color: #CBD5E1 !important;
   cursor: grab !important;
   display: flex !important;
   align-items: center !important;
+  justify-content: center !important;
   flex-shrink: 0 !important;
-  padding: 2px !important;
+  width: 18px !important;
+  height: 24px !important;
+  padding: 0 !important;
   transition: color 0.12s ease !important;
 }
 .wf-sc-drag:hover { color: #64748B !important; }
@@ -17797,25 +17815,53 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   letter-spacing: -0.01em !important;
 }
 
-.wf-sc-summary-pill {
+/* Elevated Inset Parameter Micro-Chip */
+.wf-param-chip {
   font-size: 11px !important;
-  color: #64748B !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 1.5px 6px !important;
+  font-family: inherit !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  margin-left: 2px !important;
+  max-width: 140px !important;
 }
-.wf-sc-summary-pill b { font-weight: 600 !important; color: #334155 !important; }
-.wf-sc-summary-dot { color: #CBD5E1 !important; }
 
+/* ── Fixed 3-Slot Right Controls Cluster (Zero Jitter) ── */
 .wf-sc-right {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   flex-shrink: 0 !important;
+}
+
+.wf-sc-slot-toggle {
+  width: 28px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.wf-sc-slot-chevron {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.wf-sc-slot-trash {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .wf-sc-toggle {
@@ -17925,10 +17971,10 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-cfg-eye:hover { color: #0F172A !important; }
 
-/* Output Node */
+/* ── Output Node (Truthful Semantic Coloring) ── */
 .wf-output-node {
   background: #FFFFFF !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   box-sizing: border-box !important;
@@ -17936,16 +17982,29 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 10px !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
   transition: all 0.16s ease !important;
 }
-.wf-output-node.is-ready-border { border-left: 3.5px solid #16A34A !important; }
-.wf-output-left { display: flex !important; align-items: center !important; gap: 10px !important; min-width: 0 !important; flex: 1 !important; }
 .wf-output-icon {
-  width: 32px !important; height: 32px !important; border-radius: 7px !important;
-  background: #F0FDF4 !important; color: #16A34A !important;
-  display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 7px !important;
+  background: #F1F5F9 !important;
+  color: #64748B !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: all 0.16s ease !important;
 }
+.wf-output-node.is-ready-border {
+  border-left: 3.5px solid #16A34A !important;
+}
+.wf-output-node.is-ready-border .wf-output-icon {
+  background: #F0FDF4 !important;
+  color: #16A34A !important;
+}
+.wf-output-left { display: flex !important; align-items: center !important; gap: 10px !important; min-width: 0 !important; flex: 1 !important; }
 .wf-output-texts { display: flex !important; flex-direction: column !important; gap: 1px !important; min-width: 0 !important; }
 .wf-output-title { font-size: 13px !important; font-weight: 700 !important; color: #0F172A !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .wf-output-sub { font-size: 11px !important; color: #64748B !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
@@ -17954,7 +18013,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-output-badge.is-ready { color: #15803D !important; background: #DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight: 700 !important; }
 
 /* ══════════════════════════════════════════════════════════════════
-   3. RAYCAST / LINEAR GRADE OPERATIONS PALETTE (Right Sidebar)
+   3. 420px OPERATIONS PALETTE (Fitts's Law Full-Row Clickable)
    ══════════════════════════════════════════════════════════════════ */
 .wf-ops-sidebar {
   width: 420px !important;
@@ -17971,7 +18030,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 
 /* Sidebar Head */
 .wf-ops-head {
-  padding: 12px 14px 10px !important;
+  padding: 12px 16px 10px !important;
   border-bottom: 1px solid #F1F5F9 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -18009,10 +18068,11 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-ops-badge {
   font-size: 10px !important;
   font-weight: 600 !important;
-  color: #64748B !important;
-  background: #F1F5F9 !important;
-  padding: 1.5px 6px !important;
+  color: #15803D !important;
+  background: #DCFCE7 !important;
+  padding: 2px 7px !important;
   border-radius: 4px !important;
+  border: 1px solid #BBF7D0 !important;
 }
 
 /* Search Box */
@@ -18025,7 +18085,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 
 .wf-ops-search-svg {
   position: absolute !important;
-  left: 9px !important;
+  left: 10px !important;
   color: #94A3B8 !important;
   pointer-events: none !important;
   display: flex !important;
@@ -18034,9 +18094,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 
 .wf-ops-search-inp {
   width: 100% !important;
-  height: 30px !important;
-  padding: 0 28px 0 28px !important;
-  font-size: 11.5px !important;
+  height: 32px !important;
+  padding: 0 30px 0 30px !important;
+  font-size: 12px !important;
   color: #0F172A !important;
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
@@ -18069,8 +18129,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-ops-search-clear {
   position: absolute !important;
   right: 6px !important;
-  width: 18px !important;
-  height: 18px !important;
+  width: 20px !important;
+  height: 20px !important;
   border: none !important;
   background: transparent !important;
   color: #94A3B8 !important;
@@ -18083,13 +18143,13 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-ops-search-clear:hover { color: #0F172A !important; }
 
-/* Scrollable Category & Operations List */
+/* Scrollable List */
 .wf-ops-list {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 10px 12px 28px !important;
+  padding: 10px 14px 28px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 12px !important;
@@ -18115,8 +18175,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-ops-sec-head {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
   padding: 2px 4px 4px !important;
+  gap: 6px !important;
 }
 
 .wf-ops-sec-label {
@@ -18129,12 +18189,12 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 
 .wf-ops-sec-count {
   font-size: 9.5px !important;
-  color: #CBD5E1 !important;
+  color: #94A3B8 !important;
   font-weight: 600 !important;
   font-variant-numeric: tabular-nums !important;
 }
 
-/* Operation Item */
+/* Operation Item Row */
 .wf-ops-item {
   display: flex !important;
   align-items: center !important;
@@ -18145,6 +18205,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   cursor: pointer !important;
   transition: all 0.12s ease !important;
   background: transparent !important;
+  user-select: none !important;
 }
 .wf-ops-item:hover {
   background: #F8FAFC !important;
@@ -18156,14 +18217,14 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-ops-item-left {
   display: flex !important;
   align-items: center !important;
-  gap: 9px !important;
+  gap: 10px !important;
   min-width: 0 !important;
   flex: 1 !important;
 }
 
 .wf-ops-item-icon {
-  width: 24px !important;
-  height: 24px !important;
+  width: 26px !important;
+  height: 26px !important;
   border-radius: 6px !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
@@ -18189,7 +18250,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 
 .wf-ops-item-name {
-  font-size: 12px !important;
+  font-size: 12.5px !important;
   font-weight: 600 !important;
   color: #1E293B !important;
   white-space: nowrap !important;
@@ -18216,7 +18277,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   justify-content: center !important;
   gap: 3px !important;
   height: 22px !important;
-  padding: 0 7px !important;
+  padding: 0 8px !important;
   border-radius: 5px !important;
   border: 1px solid #E2E8F0 !important;
   background: #FFFFFF !important;
@@ -18242,10 +18303,10 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-ops-add-pill:active { transform: scale(0.92) !important; }
 
 /* ══════════════════════════════════════════════════════════════════
-   4. WORKSTATION ACTION CENTER (The Crown Jewel Footer)
+   4. WORKSTATION ACTION CENTER (Truthful CTA States)
    ══════════════════════════════════════════════════════════════════ */
 .wf-ops-footer {
-  padding: 12px 14px 14px !important;
+  padding: 12px 16px 14px !important;
   background: #FFFFFF !important;
   border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
   display: flex !important;
@@ -18284,7 +18345,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   text-overflow: ellipsis !important;
 }
 
-/* FileKit Signature Pure Black CTA */
+/* FileKit Signature Pure Black CTA Button */
 .wf-ops-run-btn {
   display: inline-flex !important;
   align-items: center !important;
@@ -18292,41 +18353,66 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 0 14px !important;
   width: 100% !important;
   height: 42px !important;
-  background: #000000 !important;
-  color: #FFFFFF !important;
   font-size: 13px !important;
   font-weight: 700 !important;
-  border: 1px solid #000000 !important;
   border-radius: 8px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16) !important;
   transition: all 0.14s ease !important;
   white-space: nowrap !important;
   font-family: inherit !important;
+  box-sizing: border-box !important;
 }
-.wf-ops-run-btn:hover {
+
+/* Active Ready State: Solid Obsidian */
+.wf-ops-run-btn.is-ready {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #000000 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16) !important;
+}
+.wf-ops-run-btn.is-ready:hover {
   background: #18181B !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
   transform: translateY(-1px) !important;
 }
-.wf-ops-run-btn:active { transform: scale(0.98) !important; }
+.wf-ops-run-btn.is-ready:active { transform: scale(0.98) !important; }
+
+/* Empty Awaiting State: Clean Receptive Neutral */
+.wf-ops-run-btn.is-waiting {
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+.wf-ops-run-btn.is-waiting:hover {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+  border-color: #94A3B8 !important;
+}
+.wf-ops-run-btn.is-waiting:active { transform: scale(0.98) !important; }
 
 .wf-run-btn-left {
   display: flex !important;
   align-items: center !important;
-  gap: 7px !important;
+  gap: 8px !important;
 }
 .wf-run-btn-icon { display: flex !important; align-items: center; }
-.wf-run-btn-icon svg { width: 14px; height: 14px; fill: currentColor; }
 
 .wf-run-btn-kbd {
   font-size: 10px !important;
   font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.6) !important;
-  background: rgba(255, 255, 255, 0.12) !important;
   border-radius: 4px !important;
   padding: 2px 5px !important;
   font-family: ui-monospace, monospace !important;
+}
+.is-ready .wf-run-btn-kbd {
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+.is-waiting .wf-run-btn-kbd {
+  color: #64748B !important;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
 }
 
 .wf-footer-doc-meta {

@@ -8982,16 +8982,16 @@
     container.innerHTML = '';
     container.className = 'wf-layout-root';
 
-    // Full-bleed stage overrides
+    // Stage full-bleed overrides
     const stageEl = container.closest('.app-stage-container');
     if (stageEl) {
       stageEl.classList.add('wf-stage-active');
-      stageEl.style.cssText = 'padding:0!important;margin:0!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:#FAFAFA!important;max-width:none!important;width:100%!important;height:100%!important;';
+      stageEl.style.cssText = 'padding:0!important;margin:0!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:#F8FAFC!important;max-width:none!important;width:100%!important;height:100%!important;';
     }
     const canvasEl = container.closest('#app-canvas');
     if (canvasEl) {
       canvasEl.classList.add('wf-canvas-fullbleed');
-      canvasEl.style.cssText = 'padding:0!important;margin:0!important;background:#FAFAFA!important;';
+      canvasEl.style.cssText = 'padding:0!important;margin:0!important;background:#F8FAFC!important;';
     }
     const wtvEl = container.closest('#app-workspace-tool-view');
     if (wtvEl) {
@@ -9030,7 +9030,7 @@
   "eye_slash": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M14.53 9.47004L9.47004 14.53C8.82004 13.88 8.42004 12.99 8.42004 12C8.42004 10.02 10.02 8.42004 12 8.42004C12.99 8.42004 13.88 8.82004 14.53 9.47004Z\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M17.82 5.76998C16.07 4.44998 14.07 3.72998 12 3.72998C8.46997 3.72998 5.17997 5.80998 2.88997 9.40998C1.98997 10.82 1.98997 13.19 2.88997 14.6C3.67997 15.84 4.59997 16.91 5.59997 17.77\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M8.42004 19.5301C9.56004 20.0101 10.77 20.2701 12 20.2701C15.53 20.2701 18.82 18.1901 21.11 14.5901C22.01 13.1801 22.01 10.8101 21.11 9.40005C20.78 8.88005 20.42 8.39005 20.05 7.93005\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M15.5099 12.7C15.2499 14.11 14.0999 15.26 12.6899 15.52\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M9.47 14.53L2 22\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M22 2L14.53 9.47\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
   "download": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M12 1.25C12.4142 1.25 12.75 1.58579 12.75 2V12.9726L14.4306 11.0119C14.7001 10.6974 15.1736 10.661 15.4881 10.9306C15.8026 11.2001 15.839 11.6736 15.5694 11.9881L12.5694 15.4881C12.427 15.6543 12.2189 15.75 12 15.75C11.7811 15.75 11.573 15.6543 11.4306 15.4881L8.43056 11.9881C8.16099 11.6736 8.19741 11.2001 8.51191 10.9306C8.8264 10.661 9.29988 10.6974 9.56944 11.0119L11.25 12.9726V2C11.25 1.58579 11.5858 1.25 12 1.25ZM6.99583 8.25196C7.41003 8.24966 7.74768 8.58357 7.74999 8.99778C7.7523 9.41199 7.41838 9.74964 7.00418 9.75194C5.91068 9.75803 5.1356 9.78643 4.54735 9.89448C3.98054 9.99859 3.65246 10.1658 3.40901 10.4092C3.13225 10.686 2.9518 11.0746 2.85315 11.8083C2.75159 12.5637 2.75 13.5648 2.75 15.0002V16.0002C2.75 17.4356 2.75159 18.4367 2.85315 19.1921C2.9518 19.9259 3.13225 20.3144 3.40901 20.5912C3.68577 20.868 4.07435 21.0484 4.80812 21.1471C5.56347 21.2486 6.56458 21.2502 8 21.2502H16C17.4354 21.2502 18.4365 21.2486 19.1919 21.1471C19.9257 21.0484 20.3142 20.868 20.591 20.5912C20.8678 20.3144 21.0482 19.9259 21.1469 19.1921C21.2484 18.4367 21.25 17.4356 21.25 16.0002V15.0002C21.25 13.5648 21.2484 12.5637 21.1469 11.8083C21.0482 11.0746 20.8678 10.686 20.591 10.4092C20.3475 10.1658 20.0195 9.99859 19.4527 9.89448C18.8644 9.78643 18.0893 9.75803 16.9958 9.75194C16.5816 9.74964 16.2477 9.41199 16.25 8.99778C16.2523 8.58357 16.59 8.24966 17.0042 8.25196C18.0857 8.25799 18.9871 8.28387 19.7236 8.41916C20.4816 8.55839 21.1267 8.82364 21.6517 9.34857C22.2536 9.95048 22.5125 10.7084 22.6335 11.6085C22.75 12.4754 22.75 13.5778 22.75 14.9453V16.0551C22.75 17.4227 22.75 18.525 22.6335 19.392C22.5125 20.2921 22.2536 21.0499 21.6517 21.6519C21.0497 22.2538 20.2919 22.5127 19.3918 22.6337C18.5248 22.7503 17.4225 22.7502 16.0549 22.7502H7.94513C6.57754 22.7502 5.47522 22.7503 4.60825 22.6337C3.70814 22.5127 2.95027 22.2538 2.34835 21.6519C1.74643 21.0499 1.48754 20.2921 1.36652 19.392C1.24996 18.525 1.24998 17.4227 1.25 16.0551V14.9453C1.24998 13.5778 1.24996 12.4754 1.36652 11.6085C1.48754 10.7084 1.74643 9.95048 2.34835 9.34857C2.87328 8.82363 3.51835 8.55839 4.27635 8.41916C5.01291 8.28387 5.9143 8.25798 6.99583 8.25196Z\" fill=\"currentColor\"/></svg>",
   "chevron": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><polyline points=\"20.3333 8.6666 12 17 3.6667 8.6666\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\"></polyline></svg>",
-  "grip": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M20.75 7C20.75 7.41421 20.4142 7.75 20 7.75L4 7.75C3.58579 7.75 3.25 7.41421 3.25 7C3.25 6.58579 3.58579 6.25 4 6.25L20 6.25C20.4142 6.25 20.75 6.58579 20.75 7Z\" fill=\"currentColor\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M20.75 12C20.75 12.4142 20.4142 12.75 20 12.75L4 12.75C3.58579 12.75 3.25 12.4142 3.25 12C3.25 11.5858 3.58579 11.25 4 11.25L20 11.25C20.4142 11.25 20.75 11.5858 20.75 12Z\" fill=\"currentColor\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M20.75 17C20.75 17.4142 20.4142 17.75 20 17.75L4 17.75C3.58579 17.75 3.25 17.4142 3.25 17C3.25 16.5858 3.58579 16.25 4 16.25L20 16.25C20.4142 16.25 20.75 16.5858 20.75 17Z\" fill=\"currentColor\"/></svg>",
+  "grip": "<svg width=\"11\" height=\"16\" viewBox=\"0 0 12 18\" fill=\"none\"><circle cx=\"4\" cy=\"4\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"8\" cy=\"4\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"4\" cy=\"9\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"8\" cy=\"9\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"4\" cy=\"14\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"8\" cy=\"14\" r=\"1.4\" fill=\"currentColor\"/></svg>",
   "undo": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M7.53033 3.46967C7.82322 3.76256 7.82322 4.23744 7.53033 4.53033L5.81066 6.25L15.0358 6.25C15.94 6.24999 16.6693 6.24998 17.2576 6.3033C17.864 6.35826 18.3938 6.47456 18.875 6.75241C19.4451 7.08154 19.9185 7.55492 20.2476 8.12499C20.5254 8.60624 20.6417 9.13604 20.6967 9.74239C20.75 10.3307 20.75 11.06 20.75 11.9643V12.0358C20.75 12.94 20.75 13.6693 20.6967 14.2576C20.6418 14.8639 20.5255 15.3937 20.2476 15.875C19.9185 16.4451 19.4451 16.9185 18.875 17.2476C18.3938 17.5254 17.864 17.6417 17.2576 17.6967C16.6693 17.75 15.94 17.75 15.0358 17.75H8.00001C7.58579 17.75 7.25001 17.4142 7.25001 17C7.25001 16.5858 7.58579 16.25 8.00001 16.25H15C15.9484 16.25 16.6096 16.2493 17.1222 16.2028C17.6245 16.1573 17.9101 16.0726 18.125 15.9486C18.4671 15.7511 18.7511 15.467 18.9486 15.125C19.0726 14.9101 19.1573 14.6245 19.2028 14.1222C19.2493 13.6096 19.25 12.9484 19.25 12C19.25 11.0516 19.2493 10.3904 19.2028 9.87779C19.1573 9.37548 19.0726 9.0899 18.9486 8.87499C18.7511 8.53295 18.467 8.24892 18.125 8.05144C17.9101 7.92737 17.6245 7.84271 17.1222 7.79718C16.6096 7.75072 15.9484 7.75 15 7.75H5.81066L7.53033 9.46967C7.82322 9.76256 7.82322 10.2374 7.53033 10.5303C7.23744 10.8232 6.76256 10.8232 6.46967 10.5303L3.46967 7.53033C3.17678 7.23744 3.17678 6.76256 3.46967 6.46967L6.46967 3.46967C6.76256 3.17678 7.23744 3.17678 7.53033 3.46967Z\" fill=\"currentColor\"/></svg>",
   "redo": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.4697 3.46967C16.7626 3.17678 17.2374 3.17678 17.5303 3.46967L20.5303 6.46967C20.8232 6.76256 20.8232 7.23744 20.5303 7.53033L17.5303 10.5303C17.2374 10.8232 16.7626 10.8232 16.4697 10.5303C16.1768 10.2374 16.1768 9.76256 16.4697 9.46967L18.1893 7.75H9.00001C8.05159 7.75 7.39042 7.75072 6.8778 7.79718C6.37549 7.84271 6.0899 7.92737 5.875 8.05144C5.53296 8.24892 5.24893 8.53295 5.05145 8.87499C4.92738 9.0899 4.84271 9.37548 4.79718 9.87779C4.75072 10.3904 4.75 11.0516 4.75 12C4.75 12.9484 4.75072 13.6096 4.79718 14.1222C4.84271 14.6245 4.92737 14.9101 5.05144 15.125C5.24892 15.467 5.53296 15.7511 5.875 15.9486C6.0899 16.0726 6.37549 16.1573 6.87779 16.2028C7.39041 16.2493 8.05158 16.25 9 16.25H16C16.4142 16.25 16.75 16.5858 16.75 17C16.75 17.4142 16.4142 17.75 16 17.75H8.96423C8.05998 17.75 7.3307 17.75 6.7424 17.6967C6.13605 17.6417 5.60625 17.5254 5.125 17.2476C4.55493 16.9185 4.08154 16.4451 3.75241 15.875C3.47455 15.3937 3.35826 14.8639 3.3033 14.2576C3.24998 13.6693 3.24999 12.94 3.25 12.0358V11.9642C3.24999 11.06 3.24999 10.3307 3.30331 9.74239C3.35826 9.13604 3.47456 8.60624 3.75241 8.12499C4.08154 7.55492 4.55493 7.08154 5.125 6.75241C5.60625 6.47456 6.13605 6.35826 6.7424 6.3033C7.33069 6.24998 8.05997 6.24999 8.96421 6.25L18.1893 6.25L16.4697 4.53033C16.1768 4.23744 16.1768 3.76256 16.4697 3.46967Z\" fill=\"currentColor\"/></svg>",
   "history": "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M5.07868 5.06891C8.87402 1.27893 15.0437 1.31923 18.8622 5.13778C22.6824 8.95797 22.7211 15.1313 18.9262 18.9262C15.1312 22.7211 8.95793 22.6824 5.13774 18.8622C2.87389 16.5984 1.93904 13.5099 2.34047 10.5812C2.39672 10.1708 2.775 9.88377 3.18537 9.94002C3.59575 9.99627 3.88282 10.3745 3.82658 10.7849C3.4866 13.2652 4.27782 15.881 6.1984 17.8016C9.44288 21.0461 14.6664 21.0646 17.8655 17.8655C21.0646 14.6664 21.046 9.44292 17.8015 6.19844C14.5587 2.95561 9.33889 2.93539 6.13935 6.12957L6.88705 6.13333C7.30126 6.13541 7.63535 6.47288 7.63327 6.88709C7.63119 7.3013 7.29372 7.63539 6.87951 7.63331L4.33396 7.62052C3.92269 7.61845 3.58981 7.28556 3.58774 6.8743L3.57495 4.32874C3.57286 3.91454 3.90696 3.57707 4.32117 3.57498C4.73538 3.5729 5.07285 3.907 5.07493 4.32121L5.07868 5.06891ZM11.9999 7.24992C12.4141 7.24992 12.7499 7.58571 12.7499 7.99992V11.6893L15.0302 13.9696C15.3231 14.2625 15.3231 14.7374 15.0302 15.0302C14.7373 15.3231 14.2624 15.3231 13.9696 15.0302L11.2499 12.3106V7.99992C11.2499 7.58571 11.5857 7.24992 11.9999 7.24992Z\" fill=\"currentColor\"/></svg>",
@@ -9064,7 +9064,7 @@
     };
 
     const STEP_TEMPLATES = {
-      watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Add diagonal text stamp', tag: 'Stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
+      watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Diagonal text stamp', tag: 'Stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
       protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password', tag: 'Security', catType: 'security', defaultConfig: () => ({ password: '' }) },
       compress: { type: 'compress', name: 'Compress PDF', desc: 'Reduce document size', tag: 'Optimize', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
       page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add page counters', tag: 'Pagination', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
@@ -9200,18 +9200,18 @@
 
     function getStepSummaryText(step) {
       if (step.type === 'watermark') {
-        return `"${esc(step.config.text || 'CONFIDENTIAL')}"`;
+        return esc(step.config.text || 'CONFIDENTIAL');
       }
       if (step.type === 'protect') {
         return step.config.password ? 'Password set' : 'No password';
       }
       if (step.type === 'compress') {
         const lvl = step.config.level === 'extreme' ? 'Extreme' : (step.config.level === 'low' ? 'Lossless' : 'Recommended');
-        return `${lvl}`;
+        return lvl;
       }
       if (step.type === 'page_numbers') {
         const pos = step.config.position === 'bottom-right' ? 'Bottom Right' : (step.config.position === 'top-right' ? 'Top Right' : 'Bottom Center');
-        return `${pos}`;
+        return pos;
       }
       if (step.type === 'rotate') {
         return `${step.config.degrees || 90}° CW`;
@@ -9220,23 +9220,24 @@
         return `Pages ${esc(step.config.range || '1-5')}`;
       }
       if (step.type === 'zip') {
-        return `Archive: ${esc(step.config.zipName || 'output.zip')}`;
+        return esc(step.config.zipName || 'archive.zip');
       }
       return 'Automatic';
     }
 
-    // ── 1. STUDIO TOOLBAR (Craft-Grade 3-Zone Architecture) ──
+    // ── 1. STUDIO TOOLBAR (Optically Centered & Symmetrical) ──
     function renderToolbar() {
       const canUndo = state.historyIndex > 0;
       const canRedo = state.historyIndex < state.historyStack.length - 1;
       const hasFile = !!state.file;
+      const canDownload = !!state.resultBlob;
 
       return `
         <header class="wf-toolbar">
           <div class="wf-tb-left">
             <div class="wf-tb-studio-pill">
               <span class="wf-tb-pill-icon">${ICONS.flow}</span>
-              <span class="wf-tb-pill-name">Pipeline Studio</span>
+              <span class="wf-tb-pill-name">Workflow</span>
               <span class="wf-tb-pill-sep">/</span>
               <span class="wf-tb-pill-state ${hasFile ? 'is-ready' : ''}">
                 <span class="wf-pulse-dot"></span>
@@ -9271,8 +9272,8 @@
             <div class="wf-tb-icon-group">
               <button type="button" class="wf-tb-tool-btn" id="wf-btn-undo" ${canUndo ? '' : 'disabled'} title="Undo (Ctrl+Z)">${ICONS.undo}</button>
               <button type="button" class="wf-tb-tool-btn" id="wf-btn-redo" ${canRedo ? '' : 'disabled'} title="Redo (Ctrl+Y)">${ICONS.redo}</button>
-              <button type="button" class="wf-tb-tool-btn" id="wf-btn-save" title="Save Preset">${ICONS.save}</button>
-              <button type="button" class="wf-tb-tool-btn" id="wf-btn-download" title="Export Pipeline Output">${ICONS.download}</button>
+              <button type="button" class="wf-tb-tool-btn" id="wf-btn-save" title="Save Preset (Ctrl+S)">${ICONS.save}</button>
+              <button type="button" class="wf-tb-tool-btn" id="wf-btn-download" ${canDownload ? '' : 'disabled'} title="Download Processed Output">${ICONS.download}</button>
             </div>
           </div>
         </header>
@@ -9414,7 +9415,7 @@
 
       let html = '';
 
-      // 1. INPUT NODE
+      // 1. INPUT NODE (Receptive Drop Well -> Solid Sheet)
       html += `
         <div class="wf-input-node ${hasFile ? 'has-file' : ''}" id="wf-input-trigger">
           <div class="wf-input-left">
@@ -9439,11 +9440,11 @@
         </div>
       `;
 
-      // 2. STEP NODES
+      // 2. STEP NODES (With Strict 3-Slot Grid & 6-Dot Grip)
       if (!state.steps.length) {
         html += `
           <div class="wf-empty-state" style="padding: 32px; text-align: center; color: #94A3B8;">
-            <p style="margin: 0; font-size: 13px; font-weight: 500;">Pipeline has no operations. Click any tool from the library on the right to add.</p>
+            <p style="margin: 0; font-size: 13px; font-weight: 500;">Pipeline is empty. Click any tool from the library on the right to add.</p>
           </div>
         `;
       } else {
@@ -9461,12 +9462,18 @@
                   <span class="wf-sc-num">${idx + 1}</span>
                   <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
                   <span class="wf-sc-name">${esc(step.name)}</span>
-                  <span class="wf-sc-summary-pill"><span class="wf-sc-summary-dot">·</span> <b>${summary}</b></span>
+                  <span class="wf-param-chip">${summary}</span>
                 </div>
                 <div class="wf-sc-right">
-                  <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}"></button>
-                  ${hasConfig ? `<button type="button" class="wf-sc-expand-btn ${isExpanded ? 'is-open' : ''}" data-step-idx="${idx}" aria-label="Configure">${ICONS.chevron}</button>` : ''}
-                  <button type="button" class="wf-sc-trash-btn" data-step-idx="${idx}" aria-label="Remove step">${ICONS.trash}</button>
+                  <div class="wf-sc-slot-toggle">
+                    <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}"></button>
+                  </div>
+                  <div class="wf-sc-slot-chevron">
+                    ${hasConfig ? `<button type="button" class="wf-sc-expand-btn ${isExpanded ? 'is-open' : ''}" data-step-idx="${idx}" aria-label="Configure">${ICONS.chevron}</button>` : ''}
+                  </div>
+                  <div class="wf-sc-slot-trash">
+                    <button type="button" class="wf-sc-trash-btn" data-step-idx="${idx}" aria-label="Remove step">${ICONS.trash}</button>
+                  </div>
                 </div>
               </div>
               ${hasConfig ? `
@@ -9488,7 +9495,7 @@
         });
       }
 
-      // 3. OUTPUT NODE
+      // 3. OUTPUT NODE (Truthful Semantic Colors)
       html += `
         <div class="wf-output-node ${hasFile ? 'is-ready-border' : ''}">
           <div class="wf-output-left">
@@ -9505,7 +9512,7 @@
       return html;
     }
 
-    // ── 2. OPERATIONS PALETTE (Raycast / Linear Grade Workbench) ──
+    // ── 2. OPERATIONS PALETTE (420px Fitts's Law Full Row Hit Area) ──
     function renderOpsSidebar() {
       const activeSteps = state.steps.filter((s) => s.enabled !== false);
       const activeCount = activeSteps.length;
@@ -9525,8 +9532,9 @@
           totalVisible += filteredItems.length;
           let itemsHtml = '';
           filteredItems.forEach((item) => {
+            const isAlreadyActive = state.steps.some((s) => s.enabled !== false && s.type === item.type);
             itemsHtml += `
-              <div class="wf-ops-item" data-op-type="${item.type}">
+              <div class="wf-ops-item ${isAlreadyActive ? 'is-active-step' : ''}" data-op-type="${item.type}">
                 <div class="wf-ops-item-left">
                   <div class="wf-ops-item-icon">${ICONS[item.type] || ICONS.flow}</div>
                   <div class="wf-ops-item-texts">
@@ -9545,7 +9553,7 @@
             <div class="wf-ops-section">
               <div class="wf-ops-sec-head">
                 <span class="wf-ops-sec-label">${esc(cat.title)}</span>
-                <span class="wf-ops-sec-count">${filteredItems.length}</span>
+                <span class="wf-ops-sec-count">(${filteredItems.length})</span>
               </div>
               ${itemsHtml}
             </div>
@@ -9562,7 +9570,7 @@
         `;
       }
 
-      // Format queue summary: e.g. "1. Stamp → 2. Encrypt → 3. Flatten"
+      // Format queue summary
       const flowText = activeSteps.length
         ? activeSteps.map((s, i) => `${i + 1}. ${s.name.split(' ')[0]}`).join(' → ')
         : 'Empty queue — click any tool to append';
@@ -9575,7 +9583,7 @@
                 <span class="wf-ops-title">Operations</span>
                 <span class="wf-ops-count">${totalVisible} available</span>
               </div>
-              <span class="wf-ops-badge">On-Device WASM</span>
+              <span class="wf-ops-badge">100% Private (On-Device)</span>
             </div>
 
             <div class="wf-ops-search-wrap">
@@ -9604,12 +9612,12 @@
               </div>
             </div>
 
-            <button type="button" class="wf-ops-run-btn ${hasFile ? 'is-ready' : ''}" id="wf-run-pipeline-btn">
+            <button type="button" class="wf-ops-run-btn ${hasFile ? 'is-ready' : 'is-waiting'}" id="wf-run-pipeline-btn">
               <div class="wf-run-btn-left">
-                <span class="wf-run-btn-icon">${ICONS.play}</span>
-                <span class="wf-run-btn-label">Execute Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+                <span class="wf-run-btn-icon">${hasFile ? ICONS.play : ICONS.upload}</span>
+                <span class="wf-run-btn-label">${hasFile ? `Execute Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})` : 'Upload Document to Run'}</span>
               </div>
-              <span class="wf-run-btn-kbd">⌘↵</span>
+              <span class="wf-run-btn-kbd">${hasFile ? '⌘↵' : 'Browse'}</span>
             </button>
 
             <div class="wf-footer-doc-meta">
@@ -9976,6 +9984,24 @@
           }
         };
       }
+
+      // 11. Real Keyboard Bindings (⌘K for search, ⌘Enter for run)
+      if (!window.__wfKeybound) {
+        window.__wfKeybound = true;
+        window.addEventListener('keydown', (e) => {
+          if (!container.isConnected) return;
+          if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            const sInp = container.querySelector('#wf-ops-search-inp');
+            if (sInp) { sInp.focus(); sInp.select(); }
+          }
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            const rBtn = container.querySelector('#wf-run-pipeline-btn');
+            if (rBtn) rBtn.click();
+          }
+        });
+      }
     }
 
     function refreshSidebarOnly() {
@@ -9998,7 +10024,7 @@
     }
 
     function wireSidebarEvents() {
-      // Operations Add Buttons
+      // Operations Add Buttons (Full-row clickable via Fitts's Law)
       container.querySelectorAll('.wf-ops-item').forEach((row) => {
         row.onclick = () => {
           const opType = row.dataset.opType;
