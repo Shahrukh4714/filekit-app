@@ -8999,24 +8999,25 @@
     }
 
     const ICONS = {
-      flow: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
-      upload: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
-      doc: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-      watermark: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
-      protect: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
-      compress: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
-      page_numbers: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
-      flatten: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
-      grayscale: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
-      rotate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
-      extract: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
-      zip: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
-      check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
-      trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+      flow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
+      upload: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
+      doc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>`,
+      watermark: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
+      protect: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
+      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+      page_numbers: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
+      flatten: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
+      grayscale: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
+      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
+      extract: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
+      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
+      check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+      trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
       eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
       download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
-      chevron: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
-      grip: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
+      chevron: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
+      grip: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
     };
 
     const RECIPES = {
@@ -9044,40 +9045,40 @@
     };
 
     const STEP_TEMPLATES = {
-      watermark: { type: 'watermark', name: 'Watermark Stamp', catType: 'stamp', desc: 'Centered diagonal text stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
-      protect: { type: 'protect', name: 'Protect & Encrypt', catType: 'security', desc: 'Secure with password encryption', defaultConfig: () => ({ password: '' }) },
-      compress: { type: 'compress', name: 'Compress PDF', catType: 'compress', desc: 'Streamline PDF streams and reduce file weight', defaultConfig: () => ({ level: 'recommended' }) },
-      page_numbers: { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', desc: 'Add page counters to footer or header', defaultConfig: () => ({ position: 'bottom-center' }) },
-      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', catType: 'visual', desc: 'Render pages to clean black & white', defaultConfig: () => ({}) },
-      rotate: { type: 'rotate', name: 'Rotate Pages', catType: 'structure', desc: 'Rotate orientation in 90° increments', defaultConfig: () => ({ degrees: 90 }) },
-      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', catType: 'structure', desc: 'Lock form fields and drawings permanently', defaultConfig: () => ({}) },
-      extract: { type: 'extract', name: 'Extract Page Range', catType: 'structure', desc: 'Select and export only specified pages', defaultConfig: () => ({ range: '1-5' }) },
-      zip: { type: 'zip', name: 'Create ZIP Archive', catType: 'compress', desc: 'Bundle final output into a compressed ZIP', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
+      watermark: { type: 'watermark', name: 'Watermark Stamp', desc: 'Add diagonal text stamp', catType: 'stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
+      protect: { type: 'protect', name: 'Protect & Encrypt', desc: 'Secure with password encryption', catType: 'security', defaultConfig: () => ({ password: '' }) },
+      compress: { type: 'compress', name: 'Compress PDF', desc: 'Streamline PDF streams', catType: 'compress', defaultConfig: () => ({ level: 'recommended' }) },
+      page_numbers: { type: 'page_numbers', name: 'Page Numbers', desc: 'Add footer or header counters', catType: 'stamp', defaultConfig: () => ({ position: 'bottom-center' }) },
+      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', desc: 'High-contrast black & white', catType: 'visual', defaultConfig: () => ({}) },
+      rotate: { type: 'rotate', name: 'Rotate Pages', desc: 'Rotate orientation in 90° steps', catType: 'structure', defaultConfig: () => ({ degrees: 90 }) },
+      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', desc: 'Lock form fields & drawings', catType: 'structure', defaultConfig: () => ({}) },
+      extract: { type: 'extract', name: 'Extract Page Range', desc: 'Export selected page numbers', catType: 'structure', defaultConfig: () => ({ range: '1-5' }) },
+      zip: { type: 'zip', name: 'Create ZIP Archive', desc: 'Bundle into compressed archive', catType: 'compress', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
     };
 
     const OPS_CATEGORIES = [
       {
         title: 'PDF Operations',
         items: [
-          { type: 'watermark', label: 'Watermark Stamp' },
-          { type: 'protect', label: 'Protect & Encrypt' },
-          { type: 'compress', label: 'Compress PDF' },
-          { type: 'page_numbers', label: 'Page Numbers' }
+          { type: 'watermark', label: 'Watermark Stamp', desc: 'Add diagonal text stamp' },
+          { type: 'protect', label: 'Protect & Encrypt', desc: 'Secure with password' },
+          { type: 'compress', label: 'Compress PDF', desc: 'Reduce document size' },
+          { type: 'page_numbers', label: 'Page Numbers', desc: 'Add page counters' }
         ]
       },
       {
         title: 'Transforms',
         items: [
-          { type: 'grayscale', label: 'Monochrome Grayscale' },
-          { type: 'rotate', label: 'Rotate Pages' },
-          { type: 'flatten', label: 'Flatten Forms & Fields' },
-          { type: 'extract', label: 'Extract Page Range' }
+          { type: 'grayscale', label: 'Monochrome Grayscale', desc: 'Convert to black & white' },
+          { type: 'rotate', label: 'Rotate Pages', desc: 'Rotate in 90° increments' },
+          { type: 'flatten', label: 'Flatten Forms & Fields', desc: 'Lock forms and annotations' },
+          { type: 'extract', label: 'Extract Page Range', desc: 'Export specific pages' }
         ]
       },
       {
         title: 'Output',
         items: [
-          { type: 'zip', label: 'Create ZIP Archive' }
+          { type: 'zip', label: 'Create ZIP Archive', desc: 'Bundle into compressed ZIP' }
         ]
       }
     ];
@@ -9131,52 +9132,47 @@
       render();
     }
 
-    function getStepSummary(step) {
+    function renderParamChips(step) {
       if (step.type === 'watermark') {
-        return `"${step.config.text || 'CONFIDENTIAL'}"`;
+        const txt = step.config.text || 'CONFIDENTIAL';
+        const opac = step.config.opacity === 0.15 ? 'Subtle' : (step.config.opacity === 0.65 ? 'Bold' : 'Balanced');
+        return `
+          <span class="wf-param-chip">Text: <strong>${esc(txt)}</strong></span>
+          <span class="wf-param-chip">Tone: <strong>${opac}</strong></span>
+        `;
       }
       if (step.type === 'protect') {
-        return step.config.password ? '••••••••' : 'No password';
+        return step.config.password
+          ? `<span class="wf-param-chip">Password: <strong>••••••••</strong></span>`
+          : `<span class="wf-param-chip" style="color:#94A3B8;">No password set</span>`;
       }
       if (step.type === 'compress') {
-        return step.config.level === 'extreme' ? 'Extreme' : (step.config.level === 'low' ? 'Lossless' : 'Recommended');
+        const lvl = step.config.level === 'extreme' ? 'Extreme compression' : (step.config.level === 'low' ? 'Lossless' : 'Recommended quality');
+        return `<span class="wf-param-chip">Level: <strong>${lvl}</strong></span>`;
       }
       if (step.type === 'page_numbers') {
-        return step.config.position === 'bottom-right' ? 'Bottom Right' : (step.config.position === 'top-right' ? 'Top Right' : 'Bottom Center');
+        const pos = step.config.position === 'bottom-right' ? 'Bottom Right' : (step.config.position === 'top-right' ? 'Top Right' : 'Bottom Center');
+        return `<span class="wf-param-chip">Position: <strong>${pos}</strong></span>`;
       }
       if (step.type === 'rotate') {
-        return `${step.config.degrees || 90}° CW`;
+        return `<span class="wf-param-chip">Angle: <strong>${step.config.degrees || 90}° CW</strong></span>`;
       }
       if (step.type === 'extract') {
-        return `Pages ${step.config.range || '1-5'}`;
+        return `<span class="wf-param-chip">Pages: <strong>${esc(step.config.range || '1-5')}</strong></span>`;
       }
       if (step.type === 'zip') {
-        return step.config.zipName || 'archive.zip';
+        return `<span class="wf-param-chip">File: <strong>${esc(step.config.zipName || 'output.zip')}</strong></span>`;
       }
-      return 'Automatic';
+      return `<span class="wf-param-chip" style="color:#64748B;">⚡ Automatic on-device execution</span>`;
     }
 
     function renderToolbar() {
       const activeCount = state.steps.filter((s) => s.enabled !== false).length;
-      const canRun = !!state.file && activeCount > 0;
       return `
         <header class="wf-toolbar">
           <div class="wf-toolbar-left">
-            ${state.file ? `
-              <div class="wf-toolbar-file-loaded">
-                <div class="wf-toolbar-file-icon">${ICONS.doc}</div>
-                <span class="wf-toolbar-file-name" title="${esc(state.file.name)}">${esc(state.file.name)}</span>
-                <span class="wf-toolbar-file-size">${formatBytes(state.file.size)}</span>
-                <button type="button" class="wf-toolbar-change-btn" id="wf-change-file-btn">Change</button>
-              </div>
-            ` : `
-              <label for="wf-file-inp" class="wf-toolbar-file-btn">
-                ${ICONS.upload}
-                <span>Select Document</span>
-              </label>
-              <span class="wf-toolbar-hint">PDF, Images, or Office</span>
-            `}
-            <input type="file" id="wf-file-inp" accept=".pdf,image/*,.docx,.xlsx,.pptx" style="display:none;" />
+            <span class="wf-toolbar-title">${ICONS.flow} Workflow Studio</span>
+            <span class="wf-toolbar-badge">${activeCount} Step${activeCount === 1 ? '' : 's'} Active</span>
           </div>
 
           <div class="wf-toolbar-center">
@@ -9193,8 +9189,8 @@
           </div>
 
           <div class="wf-toolbar-right">
-            <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn" ${canRun ? '' : 'disabled'} title="${!state.file ? 'Please select a document first' : (activeCount === 0 ? 'Enable at least one step' : 'Execute pipeline')}">
-              <span>Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+            <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn">
+              <span>▶ Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
             </button>
           </div>
         </header>
@@ -9322,46 +9318,85 @@
         `;
       }
 
-      if (!state.steps.length) {
-        return `
-          <div class="wf-empty-state">
-            <div class="wf-empty-state-icon">${ICONS.flow}</div>
-            <h4 class="wf-empty-state-title">Pipeline is empty</h4>
-            <p class="wf-empty-state-sub">Click any tool on the right panel to begin building your custom document workflow.</p>
-          </div>
-        `;
-      }
+      // ── Pipeline Chain: Input Node -> Steps -> Output Node ──
+      const hasFile = !!state.file;
+      const baseName = state.file ? state.file.name.replace(/\.[^/.]+$/, '') : 'document';
+      const hasZip = state.steps.some((s) => s.enabled !== false && s.type === 'zip');
+      const outputExt = hasZip ? 'zip' : 'pdf';
+      const outputName = `${baseName}_processed.${outputExt}`;
+      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
 
       let html = '';
-      state.steps.forEach((step, idx) => {
-        const isLast = idx === state.steps.length - 1;
-        const isDisabled = step.enabled === false;
-        const isExpanded = step.isExpanded === true;
-        const summary = getStepSummary(step);
 
-        html += `
-          <div class="wf-step-card ${isDisabled ? 'is-disabled' : ''} ${isExpanded ? 'is-expanded' : ''}" data-step-idx="${idx}">
-            <div class="wf-sc-header" data-step-idx="${idx}">
-              <div class="wf-sc-drag" title="Drag to reorder" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
-              <span class="wf-sc-badge">${idx + 1}</span>
-              <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
-              <span class="wf-sc-name">${esc(step.name)}</span>
-              <span class="wf-sc-summary">${esc(summary)}</span>
-              <div class="wf-sc-controls">
-                <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}" title="${!isDisabled ? 'Step active (click to skip)' : 'Step disabled (skipped)'}"></button>
-                <button type="button" class="wf-sc-action-btn wf-sc-chevron" data-step-idx="${idx}" title="Configure step">${ICONS.chevron}</button>
-                <button type="button" class="wf-sc-action-btn is-danger wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
-              </div>
-            </div>
-            <div class="wf-sc-config">
-              <div class="wf-sc-config-inner">
-                ${renderStepConfig(step, idx)}
-              </div>
+      // 1. INPUT NODE
+      html += `
+        <div class="wf-input-node ${hasFile ? 'has-file' : ''}" id="wf-input-trigger" title="${hasFile ? 'Click to change document' : 'Click to select or drop document'}">
+          <div class="wf-input-left">
+            <div class="wf-input-icon">${hasFile ? ICONS.doc : ICONS.upload}</div>
+            <div class="wf-input-texts">
+              <span class="wf-input-title">${hasFile ? esc(state.file.name) : 'Select or drop input document'}</span>
+              <span class="wf-input-sub">${hasFile ? `${formatBytes(state.file.size)} · Ready to process` : 'Supports PDF, Images (PNG, JPG), Office documents'}</span>
             </div>
           </div>
-        `;
+          <button type="button" class="wf-input-action-btn">${hasFile ? 'Change' : '+ Choose File'}</button>
+          <input type="file" id="wf-file-inp" accept=".pdf,image/*,.docx,.xlsx,.pptx" style="display:none;" />
+        </div>
+      `;
 
-        if (!isLast) {
+      // Flow connector into step 1
+      html += `
+        <div class="wf-step-connector">
+          <div class="wf-connector-line"></div>
+          <div class="wf-connector-badge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+          </div>
+          <div class="wf-connector-line"></div>
+        </div>
+      `;
+
+      // 2. STEP NODES
+      if (!state.steps.length) {
+        html += `
+          <div class="wf-empty-state">
+            <div class="wf-empty-state-icon">${ICONS.flow}</div>
+            <h4 class="wf-empty-state-title">Pipeline has no steps</h4>
+            <p class="wf-empty-state-sub">Click any operation from the library on the right to append it to your workflow.</p>
+          </div>
+        `;
+      } else {
+        state.steps.forEach((step, idx) => {
+          const isDisabled = step.enabled === false;
+          const isExpanded = step.isExpanded === true;
+
+          html += `
+            <div class="wf-step-card ${isDisabled ? 'is-disabled' : ''} ${isExpanded ? 'is-expanded' : ''}" data-step-idx="${idx}">
+              <div class="wf-sc-row-header" data-step-idx="${idx}">
+                <div class="wf-sc-id-group">
+                  <div class="wf-sc-drag" title="Drag to reorder" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
+                  <span class="wf-sc-badge">${String(idx + 1).padStart(2, '0')}</span>
+                  <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
+                  <span class="wf-sc-name">${esc(step.name)}</span>
+                </div>
+                <div class="wf-sc-controls">
+                  <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}" title="${!isDisabled ? 'Step active (click to skip)' : 'Step disabled (skipped)'}"></button>
+                  <button type="button" class="wf-sc-action-btn is-danger wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
+                </div>
+              </div>
+              <div class="wf-sc-row-summary" data-step-idx="${idx}">
+                <div class="wf-sc-param-chips">
+                  ${renderParamChips(step)}
+                </div>
+                <span class="wf-sc-edit-btn" data-step-idx="${idx}">${isExpanded ? 'Done' : 'Configure'} ${ICONS.chevron}</span>
+              </div>
+              <div class="wf-sc-config">
+                <div class="wf-sc-config-inner">
+                  ${renderStepConfig(step, idx)}
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Connector between steps or into output
           html += `
             <div class="wf-step-connector">
               <div class="wf-connector-line"></div>
@@ -9371,8 +9406,22 @@
               <div class="wf-connector-line"></div>
             </div>
           `;
-        }
-      });
+        });
+      }
+
+      // 3. OUTPUT NODE
+      html += `
+        <div class="wf-output-node">
+          <div class="wf-output-left">
+            <div class="wf-output-icon">${ICONS.package}</div>
+            <div class="wf-output-texts">
+              <span class="wf-output-title">Output: ${esc(outputName)}</span>
+              <span class="wf-output-sub">${activeCount} step${activeCount === 1 ? '' : 's'} applied · Formatted as ${outputExt.toUpperCase()}</span>
+            </div>
+          </div>
+          <span class="wf-output-badge">${hasFile ? 'Ready to Run' : 'Awaiting File'}</span>
+        </div>
+      `;
 
       return html;
     }
@@ -9383,10 +9432,13 @@
         let itemsHtml = '';
         cat.items.forEach((item) => {
           itemsHtml += `
-            <div class="wf-ops-item" data-op-type="${item.type}">
+            <div class="wf-ops-item" data-op-type="${item.type}" title="Add ${esc(item.label)} to pipeline">
               <div class="wf-ops-item-icon">${ICONS[item.type] || ICONS.flow}</div>
-              <span class="wf-ops-item-name">${esc(item.label)}</span>
-              <button type="button" class="wf-ops-add-btn" data-op-type="${item.type}" title="Add ${esc(item.label)} to pipeline">+</button>
+              <div class="wf-ops-item-texts">
+                <span class="wf-ops-item-name">${esc(item.label)}</span>
+                <span class="wf-ops-item-desc">${esc(item.desc)}</span>
+              </div>
+              <button type="button" class="wf-ops-add-btn" data-op-type="${item.type}">+</button>
             </div>
           `;
         });
@@ -9401,7 +9453,7 @@
       return `
         <aside class="wf-ops-sidebar">
           <div class="wf-ops-title-bar">
-            <h4 class="wf-ops-title">Operations</h4>
+            <h4 class="wf-ops-title">Operations Library</h4>
             <span class="wf-ops-sub">Click any tool to append to pipeline</span>
           </div>
           <div class="wf-ops-inner">
@@ -9427,8 +9479,14 @@
     }
 
     function wireEvents() {
-      // 1. File Input
+      // 1. File Input & Input Node Trigger
       const fileInp = container.querySelector('#wf-file-inp');
+      const inputTrigger = container.querySelector('#wf-input-trigger');
+
+      if (inputTrigger && fileInp) {
+        inputTrigger.onclick = () => fileInp.click();
+      }
+
       if (fileInp) {
         fileInp.onchange = (e) => {
           const f = e.target.files && e.target.files[0];
@@ -9436,12 +9494,7 @@
         };
       }
 
-      const changeBtn = container.querySelector('#wf-change-file-btn');
-      if (changeBtn && fileInp) {
-        changeBtn.onclick = () => fileInp.click();
-      }
-
-      // Drag & drop file onto canvas
+      // Drag & drop file onto canvas or input node
       const canvasEl = container.querySelector('#wf-pipeline-canvas');
       if (canvasEl) {
         canvasEl.ondragover = (e) => {
@@ -9474,7 +9527,13 @@
       // 3. Run Pipeline CTA
       const runBtn = container.querySelector('#wf-run-pipeline-btn');
       if (runBtn) {
-        runBtn.onclick = () => runPipeline();
+        runBtn.onclick = () => {
+          if (!state.file) {
+            if (fileInp) fileInp.click();
+            return;
+          }
+          runPipeline();
+        };
       }
 
       // 4. Operations Sidebar Add Buttons
@@ -9496,19 +9555,26 @@
         };
       });
 
-      // 5. Step Card Header (Expand/Collapse on row or chevron click)
-      container.querySelectorAll('.wf-sc-header').forEach((header) => {
+      // 5. Step Card Header & Edit Trigger (Expand/Collapse drawer)
+      const toggleExpand = (idx) => {
+        if (state.steps[idx]) {
+          state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
+          render();
+        }
+      };
+
+      container.querySelectorAll('.wf-sc-row-header').forEach((header) => {
         header.onclick = (e) => {
-          // Don't toggle expansion if user clicked an explicit action control (toggle, remove, drag)
           if (e.target.closest('.wf-sc-toggle') || e.target.closest('.wf-sc-remove') || e.target.closest('.wf-sc-drag')) return;
           const idx = Number(header.dataset.stepIdx);
-          if (state.steps[idx]) {
-            state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
-            const card = header.closest('.wf-step-card');
-            if (card) {
-              card.classList.toggle('is-expanded', state.steps[idx].isExpanded);
-            }
-          }
+          toggleExpand(idx);
+        };
+      });
+
+      container.querySelectorAll('.wf-sc-row-summary').forEach((row) => {
+        row.onclick = () => {
+          const idx = Number(row.dataset.stepIdx);
+          toggleExpand(idx);
         };
       });
 
@@ -9523,13 +9589,11 @@
             toggle.setAttribute('aria-checked', isNowEnabled);
             const card = toggle.closest('.wf-step-card');
             if (card) card.classList.toggle('is-disabled', !isNowEnabled);
-            // Update toolbar run button step count dynamically
             const activeCount = state.steps.filter((s) => s.enabled !== false).length;
+            const badge = container.querySelector('.wf-toolbar-badge');
+            if (badge) badge.textContent = `${activeCount} Step${activeCount === 1 ? '' : 's'} Active`;
             const runCta = container.querySelector('#wf-run-pipeline-btn');
-            if (runCta) {
-              runCta.querySelector('span').textContent = `Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
-              runCta.disabled = !state.file || activeCount === 0;
-            }
+            if (runCta) runCta.querySelector('span').textContent = `Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
           }
         };
       });
@@ -9577,15 +9641,11 @@
         };
       });
 
-      // 9. Config Inputs (Targeted without full re-render to retain focus)
+      // 9. Config Inputs
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) {
-            state.steps[idx].config.text = e.target.value;
-            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
-          }
+          if (state.steps[idx]) state.steps[idx].config.text = e.target.value;
         };
       });
 
@@ -9599,8 +9659,6 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
-            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9608,11 +9666,7 @@
       container.querySelectorAll('.wf-cfg-protect-pass').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) {
-            state.steps[idx].config.password = e.target.value;
-            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
-          }
+          if (state.steps[idx]) state.steps[idx].config.password = e.target.value;
         };
       });
 
@@ -9637,8 +9691,6 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
-            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9653,8 +9705,6 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
-            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9669,8 +9719,6 @@
               parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
               btn.classList.add('is-active');
             }
-            const summaryEl = btn.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
           }
         };
       });
@@ -9678,22 +9726,14 @@
       container.querySelectorAll('.wf-cfg-extract-range').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) {
-            state.steps[idx].config.range = e.target.value;
-            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
-          }
+          if (state.steps[idx]) state.steps[idx].config.range = e.target.value;
         };
       });
 
       container.querySelectorAll('.wf-cfg-zip-name').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
-          if (state.steps[idx]) {
-            state.steps[idx].config.zipName = e.target.value;
-            const summaryEl = inp.closest('.wf-step-card')?.querySelector('.wf-sc-summary');
-            if (summaryEl) summaryEl.textContent = getStepSummary(state.steps[idx]);
-          }
+          if (state.steps[idx]) state.steps[idx].config.zipName = e.target.value;
         };
       });
 
