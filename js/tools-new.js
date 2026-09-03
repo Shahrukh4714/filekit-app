@@ -8986,12 +8986,12 @@
     const stageEl = container.closest('.app-stage-container');
     if (stageEl) {
       stageEl.classList.add('wf-stage-active');
-      stageEl.style.cssText = 'padding:0!important;margin:0!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:#FFFFFF!important;max-width:none!important;width:100%!important;height:100%!important;';
+      stageEl.style.cssText = 'padding:0!important;margin:0!important;border:none!important;border-radius:0!important;box-shadow:none!important;background:#FAFAFA!important;max-width:none!important;width:100%!important;height:100%!important;';
     }
     const canvasEl = container.closest('#app-canvas');
     if (canvasEl) {
       canvasEl.classList.add('wf-canvas-fullbleed');
-      canvasEl.style.cssText = 'padding:0!important;margin:0!important;';
+      canvasEl.style.cssText = 'padding:0!important;margin:0!important;background:#FAFAFA!important;';
     }
     const wtvEl = container.closest('#app-workspace-tool-view');
     if (wtvEl) {
@@ -9014,16 +9014,16 @@
       flow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
       upload: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
       doc: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-      package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>`,
-      watermark: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
-      protect: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
-      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
-      page_numbers: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
-      flatten: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
-      grayscale: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
-      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
-      extract: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
-      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
+      package: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>`,
+      watermark: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
+      protect: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
+      compress: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+      page_numbers: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
+      flatten: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
+      grayscale: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
+      rotate: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
+      extract: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
+      zip: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
       check: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
       trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
       eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
@@ -9149,33 +9149,62 @@
         const txt = step.config.text || 'CONFIDENTIAL';
         const opac = step.config.opacity === 0.15 ? 'Subtle' : (step.config.opacity === 0.65 ? 'Bold' : 'Balanced');
         return `
-          <span class="wf-param-chip">Text: <strong>${esc(txt)}</strong></span>
-          <span class="wf-param-chip">Tone: <strong>${opac}</strong></span>
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Text: <b>${esc(txt)}</b></span>
+            <span class="wf-meta-sep">·</span>
+            <span class="wf-meta-item">Tone: <b>${opac}</b></span>
+          </div>
         `;
       }
       if (step.type === 'protect') {
-        return step.config.password
-          ? `<span class="wf-param-chip">Password: <strong>••••••••</strong></span>`
-          : `<span class="wf-param-chip" style="color:#94A3B8;">No password set</span>`;
+        return `
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Password: <b>${step.config.password ? '••••••••' : 'None'}</b></span>
+          </div>
+        `;
       }
       if (step.type === 'compress') {
         const lvl = step.config.level === 'extreme' ? 'Extreme' : (step.config.level === 'low' ? 'Lossless' : 'Recommended');
-        return `<span class="wf-param-chip">Level: <strong>${lvl}</strong></span>`;
+        return `
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Level: <b>${lvl}</b></span>
+          </div>
+        `;
       }
       if (step.type === 'page_numbers') {
         const pos = step.config.position === 'bottom-right' ? 'Bottom Right' : (step.config.position === 'top-right' ? 'Top Right' : 'Bottom Center');
-        return `<span class="wf-param-chip">Position: <strong>${pos}</strong></span>`;
+        return `
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Position: <b>${pos}</b></span>
+          </div>
+        `;
       }
       if (step.type === 'rotate') {
-        return `<span class="wf-param-chip">Angle: <strong>${step.config.degrees || 90}° CW</strong></span>`;
+        return `
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Angle: <b>${step.config.degrees || 90}° CW</b></span>
+          </div>
+        `;
       }
       if (step.type === 'extract') {
-        return `<span class="wf-param-chip">Pages: <strong>${esc(step.config.range || '1-5')}</strong></span>`;
+        return `
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Pages: <b>${esc(step.config.range || '1-5')}</b></span>
+          </div>
+        `;
       }
       if (step.type === 'zip') {
-        return `<span class="wf-param-chip">Archive: <strong>${esc(step.config.zipName || 'output.zip')}</strong></span>`;
+        return `
+          <div class="wf-sc-meta-line">
+            <span class="wf-meta-item">Archive: <b>${esc(step.config.zipName || 'output.zip')}</b></span>
+          </div>
+        `;
       }
-      return `<span class="wf-param-chip" style="color:#64748B;">⚡ Automatic on-device execution</span>`;
+      return `
+        <div class="wf-sc-meta-line">
+          <span class="wf-meta-item" style="color:#64748B;">⚡ Automatic execution</span>
+        </div>
+      `;
     }
 
     function renderToolbar() {
@@ -9229,7 +9258,7 @@
           <div class="wf-cfg-row">
             <span class="wf-cfg-label">Password</span>
             <input type="${state.stepPassVisibility[idx] ? 'text' : 'password'}" class="wf-cfg-input wf-cfg-protect-pass" data-step-idx="${idx}" value="${esc(step.config.password || '')}" placeholder="Set document password" />
-            <button type="button" class="wf-cfg-eye wf-cfg-toggle-eye" data-step-idx="${idx}" title="Toggle password visibility">${ICONS.eye}</button>
+            <button type="button" class="wf-cfg-eye wf-cfg-toggle-eye" data-step-idx="${idx}">${ICONS.eye}</button>
           </div>
         `;
       }
@@ -9342,7 +9371,7 @@
 
       // 1. INPUT NODE
       html += `
-        <div class="wf-input-node ${hasFile ? 'has-file' : ''}" id="wf-input-trigger" title="${hasFile ? 'Click to change document' : 'Click to select or drop document'}">
+        <div class="wf-input-node ${hasFile ? 'has-file' : ''}" id="wf-input-trigger">
           <div class="wf-input-left">
             <div class="wf-input-icon">${hasFile ? ICONS.doc : ICONS.upload}</div>
             <div class="wf-input-texts">
@@ -9384,20 +9413,18 @@
             <div class="wf-step-card ${isDisabled ? 'is-disabled' : ''} ${isExpanded ? 'is-expanded' : ''}" data-step-idx="${idx}">
               <div class="wf-sc-row-header" data-step-idx="${idx}">
                 <div class="wf-sc-id-group">
-                  <div class="wf-sc-drag" title="Drag to reorder" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
+                  <div class="wf-sc-drag" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
                   <span class="wf-sc-badge">${String(idx + 1).padStart(2, '0')}</span>
                   <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
                   <span class="wf-sc-name">${esc(step.name)}</span>
                 </div>
                 <div class="wf-sc-controls">
-                  <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}" title="${!isDisabled ? 'Step active (click to skip)' : 'Step disabled (skipped)'}"></button>
-                  <button type="button" class="wf-sc-action-btn is-danger wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
+                  <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}"></button>
+                  <button type="button" class="wf-sc-action-btn is-danger wf-sc-remove" data-step-idx="${idx}">${ICONS.trash}</button>
                 </div>
               </div>
               <div class="wf-sc-row-summary" data-step-idx="${idx}">
-                <div class="wf-sc-param-chips">
-                  ${renderParamChips(step)}
-                </div>
+                ${renderParamChips(step)}
                 <span class="wf-sc-edit-btn" data-step-idx="${idx}">${isExpanded ? 'Done' : 'Configure'} ${ICONS.chevron}</span>
               </div>
               <div class="wf-sc-config">
@@ -9444,7 +9471,7 @@
         let itemsHtml = '';
         cat.items.forEach((item) => {
           itemsHtml += `
-            <div class="wf-ops-item" data-op-type="${item.type}" title="Add ${esc(item.label)} to pipeline">
+            <div class="wf-ops-item" data-op-type="${item.type}">
               <div class="wf-ops-item-icon">${ICONS[item.type] || ICONS.flow}</div>
               <div class="wf-ops-item-texts">
                 <span class="wf-ops-item-name">${esc(item.label)}</span>

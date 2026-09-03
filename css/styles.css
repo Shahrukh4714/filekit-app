@@ -17315,8 +17315,8 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Studio -- Systematically Scaled Workbench
-   Zero Gutters + 640px Optical Spine + 280px Operations Library
+   Workflow Studio -- Clean Minimalist Workbench
+   Pure Surfaces + Clean Typography + Zero Highlight Boxes
 =============================================================== */
 
 /* Global container overrides for Workflow Studio */
@@ -17410,7 +17410,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: #F8FAFC !important;
+  background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 7px !important;
   padding: 0 8px 0 10px !important;
@@ -17436,7 +17436,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 0 4px !important;
 }
 
-/* Right toolbar zone: 280px wide to match the operations sidebar exactly! */
+/* Right toolbar zone: exactly 280px wide aligned with operations sidebar */
 .wf-toolbar-right {
   width: 280px !important;
   flex-shrink: 0 !important;
@@ -17484,7 +17484,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   overflow: hidden !important;
 }
 
-/* ── Pipeline Canvas: perfectly centered 640px spine ── */
+/* ── Pipeline Canvas: clean unified surface ── */
 .wf-canvas {
   flex: 1 !important;
   min-width: 0 !important;
@@ -17492,7 +17492,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   overflow-x: hidden !important;
   padding: 20px 24px 48px !important;
   box-sizing: border-box !important;
-  background: #F8FAFC !important;
+  background: #FAFAFA !important;
   display: flex !important;
   flex-direction: column !important;
 }
@@ -17508,7 +17508,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 /* ── Input Node (Beginning of pipeline) ── */
 .wf-input-node {
   background: #FFFFFF !important;
-  border: 1.5px dashed #CBD5E1 !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   box-sizing: border-box !important;
@@ -17516,21 +17516,13 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 10px !important;
-  transition: border-color 0.14s ease, background 0.14s ease !important;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
   cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
 }
 .wf-input-node:hover {
-  border-color: #EC4899 !important;
-  background: #FDF2F8 !important;
-}
-.wf-input-node.has-file {
-  border-style: solid !important;
-  border-color: #E2E8F0 !important;
-  background: #FFFFFF !important;
-}
-.wf-input-node.has-file:hover {
   border-color: #CBD5E1 !important;
-  background: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
 }
 
 .wf-input-left {
@@ -17576,9 +17568,9 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-input-action-btn {
   display: inline-flex !important;
   align-items: center !important;
-  padding: 5px 12px !important;
+  padding: 4px 10px !important;
   font-size: 11px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   color: #EC4899 !important;
   background: #FDF2F8 !important;
   border: 1px solid #FCE7F3 !important;
@@ -17599,14 +17591,14 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 24px !important;
+  height: 22px !important;
   margin: -1px 0 !important;
   position: relative !important;
   z-index: 1 !important;
 }
 .wf-connector-line {
   width: 2px !important;
-  height: 7px !important;
+  height: 6px !important;
   background: #CBD5E1 !important;
 }
 .wf-connector-badge {
@@ -17659,7 +17651,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 10px 14px 6px 14px !important;
+  padding: 10px 14px 4px 14px !important;
   cursor: pointer !important;
   user-select: none !important;
 }
@@ -17780,7 +17772,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   color: #DC2626 !important;
 }
 
-/* Row 2: Parameter summary chips & edit toggle */
+/* Row 2: Clean typographical metadata (NO grey highlight pills!) */
 .wf-sc-row-summary {
   display: flex !important;
   align-items: center !important;
@@ -17790,29 +17782,28 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   cursor: pointer !important;
 }
 
-.wf-sc-param-chips {
+.wf-sc-meta-line {
   display: flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  flex-wrap: wrap !important;
+  gap: 6px !important;
+  font-size: 11.5px !important;
+  color: #64748B !important;
   min-width: 0 !important;
 }
 
-.wf-param-chip {
-  font-size: 11px !important;
-  font-weight: 500 !important;
-  color: #475569 !important;
-  background: #F1F5F9 !important;
-  padding: 2px 7px !important;
-  border-radius: 4px !important;
-  white-space: nowrap !important;
+.wf-meta-item {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
+  white-space: nowrap !important;
 }
-.wf-param-chip strong {
-  font-weight: 700 !important;
+.wf-meta-item b {
+  font-weight: 600 !important;
   color: #0F172A !important;
+}
+.wf-meta-sep {
+  color: #CBD5E1 !important;
+  font-size: 10px !important;
 }
 
 .wf-sc-edit-btn {
@@ -17830,7 +17821,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-sc-edit-btn:hover { color: #DB2777 !important; }
 .wf-step-card.is-expanded .wf-sc-edit-btn svg { transform: rotate(180deg) !important; }
 
-/* Inline config drawer */
+/* Inline config drawer (Clean transparent rows, no nested grey boxes) */
 .wf-sc-config {
   overflow: hidden !important;
   max-height: 0 !important;
@@ -17844,8 +17835,8 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   padding: 0 14px 12px 14px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
-  border-top: 1px dashed #F1F5F9 !important;
+  gap: 4px !important;
+  border-top: 1px solid #F1F5F9 !important;
   margin-top: 2px !important;
   padding-top: 10px !important;
 }
@@ -17853,11 +17844,10 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  background: #F8FAFC !important;
-  border: 1px solid #F1F5F9 !important;
-  border-radius: 6px !important;
-  padding: 6px 10px !important;
-  min-height: 32px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 4px 0 !important;
+  min-height: 30px !important;
 }
 .wf-cfg-label {
   font-size: 10px !important;
@@ -17870,10 +17860,10 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 }
 .wf-cfg-input {
   flex: 1 1 0 !important;
-  height: 24px !important;
+  height: 26px !important;
   background: #FFFFFF !important;
   border: 1px solid #CBD5E1 !important;
-  border-radius: 4px !important;
+  border-radius: 5px !important;
   padding: 0 8px !important;
   font-size: 11.5px !important;
   color: #0F172A !important;
@@ -17919,6 +17909,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 10px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
 }
 .wf-output-left {
   display: flex !important;
@@ -18050,7 +18041,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
   width: 24px !important;
   height: 24px !important;
   border-radius: 5px !important;
-  background: #F1F5F9 !important;
+  background: #F8FAFC !important;
   color: #64748B !important;
   display: flex !important;
   align-items: center !important;
@@ -18141,7 +18132,7 @@ body #app-view #app-canvas.app-canvas.wf-canvas-fullbleed,
 .wf-result-title { font-size: 16px !important; font-weight: 700 !important; color: #0F172A !important; margin: 0 !important; letter-spacing: -0.02em !important; }
 .wf-result-sub { font-size: 12px !important; color: #64748B !important; margin: 0 !important; }
 .wf-result-file-box {
-  width: 100% !important; max-width: 380px !important; background: #F8FAFC !important;
+  width: 100% !important; max-width: 380px !important; background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important; border-radius: 8px !important; padding: 10px 14px !important;
   box-sizing: border-box !important; text-align: left !important;
   display: flex !important; flex-direction: column !important; gap: 3px !important;
