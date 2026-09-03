@@ -17315,19 +17315,23 @@ div.app-main-content,
   background: #F8FAFC !important;
 }
 /* ===============================================================
-   Workflow Builder -- Pro Three-Zone Pipeline Tool
-   Toolbar (pinned) + Centered Pipeline Chain + Sleek Ops Sidebar
+   Workflow Builder -- Pro Three-Zone Pipeline Tool (v3 Refined)
+   Full-Bleed Stage + Centered Chain + Real Connectors + Zero Gutters
 =============================================================== */
 
-/* Stage & Workspace container overrides: scoped strictly to workflow via :has() */
+/* Stage & Workspace container overrides: eliminates the box-in-a-box white gutters */
+body #app-view #app-canvas.app-canvas:has(.wf-layout-root),
+body #app-view .app-canvas.ff-tool-active:has(.wf-layout-root),
+html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.wf-layout-root),
 #app-workspace-tool-view:has(.wf-layout-root),
 #app-workspace-tool-view #app-tool-stage:has(.wf-layout-root),
-.app-stage-container:has(.wf-layout-root) {
+.app-stage-container:has(.wf-layout-root),
+#app-tool-stage:has(.wf-layout-root) {
   padding: 0 !important;
   margin: 0 !important;
   max-width: 100% !important;
   width: 100% !important;
-  height: 100% !important;
+  height: calc(100vh - 60px) !important;
   background: #FFFFFF !important;
   border: none !important;
   border-radius: 0 !important;
@@ -17346,7 +17350,7 @@ div.app-main-content,
   font-family: inherit !important;
 }
 
-/* ── Toolbar: 52px pinned, Run CTA lives here always ── */
+/* ── Toolbar: 52px pinned, cleanly partitioned ── */
 .wf-toolbar {
   display: flex !important;
   align-items: center !important;
@@ -17355,14 +17359,49 @@ div.app-main-content,
   height: 52px !important;
   min-height: 52px !important;
   flex-shrink: 0 !important;
-  padding: 0 18px !important;
+  padding: 0 20px !important;
   background: #FFFFFF !important;
   border-bottom: 1px solid #E2E8F0 !important;
   box-sizing: border-box !important;
   z-index: 10 !important;
 }
 
-.wf-toolbar-file {
+.wf-toolbar-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+.wf-toolbar-file-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #0F172A !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 7px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.12s ease !important;
+  font-family: inherit !important;
+}
+.wf-toolbar-file-btn:hover {
+  background: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
+}
+.wf-toolbar-file-btn svg { color: #EC4899 !important; }
+
+.wf-toolbar-hint {
+  font-size: 11px !important;
+  color: #94A3B8 !important;
+  white-space: nowrap !important;
+}
+
+.wf-toolbar-file-loaded {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -17370,8 +17409,8 @@ div.app-main-content,
 }
 
 .wf-toolbar-file-icon {
-  width: 28px !important;
-  height: 28px !important;
+  width: 26px !important;
+  height: 26px !important;
   border-radius: 6px !important;
   background: #FDF2F8 !important;
   color: #EC4899 !important;
@@ -17382,13 +17421,13 @@ div.app-main-content,
 }
 
 .wf-toolbar-file-name {
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   font-weight: 600 !important;
   color: #0F172A !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  max-width: 220px !important;
+  max-width: 200px !important;
 }
 
 .wf-toolbar-file-size {
@@ -17401,8 +17440,7 @@ div.app-main-content,
 .wf-toolbar-change-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  padding: 3px 9px !important;
+  padding: 2px 8px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #64748B !important;
@@ -17420,26 +17458,12 @@ div.app-main-content,
   color: #0F172A !important;
 }
 
-.wf-toolbar-choose-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 5px 14px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #FFFFFF !important;
-  background: #EC4899 !important;
-  border: none !important;
-  border-radius: 7px !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  transition: all 0.13s cubic-bezier(0.23,1,0.32,1) !important;
-  font-family: inherit !important;
-}
-.wf-toolbar-choose-btn:hover { background: #DB2777 !important; transform: translateY(-1px) !important; }
-.wf-toolbar-choose-btn:active { transform: scale(0.97) !important; }
-
 /* Preset Selector in Toolbar */
+.wf-toolbar-center {
+  display: flex !important;
+  align-items: center !important;
+}
+
 .wf-preset-select-wrap {
   display: flex !important;
   align-items: center !important;
@@ -17470,7 +17494,13 @@ div.app-main-content,
   padding: 0 4px !important;
 }
 
-/* Run Pipeline CTA -- always in toolbar, structurally cannot scroll away */
+/* Run Pipeline CTA */
+.wf-toolbar-right {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
 .wf-toolbar-run {
   display: inline-flex !important;
   align-items: center !important;
@@ -17482,7 +17512,7 @@ div.app-main-content,
   color: #FFFFFF !important;
   font-size: 12.5px !important;
   font-weight: 700 !important;
-  border: none !important;
+  border: 1px solid #EC4899 !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   box-shadow: 0 2px 8px rgba(236,72,153,0.28) !important;
@@ -17492,18 +17522,22 @@ div.app-main-content,
 }
 .wf-toolbar-run:hover:not(:disabled) {
   background: #DB2777 !important;
+  border-color: #DB2777 !important;
   box-shadow: 0 4px 14px rgba(236,72,153,0.38) !important;
   transform: translateY(-1px) !important;
 }
 .wf-toolbar-run:active:not(:disabled) { transform: scale(0.97) !important; }
 .wf-toolbar-run:disabled {
-  opacity: 0.45 !important;
+  background: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #94A3B8 !important;
+  box-shadow: none !important;
   cursor: not-allowed !important;
   transform: none !important;
-  box-shadow: none !important;
+  opacity: 1 !important;
 }
 
-/* ── Body: fills remaining height, min-height:0 is CRITICAL for internal scroll ── */
+/* ── Body: fills remaining height ── */
 .wf-body {
   display: flex !important;
   flex: 1 !important;
@@ -17517,7 +17551,7 @@ div.app-main-content,
   min-width: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 24px 24px 48px !important;
+  padding: 24px 20px 48px !important;
   box-sizing: border-box !important;
   background: #F8FAFC !important;
   display: flex !important;
@@ -17526,7 +17560,7 @@ div.app-main-content,
 
 .wf-pipeline-chain {
   width: 100% !important;
-  max-width: 680px !important;
+  max-width: 660px !important;
   margin: 0 auto !important;
   display: flex !important;
   flex-direction: column !important;
@@ -17590,7 +17624,7 @@ div.app-main-content,
 }
 
 .wf-sc-drag {
-  color: #D1D5DB !important;
+  color: #CBD5E1 !important;
   cursor: grab !important;
   display: flex !important;
   align-items: center !important;
@@ -17653,12 +17687,12 @@ div.app-main-content,
 .wf-sc-controls {
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 6px !important;
   flex-shrink: 0 !important;
   margin-left: auto !important;
 }
 
-/* Toggle switch: proper CSS sliding pill */
+/* Toggle switch: sliding pill */
 .wf-sc-toggle {
   position: relative !important;
   width: 32px !important;
@@ -17688,10 +17722,10 @@ div.app-main-content,
 .wf-sc-toggle[aria-checked="true"]::after { transform: translateX(13px) !important; }
 .wf-sc-toggle:focus-visible { outline: 2px solid #EC4899 !important; outline-offset: 2px !important; }
 
-/* Action buttons: Move up/down, expand, remove */
+/* Clean action icon buttons (Chevron and Delete only) */
 .wf-sc-action-btn {
-  width: 24px !important;
-  height: 24px !important;
+  width: 26px !important;
+  height: 26px !important;
   border-radius: 5px !important;
   border: 1px solid transparent !important;
   background: transparent !important;
@@ -17704,7 +17738,7 @@ div.app-main-content,
   transition: all 0.12s ease !important;
   font-family: inherit !important;
 }
-.wf-sc-action-btn:hover:not(:disabled) {
+.wf-sc-action-btn:hover {
   background: #F1F5F9 !important;
   border-color: #E2E8F0 !important;
   color: #0F172A !important;
@@ -17714,16 +17748,12 @@ div.app-main-content,
   border-color: #FECACA !important;
   color: #DC2626 !important;
 }
-.wf-sc-action-btn:disabled {
-  opacity: 0.25 !important;
-  cursor: not-allowed !important;
-}
 
 /* Expand chevron rotation */
-.wf-sc-action-btn.wf-sc-chevron svg {
+.wf-sc-chevron svg {
   transition: transform 0.16s ease-out !important;
 }
-.wf-step-card.is-expanded .wf-sc-action-btn.wf-sc-chevron svg {
+.wf-step-card.is-expanded .wf-sc-chevron svg {
   transform: rotate(180deg) !important;
 }
 
@@ -17805,37 +17835,38 @@ div.app-main-content,
 .wf-cfg-eye:hover { color: #475569 !important; }
 .wf-cfg-auto-note { font-size: 11px !important; color: #94A3B8 !important; font-style: italic !important; }
 
-/* Pipeline Flow Connector with Arrow */
+/* ── Pipeline Flow Connector with Badge Arrow ── */
 .wf-step-connector {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 22px !important;
-  flex-shrink: 0 !important;
+  height: 20px !important;
+  margin: -1px 0 !important;
   position: relative !important;
+  z-index: 1 !important;
 }
-.wf-step-connector-line {
+.wf-connector-line {
   width: 2px !important;
-  height: 100% !important;
-  background: #E2E8F0 !important;
+  height: 6px !important;
+  background: #CBD5E1 !important;
 }
-.wf-step-connector-arrow {
-  position: absolute !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 16px !important;
-  height: 16px !important;
-  background: #F8FAFC !important;
+.wf-connector-badge {
+  width: 15px !important;
+  height: 15px !important;
+  border-radius: 50% !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #94A3B8 !important;
+  color: #64748B !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
-/* ── Operations Sidebar: 260px fixed ── */
+/* ── Operations Sidebar: 252px fixed, zero scroll ── */
 .wf-ops-sidebar {
-  width: 260px !important;
+  width: 252px !important;
   flex-shrink: 0 !important;
   background: #FFFFFF !important;
   border-left: 1px solid #E2E8F0 !important;
@@ -17846,7 +17877,7 @@ div.app-main-content,
 }
 
 .wf-ops-title-bar {
-  padding: 14px 14px 10px !important;
+  padding: 12px 14px 10px !important;
   border-bottom: 1px solid #F1F5F9 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -17862,7 +17893,7 @@ div.app-main-content,
   margin: 0 !important;
 }
 .wf-ops-sub {
-  font-size: 11px !important;
+  font-size: 10.5px !important;
   color: #94A3B8 !important;
   margin: 0 !important;
 }
@@ -17871,10 +17902,10 @@ div.app-main-content,
   flex: 1 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 12px 10px 20px !important;
+  padding: 10px 10px 16px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 14px !important;
+  gap: 12px !important;
 }
 
 .wf-canvas::-webkit-scrollbar,
@@ -17891,21 +17922,21 @@ div.app-main-content,
   background: transparent !important;
 }
 
-.wf-ops-section { display: flex !important; flex-direction: column !important; gap: 2px !important; }
+.wf-ops-section { display: flex !important; flex-direction: column !important; gap: 1px !important; }
 .wf-ops-section-label {
-  font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important;
-  letter-spacing: 0.08em !important; color: #94A3B8 !important; padding: 0 4px !important; margin-bottom: 3px !important;
+  font-size: 9.5px !important; font-weight: 700 !important; text-transform: uppercase !important;
+  letter-spacing: 0.08em !important; color: #94A3B8 !important; padding: 0 4px !important; margin-bottom: 2px !important;
 }
 
 .wf-ops-item {
   display: flex !important; align-items: center !important; gap: 8px !important;
-  padding: 5px 8px !important; border-radius: 6px !important; cursor: pointer !important;
-  transition: background 0.12s ease !important; min-height: 34px !important;
+  padding: 4px 6px !important; border-radius: 6px !important; cursor: pointer !important;
+  transition: background 0.12s ease !important; min-height: 32px !important;
 }
 .wf-ops-item:hover { background: #FDF2F8 !important; }
 
 .wf-ops-item-icon {
-  width: 22px !important; height: 22px !important; border-radius: 5px !important;
+  width: 20px !important; height: 20px !important; border-radius: 4px !important;
   background: #F1F5F9 !important; color: #64748B !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
   flex-shrink: 0 !important; transition: background 0.12s ease, color 0.12s ease !important;
@@ -17919,9 +17950,9 @@ div.app-main-content,
 .wf-ops-item:hover .wf-ops-item-name { color: #0F172A !important; }
 
 .wf-ops-add-btn {
-  width: 20px !important; height: 20px !important; border-radius: 50% !important;
+  width: 18px !important; height: 18px !important; border-radius: 50% !important;
   border: 1.5px solid #E2E8F0 !important; background: #FFFFFF !important; color: #94A3B8 !important;
-  font-size: 13px !important; line-height: 1 !important; cursor: pointer !important;
+  font-size: 12px !important; line-height: 1 !important; cursor: pointer !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
   flex-shrink: 0 !important; transition: all 0.13s cubic-bezier(0.23,1,0.32,1) !important;
   padding: 0 !important; font-family: inherit !important;

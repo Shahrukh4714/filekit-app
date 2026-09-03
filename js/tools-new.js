@@ -9000,26 +9000,23 @@
 
     const ICONS = {
       flow: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
-      upload: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
-      doc: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-      watermark: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
-      protect: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
-      compress: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
-      page_numbers: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
-      flatten: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
-      grayscale: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
-      rotate: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
-      extract: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
-      zip: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
+      upload: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
+      doc: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+      watermark: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
+      protect: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
+      compress: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>`,
+      page_numbers: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15h6M12 11v6"/></svg>`,
+      flatten: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>`,
+      grayscale: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>`,
+      rotate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
+      extract: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
+      zip: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
       check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
-      up: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>`,
-      down: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
-      trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+      trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
       eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
       download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
-      chevron: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
-      grip: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
-      plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+      chevron: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
+      grip: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
     };
 
     const RECIPES = {
@@ -9139,7 +9136,7 @@
         return `"${step.config.text || 'CONFIDENTIAL'}"`;
       }
       if (step.type === 'protect') {
-        return step.config.password ? 'Password set' : 'No password';
+        return step.config.password ? '••••••••' : 'No password';
       }
       if (step.type === 'compress') {
         return step.config.level === 'extreme' ? 'Extreme' : (step.config.level === 'low' ? 'Lossless' : 'Recommended');
@@ -9166,16 +9163,18 @@
         <header class="wf-toolbar">
           <div class="wf-toolbar-left">
             ${state.file ? `
-              <div class="wf-toolbar-file-icon">${ICONS.doc}</div>
-              <div class="wf-toolbar-file-name" title="${esc(state.file.name)}">${esc(state.file.name)}</div>
-              <div class="wf-toolbar-file-size">${formatBytes(state.file.size)}</div>
-              <button type="button" class="wf-toolbar-change-btn" id="wf-change-file-btn">Change</button>
+              <div class="wf-toolbar-file-loaded">
+                <div class="wf-toolbar-file-icon">${ICONS.doc}</div>
+                <span class="wf-toolbar-file-name" title="${esc(state.file.name)}">${esc(state.file.name)}</span>
+                <span class="wf-toolbar-file-size">${formatBytes(state.file.size)}</span>
+                <button type="button" class="wf-toolbar-change-btn" id="wf-change-file-btn">Change</button>
+              </div>
             ` : `
-              <label for="wf-file-inp" class="wf-toolbar-choose-btn">
+              <label for="wf-file-inp" class="wf-toolbar-file-btn">
                 ${ICONS.upload}
-                <span>Choose Document</span>
+                <span>Select Document</span>
               </label>
-              <span style="font-size:11.5px;color:#94A3B8;margin-left:4px;">Supports PDF, Images, Office</span>
+              <span class="wf-toolbar-hint">PDF, Images, or Office</span>
             `}
             <input type="file" id="wf-file-inp" accept=".pdf,image/*,.docx,.xlsx,.pptx" style="display:none;" />
           </div>
@@ -9194,7 +9193,7 @@
           </div>
 
           <div class="wf-toolbar-right">
-            <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn" ${canRun ? '' : 'disabled'} title="${!state.file ? 'Please choose a document first' : (activeCount === 0 ? 'Enable at least one step' : 'Execute pipeline')}">
+            <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn" ${canRun ? '' : 'disabled'} title="${!state.file ? 'Please select a document first' : (activeCount === 0 ? 'Enable at least one step' : 'Execute pipeline')}">
               <span>Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
             </button>
           </div>
@@ -9350,8 +9349,6 @@
               <span class="wf-sc-summary">${esc(summary)}</span>
               <div class="wf-sc-controls">
                 <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}" title="${!isDisabled ? 'Step active (click to skip)' : 'Step disabled (skipped)'}"></button>
-                <button type="button" class="wf-sc-action-btn wf-sc-move-up" data-step-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move up">${ICONS.up}</button>
-                <button type="button" class="wf-sc-action-btn wf-sc-move-down" data-step-idx="${idx}" ${isLast ? 'disabled' : ''} title="Move down">${ICONS.down}</button>
                 <button type="button" class="wf-sc-action-btn wf-sc-chevron" data-step-idx="${idx}" title="Configure step">${ICONS.chevron}</button>
                 <button type="button" class="wf-sc-action-btn is-danger wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
               </div>
@@ -9367,10 +9364,11 @@
         if (!isLast) {
           html += `
             <div class="wf-step-connector">
-              <div class="wf-step-connector-line"></div>
-              <div class="wf-step-connector-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <div class="wf-connector-line"></div>
+              <div class="wf-connector-badge">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
               </div>
+              <div class="wf-connector-line"></div>
             </div>
           `;
         }
@@ -9465,7 +9463,9 @@
           const rId = presetSelect.value;
           if (RECIPES[rId]) {
             state.activeRecipe = rId;
-            state.steps = JSON.parse(JSON.stringify(RECIPES[rId]));
+            const newSteps = JSON.parse(JSON.stringify(RECIPES[rId]));
+            newSteps.forEach((s) => s.isExpanded = false);
+            state.steps = newSteps;
             render();
           }
         };
@@ -9499,8 +9499,8 @@
       // 5. Step Card Header (Expand/Collapse on row or chevron click)
       container.querySelectorAll('.wf-sc-header').forEach((header) => {
         header.onclick = (e) => {
-          // Don't toggle expansion if user clicked an explicit action control (toggle, move, remove)
-          if (e.target.closest('.wf-sc-toggle') || e.target.closest('.wf-sc-move-up') || e.target.closest('.wf-sc-move-down') || e.target.closest('.wf-sc-remove') || e.target.closest('.wf-sc-drag')) return;
+          // Don't toggle expansion if user clicked an explicit action control (toggle, remove, drag)
+          if (e.target.closest('.wf-sc-toggle') || e.target.closest('.wf-sc-remove') || e.target.closest('.wf-sc-drag')) return;
           const idx = Number(header.dataset.stepIdx);
           if (state.steps[idx]) {
             state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
@@ -9534,36 +9534,7 @@
         };
       });
 
-      // 7. Step Reorder Up / Down
-      container.querySelectorAll('.wf-sc-move-up').forEach((btn) => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const idx = Number(btn.dataset.stepIdx);
-          if (idx > 0) {
-            const temp = state.steps[idx];
-            state.steps[idx] = state.steps[idx - 1];
-            state.steps[idx - 1] = temp;
-            state.activeRecipe = 'custom';
-            render();
-          }
-        };
-      });
-
-      container.querySelectorAll('.wf-sc-move-down').forEach((btn) => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const idx = Number(btn.dataset.stepIdx);
-          if (idx < state.steps.length - 1) {
-            const temp = state.steps[idx];
-            state.steps[idx] = state.steps[idx + 1];
-            state.steps[idx + 1] = temp;
-            state.activeRecipe = 'custom';
-            render();
-          }
-        };
-      });
-
-      // 8. Step Remove
+      // 7. Step Remove
       container.querySelectorAll('.wf-sc-remove').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
@@ -9574,7 +9545,7 @@
         };
       });
 
-      // 9. Drag & Drop Reorder
+      // 8. Drag & Drop Reorder
       let draggedIdx = null;
       container.querySelectorAll('.wf-sc-drag').forEach((handle) => {
         handle.ondragstart = (e) => {
@@ -9606,7 +9577,7 @@
         };
       });
 
-      // 10. Config Inputs (Targeted without full re-render to retain focus)
+      // 9. Config Inputs (Targeted without full re-render to retain focus)
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
@@ -9726,7 +9697,7 @@
         };
       });
 
-      // 11. Result Actions
+      // 10. Result Actions
       const dlBtn = container.querySelector('#wf-download-result-btn');
       if (dlBtn && state.resultBlob) {
         dlBtn.onclick = () => {
