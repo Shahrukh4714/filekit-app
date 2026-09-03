@@ -9078,39 +9078,195 @@
       return Array.from(set).sort((a, b) => a - b);
     }
 
-    function render() {
-      container.innerHTML = `
-        <div class="wf-workbench" id="wf-workbench">
-          <!-- Pinned Header with Recipe Segment Control -->
-          <header class="wf-recipe-header">
-            <div class="wf-recipe-title-row">
-              <div class="wf-recipe-title">
-                ${ICONS.flow}
-                <span>Workflow Recipes</span>
-              </div>
-              <span style="font-size:11.5px;color:#64748B;font-weight:500;">Batch client automations</span>
+    async function renderPaperPreview() {
+      const paper = container.querySelector('#wf-paper-container');
+      if (!paper || !state.file) return;
+
+      const isPdf = (state.file.type === 'application/pdf') || state.file.name.toLowerCase().endsWith('.pdf');
+      const isImg = (state.file.type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp)$/i.test(state.file.name);
+
+      if (isImg) {
+        try {
+          const url = URL.createObjectURL(state.file);
+          paper.innerHTML = `<img src="${url}" alt="Preview" style="max-width:100%;max-height:calc(100vh - 210px);object-fit:contain;border-radius:4px;" />`;
+          return;
+        } catch (e) {}
+      }
+
+      if (isPdf) {
+        try {
+          paper.innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:36px;color:#64748B;">
+              <div style="width:24px;height:24px;border:2.5px solid #E2E8F0;border-top-color:#EC4899;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+              <span style="font-size:12px;font-weight:500;">Rendering document preview…</span>
+            </div>`;
+          const pdfjs = await load.pdfjs();
+          const arrayBuf = await state.file.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: arrayBuf }).promise;
+          const page = await doc.getPage(1);
+          const vp1 = page.getViewport({ scale: 1 });
+          const maxW = 460;
+          const maxH = Math.min(window.innerHeight ? window.innerHeight - 220 : 500, 560);
+          const scale = Math.min(maxW / vp1.width, maxH / vp1.height, 1.4);
+          const scaledVp = page.getViewport({ scale });
+
+          const canvas = document.createElement('canvas');
+          canvas.width = scaledVp.width;
+          canvas.height = scaledVp.height;
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport: scaledVp }).promise;
+
+          paper.innerHTML = '';
+          paper.appendChild(canvas);
+          return;
+        } catch (err) {
+          console.warn('[Workflow] PDF preview render error', err);
+        }
+      }
+
+      // Handcrafted illustration fallback
+      const ext = (state.file.name.split('.').pop() || 'pdf').toLowerCase();
+      const buildIll = window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration;
+      if (typeof buildIll === 'function') {
+        paper.innerHTML = buildIll(ext, state.file.name, bytes(state.file.size), 'stage');
+      } else {
+        paper.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 20px;text-align:center;">
+            <div style="width:48px;height:48px;border-radius:10px;background:#FDF2F8;color:#EC4899;display:flex;align-items:center;justify-content:center;">
+              ${ICONS.doc}
             </div>
-            <nav class="wf-recipe-nav" role="tablist" aria-label="Workflow Recipes">
-              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
-              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign & Compress</button>
-              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean & Gray</button>
-              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish & ZIP</button>
-              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'custom' ? 'is-active' : ''}" data-recipe="custom">Custom</button>
-            </nav>
-          </header>
+            <strong style="font-size:14px;color:#0F172A;">${esc(state.file.name)}</strong>
+            <span style="font-size:12px;color:#64748B;">${bytes(state.file.size)}</span>
+          </div>`;
+      }
+    }
 
-          <input type="file" id="wf-hidden-file-input" style="display:none" accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp">
+    function render() {
+      container.className = 'cpdf-root wf-root';
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.classList.toggle('wf-stage-active', !!state.file);
+      }
 
-          <!-- Dynamic Stage Body (Processing / Result / Pipeline) -->
-          ${state.isProcessing ? renderProcessingHtml() : (state.resultBlob ? renderResultHtml() : renderPipelineHtml())}
+      if (!state.file) {
+        renderDropzone();
+      } else {
+        renderWorkstation();
+      }
+    }
+
+    function renderDropzone() {
+      container.innerHTML = `
+        <div class="cpdf-body" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#FFFFFF;">
+          <div class="cpdf-dropzone drop-hero-box" id="wf-initial-dz" tabindex="0" role="button" aria-label="Drop PDF or image to run workflow" style="max-width:540px;width:100%;margin:auto;display:flex;flex-direction:column;align-items:center;padding:34px 24px 30px;border:2px dashed #CBD5E1;border-radius:12px;background:#FAFAFA;cursor:pointer;">
+            <div class="drop-illustration-wrap" style="margin-bottom:16px;">
+              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:190px;height:124px;">
+                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
+                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.05"/>
+                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.05"/>
+                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.05"/>
+                <g transform="rotate(-9 66 74)">
+                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
+                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#EC4899" opacity="0.9"/>
+                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#EC4899" opacity="0.9"/>
+                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#EC4899" opacity="0.9"/>
+                </g>
+                <g transform="rotate(9 154 74)">
+                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
+                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
+                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <g>
+                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
+                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
+                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
+                </g>
+                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
+                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
+                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
+                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              </svg>
+            </div>
+
+            <div class="drop-action-group" style="margin-bottom:12px;">
+              <label for="wf-initial-inp" class="select-files-main-btn" style="background:#EC4899;display:inline-flex;align-items:center;gap:8px;padding:9px 22px;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span>Select file</span>
+              </label>
+            </div>
+
+            <p class="drop-sub-text" style="font-size:13px;color:#64748B;margin:0 0 14px;">Add <strong>PDF</strong> or <strong>Image</strong> to run automated workflow</p>
+
+            <div class="supported-formats-row" style="display:flex;align-items:center;gap:6px;">
+              <span class="fmt-label" style="font-size:11px;color:#94A3B8;font-weight:600;">Supported formats:</span>
+              <span class="fmt-badge fmt-pdf" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#FEE2E2;color:#DC2626;">PDF</span>
+              <span class="fmt-badge fmt-img" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#E0F2FE;color:#0284C7;">PNG</span>
+              <span class="fmt-badge fmt-img" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#E0F2FE;color:#0284C7;">JPG</span>
+              <span class="fmt-badge fmt-img" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#E0F2FE;color:#0284C7;">WEBP</span>
+            </div>
+          </div>
+          <input id="wf-initial-inp" type="file" accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp" hidden>
         </div>
       `;
 
-      wireEvents();
+      const dz = container.querySelector('#wf-initial-dz');
+      const inp = container.querySelector('#wf-initial-inp');
+      if (inp) inp.onchange = () => inp.files[0] && handleFileSelect(inp.files[0]);
+      if (dz) {
+        dz.onclick = (e) => { if (!e.target.closest('label')) inp && inp.click(); };
+        dz.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp && inp.click(); } };
+        dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = '#EC4899'; dz.style.background = '#FDF2F8'; };
+        dz.ondragleave = () => { dz.style.borderColor = '#CBD5E1'; dz.style.background = '#FAFAFA'; };
+        dz.ondrop = (e) => {
+          e.preventDefault();
+          dz.style.borderColor = '#CBD5E1';
+          dz.style.background = '#FAFAFA';
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0]);
+          }
+        };
+      }
     }
 
-    function renderPipelineHtml() {
-      const hasFile = !!state.file;
+    function renderWorkstation() {
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body" style="width:100%;height:100%;">
+          <div class="wf-benchmark-workstation">
+            <!-- Left Stage: Document Paper Sheet & Preview (Benchmark standard) -->
+            <div class="wf-benchmark-stage">
+              <div class="wf-benchmark-paper" id="wf-paper-container">
+                <!-- Loaded via renderPaperPreview -->
+              </div>
+              <div class="wf-benchmark-fileinfo-row">
+                <span class="wf-benchmark-fileinfo-text" id="wf-file-meta-text">
+                  ${esc(state.file.name)} (${bytes(state.file.size)})
+                </span>
+                <button type="button" class="cpdf-benchmark-btn-add" id="wf-change-file-btn" title="Change file">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Change File</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Panel: Studio Inspector (Benchmark standard) -->
+            <div class="wf-benchmark-panel">
+              ${state.isProcessing ? renderProcessingHtml() : (state.resultBlob ? renderResultHtml() : renderPanelPipelineHtml())}
+            </div>
+          </div>
+        </div>
+        <input type="file" id="wf-hidden-file-input" style="display:none" accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp">
+      `;
+
+      wireEvents();
+      renderPaperPreview();
+    }
+
+    function renderPanelPipelineHtml() {
       const stepCount = state.steps.length;
 
       let stepsHtml = '';
@@ -9121,8 +9277,7 @@
         const isLast = idx === stepCount - 1;
 
         stepsHtml += `
-          <div class="wf-spine-line"></div>
-          <div class="wf-node-card wf-step-node" data-step-idx="${idx}">
+          <div class="wf-step-node" data-step-idx="${idx}">
             <div class="wf-step-main-row">
               <div class="wf-step-num">${stepNum}</div>
               <div class="wf-step-icon-wrap">${iconSvg}</div>
@@ -9138,36 +9293,34 @@
         `;
       });
 
-      const outName = getPredictedOutputName();
-
       return `
-        <div class="wf-track-stage">
-          <!-- Node 0: IN Document -->
-          ${hasFile ? `
-            <div class="wf-node-card wf-node-in is-filled">
-              <div class="wf-node-badge is-in">IN</div>
-              <div class="wf-node-info">
-                <div class="wf-node-title" title="${esc(state.file.name)}">${esc(state.file.name)}</div>
-                <div class="wf-node-sub">${bytes(state.file.size)} · Ready for pipeline</div>
-              </div>
-              <button type="button" class="wf-row-action-btn" id="wf-change-file-btn">Change</button>
+        <div class="wf-panel-scrollable">
+          <!-- Top Header -->
+          <div class="cpdf-benchmark-header" style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+            <div class="wf-benchmark-icon">
+              ${ICONS.flow}
             </div>
-          ` : `
-            <div class="wf-node-card wf-node-in" id="wf-input-dropzone" tabindex="0" role="button" aria-label="Select or drop input file">
-              <div class="wf-node-badge is-in">IN</div>
-              <div class="wf-node-info">
-                <div class="wf-node-title">Choose or drop input file</div>
-                <div class="wf-node-sub">PDF or image supported · 100% on-device</div>
-              </div>
-              <button type="button" class="wf-row-action-btn is-primary" id="wf-browse-trigger-btn">Browse</button>
+            <div>
+              <h2 class="cpdf-benchmark-title" style="font-size:18px;font-weight:700;color:#0F172A;margin:0;line-height:1.2;">Workflow Builder</h2>
+              <p style="font-size:11.5px;color:#64748B;margin:0;">Multi-step automated pipeline</p>
             </div>
-          `}
+          </div>
 
-          <!-- Dynamic Steps Chain -->
-          ${stepsHtml}
+          <!-- Recipe Segmented Tabs -->
+          <nav class="wf-recipe-nav" role="tablist" aria-label="Workflow Recipes">
+            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
+            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign & Compress</button>
+            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean & Gray</button>
+            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish & ZIP</button>
+            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'custom' ? 'is-active' : ''}" data-recipe="custom">Custom</button>
+          </nav>
+
+          <!-- Step Stack -->
+          <div class="wf-steps-stack" style="display:flex;flex-direction:column;gap:8px;">
+            ${stepsHtml}
+          </div>
 
           <!-- Add Step Action -->
-          <div class="wf-spine-line"></div>
           <div class="wf-add-section">
             <button type="button" class="wf-add-trigger-btn" id="wf-add-toggle-btn">
               <span>+ Add Step to Pipeline</span>
@@ -9185,29 +9338,22 @@
               <button type="button" class="wf-pop-chip" data-add-type="zip">${ICONS.zip} ZIP Bundle</button>
             </div>
           </div>
-
-          <!-- Node Final: OUT Document -->
-          <div class="wf-spine-line"></div>
-          <div class="wf-node-card wf-node-out">
-            <div class="wf-node-badge is-out">OUT</div>
-            <div class="wf-node-info">
-              <div class="wf-node-title">${esc(outName)}</div>
-              <div class="wf-node-sub">${stepCount} step operations chained</div>
-            </div>
-            <div style="font-size:11px;font-weight:700;color:#16A34A;display:flex;align-items:center;gap:4px;">
-              ${ICONS.check} Ready
-            </div>
-          </div>
         </div>
 
-        <!-- Pinned Command Dock -->
-        <footer class="wf-command-dock">
+        <!-- Pinned Footer Command Dock -->
+        <footer class="wf-panel-footer">
           <div class="wf-dock-meta">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span><strong>100% Client-Side</strong> · In-memory execution</span>
+            <span style="display:flex;align-items:center;gap:5px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <strong>100% Client-Side</strong>
+            </span>
+            <span>${stepCount} Step${stepCount === 1 ? '' : 's'} queued</span>
           </div>
-          <button type="button" class="wf-dock-cta" id="wf-run-pipeline-btn" ${!hasFile || stepCount === 0 ? 'disabled style="opacity:0.45;cursor:not-allowed;"' : ''}>
-            Run Pipeline (${stepCount} Step${stepCount === 1 ? '' : 's'}) →
+          <button type="button" class="wf-run-cta" id="wf-run-pipeline-btn" ${stepCount === 0 ? 'disabled' : ''}>
+            <span>Run Pipeline (${stepCount} Step${stepCount === 1 ? '' : 's'})</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
           </button>
         </footer>
       `;
@@ -9248,7 +9394,7 @@
             <span class="wf-inset-label">Level:</span>
             <div class="wf-inset-pills" style="flex:1;">
               <button type="button" class="wf-inset-pill ${lvl === 'extreme' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="extreme">Extreme</button>
-              <button type="button" class="wf-inset-pill ${lvl === 'recommended' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="recommended">Balanced (Recommended)</button>
+              <button type="button" class="wf-inset-pill ${lvl === 'recommended' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="recommended">Balanced</button>
               <button type="button" class="wf-inset-pill ${lvl === 'less' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="less">Light</button>
             </div>
           </div>
@@ -9314,33 +9460,21 @@
       return '';
     }
 
-    function getPredictedOutputName() {
-      if (!state.file) return 'workflow_output.pdf';
-      const base = state.file.name.replace(/\.[^/.]+$/, '');
-      const hasZip = state.steps.some((s) => s.type === 'zip');
-      return hasZip ? `${base}_bundle.zip` : `${base}_processed.pdf`;
-    }
-
     function renderProcessingHtml() {
       const stepIdx = Math.max(0, state.currentStepIndex);
       const totalSteps = Math.max(1, state.steps.length);
       const pct = Math.min(100, Math.max(5, state.progressPercent));
 
       return `
-        <div class="wf-processing-card">
-          <div class="wf-proc-ring-box">
-            <div class="wf-proc-ring"></div>
-            <div class="wf-proc-icon">${ICONS.flow}</div>
+        <div class="wf-panel-scrollable" style="justify-content:center;align-items:center;text-align:center;">
+          <div style="width:44px;height:44px;border:3px solid #FDF2F8;border-top-color:#EC4899;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;"></div>
+          <h3 style="font-size:17px;font-weight:700;color:#0F172A;margin:0 0 6px;">Executing Pipeline</h3>
+          <p style="font-size:12px;color:#64748B;margin:0 0 16px;">Step ${stepIdx + 1} of ${totalSteps}: <strong>${esc(state.currentStepName || 'Processing...')}</strong></p>
+          
+          <div style="width:100%;height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;margin-bottom:8px;">
+            <div style="height:100%;background:#EC4899;border-radius:3px;width:${pct}%;transition:width 0.2s ease;"></div>
           </div>
-          <h3 class="wf-proc-title">Executing Workflow Pipeline</h3>
-          <p class="wf-proc-sub">Step ${stepIdx + 1} of ${totalSteps}: ${esc(state.currentStepName || 'Processing...')}</p>
-          <div class="wf-proc-bar-wrap">
-            <div class="wf-proc-bar-fill" style="width: ${pct}%"></div>
-          </div>
-          <div class="wf-proc-telemetry">
-            <span>Client-side execution</span>
-            <span>${pct}% completed</span>
-          </div>
+          <span style="font-size:11px;color:#94A3B8;font-weight:600;">${pct}% completed · In-memory execution</span>
         </div>
       `;
     }
@@ -9357,38 +9491,39 @@
       }
 
       return `
-        <div class="wf-result-card">
-          <div class="wf-res-badge-ok">${ICONS.check}</div>
-          <h3 class="wf-res-title">Workflow Completed!</h3>
-          <p class="wf-res-sub">All ${state.steps.length} pipeline step${state.steps.length === 1 ? '' : 's'} executed seamlessly in-browser.</p>
+        <div class="wf-panel-scrollable" style="justify-content:center;align-items:center;text-align:center;">
+          <div class="wf-res-badge-ok" style="width:48px;height:48px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            ${ICONS.check}
+          </div>
+          <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin:0 0 4px;">Workflow Completed!</h3>
+          <p style="font-size:12px;color:#64748B;margin:0 0 16px;">All ${state.steps.length} pipeline steps executed seamlessly in-browser.</p>
 
-          <div class="wf-res-file-box">
-            <span class="wf-res-pill">READY</span>
-            <div class="wf-res-file-details">
-              <span class="wf-res-filename" title="${esc(state.resultFileName)}">${esc(state.resultFileName)}</span>
-              <span class="wf-res-meta">${bytes(resSize)}${diffText} · Took ${state.durationMs}ms</span>
+          <div style="width:100%;padding:12px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;box-sizing:border-box;margin-bottom:18px;display:flex;flex-direction:column;gap:4px;text-align:left;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(state.resultFileName)}">${esc(state.resultFileName)}</span>
+              <span style="font-size:9.5px;font-weight:800;color:#16A34A;background:#DCFCE7;padding:1px 5px;border-radius:3px;">READY</span>
             </div>
+            <span style="font-size:11px;color:#64748B;">${bytes(resSize)}${diffText} · Took ${state.durationMs}ms</span>
           </div>
 
-          <div class="wf-res-btn-stack">
-            <button type="button" class="wf-dock-cta wf-res-download" id="wf-download-result-btn">
-              ${ICONS.download} Download Result (${bytes(resSize)})
+          <button type="button" class="wf-run-cta" id="wf-download-result-btn" style="margin-bottom:10px;">
+            ${ICONS.download} Download Result (${bytes(resSize)})
+          </button>
+          <div style="display:flex;gap:8px;width:100%;">
+            <button type="button" class="cpdf-benchmark-btn-add" id="wf-restart-btn" style="flex:1;height:34px;justify-content:center;font-size:12px;">
+              🔄 Run Another File
             </button>
-            <div class="wf-res-btn-row">
-              <button type="button" class="wf-ghost-btn" id="wf-restart-btn">🔄 Run Another File</button>
-              <button type="button" class="wf-ghost-btn" id="wf-open-editor-btn">✨ Open in Edit PDF</button>
-            </div>
+            <button type="button" class="cpdf-benchmark-btn-add" id="wf-open-editor-btn" style="flex:1;height:34px;justify-content:center;font-size:12px;">
+              ✨ Open in Edit PDF
+            </button>
           </div>
         </div>
       `;
     }
 
     function wireEvents() {
-      const workbench = container.querySelector('#wf-workbench');
-      if (!workbench) return;
-
       // Recipe Tabs
-      workbench.querySelectorAll('.wf-recipe-tab').forEach((tab) => {
+      container.querySelectorAll('.wf-recipe-tab').forEach((tab) => {
         tab.onclick = () => {
           const recipeKey = tab.dataset.recipe;
           if (RECIPES[recipeKey]) {
@@ -9401,11 +9536,9 @@
         };
       });
 
-      // Hidden File Input & Triggers
-      const hiddenInput = workbench.querySelector('#wf-hidden-file-input');
-      const inputDz = workbench.querySelector('#wf-input-dropzone');
-      const browseBtn = workbench.querySelector('#wf-browse-trigger-btn');
-      const changeBtn = workbench.querySelector('#wf-change-file-btn');
+      // Change File Trigger
+      const hiddenInput = container.querySelector('#wf-hidden-file-input');
+      const changeBtn = container.querySelector('#wf-change-file-btn');
 
       if (hiddenInput) {
         hiddenInput.onchange = (e) => {
@@ -9415,35 +9548,12 @@
         };
       }
 
-      if (browseBtn) {
-        browseBtn.onclick = (e) => {
-          e.stopPropagation();
-          hiddenInput && hiddenInput.click();
-        };
-      }
-
-      if (inputDz) {
-        inputDz.onclick = () => hiddenInput && hiddenInput.click();
-        inputDz.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hiddenInput && hiddenInput.click(); } };
-        
-        // Drag & Drop
-        inputDz.ondragover = (e) => { e.preventDefault(); inputDz.classList.add('is-dragover'); };
-        inputDz.ondragleave = () => { inputDz.classList.remove('is-dragover'); };
-        inputDz.ondrop = (e) => {
-          e.preventDefault();
-          inputDz.classList.remove('is-dragover');
-          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files[0]);
-          }
-        };
-      }
-
       if (changeBtn) {
         changeBtn.onclick = () => hiddenInput && hiddenInput.click();
       }
 
       // Add Step Toggle & Chips
-      const addToggleBtn = workbench.querySelector('#wf-add-toggle-btn');
+      const addToggleBtn = container.querySelector('#wf-add-toggle-btn');
       if (addToggleBtn) {
         addToggleBtn.onclick = () => {
           state.isAddOpen = !state.isAddOpen;
@@ -9451,7 +9561,7 @@
         };
       }
 
-      workbench.querySelectorAll('.wf-pop-chip').forEach((btn) => {
+      container.querySelectorAll('.wf-pop-chip').forEach((btn) => {
         btn.onclick = () => {
           const type = btn.dataset.addType;
           const tmpl = STEP_TEMPLATES[type];
@@ -9471,7 +9581,7 @@
       });
 
       // Move Up / Move Down / Remove
-      studio.querySelectorAll('.wf-btn-up').forEach((btn) => {
+      container.querySelectorAll('.wf-btn-up').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
@@ -9485,7 +9595,7 @@
         };
       });
 
-      studio.querySelectorAll('.wf-btn-down').forEach((btn) => {
+      container.querySelectorAll('.wf-btn-down').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
@@ -9499,7 +9609,7 @@
         };
       });
 
-      studio.querySelectorAll('.wf-btn-remove').forEach((btn) => {
+      container.querySelectorAll('.wf-btn-remove').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
@@ -9510,14 +9620,14 @@
       });
 
       // Config Inputs & Toggles
-      studio.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
+      container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
           if (state.steps[idx]) state.steps[idx].config.text = e.target.value;
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-wm-opacity').forEach((btn) => {
+      container.querySelectorAll('.wf-cfg-wm-opacity').forEach((btn) => {
         btn.onclick = () => {
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
@@ -9527,14 +9637,14 @@
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-protect-pass').forEach((inp) => {
+      container.querySelectorAll('.wf-cfg-protect-pass').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
           if (state.steps[idx]) state.steps[idx].config.password = e.target.value;
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-toggle-eye').forEach((btn) => {
+      container.querySelectorAll('.wf-cfg-toggle-eye').forEach((btn) => {
         btn.onclick = () => {
           const idx = Number(btn.dataset.stepIdx);
           state.stepPassVisibility[idx] = !state.stepPassVisibility[idx];
@@ -9542,7 +9652,7 @@
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-compress-lvl').forEach((btn) => {
+      container.querySelectorAll('.wf-cfg-compress-lvl').forEach((btn) => {
         btn.onclick = () => {
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
@@ -9552,7 +9662,7 @@
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-pagenum-pos').forEach((btn) => {
+      container.querySelectorAll('.wf-cfg-pagenum-pos').forEach((btn) => {
         btn.onclick = () => {
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
@@ -9562,7 +9672,7 @@
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-rot-deg').forEach((btn) => {
+      container.querySelectorAll('.wf-cfg-rot-deg').forEach((btn) => {
         btn.onclick = () => {
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
@@ -9572,14 +9682,14 @@
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-extract-range').forEach((inp) => {
+      container.querySelectorAll('.wf-cfg-extract-range').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
           if (state.steps[idx]) state.steps[idx].config.range = e.target.value;
         };
       });
 
-      studio.querySelectorAll('.wf-cfg-zip-name').forEach((inp) => {
+      container.querySelectorAll('.wf-cfg-zip-name').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
           if (state.steps[idx]) state.steps[idx].config.zipName = e.target.value;
@@ -9587,13 +9697,13 @@
       });
 
       // Run Pipeline CTA
-      const runBtn = studio.querySelector('#wf-run-pipeline-btn');
+      const runBtn = container.querySelector('#wf-run-pipeline-btn');
       if (runBtn) {
         runBtn.onclick = () => runPipeline();
       }
 
       // Result Actions
-      const dlBtn = studio.querySelector('#wf-download-result-btn');
+      const dlBtn = container.querySelector('#wf-download-result-btn');
       if (dlBtn && state.resultBlob) {
         dlBtn.onclick = () => {
           const url = URL.createObjectURL(state.resultBlob);
@@ -9606,7 +9716,7 @@
         };
       }
 
-      const restartBtn = studio.querySelector('#wf-restart-btn');
+      const restartBtn = container.querySelector('#wf-restart-btn');
       if (restartBtn) {
         restartBtn.onclick = () => {
           state.resultBlob = null;
@@ -9615,7 +9725,7 @@
         };
       }
 
-      const openEditorBtn = studio.querySelector('#wf-open-editor-btn');
+      const openEditorBtn = container.querySelector('#wf-open-editor-btn');
       if (openEditorBtn && state.resultBlob) {
         openEditorBtn.onclick = () => {
           try {

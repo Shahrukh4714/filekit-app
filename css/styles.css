@@ -17321,93 +17321,176 @@ div.app-main-content,
    Clean · Segmented · Central Spine · Integrated Cards · Zero Clutter
 ═══════════════════════════════════════════════════════════════════ */
 
-#app-workspace-tool-view #app-tool-stage.wf-root,
-.app-stage-container.wf-root,
-.app-stage-container:has(.wf-workbench),
-.wf-root {
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
+/* ═══════════════════════════════════════════════════════════════════
+   Workflow Builder Studio — Native Benchmark Workstation Architecture
+   Dual-Stage Layout: Document Canvas (Left) + Studio Panel (Right)
+   Exact match to Compress & Protect
+═══════════════════════════════════════════════════════════════════ */
+
+.app-stage-container:has(.wf-workstation-body),
+.app-stage-container:has(.wf-benchmark-workstation),
+.app-stage-container.wf-stage-active,
+.app-stage-container:has(.wf-root),
+.app-stage-container.wf-root {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
   height: 100% !important;
-  min-height: 100% !important;
-  box-sizing: border-box !important;
-  background: #F8FAFC !important;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  padding: 10px 16px 20px !important;
-  align-items: center !important;
-  justify-content: center !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  overflow: hidden !important;
 }
 
-.wf-workbench {
+.wf-root {
   width: 100% !important;
-  max-width: 540px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  box-sizing: border-box !important;
-  margin: 0 auto !important;
-  flex-shrink: 0 !important;
+  background: #FFFFFF !important;
 }
 
-/* Header & Recipe Switcher */
-.wf-recipe-header {
-  padding: 8px 14px 7px !important;
-  border-bottom: 1px solid #F1F5F9 !important;
-  background: #FFFFFF !important;
+.wf-benchmark-workstation {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 420px !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 900px) {
+  .wf-benchmark-workstation {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr 1fr !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* Left Canvas Stage (Identical to Compress & Protect) */
+.wf-benchmark-stage {
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
-  flex-shrink: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 !important;
+  background: #F8FAFC !important;
+  position: relative !important;
+  overflow: hidden !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.wf-recipe-title-row {
+.wf-benchmark-paper {
+  background: #FFFFFF !important;
+  border-radius: 4px !important;
+  box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: auto !important;
+  max-width: 480px !important;
+  max-height: calc(100vh - 210px) !important;
+  overflow: hidden !important;
+}
+
+.wf-benchmark-paper canvas,
+.wf-benchmark-paper img {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: calc(100vh - 210px) !important;
+  object-fit: contain !important;
+}
+
+/* Bottom File Info Bar */
+.wf-benchmark-fileinfo-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  background: #FFFFFF !important;
+  border-top: 1px solid #E2E8F0 !important;
+  padding: 0 18px !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.02) !important;
+  margin-top: auto !important;
+  z-index: 10 !important;
 }
 
-.wf-recipe-title {
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #0F172A !important;
+.wf-benchmark-fileinfo-text {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #4B4B4B !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Right Studio Panel */
+.wf-benchmark-panel {
+  background: #FFFFFF !important;
+  border-left: 1px solid #E5EAF2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.wf-panel-scrollable {
+  flex: 1 1 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 20px 22px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.wf-benchmark-icon {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  background: #EC4899 !important;
+  color: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  letter-spacing: -0.02em !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
-.wf-recipe-title svg {
-  color: #EC4899 !important;
-  width: 15px !important;
-  height: 15px !important;
-}
-
+/* Recipe Nav Tabs */
 .wf-recipe-nav {
   display: flex !important;
   align-items: center !important;
-  gap: 2px !important;
+  gap: 3px !important;
   background: #F1F5F9 !important;
-  padding: 2.5px !important;
-  border-radius: 6px !important;
+  padding: 3px !important;
+  border-radius: 8px !important;
+  flex-shrink: 0 !important;
 }
 
 .wf-recipe-tab {
   flex: 1 1 auto !important;
   text-align: center !important;
-  padding: 4px 7px !important;
-  font-size: 10.5px !important;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
   color: #64748B !important;
   background: transparent !important;
   border: none !important;
-  border-radius: 5px !important;
+  border-radius: 6px !important;
   cursor: pointer !important;
   transition: all 0.14s cubic-bezier(0.23, 1, 0.32, 1) !important;
   white-space: nowrap !important;
@@ -17425,117 +17508,22 @@ div.app-main-content,
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Pipeline Track Body with Central Spine */
-.wf-track-stage {
-  padding: 8px 14px !important;
+/* Step Nodes Stack */
+.wf-step-node {
+  padding: 8px 12px !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: center !important;
-  position: relative !important;
-  gap: 0 !important;
-  overflow-y: auto !important;
-  max-height: calc(100vh - 170px) !important;
-}
-
-/* Spine connector line */
-.wf-spine-line {
-  width: 1.5px !important;
-  height: 6px !important;
-  background: #E2E8F0 !important;
-  margin: 0 auto !important;
-  flex-shrink: 0 !important;
-}
-
-/* Node Cards */
-.wf-node-card {
-  width: 100% !important;
+  gap: 6px !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 8px !important;
   box-sizing: border-box !important;
   transition: all 0.13s ease !important;
-  position: relative !important;
-  flex-shrink: 0 !important;
 }
 
-.wf-node-card:hover {
+.wf-step-node:hover {
   border-color: #CBD5E1 !important;
-  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.04) !important;
-}
-
-/* IN Node */
-.wf-node-in {
-  padding: 5px 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  background: #FAFAFA !important;
-  border: 1.5px dashed #CBD5E1 !important;
-  cursor: pointer !important;
-  min-height: 34px !important;
-}
-
-.wf-node-in:hover {
-  border-color: #EC4899 !important;
-  background: #FDF2F8 !important;
-}
-
-.wf-node-in.is-filled {
-  border-style: solid !important;
-  border-color: #E2E8F0 !important;
-  background: #FFFFFF !important;
-}
-
-.wf-node-in.is-filled:hover {
-  border-color: #CBD5E1 !important;
-}
-
-.wf-node-badge {
-  font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace !important;
-  font-size: 9px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.05em !important;
-  padding: 2px 5px !important;
-  border-radius: 4px !important;
-  background: #0F172A !important;
-  color: #FFFFFF !important;
-  flex-shrink: 0 !important;
-}
-
-.wf-node-badge.is-in { background: #EC4899 !important; }
-.wf-node-badge.is-out { background: #16A34A !important; }
-
-.wf-node-info {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 1px !important;
-}
-
-.wf-node-title {
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  color: #0F172A !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  line-height: 1.2 !important;
-}
-
-.wf-node-sub {
-  font-size: 10px !important;
-  color: #64748B !important;
-  line-height: 1.2 !important;
-}
-
-/* Step Node (Unified Seamless Surface) */
-.wf-step-node {
-  padding: 5px 10px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  background: #FFFFFF !important;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.04) !important;
 }
 
 .wf-step-main-row {
@@ -17547,19 +17535,19 @@ div.app-main-content,
 
 .wf-step-num {
   font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace !important;
-  font-size: 10px !important;
+  font-size: 10.5px !important;
   font-weight: 700 !important;
   color: #64748B !important;
   background: #F1F5F9 !important;
-  padding: 1px 5px !important;
-  border-radius: 3px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
   flex-shrink: 0 !important;
 }
 
 .wf-step-icon-wrap {
-  width: 22px !important;
-  height: 22px !important;
-  border-radius: 5px !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 6px !important;
   background: #FDF2F8 !important;
   color: #EC4899 !important;
   display: flex !important;
@@ -17568,13 +17556,8 @@ div.app-main-content,
   flex-shrink: 0 !important;
 }
 
-.wf-step-icon-wrap svg {
-  width: 14px !important;
-  height: 14px !important;
-}
-
 .wf-step-name {
-  font-size: 12px !important;
+  font-size: 12.5px !important;
   font-weight: 600 !important;
   color: #0F172A !important;
   flex: 1 1 0 !important;
@@ -17589,8 +17572,8 @@ div.app-main-content,
 }
 
 .wf-icon-btn {
-  width: 22px !important;
-  height: 22px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 4px !important;
   border: 1px solid transparent !important;
   background: transparent !important;
@@ -17601,11 +17584,6 @@ div.app-main-content,
   justify-content: center !important;
   padding: 0 !important;
   transition: all 0.11s ease !important;
-}
-
-.wf-icon-btn svg {
-  width: 11px !important;
-  height: 11px !important;
 }
 
 .wf-icon-btn:hover:not(:disabled) {
@@ -17621,26 +17599,22 @@ div.app-main-content,
 }
 
 .wf-icon-btn:active:not(:disabled) { transform: scale(0.95) !important; }
-
-.wf-icon-btn:disabled {
-  opacity: 0.25 !important;
-  cursor: not-allowed !important;
-}
+.wf-icon-btn:disabled { opacity: 0.25 !important; cursor: not-allowed !important; }
 
 /* Inset Config Bar */
 .wf-step-inset-config {
   background: #F8FAFC !important;
   border: 1px solid #F1F5F9 !important;
-  border-radius: 5px !important;
-  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  padding: 5px 8px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  min-height: 24px !important;
+  gap: 8px !important;
+  min-height: 26px !important;
 }
 
 .wf-inset-label {
-  font-size: 10px !important;
+  font-size: 10.5px !important;
   font-weight: 600 !important;
   color: #64748B !important;
   flex-shrink: 0 !important;
@@ -17648,12 +17622,12 @@ div.app-main-content,
 
 .wf-inset-input {
   flex: 1 1 0 !important;
-  height: 20px !important;
+  height: 22px !important;
   background: #FFFFFF !important;
   border: 1px solid #CBD5E1 !important;
   border-radius: 4px !important;
-  padding: 0 6px !important;
-  font-size: 10.5px !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
   color: #0F172A !important;
   outline: none !important;
   font-family: inherit !important;
@@ -17671,8 +17645,8 @@ div.app-main-content,
 }
 
 .wf-inset-pill {
-  padding: 2px 6px !important;
-  font-size: 9.5px !important;
+  padding: 2.5px 7px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   border: 1px solid #E2E8F0 !important;
   background: #FFFFFF !important;
@@ -17680,9 +17654,6 @@ div.app-main-content,
   border-radius: 4px !important;
   cursor: pointer !important;
   transition: all 0.11s ease !important;
-  height: 19px !important;
-  display: inline-flex !important;
-  align-items: center !important;
 }
 
 .wf-inset-pill:hover {
@@ -17696,38 +17667,26 @@ div.app-main-content,
   color: #FFFFFF !important;
 }
 
-/* OUT Node */
-.wf-node-out {
-  padding: 5px 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  background: #F0FDF4 !important;
-  border: 1px solid #DCFCE7 !important;
-  min-height: 34px !important;
-}
-
 /* Add Step Section */
 .wf-add-section {
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  padding: 1px 0 !important;
-  flex-shrink: 0 !important;
+  padding: 2px 0 !important;
 }
 
 .wf-add-trigger-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  padding: 3px 10px !important;
-  font-size: 10px !important;
+  gap: 6px !important;
+  padding: 5px 14px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
   color: #475569 !important;
   background: #F8FAFC !important;
   border: 1px dashed #CBD5E1 !important;
-  border-radius: 16px !important;
+  border-radius: 20px !important;
   cursor: pointer !important;
   transition: all 0.13s ease !important;
 }
@@ -17741,13 +17700,13 @@ div.app-main-content,
 .wf-add-popover {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
-  gap: 4px !important;
+  gap: 5px !important;
   width: 100% !important;
   background: #F8FAFC !important;
   border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  padding: 6px !important;
-  margin-top: 6px !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  margin-top: 8px !important;
   box-sizing: border-box !important;
 }
 
@@ -17755,8 +17714,8 @@ div.app-main-content,
   display: flex !important;
   align-items: center !important;
   gap: 5px !important;
-  padding: 4px 7px !important;
-  font-size: 10px !important;
+  padding: 5px 8px !important;
+  font-size: 10.5px !important;
   font-weight: 600 !important;
   color: #334155 !important;
   background: #FFFFFF !important;
@@ -17775,49 +17734,62 @@ div.app-main-content,
 
 .wf-pop-chip svg {
   color: #EC4899 !important;
-  width: 13px !important;
-  height: 13px !important;
 }
 
-/* Action button on IN row */
-.wf-row-action-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 2.5px 8px !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
-  color: #475569 !important;
-  background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 5px !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  transition: all 0.12s ease !important;
-}
-
-.wf-row-action-btn:hover {
-  background: #F8FAFC !important;
-  border-color: #94A3B8 !important;
-  color: #0F172A !important;
-}
-
-.wf-row-action-btn.is-primary {
-  background: #0F172A !important;
-  border-color: #0F172A !important;
-  color: #FFFFFF !important;
-}
-
-.wf-row-action-btn.is-primary:hover {
-  background: #1E293B !important;
-}
-
-.wf-row-action-btn:active { transform: scale(0.97) !important; }
-
-/* Bottom Command Dock */
-.wf-command-dock {
-  padding: 8px 14px !important;
+/* Pinned Footer Toolbar */
+.wf-panel-footer {
+  padding: 14px 20px !important;
   border-top: 1px solid #F1F5F9 !important;
+  background: #FFFFFF !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.wf-dock-meta {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  color: #64748B !important;
+}
+
+.wf-run-cta {
+  width: 100% !important;
+  height: 40px !important;
+  background: #EC4899 !important;
+  border: 1px solid #EC4899 !important;
+  color: #FFFFFF !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3) !important;
+  transition: all 0.14s ease !important;
+}
+
+.wf-run-cta:hover {
+  background: #DB2777 !important;
+  border-color: #DB2777 !important;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.wf-run-cta:active {
+  transform: scale(0.97) !important;
+}
+
+.wf-run-cta:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
   background: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
