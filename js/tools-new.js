@@ -9048,6 +9048,7 @@
       activeRecipe: 'confidential',
       steps: JSON.parse(JSON.stringify(RECIPES.confidential)),
       stepPassVisibility: {},
+      isAddOpen: false,
       isProcessing: false,
       progressPercent: 0,
       currentStepIndex: -1,
@@ -9079,16 +9080,20 @@
 
     function render() {
       container.innerHTML = `
-        <div class="wf-single-studio" id="wf-studio">
-          <header class="wf-studio-header">
-            <div class="wf-studio-badge">
-              ${ICONS.flow}
-              <span>Workflow Builder</span>
+        <div class="wf-workbench" id="wf-workbench">
+          <!-- Pinned Header with Recipe Segment Control -->
+          <header class="wf-recipe-header">
+            <div class="wf-recipe-title-row">
+              <div class="wf-recipe-title">
+                ${ICONS.flow}
+                <span>Workflow Recipes</span>
+              </div>
+              <span style="font-size:11.5px;color:#64748B;font-weight:500;">Batch client automations</span>
             </div>
             <nav class="wf-recipe-nav" role="tablist" aria-label="Workflow Recipes">
               <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
               <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign & Compress</button>
-              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean & Grayscale</button>
+              <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean & Gray</button>
               <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish & ZIP</button>
               <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'custom' ? 'is-active' : ''}" data-recipe="custom">Custom</button>
             </nav>
@@ -9096,9 +9101,8 @@
 
           <input type="file" id="wf-hidden-file-input" style="display:none" accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp">
 
-          <div class="wf-track-wrap" id="wf-track-wrap">
-            ${state.isProcessing ? renderProcessingHtml() : (state.resultBlob ? renderResultHtml() : renderPipelineHtml())}
-          </div>
+          <!-- Dynamic Stage Body (Processing / Result / Pipeline) -->
+          ${state.isProcessing ? renderProcessingHtml() : (state.resultBlob ? renderResultHtml() : renderPipelineHtml())}
         </div>
       `;
 
@@ -9117,19 +9121,13 @@
         const isLast = idx === stepCount - 1;
 
         stepsHtml += `
-          <div class="wf-hairline-connector">
-            <div class="wf-hairline-line"></div>
-            <div class="wf-hairline-arrow">▾</div>
-          </div>
-          <div class="wf-step-block" data-step-idx="${idx}">
-            <div class="wf-flat-row wf-step-row wf-type-${step.catType}">
-              <div class="wf-row-idx">${stepNum}</div>
-              <div class="wf-row-icon">${iconSvg}</div>
-              <div class="wf-row-body">
-                <span class="wf-row-title">${esc(step.name)}</span>
-                <span class="wf-row-sub">${esc(getStepSummary(step))}</span>
-              </div>
-              <div class="wf-row-actions">
+          <div class="wf-spine-line"></div>
+          <div class="wf-node-card wf-step-node" data-step-idx="${idx}">
+            <div class="wf-step-main-row">
+              <div class="wf-step-num">${stepNum}</div>
+              <div class="wf-step-icon-wrap">${iconSvg}</div>
+              <div class="wf-step-name">${esc(step.name)}</div>
+              <div class="wf-step-actions">
                 <button type="button" class="wf-icon-btn wf-btn-up" data-step-idx="${idx}" title="Move Up" ${isFirst ? 'disabled' : ''}>${ICONS.up}</button>
                 <button type="button" class="wf-icon-btn wf-btn-down" data-step-idx="${idx}" title="Move Down" ${isLast ? 'disabled' : ''}>${ICONS.down}</button>
                 <button type="button" class="wf-icon-btn is-danger wf-btn-remove" data-step-idx="${idx}" title="Remove Step">${ICONS.trash}</button>
@@ -9143,97 +9141,76 @@
       const outName = getPredictedOutputName();
 
       return `
-        <div class="wf-pipeline-track">
+        <div class="wf-track-stage">
           <!-- Node 0: IN Document -->
           ${hasFile ? `
-            <div class="wf-flat-row wf-doc-row">
-              <div class="wf-row-idx">IN</div>
-              <div class="wf-row-icon is-pink">${ICONS.doc}</div>
-              <div class="wf-row-body">
-                <span class="wf-row-title" title="${esc(state.file.name)}">${esc(state.file.name)}</span>
-                <span class="wf-row-sub">${bytes(state.file.size)} · Ready</span>
+            <div class="wf-node-card wf-node-in is-filled">
+              <div class="wf-node-badge is-in">IN</div>
+              <div class="wf-node-info">
+                <div class="wf-node-title" title="${esc(state.file.name)}">${esc(state.file.name)}</div>
+                <div class="wf-node-sub">${bytes(state.file.size)} · Ready for pipeline</div>
               </div>
-              <div class="wf-row-actions">
-                <button type="button" class="wf-row-action-btn" id="wf-change-file-btn">Change</button>
-              </div>
+              <button type="button" class="wf-row-action-btn" id="wf-change-file-btn">Change</button>
             </div>
           ` : `
-            <div class="wf-flat-row wf-input-drop-row" id="wf-input-dropzone" tabindex="0" role="button" aria-label="Choose or drop input file">
-              <div class="wf-row-idx">IN</div>
-              <div class="wf-row-icon is-pink">${ICONS.upload}</div>
-              <div class="wf-row-body">
-                <span class="wf-row-title">Choose or drop input file</span>
-                <span class="wf-row-sub">PDF or Image supported · 100% on-device</span>
+            <div class="wf-node-card wf-node-in" id="wf-input-dropzone" tabindex="0" role="button" aria-label="Select or drop input file">
+              <div class="wf-node-badge is-in">IN</div>
+              <div class="wf-node-info">
+                <div class="wf-node-title">Choose or drop input file</div>
+                <div class="wf-node-sub">PDF or image supported · 100% on-device</div>
               </div>
-              <div class="wf-row-actions">
-                <button type="button" class="wf-row-action-btn is-primary" id="wf-browse-trigger-btn">Browse</button>
-              </div>
+              <button type="button" class="wf-row-action-btn is-primary" id="wf-browse-trigger-btn">Browse</button>
             </div>
           `}
 
           <!-- Dynamic Steps Chain -->
           ${stepsHtml}
 
-          <!-- Add Step Strip -->
-          <div class="wf-hairline-connector">
-            <div class="wf-hairline-line"></div>
-            <div class="wf-hairline-arrow">▾</div>
-          </div>
-          <div class="wf-add-block">
-            <div class="wf-add-strip">
-              <span class="wf-add-label">+ Add Step:</span>
-              <button type="button" class="wf-add-btn" data-add-type="watermark">+ Watermark</button>
-              <button type="button" class="wf-add-btn" data-add-type="protect">+ Protect</button>
-              <button type="button" class="wf-add-btn" data-add-type="compress">+ Compress</button>
-              <button type="button" class="wf-add-btn" data-add-type="page_numbers">+ Page #</button>
-              <button type="button" class="wf-add-btn" data-add-type="grayscale">+ Grayscale</button>
-              <button type="button" class="wf-add-btn" data-add-type="rotate">+ Rotate</button>
-              <button type="button" class="wf-add-btn" data-add-type="flatten">+ Flatten</button>
-              <button type="button" class="wf-add-btn" data-add-type="extract">+ Extract</button>
-              <button type="button" class="wf-add-btn" data-add-type="zip">+ ZIP</button>
+          <!-- Add Step Action -->
+          <div class="wf-spine-line"></div>
+          <div class="wf-add-section">
+            <button type="button" class="wf-add-trigger-btn" id="wf-add-toggle-btn">
+              <span>+ Add Step to Pipeline</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${state.isAddOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}"/></svg>
+            </button>
+            <div class="wf-add-popover" id="wf-add-popover" style="display:${state.isAddOpen ? 'grid' : 'none'};">
+              <button type="button" class="wf-pop-chip" data-add-type="watermark">${ICONS.watermark} Watermark</button>
+              <button type="button" class="wf-pop-chip" data-add-type="protect">${ICONS.protect} Protect</button>
+              <button type="button" class="wf-pop-chip" data-add-type="compress">${ICONS.compress} Compress</button>
+              <button type="button" class="wf-pop-chip" data-add-type="page_numbers">${ICONS.page_numbers} Page #</button>
+              <button type="button" class="wf-pop-chip" data-add-type="grayscale">${ICONS.grayscale} Grayscale</button>
+              <button type="button" class="wf-pop-chip" data-add-type="rotate">${ICONS.rotate} Rotate</button>
+              <button type="button" class="wf-pop-chip" data-add-type="flatten">${ICONS.flatten} Flatten</button>
+              <button type="button" class="wf-pop-chip" data-add-type="extract">${ICONS.extract} Extract</button>
+              <button type="button" class="wf-pop-chip" data-add-type="zip">${ICONS.zip} ZIP Bundle</button>
             </div>
           </div>
 
           <!-- Node Final: OUT Document -->
-          <div class="wf-hairline-connector">
-            <div class="wf-hairline-line"></div>
-            <div class="wf-hairline-arrow">▾</div>
-          </div>
-          <div class="wf-flat-row wf-out-row">
-            <div class="wf-row-idx">OUT</div>
-            <div class="wf-row-icon is-green">${ICONS.check}</div>
-            <div class="wf-row-body">
-              <span class="wf-row-title">${esc(outName)}</span>
-              <span class="wf-row-sub">Final chained output · ${stepCount} operations</span>
+          <div class="wf-spine-line"></div>
+          <div class="wf-node-card wf-node-out">
+            <div class="wf-node-badge is-out">OUT</div>
+            <div class="wf-node-info">
+              <div class="wf-node-title">${esc(outName)}</div>
+              <div class="wf-node-sub">${stepCount} step operations chained</div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:#16A34A;display:flex;align-items:center;gap:4px;">
+              ${ICONS.check} Ready
             </div>
           </div>
         </div>
 
-        <!-- Bottom Command Bar -->
-        <footer class="wf-bottom-bar">
-          <div class="wf-bottom-meta">
-            <span class="wf-telemetry-badge">⚡ 100% On-Device</span>
-            <span class="wf-telemetry-dot">•</span>
-            <span class="wf-telemetry-steps">${stepCount} Step${stepCount === 1 ? '' : 's'} in pipeline</span>
+        <!-- Pinned Command Dock -->
+        <footer class="wf-command-dock">
+          <div class="wf-dock-meta">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span><strong>100% Client-Side</strong> · In-memory execution</span>
           </div>
-          <button type="button" class="wf-primary-cta" id="wf-run-pipeline-btn" ${!hasFile || stepCount === 0 ? 'disabled style="opacity:0.45;cursor:not-allowed;"' : ''}>
+          <button type="button" class="wf-dock-cta" id="wf-run-pipeline-btn" ${!hasFile || stepCount === 0 ? 'disabled style="opacity:0.45;cursor:not-allowed;"' : ''}>
             Run Pipeline (${stepCount} Step${stepCount === 1 ? '' : 's'}) →
           </button>
         </footer>
       `;
-    }
-
-    function getStepSummary(step) {
-      if (step.type === 'watermark') return `Text: "${step.config.text || 'CONFIDENTIAL'}" · Opacity ${Math.round((step.config.opacity ?? 0.35) * 100)}%`;
-      if (step.type === 'protect') return step.config.password ? `Encrypted with custom password` : `Awaiting password entry`;
-      if (step.type === 'compress') return `Optimization tier: ${step.config.level || 'recommended'}`;
-      if (step.type === 'page_numbers') return `Position: ${step.config.position || 'bottom-center'}`;
-      if (step.type === 'rotate') return `Rotation angle: +${step.config.degrees || 90}°`;
-      if (step.type === 'extract') return `Pages: ${step.config.range || 'All'}`;
-      if (step.type === 'grayscale') return `High-contrast monochrome conversion`;
-      if (step.type === 'flatten') return `Flatten form fields & annotation layers`;
-      if (step.type === 'zip') return `ZIP bundle: ${step.config.zipName || 'archive.zip'}`;
-      return 'Pipeline operation';
     }
 
     function renderStepConfigStrip(step, idx) {
@@ -9241,14 +9218,12 @@
         const textVal = step.config.text ?? 'CONFIDENTIAL';
         const isSubtle = (step.config.opacity ?? 0.35) < 0.5;
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Text:</span>
-            <div class="wf-config-input-wrap">
-              <input type="text" class="wf-config-input wf-cfg-watermark-text" data-step-idx="${idx}" value="${esc(textVal)}" placeholder="Watermark text">
-            </div>
-            <div class="wf-config-btn-group">
-              <button type="button" class="wf-config-btn ${isSubtle ? 'is-active' : ''} wf-cfg-wm-opacity" data-step-idx="${idx}" data-val="0.35">Subtle</button>
-              <button type="button" class="wf-config-btn ${!isSubtle ? 'is-active' : ''} wf-cfg-wm-opacity" data-step-idx="${idx}" data-val="0.75">Bold</button>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Text:</span>
+            <input type="text" class="wf-inset-input wf-cfg-watermark-text" data-step-idx="${idx}" value="${esc(textVal)}" placeholder="Watermark text">
+            <div class="wf-inset-pills">
+              <button type="button" class="wf-inset-pill ${isSubtle ? 'is-active' : ''} wf-cfg-wm-opacity" data-step-idx="${idx}" data-val="0.35">Subtle (35%)</button>
+              <button type="button" class="wf-inset-pill ${!isSubtle ? 'is-active' : ''} wf-cfg-wm-opacity" data-step-idx="${idx}" data-val="0.75">Bold (75%)</button>
             </div>
           </div>
         `;
@@ -9258,12 +9233,10 @@
         const isVisible = !!state.stepPassVisibility[idx];
         const passVal = step.config.password || '';
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Password:</span>
-            <div class="wf-config-input-wrap">
-              <input type="${isVisible ? 'text' : 'password'}" class="wf-config-input wf-cfg-protect-pass" data-step-idx="${idx}" value="${esc(passVal)}" placeholder="Enter security password">
-              <button type="button" class="wf-config-eye wf-cfg-toggle-eye" data-step-idx="${idx}" title="Toggle password visibility">${ICONS.eye}</button>
-            </div>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Password:</span>
+            <input type="${isVisible ? 'text' : 'password'}" class="wf-inset-input wf-cfg-protect-pass" data-step-idx="${idx}" value="${esc(passVal)}" placeholder="Enter security password">
+            <button type="button" class="wf-icon-btn wf-cfg-toggle-eye" data-step-idx="${idx}" title="Toggle password visibility">${ICONS.eye}</button>
           </div>
         `;
       }
@@ -9271,12 +9244,12 @@
       if (step.type === 'compress') {
         const lvl = step.config.level || 'recommended';
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Level:</span>
-            <div class="wf-config-btn-group">
-              <button type="button" class="wf-config-btn ${lvl === 'extreme' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="extreme">Extreme</button>
-              <button type="button" class="wf-config-btn ${lvl === 'recommended' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="recommended">Recommended</button>
-              <button type="button" class="wf-config-btn ${lvl === 'less' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="less">Low</button>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Level:</span>
+            <div class="wf-inset-pills" style="flex:1;">
+              <button type="button" class="wf-inset-pill ${lvl === 'extreme' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="extreme">Extreme</button>
+              <button type="button" class="wf-inset-pill ${lvl === 'recommended' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="recommended">Balanced (Recommended)</button>
+              <button type="button" class="wf-inset-pill ${lvl === 'less' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="less">Light</button>
             </div>
           </div>
         `;
@@ -9285,12 +9258,12 @@
       if (step.type === 'page_numbers') {
         const pos = step.config.position || 'bottom-center';
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Placement:</span>
-            <div class="wf-config-btn-group">
-              <button type="button" class="wf-config-btn ${pos === 'bottom-center' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="bottom-center">Bottom Center</button>
-              <button type="button" class="wf-config-btn ${pos === 'bottom-right' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="bottom-right">Bottom Right</button>
-              <button type="button" class="wf-config-btn ${pos === 'top-right' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="top-right">Top Right</button>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Placement:</span>
+            <div class="wf-inset-pills" style="flex:1;">
+              <button type="button" class="wf-inset-pill ${pos === 'bottom-center' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="bottom-center">Bottom Center</button>
+              <button type="button" class="wf-inset-pill ${pos === 'bottom-right' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="bottom-right">Bottom Right</button>
+              <button type="button" class="wf-inset-pill ${pos === 'top-right' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="top-right">Top Right</button>
             </div>
           </div>
         `;
@@ -9299,12 +9272,12 @@
       if (step.type === 'rotate') {
         const deg = Number(step.config.degrees || 90);
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Rotation:</span>
-            <div class="wf-config-btn-group">
-              <button type="button" class="wf-config-btn ${deg === 90 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="90">90° CW</button>
-              <button type="button" class="wf-config-btn ${deg === 180 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="180">180°</button>
-              <button type="button" class="wf-config-btn ${deg === 270 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="270">270° CCW</button>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Rotation:</span>
+            <div class="wf-inset-pills" style="flex:1;">
+              <button type="button" class="wf-inset-pill ${deg === 90 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="90">90° CW</button>
+              <button type="button" class="wf-inset-pill ${deg === 180 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="180">180°</button>
+              <button type="button" class="wf-inset-pill ${deg === 270 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="270">270° CCW</button>
             </div>
           </div>
         `;
@@ -9313,11 +9286,9 @@
       if (step.type === 'extract') {
         const rangeVal = step.config.range || '1-5';
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Pages:</span>
-            <div class="wf-config-input-wrap">
-              <input type="text" class="wf-config-input wf-cfg-extract-range" data-step-idx="${idx}" value="${esc(rangeVal)}" placeholder="e.g. 1-3, 5, 8">
-            </div>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Pages:</span>
+            <input type="text" class="wf-inset-input wf-cfg-extract-range" data-step-idx="${idx}" value="${esc(rangeVal)}" placeholder="e.g. 1-3, 5, 8">
           </div>
         `;
       }
@@ -9325,22 +9296,17 @@
       if (step.type === 'zip') {
         const zName = step.config.zipName || 'workflow_output.zip';
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Archive:</span>
-            <div class="wf-config-input-wrap">
-              <input type="text" class="wf-config-input wf-cfg-zip-name" data-step-idx="${idx}" value="${esc(zName)}" placeholder="output.zip">
-            </div>
+          <div class="wf-step-inset-config">
+            <span class="wf-inset-label">Archive:</span>
+            <input type="text" class="wf-inset-input wf-cfg-zip-name" data-step-idx="${idx}" value="${esc(zName)}" placeholder="output.zip">
           </div>
         `;
       }
 
       if (step.type === 'grayscale' || step.type === 'flatten') {
         return `
-          <div class="wf-inline-config-strip">
-            <span class="wf-config-label">Mode:</span>
-            <div class="wf-config-btn-group">
-              <button type="button" class="wf-config-btn is-active" style="pointer-events:none;">Automatic On-Device</button>
-            </div>
+          <div class="wf-step-inset-config">
+            <span style="font-size:11px;color:#64748B;">⚡ Automatic on-device execution with zero configuration</span>
           </div>
         `;
       }
@@ -9405,7 +9371,7 @@
           </div>
 
           <div class="wf-res-btn-stack">
-            <button type="button" class="wf-primary-cta wf-res-download" id="wf-download-result-btn">
+            <button type="button" class="wf-dock-cta wf-res-download" id="wf-download-result-btn">
               ${ICONS.download} Download Result (${bytes(resSize)})
             </button>
             <div class="wf-res-btn-row">
@@ -9418,32 +9384,41 @@
     }
 
     function wireEvents() {
-      const studio = container.querySelector('#wf-studio');
-      if (!studio) return;
+      const workbench = container.querySelector('#wf-workbench');
+      if (!workbench) return;
 
       // Recipe Tabs
-      studio.querySelectorAll('.wf-recipe-tab').forEach((tab) => {
+      workbench.querySelectorAll('.wf-recipe-tab').forEach((tab) => {
         tab.onclick = () => {
           const recipeKey = tab.dataset.recipe;
           if (RECIPES[recipeKey]) {
             state.activeRecipe = recipeKey;
             state.steps = JSON.parse(JSON.stringify(RECIPES[recipeKey]));
             state.resultBlob = null;
+            state.isAddOpen = false;
             render();
           }
         };
       });
 
       // Hidden File Input & Triggers
-      const hiddenInput = studio.querySelector('#wf-hidden-file-input');
-      const inputDz = studio.querySelector('#wf-input-dropzone');
-      const changeBtn = studio.querySelector('#wf-change-file-btn');
+      const hiddenInput = workbench.querySelector('#wf-hidden-file-input');
+      const inputDz = workbench.querySelector('#wf-input-dropzone');
+      const browseBtn = workbench.querySelector('#wf-browse-trigger-btn');
+      const changeBtn = workbench.querySelector('#wf-change-file-btn');
 
       if (hiddenInput) {
         hiddenInput.onchange = (e) => {
           if (e.target.files && e.target.files.length > 0) {
             handleFileSelect(e.target.files[0]);
           }
+        };
+      }
+
+      if (browseBtn) {
+        browseBtn.onclick = (e) => {
+          e.stopPropagation();
+          hiddenInput && hiddenInput.click();
         };
       }
 
@@ -9467,8 +9442,16 @@
         changeBtn.onclick = () => hiddenInput && hiddenInput.click();
       }
 
-      // Add Step Chips
-      studio.querySelectorAll('.wf-add-btn').forEach((btn) => {
+      // Add Step Toggle & Chips
+      const addToggleBtn = workbench.querySelector('#wf-add-toggle-btn');
+      if (addToggleBtn) {
+        addToggleBtn.onclick = () => {
+          state.isAddOpen = !state.isAddOpen;
+          render();
+        };
+      }
+
+      workbench.querySelectorAll('.wf-pop-chip').forEach((btn) => {
         btn.onclick = () => {
           const type = btn.dataset.addType;
           const tmpl = STEP_TEMPLATES[type];
@@ -9480,6 +9463,7 @@
               config: tmpl.defaultConfig()
             });
             state.activeRecipe = 'custom';
+            state.isAddOpen = false;
             state.resultBlob = null;
             render();
           }
