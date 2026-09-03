@@ -8980,11 +8980,27 @@
   ════════════════════════════════════════════════════════════════ */
   window.__ffMountWorkflow = function mountWorkflow(container, initialTool) {
     container.innerHTML = '';
-    container.className = 'wf-root app-stage-container';
+    container.className = 'wf-layout-root';
+    const stageEl = container.closest('.app-stage-container');
+    if (stageEl) {
+      stageEl.classList.add('wf-stage-active');
+    }
+
+    function formatBytes(b) {
+      if (!b || isNaN(b)) return '0 B';
+      const k = 1024;
+      const s = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.min(Math.floor(Math.log(b) / Math.log(k)), s.length - 1);
+      return (b / Math.pow(k, i)).toFixed(i ? 1 : 0) + ' ' + s[i];
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     const ICONS = {
       flow: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>`,
-      upload: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
+      upload: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
       doc: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
       watermark: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 2 4 4-10 10-4-4L18 2ZM2 22l4-1-3-3-1 4Z"/></svg>`,
       protect: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>`,
@@ -8995,60 +9011,92 @@
       rotate: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.9 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`,
       extract: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>`,
       zip: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>`,
-      check: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+      check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
       up: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>`,
       down: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
       trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
       eye: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
-      download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`
+      download: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`,
+      chevron: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`,
+      grip: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
+      plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
     };
 
     const RECIPES = {
       confidential: [
-        { type: 'watermark', name: 'Watermark Stamp', catType: 'stamp', config: { text: 'CONFIDENTIAL', opacity: 0.35 } },
-        { type: 'protect', name: 'Protect & Password', catType: 'security', config: { password: '' } },
-        { type: 'flatten', name: 'Flatten Forms', catType: 'structure', config: {} }
+        { type: 'watermark', name: 'Watermark Stamp', catType: 'stamp', enabled: true, isExpanded: false, config: { text: 'CONFIDENTIAL', opacity: 0.35 } },
+        { type: 'protect', name: 'Protect & Encrypt', catType: 'security', enabled: true, isExpanded: false, config: { password: '' } },
+        { type: 'flatten', name: 'Flatten Forms & Fields', catType: 'structure', enabled: true, isExpanded: false, config: {} }
       ],
       sign_compress: [
-        { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', config: { position: 'bottom-center' } },
-        { type: 'flatten', name: 'Flatten Annotations', catType: 'structure', config: {} },
-        { type: 'compress', name: 'Compress PDF', catType: 'compress', config: { level: 'recommended' } }
+        { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', enabled: true, isExpanded: false, config: { position: 'bottom-center' } },
+        { type: 'flatten', name: 'Flatten Annotations', catType: 'structure', enabled: true, isExpanded: false, config: {} },
+        { type: 'compress', name: 'Compress PDF', catType: 'compress', enabled: true, isExpanded: false, config: { level: 'recommended' } }
       ],
       clean_gray: [
-        { type: 'grayscale', name: 'Monochrome Grayscale', catType: 'visual', config: {} },
-        { type: 'flatten', name: 'Flatten Structure', catType: 'structure', config: {} },
-        { type: 'compress', name: 'Compress PDF', catType: 'compress', config: { level: 'recommended' } }
+        { type: 'grayscale', name: 'Monochrome Grayscale', catType: 'visual', enabled: true, isExpanded: false, config: {} },
+        { type: 'flatten', name: 'Flatten Structure', catType: 'structure', enabled: true, isExpanded: false, config: {} },
+        { type: 'compress', name: 'Compress PDF', catType: 'compress', enabled: true, isExpanded: false, config: { level: 'recommended' } }
       ],
       publish_zip: [
-        { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', config: { position: 'bottom-right' } },
-        { type: 'watermark', name: 'Approval Stamp', catType: 'stamp', config: { text: 'OFFICIAL', opacity: 0.25 } },
-        { type: 'compress', name: 'Compress PDF', catType: 'compress', config: { level: 'recommended' } },
-        { type: 'zip', name: 'Archive into ZIP', catType: 'compress', config: { zipName: 'document_pack.zip' } }
-      ],
-      custom: [
-        { type: 'watermark', name: 'Watermark Stamp', catType: 'stamp', config: { text: 'CONFIDENTIAL', opacity: 0.35 } },
-        { type: 'compress', name: 'Compress PDF', catType: 'compress', config: { level: 'recommended' } }
+        { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', enabled: true, isExpanded: false, config: { position: 'bottom-right' } },
+        { type: 'watermark', name: 'Approval Stamp', catType: 'stamp', enabled: true, isExpanded: false, config: { text: 'OFFICIAL', opacity: 0.25 } },
+        { type: 'compress', name: 'Compress PDF', catType: 'compress', enabled: true, isExpanded: false, config: { level: 'recommended' } },
+        { type: 'zip', name: 'Create ZIP Archive', catType: 'compress', enabled: true, isExpanded: false, config: { zipName: 'document_pack.zip' } }
       ]
     };
 
     const STEP_TEMPLATES = {
-      watermark: { type: 'watermark', name: 'Watermark Stamp', catType: 'stamp', desc: 'Embed centered diagonal text across all pages', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
-      protect: { type: 'protect', name: 'Protect & Encrypt', catType: 'security', desc: 'Secure with 128/256-bit password encryption', defaultConfig: () => ({ password: '' }) },
+      watermark: { type: 'watermark', name: 'Watermark Stamp', catType: 'stamp', desc: 'Centered diagonal text stamp', defaultConfig: () => ({ text: 'CONFIDENTIAL', opacity: 0.35 }) },
+      protect: { type: 'protect', name: 'Protect & Encrypt', catType: 'security', desc: 'Secure with password encryption', defaultConfig: () => ({ password: '' }) },
       compress: { type: 'compress', name: 'Compress PDF', catType: 'compress', desc: 'Streamline PDF streams and reduce file weight', defaultConfig: () => ({ level: 'recommended' }) },
-      page_numbers: { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', desc: 'Add clean page counter labels to footer or header', defaultConfig: () => ({ position: 'bottom-center' }) },
-      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', catType: 'structure', desc: 'Lock form fields and drawings into permanent pages', defaultConfig: () => ({}) },
-      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', catType: 'visual', desc: 'Render pages to clean high-contrast black & white', defaultConfig: () => ({}) },
+      page_numbers: { type: 'page_numbers', name: 'Page Numbers', catType: 'stamp', desc: 'Add page counters to footer or header', defaultConfig: () => ({ position: 'bottom-center' }) },
+      grayscale: { type: 'grayscale', name: 'Monochrome Grayscale', catType: 'visual', desc: 'Render pages to clean black & white', defaultConfig: () => ({}) },
       rotate: { type: 'rotate', name: 'Rotate Pages', catType: 'structure', desc: 'Rotate orientation in 90° increments', defaultConfig: () => ({ degrees: 90 }) },
-      extract: { type: 'extract', name: 'Extract Page Range', catType: 'structure', desc: 'Select and export only specified page numbers', defaultConfig: () => ({ range: '1-5' }) },
-      zip: { type: 'zip', name: 'Create ZIP Archive', catType: 'compress', desc: 'Bundle final output into a compressed ZIP file', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
+      flatten: { type: 'flatten', name: 'Flatten Forms & Fields', catType: 'structure', desc: 'Lock form fields and drawings permanently', defaultConfig: () => ({}) },
+      extract: { type: 'extract', name: 'Extract Page Range', catType: 'structure', desc: 'Select and export only specified pages', defaultConfig: () => ({ range: '1-5' }) },
+      zip: { type: 'zip', name: 'Create ZIP Archive', catType: 'compress', desc: 'Bundle final output into a compressed ZIP', defaultConfig: () => ({ zipName: 'workflow_output.zip' }) }
     };
+
+    const OPS_CATEGORIES = [
+      {
+        title: 'PDF Operations',
+        items: [
+          { type: 'watermark', label: 'Watermark Stamp' },
+          { type: 'protect', label: 'Protect & Encrypt' },
+          { type: 'compress', label: 'Compress PDF' },
+          { type: 'page_numbers', label: 'Page Numbers' }
+        ]
+      },
+      {
+        title: 'Transforms',
+        items: [
+          { type: 'grayscale', label: 'Monochrome Grayscale' },
+          { type: 'rotate', label: 'Rotate Pages' },
+          { type: 'flatten', label: 'Flatten Forms & Fields' },
+          { type: 'extract', label: 'Extract Page Range' }
+        ]
+      },
+      {
+        title: 'Output',
+        items: [
+          { type: 'zip', label: 'Create ZIP Archive' }
+        ]
+      }
+    ];
+
+    const PRESETS = [
+      { id: 'confidential', name: 'Confidential PDF' },
+      { id: 'sign_compress', name: 'Sign & Compress' },
+      { id: 'clean_gray', name: 'Clean Monochrome' },
+      { id: 'publish_zip', name: 'Publish Package' }
+    ];
 
     let state = {
       file: null,
       activeRecipe: 'confidential',
       steps: JSON.parse(JSON.stringify(RECIPES.confidential)),
       stepPassVisibility: {},
-      isAddOpen: false,
       isProcessing: false,
       progressPercent: 0,
       currentStepIndex: -1,
@@ -9078,510 +9126,380 @@
       return Array.from(set).sort((a, b) => a - b);
     }
 
-    async function renderPaperPreview() {
-      const paper = container.querySelector('#wf-paper-container');
-      if (!paper || !state.file) return;
+    function addStep(type) {
+      const tmpl = STEP_TEMPLATES[type];
+      if (!tmpl) return;
+      state.steps.push({
+        type: tmpl.type,
+        name: tmpl.name,
+        catType: tmpl.catType,
+        enabled: true,
+        isExpanded: true,
+        config: tmpl.defaultConfig()
+      });
+      state.activeRecipe = 'custom';
+      render();
+    }
 
-      const isPdf = (state.file.type === 'application/pdf') || state.file.name.toLowerCase().endsWith('.pdf');
-      const isImg = (state.file.type || '').startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp)$/i.test(state.file.name);
+    function renderToolbar() {
+      const activeCount = state.steps.filter((s) => s.enabled !== false).length;
+      const canRun = !!state.file && activeCount > 0;
+      return `
+        <header class="wf-toolbar">
+          <div class="wf-toolbar-file">
+            ${state.file ? `
+              <div class="wf-toolbar-file-icon">${ICONS.doc}</div>
+              <div class="wf-toolbar-file-name" title="${esc(state.file.name)}">${esc(state.file.name)}</div>
+              <div class="wf-toolbar-file-size">${formatBytes(state.file.size)}</div>
+              <button type="button" class="wf-toolbar-change-btn" id="wf-change-file-btn">Change Document</button>
+            ` : `
+              <label for="wf-file-inp" class="wf-toolbar-choose-btn">
+                ${ICONS.upload}
+                <span>Choose Document</span>
+              </label>
+              <span style="font-size:11.5px;color:#94A3B8;margin-left:4px;">Supports PDF, Images, Office docs</span>
+            `}
+            <input type="file" id="wf-file-inp" accept=".pdf,image/*,.docx,.xlsx,.pptx" style="display:none;" />
+          </div>
+          <button type="button" class="wf-toolbar-run" id="wf-run-pipeline-btn" ${canRun ? '' : 'disabled'} title="${!state.file ? 'Please choose a document first' : (activeCount === 0 ? 'Enable at least one step' : 'Execute pipeline')}">
+            <span>Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})</span>
+          </button>
+        </header>
+      `;
+    }
 
-      if (isImg) {
-        try {
-          const url = URL.createObjectURL(state.file);
-          paper.innerHTML = `<img src="${url}" alt="Preview" style="max-width:100%;max-height:calc(100vh - 210px);object-fit:contain;border-radius:4px;" />`;
-          return;
-        } catch (e) {}
-      }
-
-      if (isPdf) {
-        try {
-          paper.innerHTML = `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:36px;color:#64748B;">
-              <div style="width:24px;height:24px;border:2.5px solid #E2E8F0;border-top-color:#EC4899;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-              <span style="font-size:12px;font-weight:500;">Rendering document preview…</span>
-            </div>`;
-          const pdfjs = await load.pdfjs();
-          const arrayBuf = await state.file.arrayBuffer();
-          const doc = await pdfjs.getDocument({ data: arrayBuf }).promise;
-          const page = await doc.getPage(1);
-          const vp1 = page.getViewport({ scale: 1 });
-          const maxW = 460;
-          const maxH = Math.min(window.innerHeight ? window.innerHeight - 220 : 500, 560);
-          const scale = Math.min(maxW / vp1.width, maxH / vp1.height, 1.4);
-          const scaledVp = page.getViewport({ scale });
-
-          const canvas = document.createElement('canvas');
-          canvas.width = scaledVp.width;
-          canvas.height = scaledVp.height;
-          const ctx = canvas.getContext('2d');
-          await page.render({ canvasContext: ctx, viewport: scaledVp }).promise;
-
-          paper.innerHTML = '';
-          paper.appendChild(canvas);
-          return;
-        } catch (err) {
-          console.warn('[Workflow] PDF preview render error', err);
-        }
-      }
-
-      // Handcrafted illustration fallback
-      const ext = (state.file.name.split('.').pop() || 'pdf').toLowerCase();
-      const buildIll = window.FF?.buildHandcraftedIllustration || window.__ffBuildIllustration || window.buildHandcraftedIllustration;
-      if (typeof buildIll === 'function') {
-        paper.innerHTML = buildIll(ext, state.file.name, bytes(state.file.size), 'stage');
-      } else {
-        paper.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 20px;text-align:center;">
-            <div style="width:48px;height:48px;border-radius:10px;background:#FDF2F8;color:#EC4899;display:flex;align-items:center;justify-content:center;">
-              ${ICONS.doc}
+    function renderStepConfig(step, idx) {
+      if (step.type === 'watermark') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">Text</span>
+            <input type="text" class="wf-cfg-input wf-cfg-watermark-text" data-step-idx="${idx}" value="${esc(step.config.text || 'CONFIDENTIAL')}" placeholder="Watermark text" />
+            <span class="wf-cfg-label" style="margin-left:6px;">Tone</span>
+            <div class="wf-cfg-pills">
+              <button type="button" class="wf-cfg-pill wf-cfg-wm-opacity ${step.config.opacity === 0.15 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="0.15">Subtle</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-wm-opacity ${step.config.opacity === 0.35 || step.config.opacity == null ? 'is-active' : ''}" data-step-idx="${idx}" data-val="0.35">Balanced</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-wm-opacity ${step.config.opacity === 0.65 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="0.65">Bold</button>
             </div>
-            <strong style="font-size:14px;color:#0F172A;">${esc(state.file.name)}</strong>
-            <span style="font-size:12px;color:#64748B;">${bytes(state.file.size)}</span>
-          </div>`;
+          </div>
+        `;
       }
+      if (step.type === 'protect') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">Password</span>
+            <input type="${state.stepPassVisibility[idx] ? 'text' : 'password'}" class="wf-cfg-input wf-cfg-protect-pass" data-step-idx="${idx}" value="${esc(step.config.password || '')}" placeholder="Set document password" />
+            <button type="button" class="wf-cfg-eye wf-cfg-toggle-eye" data-step-idx="${idx}" title="Toggle password visibility">${ICONS.eye}</button>
+          </div>
+        `;
+      }
+      if (step.type === 'compress') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">Level</span>
+            <div class="wf-cfg-pills">
+              <button type="button" class="wf-cfg-pill wf-cfg-compress-lvl ${step.config.level === 'recommended' || !step.config.level ? 'is-active' : ''}" data-step-idx="${idx}" data-val="recommended">Recommended</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-compress-lvl ${step.config.level === 'extreme' ? 'is-active' : ''}" data-step-idx="${idx}" data-val="extreme">Extreme</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-compress-lvl ${step.config.level === 'low' ? 'is-active' : ''}" data-step-idx="${idx}" data-val="low">Lossless</button>
+            </div>
+          </div>
+        `;
+      }
+      if (step.type === 'page_numbers') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">Position</span>
+            <div class="wf-cfg-pills">
+              <button type="button" class="wf-cfg-pill wf-cfg-pagenum-pos ${step.config.position === 'bottom-center' || !step.config.position ? 'is-active' : ''}" data-step-idx="${idx}" data-val="bottom-center">Bottom Center</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-pagenum-pos ${step.config.position === 'bottom-right' ? 'is-active' : ''}" data-step-idx="${idx}" data-val="bottom-right">Bottom Right</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-pagenum-pos ${step.config.position === 'top-right' ? 'is-active' : ''}" data-step-idx="${idx}" data-val="top-right">Top Right</button>
+            </div>
+          </div>
+        `;
+      }
+      if (step.type === 'rotate') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">Angle</span>
+            <div class="wf-cfg-pills">
+              <button type="button" class="wf-cfg-pill wf-cfg-rot-deg ${step.config.degrees === 90 || !step.config.degrees ? 'is-active' : ''}" data-step-idx="${idx}" data-val="90">90° CW</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-rot-deg ${step.config.degrees === 180 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="180">180° Flip</button>
+              <button type="button" class="wf-cfg-pill wf-cfg-rot-deg ${step.config.degrees === 270 ? 'is-active' : ''}" data-step-idx="${idx}" data-val="270">270° CCW</button>
+            </div>
+          </div>
+        `;
+      }
+      if (step.type === 'extract') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">Pages</span>
+            <input type="text" class="wf-cfg-input wf-cfg-extract-range" data-step-idx="${idx}" value="${esc(step.config.range || '1-5')}" placeholder="e.g. 1-3, 5, 8" />
+          </div>
+        `;
+      }
+      if (step.type === 'zip') {
+        return `
+          <div class="wf-cfg-row">
+            <span class="wf-cfg-label">ZIP Name</span>
+            <input type="text" class="wf-cfg-input wf-cfg-zip-name" data-step-idx="${idx}" value="${esc(step.config.zipName || 'workflow_output.zip')}" placeholder="archive.zip" />
+          </div>
+        `;
+      }
+      // Grayscale & Flatten
+      return `
+        <div class="wf-cfg-row">
+          <span class="wf-cfg-auto-note">⚡ Automatic execution — no manual parameters needed</span>
+        </div>
+      `;
+    }
+
+    function renderCanvas() {
+      if (state.isProcessing) {
+        return `
+          <div class="wf-processing-view">
+            <div class="wf-proc-spinner"></div>
+            <h3 class="wf-proc-title">Executing Workflow Pipeline</h3>
+            <p class="wf-proc-step-name">${esc(state.currentStepName || 'Processing...')}</p>
+            <div class="wf-proc-bar-wrap">
+              <div class="wf-proc-bar-fill" style="width: ${state.progressPercent}%;"></div>
+            </div>
+            <span class="wf-proc-pct">${state.progressPercent}% Complete</span>
+          </div>
+        `;
+      }
+
+      if (state.resultBlob) {
+        return `
+          <div class="wf-result-view">
+            <div class="wf-result-ok-badge">${ICONS.check}</div>
+            <h3 class="wf-result-title">Pipeline Execution Complete</h3>
+            <p class="wf-result-sub">Finished in ${state.durationMs}ms across ${state.steps.filter((s) => s.enabled !== false).length} steps.</p>
+            <div class="wf-result-file-box">
+              <span class="wf-result-filename">${esc(state.resultFileName)}</span>
+              <span class="wf-result-meta">${formatBytes(state.resultFileSize)}</span>
+            </div>
+            <button type="button" class="wf-result-dl-btn" id="wf-download-result-btn">
+              ${ICONS.download}
+              <span>Download Processed File</span>
+            </button>
+            <div class="wf-result-actions">
+              <button type="button" class="wf-result-ghost-btn" id="wf-restart-btn">New File</button>
+              <button type="button" class="wf-result-ghost-btn" id="wf-open-editor-btn">Open in PDF Editor</button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!state.steps.length) {
+        return `
+          <div class="wf-empty-state">
+            <div class="wf-empty-state-icon">${ICONS.flow}</div>
+            <h4 class="wf-empty-state-title">Pipeline is empty</h4>
+            <p class="wf-empty-state-sub">Click any tool on the right panel to begin building your custom document workflow.</p>
+          </div>
+        `;
+      }
+
+      let html = '';
+      state.steps.forEach((step, idx) => {
+        const isLast = idx === state.steps.length - 1;
+        const isDisabled = step.enabled === false;
+        const isExpanded = step.isExpanded !== false;
+
+        html += `
+          <div class="wf-step-card ${isDisabled ? 'is-disabled' : ''} ${isExpanded ? 'is-expanded' : ''}" data-step-idx="${idx}">
+            <div class="wf-sc-header" data-step-idx="${idx}">
+              <div class="wf-sc-drag" title="Drag to reorder" draggable="true" data-step-idx="${idx}">${ICONS.grip}</div>
+              <span class="wf-sc-badge">${String(idx + 1).padStart(2, '0')}</span>
+              <div class="wf-sc-icon">${ICONS[step.type] || ICONS.flow}</div>
+              <span class="wf-sc-name">${esc(step.name)}</span>
+              <div class="wf-sc-controls">
+                <button type="button" class="wf-sc-toggle" role="switch" aria-checked="${!isDisabled}" aria-label="Toggle step" data-step-idx="${idx}" title="${!isDisabled ? 'Step active (click to skip)' : 'Step disabled (skipped)'}"></button>
+                <button type="button" class="wf-sc-move-up" data-step-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move step up">${ICONS.up}</button>
+                <button type="button" class="wf-sc-move-down" data-step-idx="${idx}" ${isLast ? 'disabled' : ''} title="Move step down">${ICONS.down}</button>
+                <div class="wf-sc-chevron" data-step-idx="${idx}" title="Toggle configuration">${ICONS.chevron}</div>
+                <button type="button" class="wf-sc-remove" data-step-idx="${idx}" title="Remove step">${ICONS.trash}</button>
+              </div>
+            </div>
+            <div class="wf-sc-config">
+              <div class="wf-sc-config-inner">
+                ${renderStepConfig(step, idx)}
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (!isLast) {
+          html += `<div class="wf-step-connector"></div>`;
+        }
+      });
+
+      return html;
+    }
+
+    function renderOpsSidebar() {
+      let catHtml = '';
+      OPS_CATEGORIES.forEach((cat) => {
+        let itemsHtml = '';
+        cat.items.forEach((item) => {
+          itemsHtml += `
+            <div class="wf-ops-item" data-op-type="${item.type}">
+              <div class="wf-ops-item-icon">${ICONS[item.type] || ICONS.flow}</div>
+              <span class="wf-ops-item-name">${esc(item.label)}</span>
+              <button type="button" class="wf-ops-add-btn" data-op-type="${item.type}" title="Add ${esc(item.label)} to pipeline">+</button>
+            </div>
+          `;
+        });
+        catHtml += `
+          <div class="wf-ops-section">
+            <span class="wf-ops-section-label">${esc(cat.title)}</span>
+            ${itemsHtml}
+          </div>
+        `;
+      });
+
+      let presetsHtml = '';
+      PRESETS.forEach((p) => {
+        const isActive = state.activeRecipe === p.id;
+        presetsHtml += `
+          <button type="button" class="wf-preset-btn ${isActive ? 'is-active' : ''}" data-recipe-id="${p.id}">
+            <span style="flex:1;">${esc(p.name)}</span>
+          </button>
+        `;
+      });
+
+      return `
+        <aside class="wf-ops-sidebar">
+          <div class="wf-ops-inner">
+            ${catHtml}
+          </div>
+          <div class="wf-ops-presets">
+            <span class="wf-ops-presets-label">Workflow Presets</span>
+            ${presetsHtml}
+          </div>
+        </aside>
+      `;
     }
 
     function render() {
-      container.className = 'cpdf-root wf-root';
-      const stageEl = container.closest('.app-stage-container');
-      if (stageEl) {
-        stageEl.classList.toggle('wf-stage-active', !!state.file);
-      }
-
-      if (!state.file) {
-        renderDropzone();
-      } else {
-        renderWorkstation();
-      }
-    }
-
-    function renderDropzone() {
       container.innerHTML = `
-        <div class="cpdf-body" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#FFFFFF;">
-          <div class="cpdf-dropzone drop-hero-box" id="wf-initial-dz" tabindex="0" role="button" aria-label="Drop PDF or image to run workflow" style="max-width:540px;width:100%;margin:auto;display:flex;flex-direction:column;align-items:center;padding:34px 24px 30px;border:2px dashed #CBD5E1;border-radius:12px;background:#FAFAFA;cursor:pointer;">
-            <div class="drop-illustration-wrap" style="margin-bottom:16px;">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:190px;height:124px;">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#000000" opacity="0.05"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#000000" opacity="0.05"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#000000" opacity="0.05"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#EC4899" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#EC4899" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#EC4899" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
-              </svg>
-            </div>
-
-            <div class="drop-action-group" style="margin-bottom:12px;">
-              <label for="wf-initial-inp" class="select-files-main-btn" style="background:#EC4899;display:inline-flex;align-items:center;gap:8px;padding:9px 22px;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-            </div>
-
-            <p class="drop-sub-text" style="font-size:13px;color:#64748B;margin:0 0 14px;">Add <strong>PDF</strong> or <strong>Image</strong> to run automated workflow</p>
-
-            <div class="supported-formats-row" style="display:flex;align-items:center;gap:6px;">
-              <span class="fmt-label" style="font-size:11px;color:#94A3B8;font-weight:600;">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#FEE2E2;color:#DC2626;">PDF</span>
-              <span class="fmt-badge fmt-img" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#E0F2FE;color:#0284C7;">PNG</span>
-              <span class="fmt-badge fmt-img" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#E0F2FE;color:#0284C7;">JPG</span>
-              <span class="fmt-badge fmt-img" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#E0F2FE;color:#0284C7;">WEBP</span>
-            </div>
-          </div>
-          <input id="wf-initial-inp" type="file" accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp" hidden>
+        ${renderToolbar()}
+        <div class="wf-body">
+          <main class="wf-canvas" id="wf-pipeline-canvas">
+            ${renderCanvas()}
+          </main>
+          ${renderOpsSidebar()}
         </div>
       `;
-
-      const dz = container.querySelector('#wf-initial-dz');
-      const inp = container.querySelector('#wf-initial-inp');
-      if (inp) inp.onchange = () => inp.files[0] && handleFileSelect(inp.files[0]);
-      if (dz) {
-        dz.onclick = (e) => { if (!e.target.closest('label')) inp && inp.click(); };
-        dz.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp && inp.click(); } };
-        dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = '#EC4899'; dz.style.background = '#FDF2F8'; };
-        dz.ondragleave = () => { dz.style.borderColor = '#CBD5E1'; dz.style.background = '#FAFAFA'; };
-        dz.ondrop = (e) => {
-          e.preventDefault();
-          dz.style.borderColor = '#CBD5E1';
-          dz.style.background = '#FAFAFA';
-          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFileSelect(e.dataTransfer.files[0]);
-          }
-        };
-      }
-    }
-
-    function renderWorkstation() {
-      container.innerHTML = `
-        <div class="cpdf-benchmark-body" style="width:100%;height:100%;">
-          <div class="wf-benchmark-workstation">
-            <!-- Left Stage: Document Paper Sheet & Preview (Benchmark standard) -->
-            <div class="wf-benchmark-stage">
-              <div class="wf-benchmark-paper" id="wf-paper-container">
-                <!-- Loaded via renderPaperPreview -->
-              </div>
-              <div class="wf-benchmark-fileinfo-row">
-                <span class="wf-benchmark-fileinfo-text" id="wf-file-meta-text">
-                  ${esc(state.file.name)} (${bytes(state.file.size)})
-                </span>
-                <button type="button" class="cpdf-benchmark-btn-add" id="wf-change-file-btn" title="Change file">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>Change File</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Right Panel: Studio Inspector (Benchmark standard) -->
-            <div class="wf-benchmark-panel">
-              ${state.isProcessing ? renderProcessingHtml() : (state.resultBlob ? renderResultHtml() : renderPanelPipelineHtml())}
-            </div>
-          </div>
-        </div>
-        <input type="file" id="wf-hidden-file-input" style="display:none" accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp">
-      `;
-
       wireEvents();
-      renderPaperPreview();
-    }
-
-    function renderPanelPipelineHtml() {
-      const stepCount = state.steps.length;
-
-      let stepsHtml = '';
-      state.steps.forEach((step, idx) => {
-        const stepNum = String(idx + 1).padStart(2, '0');
-        const iconSvg = ICONS[step.type] || ICONS.doc;
-        const isFirst = idx === 0;
-        const isLast = idx === stepCount - 1;
-
-        stepsHtml += `
-          <div class="wf-step-node" data-step-idx="${idx}">
-            <div class="wf-step-main-row">
-              <div class="wf-step-num">${stepNum}</div>
-              <div class="wf-step-icon-wrap">${iconSvg}</div>
-              <div class="wf-step-name">${esc(step.name)}</div>
-              <div class="wf-step-actions">
-                <button type="button" class="wf-icon-btn wf-btn-up" data-step-idx="${idx}" title="Move Up" ${isFirst ? 'disabled' : ''}>${ICONS.up}</button>
-                <button type="button" class="wf-icon-btn wf-btn-down" data-step-idx="${idx}" title="Move Down" ${isLast ? 'disabled' : ''}>${ICONS.down}</button>
-                <button type="button" class="wf-icon-btn is-danger wf-btn-remove" data-step-idx="${idx}" title="Remove Step">${ICONS.trash}</button>
-              </div>
-            </div>
-            ${renderStepConfigStrip(step, idx)}
-          </div>
-        `;
-      });
-
-      return `
-        <div class="wf-panel-scrollable">
-          <!-- Top Header -->
-          <div class="cpdf-benchmark-header" style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
-            <div class="wf-benchmark-icon">
-              ${ICONS.flow}
-            </div>
-            <div>
-              <h2 class="cpdf-benchmark-title" style="font-size:18px;font-weight:700;color:#0F172A;margin:0;line-height:1.2;">Workflow Builder</h2>
-              <p style="font-size:11.5px;color:#64748B;margin:0;">Multi-step automated pipeline</p>
-            </div>
-          </div>
-
-          <!-- Recipe Segmented Tabs -->
-          <nav class="wf-recipe-nav" role="tablist" aria-label="Workflow Recipes">
-            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'confidential' ? 'is-active' : ''}" data-recipe="confidential">Confidential</button>
-            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'sign_compress' ? 'is-active' : ''}" data-recipe="sign_compress">Sign & Compress</button>
-            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'clean_gray' ? 'is-active' : ''}" data-recipe="clean_gray">Clean & Gray</button>
-            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'publish_zip' ? 'is-active' : ''}" data-recipe="publish_zip">Publish & ZIP</button>
-            <button type="button" class="wf-recipe-tab ${state.activeRecipe === 'custom' ? 'is-active' : ''}" data-recipe="custom">Custom</button>
-          </nav>
-
-          <!-- Step Stack -->
-          <div class="wf-steps-stack" style="display:flex;flex-direction:column;gap:8px;">
-            ${stepsHtml}
-          </div>
-
-          <!-- Add Step Action -->
-          <div class="wf-add-section">
-            <button type="button" class="wf-add-trigger-btn" id="wf-add-toggle-btn">
-              <span>+ Add Step to Pipeline</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="${state.isAddOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}"/></svg>
-            </button>
-            <div class="wf-add-popover" id="wf-add-popover" style="display:${state.isAddOpen ? 'grid' : 'none'};">
-              <button type="button" class="wf-pop-chip" data-add-type="watermark">${ICONS.watermark} Watermark</button>
-              <button type="button" class="wf-pop-chip" data-add-type="protect">${ICONS.protect} Protect</button>
-              <button type="button" class="wf-pop-chip" data-add-type="compress">${ICONS.compress} Compress</button>
-              <button type="button" class="wf-pop-chip" data-add-type="page_numbers">${ICONS.page_numbers} Page #</button>
-              <button type="button" class="wf-pop-chip" data-add-type="grayscale">${ICONS.grayscale} Grayscale</button>
-              <button type="button" class="wf-pop-chip" data-add-type="rotate">${ICONS.rotate} Rotate</button>
-              <button type="button" class="wf-pop-chip" data-add-type="flatten">${ICONS.flatten} Flatten</button>
-              <button type="button" class="wf-pop-chip" data-add-type="extract">${ICONS.extract} Extract</button>
-              <button type="button" class="wf-pop-chip" data-add-type="zip">${ICONS.zip} ZIP Bundle</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pinned Footer Command Dock -->
-        <footer class="wf-panel-footer">
-          <div class="wf-dock-meta">
-            <span style="display:flex;align-items:center;gap:5px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <strong>100% Client-Side</strong>
-            </span>
-            <span>${stepCount} Step${stepCount === 1 ? '' : 's'} queued</span>
-          </div>
-          <button type="button" class="wf-run-cta" id="wf-run-pipeline-btn" ${stepCount === 0 ? 'disabled' : ''}>
-            <span>Run Pipeline (${stepCount} Step${stepCount === 1 ? '' : 's'})</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </button>
-        </footer>
-      `;
-    }
-
-    function renderStepConfigStrip(step, idx) {
-      if (step.type === 'watermark') {
-        const textVal = step.config.text ?? 'CONFIDENTIAL';
-        const isSubtle = (step.config.opacity ?? 0.35) < 0.5;
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Text:</span>
-            <input type="text" class="wf-inset-input wf-cfg-watermark-text" data-step-idx="${idx}" value="${esc(textVal)}" placeholder="Watermark text">
-            <div class="wf-inset-pills">
-              <button type="button" class="wf-inset-pill ${isSubtle ? 'is-active' : ''} wf-cfg-wm-opacity" data-step-idx="${idx}" data-val="0.35">Subtle (35%)</button>
-              <button type="button" class="wf-inset-pill ${!isSubtle ? 'is-active' : ''} wf-cfg-wm-opacity" data-step-idx="${idx}" data-val="0.75">Bold (75%)</button>
-            </div>
-          </div>
-        `;
-      }
-
-      if (step.type === 'protect') {
-        const isVisible = !!state.stepPassVisibility[idx];
-        const passVal = step.config.password || '';
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Password:</span>
-            <input type="${isVisible ? 'text' : 'password'}" class="wf-inset-input wf-cfg-protect-pass" data-step-idx="${idx}" value="${esc(passVal)}" placeholder="Enter security password">
-            <button type="button" class="wf-icon-btn wf-cfg-toggle-eye" data-step-idx="${idx}" title="Toggle password visibility">${ICONS.eye}</button>
-          </div>
-        `;
-      }
-
-      if (step.type === 'compress') {
-        const lvl = step.config.level || 'recommended';
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Level:</span>
-            <div class="wf-inset-pills" style="flex:1;">
-              <button type="button" class="wf-inset-pill ${lvl === 'extreme' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="extreme">Extreme</button>
-              <button type="button" class="wf-inset-pill ${lvl === 'recommended' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="recommended">Balanced</button>
-              <button type="button" class="wf-inset-pill ${lvl === 'less' ? 'is-active' : ''} wf-cfg-compress-lvl" data-step-idx="${idx}" data-val="less">Light</button>
-            </div>
-          </div>
-        `;
-      }
-
-      if (step.type === 'page_numbers') {
-        const pos = step.config.position || 'bottom-center';
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Placement:</span>
-            <div class="wf-inset-pills" style="flex:1;">
-              <button type="button" class="wf-inset-pill ${pos === 'bottom-center' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="bottom-center">Bottom Center</button>
-              <button type="button" class="wf-inset-pill ${pos === 'bottom-right' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="bottom-right">Bottom Right</button>
-              <button type="button" class="wf-inset-pill ${pos === 'top-right' ? 'is-active' : ''} wf-cfg-pagenum-pos" data-step-idx="${idx}" data-val="top-right">Top Right</button>
-            </div>
-          </div>
-        `;
-      }
-
-      if (step.type === 'rotate') {
-        const deg = Number(step.config.degrees || 90);
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Rotation:</span>
-            <div class="wf-inset-pills" style="flex:1;">
-              <button type="button" class="wf-inset-pill ${deg === 90 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="90">90° CW</button>
-              <button type="button" class="wf-inset-pill ${deg === 180 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="180">180°</button>
-              <button type="button" class="wf-inset-pill ${deg === 270 ? 'is-active' : ''} wf-cfg-rot-deg" data-step-idx="${idx}" data-val="270">270° CCW</button>
-            </div>
-          </div>
-        `;
-      }
-
-      if (step.type === 'extract') {
-        const rangeVal = step.config.range || '1-5';
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Pages:</span>
-            <input type="text" class="wf-inset-input wf-cfg-extract-range" data-step-idx="${idx}" value="${esc(rangeVal)}" placeholder="e.g. 1-3, 5, 8">
-          </div>
-        `;
-      }
-
-      if (step.type === 'zip') {
-        const zName = step.config.zipName || 'workflow_output.zip';
-        return `
-          <div class="wf-step-inset-config">
-            <span class="wf-inset-label">Archive:</span>
-            <input type="text" class="wf-inset-input wf-cfg-zip-name" data-step-idx="${idx}" value="${esc(zName)}" placeholder="output.zip">
-          </div>
-        `;
-      }
-
-      if (step.type === 'grayscale' || step.type === 'flatten') {
-        return `
-          <div class="wf-step-inset-config">
-            <span style="font-size:11px;color:#64748B;">⚡ Automatic on-device execution with zero configuration</span>
-          </div>
-        `;
-      }
-
-      return '';
-    }
-
-    function renderProcessingHtml() {
-      const stepIdx = Math.max(0, state.currentStepIndex);
-      const totalSteps = Math.max(1, state.steps.length);
-      const pct = Math.min(100, Math.max(5, state.progressPercent));
-
-      return `
-        <div class="wf-panel-scrollable" style="justify-content:center;align-items:center;text-align:center;">
-          <div style="width:44px;height:44px;border:3px solid #FDF2F8;border-top-color:#EC4899;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;"></div>
-          <h3 style="font-size:17px;font-weight:700;color:#0F172A;margin:0 0 6px;">Executing Pipeline</h3>
-          <p style="font-size:12px;color:#64748B;margin:0 0 16px;">Step ${stepIdx + 1} of ${totalSteps}: <strong>${esc(state.currentStepName || 'Processing...')}</strong></p>
-          
-          <div style="width:100%;height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;margin-bottom:8px;">
-            <div style="height:100%;background:#EC4899;border-radius:3px;width:${pct}%;transition:width 0.2s ease;"></div>
-          </div>
-          <span style="font-size:11px;color:#94A3B8;font-weight:600;">${pct}% completed · In-memory execution</span>
-        </div>
-      `;
-    }
-
-    function renderResultHtml() {
-      const origSize = state.file ? state.file.size : 0;
-      const resSize = state.resultFileSize || 0;
-      let diffText = '';
-      if (origSize > 0 && resSize > 0) {
-        const diff = origSize - resSize;
-        if (diff > 0) {
-          diffText = ` · Saved ${bytes(diff)} (${Math.round((diff / origSize) * 100)}%)`;
-        }
-      }
-
-      return `
-        <div class="wf-panel-scrollable" style="justify-content:center;align-items:center;text-align:center;">
-          <div class="wf-res-badge-ok" style="width:48px;height:48px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            ${ICONS.check}
-          </div>
-          <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin:0 0 4px;">Workflow Completed!</h3>
-          <p style="font-size:12px;color:#64748B;margin:0 0 16px;">All ${state.steps.length} pipeline steps executed seamlessly in-browser.</p>
-
-          <div style="width:100%;padding:12px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;box-sizing:border-box;margin-bottom:18px;display:flex;flex-direction:column;gap:4px;text-align:left;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <span style="font-size:12px;font-weight:700;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(state.resultFileName)}">${esc(state.resultFileName)}</span>
-              <span style="font-size:9.5px;font-weight:800;color:#16A34A;background:#DCFCE7;padding:1px 5px;border-radius:3px;">READY</span>
-            </div>
-            <span style="font-size:11px;color:#64748B;">${bytes(resSize)}${diffText} · Took ${state.durationMs}ms</span>
-          </div>
-
-          <button type="button" class="wf-run-cta" id="wf-download-result-btn" style="margin-bottom:10px;">
-            ${ICONS.download} Download Result (${bytes(resSize)})
-          </button>
-          <div style="display:flex;gap:8px;width:100%;">
-            <button type="button" class="cpdf-benchmark-btn-add" id="wf-restart-btn" style="flex:1;height:34px;justify-content:center;font-size:12px;">
-              🔄 Run Another File
-            </button>
-            <button type="button" class="cpdf-benchmark-btn-add" id="wf-open-editor-btn" style="flex:1;height:34px;justify-content:center;font-size:12px;">
-              ✨ Open in Edit PDF
-            </button>
-          </div>
-        </div>
-      `;
     }
 
     function wireEvents() {
-      // Recipe Tabs
-      container.querySelectorAll('.wf-recipe-tab').forEach((tab) => {
-        tab.onclick = () => {
-          const recipeKey = tab.dataset.recipe;
-          if (RECIPES[recipeKey]) {
-            state.activeRecipe = recipeKey;
-            state.steps = JSON.parse(JSON.stringify(RECIPES[recipeKey]));
-            state.resultBlob = null;
-            state.isAddOpen = false;
-            render();
-          }
+      // 1. File Input
+      const fileInp = container.querySelector('#wf-file-inp');
+      if (fileInp) {
+        fileInp.onchange = (e) => {
+          const f = e.target.files && e.target.files[0];
+          if (f) handleFileSelect(f);
         };
-      });
+      }
 
-      // Change File Trigger
-      const hiddenInput = container.querySelector('#wf-hidden-file-input');
       const changeBtn = container.querySelector('#wf-change-file-btn');
+      if (changeBtn && fileInp) {
+        changeBtn.onclick = () => fileInp.click();
+      }
 
-      if (hiddenInput) {
-        hiddenInput.onchange = (e) => {
-          if (e.target.files && e.target.files.length > 0) {
-            handleFileSelect(e.target.files[0]);
+      // Drag & drop file onto canvas
+      const canvasEl = container.querySelector('#wf-pipeline-canvas');
+      if (canvasEl) {
+        canvasEl.ondragover = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        };
+        canvasEl.ondrop = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f) handleFileSelect(f);
+        };
+      }
+
+      // 2. Run Pipeline CTA
+      const runBtn = container.querySelector('#wf-run-pipeline-btn');
+      if (runBtn) {
+        runBtn.onclick = () => runPipeline();
+      }
+
+      // 3. Operations Sidebar Add Buttons
+      container.querySelectorAll('.wf-ops-item').forEach((row) => {
+        row.onclick = (e) => {
+          const opType = row.dataset.opType;
+          if (opType) {
+            const btn = row.querySelector('.wf-ops-add-btn');
+            if (btn) {
+              btn.innerHTML = ICONS.check;
+              btn.classList.add('is-added');
+              setTimeout(() => {
+                btn.innerHTML = '+';
+                btn.classList.remove('is-added');
+              }, 600);
+            }
+            addStep(opType);
           }
         };
-      }
+      });
 
-      if (changeBtn) {
-        changeBtn.onclick = () => hiddenInput && hiddenInput.click();
-      }
-
-      // Add Step Toggle & Chips
-      const addToggleBtn = container.querySelector('#wf-add-toggle-btn');
-      if (addToggleBtn) {
-        addToggleBtn.onclick = () => {
-          state.isAddOpen = !state.isAddOpen;
-          render();
-        };
-      }
-
-      container.querySelectorAll('.wf-pop-chip').forEach((btn) => {
+      // 4. Presets Selection
+      container.querySelectorAll('.wf-preset-btn').forEach((btn) => {
         btn.onclick = () => {
-          const type = btn.dataset.addType;
-          const tmpl = STEP_TEMPLATES[type];
-          if (tmpl) {
-            state.steps.push({
-              type: tmpl.type,
-              name: tmpl.name,
-              catType: tmpl.catType,
-              config: tmpl.defaultConfig()
-            });
-            state.activeRecipe = 'custom';
-            state.isAddOpen = false;
-            state.resultBlob = null;
+          const rId = btn.dataset.recipeId;
+          if (RECIPES[rId]) {
+            state.activeRecipe = rId;
+            state.steps = JSON.parse(JSON.stringify(RECIPES[rId]));
             render();
           }
         };
       });
 
-      // Move Up / Move Down / Remove
-      container.querySelectorAll('.wf-btn-up').forEach((btn) => {
+      // 5. Step Card Header (Expand/Collapse on row click)
+      container.querySelectorAll('.wf-sc-header').forEach((header) => {
+        header.onclick = (e) => {
+          // Don't toggle expansion if user clicked an explicit action control
+          if (e.target.closest('.wf-sc-controls') || e.target.closest('.wf-sc-drag')) return;
+          const idx = Number(header.dataset.stepIdx);
+          if (state.steps[idx]) {
+            state.steps[idx].isExpanded = !state.steps[idx].isExpanded;
+            const card = header.closest('.wf-step-card');
+            if (card) {
+              card.classList.toggle('is-expanded', state.steps[idx].isExpanded);
+            }
+          }
+        };
+      });
+
+      // 6. Step Toggle Switch (Enable / Disable)
+      container.querySelectorAll('.wf-sc-toggle').forEach((toggle) => {
+        toggle.onclick = (e) => {
+          e.stopPropagation();
+          const idx = Number(toggle.dataset.stepIdx);
+          if (state.steps[idx]) {
+            state.steps[idx].enabled = (state.steps[idx].enabled === false) ? true : false;
+            const isNowEnabled = state.steps[idx].enabled;
+            toggle.setAttribute('aria-checked', isNowEnabled);
+            const card = toggle.closest('.wf-step-card');
+            if (card) card.classList.toggle('is-disabled', !isNowEnabled);
+            // Update toolbar run button step count dynamically
+            const activeCount = state.steps.filter((s) => s.enabled !== false).length;
+            const runCta = container.querySelector('#wf-run-pipeline-btn');
+            if (runCta) {
+              runCta.querySelector('span').textContent = `Run Pipeline (${activeCount} Step${activeCount === 1 ? '' : 's'})`;
+              runCta.disabled = !state.file || activeCount === 0;
+            }
+          }
+        };
+      });
+
+      // 7. Step Reorder Up / Down
+      container.querySelectorAll('.wf-sc-move-up').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
@@ -9595,7 +9513,7 @@
         };
       });
 
-      container.querySelectorAll('.wf-btn-down').forEach((btn) => {
+      container.querySelectorAll('.wf-sc-move-down').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
@@ -9609,7 +9527,8 @@
         };
       });
 
-      container.querySelectorAll('.wf-btn-remove').forEach((btn) => {
+      // 8. Step Remove
+      container.querySelectorAll('.wf-sc-remove').forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const idx = Number(btn.dataset.stepIdx);
@@ -9619,7 +9538,39 @@
         };
       });
 
-      // Config Inputs & Toggles
+      // 9. Drag & Drop Reorder
+      let draggedIdx = null;
+      container.querySelectorAll('.wf-sc-drag').forEach((handle) => {
+        handle.ondragstart = (e) => {
+          draggedIdx = Number(handle.dataset.stepIdx);
+          e.dataTransfer.effectAllowed = 'move';
+          const card = handle.closest('.wf-step-card');
+          if (card) card.classList.add('is-dragging');
+        };
+        handle.ondragend = () => {
+          container.querySelectorAll('.wf-step-card').forEach((c) => c.classList.remove('is-dragging'));
+          draggedIdx = null;
+        };
+      });
+
+      container.querySelectorAll('.wf-step-card').forEach((card) => {
+        card.ondragover = (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        };
+        card.ondrop = (e) => {
+          e.preventDefault();
+          const targetIdx = Number(card.dataset.stepIdx);
+          if (draggedIdx !== null && targetIdx !== null && draggedIdx !== targetIdx) {
+            const item = state.steps.splice(draggedIdx, 1)[0];
+            state.steps.splice(targetIdx, 0, item);
+            state.activeRecipe = 'custom';
+            render();
+          }
+        };
+      });
+
+      // 10. Config Inputs (Targeted without full re-render to retain focus)
       container.querySelectorAll('.wf-cfg-watermark-text').forEach((inp) => {
         inp.oninput = (e) => {
           const idx = Number(inp.dataset.stepIdx);
@@ -9632,7 +9583,11 @@
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
             state.steps[idx].config.opacity = Number(btn.dataset.val);
-            render();
+            const parent = btn.closest('.wf-cfg-pills');
+            if (parent) {
+              parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
+              btn.classList.add('is-active');
+            }
           }
         };
       });
@@ -9648,7 +9603,10 @@
         btn.onclick = () => {
           const idx = Number(btn.dataset.stepIdx);
           state.stepPassVisibility[idx] = !state.stepPassVisibility[idx];
-          render();
+          const inp = btn.closest('.wf-cfg-row')?.querySelector('.wf-cfg-protect-pass');
+          if (inp) {
+            inp.type = state.stepPassVisibility[idx] ? 'text' : 'password';
+          }
         };
       });
 
@@ -9657,7 +9615,11 @@
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
             state.steps[idx].config.level = btn.dataset.val;
-            render();
+            const parent = btn.closest('.wf-cfg-pills');
+            if (parent) {
+              parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
+              btn.classList.add('is-active');
+            }
           }
         };
       });
@@ -9667,7 +9629,11 @@
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
             state.steps[idx].config.position = btn.dataset.val;
-            render();
+            const parent = btn.closest('.wf-cfg-pills');
+            if (parent) {
+              parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
+              btn.classList.add('is-active');
+            }
           }
         };
       });
@@ -9677,7 +9643,11 @@
           const idx = Number(btn.dataset.stepIdx);
           if (state.steps[idx]) {
             state.steps[idx].config.degrees = Number(btn.dataset.val);
-            render();
+            const parent = btn.closest('.wf-cfg-pills');
+            if (parent) {
+              parent.querySelectorAll('.wf-cfg-pill').forEach((p) => p.classList.remove('is-active'));
+              btn.classList.add('is-active');
+            }
           }
         };
       });
@@ -9696,13 +9666,7 @@
         };
       });
 
-      // Run Pipeline CTA
-      const runBtn = container.querySelector('#wf-run-pipeline-btn');
-      if (runBtn) {
-        runBtn.onclick = () => runPipeline();
-      }
-
-      // Result Actions
+      // 11. Result Actions
       const dlBtn = container.querySelector('#wf-download-result-btn');
       if (dlBtn && state.resultBlob) {
         dlBtn.onclick = () => {
@@ -9751,13 +9715,14 @@
     }
 
     async function runPipeline() {
-      if (!state.file || !state.steps.length) return;
+      const activeSteps = state.steps.filter((s) => s.enabled !== false);
+      if (!state.file || !activeSteps.length) return;
 
       const t0 = performance.now();
       state.isProcessing = true;
       state.progressPercent = 5;
       state.currentStepIndex = 0;
-      state.currentStepName = 'Preparing file engine...';
+      state.currentStepName = 'Initializing document engine...';
       render();
 
       try {
@@ -9769,8 +9734,7 @@
         if (isPdf) {
           currentBytes = new Uint8Array(await state.file.arrayBuffer());
         } else {
-          // Wrap image or other format into a valid PDFDoc
-          state.currentStepName = 'Converting image to PDF workspace...';
+          state.currentStepName = 'Converting document to PDF...';
           render();
           const doc = await PDFLib.PDFDocument.create();
           const imgBuf = new Uint8Array(await state.file.arrayBuffer());
@@ -9789,12 +9753,12 @@
         let isZipOut = false;
         let zipCustomName = 'archive.zip';
 
-        // Execute steps in sequence
-        for (let i = 0; i < state.steps.length; i++) {
-          const step = state.steps[i];
+        // Execute active steps in sequence
+        for (let i = 0; i < activeSteps.length; i++) {
+          const step = activeSteps[i];
           state.currentStepIndex = i;
           state.currentStepName = step.name;
-          state.progressPercent = Math.round(((i + 0.5) / state.steps.length) * 90);
+          state.progressPercent = Math.round(((i + 0.5) / activeSteps.length) * 90);
           render();
 
           if (step.type === 'watermark') {
