@@ -17356,9 +17356,8 @@ div.app-main-content,
   max-height: 100% !important;
   background: #FFFFFF !important;
   box-sizing: border-box !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  padding: 20px 20px 28px !important;
+  overflow: hidden !important;
+  padding: 14px 20px !important;
   align-items: center !important;
   justify-content: flex-start !important;
   transition: background 0.15s ease !important;
@@ -17377,7 +17376,7 @@ div.app-main-content,
   justify-content: space-between !important;
   width: 100% !important;
   max-width: 520px !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 8px !important;
   flex-shrink: 0 !important;
 }
 
@@ -17401,8 +17400,8 @@ div.app-main-content,
   align-items: center !important;
   gap: 2px !important;
   background: #F8FAFC !important;
-  padding: 3px !important;
-  border-radius: 8px !important;
+  padding: 2.5px !important;
+  border-radius: 7px !important;
   border: 1px solid var(--wf-border-hover) !important;
 }
 
@@ -17410,13 +17409,13 @@ div.app-main-content,
   display: inline-flex !important;
   align-items: center !important;
   gap: 3px !important;
-  padding: 4px 11px !important;
+  padding: 3px 9px !important;
   font-size: 10.5px !important;
   font-weight: 600 !important;
   color: var(--wf-muted) !important;
   background: transparent !important;
   border: none !important;
-  border-radius: 6px !important;
+  border-radius: 5px !important;
   cursor: pointer !important;
   transition: all 0.14s cubic-bezier(0.23, 1, 0.32, 1) !important;
   letter-spacing: 0.01em !important;
@@ -17449,9 +17448,19 @@ div.app-main-content,
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
+  justify-content: space-between !important;
   width: 100% !important;
   max-width: 520px !important;
-  flex-shrink: 0 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.wf-track-wrap::-webkit-scrollbar {
+  display: none !important;
 }
 
 .wf-pipeline-track {
@@ -17459,19 +17468,21 @@ div.app-main-content,
   flex-direction: column !important;
   align-items: center !important;
   width: 100% !important;
+  flex-shrink: 0 !important;
 }
 
 /* ── Base Row Surface ── */
 .wf-flat-row {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   width: 100% !important;
-  min-height: 48px !important;
+  min-height: 38px !important;
+  height: 38px !important;
   background: var(--wf-white) !important;
   border: 1px solid var(--wf-border-hover) !important;
-  border-radius: 8px !important;
-  padding: 0 14px !important;
+  border-radius: 7px !important;
+  padding: 0 10px !important;
   box-sizing: border-box !important;
   position: relative !important;
   overflow: hidden !important;
@@ -17485,16 +17496,17 @@ div.app-main-content,
 
 /* Empty drop zone */
 .wf-flat-row.is-empty {
-  min-height: 72px !important;
-  border: 1.5px dashed #E2E8F0 !important;
+  min-height: 52px !important;
+  height: 52px !important;
+  border: 1.5px dashed #CBD5E1 !important;
   background: #FCFCFD !important;
   cursor: pointer !important;
   flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 16px !important;
-  border-radius: 10px !important;
+  gap: 3px !important;
+  padding: 6px !important;
+  border-radius: 8px !important;
 }
 
 .wf-flat-row.is-empty:hover {
@@ -17706,19 +17718,21 @@ div.app-main-content,
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 14px !important;
+  height: 8px !important;
   position: relative !important;
 }
 
 .wf-hairline-line {
   width: 1.5px !important;
-  height: 8px !important;
+  height: 4px !important;
   background: #E2E8F0 !important;
 }
 
 .wf-hairline-arrow {
   color: #CBD5E1 !important;
   margin-top: -2px !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
 }
 
 /* ── Step block (row + inline config) ── */
@@ -17731,10 +17745,10 @@ div.app-main-content,
 
 @media (prefers-reduced-motion: no-preference) {
   .wf-step-block {
-    animation: wf-step-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both !important;
+    animation: wf-step-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both !important;
   }
   @keyframes wf-step-in {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(4px); }
     to   { opacity: 1; transform: translateY(0);   }
   }
 }
@@ -17743,18 +17757,18 @@ div.app-main-content,
 .wf-inline-config-strip {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  padding: 4px 14px 4px 46px !important;
+  gap: 6px !important;
+  padding: 2px 8px 2px 34px !important;
   background: #FAFAFA !important;
   border-left: 1px solid var(--wf-border-hover) !important;
   border-right: 1px solid var(--wf-border-hover) !important;
   border-bottom: 1px solid var(--wf-border-hover) !important;
-  border-radius: 0 0 8px 8px !important;
+  border-radius: 0 0 7px 7px !important;
   box-sizing: border-box !important;
 }
 
 .wf-config-label {
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: var(--wf-muted) !important;
   flex-shrink: 0 !important;
@@ -17769,12 +17783,12 @@ div.app-main-content,
 
 .wf-config-input {
   width: 100% !important;
-  height: 26px !important;
+  height: 22px !important;
   background: var(--wf-white) !important;
   border: 1px solid var(--wf-border-hover) !important;
-  border-radius: 5px !important;
-  padding: 0 26px 0 8px !important;
-  font-size: 11.5px !important;
+  border-radius: 4px !important;
+  padding: 0 22px 0 6px !important;
+  font-size: 11px !important;
   color: var(--wf-text) !important;
   outline: none !important;
   box-sizing: border-box !important;
@@ -17789,14 +17803,14 @@ div.app-main-content,
 
 .wf-config-eye {
   position: absolute !important;
-  right: 5px !important;
+  right: 4px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   background: transparent !important;
   border: none !important;
   color: #CBD5E1 !important;
   cursor: pointer !important;
-  padding: 2px !important;
+  padding: 1px !important;
   display: flex !important;
   align-items: center !important;
   transition: color 0.12s ease !important;
@@ -17810,12 +17824,12 @@ div.app-main-content,
 }
 
 .wf-config-btn {
-  height: 24px !important;
-  padding: 0 9px !important;
-  border-radius: 5px !important;
+  height: 20px !important;
+  padding: 0 7px !important;
+  border-radius: 4px !important;
   border: 1px solid var(--wf-border-hover) !important;
   background: var(--wf-white) !important;
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: var(--wf-muted) !important;
   cursor: pointer !important;
@@ -17847,14 +17861,14 @@ div.app-main-content,
 .wf-add-strip {
   display: flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 4px !important;
   flex-wrap: wrap !important;
   justify-content: center !important;
-  padding: 2px 0 !important;
+  padding: 1px 0 !important;
 }
 
 .wf-add-label {
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: #94A3B8 !important;
   margin-right: 2px !important;
@@ -17867,14 +17881,14 @@ div.app-main-content,
 .wf-add-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 3px !important;
-  padding: 4px 10px !important;
-  font-size: 10.5px !important;
+  gap: 2px !important;
+  padding: 2.5px 8px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: var(--wf-muted) !important;
   background: var(--wf-white) !important;
   border: 1px solid var(--wf-border-hover) !important;
-  border-radius: 20px !important;
+  border-radius: 16px !important;
   cursor: pointer !important;
   transition: all 0.13s ease !important;
   letter-spacing: 0.005em !important;
@@ -17901,8 +17915,8 @@ div.app-main-content,
   justify-content: space-between !important;
   width: 100% !important;
   max-width: 520px !important;
-  margin-top: 16px !important;
-  padding-top: 12px !important;
+  margin-top: 8px !important;
+  padding-top: 8px !important;
   border-top: 1px solid var(--wf-border) !important;
   flex-shrink: 0 !important;
 }
@@ -17935,18 +17949,18 @@ div.app-main-content,
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 7px !important;
-  height: 38px !important;
-  padding: 0 20px !important;
+  gap: 6px !important;
+  height: 34px !important;
+  padding: 0 16px !important;
   background: var(--wf-pink) !important;
   color: #FFFFFF !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: 7px !important;
   cursor: pointer !important;
   transition: background 0.14s ease, transform 0.12s ease, box-shadow 0.14s ease !important;
-  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3) !important;
+  box-shadow: 0 2px 6px rgba(236, 72, 153, 0.28) !important;
   text-decoration: none !important;
   letter-spacing: -0.01em !important;
   font-family: inherit !important;
@@ -17955,12 +17969,12 @@ div.app-main-content,
 .wf-primary-cta:hover {
   background: var(--wf-pink-hover) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4) !important;
+  box-shadow: 0 4px 10px rgba(236, 72, 153, 0.38) !important;
 }
 
 .wf-primary-cta:active {
   transform: scale(0.97) !important;
-  box-shadow: 0 1px 4px rgba(236, 72, 153, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(236, 72, 153, 0.22) !important;
 }
 
 .wf-primary-cta:focus-visible {
