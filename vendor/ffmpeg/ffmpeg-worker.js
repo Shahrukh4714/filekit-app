@@ -75,7 +75,16 @@
   self.onmessage = async function (e) {
     var msg = e.data;
     var id = msg.id;
-    var post = function (obj) { obj.id = id; self.postMessage(obj); };
+    var post = function (obj, transfer) {
+      obj.id = id;
+      if (transfer && transfer.length) {
+        self.postMessage(obj, transfer);
+      } else if (obj.data && obj.data instanceof ArrayBuffer) {
+        self.postMessage(obj, [obj.data]);
+      } else {
+        self.postMessage(obj);
+      }
+    };
     try {
       if (msg.type === 'init') {
         await loadCore();
@@ -94,7 +103,7 @@
           try { Core.FS.unlink(msg.inputs[k][0]); } catch (e2) {}
         }
         try { Core.FS.unlink(msg.out); } catch (e3) {}
-        post({ type: 'done', ok: true, code: code, data: data.buffer });
+        post({ type: 'done', ok: true, code: code, data: data.buffer }, [data.buffer]);
         return;
       }
 

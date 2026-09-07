@@ -20,6 +20,14 @@ class FileKitHandler(http.server.SimpleHTTPRequestHandler):
         '.svg': 'image/svg+xml',
     }
 
+    def do_GET(self):
+        # Support clean SPA routes (e.g. /pdf-compress -> /index.html)
+        clean_path = self.path.split('?')[0].split('#')[0]
+        local_path = self.translate_path(clean_path)
+        if not os.path.exists(local_path) and '.' not in os.path.basename(clean_path):
+            self.path = '/index.html'
+        return super().do_GET()
+
     def end_headers(self):
         # Enable SharedArrayBuffer & multi-threaded WASM in local dev
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')

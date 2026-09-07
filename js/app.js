@@ -98,33 +98,122 @@
     return { blob: new Blob([await doc.save()], { type: 'application/pdf' }), filename: name, mime: 'application/pdf', preview: 'download' };
   }
 
-  // --- Toast notification system (accessible, theme-consistent, no blocking native alerts) ---
+  // --- Flagship Toast Notification System (Sonner / Vercel / Linear Standards) ---
   let _toastContainer = null;
-  function toast(message, type = 'info', duration = 3600) {
-    if (!_toastContainer) {
+  const _activeToasts = new Set();
+
+  function toast(message, type = 'info', options = {}) {
+    const opts = typeof options === 'number' ? { duration: options } : (options || {});
+    const duration = opts.duration ?? (type === 'error' ? 4500 : 3200);
+
+    if (!_toastContainer || !_toastContainer.isConnected) {
       _toastContainer = document.createElement('div');
       _toastContainer.id = 'fk-toast-container';
+      _toastContainer.className = 'fk-toast-container';
       _toastContainer.setAttribute('aria-live', 'polite');
-      _toastContainer.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:380px;width:calc(100vw - 32px);';
+      _toastContainer.setAttribute('role', 'region');
+      _toastContainer.setAttribute('aria-label', 'Notifications');
       document.body.appendChild(_toastContainer);
     }
+
+    // Limit active toasts on screen to maximum 3
+    if (_activeToasts.size >= 3) {
+      const oldest = _activeToasts.values().next().value;
+      if (oldest && typeof oldest._dismiss === 'function') {
+        oldest._dismiss();
+      }
+    }
+
     const t = document.createElement('div');
-    t.className = `fk-toast fk-toast-${type}`;
-    const bg = type === 'error' ? '#FEF2F2' : type === 'success' ? '#F0FDF4' : type === 'warn' ? '#FFFBEB' : '#FFFFFF';
-    const border = type === 'error' ? '#FCA5A5' : type === 'success' ? '#86EFAC' : type === 'warn' ? '#FDE68A' : '#E2E8F0';
-    const icon = type === 'error' ? '⚠️' : type === 'success' ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="20 6 9 17 4 12"/></svg>' : type === 'warn' ? 'ℹ️' : '💡';
-    t.style.cssText = `background:${bg};border:1px solid ${border};color:${color};padding:12px 16px;border-radius:10px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.12),0 8px 10px -6px rgba(0,0,0,0.06);font-size:13.5px;line-height:1.45;font-weight:500;display:flex;align-items:flex-start;gap:10px;pointer-events:auto;opacity:0;transform:translateY(12px);transition:all 0.22s cubic-bezier(0.16,1,0.3,1);font-family:Inter,system-ui,sans-serif;`;
-    t.innerHTML = `<span style="font-size:15px;line-height:1;flex-shrink:0;display:inline-flex;align-items:center;">${icon}</span><span style="flex:1;">${escapeHtml(message)}</span>`;
+    t.className = `fk-toast fk-toast--${type}`;
+    t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+    // Bespoke vector SVG micro-icons (no raw/cartoony emojis!)
+    let iconSvg = '';
+    if (type === 'success') {
+      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+    } else if (type === 'warn') {
+      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    } else if (type === 'error') {
+      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    } else if (type === 'loading') {
+      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fk-toast-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+    } else {
+      // Default info sparkle / circle
+      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    }
+
+    let actionHtml = '';
+    if (opts.action && opts.action.label) {
+      actionHtml = `<button type="button" class="fk-toast-action-btn">${escapeHtml(opts.action.label)}</button>`;
+    }
+
+    t.innerHTML = `
+      <span class="fk-toast-icon fk-toast-icon--${type}">${iconSvg}</span>
+      <span class="fk-toast-text">${escapeHtml(message)}</span>
+      ${actionHtml}
+      <button type="button" class="fk-toast-close" aria-label="Dismiss notification">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+
     _toastContainer.appendChild(t);
+    _activeToasts.add(t);
+
+    let dismissTimer = null;
+    let isDismissing = false;
+
+    const startTimer = (ms) => {
+      clearTimeout(dismissTimer);
+      if (ms > 0 && ms !== Infinity) {
+        dismissTimer = setTimeout(dismiss, ms);
+      }
+    };
+
+    const dismiss = () => {
+      if (isDismissing) return;
+      isDismissing = true;
+      clearTimeout(dismissTimer);
+      _activeToasts.delete(t);
+      t.classList.remove('is-visible');
+      t.classList.add('is-leaving');
+      const cleanup = () => {
+        t.remove();
+        if (_toastContainer && !_toastContainer.hasChildNodes()) {
+          _toastContainer.remove();
+          _toastContainer = null;
+        }
+      };
+      t.addEventListener('transitionend', cleanup, { once: true });
+      setTimeout(cleanup, 220);
+    };
+
+    t._dismiss = dismiss;
+
     requestAnimationFrame(() => {
-      t.style.opacity = '1';
-      t.style.transform = 'translateY(0)';
+      requestAnimationFrame(() => {
+        t.classList.add('is-visible');
+      });
     });
-    setTimeout(() => {
-      t.style.opacity = '0';
-      t.style.transform = 'translateY(10px)';
-      setTimeout(() => t.remove(), 250);
-    }, duration);
+
+    startTimer(duration);
+
+    t.addEventListener('mouseenter', () => clearTimeout(dismissTimer));
+    t.addEventListener('mouseleave', () => { if (!isDismissing) startTimer(1800); });
+
+    const closeBtn = t.querySelector('.fk-toast-close');
+    if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); dismiss(); };
+
+    const actionBtn = t.querySelector('.fk-toast-action-btn');
+    if (actionBtn && opts.action && typeof opts.action.onClick === 'function') {
+      actionBtn.onclick = (e) => {
+        e.stopPropagation();
+        try { opts.action.onClick(e); } catch (err) { console.warn(err); }
+        dismiss();
+      };
+    }
+
+    return { dismiss };
   }
 
   FF.util = { escapeHtml, bytes, downloadBlob, objectURL, revokeAll, throwIfAborted, yieldToMain, baseName, extOf, el, loadScript, loadScripts, textToPdf, toast };
@@ -146,11 +235,23 @@
   const pending = new Map();
   let initError = null;
 
-  function call(type, payload) {
+  function call(type, payload, transfer = []) {
     return new Promise((resolve, reject) => {
       const id = ++seq;
       pending.set(id, { resolve, reject });
-      worker.postMessage(Object.assign({ type, id }, payload));
+      const msg = Object.assign({ type, id }, payload);
+      const transfers = Array.isArray(transfer) ? [...transfer] : [];
+      if (!transfers.length && payload && Array.isArray(payload.inputs)) {
+        for (const item of payload.inputs) {
+          if (item && item[1] instanceof ArrayBuffer) transfers.push(item[1]);
+          else if (item && item[1]?.buffer instanceof ArrayBuffer) transfers.push(item[1].buffer);
+        }
+      }
+      if (!transfers.length && payload && payload.data instanceof ArrayBuffer) {
+        transfers.push(payload.data);
+      }
+      if (transfers.length) worker.postMessage(msg, transfers);
+      else worker.postMessage(msg);
     });
   }
 
@@ -1304,8 +1405,12 @@
     /* ═══════════════════════════════════════════════════════════════════════════
      Modern High-Fidelity Tool Icon System
   ═══════════════════════════════════════════════════════════════════════════ */
+  let __ffBooted = false;
   function boot() {
     const tools = FF.registry.all();
+    if (!tools || !tools.length) return false;
+    if (__ffBooted) return true;
+    __ffBooted = true;
     const toolTotal = tools.length;
     const eyebrow = document.querySelector('.hero-eyebrow'); if (eyebrow?.lastChild) eyebrow.lastChild.nodeValue = ` Private by design · ${toolTotal} tools`;
     const catalogSearch = document.getElementById('catalog-search'); if (catalogSearch) catalogSearch.placeholder = `Search ${toolTotal} tools…`;
@@ -1689,11 +1794,27 @@
     function showHome(scrollTarget = null) {
       FF.util.revokeAll();
       if (!home || !toolView) return;
-      home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; document.title = 'FileKit — Every File Tool You Need';
+      home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; 
+      document.title = 'FileKit — Every File Tool You Need';
+      const defaultDesc = 'FileKit is the modern, 100% private in-browser file suite. Convert, compress, edit, and organize documents, media, and archives locally.';
+      const descEl = document.querySelector('meta[name="description"]');
+      if (descEl) descEl.setAttribute('content', defaultDesc);
+      const ogTitleEl = document.querySelector('meta[property="og:title"]');
+      if (ogTitleEl) ogTitleEl.setAttribute('content', 'FileKit — Every File Tool You Need');
+      const ogDescEl = document.querySelector('meta[property="og:description"]');
+      if (ogDescEl) ogDescEl.setAttribute('content', defaultDesc);
+      const ogUrlEl = document.querySelector('meta[property="og:url"]');
+      if (ogUrlEl) ogUrlEl.setAttribute('content', 'https://filekit.app/');
+      const twTitleEl = document.querySelector('meta[name="twitter:title"]');
+      if (twTitleEl) twTitleEl.setAttribute('content', 'FileKit — Every File Tool You Need');
+      const twDescEl = document.querySelector('meta[name="twitter:description"]');
+      if (twDescEl) twDescEl.setAttribute('content', defaultDesc);
+      const canonicalEl = document.querySelector('link[rel="canonical"]');
+      if (canonicalEl) canonicalEl.setAttribute('href', 'https://filekit.app/');
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = false;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = true;
       const footer = document.querySelector('footer'); if (footer) footer.hidden = false;
-      window.history.replaceState({}, '', location.pathname);
+      try { window.history.replaceState({}, '', '/'); } catch { window.history.replaceState({}, '', '#'); }
       requestAnimationFrame(() => {
         if (scrollTarget) document.getElementById(scrollTarget)?.scrollIntoView({ behavior: 'smooth' });
         else { window.scrollTo({ top: 0, behavior: 'smooth' }); const heading = home.querySelector('h1'); if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); } }
@@ -2574,261 +2695,48 @@
     }
 
     function bindAllToolsFlyout() {
+      // Hover activation completely removed so hovering over rail icons is 100% silent
       document.querySelectorAll('.rail-item[data-task-rail="more"]').forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-          clearTimeout(allToolsCloseTimer);
-          if (!allToolsFlyoutEl) openAllToolsFlyout(btn);
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (allToolsFlyoutEl) closeAllToolsFlyout();
+          else openAllToolsFlyout(btn);
         });
-        btn.addEventListener('mouseleave', scheduleAllToolsClose);
       });
     }
     // ═══════════════════════════════════════════════════════════════════════
-    // Siderail Pro Capability Popover (Linear / Raycast Craft)
+    // Siderail Precision Tooltip Card (Faded Glass & Razor-Sharp Micro-Border)
     // ═══════════════════════════════════════════════════════════════════════
-    const RAIL_HOVER_DATA = {
-      compress: {
-        title: 'Compress',
-        count: '20 tools',
-        hint: 'Lossless',
-        items: [
-          { name: 'PDF Shrink', detail: 'Up to 90% reduction' },
-          { name: 'Images', detail: 'WebP · JPEG · PNG' },
-          { name: 'Video / Audio', detail: 'Bitrate · Resolution' }
-        ]
-      },
-      convert: {
-        title: 'Convert',
-        count: '54 tools',
-        hint: 'Universal',
-        items: [
-          { name: 'Documents', detail: 'DOCX · PDF · XLSX' },
-          { name: 'Images', detail: 'HEIC · PNG · WebP' },
-          { name: 'Media & Audio', detail: 'MP4 · GIF · MP3' }
-        ]
-      },
-      organize: {
-        title: 'Organize',
-        count: '23 tools',
-        hint: 'Interactive',
-        items: [
-          { name: 'Pages', detail: 'Merge · Split · Reorder' },
-          { name: 'Geometry', detail: 'Rotate · Crop · Extract' },
-          { name: 'Archives', detail: 'ZIP · 7Z · TAR.GZ' }
-        ]
-      },
-      edit: {
-        title: 'Edit & Annotate',
-        count: '31 tools',
-        hint: 'Canvas',
-        items: [
-          { name: 'Text & Form', detail: 'Live Text · Redact · Sign' },
-          { name: 'Page Elements', detail: 'Numbers · Watermark' },
-          { name: 'Media Tools', detail: 'Trim · Speed · Mute' }
-        ]
-      },
-      protect: {
-        title: 'Protect & Sign',
-        count: '12 tools',
-        hint: 'AES-256',
-        items: [
-          { name: 'Encryption', detail: 'Password Lock · Unlock' },
-          { name: 'Sanitization', detail: 'Redact PII · Flatten' },
-          { name: 'Signatures', detail: 'Digital Sign · Seals' }
-        ]
-      },
-      scan: {
-        title: 'Scan & OCR',
-        count: '10 tools',
-        hint: 'On-Device',
-        items: [
-          { name: 'OCR Engine', detail: 'PDF / Image to Text' },
-          { name: 'Extraction', detail: 'Tables to CSV · Audio' },
-          { name: 'Scanner', detail: 'Camera Doc Scanner' }
-        ]
-      },
-      workflow: {
-        title: 'Workflows',
-        count: 'Automator',
-        hint: 'Pipelines',
-        items: [
-          { name: 'Pipelines', detail: 'Convert + Compress + Sign' },
-          { name: 'Batch', detail: 'Bulk Multi-File Runs' }
-        ]
-      },
-      more: {
-        title: 'All Studios',
-        count: '187 tools',
-        hint: 'Directory',
-        items: [
-          { name: 'Developer', detail: 'JSON · Base64 · QR' },
-          { name: 'Forensics', detail: 'EXIF & GPS Wiper' },
-          { name: 'E-Books', detail: 'EPUB Reader · Split' }
-        ]
-      },
-      account: {
-        title: 'Privacy & Storage',
-        count: 'Local Storage',
-        hint: 'Zero Logs',
-        items: [
-          { name: 'Client Engine', detail: 'Files never leave device' },
-          { name: 'Offline Cache', detail: 'Manage storage & quota' }
-        ]
-      },
-      business: {
-        title: 'Business & Office',
-        count: 'Office Suite',
-        hint: 'Local Forms',
-        items: [
-          { name: 'Invoices & Forms', detail: 'GST · Receipts · Contracts' },
-          { name: 'Spreadsheets', detail: 'CSV · Excel Transcode' }
-        ]
-      },
-      developer: {
-        title: 'Developer Tools',
-        count: 'Data Suite',
-        hint: 'Client-Side',
-        items: [
-          { name: 'Formatters', detail: 'JSON · XML · Base64' },
-          { name: 'Codes & Hash', detail: 'QR · Barcode · SHA-256' }
-        ]
-      },
-      ebooks: {
-        title: 'E-Books & Reading',
-        count: 'E-Books',
-        hint: 'Reader',
-        items: [
-          { name: 'Reader & Edit', detail: 'EPUB Reader · Chapters' },
-          { name: 'Conversion', detail: 'EPUB to PDF · Mobi' }
-        ]
-      },
-      security: {
-        title: 'Forensics & Privacy',
-        count: 'Privacy Suite',
-        hint: 'Sanitize',
-        items: [
-          { name: 'Metadata', detail: 'Strip EXIF · Camera Data' },
-          { name: 'Geo Privacy', detail: 'Remove GPS Coordinates' }
-        ]
-      }
-    };
-
-    let railHoverCardEl = null;
-    let railHoverTimer = null;
-    let activeHoveredRailBtn = null;
+    // Siderail Title Scrubber (All Hover Popovers & Tooltips Removed)
+    // ═══════════════════════════════════════════════════════════════════════
+    function stripAllRailTitles() {
+      document.querySelectorAll('.app-sidebar-rail, .app-sidebar-rail *, #app-home-brand-btn, #app-home-brand-btn *, .rail-item, .rail-item *').forEach(el => {
+        if (el.hasAttribute('title')) {
+          const val = el.getAttribute('title');
+          if (val && !el.hasAttribute('aria-label')) el.setAttribute('aria-label', val);
+          el.removeAttribute('title');
+        }
+      });
+    }
 
     function initRailHoverIntelligence() {
-      if (!railHoverCardEl) {
-        railHoverCardEl = document.createElement('div');
-        railHoverCardEl.className = 'rail-hover-card';
-        railHoverCardEl.id = 'rail-hover-card';
-        document.body.appendChild(railHoverCardEl);
+      // Siderail hover cards, popovers, and tooltips are completely disabled.
+      const existing = document.getElementById('rail-hover-card');
+      if (existing) {
+        try { existing.remove(); } catch {}
       }
-
-      function showHoverCard(btn) {
-        if (!btn || !document.body.contains(btn)) return;
-
-        const keyRaw = (
-          btn.dataset.taskRail || 
-          btn.dataset.pinnedCat || 
-          btn.dataset.railCat || 
-          (btn.id === 'rail-account-btn' ? 'account' : '') || 
-          btn.querySelector('.rail-label')?.textContent?.trim()?.toLowerCase() || 
-          ''
-        ).toLowerCase().trim();
-
-        const cleanKey = keyRaw.replace(/[^a-z0-9]/g, '');
-        
-        let data = RAIL_HOVER_DATA[cleanKey] || RAIL_HOVER_DATA[keyRaw];
-        if (!data) {
-          for (const [k, v] of Object.entries(RAIL_HOVER_DATA)) {
-            if (cleanKey.includes(k) || k.includes(cleanKey)) {
-              data = v;
-              break;
-            }
-          }
-        }
-        if (!data) return;
-
-        clearTimeout(railHoverTimer);
-        activeHoveredRailBtn = btn;
-
-        const rect = btn.getBoundingClientRect();
-        if (rect.width === 0 && rect.height === 0) return;
-
-        const top = Math.max(16, Math.min(window.innerHeight - 140, rect.top + (rect.height / 2)));
-        const left = rect.right + 10;
-
-        railHoverCardEl.innerHTML = `
-          <div class="rail-hover-card-inner">
-            <div class="rail-popover-head">
-              <div class="rail-popover-title-wrap">
-                <span class="rail-popover-title">${data.title}</span>
-                <span class="rail-popover-count">${data.count}</span>
-              </div>
-              <span class="rail-popover-hint">${data.hint}</span>
-            </div>
-            <div class="rail-popover-list">
-              ${data.items.map(it => `
-                <div class="rail-popover-row">
-                  <span class="rail-popover-row-name">${it.name}</span>
-                  <span class="rail-popover-row-ext">${it.detail}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-
-        railHoverCardEl.style.top = `${top}px`;
-        railHoverCardEl.style.left = `${left}px`;
-
-        if (btn.hasAttribute('title')) {
-          btn.removeAttribute('title');
-        }
-
-        railHoverCardEl.classList.add('is-visible');
-      }
-
-      function hideHoverCard() {
-        clearTimeout(railHoverTimer);
-        railHoverTimer = setTimeout(() => {
-          if (railHoverCardEl) {
-            railHoverCardEl.classList.remove('is-visible');
-          }
-          activeHoveredRailBtn = null;
-        }, 40);
-      }
-
-      function stripAllRailTitles() {
-        document.querySelectorAll('.app-sidebar-rail, .app-sidebar-rail *').forEach(el => {
-          if (el.hasAttribute('title')) {
-            const val = el.getAttribute('title');
-            if (val && !el.hasAttribute('aria-label')) el.setAttribute('aria-label', val);
-            el.removeAttribute('title');
-          }
-        });
-      }
-
-      if (!window._railHoverDelegated) {
-        window._railHoverDelegated = true;
-        document.addEventListener('mouseover', (e) => {
-          stripAllRailTitles();
-          const btn = e.target.closest('.app-sidebar-rail .rail-item, .rail-item, [data-task-rail]');
-          if (btn) showHoverCard(btn);
-        }, true);
-
-        document.addEventListener('mouseout', (e) => {
-          const btn = e.target.closest('.app-sidebar-rail .rail-item, .rail-item, [data-task-rail]');
-          if (btn) {
-            if (e.relatedTarget && btn.contains(e.relatedTarget)) return;
-            hideHoverCard();
-          }
-        }, true);
-
-        document.addEventListener('click', () => {
-          hideHoverCard();
-        }, true);
-      }
+      document.querySelectorAll('.rail-hover-card').forEach(el => {
+        try { el.remove(); } catch {}
+      });
       stripAllRailTitles();
+      if (!window._railTitleScrubberDelegated) {
+        window._railTitleScrubberDelegated = true;
+        document.addEventListener('mouseover', (e) => {
+          if (e.target.closest('.app-sidebar-rail, #app-home-brand-btn, .rail-item')) {
+            stripAllRailTitles();
+          }
+        }, true);
+      }
     }
     window.initRailHoverIntelligence = initRailHoverIntelligence;
 
@@ -3320,8 +3228,14 @@
       window.scrollTo({ top: 0, behavior: 'instant' });
 
       const targetSlug = FF.ToolSlugs ? FF.ToolSlugs.toSeo(id) : id;
-      if (location.hash.replace(/^#/, '') !== targetSlug) {
-        history.replaceState(null, '', '#' + targetSlug);
+      const curP = location.pathname.replace(/^\/+|\/+$/g, '');
+      const curH = location.hash.replace(/^#/, '');
+      if (curP !== targetSlug && curH !== targetSlug) {
+        try {
+          history.replaceState(null, '', '/' + targetSlug);
+        } catch {
+          history.replaceState(null, '', '#' + targetSlug);
+        }
       }
 
       // Marketing navbar & footer are VISIBLE
@@ -3333,6 +3247,37 @@
       const displayName = ux?.title || tool.name;
       const crumbCat = document.getElementById('crumb-category'); if (crumbCat) crumbCat.textContent = tool.category;
       const crumbTl = document.getElementById('crumb-tool'); if (crumbTl) crumbTl.textContent = displayName;
+
+      // Dynamic SEO & Social Sharing Metadata Update
+      const pageTitle = `${displayName} Online — 100% Free & Private | FileKit`;
+      document.title = pageTitle;
+      const metaDesc = tool.description || `Fast, free, and 100% private in-browser ${displayName.toLowerCase()} tool. Works locally without uploading your files.`;
+
+      const descEl = document.querySelector('meta[name="description"]');
+      if (descEl) descEl.setAttribute('content', metaDesc);
+
+      const ogTitleEl = document.querySelector('meta[property="og:title"]');
+      if (ogTitleEl) ogTitleEl.setAttribute('content', pageTitle);
+
+      const ogDescEl = document.querySelector('meta[property="og:description"]');
+      if (ogDescEl) ogDescEl.setAttribute('content', metaDesc);
+
+      const ogUrlEl = document.querySelector('meta[property="og:url"]');
+      if (ogUrlEl) ogUrlEl.setAttribute('content', `https://filekit.app/${targetSlug}`);
+
+      const twTitleEl = document.querySelector('meta[name="twitter:title"]');
+      if (twTitleEl) twTitleEl.setAttribute('content', pageTitle);
+
+      const twDescEl = document.querySelector('meta[name="twitter:description"]');
+      if (twDescEl) twDescEl.setAttribute('content', metaDesc);
+
+      let canonicalEl = document.querySelector('link[rel="canonical"]');
+      if (!canonicalEl) {
+        canonicalEl = document.createElement('link');
+        canonicalEl.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonicalEl);
+      }
+      canonicalEl.setAttribute('href', `https://filekit.app/${targetSlug}`);
 
       // Apply dynamic category theme class (Approach 1)
       const toolWrap = document.querySelector('.tool-page-wrap');
@@ -3815,7 +3760,10 @@
     popularNames.forEach(name => { const t = tools.find(x => x.name.toLowerCase() === name.toLowerCase()); if (t && !popular.includes(t)) popular.push(t); });
     for (const t of tools) { if (popular.length >= 6) break; if (!popular.includes(t)) popular.push(t); }
     const popularGrid = document.getElementById('popular-grid');
-    if (popularGrid) popular.forEach(t => popularGrid.append(card(t)));
+    if (popularGrid) {
+      popularGrid.textContent = '';
+      popular.forEach(t => popularGrid.append(card(t)));
+    }
 
     updatePersonalCounts();
     const drawerCats = document.getElementById('drawer-categories');
@@ -4589,32 +4537,37 @@
       });
     });
     function handleRoute() {
-      const hash = location.hash.slice(1);
-      if (!hash) {
+      let route = location.hash.slice(1);
+      if (!route) {
+        const p = location.pathname.replace(/^\/+|\/+$/g, '');
+        if (p && p !== 'index.html') route = p;
+      }
+      if (!route) {
         showHome();
         return;
       }
-      if (hash === 'app') {
+      if (route === 'app') {
         showApp();
         return;
       }
-      if (hash.startsWith('app/category/')) {
-        const cat = decodeURIComponent(hash.replace('app/category/', ''));
+      if (route.startsWith('app/category/')) {
+        const cat = decodeURIComponent(route.replace('app/category/', ''));
         showApp(cat);
         return;
       }
-      if (hash.startsWith('app/')) {
-        const rawSlug = hash.replace('app/', '');
+      if (route.startsWith('app/')) {
+        const rawSlug = route.replace('app/', '');
         const toolId = FF.ToolSlugs ? FF.ToolSlugs.resolve(rawSlug) : rawSlug;
         openWorkspaceTool(toolId);
         return;
       }
-      // Public SEO Tool URL (e.g. #compress-pdf, #merge-pdf, #word-to-pdf, etc.)
-      const resolvedSeoId = FF.ToolSlugs ? FF.ToolSlugs.resolve(hash) : hash;
+      // Public SEO Tool URL (e.g. #compress-pdf or /compress-pdf)
+      const resolvedSeoId = FF.ToolSlugs ? FF.ToolSlugs.resolve(route) : route;
       openSeoToolPage(resolvedSeoId);
     }
 
     window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('popstate', handleRoute);
 
   /* ═══════════════════════════════════════════════════════════════════════════
      Interactive Navbar Mega Menu (iLovePDF Style Parity with FileKit Tools & Icons)
@@ -5119,9 +5072,21 @@
 
   initNavMegaMenu();
   if (window.initRailHoverIntelligence) window.initRailHoverIntelligence();
-  handleRoute();
+    handleRoute();
+    return true;
   }
-  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();
+  window.FF.boot = function() {
+    return boot();
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => boot());
+  } else {
+    if (!boot()) {
+      document.addEventListener('DOMContentLoaded', () => boot());
+      window.addEventListener('load', () => boot());
+    }
+  }
+  window.addEventListener('load', () => boot());
 })();
 
 /* =========================================================

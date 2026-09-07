@@ -3,193 +3,776 @@
    FIXES: TOOLBAR FIT, NON-OVERFLOWING RIGHT RAIL & DECOUPLED ZOOM
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Single-Row Action Toolbar — Guaranteed Fit */
+/* ═══════════════════════════════════════════════════════════════════
+   FILEKIT — EDIT PDF STUDIO ACTION TOOLBAR (OPENSOURCE UI STANDARDS)
+   Gold-Standard 48px 3-Zone Grid Toolbar, Segmented Capsule & 3D Keycaps
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 1. Unified 48px Single-Row Action Toolbar */
 .etxt-unified-toolbar {
-  height: 46px !important;
-  min-height: 46px !important;
+  position: relative !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
   background: #FFFFFF !important;
-  border-bottom: 1px solid #E2E8F0 !important;
-  display: flex !important;
+  border-bottom: 1px solid #E4E4E7 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  display: grid !important;
+  grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr) !important;
   align-items: center !important;
-  justify-content: space-between !important;
   padding: 0 12px !important;
   box-sizing: border-box !important;
   width: 100% !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   z-index: 40 !important;
+  user-select: none !important;
+  gap: 12px !important;
 }
 
-.etxt-toolbar-center {
+/* 2. Left Zone: Document & Page Structure */
+.etxt-toolbar-left {
+  grid-column: 1 !important;
+  justify-self: start !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  flex: 1 1 auto !important;
-  justify-content: center !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
 }
 
-.etxt-tool-group {
-  display: inline-flex !important;
-  align-items: center !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  gap: 2px !important;
-  flex-wrap: nowrap !important;
-  box-shadow: none !important;
-}
-
-.etxt-tool-btn {
+/* Opensource UI Depth Outline Button */
+.etxt-btn-depth {
   all: unset !important;
-  height: 28px !important;
-  padding: 0 6px !important;
+  height: 34px !important;
+  padding: 0 11px !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  border-radius: 6px !important;
-  background: transparent !important;
-  color: #4B4B4B !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
+  gap: 6px !important;
+  border-radius: 8px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  color: #18181B !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
   cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05),
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.03) !important;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  transition: all 100ms ease !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.etxt-btn-depth:hover {
+  background: #F9FAFB !important;
+  border-color: #D4D4D8 !important;
+  color: #09090B !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+.etxt-btn-depth:active {
+  background: #F4F4F5 !important;
+  transform: translateY(1px) !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06),
+              inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.etxt-btn-depth.is-active {
+  background: #F0F9FF !important;
+  border-color: #00B0FF !important;
+  color: #0284C7 !important;
+  box-shadow: 0 0 0 2px rgba(0, 176, 255, 0.25), inset 0 1px 2px rgba(0, 176, 255, 0.08) !important;
+}
+
+.etxt-btn-depth.is-active svg {
+  stroke: #00B0FF !important;
+}
+
+.etxt-btn-depth svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: #18181B !important;
+  flex-shrink: 0 !important;
+}
+
+/* Page count badge inside Depth button */
+.etxt-depth-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #F4F4F5 !important;
+  color: #71717A !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  padding: 1px 5px !important;
+  border-radius: 9999px !important;
+  border: 1px solid #E4E4E7 !important;
+  min-width: 16px !important;
+  line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.etxt-btn-depth.is-active .etxt-depth-badge {
+  background: #E0F2FE !important;
+  color: #0369A1 !important;
+  border-color: #BAE6FD !important;
+}
+
+/* Dropdown Container */
+.etxt-dropdown-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+}
+
+.etxt-dropdown-menu {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  min-width: 190px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
+              0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  padding: 4px !important;
+  z-index: 100 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  animation: etxtDropdownIn 140ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.etxt-dropdown-menu[hidden] {
+  display: none !important;
+}
+
+@keyframes etxtDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.etxt-dropdown-item {
+  all: unset !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: #18181B !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
   box-sizing: border-box !important;
 }
 
-.etxt-tool-btn svg {
+.etxt-dropdown-item:hover {
+  background: #F4F4F5 !important;
+  color: #09090B !important;
+}
+
+.etxt-dropdown-item svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: currentColor !important;
+  flex-shrink: 0 !important;
+}
+
+/* 3. Center Zone: Opensource UI Segmented Mode Capsule + Dynamic Subcontrols */
+.etxt-toolbar-center {
+  grid-column: 2 !important;
+  justify-self: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  position: static !important;
+  transform: none !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  z-index: 25 !important;
+  pointer-events: auto !important;
+}
+
+/* Segmented Toggle Button Container (iOS-Style Capsule) */
+.etxt-segmented-modes {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  background: #F4F4F5 !important;
+  padding: 2.5px !important;
+  border-radius: 8px !important;
+  border: 1px solid #E4E4E7 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08),
+              inset 0 2px 4px rgba(0, 0, 0, 0.05),
+              inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+              0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  height: 34px !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-segmented-indicator {
+  position: absolute !important;
+  top: 2.5px !important;
+  bottom: 2.5px !important;
+  left: 0 !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1),
+              0 1px 2px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.04) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.etxt-mode-tab {
+  all: unset !important;
+  position: relative !important;
+  z-index: 2 !important;
+  height: 28px !important;
+  padding: 0 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: #71717A !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: color 200ms ease !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-mode-tab svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: currentColor !important;
+  flex-shrink: 0 !important;
+  transition: stroke 200ms ease !important;
+}
+
+.etxt-mode-tab:hover:not(.is-active) {
+  color: #18181B !important;
+}
+
+.etxt-mode-tab.is-active {
+  color: #18181B !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.etxt-mode-tab.is-active svg {
+  stroke: #18181B !important;
+}
+
+/* Vertical Separator */
+.etxt-vsep {
+  width: 1px !important;
+  height: 20px !important;
+  background: #E4E4E7 !important;
+  margin: 0 3px !important;
+  display: inline-block;
+  flex-shrink: 0 !important;
+}
+
+.etxt-vsep[style*="display: none"],
+.etxt-vsep[style*="display:none"],
+#etxt-subcontrols-sep[style*="display: none"],
+#etxt-subcontrols-sep[style*="display:none"] {
+  display: none !important;
+}
+
+/* Dynamic Subcontrols Slot */
+.etxt-subcontrols-slot {
+  position: static !important;
+  transform: none !important;
+  margin-left: 0 !important;
+  display: inline-flex;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 34px !important;
+  white-space: nowrap !important;
+  pointer-events: auto !important;
+  z-index: 26 !important;
+  animation: etxtSubtoolFade 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.etxt-subcontrols-slot:empty,
+.etxt-subcontrols-slot[style*="display: none"],
+.etxt-subcontrols-slot[style*="display:none"] {
+  display: none !important;
+}
+
+@keyframes etxtSubtoolFade {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Tactile Mini Button */
+.etxt-mini-btn {
+  all: unset !important;
+  height: 28px !important;
+  padding: 0 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #18181B !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-mini-btn:hover:not(:disabled) {
+  background: #F9FAFB !important;
+  border-color: #D4D4D8 !important;
+  color: #09090B !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+.etxt-mini-btn:active:not(:disabled) {
+  background: #F4F4F5 !important;
+  transform: translateY(0.5px) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+.etxt-mini-btn.is-active {
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border-color: #18181B !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
+}
+
+.etxt-mini-btn.is-active svg {
+  stroke: #FFFFFF !important;
+}
+
+.etxt-mini-btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  background: #F4F4F5 !important;
+  color: #A1A1AA !important;
+  box-shadow: none !important;
+}
+
+.etxt-mini-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: currentColor !important;
+  flex-shrink: 0 !important;
+}
+
+/* Primary Mini Button */
+.etxt-mini-btn--primary {
+  background: #00B0FF !important;
+  color: #FFFFFF !important;
+  border-color: #008CE5 !important;
+  font-weight: 600 !important;
+}
+
+.etxt-mini-btn--primary:hover {
+  background: #38C8FF !important;
+  color: #FFFFFF !important;
+}
+
+/* Joined Button Group */
+.etxt-btn-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-btn-group .etxt-mini-btn {
+  border-radius: 0 !important;
+  margin-left: -1px !important;
+  padding: 0 6.5px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.etxt-btn-group .etxt-mini-btn:first-child {
+  border-top-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+  margin-left: 0 !important;
+}
+
+.etxt-btn-group .etxt-mini-btn:last-child {
+  border-top-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+}
+
+.etxt-btn-group .etxt-mini-btn:hover:not(:disabled) {
+  z-index: 2 !important;
+}
+
+.etxt-btn-group .etxt-mini-btn.is-active {
+  z-index: 3 !important;
+}
+
+/* Stepper Component */
+.etxt-stepper {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1.5px !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 6px !important;
+  padding: 1.5px !important;
+  height: 28px !important;
+  box-sizing: border-box !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+.etxt-step-btn {
+  all: unset !important;
+  width: 20px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #18181B !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  transition: all 120ms ease !important;
+}
+
+.etxt-step-btn:hover {
+  background: #F9FAFB !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+.etxt-step-btn:active {
+  background: #F4F4F5 !important;
+  transform: translateY(0.5px) !important;
+}
+
+.etxt-step-val {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #18181B !important;
+  min-width: 18px !important;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums !important;
+  padding: 0 2px !important;
+}
+
+/* Color Dot & Chip */
+.etxt-color-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-color-dot {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  display: inline-block !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-color-hidden {
+  opacity: 0 !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Sub-select */
+.etxt-sub-select {
+  height: 28px !important;
+  padding: 0 6px !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #18181B !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  outline: none !important;
+}
+
+/* Mini Segmented Capsule */
+.etxt-segmented-modes.etxt-segmented-mini {
+  height: 28px !important;
+  padding: 1.5px !important;
+  border-radius: 6px !important;
+}
+
+.etxt-segmented-modes.etxt-segmented-mini .etxt-mode-tab {
+  height: 22px !important;
+  padding: 0 6px !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+}
+
+.etxt-segmented-modes.etxt-segmented-mini .etxt-mode-tab.is-active {
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
+  border-radius: 4px !important;
+}
+
+/* 4. Right Zone: History & Primary Action */
+.etxt-toolbar-right {
+  grid-column: 3 !important;
+  justify-self: end !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
+  margin-left: 0 !important;
+}
+
+.etxt-history-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Tactile 3D Keycap Icon Button */
+.etxt-tool-icon-btn {
+  all: unset !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  color: #52525B !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.03) !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 120ms ease !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-tool-icon-btn svg {
   width: 13px !important;
   height: 13px !important;
   stroke: currentColor !important;
 }
 
-.etxt-tool-btn:hover:not(.is-on) {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+.etxt-tool-icon-btn:hover:not(:disabled) {
+  background: #F9FAFB !important;
+  border-color: #D4D4D8 !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
 
-.etxt-tool-btn.is-on {
-  background: #0F172A !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 1.5px 5px rgba(15, 23, 42, 0.25) !important;
+.etxt-tool-icon-btn:active:not(:disabled) {
+  background: #F4F4F5 !important;
+  transform: translateY(1px) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 
-.etxt-tool-btn.is-on svg {
-  stroke: #FFFFFF !important;
-  color: #FFFFFF !important;
+.etxt-tool-icon-btn:disabled {
+  opacity: 0.38 !important;
+  cursor: not-allowed !important;
+  background: #FAFAFA !important;
+  border: 1px solid #E4E4E7 !important;
+  box-shadow: none !important;
+  color: #A1A1AA !important;
 }
 
-.etxt-vsep {
-  width: 1px !important;
-  height: 16px !important;
-  background: #E2E8F0 !important;
-  margin: 0 2px !important;
-  display: inline-block !important;
-  flex-shrink: 0 !important;
+/* Close Keycap */
+.etxt-close-btn:hover:not(:disabled) {
+  background: #FEE2E2 !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
 }
 
-.etxt-util-group {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 2px !important;
-  flex-shrink: 0 !important;
-}
-
-.etxt-icon-btn {
+/* Primary Action CTA — Opensource UI 3D Tactile Download Button */
+button.osui-dl-btn,
+.osui-dl-btn,
+.etxt-primary-cta,
+button#etxt-finish,
+#etxt-finish {
   all: unset !important;
-  width: 26px !important;
-  height: 26px !important;
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border-radius: 6px !important;
-  color: #64748B !important;
-  background: transparent !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  transition: all 100ms ease !important;
-}
-
-.etxt-icon-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
-}
-
-.etxt-toolbar-right {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  flex-shrink: 0 !important;
-  margin-left: auto !important;
-}
-
-.etxt-sign-btn {
-  all: unset !important;
-  height: 28px !important;
-  padding: 0 10px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  border-radius: 6px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  color: #0F172A !important;
-  font-size: 11px !important;
+  gap: 5px !important;
+  height: 34px !important;
+  padding: 0 11px !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  outline: none !important;
+  user-select: none !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  transition: all 100ms ease !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  transition: background-color 300ms cubic-bezier(0.32, 0.72, 0, 1),
+              box-shadow 300ms cubic-bezier(0.32, 0.72, 0, 1),
+              color 300ms cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
-.etxt-sign-btn:hover {
-  background: #F8FAFC !important;
-  border-color: #CBD5E1 !important;
+.osui-dl-label-layer:not(.osui-dl-label--idle) {
+  position: absolute !important;
 }
 
-.etxt-export-btn {
-  all: unset !important;
-  height: 28px !important;
-  padding: 0 12px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  border-radius: 6px !important;
-  background: #0F172A !important;
+/* Phase: Idle (Opensource UI Tactile 3D Brand Blue Keycap — #00B0FF) */
+button.osui-dl-btn[data-phase="idle"],
+button.osui-dl-btn:not([data-phase]),
+.osui-dl-btn[data-phase="idle"],
+.osui-dl-btn:not([data-phase]),
+button#etxt-finish[data-phase="idle"],
+button#etxt-finish:not([data-phase]),
+#etxt-finish[data-phase="idle"],
+#etxt-finish:not([data-phase]),
+#etxt-finish,
+button.etxt-primary-cta[data-phase="idle"],
+button.etxt-primary-cta:not([data-phase]),
+.etxt-primary-cta[data-phase="idle"],
+.etxt-primary-cta:not([data-phase]) {
+  background: linear-gradient(180deg, #00B0FF 0%, #008CE5 100%) !important;
   color: #FFFFFF !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-  box-shadow: 0 1.5px 5px rgba(15, 23, 42, 0.25) !important;
-  transition: all 100ms ease !important;
+  box-shadow: 0 0 0 1px #0284C7,
+              0 2px 5px rgba(0, 176, 255, 0.35),
+              0 1px 2px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.45),
+              inset 0 -2.5px 0 #005FA3 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
 }
 
-.etxt-export-btn:hover {
-  background: #1E293B !important;
+button.osui-dl-btn[data-phase="idle"]:hover:not(:disabled),
+button.osui-dl-btn:not([data-phase]):hover:not(:disabled),
+.osui-dl-btn[data-phase="idle"]:hover:not(:disabled),
+.osui-dl-btn:not([data-phase]):hover:not(:disabled),
+button#etxt-finish[data-phase="idle"]:hover:not(:disabled),
+button#etxt-finish:not([data-phase]):hover:not(:disabled),
+#etxt-finish[data-phase="idle"]:hover:not(:disabled),
+#etxt-finish:not([data-phase]):hover:not(:disabled),
+#etxt-finish:hover:not(:disabled),
+button.etxt-primary-cta[data-phase="idle"]:hover:not(:disabled),
+button.etxt-primary-cta:not([data-phase]):hover:not(:disabled),
+.etxt-primary-cta[data-phase="idle"]:hover:not(:disabled),
+.etxt-primary-cta:not([data-phase]):hover:not(:disabled) {
+  background: linear-gradient(180deg, #38C8FF 0%, #009BEF 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0077C2,
+              0 3px 10px rgba(0, 176, 255, 0.45),
+              0 1px 2px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0.5px rgba(255, 255, 255, 0.55),
+              inset 0 -2.5px 0 #005696 !important;
 }
 
-.etxt-close-btn {
-  all: unset !important;
-  width: 26px !important;
-  height: 26px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 6px !important;
-  color: #64748B !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  transition: all 100ms ease !important;
+button.osui-dl-btn[data-phase="idle"]:active:not(:disabled),
+button.osui-dl-btn:not([data-phase]):active:not(:disabled),
+.osui-dl-btn[data-phase="idle"]:active:not(:disabled),
+.osui-dl-btn:not([data-phase]):active:not(:disabled),
+button#etxt-finish[data-phase="idle"]:active:not(:disabled),
+button#etxt-finish:not([data-phase]):active:not(:disabled),
+#etxt-finish[data-phase="idle"]:active:not(:disabled),
+#etxt-finish:not([data-phase]):active:not(:disabled),
+#etxt-finish:active:not(:disabled),
+button.etxt-primary-cta[data-phase="idle"]:active:not(:disabled),
+button.etxt-primary-cta:not([data-phase]):active:not(:disabled),
+.etxt-primary-cta[data-phase="idle"]:active:not(:disabled),
+.etxt-primary-cta:not([data-phase]):active:not(:disabled) {
+  background: linear-gradient(180deg, #0080D0 0%, #0072BA 100%) !important;
+  transform: translateY(1px) !important;
+  box-shadow: 0 0 0 1px #005D99,
+              0 1px 2px rgba(0, 0, 0, 0.2),
+              inset 0 1px 2px rgba(0, 0, 0, 0.35),
+              inset 0 -1px 0 #004D80 !important;
 }
 
-.etxt-close-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+/* Phase: Downloading / Processing */
+button.osui-dl-btn[data-phase="downloading"],
+.osui-dl-btn[data-phase="downloading"],
+button#etxt-finish[data-phase="downloading"],
+#etxt-finish[data-phase="downloading"],
+button.etxt-primary-cta[data-phase="downloading"],
+.etxt-primary-cta[data-phase="downloading"] {
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0369A1,
+              0 2px 4px rgba(0, 0, 0, 0.1),
+              inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+  cursor: wait !important;
+}
+
+/* Phase: Done / Exported */
+button.osui-dl-btn[data-phase="done"],
+.osui-dl-btn[data-phase="done"],
+button#etxt-finish[data-phase="done"],
+#etxt-finish[data-phase="done"],
+button.etxt-primary-cta[data-phase="done"],
+.etxt-primary-cta[data-phase="done"] {
+  background: #059669 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #047857,
+              0 2px 5px rgba(5, 150, 105, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4),
+              inset 0 -2.5px 0 #065F46 !important;
 }
 
 /* Right Rail — Fixed Fit with Zero Scrollbars */
@@ -417,17 +1000,9 @@
   margin-top: 4px !important;
 }
 
-/* Floating Vertical Pill Dock */
+/* Floating Vertical Pill Dock - Removed in favor of unified top toolbar */
 .etxt-floating-dock-wrap {
-  position: absolute !important;
-  top: 60px !important;
-  left: 154px !important;
-  z-index: 50 !important;
-  pointer-events: auto !important;
-}
-
-.etxt-body.is-thumbs-collapsed .etxt-floating-dock-wrap {
-  left: 24px !important;
+  display: none !important;
 }
 
 .etxt-floating-dock {
@@ -487,48 +1062,7 @@
   margin: 2px 0 !important;
 }
 
-/* Anchored Flyout Popover */
-.etxt-dock-flyout {
-  position: absolute !important;
-  left: calc(100% + 8px) !important;
-  top: 0 !important;
-  width: 180px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-  padding: 10px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  z-index: 60 !important;
-  box-sizing: border-box !important;
-}
-
-/* Canvas Area */
-.etxt-canvas-wrap {
-  flex: 1 1 auto !important;
-  position: relative !important;
-  overflow: auto !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: flex-start !important;
-  padding-top: 32px !important;
-  padding-bottom: 64px !important;
-  background: #F8FAFC !important;
-}
-
-.etxt-canvas {
-  transform-origin: center top !important;
-  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
-  display: inline-block !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  border-radius: 2px !important;
-  background: #FFFFFF !important;
-}
-
-
-/* Document Canvas Perfectly Centered */
+/* Document Canvas Stage with Safe Left Clearance for Selected Tool Flyout */
 .etxt-body {
   position: relative !important;
   display: flex !important;
@@ -546,9 +1080,9 @@
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;
-  padding-top: 32px !important;
+  padding-top: 24px !important;
   padding-bottom: 64px !important;
-  padding-left: 60px !important;
+  padding-left: 226px !important; /* Guaranteed clearance: pill (34px) + left (8px) + gap (6px) + flyout (172px) = 220px */
   padding-right: 60px !important;
   box-sizing: border-box !important;
   background: #F8FAFC !important;
@@ -559,44 +1093,76 @@
   transform-origin: center top !important;
   display: inline-block !important;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  border-radius: 2px !important;
+  border-radius: 0 !important;
   background: #FFFFFF !important;
 }
 
-/* Floating Vertical Pill Dock Pinned to Left of Screen */
+/* Single Selected Tool Pill Pinned to Left Margin */
 .etxt-floating-dock-wrap {
   position: absolute !important;
-  top: 50px !important;
-  left: 20px !important;
+  top: 14px !important;
+  left: 8px !important;
   z-index: 50 !important;
   pointer-events: auto !important;
+  display: flex !important;
+  align-items: flex-start !important;
 }
 
-.etxt-floating-dock {
+.etxt-floating-dock-wrap.is-hidden,
+.etxt-floating-dock-wrap[hidden] {
+  display: none !important;
+}
+
+.etxt-selected-tool-pill {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
-  border-radius: 20px !important;
-  padding: 6px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
-  display: flex !important;
-  flex-direction: column !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  justify-content: center !important;
+  color: #2563EB !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transition: transform 100ms ease, box-shadow 100ms ease, border-color 100ms ease, background 100ms ease !important;
 }
 
+.etxt-selected-tool-pill:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.12) !important;
+  transform: scale(1.03) !important;
+}
+
+.etxt-selected-tool-pill.is-on {
+  background: #EFF6FF !important;
+  border-color: #3B82F6 !important;
+  color: #1D4ED8 !important;
+}
+
+.etxt-active-pill-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Compact Anchored Flyout Popover */
 .etxt-dock-flyout {
   position: absolute !important;
-  left: calc(100% + 8px) !important;
+  left: calc(100% + 6px) !important;
   top: 0 !important;
-  width: 180px !important;
+  width: 172px !important;
   background: #FFFFFF !important;
   border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-  padding: 10px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+  padding: 8px 10px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 7px !important;
   z-index: 60 !important;
   box-sizing: border-box !important;
 }
@@ -604,6 +1170,204 @@
 .etxt-dock-flyout[hidden],
 .etxt-dock-flyout.is-hidden {
   display: none !important;
+}
+
+/* Flyout Typography Header & Controls */
+.etxt-flyout-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 4px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+}
+
+.etxt-flyout-title {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.etxt-flyout-close {
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+  color: #94A3B8 !important;
+  cursor: pointer !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-flyout-close:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-flyout-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.etxt-flyout-label {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+.etxt-font-select {
+  width: 100% !important;
+  height: 24px !important;
+  font-size: 11px !important;
+  color: #0F172A !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 4px !important;
+  padding: 0 4px !important;
+  box-sizing: border-box !important;
+}
+
+/* Horizontal Capsule Font Size & Format Stepper */
+.etxt-opt-track {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 3px !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  padding: 2px 3px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.etxt-fmt-btn {
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-fmt-btn:hover {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.etxt-fmt-btn.is-on {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.etxt-size-btn {
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 3px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 100ms ease !important;
+}
+
+.etxt-size-btn:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.etxt-opt-size {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  text-align: center !important;
+  flex: 1 !important;
+}
+
+/* Palette Swatches (Always Solid & Vivid) */
+.etxt-swatch-group {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 5px !important;
+  flex-wrap: wrap !important;
+}
+
+.etxt-swatch {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(15, 23, 42, 0.15) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: transform 100ms ease, outline 100ms ease !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.etxt-swatch:hover {
+  transform: scale(1.18) !important;
+}
+
+.etxt-swatch.is-on {
+  transform: scale(1.18) !important;
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 1px !important;
+}
+
+.etxt-color-picker-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 50% !important;
+  border: 1.5px dashed #94A3B8 !important;
+  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red) !important;
+  cursor: pointer !important;
+  overflow: hidden !important;
+}
+
+.etxt-color-picker {
+  opacity: 0 !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: pointer !important;
+}
+
+.etxt-flyout-hint {
+  font-size: 9.5px !important;
+  color: #64748B !important;
+  line-height: 1.35 !important;
+  margin-top: 2px !important;
 }
 
 /* Slide-out Thumbnail Drawer (Overlay so it never pushes center canvas) */
@@ -649,7 +1413,7 @@
   transform-origin: center top !important;
   display: inline-block !important;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-  border-radius: 3px !important;
+  border-radius: 0 !important;
   background: #FFFFFF !important;
 }
 
@@ -678,7 +1442,7 @@
   align-items: center !important;
   justify-content: center !important;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-  border-radius: 3px !important;
+  border-radius: 0 !important;
   background: #FFFFFF !important;
 }
 
@@ -707,7 +1471,7 @@
   align-items: center !important;
   justify-content: center !important;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-  border-radius: 3px !important;
+  border-radius: 0 !important;
   background: #FFFFFF !important;
 }
 
@@ -868,6 +1632,7 @@
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
+  border-radius: 0 !important;
 }
 
 .etxt-page {
@@ -875,10 +1640,19 @@
   position: relative !important;
   margin: 0 auto !important;
   background: #FFFFFF !important;
-  border-radius: 3px !important;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
+  overflow: visible !important;
+}
+
+.etxt-page canvas,
+.etxt-full-canvas,
+.etxt-text-layer,
+.etxt-annot-layer {
+  border-radius: 0 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -888,74 +1662,105 @@
   position: absolute !important;
   display: flex !important;
   align-items: center !important;
-  gap: 2px !important;
-  padding: 2px 4px !important;
-  height: 28px !important;
+  gap: 4px !important;
+  padding: 3px 6px !important;
+  height: 32px !important;
+  width: max-content !important;
+  min-width: max-content !important;
   background: #FFFFFF !important;
   color: #0F172A !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-  z-index: 60 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.14), 0 2px 6px -1px rgba(0, 0, 0, 0.08) !important;
+  z-index: 100 !important;
   user-select: none !important;
   pointer-events: auto !important;
   white-space: nowrap !important;
   box-sizing: border-box !important;
-  animation: etxtMicroFadeIn 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: etxtMicroFadeIn 140ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 @keyframes etxtMicroFadeIn {
-  from { opacity: 0; transform: translateY(3px) scale(0.97); }
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .etxt-inline-microbar--above {
-  bottom: calc(100% + 5px) !important;
-  left: 0 !important;
+  bottom: calc(100% + 8px) !important;
+  left: 0;
 }
 
 .etxt-inline-microbar--below {
-  top: calc(100% + 5px) !important;
-  left: 0 !important;
+  top: calc(100% + 8px) !important;
+  left: 0;
+}
+
+.etxt-inline-microbar--right {
+  left: auto !important;
+  right: 0 !important;
+}
+
+.etxt-micro-select {
+  height: 24px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #18181B !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 6px !important;
+  padding: 0 4px !important;
+  outline: none !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 120ms ease !important;
+}
+
+.etxt-micro-select:hover {
+  background: #E4E4E7 !important;
+  border-color: #D4D4D8 !important;
 }
 
 .etxt-micro-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 22px !important;
-  min-width: 22px !important;
-  padding: 0 4px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  padding: 0 5px !important;
   background: transparent !important;
   border: 1px solid transparent !important;
-  border-radius: 4px !important;
-  color: #475569 !important;
+  border-radius: 5px !important;
+  color: #52525B !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
-  transition: all 100ms ease !important;
+  flex-shrink: 0 !important;
+  transition: all 120ms ease !important;
 }
 
 .etxt-micro-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
 }
 
 .etxt-micro-btn:active {
-  transform: scale(0.96) !important;
+  transform: scale(0.95) !important;
 }
 
 .etxt-micro-btn.is-active {
-  background: #0F172A !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
   font-weight: 700 !important;
+  border-color: #18181B !important;
 }
 
 .etxt-micro-btn--commit {
   background: #10B981 !important;
   color: #FFFFFF !important;
-  padding: 0 6px !important;
+  padding: 0 7px !important;
   font-weight: 700 !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
 }
 
 .etxt-micro-btn--commit:hover {
@@ -964,60 +1769,90 @@
 }
 
 .etxt-micro-btn--delete {
-  color: #64748B !important;
+  color: #71717A !important;
+  font-size: 12px !important;
+  flex-shrink: 0 !important;
 }
 
 .etxt-micro-btn--delete:hover {
   background: #FEE2E2 !important;
-  color: #DC2626 !important;
+  color: #EF4444 !important;
 }
 
 .etxt-micro-size-val {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   font-size: 11px !important;
   font-weight: 700 !important;
-  color: #0F172A !important;
-  padding: 0 2px !important;
-  min-width: 16px !important;
+  color: #18181B !important;
+  padding: 0 3px !important;
+  min-width: 18px !important;
   text-align: center !important;
+  flex-shrink: 0 !important;
 }
 
 .etxt-micro-sep {
   width: 1px !important;
-  height: 12px !important;
-  background: #E2E8F0 !important;
+  height: 14px !important;
+  background: #E4E4E7 !important;
   margin: 0 2px !important;
+  flex-shrink: 0 !important;
 }
 
 .etxt-micro-swatch {
-  width: 13px !important;
-  height: 13px !important;
+  width: 14px !important;
+  min-width: 14px !important;
+  height: 14px !important;
   border-radius: 50% !important;
   border: 1px solid rgba(15, 23, 42, 0.15) !important;
   padding: 0 !important;
   cursor: pointer !important;
-  transition: all 100ms ease !important;
+  flex-shrink: 0 !important;
+  transition: all 120ms ease !important;
+  box-sizing: border-box !important;
 }
 
 .etxt-micro-swatch:hover {
-  transform: scale(1.18) !important;
-  border-color: #0F172A !important;
+  transform: scale(1.2) !important;
+  border-color: #18181B !important;
 }
 
 .etxt-micro-swatch.is-active {
-  outline: 1.5px solid #0F172A !important;
-  outline-offset: 1px !important;
+  outline: 1.5px solid #18181B !important;
+  outline-offset: 1.5px !important;
 }
 
-/* Pulse on commit */
+.etxt-micro-color-chip {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.etxt-micro-color-input {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+/* Pulse on commit - crisp 180ms tactile confirmation */
 @keyframes etxtBoxPulse {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3); }
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  40% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3); }
   100% { box-shadow: none; }
 }
 
 .etxt-pulse {
-  animation: etxtBoxPulse 400ms ease-out !important;
+  animation: etxtBoxPulse 180ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Edit counter badge in export button */
@@ -1032,4 +1867,375 @@
   padding: 1px 5px !important;
   border-radius: 9999px !important;
   margin-left: 5px !important;
+}
+
+/* Multi-column Reflow indicator styles */
+.etxt-hit--reflowed {
+  border-left: 2px dashed #3B82F6 !important;
+}
+
+.etxt-hit--reflowed:hover {
+  background: rgba(59, 130, 246, 0.12) !important;
+  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.6) !important;
+}
+
+.etxt-reflow-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #1D4ED8 !important;
+  background: #EFF6FF !important;
+  border: 1px solid #BFDBFE !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  pointer-events: none !important;
+  z-index: 30 !important;
+  line-height: 1.2 !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12) !important;
+  animation: etxtMicroFadeIn 150ms ease-out !important;
+}
+
+/* ── In-place Editor Zero-Displacement & Craft Polish ── */
+.etxt-text-box {
+  position: absolute !important;
+  border: none !important;
+  outline: 1px dashed #2563EB !important;
+  outline-offset: 1px !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 60 !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  display: block !important;
+  line-height: 1 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+.etxt-text-inner {
+  display: block !important;
+  vertical-align: top !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+  line-height: 1 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* ── Floating In-Place Text Action Toolbar (ihatepdf-style) ── */
+.etxt-block-toolbar {
+  position: absolute !important;
+  z-index: 120 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  background: #18181B !important;
+  color: #F4F4F5 !important;
+  padding: 3px 6px !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 11px !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  pointer-events: auto !important;
+  animation: etxtTbFadeIn 100ms ease-out !important;
+}
+@keyframes etxtTbFadeIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.etxt-tb-grip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 24px !important;
+  padding: 0 4px !important;
+  cursor: grab !important;
+  color: #94A3B8 !important;
+  border-radius: 4px !important;
+  transition: color 100ms ease, background 100ms ease !important;
+}
+.etxt-tb-grip:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.etxt-tb-grip:active {
+  cursor: grabbing !important;
+}
+.etxt-tb-sep {
+  width: 1px !important;
+  height: 14px !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  margin: 0 2px !important;
+}
+.etxt-tb-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  padding: 0 4px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #E4E4E7 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: all 100ms ease !important;
+}
+.etxt-tb-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+.etxt-tb-btn.is-active {
+  background: #2563EB !important;
+  color: #FFFFFF !important;
+}
+.etxt-tb-btn--del:hover {
+  background: #EF4444 !important;
+  color: #FFFFFF !important;
+}
+.etxt-tb-val {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #E4E4E7 !important;
+  min-width: 26px !important;
+  text-align: center !important;
+  padding: 0 2px !important;
+}
+
+/* Direct font size input with preset dropdown overlay */
+.etxt-tb-size-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 24px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 4px !important;
+  padding: 0 3px !important;
+  box-sizing: border-box !important;
+  transition: border-color 100ms ease, background 100ms ease !important;
+}
+
+.etxt-tb-size-wrap:hover,
+.etxt-tb-size-wrap:focus-within {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.etxt-tb-size-inp {
+  width: 26px !important;
+  height: 18px !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #FFFFFF !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-align: right !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  -moz-appearance: textfield !important;
+}
+
+.etxt-tb-size-inp::-webkit-inner-spin-button,
+.etxt-tb-size-inp::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+.etxt-tb-size-unit {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #94A3B8 !important;
+  margin-left: 1px !important;
+  margin-right: 2px !important;
+  pointer-events: none !important;
+}
+
+.etxt-tb-size-preset {
+  background: transparent !important;
+  color: #94A3B8 !important;
+  border: none !important;
+  outline: none !important;
+  font-size: 10px !important;
+  height: 18px !important;
+  width: 14px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.etxt-tb-size-preset option {
+  background: #18181B !important;
+  color: #F4F4F5 !important;
+}
+
+/* Magnetic Smart Alignment Guides */
+.etxt-guide-line {
+  position: absolute !important;
+  pointer-events: none !important;
+  z-index: 100 !important;
+  transition: opacity 80ms ease !important;
+}
+
+.etxt-guide-line--vcenter {
+  width: 0 !important;
+  border-left: 1.5px dashed #E11D48 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  box-shadow: 0 0 4px rgba(225, 29, 72, 0.4) !important;
+}
+
+.etxt-guide-line--hcenter {
+  height: 0 !important;
+  border-top: 1.5px dashed #E11D48 !important;
+  left: 0 !important;
+  right: 0 !important;
+  box-shadow: 0 0 4px rgba(225, 29, 72, 0.4) !important;
+}
+
+.etxt-guide-line--edge-v {
+  width: 0 !important;
+  border-left: 1.5px dashed #06B6D4 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  box-shadow: 0 0 4px rgba(6, 182, 212, 0.4) !important;
+}
+
+.etxt-guide-line--edge-h {
+  height: 0 !important;
+  border-top: 1.5px dashed #06B6D4 !important;
+  left: 0 !important;
+  right: 0 !important;
+  box-shadow: 0 0 4px rgba(6, 182, 212, 0.4) !important;
+}
+
+.etxt-tb-select {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #F4F4F5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  height: 22px !important;
+  max-width: 110px !important;
+  padding: 0 4px !important;
+  outline: none !important;
+  cursor: pointer !important;
+}
+.etxt-tb-select option {
+  background: #18181B !important;
+  color: #F4F4F5 !important;
+}
+.etxt-tb-color-dot {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.etxt-text-inner {
+  padding: 0 !important;
+  margin: 0 !important;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  caret-color: currentColor !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  display: block !important;
+  vertical-align: top !important;
+  line-height: 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+.etxt-text-inner::selection {
+  background: rgba(20, 115, 230, 0.3) !important;
+}
+
+.etxt-committed {
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  line-height: 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Clean reading view without default dashed boxes; reveals crisp dashed outline on hover/focus/selection */
+.etxt-hit,
+.etxt-zone {
+  border: 1px dashed transparent !important;
+  background: transparent !important;
+}
+
+.etxt-hit:hover,
+.etxt-zone:hover {
+  background: rgba(37, 99, 235, 0.04) !important;
+  border: 1px dashed #2563EB !important;
+  box-shadow: none !important;
+  border-radius: 1px !important;
+}
+
+.etxt-zone.etxt-zone--selected,
+.etxt-zone--selected {
+  border: 1px solid #2563EB !important;
+  background: rgba(37, 99, 235, 0.03) !important;
+  z-index: 50 !important;
+}
+
+/* Revert button overlap protection */
+.etxt-commit-x {
+  top: -6px !important;
+  right: -6px !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.3) !important;
+}
+
+/* Flyout Typography & Status Helpers */
+.etxt-flyout-badge {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+}
+
+.etxt-flyout-badge.is-edited {
+  background: #DBEAFE !important;
+  color: #1D4ED8 !important;
 }

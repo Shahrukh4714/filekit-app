@@ -588,7 +588,7 @@
         };
         render();
         document.querySelector('#fg-n').addEventListener('input', (e) => { document.querySelector('#fg-count').textContent = e.target.value; render(); });
-        s.toolbar.innerHTML = `<span class="pro-dim">${file.name} · ${bytes(file.size)}</span><span class="pro-live">Parsed locally</span>`;
+        s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)} · ${bytes(file.size)}</span><span class="pro-live">Parsed locally</span>`;
         document.querySelector('[data-fg-dl]').addEventListener('click', () => { if (blob) download(blob, baseName(file.name) + '.glyphs.png'); });
       }
       function bodyFontConvert(file) {
@@ -612,7 +612,7 @@
             meta.textContent = `${file.name} · ${bytes(file.size)}`;
           } catch (e) { info.innerHTML = `<div class="pro-live-err">Could not parse font: ${esc(e.message)}</div>`; }
         })();
-        s.toolbar.innerHTML = `<span class="pro-dim">${file.name}</span><span class="pro-live">OTF output</span>`;
+        s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)}</span><span class="pro-live">OTF output</span>`;
         s.runBtn.addEventListener('click', async () => {
           s.runBtn.disabled = true; s.runBtn.textContent = 'Converting…';
           try {
@@ -705,7 +705,7 @@
       };
       document.querySelector('#split-mb').addEventListener('input', update);
       update();
-      s.toolbar.innerHTML = `<span class="pro-dim">${file.name}</span><span class="pro-live">Chunks local</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)}</span><span class="pro-live">Chunks local</span>`;
       s.runBtn.addEventListener('click', async () => {
         setBusy(s, true, 'Splitting…');
         try {
@@ -727,7 +727,7 @@
         <aside class="pro-panel"><div class="pro-panel-head"><strong>Extraction mode</strong><span>Choose your output</span></div>
         <div class="pro-control"><label><span>Mode</span></label><select data-k="action"><option value="zip">Unpack into a standard ZIP</option><option value="manifest">Generate a file list (.txt)</option></select></div>
         <p class="pro-panel-note">ZIP / TAR / GZ are unpacked in full. Other containers fall back to a safe binary extraction.</p></aside>`;
-      s.toolbar.innerHTML = `<span class="pro-dim">${file.name}</span><span class="pro-live">Browser-side</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)}</span><span class="pro-live">Browser-side</span>`;
       s.runBtn.addEventListener('click', async () => {
         setBusy(s, true, 'Extracting…');
         try {
@@ -765,7 +765,7 @@
           document.querySelector('#sql-meta').textContent = tables.length + ' table' + (tables.length === 1 ? '' : 's') + ' detected';
         } catch (e) { document.querySelector('#sql-tables').innerHTML = `<div class="pro-live-err">${esc(e.message)}</div>`; }
       })();
-      s.toolbar.innerHTML = `<span class="pro-dim">${file.name}</span><span class="pro-live">Offline</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)}</span><span class="pro-live">Offline</span>`;
       s.runBtn.addEventListener('click', async () => {
         setBusy(s, true, 'Building report…');
         try {
@@ -1651,4 +1651,7 @@
   window.__ffMountEbookPro = (c, t) => mountEbookPro(c, t);
   window.__ffMountBizPro = (c, t) => mountBizPro(c, t);
   window.__ffMountAudPro = (c, t) => mountAudPro(c, t);
+  if (typeof window.FF?.boot === 'function') {
+    window.FF.boot();
+  }
 })();

@@ -22,4 +22,8 @@ browser_audit_results.json
 debug_after_upload.png
 test_sample.pdf
 scratch_sample.pdf
+scratch/
+node_modules/
+*.png
+!assets/**/*.png
 

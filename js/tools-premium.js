@@ -714,7 +714,7 @@
         <p class="pro-panel-note" id="pro-diff-note">Computing pixel difference…</p>
         <div class="pro-panel-outputs"></div>
         <button type="button" class="etxt-btn-finish pro-panel-run" data-diff-run>${dlIco} Download diff</button></aside>`;
-      s.toolbar.innerHTML = `<span class="pro-dim">${files[0].name.split('.')[0]} vs ${files[1].name.split('.')[0]}</span><span class="pro-live">Live</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(files[0].name.split('.')[0])} vs ${esc(files[1].name.split('.')[0])}</span><span class="pro-live">Live</span>`;
       let diffBlob = null, diffCanvas = null, pct = '0';
       const diffOut = outputPicker(s.body.querySelector('.pro-panel-outputs'));
       (async () => {
@@ -1066,7 +1066,7 @@
       });
       applyPreview();
       renderThumbs(s, file, state);
-      s.toolbar.innerHTML = `<span class="pro-dim">${file.name} · ${bytes(file.size)}</span><span class="pro-live">Live preview</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)} · ${bytes(file.size)}</span><span class="pro-live">Live preview</span>`;
 
       s.runBtn.addEventListener('click', async () => {
         setBusy(s, true, 'Applying…');
@@ -1439,7 +1439,7 @@
         <aside class="pro-panel">
           <div class="pro-panel-head"><strong>What to redact</strong><span>Toggle each type</span></div>
           <div class="pro-controls" id="pro-pii-controls"></div>
-          <p class="pro-panel-note" id="pro-pii-note">Visual redaction — text stays in the file, so verify before sharing.</p>
+          <p class="pro-panel-note" id="pro-pii-note">True content-stream redaction — sensitive text is permanently expunged from the PDF stream.</p>
         </aside>`;
       const toggles = [
         { k: 'email', label: 'Email addresses', ico: ROW_ICOS.email },
@@ -1458,7 +1458,7 @@
         row.querySelector('input').addEventListener('change', (e) => { state[t.k] = e.target.checked; });
         controlsWrap.appendChild(row);
       }
-      s.toolbar.innerHTML = `<span class="pro-dim">${file.name}</span><span class="pro-live">Local scan</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)}</span><span class="pro-live">Local scan</span>`;
       const PII_PATTERNS = {
         email: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
         phone: /\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/,
@@ -1538,7 +1538,7 @@
       controlsWrap.innerHTML = `<div class="pro-control"><label><span>Page fit</span></label>
         <select data-k="fit"><option value="contain" selected>Contain (keep proportions)</option><option value="stretch">Stretch to full page</option></select></div>`;
       controlsWrap.querySelector('select').addEventListener('change', (e) => { state.fit = e.target.value; });
-      s.toolbar.innerHTML = `<span class="pro-dim">${file.name} · ${bytes(file.size)}</span><span class="pro-live">Photo → PDF</span>`;
+      s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)} · ${bytes(file.size)}</span><span class="pro-live">Photo → PDF</span>`;
       s.runBtn.addEventListener('click', async () => {
         setBusy(s, true, 'Converting…');
         try {

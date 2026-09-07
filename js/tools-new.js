@@ -587,26 +587,49 @@
         const T = await load.tesseract();
         const base = _ocrBasePath();
 
-        const worker = await T.createWorker(lang, 1, {
-          workerPath: base + 'vendor/tesseract/worker.min.js',
-          corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
-          langPath:   lang === 'eng' ? base + 'vendor/tesseract' : 'https://tessdata.projectnaptha.com/4.0.0_fast',
-          workerBlobURL: false,
-          gzip: false,
-          logger: (m) => {
-            if (!m || !m.status) return;
-            let label = '';
-            const pct = `${Math.round((m.progress || 0) * 100)}%`;
-            // Actual status strings from Tesseract v4 worker:
-            if      (m.status === 'loading tesseract core')       label = 'Loading OCR core…';
-            else if (m.status === 'initializing tesseract')        label = `Loading WASM… ${pct}`;
-            else if (m.status === 'loading language traineddata')  label = `Loading model… ${pct}`;
-            else if (m.status === 'initializing api')              label = 'Initializing…';
-            else if (m.status === 'recognizing text')              label = `Recognizing… ${pct}`;
-            if (label) _ocrNotify(label);
-            if (m.status === 'recognizing text' && _ocrOnProgress) _ocrOnProgress(m.progress || 0);
-          },
-        });
+        const makeLogger = () => (m) => {
+          if (!m || !m.status) return;
+          let label = '';
+          const pct = `${Math.round((m.progress || 0) * 100)}%`;
+          if      (m.status === 'loading tesseract core')       label = 'Loading OCR core…';
+          else if (m.status === 'initializing tesseract')        label = `Loading WASM… ${pct}`;
+          else if (m.status === 'loading language traineddata')  label = `Loading model… ${pct}`;
+          else if (m.status === 'initializing api')              label = 'Initializing…';
+          else if (m.status === 'recognizing text')              label = `Recognizing… ${pct}`;
+          if (label) _ocrNotify(label);
+          if (m.status === 'recognizing text' && _ocrOnProgress) _ocrOnProgress(m.progress || 0);
+        };
+
+        let worker;
+        try {
+          const langPath = lang === 'eng'
+            ? base + 'vendor/tesseract'
+            : 'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0_fast';
+          worker = await T.createWorker(lang, 1, {
+            workerPath: base + 'vendor/tesseract/worker.min.js',
+            corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+            langPath,
+            workerBlobURL: false,
+            gzip: false,
+            logger: makeLogger(),
+          });
+        } catch (initErr) {
+          if (lang !== 'eng') {
+            console.warn('[OCR] Remote language model failed or blocked by COEP; falling back to local English OCR:', initErr);
+            _ocrNotify('Falling back to local OCR engine…');
+            worker = await T.createWorker('eng', 1, {
+              workerPath: base + 'vendor/tesseract/worker.min.js',
+              corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+              langPath:   base + 'vendor/tesseract',
+              workerBlobURL: false,
+              gzip: false,
+              logger: makeLogger(),
+            });
+            lang = 'eng';
+          } else {
+            throw initErr;
+          }
+        }
 
         _ocrWorker = worker;
         _ocrLang = lang;
@@ -1699,7 +1722,7 @@
   /* PDF to CSV */
   R({
     id: 'pdf-to-csv', category: 'PDF', name: 'PDF to CSV',
-    description: 'Extract table-like text from a PDF into a CSV. Best with plain text tables — scanned or image PDFs need OCR first.',
+    description: 'Extract table-like text from a PDF into a clean CSV with multi-column alignment.',
     accepts: ['pdf'], maxBytes: 200e6,
     fields: [{ key: 'delim', label: 'Delimiter', type: 'select', default: ',', options: [',', ';', 'tab'] }],
     async run({ file, inputs }) {
@@ -1707,34 +1730,109 @@
       const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
       const delim = inputs.delim === 'tab' ? '\t' : inputs.delim;
       const q = (v) => { const s = String(v ?? '').replace(/\s+/g, ' ').trim(); return /[\s"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const lines = [];
+      const allRows = [];
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
-        const vp = page.getViewport({ scale: 1 });
         const tc = await page.getTextContent();
-        // Group text items into visual lines by baseline, then sort left→right.
-        const rows = new Map();
+        const rawItems = [];
         for (const it of tc.items) {
-          if (!it.str) continue;
-          const y = Math.round((it.transform ? it.transform[5] : 0) / 2) * 2; // cluster ~2pt
+          const str = (it.str || '').trim();
+          if (!str) continue;
           const x = it.transform ? it.transform[4] : 0;
-          if (!rows.has(y)) rows.set(y, []);
-          rows.get(y).push({ x, str: it.str });
+          const y = it.transform ? it.transform[5] : 0;
+          const fontPt = Math.round(Math.hypot(it.transform?.[0] || 0, it.transform?.[1] || 0) || it.height || 10);
+          const w = it.width || (str.length * fontPt * 0.55);
+          const h = it.height || fontPt;
+          rawItems.push({ str: it.str, x, y, right: x + w, w, h, fontPt });
         }
-        const sorted = [...rows.entries()].sort((a, b) => b[0] - a[0]); // top row first
-        for (const [, items] of sorted) {
-          items.sort((a, b) => a.x - b.x);
-          const joined = items.map((it) => it.str).join(' ');
-          if (joined.trim()) lines.push(joined);
+        if (!rawItems.length) continue;
+        rawItems.sort((a, b) => b.y - a.y);
+        const lines = [];
+        for (const it of rawItems) {
+          let matched = null;
+          for (const line of lines) {
+            const tol = Math.max(3.5, Math.min(line.avgH, it.h) * 0.45);
+            if (Math.abs(it.y - line.y) <= tol) { matched = line; break; }
+          }
+          if (matched) {
+            matched.items.push(it);
+            matched.y = (matched.y * (matched.items.length - 1) + it.y) / matched.items.length;
+            matched.avgH = Math.max(matched.avgH, it.h);
+          } else {
+            lines.push({ y: it.y, avgH: it.h, items: [it] });
+          }
         }
-        if (i < doc.numPages) lines.push(''); // blank line between pages
+        lines.sort((a, b) => b.y - a.y);
+
+        for (const line of lines) {
+          line.items.sort((a, b) => a.x - b.x);
+          const tokens = [];
+          for (const it of line.items) {
+            if (!tokens.length) { tokens.push({ ...it }); continue; }
+            const prev = tokens[tokens.length - 1];
+            const gap = it.x - prev.right;
+            const threshold = Math.max(14, prev.fontPt * 1.3);
+            if (gap <= threshold) {
+              const needsSpace = gap > 1.5 && !prev.str.endsWith(' ') && !it.str.startsWith(' ');
+              prev.str += (needsSpace ? ' ' : '') + it.str;
+              prev.right = Math.max(prev.right, it.right);
+              prev.w = prev.right - prev.x;
+            } else {
+              tokens.push({ ...it });
+            }
+          }
+          line.tokens = tokens;
+        }
+
+        const colStarts = [];
+        for (const line of lines) {
+          if (line.tokens.length >= 2) {
+            for (const t of line.tokens) colStarts.push(t.x);
+          }
+        }
+        if (!colStarts.length) {
+          for (const line of lines) {
+            for (const t of line.tokens) colStarts.push(t.x);
+          }
+        }
+        colStarts.sort((a, b) => a - b);
+        const clusters = [];
+        for (const x of colStarts) {
+          let matched = clusters.find((cl) => Math.abs(x - cl.meanX) <= 22);
+          if (matched) {
+            matched.points.push(x);
+            matched.meanX = matched.points.reduce((s, v) => s + v, 0) / matched.points.length;
+          } else {
+            clusters.push({ points: [x], meanX: x });
+          }
+        }
+        clusters.sort((a, b) => a.meanX - b.meanX);
+
+        for (const line of lines) {
+          if (!line.tokens.length) continue;
+          if (clusters.length <= 1) {
+            allRows.push([line.tokens.map((t) => t.str.trim()).join(' ')]);
+            continue;
+          }
+          if (line.tokens.length === 1 && (line.tokens[0].w > 180 || line.tokens[0].fontPt > 13)) {
+            allRows.push([line.tokens[0].str.trim()]);
+            continue;
+          }
+          const row = new Array(clusters.length).fill('');
+          for (const t of line.tokens) {
+            let bestIdx = 0;
+            let minDiff = Infinity;
+            for (let ci = 0; ci < clusters.length; ci++) {
+              const diff = Math.abs(t.x - clusters[ci].meanX);
+              if (diff < minDiff) { minDiff = diff; bestIdx = ci; }
+            }
+            row[bestIdx] = (row[bestIdx] ? row[bestIdx] + ' ' : '') + t.str.trim();
+          }
+          allRows.push(row);
+        }
       }
-      if (!lines.length) throw new Error('No text found — this PDF may be a scanned image. Run OCR first.');
-      const header = lines[0];
-      // Column split: collapse runs of 2+ spaces into a column break (typical table layout).
-      const splitRow = (row) => row.split(/\s{2,}/).map((c) => c.trim()).filter((c, i, a) => c !== '' || (i === 0 && a.length > 1));
-      const rowsOut = [splitRow(header), ...lines.slice(1).filter(Boolean).map(splitRow)];
-      const csv = rowsOut.map((r) => r.map(q).join(delim)).join('\n');
+      if (!allRows.length) throw new Error('No text found — this PDF may be a scanned image. Run OCR first.');
+      const csv = allRows.map((r) => r.map(q).join(delim)).join('\n');
       return textOut(csv, U.baseName(file.name) + '.csv', 'text/csv');
     },
   });
@@ -2588,17 +2686,53 @@
         return;
       }
       const r = resultData;
+      const sizeLine = bytes(r.blob.size);
+      const isZip = r.name.endsWith('.zip');
+
+      const smartTools = [
+        {
+          id: 'pdf-compress',
+          name: 'Compress PDF',
+          sub: 'Reduce file size for fast emailing',
+          color: '#16A34A',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>'
+        },
+        {
+          id: 'pdf-sign',
+          name: 'Sign Document',
+          sub: 'Add signature or initials in studio',
+          color: '#0D9488',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>'
+        },
+        {
+          id: 'organize',
+          name: 'Organize PDF',
+          sub: 'Reorder, rotate, or split pages',
+          color: '#4F46E5',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>'
+        },
+        {
+          id: 'pdf-to-word',
+          name: 'PDF to Word',
+          sub: 'Convert into editable Word doc',
+          color: '#2563EB',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+        }
+      ];
+
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Unified Slate Canvas (#EEF2F6) with Document Paper Sheet -->
             <div class="cpdf-benchmark-stage scan-result-stage" id="scan-result-stage-wrap">
               <div class="scan-paper-page" id="scan-result-paper-page" style="margin: auto;">
                 <canvas id="scan-result-canvas" class="scan-studio-canvas"></canvas>
               </div>
 
+              <!-- Stage Bottom Toolbar with Stepper -->
               <div class="cpdf-benchmark-fileinfo-row">
                 ${r.pageCount > 1 ? `
-                  <div class="scan-res-stepper-wrap">
+                  <div class="scan-res-stepper-wrap" style="display: flex; align-items: center; gap: 4px;">
                     <button type="button" class="cpdf-res-nav-btn" id="res-prev-page" title="Previous page" ${r.resultPageIdx > 0 ? '' : 'disabled'}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
@@ -2612,88 +2746,185 @@
                 <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                   <span>${esc(r.name)}</span>
-                  <span style="color:#94A3B8;font-weight:500;">(${bytes(r.blob.size)})</span>
+                  <span style="color:#94A3B8;font-weight:500;">(${sizeLine})</span>
                 </span>
               </div>
             </div>
 
-            <div class="cpdf-benchmark-panel scan-result-panel">
-              <div class="scan-result-panel-top">
-                <div class="cpdf-benchmark-header">
-                  <div class="cpdf-benchmark-icon" style="background: #16A34A !important;">
-                    ${ICONS.check}
+            <!-- Right Panel: Symmetrical, Wider Craft Result Studio -->
+            <div class="cpdf-benchmark-panel scan-result-panel org-result-panel">
+              <div class="scan-result-panel-top org-result-panel-content">
+                <!-- Top Header: Green Check Badge & Document Name -->
+                <div class="cpdf-benchmark-header org-res-header">
+                  <div class="cpdf-benchmark-icon org-res-header-icon" id="scan-res-check-badge">
+                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 5 8 13.5 4 9.5"/>
+                    </svg>
                   </div>
-                  <h2 class="cpdf-benchmark-title">Scan Complete</h2>
+                  <div class="org-res-header-text">
+                    <h2 class="cpdf-benchmark-title">Scan Complete</h2>
+                    <div class="org-res-docname" id="scan-res-docname" title="${esc(r.name)}">${esc(r.name)}</div>
+                  </div>
                 </div>
 
-                <div class="cpdf-benchmark-est-box">
-                  <div class="cpdf-benchmark-est-title">${esc(r.formatLabel)} · ${r.pageCount} ${r.pageCount === 1 ? 'Page' : 'Pages'}</div>
-                  <div class="cpdf-benchmark-est-metrics">
-                    <strong class="cpdf-benchmark-est-new">${bytes(r.blob.size)}</strong>
-                    <span class="cpdf-benchmark-est-pct" style="color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important; font-weight:700 !important; padding: 2px 8px !important; border-radius: 9999px !important;">300 DPI Archival</span>
+                <!-- Hero Status Box (Soft Mint Metrics & Backtrack Link) -->
+                <div class="cpdf-benchmark-est-box org-res-est-box">
+                  <div class="org-res-est-top">
+                    <div class="cpdf-benchmark-est-metrics">
+                      <strong class="cpdf-benchmark-est-new">${sizeLine}</strong>
+                      <span class="cpdf-benchmark-est-pct org-res-badge-pct">${r.pageCount > 1 ? `${r.pageCount} PAGES` : '1 PAGE'} · ${esc((r.formatLabel || 'PDF').toUpperCase())}</span>
+                    </div>
+                    <span class="org-res-status-pill">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      Ready
+                    </span>
                   </div>
-                  <div class="cpdf-benchmark-track">
+                  <div class="cpdf-benchmark-track" style="margin: 6px 0;">
                     <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A !important;"></div>
                   </div>
+                  <div class="org-res-est-bottom">
+                    <button type="button" class="org-res-backtrack-btn" id="res-btn-back">
+                      Need to adjust scan? <span class="org-res-backtrack-link">↶ Return to editor</span>
+                    </button>
+                  </div>
                 </div>
 
-                <a href="${r.url}" download="${esc(r.name)}" class="cpdf-benchmark-cta scan-result-main-cta" style="text-decoration:none;">
-                  <span>Download Scanned Document</span>
-                  ${ICONS.download}
-                </a>
-
-                <div class="conv-smart-tip-card">
-                  <div class="conv-smart-tip-header">
-                    <span style="display:inline-flex;align-items:center;gap:6px;">${ICONS.sparkle} Smart recommendation</span>
+                <!-- Split Download CTA Button (FileKit Brand Blue) -->
+                <div class="org-split-dl-wrapper" id="scan-split-dl-wrapper">
+                  <div class="org-split-btn-group">
+                    <button type="button" class="cpdf-benchmark-cta org-split-btn-main" id="scan-main-dl-btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      <span>Download Scanned ${isZip ? 'Archive (ZIP)' : 'Document'}</span>
+                    </button>
+                    <button type="button" class="org-split-btn-toggle" id="scan-dl-dropdown-toggle" title="More download options" aria-haspopup="true" aria-expanded="false">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
                   </div>
-                  <p class="conv-smart-tip-desc">What would you like to do next with this document?</p>
-                  <div class="conv-smart-tools-list">
-                    <div class="conv-smart-tool-item" data-tool-id="pdf-compress" tabindex="0" role="button">
-                      <div class="conv-smart-tool-left">
-                        <span class="conv-smart-tool-icon" style="background:#0284C7;">${ICONS.compress}</span>
-                        <div class="conv-smart-tool-info">
-                          <span class="conv-smart-tool-title">Compress &amp; Shrink PDF</span>
-                          <span class="conv-smart-tool-sub">Reduce size for easy emailing</span>
-                        </div>
+                  <div class="org-floating-menu" id="scan-dl-menu">
+                    <button type="button" class="org-floating-menu-item" id="scan-dl-opt-save">
+                      <div class="org-floating-menu-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                       </div>
-                      <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
-                    </div>
-                    <div class="conv-smart-tool-item" data-tool-id="pdf-sign" tabindex="0" role="button">
-                      <div class="conv-smart-tool-left">
-                        <span class="conv-smart-tool-icon" style="background:#0D9488;">${ICONS.edit}</span>
-                        <div class="conv-smart-tool-info">
-                          <span class="conv-smart-tool-title">Sign Document</span>
-                          <span class="conv-smart-tool-sub">Add signature or initials</span>
-                        </div>
+                      <div class="org-floating-menu-text">
+                        <span class="org-floating-menu-title">Save to device</span>
+                        <span class="org-floating-menu-sub">Direct file download</span>
                       </div>
-                      <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
-                    </div>
-                    <div class="conv-smart-tool-item" data-tool-id="organize" tabindex="0" role="button">
-                      <div class="conv-smart-tool-left">
-                        <span class="conv-smart-tool-icon" style="background:#7C3AED;">${ICONS.organize}</span>
-                        <div class="conv-smart-tool-info">
-                          <span class="conv-smart-tool-title">Organize &amp; Merge PDF</span>
-                          <span class="conv-smart-tool-sub">Reorder, rotate, or combine</span>
-                        </div>
+                    </button>
+                    <button type="button" class="org-floating-menu-item" id="scan-dl-opt-tab">
+                      <div class="org-floating-menu-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                       </div>
-                      <svg class="conv-smart-tool-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
+                      <div class="org-floating-menu-text">
+                        <span class="org-floating-menu-title">Open in new tab</span>
+                        <span class="org-floating-menu-sub">View preview in browser</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Secondary Export As ▾ Dropdown -->
+                <div class="org-export-as-wrapper" id="scan-export-as-wrapper">
+                  <button type="button" class="org-btn-export-as" id="scan-export-as-btn" aria-haspopup="true" aria-expanded="false">
+                    <div class="org-btn-export-as-left">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                       </svg>
+                      <span>Export as</span>
                     </div>
+                    <svg class="org-btn-export-as-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  <div class="org-floating-menu" id="scan-export-menu">
+                    <button type="button" class="org-floating-menu-item" id="scan-exp-opt-main">
+                      <span class="org-format-badge ${isZip ? 'badge-zip' : 'badge-pdf'}">${isZip ? 'ZIP' : 'PDF'}</span>
+                      <div class="org-floating-menu-text">
+                        <span class="org-floating-menu-title">${isZip ? 'Images Archive (.zip)' : 'Standard PDF (.pdf)'}</span>
+                        <span class="org-floating-menu-sub">Primary scanned output</span>
+                      </div>
+                    </button>
+                    ${!isZip ? `
+                      <button type="button" class="org-floating-menu-item" id="scan-exp-opt-images">
+                        <span class="org-format-badge badge-zip">ZIP</span>
+                        <div class="org-floating-menu-text">
+                          <span class="org-floating-menu-title">Images Archive (.zip)</span>
+                          <span class="org-floating-menu-sub">Render pages as individual PNGs</span>
+                        </div>
+                      </button>
+                    ` : ''}
+                    ${r.ocrText ? `
+                      <button type="button" class="org-floating-menu-item" id="scan-exp-opt-text">
+                        <span class="org-format-badge badge-doc">TXT</span>
+                        <div class="org-floating-menu-text">
+                          <span class="org-floating-menu-title">Text Transcript (.txt)</span>
+                          <span class="org-floating-menu-sub">Download extracted OCR text</span>
+                        </div>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <!-- Utility Actions Trio: Share, Print, Delete -->
+                <div class="org-utility-trio">
+                  <button type="button" class="org-utility-btn" id="scan-act-share" title="Share document" aria-label="Share document">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                    <span>Share</span>
+                  </button>
+                  <button type="button" class="org-utility-btn" id="scan-act-print" title="Print document" aria-label="Print document">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 6 2 18 2 18 9"/>
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                      <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    <span>Print</span>
+                  </button>
+                  <button type="button" class="org-utility-btn org-utility-btn--delete" id="scan-act-delete" title="Delete document from session" aria-label="Delete document">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      <line x1="10" y1="11" x2="10" y2="17"/>
+                      <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+
+                <!-- "Or continue in" Workflow Continuation (1-Line Compact Rows) -->
+                <div class="org-continue-section">
+                  <div class="org-continue-header">
+                    <span class="org-continue-title">Or continue in</span>
+                  </div>
+                  <div class="conv-smart-tools-list org-continue-list">
+                    ${smartTools.map(st => `
+                      <div class="conv-smart-tool-item org-continue-item" data-tool-id="${st.id}" tabindex="0" role="button" title="${st.name} - ${st.sub || ''}">
+                        <div class="conv-smart-tool-left">
+                          <span class="conv-smart-tool-icon org-continue-badge" style="background:${st.color || '#00B0FF'};">${st.icon || ''}</span>
+                          <span class="conv-smart-tool-title org-continue-name">${st.name}</span>
+                        </div>
+                        <svg class="conv-smart-tool-arrow org-continue-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </div>
+                    `).join('')}
                   </div>
                 </div>
               </div>
 
-              <div class="scan-result-secondary-actions">
-                <button type="button" class="cpdf-result-btn-secondary-full scan-result-btn-back" id="res-btn-back">
-                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">${ICONS.arrowLeft} Back to Review Studio</span>
-                </button>
-                <button type="button" class="scan-result-btn-ghost" id="res-btn-new">
-                  <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;">${ICONS.add} Scan another document</span>
+              <!-- Footer Action: Elevated Secondary Button -->
+              <div class="org-res-footer">
+                <button type="button" class="org-btn-secondary-full" id="res-btn-new">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Scan another document</span>
                 </button>
               </div>
             </div>
@@ -2753,6 +2984,7 @@
 
       drawResultPreview();
 
+      // Stepper button bindings
       const prevBtn = container.querySelector('#res-prev-page');
       const nextBtn = container.querySelector('#res-next-page');
       if (prevBtn) {
@@ -2772,20 +3004,272 @@
         };
       }
 
-      const backBtn = container.querySelector('#res-btn-back');
-      const newBtn = container.querySelector('#res-btn-new');
-      if (backBtn) backBtn.onclick = () => { clearResult(); switchView('review'); };
-      if (newBtn) {
-        newBtn.onclick = () => { clearResult(); pages = []; selIdx = 0; switchView('hub'); };
+      // Dropdowns: Download & Export As
+      const dlToggle = container.querySelector('#scan-dl-dropdown-toggle');
+      const dlMenu = container.querySelector('#scan-dl-menu');
+      const expBtn = container.querySelector('#scan-export-as-btn');
+      const expMenu = container.querySelector('#scan-export-menu');
+
+      function closeAllMenus() {
+        dlMenu?.classList.remove('is-open');
+        expMenu?.classList.remove('is-open');
+        dlToggle?.setAttribute('aria-expanded', 'false');
+        expBtn?.setAttribute('aria-expanded', 'false');
       }
 
+      if (dlToggle && dlMenu) {
+        dlToggle.onclick = (e) => {
+          e.stopPropagation();
+          const isOpen = dlMenu.classList.contains('is-open');
+          closeAllMenus();
+          if (!isOpen) {
+            dlMenu.classList.add('is-open');
+            dlToggle.setAttribute('aria-expanded', 'true');
+          }
+        };
+      }
+
+      if (expBtn && expMenu) {
+        expBtn.onclick = (e) => {
+          e.stopPropagation();
+          const isOpen = expMenu.classList.contains('is-open');
+          closeAllMenus();
+          if (!isOpen) {
+            expMenu.classList.add('is-open');
+            expBtn.setAttribute('aria-expanded', 'true');
+          }
+        };
+      }
+
+      const triggerDownload = (blob, filename) => {
+        if (window.U && window.U.downloadBlob) {
+          window.U.downloadBlob(blob, filename);
+          return;
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+
+      // Main CTA
+      const mainDlBtn = container.querySelector('#scan-main-dl-btn');
+      if (mainDlBtn) {
+        mainDlBtn.onclick = () => {
+          triggerDownload(r.blob, r.name);
+        };
+      }
+
+      // Download dropdown options
+      container.querySelector('#scan-dl-opt-save')?.addEventListener('click', () => {
+        closeAllMenus();
+        triggerDownload(r.blob, r.name);
+      });
+
+      container.querySelector('#scan-dl-opt-tab')?.addEventListener('click', () => {
+        closeAllMenus();
+        if (r.url) window.open(r.url, '_blank');
+      });
+
+      // Export dropdown options
+      container.querySelector('#scan-exp-opt-main')?.addEventListener('click', () => {
+        closeAllMenus();
+        triggerDownload(r.blob, r.name);
+      });
+
+      container.querySelector('#scan-exp-opt-images')?.addEventListener('click', async () => {
+        closeAllMenus();
+        try {
+          window.FF?.util?.toast?.('Packing pages into image archive…', 'info');
+          const fflate = window.fflate || (window.FF && window.FF.fflate);
+          if (!fflate) {
+            await (window.FF?.util?.loadScript ? window.FF.util.loadScript('vendor/fflate.min.js') : null);
+          }
+          const F = window.fflate;
+          if (F && r.previewCanvases && r.previewCanvases.length) {
+            const zipData = {};
+            for (let i = 0; i < r.previewCanvases.length; i++) {
+              const cv = r.previewCanvases[i];
+              const pngBlob = await new Promise(res => cv.toBlob(res, 'image/png'));
+              const u8 = new Uint8Array(await pngBlob.arrayBuffer());
+              const pad = String(i + 1).padStart(2, '0');
+              zipData[`page-${pad}.png`] = u8;
+            }
+            const zipped = F.zipSync(zipData, { level: 4 });
+            const zBlob = new Blob([zipped], { type: 'application/zip' });
+            const baseName = r.name.replace(/\.[^/.]+$/, '');
+            triggerDownload(zBlob, `${baseName}-images.zip`);
+            window.FF?.util?.toast?.('Image archive downloaded!', 'success');
+          }
+        } catch (err) {
+          console.warn('[Scan] Export images error:', err);
+          window.FF?.util?.toast?.('Could not export images: ' + err.message, 'error');
+        }
+      });
+
+      container.querySelector('#scan-exp-opt-text')?.addEventListener('click', () => {
+        closeAllMenus();
+        if (r.ocrText) {
+          const tBlob = new Blob([r.ocrText], { type: 'text/plain;charset=utf-8' });
+          const baseName = r.name.replace(/\.[^/.]+$/, '');
+          triggerDownload(tBlob, `${baseName}-transcript.txt`);
+        }
+      });
+
+      // Backtrack button
+      const backBtn = container.querySelector('#res-btn-back');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          clearResult();
+          switchView('review');
+        };
+      }
+
+      // Utility Actions Trio: Share, Print, Delete
+      const shareBtn = container.querySelector('#scan-act-share');
+      if (shareBtn) {
+        shareBtn.onclick = async () => {
+          try {
+            const fileObj = new File([r.blob], r.name, { type: r.blob.type || (isZip ? 'application/zip' : 'application/pdf') });
+            if (typeof navigator.share === 'function') {
+              const shareData = { title: r.name };
+              if (navigator.canShare && navigator.canShare({ files: [fileObj] })) {
+                shareData.files = [fileObj];
+              } else {
+                shareData.text = `Sharing ${r.name}`;
+              }
+              await navigator.share(shareData);
+              return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(r.url);
+              window.FF?.util?.toast?.('Document link copied to clipboard!', 'success');
+              return;
+            }
+            window.open(r.url, '_blank');
+          } catch (e) {
+            if (e.name === 'AbortError') return;
+            console.warn('[Scan] Share error:', e);
+            window.FF?.util?.toast?.('Could not share document: ' + e.message, 'error');
+          }
+        };
+      }
+
+      const printBtn = container.querySelector('#scan-act-print');
+      if (printBtn) {
+        printBtn.onclick = () => {
+          try {
+            window.FF?.util?.toast?.('Opening print dialog…', 'info');
+            const printIframe = document.createElement('iframe');
+            printIframe.style.position = 'fixed';
+            printIframe.style.top = '-9999px';
+            printIframe.style.left = '-9999px';
+            printIframe.style.width = '1000px';
+            printIframe.style.height = '1000px';
+            printIframe.style.border = 'none';
+            printIframe.style.opacity = '0';
+            printIframe.style.pointerEvents = 'none';
+            document.body.appendChild(printIframe);
+
+            const cleanup = () => {
+              setTimeout(() => {
+                try { printIframe.remove(); } catch {}
+              }, 60000);
+            };
+
+            const iWin = printIframe.contentWindow;
+            const iDoc = iWin.document;
+
+            const pagesHtml = [];
+            if (r.previewCanvases && r.previewCanvases.length) {
+              for (let i = 0; i < r.previewCanvases.length; i++) {
+                const cv = r.previewCanvases[i];
+                const dataUrl = cv.toDataURL('image/png');
+                pagesHtml.push(`<div class="print-page"><img src="${dataUrl}" alt="Page ${i + 1}" /></div>`);
+              }
+            }
+
+            iDoc.open();
+            iDoc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>${esc(r.name)}</title>
+  <style>
+    @page { margin: 0; size: auto; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    .print-page { page-break-after: always; page-break-inside: avoid; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 100vh; box-sizing: border-box; padding: 0; }
+    .print-page:last-child { page-break-after: auto; }
+    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+  </style>
+</head>
+<body>
+  ${pagesHtml.join('')}
+</body>
+</html>`);
+            iDoc.close();
+
+            setTimeout(() => {
+              try {
+                iWin.focus();
+                iWin.print();
+              } catch (e) {
+                console.warn('[Scan] Print error:', e);
+              }
+              cleanup();
+            }, 400);
+          } catch (err) {
+            console.warn('[Scan] Print error:', err);
+            window.FF?.util?.toast?.('Could not open print dialog: ' + err.message, 'error');
+          }
+        };
+      }
+
+      const delBtn = container.querySelector('#scan-act-delete');
+      if (delBtn) {
+        delBtn.onclick = () => {
+          clearResult();
+          pages = [];
+          selIdx = 0;
+          switchView('hub');
+          window.FF?.util?.toast?.('Scanned document removed from session.', 'info');
+        };
+      }
+
+      // Smart tool continuation
       container.querySelectorAll('.conv-smart-tool-item').forEach(item => {
         item.onclick = () => {
           const tid = item.dataset.toolId;
+          const targetFile = new File([r.blob], r.name, { type: r.blob.type || (isZip ? 'application/zip' : 'application/pdf') });
           if (tid) {
-            window.location.hash = '#app/' + tid;
+            if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+              window.FF.app.openTool(tid, true, [targetFile]);
+            } else if (typeof window.openToolById === 'function') {
+              window.openToolById(tid, [targetFile]);
+            } else if (typeof window.openTool === 'function') {
+              window.openTool(tid, true, [targetFile]);
+            }
           }
         };
+      });
+
+      // Secondary footer action
+      const newBtn = container.querySelector('#res-btn-new');
+      if (newBtn) {
+        newBtn.onclick = () => {
+          clearResult();
+          pages = [];
+          selIdx = 0;
+          switchView('hub');
+        };
+      }
+
+      // Dismiss floating menus when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#scan-split-dl-wrapper') && !e.target.closest('#scan-export-as-wrapper')) {
+          closeAllMenus();
+        }
       });
     }
 
@@ -7299,34 +7783,24 @@
     }
 
     function showUndoToast() {
-      const old = container.querySelector('#scan-toast');
-      if (old) old.remove();
       if (!lastRemoved) return;
-
-      const toast = document.createElement('div');
-      toast.id = 'scan-toast';
-      toast.className = 'scan-toast';
-      toast.innerHTML = `
-        <span>Page deleted</span>
-        <button type="button" id="btn-scan-undo">Undo</button>
-      `;
-      container.appendChild(toast);
-
-      const undoBtn = toast.querySelector('#btn-scan-undo');
-      if (undoBtn) {
-        undoBtn.onclick = () => {
-          if (lastRemoved) {
-            pages.splice(lastRemoved.idx, 0, lastRemoved.page);
-            selIdx = lastRemoved.idx;
-            lastRemoved = null;
-            toast.remove();
-            pushHistoryState('Restore Page');
-            refreshStudioUI();
+      if (window.FF?.util?.toast) {
+        window.FF.util.toast('Page deleted', 'info', {
+          duration: 5000,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              if (lastRemoved) {
+                pages.splice(lastRemoved.idx, 0, lastRemoved.page);
+                selIdx = lastRemoved.idx;
+                lastRemoved = null;
+                pushHistoryState('Restore Page');
+                refreshStudioUI();
+              }
+            }
           }
-        };
+        });
       }
-
-      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
     }
 
     async function copyPageImage(idx) {
@@ -9122,18 +9596,11 @@
     };
 
     function showToast(msg) {
-      let toast = container.querySelector('.wf-toast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.className = 'wf-toast';
-        container.appendChild(toast);
+      if (window.FF?.util?.toast) {
+        const cleanMsg = String(msg || '').replace(/^✓\s*/, '');
+        const type = String(msg || '').startsWith('✓') ? 'success' : 'info';
+        window.FF.util.toast(cleanMsg, type);
       }
-      toast.innerHTML = msg;
-      toast.classList.add('is-visible');
-      clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => {
-        toast.classList.remove('is-visible');
-      }, 2200);
     }
 
     function recordHistory() {
@@ -10991,24 +11458,38 @@
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const phoneRegex = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
       const customKeywords = (inputs.customWords || '').split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
+      const sensitiveStringsToScrub = new Set();
 
       let redactedCount = 0;
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        onProgress?.(0.3 + (pageNum / pdfDoc.numPages) * 0.5, `Redacting page ${pageNum}/${pdfDoc.numPages}…`);
+        onProgress?.(0.3 + (pageNum / pdfDoc.numPages) * 0.4, `Redacting page ${pageNum}/${pdfDoc.numPages}…`);
         const page = await pdfDoc.getPage(pageNum);
         const textContent = await page.getTextContent();
         const targetPage = targetPdf.getPage(pageNum - 1);
         const { height } = targetPage.getSize();
 
         for (const item of textContent.items) {
-          const str = item.str;
+          const str = (item.str || '').trim();
+          if (!str) continue;
           let shouldRedact = false;
-          if (inputs.redactEmails === 'yes' && emailRegex.test(str)) shouldRedact = true;
-          if (inputs.redactPhones === 'yes' && phoneRegex.test(str)) shouldRedact = true;
-          if (customKeywords.some(kw => str.toLowerCase().includes(kw))) shouldRedact = true;
+          if (inputs.redactEmails === 'yes' && emailRegex.test(str)) {
+            shouldRedact = true;
+            const emails = str.match(emailRegex) || [];
+            emails.forEach(e => sensitiveStringsToScrub.add(e));
+          }
+          if (inputs.redactPhones === 'yes' && phoneRegex.test(str)) {
+            shouldRedact = true;
+            const phones = str.match(phoneRegex) || [];
+            phones.forEach(p => sensitiveStringsToScrub.add(p));
+          }
+          if (customKeywords.some(kw => str.toLowerCase().includes(kw))) {
+            shouldRedact = true;
+            customKeywords.filter(kw => str.toLowerCase().includes(kw)).forEach(kw => sensitiveStringsToScrub.add(kw));
+          }
 
           if (shouldRedact) {
             redactedCount++;
+            sensitiveStringsToScrub.add(str);
             const tx = item.transform;
             const x = tx[4];
             const y = tx[5];
@@ -11028,7 +11509,78 @@
         }
       }
 
-      onProgress?.(0.9, 'Saving sanitized PDF…');
+      // True Content-Stream Redaction: expunge sensitive strings from PDF byte streams
+      const fflate = window.fflate || await window.FF?.util?.loadScript('vendor/fflate.js').then(() => window.fflate).catch(() => null);
+      if (sensitiveStringsToScrub.size > 0 && fflate) {
+        onProgress?.(0.75, 'Permanently expunging text operators from PDF streams…');
+        const sensitiveList = Array.from(sensitiveStringsToScrub);
+
+        for (let pIdx = 0; pIdx < targetPdf.getPageCount(); pIdx++) {
+          const pg = targetPdf.getPage(pIdx);
+          const contentsRef = pg.node.Contents();
+          if (!contentsRef) continue;
+
+          const streamRefs = contentsRef.asArray ? contentsRef.asArray() : [contentsRef];
+          for (const ref of streamRefs) {
+            const streamObj = targetPdf.context.lookup(ref);
+            if (!streamObj || !streamObj.getContents) continue;
+            const rawBytes = streamObj.getContents();
+            let streamStr = '';
+
+            try {
+              const unz = fflate.unzlibSync(rawBytes);
+              streamStr = new TextDecoder('latin1').decode(unz);
+            } catch {
+              try {
+                const inf = fflate.inflateSync(rawBytes);
+                streamStr = new TextDecoder('latin1').decode(inf);
+              } catch {
+                streamStr = new TextDecoder('latin1').decode(rawBytes);
+              }
+            }
+
+            let scrubbed = streamStr;
+            for (const item of sensitiveList) {
+              if (!item || item.length < 2) continue;
+              // 1. Literal matching in operator stream (target)
+              const escaped = item.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+              scrubbed = scrubbed.replace(new RegExp(escaped, 'gi'), ' '.repeat(item.length));
+
+              // 2. Hex matching in operator stream <hex...>
+              try {
+                const hexBytes = new TextEncoder().encode(item);
+                const hexStr = Array.from(hexBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+                const hexSpaces = '20'.repeat(item.length);
+                scrubbed = scrubbed.replace(new RegExp(hexStr, 'gi'), hexSpaces);
+              } catch {}
+            }
+
+            if (scrubbed !== streamStr) {
+              const newStream = targetPdf.context.flateStream(scrubbed);
+              targetPdf.context.assign(ref, newStream);
+            }
+          }
+
+          // Strip matching Link Annotations (e.g. mailto: links)
+          try {
+            const annots = pg.node.Annots();
+            if (annots && annots.asArray) {
+              const annotArr = annots.asArray();
+              for (let aIdx = annotArr.length - 1; aIdx >= 0; aIdx--) {
+                const annotObj = targetPdf.context.lookup(annotArr[aIdx]);
+                if (annotObj && typeof annotObj.toString === 'function') {
+                  const aStr = annotObj.toString();
+                  if (sensitiveList.some(kw => aStr.toLowerCase().includes(kw.toLowerCase()))) {
+                    annotArr.splice(aIdx, 1);
+                  }
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      onProgress?.(0.95, 'Saving sanitized PDF…');
       const savedBytes = await targetPdf.save();
       onProgress?.(1, `Sanitized ${redactedCount} sensitive item(s)!`);
 

@@ -9,9 +9,22 @@
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  background: #F8FAFC !important;
+  background: #FAFAFA !important;
   overflow: hidden !important;
   position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+body #app-view .app-main-content:has(.org-shell) {
+  margin-left: 68px !important;
+}
+
+@media (max-width: 768px) {
+  body #app-view .app-main-content:has(.org-shell) {
+    margin-left: 64px !important;
+  }
 }
 
 .org-flow {
@@ -24,581 +37,1302 @@
   position: relative !important;
 }
 
-/* ── 1. Fluent 44px Unified Single-Row Action Toolbar ── */
+/* ── 1. Unified 48px Single-Row Action Toolbar (Opensource UI Standards) ── */
 .org-unified-toolbar {
-  height: 44px !important;
-  min-height: 44px !important;
-  max-height: 44px !important;
-  background: #ffffff !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-  box-shadow: none !important;
-  display: flex !important;
+  position: relative !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E4E4E7 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  display: grid !important;
+  grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr) !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  padding: 0 14px !important;
+  padding: 0 12px !important;
   box-sizing: border-box !important;
   width: 100% !important;
   overflow: hidden !important;
   z-index: 40 !important;
   user-select: none !important;
-  gap: 10px !important;
+  gap: 12px !important;
 }
 
+/* Left Group: '+ Add Files' Depth Outline Button */
 .org-toolbar-left {
+  grid-column: 1 !important;
   display: flex !important;
   align-items: center !important;
+  justify-content: flex-start !important;
   gap: 8px !important;
   flex-shrink: 0 !important;
   min-width: 0 !important;
 }
 
-/* Fluent Primary '+ Add Files' (Flat — no pill chrome) */
-.org-fluent-new-btn {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Depth Outline Button — Opensource UI Secondary CTA
+   https://opensourceui.in/components/depth-outline-button
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-btn-add-files {
   all: unset !important;
-  height: 30px !important;
-  padding: 0 8px !important;
+  height: 34px !important;
+  padding: 0 13px !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  border-radius: 6px !important;
-  background: transparent !important;
-  border: none !important;
-  color: #0F172A !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
+  border-radius: 8px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  color: #18181B !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
   cursor: pointer !important;
-  transition: all 120ms ease !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05),
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.03) !important;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
 }
 
-.org-fluent-new-btn:hover {
-  background: #F1F5F9 !important;
-  border: none !important;
-  box-shadow: none !important;
+.org-btn-add-files:hover {
+  background: #F9FAFB !important;
+  border-color: #D4D4D8 !important;
+  color: #09090B !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 1) !important;
 }
 
-.org-fluent-new-btn svg {
-  stroke: #0F172A !important;
+.org-btn-add-files:active {
+  background: #F4F4F5 !important;
+  transform: translateY(1px) !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06),
+              inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.org-btn-add-files svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: #18181B !important;
   flex-shrink: 0 !important;
 }
 
-.org-toolbar-file-pill {
+/* Toolbar 'Crop Page' Button */
+.org-btn-crop-page {
+  gap: 5px !important;
+}
+
+.org-btn-crop-page.is-active {
+  background: #0F172A !important;
+  border-color: #0F172A !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.org-btn-crop-page.is-active:hover {
+  background: #1E293B !important;
+  border-color: #1E293B !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.org-btn-crop-page.is-active svg {
+  stroke: #FFFFFF !important;
+}
+
+/* Center Toolbar: Dedicated Opensource UI Segmented Mode Control + Inline Mode Controls */
+.org-toolbar-center {
+  grid-column: 2 !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 0 8px !important;
-  height: 28px !important;
-  background: #F8FAFC !important;
-  border: 1px solid #E2E8F0 !important;
-  border-radius: 6px !important;
-  max-width: 220px !important;
-  box-sizing: border-box !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  position: static !important;
+  transform: none !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  z-index: 25 !important;
+  pointer-events: auto !important;
 }
 
-.org-file-name {
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  color: #1E293B !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+.org-toolbar-center > * {
+  pointer-events: auto !important;
+}
+
+/* Contextual Subcontrols Slot — Anchored immediately to the right of the center capsule */
+.org-subcontrols-slot {
+  position: static !important;
+  transform: none !important;
+  margin-left: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 34px !important;
   white-space: nowrap !important;
+  pointer-events: auto !important;
+  z-index: 26 !important;
+  animation: orgSubtoolFade 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.org-file-meta {
+.org-subcontrols-slot .org-mini-btn {
+  height: 25px !important;
+  padding: 0 4px !important;
+  font-size: 10.5px !important;
+  gap: 2.5px !important;
+}
+
+.org-subcontrols-slot .org-btn-group .org-mini-btn {
+  padding: 0 3.5px !important;
+  gap: 2px !important;
+}
+
+.org-subcontrols-slot .org-mini-btn svg {
+  width: 11.5px !important;
+  height: 11.5px !important;
+}
+
+.org-subcontrols-slot .org-stepper {
+  height: 25px !important;
+  padding: 1.5px !important;
+  border-radius: 5px !important;
+}
+
+.org-subcontrols-slot .org-step-btn {
+  width: 19px !important;
+  height: 20px !important;
+  font-size: 11.5px !important;
+}
+
+.org-subcontrols-slot .org-step-val {
+  font-size: 11px !important;
+  min-width: 15px !important;
+}
+
+.org-subcontrols-slot .org-segmented-modes.org-segmented-mini {
+  height: 25px !important;
+  padding: 1.5px !important;
+  border-radius: 5px !important;
+}
+
+.org-subcontrols-slot .org-segmented-modes.org-segmented-mini .org-mode-tab {
+  height: 20px !important;
+  padding: 0 5px !important;
   font-size: 10.5px !important;
   font-weight: 500 !important;
-  color: #64748B !important;
-  white-space: nowrap !important;
 }
 
-.org-local-pill {
-  font-size: 9.5px !important;
-  font-weight: 700 !important;
-  color: #059669 !important;
-  background: #ECFDF5 !important;
-  border: 1px solid #A7F3D0 !important;
-  border-radius: 4px !important;
-  padding: 1px 5px !important;
-  letter-spacing: 0.02em !important;
-  text-transform: uppercase !important;
+.org-subcontrols-slot .org-vsep {
+  margin: 0 2px !important;
 }
 
-/* Center Toolbar Groups — Fluent Segmented Pill */
-.org-toolbar-center {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  flex: 1 1 auto !important;
-  justify-content: center !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
+@keyframes orgSubtoolFade {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
-.org-tool-group {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Segmented Control — Opensource UI iOS-Style Sliding Pill
+   https://opensourceui.in/components/segmented-toggle-button
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-segmented-modes {
+  position: relative !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 2px !important;
+  gap: 1px !important;
+  background: #F4F4F5 !important;
+  padding: 2.5px !important;
+  border-radius: 8px !important;
+  border: 1px solid #E4E4E7 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08),
+              inset 0 2px 4px rgba(0, 0, 0, 0.05),
+              inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+              0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  height: 34px !important;
   flex-shrink: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.org-tool-btn {
+.org-segmented-indicator {
+  position: absolute !important;
+  top: 2.5px !important;
+  bottom: 2.5px !important;
+  left: 0 !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1),
+              0 1px 2px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 1),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.04) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.org-mode-tab {
   all: unset !important;
+  position: relative !important;
+  z-index: 2 !important;
   height: 28px !important;
-  padding: 0 10px !important;
+  padding: 0 7px !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5.5px !important;
-  border-radius: 6px !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  border-radius: 5px !important;
   background: transparent !important;
-  color: #4B4B4B !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
+  color: #71717A !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  transition: all 120ms ease !important;
+  transition: color 200ms ease !important;
   box-sizing: border-box !important;
-  position: relative !important;
 }
 
-.org-tool-btn svg {
-  width: 13.5px !important;
-  height: 13.5px !important;
+.org-mode-tab svg {
+  width: 13px !important;
+  height: 13px !important;
   stroke: currentColor !important;
   flex-shrink: 0 !important;
+  transition: stroke 200ms ease !important;
 }
 
-.org-tool-btn:hover:not(.is-on):not(:disabled) {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
+.org-mode-tab:hover:not(.is-active) {
+  color: #18181B !important;
 }
 
-/* Fluent Active Mode Indicator: Soft Tint + Neutral Accent Bottom Bar */
-.org-tool-btn.is-on {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
-  font-weight: 700 !important;
+.org-mode-tab.is-active {
+  color: #18181B !important;
+  font-weight: 600 !important;
+  background: transparent !important;
   box-shadow: none !important;
 }
 
-.org-tool-btn.is-on::after {
-  content: '' !important;
-  position: absolute !important;
-  bottom: 0 !important;
-  left: 8px !important;
-  right: 8px !important;
-  height: 2.5px !important;
-  background: #0F172A !important;
-  border-radius: 2px 2px 0 0 !important;
-}
-
-.org-tool-btn.is-on svg {
-  stroke: #0F172A !important;
-  color: #0F172A !important;
-}
-
-.org-tool-btn:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
+.org-mode-tab.is-active svg {
+  stroke: #18181B !important;
 }
 
 .org-vsep {
   width: 1px !important;
-  height: 18px !important;
-  background: #E2E8F0 !important;
-  margin: 0 6px !important;
+  height: 20px !important;
+  background: #E4E4E7 !important;
+  margin: 0 4px !important;
   display: inline-block !important;
   flex-shrink: 0 !important;
 }
 
-/* Sub-toolbar inline controls for Split/Rotate (Flat) */
-.org-inline-ctrls {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Inline Mode Controls — Integrated seamlessly into Center Toolbar
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-toolbar-inline-ctrl {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  height: 28px !important;
-  box-sizing: border-box !important;
+  gap: 5px !important;
+  flex-shrink: 0 !important;
+  margin-left: 0 !important;
 }
 
-.org-ctrl-label {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #4B4B4B !important;
+.org-inline-label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #52525B !important;
+  white-space: nowrap !important;
 }
 
+.org-inline-unit {
+  font-size: 12px !important;
+  color: #71717A !important;
+  white-space: nowrap !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Quantity Stepper Button — Opensource UI Tactile Keycaps
+   https://opensourceui.in/components/quantity-stepper-button
+   ═══════════════════════════════════════════════════════════════════════════ */
 .org-stepper {
   display: inline-flex !important;
   align-items: center !important;
   gap: 2px !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 4px !important;
-  padding: 0 !important;
-  height: 22px !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 7px !important;
+  padding: 2px !important;
+  height: 30px !important;
+  box-sizing: border-box !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
 .org-step-btn {
   all: unset !important;
-  width: 18px !important;
-  height: 18px !important;
+  width: 22px !important;
+  height: 24px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   font-size: 13px !important;
   font-weight: 700 !important;
-  color: #4B4B4B !important;
+  color: #18181B !important;
   cursor: pointer !important;
-  border-radius: 3px !important;
+  border-radius: 5px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  transition: all 120ms ease !important;
 }
 
 .org-step-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+  background: #F9FAFB !important;
+  color: #000000 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+.org-step-btn:active {
+  background: #F4F4F5 !important;
+  transform: translateY(0.5px) !important;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .org-step-val {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
-  color: #0F172A !important;
-  min-width: 16px !important;
+  color: #18181B !important;
+  min-width: 18px !important;
   text-align: center !important;
-}
-
-.org-range-input {
-  all: unset !important;
-  height: 22px !important;
-  width: 90px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 4px !important;
-  padding: 0 6px !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #0F172A !important;
-  box-sizing: border-box !important;
-}
-
-.org-range-input:focus {
-  border-color: #0F172A !important;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1) !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 .org-mini-btn {
   all: unset !important;
-  height: 24px !important;
-  padding: 0 8px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 4px !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  border: none !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: #4B4B4B !important;
+  gap: 5px !important;
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: #18181B !important;
   white-space: nowrap !important;
   cursor: pointer !important;
-  transition: all 100ms ease !important;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+  box-sizing: border-box !important;
 }
 
-.org-mini-btn:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+.org-mini-btn:hover:not(:disabled) {
+  background: #F9FAFB !important;
+  border-color: #D4D4D8 !important;
+  color: #09090B !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
-.org-mini-btn.is-on {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+.org-mini-btn:active:not(:disabled) {
+  background: #F4F4F5 !important;
+  transform: translateY(0.5px) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
-.org-mini-btn--danger {
-  color: #DC2626 !important;
+.org-mini-btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  background: #F4F4F5 !important;
+  color: #A1A1AA !important;
+  box-shadow: none !important;
 }
 
-.org-mini-btn--danger:hover {
-  background: #FEF2F2 !important;
-  color: #DC2626 !important;
-}
-
-/* Toolbar Right Area */
-.org-toolbar-right {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
+.org-mini-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: currentColor !important;
   flex-shrink: 0 !important;
-  margin-left: auto !important;
 }
 
-.org-icon-group {
+/* Joined Button Group (Tactile Segmented Keycaps for Rotate & Selection) */
+.org-btn-group {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.org-btn-group .org-mini-btn {
+  border-radius: 0 !important;
+  margin-left: -1px !important;
+  padding: 0 7.5px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.org-btn-group .org-mini-btn:first-child {
+  border-top-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+  margin-left: 0 !important;
+}
+
+.org-btn-group .org-mini-btn:last-child {
+  border-top-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+}
+
+.org-btn-group .org-mini-btn:hover:not(:disabled) {
+  z-index: 2 !important;
+}
+
+.org-btn-group .org-mini-btn:active:not(:disabled) {
+  z-index: 2 !important;
+}
+
+.org-btn-group .org-mini-btn:focus-visible {
+  z-index: 3 !important;
+}
+
+/* Toolbar Right: History Cluster & Primary Action CTA */
+.org-toolbar-right {
+  grid-column: 3 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
+  margin-left: 0 !important;
+}
+
+.org-history-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
   padding: 0 !important;
+  flex-shrink: 0 !important;
 }
 
-.org-icon-btn {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tactile 3D Icon Button — Opensource UI Physical Keycaps
+   https://opensourceui.in/components/3d-icon-button
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-tool-icon-btn {
   all: unset !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 28px !important;
+  height: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border-radius: 5px !important;
-  color: #64748B !important;
-  background: transparent !important;
+  border-radius: 6px !important;
+  color: #52525B !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.03) !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
-  transition: all 100ms ease !important;
+  transition: all 120ms ease !important;
+  box-sizing: border-box !important;
 }
 
-.org-icon-btn svg {
-  width: 14px !important;
-  height: 14px !important;
+.org-tool-icon-btn svg {
+  width: 13px !important;
+  height: 13px !important;
   stroke: currentColor !important;
 }
 
-.org-icon-btn:hover:not(:disabled) {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
+.org-tool-icon-btn:hover:not(:disabled) {
+  background: #F9FAFB !important;
+  border-color: #D4D4D8 !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
 
-.org-icon-btn:disabled {
-  opacity: 0.3 !important;
+.org-tool-icon-btn:active:not(:disabled) {
+  background: #F4F4F5 !important;
+  transform: translateY(1px) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.org-tool-icon-btn:disabled {
+  opacity: 0.38 !important;
   cursor: not-allowed !important;
+  background: #FAFAFA !important;
+  border: 1px solid #E4E4E7 !important;
+  box-shadow: none !important;
+  color: #A1A1AA !important;
 }
 
-.org-sec-btn {
+/* ═══════════════════════════════════════════════════════════════════════════
+   Primary Action CTA — Opensource UI 3D Tactile Download Button
+   https://opensourceui.in/components/download-button
+   ═══════════════════════════════════════════════════════════════════════════ */
+button.osui-dl-btn,
+.osui-dl-btn,
+.org-primary-cta,
+button#org-run-btn,
+#org-run-btn {
   all: unset !important;
-  height: 30px !important;
-  padding: 0 10px !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 5px !important;
-  border-radius: 6px !important;
-  background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  color: #0F172A !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-  transition: all 120ms ease !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-}
-
-.org-sec-btn:hover {
-  background: #F8FAFC !important;
-  border-color: #94A3B8 !important;
-}
-
-.org-finish-btn {
-  all: unset !important;
-  height: 30px !important;
-  padding: 0 14px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  border-radius: 6px !important;
-  background: #0F172A !important;
-  color: #FFFFFF !important;
+  height: 34px !important;
+  padding: 0 11px !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
   font-size: 12px !important;
   font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  outline: none !important;
+  user-select: none !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  box-shadow: 0 1.5px 5px rgba(15, 23, 42, 0.2) !important;
-  transition: all 120ms ease !important;
   box-sizing: border-box !important;
+  position: relative !important;
+  transition: background-color 300ms cubic-bezier(0.32, 0.72, 0, 1),
+              box-shadow 300ms cubic-bezier(0.32, 0.72, 0, 1),
+              color 300ms cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
-.org-finish-btn:hover:not(:disabled) {
-  background: #1E293B !important;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3) !important;
+.osui-dl-label-layer:not(.osui-dl-label--idle) {
+  position: absolute !important;
 }
 
-.org-finish-btn:disabled {
-  opacity: 0.45 !important;
+/* Phase: Idle (Opensource UI Tactile 3D Brand Blue Keycap — #00B0FF) */
+button.osui-dl-btn[data-phase="idle"],
+button.osui-dl-btn:not([data-phase]),
+.osui-dl-btn[data-phase="idle"],
+.osui-dl-btn:not([data-phase]),
+button#org-run-btn[data-phase="idle"],
+button#org-run-btn:not([data-phase]),
+#org-run-btn[data-phase="idle"],
+#org-run-btn:not([data-phase]),
+#org-run-btn,
+button.org-primary-cta[data-phase="idle"],
+button.org-primary-cta:not([data-phase]),
+.org-primary-cta[data-phase="idle"],
+.org-primary-cta:not([data-phase]) {
+  background: linear-gradient(180deg, #00B0FF 0%, #008CE5 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0284C7,
+              0 2px 5px rgba(0, 176, 255, 0.35),
+              0 1px 2px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.45),
+              inset 0 -2.5px 0 #005FA3 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
+}
+
+button.osui-dl-btn[data-phase="idle"]:hover:not(:disabled),
+button.osui-dl-btn:not([data-phase]):hover:not(:disabled),
+.osui-dl-btn[data-phase="idle"]:hover:not(:disabled),
+.osui-dl-btn:not([data-phase]):hover:not(:disabled),
+button#org-run-btn[data-phase="idle"]:hover:not(:disabled),
+button#org-run-btn:not([data-phase]):hover:not(:disabled),
+#org-run-btn[data-phase="idle"]:hover:not(:disabled),
+#org-run-btn:not([data-phase]):hover:not(:disabled),
+#org-run-btn:hover:not(:disabled),
+button.org-primary-cta[data-phase="idle"]:hover:not(:disabled),
+button.org-primary-cta:not([data-phase]):hover:not(:disabled),
+.org-primary-cta[data-phase="idle"]:hover:not(:disabled),
+.org-primary-cta:not([data-phase]):hover:not(:disabled) {
+  background: linear-gradient(180deg, #38C8FF 0%, #009BEF 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 1px #0077C2,
+              0 3px 10px rgba(0, 176, 255, 0.45),
+              0 1px 2px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0.5px rgba(255, 255, 255, 0.55),
+              inset 0 -2.5px 0 #00508A !important;
+}
+
+button.osui-dl-btn[data-phase="idle"]:active:not(:disabled),
+button#org-run-btn[data-phase="idle"]:active:not(:disabled),
+#org-run-btn[data-phase="idle"]:active:not(:disabled),
+#org-run-btn:active:not(:disabled) {
+  transform: translateY(1.5px) !important;
+  background: linear-gradient(180deg, #008CE5 0%, #0070B8 100%) !important;
+  box-shadow: 0 0 0 1px #00508A,
+              0 1px 2px rgba(0, 176, 255, 0.25),
+              inset 0 1px 2px rgba(0, 0, 0, 0.25),
+              inset 0 -1px 0 #00508A !important;
+}
+
+/* Phase: Downloading (Tactile Sunk 3D keycap state with spinner) */
+button.osui-dl-btn[data-phase="downloading"],
+.osui-dl-btn[data-phase="downloading"],
+button#org-run-btn[data-phase="downloading"],
+#org-run-btn[data-phase="downloading"],
+button.org-primary-cta[data-phase="downloading"],
+.org-primary-cta[data-phase="downloading"] {
+  cursor: default !important;
+  background: #0070B8 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 0 1px #004F80,
+              inset 0 1px 2px rgba(0, 0, 0, 0.3),
+              inset 0 -1px 0 #004F80 !important;
+}
+
+/* Phase: Done (Emerald 3D keycap with rich specular gloss) */
+button#org-run-btn[data-phase="done"],
+#org-run-btn[data-phase="done"],
+button.org-primary-cta[data-phase="done"],
+.osui-dl-btn[data-phase="done"],
+.org-primary-cta[data-phase="done"] {
+  cursor: default !important;
+  background-color: #059669 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.25),
+              0 3px 6px rgba(0, 0, 0, 0.2),
+              0 6px 12px rgba(0, 0, 0, 0.15),
+              inset 0 1px 2px rgba(255, 255, 255, 0.22),
+              inset 0 -3px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+.osui-dl-btn:disabled,
+.org-primary-cta:disabled {
+  opacity: 0.5 !important;
   cursor: not-allowed !important;
+}
+
+/* Icon Slot & Morphing Layers */
+.osui-dl-icon-slot {
+  position: relative !important;
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+}
+
+.osui-dl-icon-layer {
+  position: absolute !important;
+  inset: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  transition: opacity 250ms ease-out, visibility 250ms !important;
+  pointer-events: none !important;
+}
+
+.osui-dl-icon-layer svg {
+  width: 15px !important;
+  height: 15px !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  display: block !important;
+}
+
+/* Spin animation for loader */
+@keyframes osuiSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.osui-spin {
+  animation: osuiSpin 1s linear infinite !important;
+}
+
+/* Icon Visibility Matrix & Strict Color Inheritance */
+.osui-dl-btn[data-phase="idle"] .osui-dl-icon--idle svg,
+.osui-dl-btn:not([data-phase]) .osui-dl-icon--idle svg,
+#org-run-btn[data-phase="idle"] .osui-dl-icon--idle svg,
+#org-run-btn:not([data-phase]) .osui-dl-icon--idle svg,
+button#org-run-btn[data-phase="idle"] .osui-dl-icon--idle svg,
+button#org-run-btn:not([data-phase]) .osui-dl-icon--idle svg,
+.org-primary-cta[data-phase="idle"] .osui-dl-icon--idle svg,
+.org-primary-cta:not([data-phase]) .osui-dl-icon--idle svg {
+  stroke: #FFFFFF !important;
+}
+
+.osui-dl-btn[data-phase="idle"] .osui-dl-icon--idle,
+.osui-dl-btn:not([data-phase]) .osui-dl-icon--idle,
+.org-primary-cta[data-phase="idle"] .osui-dl-icon--idle,
+.org-primary-cta:not([data-phase]) .osui-dl-icon--idle {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.osui-dl-btn[data-phase="idle"] .osui-dl-icon--downloading,
+.osui-dl-btn[data-phase="idle"] .osui-dl-icon--done,
+.osui-dl-btn:not([data-phase]) .osui-dl-icon--downloading,
+.osui-dl-btn:not([data-phase]) .osui-dl-icon--done,
+.org-primary-cta[data-phase="idle"] .osui-dl-icon--downloading,
+.org-primary-cta[data-phase="idle"] .osui-dl-icon--done,
+.org-primary-cta:not([data-phase]) .osui-dl-icon--downloading,
+.org-primary-cta:not([data-phase]) .osui-dl-icon--done {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.osui-dl-btn[data-phase="downloading"] .osui-dl-icon--downloading svg,
+.org-primary-cta[data-phase="downloading"] .osui-dl-icon--downloading svg {
+  stroke: #71717A !important;
+}
+.osui-dl-btn[data-phase="downloading"] .osui-dl-icon--downloading,
+.org-primary-cta[data-phase="downloading"] .osui-dl-icon--downloading {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.osui-dl-btn[data-phase="downloading"] .osui-dl-icon--idle,
+.osui-dl-btn[data-phase="downloading"] .osui-dl-icon--done,
+.org-primary-cta[data-phase="downloading"] .osui-dl-icon--idle,
+.org-primary-cta[data-phase="downloading"] .osui-dl-icon--done {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.osui-dl-btn[data-phase="done"] .osui-dl-icon--done svg,
+.org-primary-cta[data-phase="done"] .osui-dl-icon--done svg {
+  stroke: #FFFFFF !important;
+}
+.osui-dl-btn[data-phase="done"] .osui-dl-icon--done,
+.org-primary-cta[data-phase="done"] .osui-dl-icon--done {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.osui-dl-btn[data-phase="done"] .osui-dl-icon--idle,
+.osui-dl-btn[data-phase="done"] .osui-dl-icon--downloading,
+.org-primary-cta[data-phase="done"] .osui-dl-icon--idle,
+.org-primary-cta[data-phase="done"] .osui-dl-icon--downloading {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Stacked Label Grid for Zero-Layout-Shift Crossfading (Symmetrically Centered) */
+.osui-dl-label-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 1fr !important;
+  place-items: center !important;
+}
+
+.osui-dl-label-layer {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  text-align: center !important;
+  transition: opacity 200ms ease-out, visibility 200ms !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  white-space: nowrap !important;
+  font-weight: 600 !important;
+}
+
+.osui-dl-btn[data-phase="idle"] .osui-dl-label--idle,
+.osui-dl-btn:not([data-phase]) .osui-dl-label--idle,
+#org-run-btn[data-phase="idle"] .osui-dl-label--idle,
+#org-run-btn:not([data-phase]) .osui-dl-label--idle,
+button#org-run-btn[data-phase="idle"] .osui-dl-label--idle,
+button#org-run-btn:not([data-phase]) .osui-dl-label--idle,
+.org-primary-cta[data-phase="idle"] .osui-dl-label--idle,
+.org-primary-cta:not([data-phase]) .osui-dl-label--idle {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition-duration: 250ms !important;
+  transition-delay: 100ms !important;
+}
+
+.osui-dl-btn[data-phase="downloading"] .osui-dl-label--downloading,
+#org-run-btn[data-phase="downloading"] .osui-dl-label--downloading,
+button#org-run-btn[data-phase="downloading"] .osui-dl-label--downloading,
+.org-primary-cta[data-phase="downloading"] .osui-dl-label--downloading {
+  color: #71717A !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition-duration: 250ms !important;
+  transition-delay: 100ms !important;
+}
+
+.osui-dl-btn[data-phase="done"] .osui-dl-label--done,
+#org-run-btn[data-phase="done"] .osui-dl-label--done,
+button#org-run-btn[data-phase="done"] .osui-dl-label--done,
+.org-primary-cta[data-phase="done"] .osui-dl-label--done {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition-duration: 250ms !important;
+  transition-delay: 100ms !important;
+}
+
+/* Explicit inactive label hiding to prevent overlap */
+#org-run-btn[data-phase="idle"] .osui-dl-label--downloading,
+#org-run-btn[data-phase="idle"] .osui-dl-label--done,
+#org-run-btn:not([data-phase]) .osui-dl-label--downloading,
+#org-run-btn:not([data-phase]) .osui-dl-label--done,
+#org-run-btn[data-phase="downloading"] .osui-dl-label--idle,
+#org-run-btn[data-phase="downloading"] .osui-dl-label--done,
+#org-run-btn[data-phase="done"] .osui-dl-label--idle,
+#org-run-btn[data-phase="done"] .osui-dl-label--downloading {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Large variant (for Result screens) */
+button.osui-dl-btn--large,
+.osui-dl-btn--large {
+  height: 38px !important;
+  padding: 0 18px !important;
+  font-size: 13px !important;
+  border-radius: 7px !important;
+}
+button.osui-dl-btn--large .osui-dl-icon-slot,
+.osui-dl-btn--large .osui-dl-icon-slot {
+  width: 16px !important;
+  height: 16px !important;
+}
+button.osui-dl-btn--large .osui-dl-icon-layer svg,
+.osui-dl-btn--large .osui-dl-icon-layer svg {
+  width: 16px !important;
+  height: 16px !important;
 }
 
 /* ── 2. Studio Body & Fixed Right Utility Rail ── */
+/* ── 2. Full-Viewport Attached Right Utility Rail ── */
 .org-studio-body {
   position: relative !important;
   display: flex !important;
+  flex-direction: row !important;
   flex: 1 1 auto !important;
   width: 100% !important;
-  height: calc(100% - 44px) !important;
+  height: auto !important;
+  min-height: 0 !important;
   overflow: hidden !important;
-  background: #F1F5F9 !important;
+  background: #FAFAFA !important;
 }
 
-/* Right Rail — Fixed Fit with Zero Scrollbars */
 .org-right-rail {
-  position: absolute !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  right: 0 !important;
+  flex: 0 0 44px !important;
   width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
   height: 100% !important;
   max-height: 100% !important;
-  overflow: hidden !important;
   background: #FFFFFF !important;
-  border-left: 1px solid #E2E8F0 !important;
-  box-shadow: -2px 0 8px rgba(15, 23, 42, 0.04) !important;
-  z-index: 50 !important;
+  border-left: 1px solid #E4E4E7 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  z-index: 30 !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
   align-items: center !important;
-  padding: 8px 4px !important;
+  padding: 10px 0 12px 0 !important;
   box-sizing: border-box !important;
   user-select: none !important;
+  position: relative !important;
+  order: 2 !important;
 }
 
-.org-rail-top,
-.org-rail-mid,
+.org-rail-top {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+}
+
+.org-rail-mid {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
 .org-rail-bot {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 2px !important;
+  gap: 3px !important;
   width: 100% !important;
-}
-
-.org-rail-mid {
-  flex: 1 1 auto !important;
-  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
 .org-rail-sep {
-  width: 20px !important;
+  width: 22px !important;
   height: 1px !important;
-  background: #E2E8F0 !important;
-  margin: 3px 0 !important;
+  background: #E4E4E7 !important;
+  margin: 5px 0 !important;
+  flex-shrink: 0 !important;
 }
 
-.org-fzoom-page-ctrl {
+/* Page & Selection Badges */
+.org-rail-badge-btn {
+  all: unset !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 2px !important;
-}
-
-.org-fzoom-page-badge {
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  color: #4B4B4B !important;
-  padding: 1px 0 !important;
-  white-space: nowrap !important;
-}
-
-.org-fzoom-badge {
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  color: #0F172A !important;
-  padding: 1px 4px !important;
-  letter-spacing: 0.02em !important;
-}
-
-.org-fzoom-step {
-  all: unset !important;
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 6px !important;
-  background: #F1F5F9 !important;
-  color: #4B4B4B !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  justify-content: center !important;
   cursor: pointer !important;
+  transition: background 100ms ease, border-color 100ms ease, transform 80ms ease !important;
+  box-sizing: border-box !important;
+}
+
+.org-rail-badge-num {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #18181B !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif !important;
+}
+
+.org-rail-badge-lbl {
+  font-size: 7px !important;
+  font-weight: 700 !important;
+  color: #71717A !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  margin-top: 1.5px !important;
+}
+
+.org-rail-badge-btn:hover:not(.org-rail-badge-btn--sel):not(.is-active) {
+  background: #F4F4F5 !important;
+  border-color: #E4E4E7 !important;
+}
+
+.org-rail-badge-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.org-rail-badge-btn.is-active {
+  background: #18181B !important;
+  border-color: #18181B !important;
+}
+
+.org-rail-badge-btn.is-active .org-rail-badge-num {
+  color: #FFFFFF !important;
+}
+
+.org-rail-badge-btn.is-active .org-rail-badge-lbl {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.org-rail-badge-btn--sel {
+  background: #00B0FF !important;
+  border-color: #00B0FF !important;
+}
+
+.org-rail-badge-btn--sel .org-rail-badge-num {
+  color: #FFFFFF !important;
+}
+
+.org-rail-badge-btn--sel .org-rail-badge-lbl {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.org-rail-badge-btn--sel:hover {
+  background: #009FE5 !important;
+  border-color: #009FE5 !important;
+}
+
+/* Smart Selection Micro-Popover (Anchored left of Right Rail Badge) */
+.org-rail-popover {
+  position: absolute !important;
+  top: 0 !important;
+  right: calc(100% + 10px) !important;
+  width: 176px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 8px !important;
+  padding: 4px !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  z-index: 100 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  user-select: none !important;
+  animation: orgPopIn 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform-origin: top right !important;
+}
+
+@keyframes orgPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateX(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.org-rail-popover-head {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  color: #71717A !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 6px 8px 4px 8px !important;
+}
+
+.org-rail-popover-item {
+  all: unset !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  transition: all 100ms ease !important;
+  justify-content: space-between !important;
+  padding: 6px 8px !important;
+  border-radius: 5px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: #18181B !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  transition: background 100ms ease, color 100ms ease !important;
 }
 
-.org-fzoom-step:hover:not(:disabled) {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
+.org-rail-popover-item:hover:not(:disabled) {
+  background: #F4F4F5 !important;
+  color: #09090B !important;
 }
 
-.org-fzoom-step:disabled {
-  opacity: 0.3 !important;
+.org-rail-popover-item:active:not(:disabled) {
+  background: #E4E4E7 !important;
+}
+
+.org-rail-popover-item:disabled {
+  opacity: 0.4 !important;
   cursor: not-allowed !important;
 }
 
-.org-fzoom-slider-wrap {
-  height: 75px !important;
+.org-rail-popover-item kbd {
+  all: unset !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: #71717A !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 3px !important;
+  padding: 1px 4px !important;
+  line-height: 1 !important;
+}
+
+.org-popover-meta {
+  font-size: 10px !important;
+  color: #71717A !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Menlo, monospace !important;
+}
+
+.org-rail-popover-item.org-popover-item--danger {
+  color: #DC2626 !important;
+}
+
+.org-rail-popover-item.org-popover-item--danger:hover:not(:disabled) {
+  background: #FEF2F2 !important;
+  color: #B91C1C !important;
+}
+
+.org-rail-popover-item.org-popover-item--danger .org-popover-meta {
+  color: #EF4444 !important;
+}
+
+.org-rail-popover-sep {
+  height: 1px !important;
+  background: #E4E4E7 !important;
+  margin: 3px 0 !important;
+  width: 100% !important;
+}
+
+/* Rail Icon Action Buttons */
+.org-rail-icon-btn {
+  all: unset !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: #71717A !important;
+  cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  transition: background 100ms ease, color 100ms ease, transform 80ms ease !important;
+  flex-shrink: 0 !important;
+}
+
+.org-rail-icon-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+}
+
+.org-rail-icon-btn:hover {
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+}
+
+.org-rail-icon-btn:active {
+  background: #E4E4E7 !important;
+  transform: scale(0.95) !important;
+}
+
+.org-rail-btn--text {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: #71717A !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif !important;
+}
+
+.org-rail-btn--text:hover {
+  color: #18181B !important;
+}
+
+.org-rail-btn--text.is-active {
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border-radius: 4px !important;
+}
+
+.org-rail-btn--text.is-active:hover {
+  background: #27272A !important;
+  color: #FFFFFF !important;
+}
+
+/* Precision Vertical Slider */
+.org-rail-slider-wrap {
+  height: 84px !important;
+  width: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
   padding: 2px 0 !important;
 }
 
-.org-fzoom-slider {
+.org-rail-slider {
+  -webkit-appearance: none !important;
+  appearance: none !important;
   writing-mode: vertical-lr !important;
   direction: rtl !important;
-  appearance: slider-vertical !important;
-  -webkit-appearance: slider-vertical !important;
-  width: 6px !important;
-  height: 70px !important;
-  accent-color: #0F172A !important;
+  width: 4px !important;
+  height: 74px !important;
+  background: #E4E4E7 !important;
+  border-radius: 9999px !important;
+  outline: none !important;
   cursor: pointer !important;
+  transition: background 120ms ease !important;
 }
 
-.org-fzoom-action {
+.org-rail-slider:hover {
+  background: #D4D4D8 !important;
+}
+
+.org-rail-slider::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  background: #18181B !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  cursor: grab !important;
+  transition: transform 100ms ease, box-shadow 100ms ease !important;
+}
+
+.org-rail-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+.org-rail-slider::-webkit-slider-thumb:active {
+  cursor: grabbing !important;
+  transform: scale(1.05) !important;
+}
+
+.org-rail-slider::-moz-range-thumb {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  background: #18181B !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  cursor: grab !important;
+}
+
+/* Zoom Percentage Badge Button */
+.org-rail-pct-badge {
   all: unset !important;
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 6px !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  color: #52525B !important;
   background: transparent !important;
-  color: #64748B !important;
-  font-size: 10px !important;
-  font-weight: 800 !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  padding: 1.5px 4px !important;
+  text-align: center !important;
   cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  font-variant-numeric: tabular-nums !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif !important;
   transition: all 100ms ease !important;
+  line-height: 1.2 !important;
 }
 
-.org-fzoom-action:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+.org-rail-pct-badge:hover {
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+  border-color: #E4E4E7 !important;
 }
 
-.org-fzoom-action svg {
-  width: 13px !important;
-  height: 13px !important;
+.org-rail-pct-badge:active {
+  transform: scale(0.95) !important;
 }
 
-/* ── 3. Expansive Tactile Canvas Grid ── */
+/* ── 3. Expansive Tactile Canvas Grid (Clean Solid Canvas) ── */
 .org-canvas-wrap {
   flex: 1 1 auto !important;
+  order: 1 !important;
   position: relative !important;
   overflow: auto !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  padding: 28px 60px 80px 28px !important;
+  padding: 24px 24px 36px 24px !important;
   box-sizing: border-box !important;
-  background: #F8FAFC !important;
+  background: #FAFAFA !important;
   min-height: 0 !important;
-  width: 100% !important;
+  min-width: 0 !important;
+  width: auto !important;
+  transition: padding-bottom 140ms ease !important;
+}
+
+.org-canvas-wrap.has-dock-active {
+  padding-bottom: 76px !important;
+}
+
+.org-canvas-wrap.is-file-dragover {
+  background-color: #F4F4F5 !important;
+  outline: 2px dashed #18181B !important;
+  outline-offset: -8px !important;
 }
 
 .org-canvas-grid {
@@ -606,12 +1340,12 @@
   flex-wrap: wrap !important;
   align-items: flex-start !important;
   justify-content: center !important;
-  gap: 16px !important;
+  gap: 18px !important;
   width: 100% !important;
-    max-width: 1400px !important;
+  max-width: 1600px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
-  transition: transform 120ms ease !important;
+  transform: none !important;
   transform-origin: top center !important;
 }
 
@@ -648,21 +1382,21 @@
 }
 
 .org-pg-tile.is-drag-over-left .org-pg-thumb {
-  border-left: 3px solid #0F172A !important;
+  border-left: 2px solid #18181B !important;
 }
 
 .org-pg-tile.is-drag-over-right .org-pg-thumb {
-  border-right: 3px solid #0F172A !important;
+  border-right: 2px solid #18181B !important;
 }
 
 /* Checkbox on top-left of page sheet */
 .org-card-chk {
   position: absolute !important;
-  top: 6px !important;
-  left: 6px !important;
+  top: 8px !important;
+  left: 8px !important;
   width: 16px !important;
   height: 16px !important;
-  accent-color: #0F172A !important;
+  accent-color: #18181B !important;
   z-index: 10 !important;
   cursor: pointer !important;
   opacity: 0.75 !important;
@@ -679,21 +1413,21 @@
 .org-card-close {
   all: unset !important;
   position: absolute !important;
-  top: 6px !important;
-  right: 6px !important;
-  width: 18px !important;
-  height: 18px !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 20px !important;
+  height: 20px !important;
   border-radius: 50% !important;
   background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #CBD5E1 !important;
-  color: #64748B !important;
+  border: 1px solid #D4D4D8 !important;
+  color: #71717A !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   z-index: 10 !important;
   opacity: 0 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
   transition: opacity 120ms ease, background 100ms ease, color 100ms ease !important;
 }
 
@@ -708,53 +1442,57 @@
   color: #FFFFFF !important;
 }
 
-/* Physical Document Sheet Stage */
+/* Physical Document Sheet Stage — Opensource UI Tactile Elevation (Sharp 90° Corners) */
 .org-pg-thumb {
   position: relative !important;
   width: 100% !important;
   height: auto !important;
-    min-height: var(--org-thumb-minh, 300px) !important;
+  min-height: var(--org-thumb-minh, 300px) !important;
   background: #FFFFFF !important;
-  border-radius: 2px !important;
-  border: 1px solid #CBD5E1 !important;
-  overflow: hidden !important;
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: visible !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.06) !important;
-  transition: transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease !important;
-  transform: none !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08),
+              0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              outline 140ms ease !important;
   cursor: zoom-in !important;
 }
 
 .org-pg-thumb:active {
-  transform: scale(0.97) !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
+  transform: scale(0.985) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }
 
 .org-pg-tile:hover .org-pg-thumb,
 .org-deck-card:hover .org-pg-thumb {
-  border-color: #94A3B8 !important;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.15) !important;
-  transform: none !important;
+  outline: 1.5px solid #18181B !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12),
+              0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  transform: translateY(-2px) !important;
 }
 
 .org-pg-tile.is-selected .org-pg-thumb,
 .org-deck-card.is-selected .org-pg-thumb {
-  border-color: #0F172A !important;
-  box-shadow: 0 0 0 2px #0F172A, 0 6px 18px rgba(15, 23, 42, 0.16) !important;
-  transform: none !important;
+  outline: 2px solid #18181B !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+  transform: translateY(-2px) !important;
 }
 
 .org-pg-tile.is-deleted .org-pg-thumb {
   opacity: 0.4 !important;
-  border-color: #FCA5A5 !important;
+  outline: 1.5px solid #FCA5A5 !important;
   background: #FEF2F2 !important;
   filter: grayscale(0.8) !important;
 }
 
 .org-pg-tile.is-blank .org-pg-thumb {
-  border-style: dashed !important;
+  outline: 1.5px dashed #A1A1AA !important;
   background: #FAFAFA !important;
 }
 
@@ -764,7 +1502,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
 }
 
 .org-pg-thumb canvas,
@@ -773,13 +1512,16 @@
   max-height: 100% !important;
   object-fit: contain !important;
   display: block !important;
+  border-radius: 0 !important;
   transition: transform 180ms ease !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: high-quality !important;
 }
 
 .org-tile-ph {
   font-size: 18px !important;
   font-weight: 800 !important;
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
 }
 
 /* Card Hover Actions Bar (Rotate CW/CCW, Duplicate, Delete) */
@@ -788,16 +1530,17 @@
   bottom: 8px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  background: rgba(15, 23, 42, 0.92) !important;
-  backdrop-filter: blur(4px) !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
   border-radius: 6px !important;
-  padding: 3px 5px !important;
+  padding: 2.5px 4px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 2px !important;
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 120ms ease !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
   z-index: 20 !important;
 }
 
@@ -816,13 +1559,14 @@
   align-items: center !important;
   justify-content: center !important;
   border-radius: 4px !important;
-  color: #FFFFFF !important;
+  color: #52525B !important;
   cursor: pointer !important;
-  transition: background 100ms ease !important;
+  transition: background 100ms ease, color 100ms ease !important;
 }
 
 .org-card-act-btn:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
 }
 
 .org-card-act-btn svg {
@@ -837,7 +1581,7 @@
   margin-top: 6px !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: center !important;
   padding: 0 2px !important;
   box-sizing: border-box !important;
 }
@@ -845,7 +1589,7 @@
 .org-pg-num {
   font-size: 11px !important;
   font-weight: 500 !important;
-  color: #64748B !important;
+  color: #71717A !important;
   letter-spacing: -0.01em !important;
 }
 
@@ -867,9 +1611,9 @@
 }
 
 .org-badge-rot {
-  background: #EFF6FF !important;
-  color: #1D4ED8 !important;
-  border: 1px solid #BFDBFE !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+  border: 1px solid #D4D4D8 !important;
 }
 
 .org-badge-crop {
@@ -881,9 +1625,9 @@
 .org-pg-part-tag {
   font-size: 9.5px !important;
   font-weight: 700 !important;
-  color: #0F172A !important;
-  background: #F1F5F9 !important;
-  border: 1px solid #CBD5E1 !important;
+  color: #18181B !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #D4D4D8 !important;
   border-radius: 3px !important;
   padding: 1px 4px !important;
 }
@@ -905,7 +1649,7 @@
 .org-cut-line {
   width: 2px !important;
   height: 100% !important;
-  background: #CBD5E1 !important;
+  background: #D4D4D8 !important;
   border-radius: 1px !important;
   transition: background 120ms ease, height 120ms ease !important;
 }
@@ -920,8 +1664,8 @@
   height: 24px !important;
   border-radius: 50% !important;
   background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
-  color: #64748B !important;
+  border: 1px solid #D4D4D8 !important;
+  color: #71717A !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -930,12 +1674,12 @@
 }
 
 .org-cut-divider:hover .org-cut-line {
-  background: #0F172A !important;
+  background: #18181B !important;
 }
 
 .org-cut-divider:hover .org-cut-btn {
-  background: #0F172A !important;
-  border-color: #0F172A !important;
+  background: #18181B !important;
+  border-color: #18181B !important;
   color: #FFFFFF !important;
   transform: translate(-50%, -50%) !important;
 }
@@ -960,7 +1704,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
   font-size: 16px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
@@ -969,15 +1713,15 @@
 }
 
 .org-insert-btn:hover {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
+  background: #E4E4E7 !important;
+  color: #18181B !important;
 }
 
 /* Add More Card at End */
 .org-drop-card-end {
     width: var(--org-tile-w, 240px) !important;
   height: 340px !important;
-  border: 1.5px dashed #CBD5E1 !important;
+  border: 1.5px dashed #D4D4D8 !important;
   border-radius: 4px !important;
   background: #FFFFFF !important;
   display: flex !important;
@@ -992,16 +1736,16 @@
   font-size: 11px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
   transition: border-color 120ms ease, box-shadow 120ms ease !important;
   transform: none !important;
 }
 
 .org-drop-card-end:hover {
-  border-color: #0F172A !important;
-  color: #0F172A !important;
+  border-color: #18181B !important;
+  color: #18181B !important;
   background: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
   transform: none !important;
 }
 
@@ -1014,8 +1758,8 @@
 
 .org-drop-card-end:hover svg,
 .org-drop-card-end:hover svg * {
-  stroke: #0F172A !important;
-  color: #0F172A !important;
+  stroke: #18181B !important;
+  color: #18181B !important;
 }
 
 /* ── 4. Floating Batch Action Dock ── */
@@ -1035,69 +1779,85 @@
 }
 
 .org-batch-dock {
-  background: #0F172A !important;
-  border-radius: 10px !important;
-  padding: 6px 12px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E4E4E7 !important;
+  border-radius: 8px !important;
+  padding: 5px 10px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+  gap: 6px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
 }
 
 .org-batch-count {
   font-size: 11.5px !important;
   font-weight: 700 !important;
-  color: #F8FAFC !important;
-  padding-right: 6px !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #18181B !important;
+  padding-right: 8px !important;
+  border-right: 1px solid #E4E4E7 !important;
   white-space: nowrap !important;
 }
 
 .org-batch-btn {
   all: unset !important;
-  height: 26px !important;
-  padding: 0 8px !important;
+  height: 28px !important;
+  padding: 0 9px !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  border-radius: 5px !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #FFFFFF !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
+  gap: 5px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #18181B !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
-  transition: background 100ms ease !important;
+  transition: background 120ms ease, color 120ms ease, transform 80ms ease !important;
 }
 
 .org-batch-btn:hover {
-  background: rgba(255, 255, 255, 0.22) !important;
+  background: #F4F4F5 !important;
+  color: #09090B !important;
+}
+
+.org-batch-btn:active {
+  background: #E4E4E7 !important;
+  transform: translateY(0.5px) !important;
 }
 
 .org-batch-btn svg {
-  width: 12px !important;
-  height: 12px !important;
+  width: 13px !important;
+  height: 13px !important;
   stroke: currentColor !important;
 }
 
 .org-batch-btn--danger {
-  background: rgba(220, 38, 38, 0.3) !important;
-  color: #FCA5A5 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #DC2626 !important;
 }
 
 .org-batch-btn--danger:hover {
-  background: #DC2626 !important;
-  color: #FFFFFF !important;
+  background: #FEF2F2 !important;
+  color: #B91C1C !important;
+}
+
+.org-batch-btn--danger:active {
+  background: #FEE2E2 !important;
+  transform: translateY(0.5px) !important;
 }
 
 .org-batch-btn--ghost {
   background: transparent !important;
-  color: #94A3B8 !important;
+  border: 1px solid transparent !important;
+  color: #71717A !important;
 }
 
 .org-batch-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #FFFFFF !important;
+  background: #F4F4F5 !important;
+  border-color: #E4E4E7 !important;
+  color: #18181B !important;
 }
 
 /* ── 5. Slim Footer Notice ── */
@@ -1105,13 +1865,13 @@
   height: 24px !important;
   min-height: 24px !important;
   background: #FFFFFF !important;
-  border-top: 1px solid #E2E8F0 !important;
+  border-top: 1px solid #E4E4E7 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 6px !important;
   font-size: 10.5px !important;
-  color: #64748B !important;
+  color: #71717A !important;
   font-weight: 500 !important;
   z-index: 35 !important;
 }
@@ -1119,7 +1879,7 @@
 .org-slim-foot svg {
   width: 12px !important;
   height: 12px !important;
-  stroke: #64748B !important;
+  stroke: #71717A !important;
   flex-shrink: 0 !important;
 }
 
@@ -1130,7 +1890,7 @@
   position: fixed !important;
   inset: 0 !important;
   z-index: 900 !important;
-  background: rgba(15, 23, 42, 0.5) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(3px) !important;
   display: flex !important;
   align-items: center !important;
@@ -1148,7 +1908,7 @@
 .org-preview-sheet {
   background: #FFFFFF !important;
   border-radius: 10px !important;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28), 0 4px 12px rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   max-width: min(92vw, 1100px) !important;
   max-height: calc(100vh - 80px) !important;
   display: flex !important;
@@ -1170,13 +1930,13 @@
   justify-content: space-between !important;
   gap: 12px !important;
   padding: 12px 16px !important;
-  border-bottom: 1px solid #E2E8F0 !important;
+  border-bottom: 1px solid #E4E4E7 !important;
 }
 
 .org-preview-title {
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: #0F172A !important;
+  color: #18181B !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -1194,8 +1954,8 @@
   height: 24px !important;
   padding: 0 8px !important;
   border-radius: 4px !important;
-  background: #F1F5F9 !important;
-  border: 1px solid #E2E8F0 !important;
+  background: #F4F4F5 !important;
+  border: 1px solid #E4E4E7 !important;
   color: #4B4B4B !important;
   font-size: 11px !important;
   font-weight: 600 !important;
@@ -1208,8 +1968,8 @@
 }
 
 .org-preview-tool-btn:hover {
-  background: #E2E8F0 !important;
-  color: #0F172A !important;
+  background: #E4E4E7 !important;
+  color: #18181B !important;
 }
 
 .org-preview-tool-btn:active {
@@ -1230,15 +1990,15 @@
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #64748B !important;
+  color: #71717A !important;
   cursor: pointer !important;
   transition: background 120ms ease, color 120ms ease, transform 120ms ease-out !important;
   flex-shrink: 0 !important;
 }
 
 .org-preview-close:hover {
-  background: #F1F5F9 !important;
-  color: #0F172A !important;
+  background: #F4F4F5 !important;
+  color: #18181B !important;
 }
 
 .org-preview-close:active {
@@ -1255,7 +2015,7 @@
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow: auto !important;
-  background: #F1F5F9 !important;
+  background: #F4F4F5 !important;
   display: flex !important;
   align-items: flex-start !important;
   justify-content: center !important;
@@ -1265,17 +2025,20 @@
 
 .org-preview-canvas {
   background: #FFFFFF !important;
-  border-radius: 3px !important;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12) !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14), 0 1px 4px rgba(0, 0, 0, 0.06) !important;
   max-width: 100% !important;
   height: auto !important;
   object-fit: contain !important;
   display: block !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: high-quality !important;
 }
 
 .org-preview-ph {
   padding: 60px !important;
-  color: #94A3B8 !important;
+  color: #A1A1AA !important;
   font-size: 16px !important;
   font-weight: 600 !important;
 }
@@ -1287,9 +2050,9 @@
   justify-content: space-between !important;
   gap: 12px !important;
   padding: 10px 16px !important;
-  border-top: 1px solid #E2E8F0 !important;
+  border-top: 1px solid #E4E4E7 !important;
   font-size: 11px !important;
-  color: #64748B !important;
+  color: #71717A !important;
 }
 
 .org-preview-hint {
@@ -1304,9 +2067,969 @@
 .org-preview-num::before {
   content: 'Page ' !important;
   font-weight: 500 !important;
-  color: #64748B !important;
+  color: #71717A !important;
 }
 
 @media (max-width: 620px) {
   .org-preview-overlay { padding: 16px !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   In-Viewport Canvas Crop Workspace — Direct Manipulation on Canvas Tiles
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-pg-tile.is-cropping {
+  z-index: 45 !important;
+  cursor: default !important;
+}
+
+.org-pg-tile.is-cropping .org-pg-thumb {
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  cursor: default !important;
+  transform: none !important;
+}
+
+.org-pg-tile.is-cropping .org-card-hover-actions,
+.org-pg-tile.is-cropping .org-card-chk,
+.org-pg-tile.is-cropping .org-card-close {
+  display: none !important;
+}
+
+/* Interactive Bounding Box with Darkened Scrim Mask & Rule-of-Thirds Hairlines (Direction B: Apple / Lightroom Precision) */
+.org-crop-box {
+  position: absolute !important;
+  top: var(--crop-top, 0%) !important;
+  right: var(--crop-right, 0%) !important;
+  bottom: var(--crop-bottom, 0%) !important;
+  left: var(--crop-left, 0%) !important;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  outline: 1px solid rgba(0, 0, 0, 0.45) !important;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 1px, transparent 1px) !important;
+  background-size: 33.333% 33.333% !important;
+  z-index: 25 !important;
+  cursor: move !important;
+  box-sizing: border-box !important;
+  touch-action: none !important;
+}
+
+/* 8 Precision Drag Bars (Pro-Grade L-Brackets & Tactile Center Edge Bars) */
+.org-crop-handle {
+  position: absolute !important;
+  z-index: 30 !important;
+  touch-action: none !important;
+  box-sizing: border-box !important;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), filter 120ms ease !important;
+}
+
+/* Generous Touch & Click Target Area */
+.org-crop-handle::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -8px !important;
+  left: -8px !important;
+  right: -8px !important;
+  bottom: -8px !important;
+  background: transparent !important;
+  z-index: 1 !important;
+}
+
+/* 4 Corner L-Brackets (14x14px, 2.5px solid white, sharp 90deg corners, multi-layer drop shadow) */
+.org-crop-handle--nw {
+  top: -2px !important;
+  left: -2px !important;
+  width: 14px !important;
+  height: 14px !important;
+  background: transparent !important;
+  border-top: 2.5px solid #FFFFFF !important;
+  border-left: 2.5px solid #FFFFFF !important;
+  border-radius: 0 !important;
+  transform-origin: top left !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  cursor: nwse-resize !important;
+}
+
+.org-crop-handle--ne {
+  top: -2px !important;
+  right: -2px !important;
+  width: 14px !important;
+  height: 14px !important;
+  background: transparent !important;
+  border-top: 2.5px solid #FFFFFF !important;
+  border-right: 2.5px solid #FFFFFF !important;
+  border-radius: 0 !important;
+  transform-origin: top right !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  cursor: nesw-resize !important;
+}
+
+.org-crop-handle--se {
+  bottom: -2px !important;
+  right: -2px !important;
+  width: 14px !important;
+  height: 14px !important;
+  background: transparent !important;
+  border-bottom: 2.5px solid #FFFFFF !important;
+  border-right: 2.5px solid #FFFFFF !important;
+  border-radius: 0 !important;
+  transform-origin: bottom right !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  cursor: nwse-resize !important;
+}
+
+.org-crop-handle--sw {
+  bottom: -2px !important;
+  left: -2px !important;
+  width: 14px !important;
+  height: 14px !important;
+  background: transparent !important;
+  border-bottom: 2.5px solid #FFFFFF !important;
+  border-left: 2.5px solid #FFFFFF !important;
+  border-radius: 0 !important;
+  transform-origin: bottom left !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  cursor: nesw-resize !important;
+}
+
+/* 4 Center Edge Grip Ticks (18x2.5px / 2.5x18px precision white bars) */
+.org-crop-handle--n {
+  top: -1.25px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 18px !important;
+  height: 2.5px !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-radius: 0 !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  box-shadow: none !important;
+  cursor: ns-resize !important;
+}
+
+.org-crop-handle--s {
+  bottom: -1.25px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 18px !important;
+  height: 2.5px !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-radius: 0 !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  box-shadow: none !important;
+  cursor: ns-resize !important;
+}
+
+.org-crop-handle--w {
+  top: 50% !important;
+  left: -1.25px !important;
+  transform: translateY(-50%) !important;
+  width: 2.5px !important;
+  height: 18px !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-radius: 0 !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  box-shadow: none !important;
+  cursor: ew-resize !important;
+}
+
+.org-crop-handle--e {
+  top: 50% !important;
+  right: -1.25px !important;
+  transform: translateY(-50%) !important;
+  width: 2.5px !important;
+  height: 18px !important;
+  background: #FFFFFF !important;
+  border: none !important;
+  border-radius: 0 !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)) !important;
+  box-shadow: none !important;
+  cursor: ew-resize !important;
+}
+
+/* Interactive Precision Hover & Active Feedback */
+.org-crop-handle:hover,
+.org-crop-handle:active {
+  filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.75)) !important;
+}
+
+.org-crop-handle--nw:hover,
+.org-crop-handle--nw:active,
+.org-crop-handle--ne:hover,
+.org-crop-handle--ne:active,
+.org-crop-handle--se:hover,
+.org-crop-handle--se:active,
+.org-crop-handle--sw:hover,
+.org-crop-handle--sw:active {
+  transform: scale(1.15) !important;
+}
+
+.org-crop-handle--n:hover,
+.org-crop-handle--n:active,
+.org-crop-handle--s:hover,
+.org-crop-handle--s:active {
+  transform: translateX(-50%) scaleY(1.6) !important;
+}
+
+.org-crop-handle--w:hover,
+.org-crop-handle--w:active,
+.org-crop-handle--e:hover,
+.org-crop-handle--e:active {
+  transform: translateY(-50%) scaleX(1.6) !important;
+}
+
+/* In-Viewport Floating Control Bar (Refined Figma / Linear HUD Style) */
+.org-crop-floating-bar {
+  margin-top: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  background: rgba(24, 24, 27, 0.96) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  padding: 4px 6px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  z-index: 45 !important;
+  user-select: none !important;
+  animation: orgCropBarPop 140ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes orgCropBarPop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.org-crop-hud-sep {
+  width: 1px !important;
+  height: 14px !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  margin: 0 3px !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+.org-crop-pill-btn {
+  all: unset !important;
+  height: 24px !important;
+  padding: 0 9px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: #D4D4D8 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: background-color 100ms ease, color 100ms ease, transform 100ms ease !important;
+  box-sizing: border-box !important;
+}
+
+.org-crop-pill-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: currentColor !important;
+  flex-shrink: 0 !important;
+}
+
+.org-crop-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+}
+
+.org-crop-pill-btn:active {
+  background: rgba(255, 255, 255, 0.16) !important;
+  transform: scale(0.96) !important;
+}
+
+.org-crop-pill-btn.is-active {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.org-crop-pill-btn--primary {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.org-crop-pill-btn--primary:hover {
+  background: #F4F4F5 !important;
+  color: #000000 !important;
+}
+
+.org-crop-pill-btn--primary:active {
+  transform: scale(0.96) !important;
+  background: #E4E4E7 !important;
+}
+
+.org-crop-pill-btn--cancel {
+  color: #A1A1AA !important;
+}
+
+.org-crop-pill-btn--cancel:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Organize PDF Result Studio: Elevated Smallpdf-Inspired Craft Workstation
+   Left Stage Canvas Centering + Right Panel Zero-Scroll Studio
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Dedicated Centered Canvas Viewport inside Left Stage */
+.org-result-stage {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  background: #F8FAFC !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.org-stage-canvas-viewport {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.org-stage-canvas-viewport #org-res-thumb-box,
+.org-res-paper {
+  margin: auto !important;
+  align-self: center !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #FFFFFF !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  transition: width 140ms cubic-bezier(0.23, 1, 0.32, 1), height 140ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+
+.org-stage-canvas-viewport #org-res-thumb-box canvas,
+.org-res-paper canvas {
+  border-radius: 0 !important;
+}
+
+/* Right Panel: Symmetrical, Width & Proportions Matching Compress Benchmark */
+.cpdf-benchmark-panel.scan-result-panel.org-result-panel {
+  overflow: hidden !important;
+  max-height: 100% !important;
+  height: 100% !important;
+  padding: 24px 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  background: #FFFFFF !important;
+  border-left: 1px solid #E2E8F0 !important;
+}
+
+.org-result-panel-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 296px !important;
+  margin: 0 auto !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Header Checkmark Icon (Crisp, High-Craft Badge) */
+.cpdf-benchmark-header.org-res-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-bottom: 0 !important;
+}
+
+.cpdf-benchmark-icon.org-res-header-icon {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 6px !important;
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%) !important;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(21, 128, 61, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.cpdf-benchmark-icon.org-res-header-icon svg {
+  display: block !important;
+  stroke: #FFFFFF !important;
+}
+
+.org-res-header-text {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.org-res-docname {
+  font-size: 11.5px !important;
+  color: #64748B !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 230px !important;
+  margin-top: 1px !important;
+}
+
+/* Soft Mint Metrics Box & Backtrack Action (Crisp 6px Radius) */
+.cpdf-benchmark-est-box.org-res-est-box {
+  background: #F0FDF4 !important;
+  border: 1px solid #DCFCE7 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.org-res-est-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.cpdf-benchmark-est-metrics {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.cpdf-benchmark-est-new {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #0F172A !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.org-res-badge-pct {
+  color: #15803D !important;
+  background: #DCFCE7 !important;
+  border: 1px solid #BBF7D0 !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+}
+
+.org-res-status-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #16A34A !important;
+}
+
+.cpdf-benchmark-track {
+  height: 3px !important;
+  background: #DCFCE7 !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+}
+
+.org-res-est-bottom {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+.org-res-backtrack-btn {
+  all: unset !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #64748B !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  transition: color 100ms ease !important;
+}
+
+.org-res-backtrack-btn:hover {
+  color: #0F172A !important;
+  transform: none !important;
+}
+
+.org-res-backtrack-link {
+  color: #15803D !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+  transition: color 100ms ease !important;
+}
+
+.org-res-backtrack-btn:hover .org-res-backtrack-link {
+  color: #166534 !important;
+}
+
+/* Split Download CTA Button (Crisp 6px Radius) */
+.org-split-dl-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  z-index: 40 !important;
+}
+
+.org-export-as-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  z-index: 35 !important;
+}
+
+.org-split-btn-group {
+  display: flex !important;
+  width: 100% !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px rgba(0, 109, 254, 0.25) !important;
+  overflow: hidden !important;
+}
+
+.cpdf-benchmark-cta.org-split-btn-main {
+  flex: 1 1 auto !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  border-radius: 6px 0 0 6px !important;
+  background: linear-gradient(180deg, #0076FF 0%, #0060F0 100%) !important;
+  border: 1px solid #0058E5 !important;
+  border-right: none !important;
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  transition: background 120ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 120ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+
+.cpdf-benchmark-cta.org-split-btn-main:hover {
+  background: linear-gradient(180deg, #0A7EFF 0%, #0066FF 100%) !important;
+  box-shadow: 0 3px 12px rgba(0, 109, 254, 0.35) !important;
+  transform: none !important;
+}
+
+.cpdf-benchmark-cta.org-split-btn-main:active {
+  transform: scale(0.985) !important;
+}
+
+.org-split-btn-toggle {
+  all: unset !important;
+  width: 36px !important;
+  height: 40px !important;
+  background: linear-gradient(180deg, #0076FF 0%, #0060F0 100%) !important;
+  border: 1px solid #0058E5 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 0 6px 6px 0 !important;
+  color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background 120ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+  box-sizing: border-box !important;
+}
+
+.org-split-btn-toggle:hover {
+  background: linear-gradient(180deg, #0A7EFF 0%, #0066FF 100%) !important;
+  transform: none !important;
+}
+
+.org-split-btn-toggle:active {
+  transform: scale(0.96) !important;
+}
+
+/* Secondary Export As Button (Crisp 6px Radius) */
+.org-btn-export-as {
+  all: unset !important;
+  width: 100% !important;
+  height: 32px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #1E293B !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease !important;
+}
+
+.org-btn-export-as:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+  transform: none !important;
+}
+
+.org-btn-export-as:active {
+  transform: scale(0.98) !important;
+}
+
+.org-btn-export-as-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+.org-btn-export-as-arrow {
+  color: #64748B !important;
+  transition: color 120ms ease !important;
+}
+
+/* Elevated Floating Menus (Crisp 6px Container, 4px Items) */
+.org-floating-menu {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  padding: 4px !important;
+  z-index: 60 !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  transform-origin: top center !important;
+}
+
+.org-floating-menu.is-open {
+  display: flex !important;
+  animation: orgMenuFadeIn 140ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+
+@keyframes orgMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.org-floating-menu-item {
+  all: unset !important;
+  width: 100% !important;
+  padding: 6px 9px !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: background 100ms ease !important;
+}
+
+.org-floating-menu-item:hover {
+  background: #F1F5F9 !important;
+  transform: none !important;
+}
+
+.org-floating-menu-icon {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 4px !important;
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.org-floating-menu-item:hover .org-floating-menu-icon {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.org-floating-menu-text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+}
+
+.org-floating-menu-title {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+}
+
+.org-floating-menu-sub {
+  font-size: 10.5px !important;
+  color: #64748B !important;
+  font-weight: 500 !important;
+}
+
+.org-format-badge {
+  width: 38px !important;
+  height: 22px !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.org-format-badge.badge-pdf {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+}
+
+.org-format-badge.badge-zip {
+  background: #FEF3C7 !important;
+  color: #D97706 !important;
+}
+
+.org-format-badge.badge-doc {
+  background: #DBEAFE !important;
+  color: #2563EB !important;
+}
+
+/* Utility Action Trio (Crisp 6px Radius) */
+.org-utility-trio {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.org-utility-btn {
+  all: unset !important;
+  height: 32px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease !important;
+}
+
+.org-utility-btn:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+  transform: none !important;
+}
+
+.org-utility-btn:active {
+  transform: scale(0.97) !important;
+}
+
+.org-utility-btn--delete:hover {
+  background: #FEF2F2 !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
+  transform: none !important;
+}
+
+/* "Or continue in" Workflow Continuation Section (Crisp 6px Row, 4px Badge) */
+.org-continue-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  margin-top: 2px !important;
+  width: 100% !important;
+}
+
+.org-continue-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 2px !important;
+}
+
+.org-continue-title {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #64748B !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.org-continue-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  width: 100% !important;
+}
+
+.org-continue-item {
+  all: unset !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 10px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #F1F5F9 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  transition: background 120ms ease, border-color 120ms ease !important;
+}
+
+.org-continue-item:hover {
+  background: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  transform: none !important;
+}
+
+.org-continue-item:hover .org-continue-arrow {
+  color: #0F172A !important;
+  transform: none !important;
+}
+
+.org-continue-item:active {
+  transform: scale(0.985) !important;
+}
+
+.org-continue-item .conv-smart-tool-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.org-continue-badge {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #FFFFFF !important;
+  flex-shrink: 0 !important;
+}
+
+.org-continue-name {
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  color: #1E293B !important;
+}
+
+.org-continue-arrow {
+  color: #94A3B8 !important;
+  transition: color 120ms ease !important;
+}
+
+/* Footer Secondary Button (Crisp 6px Radius) */
+.org-res-footer {
+  margin-top: 8px !important;
+  width: 100% !important;
+  max-width: 296px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.org-btn-secondary-full,
+.org-res-footer .scan-result-btn-back {
+  all: unset !important;
+  width: auto !important;
+  min-width: 190px !important;
+  max-width: 220px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  margin: 0 auto !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease !important;
+}
+
+.org-btn-secondary-full:hover,
+.org-res-footer .scan-result-btn-back:hover {
+  background: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  transform: none !important;
+}
+
+.org-btn-secondary-full:active,
+.org-res-footer .scan-result-btn-back:active {
+  background: #F1F5F9 !important;
+  transform: scale(0.985) !important;
+}
+
