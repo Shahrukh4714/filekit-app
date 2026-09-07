@@ -13860,6 +13860,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   <span class="conv-format-panel-title">SELECT FORMAT</span>
                   <span class="conv-format-panel-active-tag">${(t.out || t.label).toUpperCase()}</span>
                 </div>
+                ${files.length > 1 ? `
+                  <button type="button" class="conv-apply-all-btn" id="conv-apply-all-btn" title="Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files</span>
+                  </button>
+                ` : ''}
                 <div class="conv-studio-select-menu" id="conv-format-menu">
                   ${groupsShown.map(g => {
                     const items = list.filter((x) => x.g === g);
@@ -13981,6 +13987,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       });
 
+      container.querySelector('#conv-apply-all-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const currentFid = formatIds[activeIndex] || formatId;
+        const currentOut = (t.out || '').toUpperCase();
+        for (let i = 0; i < files.length; i++) {
+          const fam = families[i];
+          const famTargets = TARGETS[fam] || [];
+          if (famTargets.some(x => x.id === currentFid)) {
+            formatIds[i] = currentFid;
+          } else {
+            const match = famTargets.find(x => (x.out || '').toUpperCase() === currentOut);
+            if (match) formatIds[i] = match.id;
+          }
+        }
+        if (window.FF?.util?.toast) {
+          window.FF.util.toast(`Applied ${currentOut} to all files`, 'success');
+        }
+        renderConfigure();
+      });
+
       // Add more files listeners
       const fileCard = container.querySelector('#conv-studio-file-card');
       const addInp = container.querySelector('#conv-add-input');
@@ -14007,145 +14033,122 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         if (fList && fList.length) pickFiles(Array.from(fList));
       });
 
-      // Format item select
-      container.querySelectorAll('.conv-studio-menu-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          formatId = item.dataset.fid;
-          formatIds[activeIndex] = formatId;
-          userClosedSettings = false; // Reset so newly selected format options are visible
+      // Format selection listener
+      container.querySelectorAll('.conv-studio-menu-item').forEach((it) => {
+        it.onclick = () => {
+          const fid = it.dataset.fid;
+          formatIds[activeIndex] = fid;
+          formatId = fid;
           renderConfigure();
-        });
-      });
-
-      // Gear settings toggle & close
-      const gearBtn = container.querySelector('#conv-gear-btn');
-      gearBtn?.addEventListener('click', () => {
-        isSettingsOpen = !isSettingsOpen;
-        userClosedSettings = !isSettingsOpen;
-        renderConfigure();
-      });
-      container.querySelector('#conv-settings-close')?.addEventListener('click', () => {
-        isSettingsOpen = false;
-        userClosedSettings = true;
-        renderConfigure();
-      });
-
-      // Wire fields
-      for (const f of fields) {
-        const el = container.querySelector(`[data-cfg="${f.key}"]`);
-        if (!el) continue;
-        const commit = () => {
-          let v = el.value;
-          if (f.type === 'number' && v !== '') v = Number(v);
-          cfg[f.key] = v;
-          const valEl = container.querySelector(`#cfg-${f.key}-val`);
-          if (valEl) {
-            const isPct = f.key === 'quality' || f.unit === '%';
-            valEl.textContent = isPct ? `${v}%` : String(v);
-          }
         };
-        el.addEventListener((f.type === 'range' || f.type === 'number' || f.type === 'text') ? 'input' : 'change', commit);
-      }
+      });
 
-      container.querySelector('#conv-run')?.addEventListener('click', () => runConvert());
+      // Settings toggle listener
+      container.querySelector('#conv-gear-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isSettingsOpen = !isSettingsOpen;
+        renderConfigure();
+      });
+
+      container.querySelector('#conv-settings-close')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isSettingsOpen = false;
+        renderConfigure();
+      });
+
+      // Bind input values inside inline settings bar
+      container.querySelectorAll('.conv-compact-fields-row input, .conv-compact-fields-row select').forEach((inp) => {
+        inp.oninput = () => {
+          const k = inp.dataset.cfg;
+          cfg[k] = inp.value;
+          const valDisplay = container.querySelector(`#cfg-${k}-val`);
+          if (valDisplay) valDisplay.textContent = inp.value;
+        };
+      });
+
+      // Trigger conversion run
+      container.querySelector('#conv-run')?.addEventListener('click', () => {
+        runConvert();
+      });
     }
 
+    /* ── Step 3: Run & Result ── */
     async function runConvert() {
-      const t = target();
-      const studioWrap = container.querySelector('#conv-studio-wrapper');
-      const normalContent = container.querySelector('.conv-btn-normal-content');
-      const procContent = container.querySelector('.conv-btn-proc-content');
-      const pctEl = container.querySelector('#conv-pct');
-      const statusEl = container.querySelector('#conv-proc-status');
-      const btn = container.querySelector('#conv-run');
-
-      if (studioWrap) {
-        studioWrap.classList.add('is-processing');
-        if (normalContent) normalContent.style.display = 'none';
-        if (procContent) procContent.style.display = 'inline-flex';
-        if (btn) btn.disabled = true;
+      const runBtn = container.querySelector('#conv-run');
+      if (runBtn) {
+        runBtn.disabled = true;
+        const norm = runBtn.querySelector('.conv-btn-normal-content');
+        const proc = runBtn.querySelector('.conv-btn-proc-content');
+        if (norm) norm.style.display = 'none';
+        if (proc) proc.style.display = 'inline-flex';
       }
 
-      const results = [];
-      const total = files.length;
-      let extra = {};
-      for (const f of cfgFields()) if (cfg[f.key] !== undefined) extra[f.key] = cfg[f.key];
+      const t = target();
+      const pctEl = container.querySelector('#conv-pct');
+      const onProgress = (ratio, text) => {
+        if (pctEl) pctEl.textContent = `${Math.round(ratio * 100)}%`;
+      };
 
       try {
-        for (let i = 0; i < total; i++) {
-          const curFile = files[i];
-          const filePctBase = i / total;
-          const filePctWeight = 1 / total;
-
-          // Per-file target: uses each queued file's own chosen format.
-          const famTargets = families[i] ? (TARGETS[families[i]] || []) : [];
-          const ti = famTargets.find((x) => x.id === formatIds[i]) || famTargets[0];
-
-          const update = (subP, label) => {
-            const overall = filePctBase + (subP || 0) * filePctWeight;
-            const v = Math.max(6, Math.min(100, Math.round(overall * 100)));
-            if (pctEl) pctEl.textContent = total > 1 ? `${i + 1}/${total} (${v}%)` : `${v}%`;
-            if (statusEl) statusEl.textContent = `● Converting ${curFile.name}...`;
-          };
-
-          const out = await runTarget(ti, curFile, extra, update);
-          results.push({
-            sourceFile: curFile,
-            targetName: (out.filename) || _targetName(curFile.name, ti.out),
-            out: out
-          });
-        }
-
-        if (pctEl) pctEl.textContent = '100%';
-        if (statusEl) statusEl.textContent = '● Done!';
-
-        setTimeout(() => {
-          if (results.length === 1) {
-            renderResult(results[0].out, t);
-          } else {
-            renderBatchResult(results, t);
+        if (files.length === 1) {
+          onProgress(0.1, 'Converting…');
+          const out = await runTargetConversion(files[0], t, cfg, onProgress);
+          onProgress(1, 'Complete!');
+          renderResult(out, t);
+        } else {
+          // Batch Multi-File Mode
+          const batchResults = [];
+          for (let i = 0; i < files.length; i++) {
+            const curF = files[i];
+            const curFam = families[i];
+            const curTList = TARGETS[curFam] || [];
+            const curT = curTList.find(x => x.id === formatIds[i]) || curTList[0] || t;
+            onProgress(i / files.length, `Converting ${i + 1}/${files.length}…`);
+            const out = await runTargetConversion(curF, curT, cfg, (subRatio) => {
+              onProgress((i + subRatio) / files.length, `Converting ${i + 1}/${files.length}…`);
+            });
+            batchResults.push({
+              sourceFile: curF,
+              target: curT,
+              targetName: _targetName(curF.name, curT.out),
+              out
+            });
           }
-        }, 350);
-      } catch (e) {
-        if (studioWrap) {
-          studioWrap.classList.remove('is-processing');
-          if (normalContent) normalContent.style.display = 'inline-flex';
-          if (procContent) procContent.style.display = 'none';
-          if (btn) btn.disabled = false;
+          onProgress(1, 'All files converted!');
+          renderBatchResult(batchResults, t);
         }
-        const message = e && e.message ? e.message : 'Something went wrong while converting.';
-        container.innerHTML = `
-          <div class="cpdf-body cpdf-body--center">
-            <div class="conv-dz-err" style="display:block;max-width:420px;text-align:left">
-              <strong>Conversion failed</strong>
-              <span>${_esc(message)}</span>
-            </div>
-            <div class="cpdf-footer conv-actions">
-              <button class="cpdf-btn-primary" id="conv-retry" type="button">${I.convert}&nbsp; Try again</button>
-              <button class="cpdf-btn-ghost" id="conv-back" type="button">Change format</button>
-            </div>
-          </div>`;
-        container.querySelector('#conv-retry').onclick = () => renderConfigure();
-        container.querySelector('#conv-back').onclick = () => renderConfigure();
+      } catch (err) {
+        console.error('[Convert Tool Error]', err);
+        showErr(err.message || 'Conversion failed.');
+        if (runBtn) {
+          runBtn.disabled = false;
+          const norm = runBtn.querySelector('.conv-btn-normal-content');
+          const proc = runBtn.querySelector('.conv-btn-proc-content');
+          if (norm) norm.style.display = 'inline-flex';
+          if (proc) proc.style.display = 'none';
+        }
       }
     }
 
-    async function renderBatchResult(results, t) {
+    function renderBatchResult(results, t) {
+      container.classList.add('cpdf-root', 'conv-root');
       container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 24px 0; background: #FFFFFF !important;">
-          <div class="conv-batch-results-wrapper">
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation" style="max-width: 680px; margin: 0 auto; flex-direction: column; align-items: center; text-align: center; gap: 20px; padding: 32px 16px;">
             
-            <div style="text-align: center; margin-bottom: 8px;">
-              <div style="display: inline-flex; align-items: center; gap: 6px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; margin-bottom: 8px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>${results.length} files converted to ${(t.out || 'TARGET').toUpperCase()}</span>
-              </div>
-              <h2 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Batch Conversion Complete</h2>
+            <div style="width: 56px; height: 56px; border-radius: 14px; background: #DCFCE7; border: 1.5px solid #BBF7D0; color: #15803D; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
             </div>
 
-            <!-- Hero ZIP Download Button -->
-            <button type="button" class="conv-studio-btn-convert" id="conv-download-zip-btn" style="min-width: 240px;">
+            <div>
+              <h2 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 4px 0;">All ${results.length} files converted successfully!</h2>
+              <p style="font-size: 13px; color: #64748B; margin: 0;">Processed 100% locally in your browser.</p>
+            </div>
+
+            <!-- Hero Download All (ZIP) Button -->
+            <button type="button" class="conv-studio-btn-convert" id="conv-download-zip-btn" style="width: 100%; max-width: 380px;">
               <span class="shadow"></span>
               <span class="edge"></span>
               <span class="front" style="padding: 14px 32px; font-size: 1.15rem;">
@@ -14157,27 +14160,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </button>
 
             <!-- Converted Files List -->
-            <div class="conv-batch-results-list">
+            <div class="conv-batch-results-list" style="width: 100%; max-width: 480px; text-align: left; margin-top: 10px;">
               ${results.map((r, idx) => {
                 const blobSize = r.out.blob ? _bytes(r.out.blob.size) : (r.out.text ? _bytes(new TextEncoder().encode(r.out.text).length) : '');
                 const dlUrl = r.out.blob ? URL.createObjectURL(r.out.blob) : (r.out.text ? URL.createObjectURL(new Blob([r.out.text], { type: 'text/plain' })) : '#');
                 return `
-                  <div class="conv-batch-item-row">
+                  <div class="conv-batch-item-row" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E2E8F0;">
                     <div class="conv-batch-item-info">
-                      <div class="conv-batch-item-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <div class="conv-batch-item-title" title="${_esc(r.targetName)}">${_esc(r.targetName)}</div>
-                        <div class="conv-batch-item-size">${blobSize} &middot; ${_esc(r.sourceFile.name)}</div>
-                      </div>
+                      <div class="conv-batch-item-title" title="${_esc(r.targetName)}" style="font-size: 13.5px; font-weight: 600; color: #0F172A;">${_esc(r.targetName)}</div>
+                      <div class="conv-batch-item-size" style="font-size: 11px; color: #64748B;">${blobSize}</div>
                     </div>
-                    <a href="${dlUrl}" download="${_esc(r.targetName)}" class="conv-batch-item-dl-btn">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      <span>Download</span>
-                    </a>
+                    <a href="${dlUrl}" download="${_esc(r.targetName)}" class="conv-batch-item-dl-btn" style="text-decoration:none; color:#2563EB; font-weight:600; font-size: 13px;">Download</a>
                   </div>
                 `;
               }).join('')}
@@ -14342,19 +14335,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   <img src="${url}" alt="Converted Preview" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px;" />
                 ` : out.preview === 'audio' && out.blob ? `
                   <div style="width: 300px; padding: 24px 20px; text-align: center; box-sizing: border-box;">
-                    <div style="width: 52px; height: 52px; border-radius: 12px; background: #FAF5FF; border: 1.5px solid #E9D5FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                    <div style="width: 52px; height: 52px; border-radius: 12px; background: #FAF5FF; border: 1.5px solid #E9D5FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
                       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                     </div>
-                    <!-- Audio Equalizer Bars Mockup -->
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 28px; margin-bottom: 12px;">
-                      <div style="width: 4px; height: 16px; background: #C4B5FD; border-radius: 2px;"></div>
-                      <div style="width: 4px; height: 24px; background: #8B5CF6; border-radius: 2px;"></div>
-                      <div style="width: 4px; height: 12px; background: #A78BFA; border-radius: 2px;"></div>
-                      <div style="width: 4px; height: 28px; background: #7C3AED; border-radius: 2px;"></div>
-                      <div style="width: 4px; height: 18px; background: #8B5CF6; border-radius: 2px;"></div>
-                      <div style="width: 4px; height: 22px; background: #C4B5FD; border-radius: 2px;"></div>
-                    </div>
-                    <audio src="${url}" controls preload="metadata" style="width: 100%; height: 32px; margin-bottom: 10px;"></audio>
+                    <audio src="${url}" controls preload="metadata" style="width: 100%; height: 36px; margin-bottom: 12px;"></audio>
                     <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 auto 2px;">${_esc(outName)}</div>
                     <div style="font-size: 11px; color: #64748B; font-weight: 500;">${sizeLine} · Audio File</div>
                   </div>
