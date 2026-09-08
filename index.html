@@ -9,21 +9,22 @@
 <meta property="og:title" content="FileKit — Every File Tool You Need"/>
 <meta property="og:description" content="Fast, 100% private in-browser file suite. Convert, compress, edit, and organize PDF, media, and documents locally without uploading."/>
 <meta property="og:type" content="website"/>
-<meta property="og:url" content="https://filekit.app/"/>
-<meta property="og:image" content="https://filekit.app/assets/filekit-logo.svg"/>
+<meta property="og:url" content="https://filekit.cc/"/>
+<meta property="og:image" content="https://filekit.cc/assets/filekit-logo.svg"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="FileKit — Every File Tool You Need"/>
 <meta name="twitter:description" content="100% private in-browser file suite. Convert, compress, and edit documents, PDFs, and images locally."/>
-<link rel="canonical" href="https://filekit.app/"/>
+<link rel="canonical" href="https://filekit.cc/"/>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg"/>
+<link rel="apple-touch-icon" href="assets/filekit-icon-4colors.svg"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Dancing+Script:wght@600&family=Great+Vibes&family=Marck+Script&family=Playfair+Display:ital,wght@1,600&family=Sacramento&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dist/css/local-fonts.min.css"/>
-<link rel="stylesheet" href="dist/css/styles.min.css?v=20260906_v56"/>
-<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20260906_v56"/>
-<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20260906_v56"/>
+<link rel="stylesheet" href="dist/css/styles.min.css?v=20260908_v73"/>
+<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20260908_v73"/>
+<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20260908_v73"/>
 </head>
 <body>
 <div class="app">
@@ -31,14 +32,22 @@
 <button aria-label="FileKit home" class="brand" id="home-button" type="button">
 <svg class="brand-icon" width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-  <g filter="url(#fk-badge-shadow)">
-    <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#fk-tile-bg)"/>
-    <rect x="4" y="4" width="40" height="40" rx="10" stroke="rgba(255,255,255,0.9)" stroke-width="0.8"/>
+    <filter id="fk-top-badge-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#1A1714" flood-opacity="0.25"/>
+    </filter>
+    <linearGradient id="fk-top-tile-bg" x1="24" y1="4" x2="24" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F1F5F9"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#fk-top-badge-shadow)">
+    <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#fk-top-tile-bg)"/>
+    <rect x="4" y="4" width="40" height="40" rx="10" stroke="rgba(0,0,0,0.08)" stroke-width="0.8"/>
     <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
     <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
     <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
     <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
-    <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+    <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B" stroke="#FFFFFF" stroke-width="0.8"/>
   </g>
 </svg>
 <strong>FileKit</strong>
@@ -367,7 +376,7 @@
           </div>
           <div class="htc-window-title">
             <span>FileKit</span>
-            <span class="htc-window-badge-lavender">Instant Offline</span>
+            <span class="htc-window-badge-amber">Instant Offline</span>
           </div>
           <div style="width: 48px;"></div>
         </div>
@@ -375,57 +384,117 @@
         <!-- Window Workspace Body with 11 Screens -->
         <div class="htc-window-canvas" id="htc-window-canvas">
 
-          <!-- SCREEN 1: BATCH CONVERT -->
+          <!-- SCREEN 1: BATCH CONVERT (Word DOCX + PPTX + XLSX to PDF Convert Workbench) -->
           <div class="htc-screen active" data-screen="batch">
             <div class="htc-app-body">
               <div class="htc-hero-convert-row">
-                <!-- Drop Box (Left: White + Lavender badge) -->
-                <div class="htc-drop-zone">
-                  <div class="htc-drop-badge">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" class="htc-drop-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
-                    </svg>
+                <!-- Left: Stacked Document Cards for Batch Conversion (DOCX, PPTX, XLSX) -->
+                <div class="htc-doc-stack-wrapper">
+                  <!-- Stack Layer 1: Excel XLSX (Back Left) -->
+                  <div class="htc-doc-stacked-bg htc-doc-bg-excel" aria-hidden="true">
+                    <div class="htc-doc-bg-header">
+                      <div class="htc-doc-x-icon">X</div>
+                      <span class="htc-doc-bg-title">Budget_Q4.xlsx</span>
+                      <span class="htc-doc-bg-badge xlsx">XLSX</span>
+                    </div>
                   </div>
-                  <p class="htc-drop-text">Drag 'n' drop files here, or click to select files</p>
+
+                  <!-- Stack Layer 2: PowerPoint PPTX (Back Right) -->
+                  <div class="htc-doc-stacked-bg htc-doc-bg-pptx" aria-hidden="true">
+                    <div class="htc-doc-bg-header">
+                      <div class="htc-doc-p-icon">P</div>
+                      <span class="htc-doc-bg-title">Deck_2026.pptx</span>
+                      <span class="htc-doc-bg-badge pptx">PPTX</span>
+                    </div>
+                  </div>
+
+                  <!-- Main Front Card: Word DOCX (Exact FileKit App Convert Card) -->
+                  <div class="htc-doc-file-card">
+                    <div class="htc-doc-card-top">
+                      <div class="htc-doc-w-icon">W</div>
+                      <div class="htc-doc-meta">
+                        <div class="htc-doc-title">120 RULES OF GRA...</div>
+                        <div class="htc-doc-sub">Word Document</div>
+                      </div>
+                      <span class="htc-doc-badge">DOCX</span>
+                    </div>
+
+                    <div class="htc-doc-preview-lines">
+                      <div class="htc-doc-line-accent"></div>
+                      <div class="htc-doc-line l1"></div>
+                      <div class="htc-doc-line l2"></div>
+                      <div class="htc-doc-line l3"></div>
+                      <div class="htc-doc-line l4"></div>
+                      <div class="htc-doc-line l5"></div>
+                    </div>
+
+                    <div class="htc-doc-card-footer">
+                      <span>Microsoft Word</span>
+                      <span>14.4 KB</span>
+                    </div>
+
+                    <div class="htc-doc-card-bottom-bar">
+                      <span class="htc-doc-filename-chip">120 R...RAMMAR.docx</span>
+                      <button type="button" class="htc-doc-add-btn" title="Add more files">+</button>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Action Group (Center: Deep Black Button + Gear) -->
-                <div class="htc-action-group">
-                  <button type="button" class="htc-btn-convert">
-                    Convert
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="18" height="18">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
-                    </svg>
+                <!-- Center: Primary Action Vector with Exact 3D Pushable Convert Button -->
+                <div class="htc-action-vector">
+                  <button type="button" class="conv-studio-btn-convert htc-conv-btn" title="Convert to PDF">
+                    <span class="shadow"></span>
+                    <span class="edge"></span>
+                    <span class="front">
+                      <span class="conv-btn-normal-content">
+                        <span>Convert to PDF</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" width="14" height="14">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                        </svg>
+                      </span>
+                    </span>
                   </button>
-                  <button type="button" class="htc-btn-gear" title="Settings">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="#1A1714" width="18" height="18">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"></path>
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
-                    </svg>
-                  </button>
+                  <div class="htc-action-file-info">File 1: 120 RU...GRAMMAR.docx</div>
+                  <div class="htc-action-trust-badge">
+                    <span>14.4 KB</span>
+                    <span class="htc-trust-dot">•</span>
+                    <span class="htc-trust-highlight">100% In-Browser</span>
+                  </div>
                 </div>
 
-                <!-- Dropdown Format Selector (Right: Bright Golden Yellow) -->
-                <div class="htc-format-dropdown-box">
-                  <div class="htc-select-trigger">
-                    <span class="htc-cursor-blink">|</span>
-                    <span class="htc-selected-val">WEBP</span>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
+                <!-- Right: Categorized Format Selector Deck -->
+                <div class="htc-format-selector-deck">
+                  <div class="htc-deck-header">
+                    <span>SELECT FORMAT</span>
+                    <span class="htc-deck-badge">PDF</span>
                   </div>
 
-                  <!-- Open dropdown menu -->
-                  <div class="htc-select-menu">
-                    <div class="htc-menu-header">IMAGE</div>
-                    <div class="htc-menu-item active"><span>WEBP</span><span style="font-size:11px;color:#7C3AED;">✓</span></div>
-                    <div class="htc-menu-item"><span>JPG</span></div>
-                    <div class="htc-menu-item"><span>GIF</span></div>
+                  <!-- Category 1: OFFICE -->
+                  <div class="htc-deck-section">
+                    <div class="htc-deck-cat-label">OFFICE</div>
+                    <div class="htc-deck-item active">
+                      <span>PDF</span>
+                      <span class="htc-deck-check">✓</span>
+                    </div>
                   </div>
 
-                  <!-- Realistic Mouse Pointer Hovering over WEBP! -->
-                  <div class="htc-mouse-cursor" aria-hidden="true">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <!-- Category 2: WEB & TEXT -->
+                  <div class="htc-deck-section">
+                    <div class="htc-deck-cat-label">WEB &amp; TEXT</div>
+                    <div class="htc-deck-item"><span>HTML</span></div>
+                    <div class="htc-deck-item"><span>Plain text (TXT)</span></div>
+                    <div class="htc-deck-item"><span>Markdown (MD)</span></div>
+                  </div>
+
+                  <!-- Category 3: E-BOOKS -->
+                  <div class="htc-deck-section">
+                    <div class="htc-deck-cat-label">E-BOOKS</div>
+                    <div class="htc-deck-item"><span>EPUB ebook (EPUB)</span></div>
+                  </div>
+
+                  <!-- Mouse Pointer Cursor Hovering -->
+                  <div class="htc-mouse-cursor-deck" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path d="M4 2L18.5 12.5L12 13.5L16 21.5L13 23L9 15L4 19L4 2Z" fill="#18181B" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/>
                     </svg>
                   </div>
@@ -434,7 +503,7 @@
 
               <!-- Bottom hint line -->
               <div class="htc-bottom-hint">
-                <span>Select the output format and click <strong style="color: #1A1714;">Convert</strong></span>
+                <span>Select any output format and convert instantly in your browser</span>
               </div>
             </div>
           </div>
@@ -451,7 +520,7 @@
                   <div class="htc-field-group">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                       <label style="margin:0;">Target Format</label>
-                      <span class="htc-tag-lavender">Auto Optimize</span>
+                      <span class="htc-tag-blue">Auto Optimize</span>
                     </div>
                     <div class="htc-pill-row">
                       <span class="htc-pill active">PNG</span>
@@ -534,26 +603,26 @@
                 </div>
                 <div class="htc-waveform">
                   <svg viewBox="0 0 400 60" preserveAspectRatio="none" style="width:100%;height:50px;">
-                    <rect x="0" y="15" width="4" height="30" rx="2" fill="#7C3AED"/>
-                    <rect x="8" y="10" width="4" height="40" rx="2" fill="#7C3AED"/>
-                    <rect x="16" y="5" width="4" height="50" rx="2" fill="#7C3AED"/>
-                    <rect x="24" y="18" width="4" height="24" rx="2" fill="#7C3AED"/>
-                    <rect x="32" y="8" width="4" height="44" rx="2" fill="#7C3AED"/>
-                    <rect x="40" y="2" width="4" height="56" rx="2" fill="#7C3AED"/>
-                    <rect x="48" y="12" width="4" height="36" rx="2" fill="#7C3AED"/>
-                    <rect x="56" y="20" width="4" height="20" rx="2" fill="#7C3AED"/>
-                    <rect x="64" y="6" width="4" height="48" rx="2" fill="#7C3AED"/>
-                    <rect x="72" y="14" width="4" height="32" rx="2" fill="#7C3AED"/>
-                    <rect x="80" y="0" width="4" height="60" rx="2" fill="#7C3AED"/>
-                    <rect x="88" y="10" width="4" height="40" rx="2" fill="#7C3AED"/>
-                    <rect x="96" y="22" width="4" height="16" rx="2" fill="#DDD6FE"/>
-                    <rect x="104" y="8" width="4" height="44" rx="2" fill="#DDD6FE"/>
-                    <rect x="112" y="4" width="4" height="52" rx="2" fill="#DDD6FE"/>
-                    <rect x="120" y="16" width="4" height="28" rx="2" fill="#DDD6FE"/>
-                    <rect x="128" y="12" width="4" height="36" rx="2" fill="#DDD6FE"/>
-                    <rect x="136" y="20" width="4" height="20" rx="2" fill="#DDD6FE"/>
-                    <rect x="144" y="6" width="4" height="48" rx="2" fill="#DDD6FE"/>
-                    <rect x="152" y="14" width="4" height="32" rx="2" fill="#DDD6FE"/>
+                    <rect x="0" y="15" width="4" height="30" rx="2" fill="#18181B"/>
+                    <rect x="8" y="10" width="4" height="40" rx="2" fill="#18181B"/>
+                    <rect x="16" y="5" width="4" height="50" rx="2" fill="#18181B"/>
+                    <rect x="24" y="18" width="4" height="24" rx="2" fill="#18181B"/>
+                    <rect x="32" y="8" width="4" height="44" rx="2" fill="#18181B"/>
+                    <rect x="40" y="2" width="4" height="56" rx="2" fill="#18181B"/>
+                    <rect x="48" y="12" width="4" height="36" rx="2" fill="#18181B"/>
+                    <rect x="56" y="20" width="4" height="20" rx="2" fill="#18181B"/>
+                    <rect x="64" y="6" width="4" height="48" rx="2" fill="#18181B"/>
+                    <rect x="72" y="14" width="4" height="32" rx="2" fill="#18181B"/>
+                    <rect x="80" y="0" width="4" height="60" rx="2" fill="#18181B"/>
+                    <rect x="88" y="10" width="4" height="40" rx="2" fill="#18181B"/>
+                    <rect x="96" y="22" width="4" height="16" rx="2" fill="#CBD5E1"/>
+                    <rect x="104" y="8" width="4" height="44" rx="2" fill="#CBD5E1"/>
+                    <rect x="112" y="4" width="4" height="52" rx="2" fill="#CBD5E1"/>
+                    <rect x="120" y="16" width="4" height="28" rx="2" fill="#CBD5E1"/>
+                    <rect x="128" y="12" width="4" height="36" rx="2" fill="#CBD5E1"/>
+                    <rect x="136" y="20" width="4" height="20" rx="2" fill="#CBD5E1"/>
+                    <rect x="144" y="6" width="4" height="48" rx="2" fill="#CBD5E1"/>
+                    <rect x="152" y="14" width="4" height="32" rx="2" fill="#CBD5E1"/>
                   </svg>
                 </div>
                 <div class="htc-audio-bar">
@@ -632,24 +701,24 @@
             <div class="htc-app-body htc-screen-pad">
               <div class="htc-vector-box">
                 <div class="htc-vector-canvas">
-                  <svg viewBox="0 0 360 140" style="width:100%;height:140px;background:#FAF8FF;border-radius:10px;border:1px solid #EDE9FE;">
+                  <svg viewBox="0 0 360 140" style="width:100%;height:140px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;">
                     <defs>
                       <pattern id="htc-grid" width="16" height="16" patternUnits="userSpaceOnUse">
-                        <circle cx="8" cy="8" r="1" fill="#DDD6FE"/>
+                        <circle cx="8" cy="8" r="1" fill="#CBD5E1"/>
                       </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#htc-grid)" />
                     <!-- Vector shape -->
-                    <path d="M 40 100 C 70 20, 130 20, 160 80 S 260 120, 310 40" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M 40 100 C 70 20, 130 20, 160 80 S 260 120, 310 40" fill="none" stroke="#18181B" stroke-width="3" stroke-linecap="round"/>
                     <!-- Control handles -->
-                    <line x1="40" y1="100" x2="70" y2="20" stroke="#A78BFA" stroke-width="1.2" stroke-dasharray="2,2"/>
-                    <line x1="160" y1="80" x2="130" y2="20" stroke="#A78BFA" stroke-width="1.2" stroke-dasharray="2,2"/>
-                    <circle cx="70" cy="20" r="4.5" fill="#F6D860" stroke="#1A1714" stroke-width="1"/>
-                    <circle cx="130" cy="20" r="4.5" fill="#F6D860" stroke="#1A1714" stroke-width="1"/>
+                    <line x1="40" y1="100" x2="70" y2="20" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="2,2"/>
+                    <line x1="160" y1="80" x2="130" y2="20" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="2,2"/>
+                    <circle cx="70" cy="20" r="4.5" fill="#F6D860" stroke="#18181B" stroke-width="1"/>
+                    <circle cx="130" cy="20" r="4.5" fill="#F6D860" stroke="#18181B" stroke-width="1"/>
                     <!-- Anchor nodes -->
-                    <rect x="36" y="96" width="8" height="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
-                    <rect x="156" y="76" width="8" height="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
-                    <rect x="306" y="36" width="8" height="8" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
+                    <rect x="36" y="96" width="8" height="8" fill="#FFFFFF" stroke="#18181B" stroke-width="2"/>
+                    <rect x="156" y="76" width="8" height="8" fill="#FFFFFF" stroke="#18181B" stroke-width="2"/>
+                    <rect x="306" y="36" width="8" height="8" fill="#FFFFFF" stroke="#18181B" stroke-width="2"/>
                   </svg>
                   <span class="htc-vector-badge">&lt;svg&gt; Scalable Vector Paths</span>
                 </div>
@@ -729,7 +798,7 @@
                   <span class="htc-finder-folder-title">&#x1F4C1; Documents</span>
                 </div>
                 <div class="htc-finder-actions">
-                  <span class="htc-tag-lavender">90+ Offline Tools</span>
+                  <span class="htc-tag-blue">90+ Offline Tools</span>
                 </div>
               </div>
 
@@ -1159,7 +1228,7 @@
           <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
           <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
           <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
-          <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+          <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B" stroke="#FFFFFF" stroke-width="0.8"/>
         </g>
       </svg>
     </div>
@@ -1171,7 +1240,9 @@
         <h1 class="app-topbar-page-title" id="app-workspace-title">Home</h1>
       </div>
 
-      <div class="app-topbar-center" id="app-topbar-center"></div>
+      <div class="app-topbar-center" id="app-topbar-center">
+        <nav class="sp-home-filter-bar" id="sp-home-filter-bar" aria-label="Tool capability categories"></nav>
+      </div>
 
       <div class="app-topbar-right">
         <button type="button" class="app-login-btn" id="app-login-btn">Log In</button>
@@ -1248,14 +1319,19 @@
       <div class="app-canvas" id="app-canvas">
 
       <div class="app-home-view" id="app-home-view">
-        <section class="sp-section">
-          <h2 class="sp-section-heading">Popular Tools</h2>
-          <div class="sp-tools-grid" id="sp-popular-grid"></div>
-        </section>
-        <section class="sp-section">
-          <h2 class="sp-section-heading">More Tools</h2>
-          <div class="sp-tools-grid" id="sp-more-grid"></div>
-        </section>
+        <div class="sp-home-sections-container" id="sp-home-sections-container">
+          <section class="sp-section" id="sec-popular">
+            <div class="sp-section-header">
+              <div class="sp-section-title-wrap">
+                <span class="sp-section-icon">⭐</span>
+                <h2 class="sp-section-heading">Popular & Essential Tools</h2>
+                <span class="sp-section-badge">16 tools</span>
+              </div>
+              <p class="sp-section-desc">Most frequently used document, image, and video tools</p>
+            </div>
+            <div class="sp-tools-grid" id="sp-popular-grid"></div>
+          </section>
+        </div>
       </div>
 
       <div class="app-category-view" id="app-category-view" hidden="">
@@ -1350,6 +1426,30 @@
 
     </div>
   </div>
+
+  <!-- Mobile-only bottom tab bar — hidden on desktop via CSS -->
+  <nav class="mobile-tab-bar" id="mobile-tab-bar" aria-label="Main navigation">
+    <button class="mtab active" data-task-rail="compress" type="button">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg>
+      <span>Compress</span>
+    </button>
+    <button class="mtab" data-task-rail="convert" type="button">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10h11l-3-3M17 14H6l3 3"/></svg>
+      <span>Convert</span>
+    </button>
+    <button class="mtab" data-task-rail="organize" type="button">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"/><path d="M10.18 17.15L7.14 14.11M10.18 6.85v10.3M13.82 6.85l3.04 3.04M13.82 17.15V6.85"/></svg>
+      <span>Organize</span>
+    </button>
+    <button class="mtab" data-task-rail="edit" type="button">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.26 3.6L5.05 12.29c-.31.33-.61.98-.67 1.43l-.37 3.24c-.13 1.17.71 1.97 1.87 1.77l3.22-.55c.45-.08 1.08-.41 1.39-.75l8.21-8.69c1.42-1.5 2.06-3.21-.15-5.3-2.2-2.07-3.87-1.34-5.29.16z"/><path d="M11.89 5.05c.43 2.76 2.67 4.87 5.45 5.15M3 22h18"/></svg>
+      <span>Edit</span>
+    </button>
+    <button class="mtab" data-task-rail="more" type="button">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10.9V4.1C22 2.6 21.36 2 19.77 2H15.73C14.14 2 13.5 2.6 13.5 4.1V10.9C13.5 12.4 14.14 13 15.73 13H19.77C21.36 13 22 12.4 22 10.9Z"/><path d="M22 19.9V18.1C22 16.6 21.36 16 19.77 16H15.73C14.14 16 13.5 16.6 13.5 18.1V19.9C13.5 21.4 14.14 22 15.73 22H19.77C21.36 22 22 21.4 22 19.9Z"/><path d="M10.5 13.1V19.9C10.5 21.4 9.86 22 8.27 22H4.23C2.64 22 2 21.4 2 19.9V13.1C2 11.6 2.64 11 4.23 11H8.27C9.86 11 10.5 11.6 10.5 13.1Z"/><path d="M10.5 4.1V5.9C10.5 7.4 9.86 8 8.27 8H4.23C2.64 8 2 7.4 2 5.9V4.1C2 2.6 2.64 2 4.23 2H8.27C9.86 2 10.5 2.6 10.5 4.1Z"/></svg>
+      <span>More</span>
+    </button>
+  </nav>
 </main>
 
 
@@ -1402,7 +1502,7 @@
             <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
             <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
             <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
-            <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#7C3AED" stroke="#FFFFFF" stroke-width="0.8"/>
+            <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B" stroke="#FFFFFF" stroke-width="0.8"/>
           </g>
         </svg>
         <strong>FileKit</strong>
@@ -1466,19 +1566,23 @@
   </div>
 </footer>
 </div>
-<script defer src="https://cdn.jsdelivr.net/npm/reicon@latest/cdn/reicon.js"></script>
-<script defer src="dist/js/app.min.js?v=20260907_v58"></script>
-<script defer src="dist/js/tools.min.js?v=20260907_v58"></script>
-<script defer src="dist/js/tools-new.min.js?v=20260907_v58"></script>
-<script defer src="dist/js/tools-premium.min.js?v=20260907_v58"></script>
-<script defer src="dist/js/tools-premium2.min.js?v=20260907_v58"></script>
+<script defer src="dist/js/app.min.js?v=20260908_v73"></script>
+<script defer src="dist/js/tools.min.js?v=20260908_v73"></script>
+<script defer src="dist/js/tools-new.min.js?v=20260908_v73"></script>
+<script defer src="dist/js/tools-premium.min.js?v=20260908_v73"></script>
+<script defer src="dist/js/tools-premium2.min.js?v=20260908_v73"></script>
 <script>
+  if ('caches' in window) {
+    caches.keys().then((keys) => {
+      keys.forEach((k) => caches.delete(k));
+    }).catch(() => {});
+  }
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then((reg) => {
-        reg.update().catch(() => {});
-      }).catch(() => {});
-    });
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        reg.unregister().catch(() => {});
+      }
+    }).catch(() => {});
   }
 </script>
 </body>

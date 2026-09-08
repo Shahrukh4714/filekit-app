@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://filekit.app/sitemap.xml
+Sitemap: https://filekit.cc/sitemap.xml

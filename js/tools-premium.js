@@ -155,6 +155,8 @@
       <div class="pro-body" data-pro-body></div>
       <div class="pro-result" data-pro-result hidden></div>`;
     return {
+      container,
+      tool,
       top: container.querySelector('.etxt-top'),
       toolbar: container.querySelector('.pro-toolbar'),
       body: container.querySelector('.pro-body'),
@@ -165,8 +167,31 @@
   }
 
   /* Result bar */
-  function showResult(shellEl, { ok = true, title, msg, actions = [] }) {
+  function showResult(shellEl, { ok = true, title, msg, actions = [], blob, filename, tool, onBacktrack, onAgain }) {
+    if (ok && window.FF?.renderUnifiedResult && shellEl?.container) {
+      let resultBlob = blob;
+      let resultName = filename;
+      if (!resultBlob && actions && actions.length) {
+        const dl = actions.find(a => a.blob || (typeof a.filename === 'string' && a.filename));
+        if (dl?.blob) resultBlob = dl.blob;
+        if (dl?.filename) resultName = dl.filename;
+      }
+      if (resultBlob) {
+        window.FF.renderUnifiedResult(shellEl.container, {
+          tool: tool || shellEl.tool || { id: 'tool', name: title || 'File Tool', category: 'Tool' },
+          blob: resultBlob,
+          filename: resultName || (tool?.id ? `${tool.id}.out` : 'processed-file'),
+          title: title || 'Processing Complete',
+          badge: msg || '100% Local Sandbox',
+          onBacktrack: onBacktrack || (() => { if (typeof shellEl.renderWorkspace === 'function') shellEl.renderWorkspace(); }),
+          onAgain: onAgain || (() => { if (typeof shellEl.renderDrop === 'function') shellEl.renderDrop(); })
+        });
+        return;
+      }
+    }
+
     const el = shellEl.result;
+    if (!el) return;
     el.hidden = false;
     el.className = 'pro-result' + (ok ? ' is-ok' : ' is-err');
     el.innerHTML = `
@@ -597,11 +622,16 @@
       async function doRun() {
         conf.run(off, img, ib.state, files[0]);
         const fmt = (ib.output && ib.output.fmt) || (conf.type ? (conf.type === 'image/png' ? 'png' : 'jpeg') : outType(files[0]));
-        const blob = await encodeCanvas(off, fmt, ib.output ? ib.output.quality / 100 : 0.9);
+        const fname = baseName(files[0].name) + '-' + slug(conf.title) + '.' + (FMT_EXT[fmt] || 'png');
         showResult(s, {
-          ok: true, title: `${conf.title} complete`, msg: `${img.naturalWidth} × ${img.naturalHeight}px → ${off.width} × ${off.height}px ${FMT_EXT[fmt] || fmt} · ${bytes(blob.size)}`,
+          ok: true,
+          title: `${conf.title} complete`,
+          msg: `${img.naturalWidth} × ${img.naturalHeight}px → ${off.width} × ${off.height}px ${FMT_EXT[fmt] || fmt} · ${bytes(blob.size)}`,
+          blob,
+          filename: fname,
+          tool,
           actions: [
-            { label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, baseName(files[0].name) + '-' + slug(conf.title) + '.' + (FMT_EXT[fmt] || 'png')) },
+            { label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, fname) },
             { label: 'Done', cls: 'etxt-btn-ghost', onClick: () => s.result.hidden = true },
           ],
         });
@@ -635,8 +665,16 @@
         const fflate = await load.fflate();
         const map = {};
         for (const c of canvases) map['favicon-' + c.dataset.sz + '.png'] = await u8(await new Promise((res) => c.__blob.toBlob(res, 'image/png')));
-        download(new Blob([fflate.zipSync(map)], { type: 'application/zip' }), 'favicons.zip');
-        showResult(s, { ok: true, title: 'Favicon set ready', msg: `${canvases.length} PNGs bundled into favicons.zip`, actions: [{ label: 'Done', cls: 'etxt-btn-ghost', onClick: () => s.result.hidden = true }] });
+        const zipBlob = new Blob([fflate.zipSync(map)], { type: 'application/zip' });
+        showResult(s, {
+          ok: true,
+          title: 'Favicon set ready',
+          msg: `${canvases.length} PNGs bundled into favicons.zip`,
+          blob: zipBlob,
+          filename: 'favicons.zip',
+          tool,
+          actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(zipBlob, 'favicons.zip') }]
+        });
       };
       s.body.querySelector('[data-dl-all]').addEventListener('click', dlAll);
       s.body.querySelector('[data-dl-ico]').addEventListener('click', () => { const c = canvases.find(x => x.dataset.sz === '64') || canvases[canvases.length - 1]; c.__blob.toBlob((b) => download(b, 'favicon-64.png'), 'image/png'); });
@@ -664,9 +702,15 @@
         const after = s.body.querySelector('#pro-strip-after');
         after.textContent = `${bytes(blob.size)} — metadata removed`;
         after.closest('.pro-strip-card').classList.add('is-done');
+        const fname = baseName(files[0].name) + '-clean.' + (FMT_EXT[fmt] || 'png');
         showResult(s, {
-          ok: true, title: 'Metadata stripped', msg: `${bytes(files[0].size)} → ${bytes(blob.size)} · EXIF removed · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`,
-          actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, baseName(files[0].name) + '-clean.' + (FMT_EXT[fmt] || 'png')) }],
+          ok: true,
+          title: 'Metadata stripped',
+          msg: `${bytes(files[0].size)} → ${bytes(blob.size)} · EXIF removed · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`,
+          blob,
+          filename: fname,
+          tool,
+          actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, fname) }],
         });
       });
     }
@@ -749,7 +793,12 @@
         const fmt = diffOut.state.fmt;
         const blob = await encodeCanvas(diffCanvas, fmt, diffOut.state.quality / 100);
         showResult(s, {
-          ok: true, title: 'Diff complete', msg: `${pct}% of pixels differ · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`,
+          ok: true,
+          title: 'Diff complete',
+          msg: `${pct}% of pixels differ · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`,
+          blob,
+          filename: 'image-diff.' + (FMT_EXT[fmt] || 'png'),
+          tool,
           actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, 'image-diff.' + (FMT_EXT[fmt] || 'png')) }],
         });
       });
@@ -783,7 +832,15 @@
       s.runBtn.addEventListener('click', () => {
         if (!sheetBlob) return;
         const fmt = ib.output.fmt;
-        showResult(s, { ok: true, title: 'Sprite sheet ready', msg: `${files.length} images combined · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(sheetBlob, 'sprite-sheet.' + (FMT_EXT[fmt] || 'png')) }] });
+        showResult(s, {
+          ok: true,
+          title: 'Sprite sheet ready',
+          msg: `${files.length} images combined · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`,
+          blob: sheetBlob,
+          filename: 'sprite-sheet.' + (FMT_EXT[fmt] || 'png'),
+          tool,
+          actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(sheetBlob, 'sprite-sheet.' + (FMT_EXT[fmt] || 'png')) }]
+        });
       });
     }
 
@@ -839,7 +896,16 @@
       s.runBtn.addEventListener('click', () => {
         if (!outBlob) return;
         const fmt = ib.output.fmt;
-        showResult(s, { ok: true, title: 'Raster complete', msg: `${bytes(outBlob.size)} ${(FMT_EXT[fmt] || fmt).toUpperCase()} ready`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(outBlob, baseName(files[0].name) + '.' + (FMT_EXT[fmt] || 'png')) }] });
+        const fname = baseName(files[0].name) + '.' + (FMT_EXT[fmt] || 'png');
+        showResult(s, {
+          ok: true,
+          title: 'Raster complete',
+          msg: `${bytes(outBlob.size)} ${(FMT_EXT[fmt] || fmt).toUpperCase()} ready`,
+          blob: outBlob,
+          filename: fname,
+          tool,
+          actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(outBlob, fname) }]
+        });
       });
     }
 
@@ -1074,6 +1140,7 @@
           const out = await tool.run({ file, inputs: state, onProgress: (p, l) => setBusy(s, true, l || 'Applying…') });
           showResult(s, {
             ok: true, title: 'Headers & footers applied', msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob, filename: out.filename, tool,
             actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
           });
         } catch (e) { showResult(s, { ok: false, title: 'Could not apply', msg: e.message }); }
@@ -1414,6 +1481,7 @@
           const out = await tool.run({ file, inputs: { scale: '1.5' }, onProgress: (p, l) => setBusy(s, true, l || 'Inverting…') });
           showResult(s, {
             ok: true, title: 'PDF inverted', msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob, filename: out.filename, tool,
             actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
           });
         } catch (e) { showResult(s, { ok: false, title: 'Could not invert', msg: e.message }); }
@@ -1515,6 +1583,7 @@
           const out = await tool.run({ file, inputs, onProgress: (p, l) => setBusy(s, true, l || 'Redacting…') });
           showResult(s, {
             ok: true, title: isSanitize ? 'Document sanitized' : 'PII redacted', msg: `${foundTotal} item${foundTotal === 1 ? '' : 's'} covered · ${out.filename}`,
+            blob: out.blob, filename: out.filename, tool,
             actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
           });
         } catch (e) { showResult(s, { ok: false, title: 'Could not process', msg: e.message }); }
@@ -1545,6 +1614,7 @@
           const out = await tool.run({ file, inputs: state });
           showResult(s, {
             ok: true, title: 'PDF created', msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob, filename: out.filename, tool,
             actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
           });
         } catch (e) { showResult(s, { ok: false, title: 'Could not convert', msg: e.message }); }
@@ -1589,6 +1659,7 @@
           const out = await tool.run({ file, files, inputs: state });
           showResult(s, {
             ok: true, title: 'Archive ready', msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob, filename: out.filename, tool,
             actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
           });
         } catch (e) { showResult(s, { ok: false, title: 'Could not create archive', msg: e.message }); }
@@ -1652,6 +1723,18 @@
             ? { title: container.querySelector('#pro-in-title').value, text: container.querySelector('#pro-in-body').value, size: container.querySelector('#pro-in-size').value, fontSize: container.querySelector('#pro-in-fs').value }
             : { text: container.querySelector('#pro-in-body').value, ink: container.querySelector('#pro-in-ink').value, size: container.querySelector('#pro-in-hand').value };
           const out = await tool.run({ inputs });
+          if (window.FF?.renderUnifiedResult && out?.blob) {
+            window.FF.renderUnifiedResult(container, {
+              tool,
+              blob: out.blob,
+              filename: out.filename,
+              title: id === 'pdf-create' ? 'PDF Created' : 'Handwriting Page Ready',
+              badge: `${bytes(out.blob.size)} · 100% Local`,
+              onBacktrack: () => mountInputPdf(container, tool, id),
+              onAgain: () => mountInputPdf(container, tool, id)
+            });
+            return;
+          }
           resultEl.className = 'pro-result is-ok';
           resultEl.hidden = false;
           resultEl.innerHTML = `

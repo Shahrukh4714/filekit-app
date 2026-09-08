@@ -2686,6 +2686,21 @@
         return;
       }
       const r = resultData;
+      if (window.FF?.renderUnifiedResult && r.blob) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'scan-document', name: 'Scan Document', category: 'Scan & Workflow' },
+          blob: r.blob,
+          filename: r.name,
+          title: 'Document Scan Complete',
+          badge: `${r.pageCount || 1} Page${(r.pageCount || 1) === 1 ? '' : 's'} Digitized`,
+          originalBytes: r.blob.size,
+          resultBytes: r.blob.size,
+          onBacktrack: () => { clearResult(); switchView('review'); },
+          onAgain: () => { clearAll(); switchView('capture'); }
+        });
+        return;
+      }
+
       const sizeLine = bytes(r.blob.size);
       const isZip = r.name.endsWith('.zip');
 
@@ -9250,8 +9265,23 @@
     }
 
     function renderResult(out) {
-      const url = URL.createObjectURL(out.blob);
       const steps = getActiveSteps();
+      if (window.FF?.renderUnifiedResult && out?.blob) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'pdf-workflow', name: 'Smart Recipe Automation', category: 'PDF' },
+          blob: out.blob,
+          filename: out.filename,
+          title: 'Pipeline Complete',
+          badge: `${steps.length} Actions Baked`,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            file = null; pdfDoc = null;
+            renderConfigure();
+          }
+        });
+        return;
+      }
+      const url = URL.createObjectURL(out.blob);
       const track = container.querySelector('.wf-track-wrap');
       const bottomBar = container.querySelector('.wf-bottom-bar');
       if (bottomBar) bottomBar.style.display = 'none';
@@ -10072,6 +10102,31 @@
     }
 
     function render() {
+      if (state.resultBlob && window.FF?.renderUnifiedResult) {
+        const activeStepsCount = state.steps.filter((s) => s.enabled !== false).length;
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'workflow-builder', name: 'Workflow Pipeline', category: 'Scan & Workflow' },
+          blob: state.resultBlob,
+          filename: state.resultFileName,
+          title: 'Pipeline Execution Complete',
+          badge: `${activeStepsCount} Step${activeStepsCount === 1 ? '' : 's'} Executed`,
+          originalBytes: state.file ? state.file.size : state.resultBlob.size,
+          resultBytes: state.resultBlob.size,
+          onBacktrack: () => {
+            state.resultBlob = null;
+            state.isPreviewStage = false;
+            render();
+          },
+          onAgain: () => {
+            state.file = null;
+            state.resultBlob = null;
+            state.isPreviewStage = false;
+            render();
+          }
+        });
+        return;
+      }
+
       container.innerHTML = `
         ${renderToolbar()}
         <div class="wf-body">
@@ -12620,10 +12675,23 @@
           `"${r.invNo}","${r.gstin || ''}","${r.isB2B?'B2B':'B2C'}",${r.taxable.toFixed(2)},${r.tax.toFixed(2)},${r.total.toFixed(2)}`
         ).join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const fname = `GSTR1_Summary_${new Date().toISOString().slice(0,10)}.csv`;
+        if (window.FF?.renderUnifiedResult) {
+          window.FF.renderUnifiedResult(container, {
+            tool: tool || { id: 'gst-filing-prep', name: 'GST Filing Summary', category: 'Business' },
+            blob,
+            filename: fname,
+            title: 'GSTR-1 Summary Ready',
+            badge: `${filingState.rows.length} Invoices Compiled`,
+            onBacktrack: () => mountBusinessSuite(container, tool, 'filing'),
+            onAgain: () => mountBusinessSuite(container, tool, 'filing')
+          });
+          return;
+        }
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `GSTR1_Summary_${new Date().toISOString().slice(0,10)}.csv`;
+        a.download = fname;
         a.click();
         URL.revokeObjectURL(url);
       }

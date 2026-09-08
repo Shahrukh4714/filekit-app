@@ -264,7 +264,356 @@
   const range = (str, max) => { if (!str || !str.trim()) return [...Array(max).keys()]; const set = new Set();
     for (const part of String(str).split(',')) { const m = part.trim().split('-'); if (m.length === 2) { for (let i = +m[0]; i <= +m[1]; i++) if (i >= 1 && i <= max) set.add(i - 1); } else { const n = +m[0]; if (n >= 1 && n <= max) set.add(n - 1); } } return [...set].sort((a, b) => a - b); };
   const pagesField = { key: 'pages', label: 'Pages (e.g. 1-3,5 · blank = all)', type: 'text', default: '' };
-  async function renderPage(pdfjs, pageProxy, scale) { const vp = pageProxy.getViewport({ scale }); const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; await pageProxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; return c; }
+  // --- Pure JS Standard PDF Security Handler (Revision 3, 128-bit) ---
+  function fkMd5(input) {
+    const bytes = (typeof input === 'string')
+      ? new Uint8Array([...input].map(c => c.charCodeAt(0) & 0xff))
+      : input instanceof Uint8Array ? input : new Uint8Array(input);
+    let a0 = 0x67452301 | 0, b0 = 0xefcdab89 | 0, c0 = 0x98badcfe | 0, d0 = 0x10325476 | 0;
+    const s = [
+      7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+      5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+      4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+      6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+    ];
+    const K = new Int32Array(64);
+    for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) | 0;
+
+    const bitLen = bytes.length * 8;
+    const numBlocks = (((bytes.length + 8) >> 6) + 1) << 4;
+    const M = new Int32Array(numBlocks);
+    for (let i = 0; i < bytes.length; i++) M[i >> 2] |= bytes[i] << ((i % 4) * 8);
+    M[bytes.length >> 2] |= 0x80 << ((bytes.length % 4) * 8);
+    M[numBlocks - 2] = bitLen | 0;
+    M[numBlocks - 1] = (bitLen / 4294967296) | 0;
+
+    for (let i = 0; i < numBlocks; i += 16) {
+      let A = a0, B = b0, C = c0, D = d0;
+      for (let j = 0; j < 64; j++) {
+        let F, g;
+        if (j < 16) { F = (B & C) | ((~B) & D); g = j; }
+        else if (j < 32) { F = (D & B) | ((~D) & C); g = (5 * j + 1) % 16; }
+        else if (j < 48) { F = B ^ C ^ D; g = (3 * j + 5) % 16; }
+        else { F = C ^ (B | (~D)); g = (7 * j) % 16; }
+
+        const temp = D; D = C; C = B;
+        const val = (A + F + K[j] + M[i + g]) | 0;
+        const rot = s[j];
+        B = (B + ((val << rot) | (val >>> (32 - rot)))) | 0;
+        A = temp;
+      }
+      a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
+    }
+
+    const out = new Uint8Array(16);
+    const words = [a0, b0, c0, d0];
+    for (let i = 0; i < 16; i++) out[i] = (words[i >> 2] >> ((i % 4) * 8)) & 0xff;
+    return out;
+  }
+
+  function fkRc4(key, data) {
+    const s = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) s[i] = i;
+    let j = 0;
+    for (let i = 0; i < 256; i++) {
+      j = (j + s[i] + key[i % key.length]) & 255;
+      const tmp = s[i]; s[i] = s[j]; s[j] = tmp;
+    }
+    let i = 0; j = 0;
+    const out = new Uint8Array(data.length);
+    for (let k = 0; k < data.length; k++) {
+      i = (i + 1) & 255;
+      j = (j + s[i]) & 255;
+      const tmp = s[i]; s[i] = s[j]; s[j] = tmp;
+      out[k] = data[k] ^ s[(s[i] + s[j]) & 255];
+    }
+    return out;
+  }
+
+  const FK_PADDING = new Uint8Array([
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+    0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A
+  ]);
+
+  function fkPadPassword(pw) {
+    const buf = new Uint8Array(32);
+    const pwBytes = new Uint8Array([...(pw || '')].map(c => c.charCodeAt(0) & 0xff));
+    if (pwBytes.length >= 32) {
+      buf.set(pwBytes.subarray(0, 32));
+    } else {
+      buf.set(pwBytes);
+      buf.set(FK_PADDING.subarray(0, 32 - pwBytes.length), pwBytes.length);
+    }
+    return buf;
+  }
+
+  function fkComputeO(userPass, ownerPass) {
+    const opad = fkPadPassword(ownerPass || userPass);
+    let hash = fkMd5(opad);
+    for (let i = 0; i < 50; i++) hash = fkMd5(hash.subarray(0, 16));
+    const key = hash.subarray(0, 16);
+    let out = fkRc4(key, fkPadPassword(userPass));
+    for (let i = 1; i <= 19; i++) {
+      const k = new Uint8Array(16);
+      for (let x = 0; x < 16; x++) k[x] = key[x] ^ i;
+      out = fkRc4(k, out);
+    }
+    return out;
+  }
+
+  function fkComputeKey(userPass, o, p, fileId) {
+    const upad = fkPadPassword(userPass);
+    const pBuf = new Uint8Array(4);
+    const view = new DataView(pBuf.buffer);
+    view.setInt32(0, p, true);
+
+    const combined = new Uint8Array(upad.length + o.length + pBuf.length + fileId.length);
+    combined.set(upad, 0);
+    combined.set(o, upad.length);
+    combined.set(pBuf, upad.length + o.length);
+    combined.set(fileId, upad.length + o.length + pBuf.length);
+
+    let hash = fkMd5(combined);
+    for (let i = 0; i < 50; i++) hash = fkMd5(hash.subarray(0, 16));
+    return hash.subarray(0, 16);
+  }
+
+  function fkComputeU(key, fileId) {
+    const combined = new Uint8Array(FK_PADDING.length + fileId.length);
+    combined.set(FK_PADDING, 0);
+    combined.set(fileId, FK_PADDING.length);
+    const hash16 = fkMd5(combined);
+    let out = fkRc4(key, hash16);
+    for (let i = 1; i <= 19; i++) {
+      const k = new Uint8Array(16);
+      for (let x = 0; x < 16; x++) k[x] = key[x] ^ i;
+      out = fkRc4(k, out);
+    }
+    const u = new Uint8Array(32);
+    u.set(out, 0);
+    return u;
+  }
+
+  function fkComputeObjectKey(fileKey, objNum, genNum) {
+    const b = new Uint8Array(5);
+    b[0] = objNum & 0xff;
+    b[1] = (objNum >> 8) & 0xff;
+    b[2] = (objNum >> 16) & 0xff;
+    b[3] = genNum & 0xff;
+    b[4] = (genNum >> 8) & 0xff;
+
+    const combined = new Uint8Array(fileKey.length + 5);
+    combined.set(fileKey, 0);
+    combined.set(b, fileKey.length);
+
+    return fkMd5(combined).subarray(0, Math.min(fileKey.length + 5, 16));
+  }
+
+  function fkToHex(u8) {
+    return [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function getPdfLibEngine(PDFLib) {
+    if (PDFLib) return PDFLib;
+    if (window.PDFLib) return window.PDFLib;
+    if (typeof loadLib === 'function') {
+      try { const l = await loadLib(); if (l) return l; } catch {}
+    }
+    if (window.FF?.loadPdfLib) {
+      try { const l = await window.FF.loadPdfLib(); if (l) return l; } catch {}
+    }
+    const loader = window.FF?.util?.loadScript || (src => new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+    }));
+    await loader('vendor/pdf-lib.min.js');
+    return window.PDFLib;
+  }
+
+  async function encryptPdfDocument(pdfBytes, password, permissions = {}, PDFLib) {
+    const lib = await getPdfLibEngine(PDFLib);
+    const doc = await lib.PDFDocument.load(pdfBytes, { ignoreEncryption: true, throwOnInvalidObject: false });
+
+    let p = -4;
+    if (permissions.printing !== false) p |= (1 << 2) | (1 << 11); else p &= ~((1 << 2) | (1 << 11));
+    if (permissions.modifying) p |= (1 << 3); else p &= ~(1 << 3);
+    if (permissions.copying !== false) p |= (1 << 4); else p &= ~(1 << 4);
+    if (permissions.annotating) p |= (1 << 5); else p &= ~(1 << 5);
+    if (permissions.fillingForms !== false) p |= (1 << 8); else p &= ~(1 << 8);
+    if (permissions.contentAccessibility !== false) p |= (1 << 9); else p &= ~(1 << 9);
+    if (permissions.documentAssembly) p |= (1 << 10); else p &= ~(1 << 10);
+
+    const fileId = new Uint8Array(16);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(fileId);
+    } else {
+      for (let i = 0; i < 16; i++) fileId[i] = Math.floor(Math.random() * 256);
+    }
+
+    const userPassword = password || '';
+    const ownerPassword = permissions.ownerPassword || userPassword;
+
+    const o = fkComputeO(userPassword, ownerPassword);
+    const fileKey = fkComputeKey(userPassword, o, p, fileId);
+    const u = fkComputeU(fileKey, fileId);
+
+    // Register Encrypt dictionary into PDF context
+    const encryptDict = doc.context.obj({
+      Filter: lib.PDFName.of('Standard'),
+      V: lib.PDFNumber.of(2),
+      R: lib.PDFNumber.of(3),
+      Length: lib.PDFNumber.of(128),
+      P: lib.PDFNumber.of(p),
+      O: lib.PDFHexString.of(fkToHex(o)),
+      U: lib.PDFHexString.of(fkToHex(u))
+    });
+
+    const encryptRef = doc.context.register(encryptDict);
+    doc.context.trailerInfo.Encrypt = encryptRef;
+    doc.context.trailerInfo.ID = doc.context.obj([
+      lib.PDFHexString.of(fkToHex(fileId)),
+      lib.PDFHexString.of(fkToHex(fileId))
+    ]);
+
+    // Encrypt string values recursively
+    function encryptObjectValue(val, objKey) {
+      if (!val) return val;
+      if (val instanceof lib.PDFString || val instanceof lib.PDFHexString) {
+        const rawBytes = val.asBytes();
+        const enc = fkRc4(objKey, rawBytes);
+        return lib.PDFHexString.of(fkToHex(enc));
+      }
+      if (val instanceof lib.PDFArray) {
+        for (let i = 0; i < val.size(); i++) {
+          const item = val.get(i);
+          const encItem = encryptObjectValue(item, objKey);
+          if (encItem !== item) val.set(i, encItem);
+        }
+      }
+      if (val instanceof lib.PDFDict) {
+        for (const [k, v] of val.entries()) {
+          const encV = encryptObjectValue(v, objKey);
+          if (encV !== v) val.set(k, encV);
+        }
+      }
+      return val;
+    }
+
+    // Encrypt all indirect objects & streams
+    const indirectObjects = doc.context.enumerateIndirectObjects();
+    for (const [ref, obj] of indirectObjects) {
+      if (ref.objectNumber === encryptRef.objectNumber) continue;
+
+      const objKey = fkComputeObjectKey(fileKey, ref.objectNumber, ref.generationNumber);
+
+      if (obj instanceof lib.PDFStream) {
+        const contents = obj.getContents();
+        const encContents = fkRc4(objKey, contents);
+        const dict = obj.dict.clone();
+        dict.set(lib.PDFName.of('Length'), lib.PDFNumber.of(encContents.length));
+        encryptObjectValue(dict, objKey);
+        const rawStream = lib.PDFRawStream.of(dict, encContents);
+        doc.context.indirectObjects.set(ref, rawStream);
+      } else if (obj instanceof lib.PDFDict) {
+        encryptObjectValue(obj, objKey);
+      } else if (obj instanceof lib.PDFArray) {
+        encryptObjectValue(obj, objKey);
+      }
+    }
+
+    return await doc.save({ useObjectStreams: false });
+  }
+
+  async function decryptPdfDocument(pdfBytes, password, PDFLib) {
+    const lib = await getPdfLibEngine(PDFLib);
+    const doc = await lib.PDFDocument.load(pdfBytes, { ignoreEncryption: true, throwOnInvalidObject: false });
+
+    const encryptRef = doc.context.trailerInfo.Encrypt;
+    if (!encryptRef) {
+      return await doc.save({ useObjectStreams: false });
+    }
+
+    const encryptDict = doc.context.lookup(encryptRef);
+    if (!encryptDict) {
+      delete doc.context.trailerInfo.Encrypt;
+      return await doc.save({ useObjectStreams: false });
+    }
+
+    const oObj = encryptDict.get(lib.PDFName.of('O'));
+    const pObj = encryptDict.get(lib.PDFName.of('P'));
+    const idArray = doc.context.trailerInfo.ID;
+
+    const o = oObj ? (oObj.asBytes ? oObj.asBytes() : (oObj.value ? new Uint8Array([...oObj.value.match(/.{1,2}/g)].map(b => parseInt(b, 16))) : new Uint8Array(32))) : new Uint8Array(32);
+    const p = pObj ? (typeof pObj.numberValue === 'number' ? pObj.numberValue : parseInt(pObj.toString(), 10)) : -4;
+    let fileId = new Uint8Array(16);
+    if (idArray && idArray.size && idArray.size() > 0) {
+      const firstId = idArray.get(0);
+      if (firstId.asBytes) fileId = firstId.asBytes();
+      else if (firstId.value) fileId = new Uint8Array([...firstId.value.match(/.{1,2}/g)].map(b => parseInt(b, 16)));
+    }
+
+    const userPassword = password || '';
+    const fileKey = fkComputeKey(userPassword, o, p, fileId);
+
+    // Decrypt string values recursively
+    function decryptObjectValue(val, objKey) {
+      if (!val) return val;
+      if (val instanceof lib.PDFString || val instanceof lib.PDFHexString) {
+        const rawBytes = val.asBytes();
+        const dec = fkRc4(objKey, rawBytes);
+        return lib.PDFHexString.of(fkToHex(dec));
+      }
+      if (val instanceof lib.PDFArray) {
+        for (let i = 0; i < val.size(); i++) {
+          const item = val.get(i);
+          const decItem = decryptObjectValue(item, objKey);
+          if (decItem !== item) val.set(i, decItem);
+        }
+      }
+      if (val instanceof lib.PDFDict) {
+        for (const [k, v] of val.entries()) {
+          const decV = decryptObjectValue(v, objKey);
+          if (decV !== v) val.set(k, decV);
+        }
+      }
+      return val;
+    }
+
+    // Decrypt all streams & strings in indirect objects
+    const indirectObjects = doc.context.enumerateIndirectObjects();
+    for (const [ref, obj] of indirectObjects) {
+      if (encryptRef && ref.objectNumber === encryptRef.objectNumber) continue;
+
+      const objKey = fkComputeObjectKey(fileKey, ref.objectNumber, ref.generationNumber);
+
+      if (obj instanceof lib.PDFStream) {
+        const contents = obj.getContents();
+        const decContents = fkRc4(objKey, contents);
+        const dict = obj.dict.clone();
+        dict.set(lib.PDFName.of('Length'), lib.PDFNumber.of(decContents.length));
+        decryptObjectValue(dict, objKey);
+        const rawStream = lib.PDFRawStream.of(dict, decContents);
+        doc.context.indirectObjects.set(ref, rawStream);
+      } else if (obj instanceof lib.PDFDict) {
+        decryptObjectValue(obj, objKey);
+      } else if (obj instanceof lib.PDFArray) {
+        decryptObjectValue(obj, objKey);
+      }
+    }
+
+    delete doc.context.trailerInfo.Encrypt;
+    if (encryptRef) {
+      doc.context.indirectObjects.delete(encryptRef);
+    }
+
+    return await doc.save({ useObjectStreams: false });
+  }
+
+  if (window.FF) {
+    window.FF.encryptPdfDocument = encryptPdfDocument;
+    window.FF.decryptPdfDocument = decryptPdfDocument;
+  }
 
   R({ id: 'pdf-merge', category: 'PDF', name: 'Merge', description: 'Combine several PDFs into one. Drop MANY.',
     accepts: ['pdf'], multiple: true, maxBytes: 200e6, engine: loadLib,
@@ -319,11 +668,36 @@
     accepts: ['pdf'], engine: loadLib,
     async run({ file, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); try { doc.getForm().flatten(); } catch {} return pdfOut(await doc.save(), U.baseName(file.name) + '-flat.pdf'); } });
 
-  R({ id: 'pdf-sign', category: 'PDF', name: 'Sign PDF', description: 'Stamp a text signature on the last page.',
-    accepts: ['pdf'], engine: loadLib, fields: [{ key: 'name', label: 'Signature text', type: 'text', default: 'Signed by …' }],
-    async run({ file, inputs, engine: PDFLib }) { const doc = await PDFLib.PDFDocument.load(await bytesU8(file), { ignoreEncryption: true }); const font = await doc.embedFont(PDFLib.StandardFonts.HelveticaOblique); const pg = doc.getPages().at(-1); const label = `${inputs.name}  —  ${new Date().toISOString().slice(0, 10)}`; pg.drawText(label, { x: 40, y: 40, size: 14, font, color: PDFLib.rgb(0.1, 0.1, 0.5) }); return pdfOut(await doc.save(), U.baseName(file.name) + '-signed.pdf'); } });
+  R({ id: 'pdf-protect', category: 'PDF', name: 'Protect PDF', description: 'Encrypt PDF with password and permissions.',
+    accepts: ['pdf'], engine: loadLib,
+    fields: [
+      { key: 'password', label: 'Password', type: 'text', default: '' },
+      { key: 'allowPrinting', label: 'Allow Printing', type: 'select', default: 'yes', options: ['yes', 'no'] },
+      { key: 'allowCopying', label: 'Allow Copying', type: 'select', default: 'yes', options: ['yes', 'no'] },
+      { key: 'allowEditing', label: 'Allow Editing', type: 'select', default: 'no', options: ['no', 'yes'] }
+    ],
+    async run({ file, inputs, engine: PDFLib }) {
+      const bytes = await bytesU8(file);
+      const pw = inputs.password || inputs.userPassword || '';
+      const permPrint = inputs.allowPrinting !== 'no' && inputs.allowPrinting !== false;
+      const permCopy = inputs.allowCopying !== 'no' && inputs.allowCopying !== false;
+      const permEdit = inputs.allowEditing === 'yes' || inputs.allowEditing === true;
+      const encBytes = await encryptPdfDocument(bytes, pw, { printing: permPrint, copying: permCopy, modifying: permEdit, annotating: permEdit }, PDFLib);
+      return pdfOut(encBytes, U.baseName(file.name) + '-protected.pdf');
+    }
+  });
 
-  
+  R({ id: 'pdf-unlock', category: 'PDF', name: 'Unlock PDF', description: 'Remove password and decrypt PDF document.',
+    accepts: ['pdf'], engine: loadLib,
+    fields: [{ key: 'password', label: 'Password (if required)', type: 'text', default: '' }],
+    async run({ file, inputs, engine: PDFLib }) {
+      const bytes = await bytesU8(file);
+      const pw = inputs.password || inputs.userPassword || '';
+      const unlockedBytes = await decryptPdfDocument(bytes, pw, PDFLib);
+      return pdfOut(unlockedBytes, U.baseName(file.name) + '-unlocked.pdf');
+    }
+  });
+
   R({ id: 'pdf-edit-text', category: 'PDF', name: 'Edit PDF',
     description: 'Edit and annotate PDF text in a private canvas.',
     accepts: ['pdf'], maxBytes: 200e6, engine: loadLib,
@@ -2447,9 +2821,9 @@
     if (isCompact) {
       cardStyle = 'width: 100%; height: 100%; min-height: 120px; padding: 12px 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: transparent; font-family: Inter, system-ui, sans-serif;';
     } else if (isFillStage) {
-      cardStyle = 'width: 320px; height: 420px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.32; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: #FFFFFF; border-radius: 4px; font-family: Inter, system-ui, sans-serif; margin: auto;';
+      cardStyle = 'width: 330px; height: 466px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.4142; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05); font-family: Inter, system-ui, sans-serif; margin: auto;';
     } else {
-      cardStyle = 'width: 320px; height: 420px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.32; background: #FFFFFF; border-radius: 4px; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05); margin: auto; font-family: Inter, system-ui, sans-serif;';
+      cardStyle = 'width: 330px; height: 466px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.4142; background: #FFFFFF; border-radius: 4px; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.05); margin: auto; font-family: Inter, system-ui, sans-serif;';
     }
 
     // 0. PDF Documents
@@ -4290,6 +4664,24 @@
       const firstRes = results[0];
       const outName = !isBatch ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
 
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'pdf-compress', name: 'Compress File', category: 'PDF' },
+          blob: !isBatch ? firstRes.result.blob : undefined,
+          files: isBatch ? results.map(r => ({ name: r.result.filename || r.file?.name, blob: r.result.blob, size: r.result.blob?.size || 0 })) : undefined,
+          filename: outName,
+          title: 'Compression Complete',
+          badge: isBatch ? `${results.length} Files Compressed` : (win ? `-${redPct}% Size Reduction` : 'Optimized File'),
+          reductionPct: redPct,
+          originalBytes: oTot,
+          resultBytes: cTot,
+          savedBytes: saved,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => { files = []; renderUpload(); }
+        });
+        return;
+      }
+
       let smartTip = 'What would you like to do next with your compressed file?';
       let smartTools = [
         {
@@ -4858,6 +5250,21 @@
     }
 
     function renderResult(result) {
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool,
+          blob: result.blob,
+          filename: result.filename,
+          title: 'Merge Complete',
+          badge: `${items.length} PDFs Combined`,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            items = [];
+            renderUpload();
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(result.blob);
       const n = items.length;
       const total = totalBytes();
@@ -5632,8 +6039,23 @@
     }
 
     function renderResult(blob, filename, partCount) {
-      container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool,
+          blob,
+          filename,
+          title: 'Split Complete',
+          badge: `${partCount} Part${partCount === 1 ? '' : 's'} Created`,
+          onBacktrack: () => renderWorkspace(),
+          onAgain: () => {
+            file = null; pages = []; pageCount = 0; cuts = new Set();
+            renderUpload();
+          }
+        });
+        return;
+      }
+      container.classList.add('cpdf-root');
       const url = URL.createObjectURL(blob);
       container.innerHTML = `
         <header class="cpdf-hdr">
@@ -11016,6 +11438,28 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function showResult(blob, name, count, warn) {
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'pdf-edit-text', name: 'Edit PDF', category: 'PDF' },
+          blob,
+          filename: name,
+          title: 'Edit Complete',
+          badge: count > 0 ? `${count} Edit${count === 1 ? '' : 's'} Applied` : (warn || 'Ready'),
+          originalBytes: file ? file.size : blob.size,
+          resultBytes: blob.size,
+          onBacktrack: () => renderEditor(),
+          onAgain: () => {
+            file = null;
+            currentPdf = null;
+            pages = [];
+            edits = [];
+            pdfDoc = null;
+            renderUpload();
+          }
+        });
+        return;
+      }
+
       const url = URL.createObjectURL(blob);
       container.classList.add('cpdf-root');
       container.classList.remove('etxt-shell');
@@ -12550,12 +12994,27 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function showResult(blob, name, count, meta) {
-      const url = URL.createObjectURL(blob);
-      container.classList.add('cpdf-root');
       container.classList.remove('sign-shell');
       const stage = container.closest('.app-stage-container');
       if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
       const ok = count > 0;
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'pdf-sign', name: 'Sign PDF', category: 'PDF' },
+          blob,
+          filename: name,
+          title: 'Document Signed',
+          badge: ok ? `${count} Signature${count === 1 ? '' : 's'} Applied` : 'Ready',
+          onBacktrack: () => renderWorkspace(),
+          onAgain: () => {
+            file = null; pages = []; marks = []; imgData = null; inkPoints = []; formFields = []; ghost = null;
+            renderUpload();
+          }
+        });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      container.classList.add('cpdf-root');
       const sb = (meta && meta.signedBy) || [];
       const certLine = meta && meta.certify && sb.length
         ? `<div class="sign-cert-bar">${I.cert} <b>Certified</b> — signed by ${sb.map(s => `<i style="--s:${_esc(s.color)}"></i><b>${_esc(s.name)}</b>${s.title ? ' · ' + _esc(s.title) : ''}`).join(', ')} on ${(meta.date || new Date()).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</div>`
@@ -13586,6 +14045,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       });
     }
 
+    function _midTrunc(name, maxLen = 24) {
+      if (!name || name.length <= maxLen) return name || '';
+      const extIdx = name.lastIndexOf('.');
+      const ext = extIdx !== -1 ? name.slice(extIdx) : '';
+      const base = extIdx !== -1 ? name.slice(0, extIdx) : name;
+      const avail = maxLen - ext.length - 3;
+      if (avail <= 4) return name.slice(0, maxLen - 3) + '…';
+      const front = Math.ceil(avail / 2);
+      const back = Math.floor(avail / 2);
+      return `${base.slice(0, front)}…${base.slice(-back)}${ext}`;
+    }
+
+    function _targetName(sourceName, outExt) {
+      if (!sourceName) return 'converted_file.' + (outExt || 'pdf').toLowerCase();
+      const extIdx = sourceName.lastIndexOf('.');
+      const base = extIdx !== -1 ? sourceName.slice(0, extIdx) : sourceName;
+      const targetExt = (outExt || 'pdf').toLowerCase().replace(/^\./, '');
+      return base + '.' + targetExt;
+    }
+
     function compactFieldPanel(f) {
       const v = cfg[f.key];
       const label = `<span class="conv-compact-label">${_esc(f.label || f.key)}</span>`;
@@ -13762,26 +14241,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
       </svg>`;
-
-      function _midTrunc(name, maxLen = 24) {
-        if (!name || name.length <= maxLen) return name || '';
-        const extIdx = name.lastIndexOf('.');
-        const ext = extIdx !== -1 ? name.slice(extIdx) : '';
-        const base = extIdx !== -1 ? name.slice(0, extIdx) : name;
-        const avail = maxLen - ext.length - 3;
-        if (avail <= 4) return name.slice(0, maxLen - 3) + '…';
-        const front = Math.ceil(avail / 2);
-        const back = Math.floor(avail / 2);
-        return `${base.slice(0, front)}…${base.slice(-back)}${ext}`;
-      }
-
-      function _targetName(sourceName, outExt) {
-        if (!sourceName) return 'converted_file.' + (outExt || 'pdf').toLowerCase();
-        const extIdx = sourceName.lastIndexOf('.');
-        const base = extIdx !== -1 ? sourceName.slice(0, extIdx) : sourceName;
-        const targetExt = (outExt || 'pdf').toLowerCase().replace(/^\./, '');
-        return base + '.' + targetExt;
-      }
 
       const buttonLabel = files.length > 1 ? `Convert ${files.length} files to ${t.out}` : `Convert to ${t.out}`;
       const fileInfoMain = files.length > 1 ? `${files.length} files queued` : `File 1: ${_esc(_midTrunc(currentFile.name, 22))}`;
@@ -14092,7 +14551,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       try {
         if (files.length === 1) {
           onProgress(0.1, 'Converting…');
-          const out = await runTargetConversion(files[0], t, cfg, onProgress);
+          const out = await runTarget(t, files[0], cfg, onProgress);
           onProgress(1, 'Complete!');
           renderResult(out, t);
         } else {
@@ -14104,7 +14563,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             const curTList = TARGETS[curFam] || [];
             const curT = curTList.find(x => x.id === formatIds[i]) || curTList[0] || t;
             onProgress(i / files.length, `Converting ${i + 1}/${files.length}…`);
-            const out = await runTargetConversion(curF, curT, cfg, (subRatio) => {
+            const out = await runTarget(curT, curF, cfg, (subRatio) => {
               onProgress((i + subRatio) / files.length, `Converting ${i + 1}/${files.length}…`);
             });
             batchResults.push({
@@ -14131,6 +14590,21 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function renderBatchResult(results, t) {
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: t.id || 'pdf-convert', name: t.name || t.label || 'Convert Files', category: 'Convert' },
+          files: results.map(r => ({ name: r.targetName, blob: r.out?.blob, size: r.out?.blob?.size || 0 })),
+          filename: `converted_${results.length}_files_${(t.out || 'out').toLowerCase()}.zip`,
+          title: `All ${results.length} Files Converted`,
+          badge: `${results.length} Files ZIP`,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            files = []; family = null; formatId = null;
+            renderUpload();
+          }
+        });
+        return;
+      }
       container.classList.add('cpdf-root', 'conv-root');
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
@@ -14242,8 +14716,27 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function renderResult(out, t) {
       const isCollection = !!(out.files && out.files.length);
       const curFile = file || (files && files.length ? files[0] : null);
-      const sizeLine = out.blob ? _bytes(out.blob.size) : (out.files ? out.files.reduce((a, f) => a + (f.blob ? f.blob.size : 0), 0) + ' total' : '');
       const outName = isCollection ? (out.files.length + ' files') : (out.filename || (curFile ? `${U.baseName(curFile.name)}.${(t.out || 'out').toLowerCase()}` : `converted_file.${(t.out || 'pdf').toLowerCase()}`));
+
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: t.id || 'pdf-convert', name: t.name || t.label || 'Convert File', category: 'Convert', out: t.out },
+          blob: out.blob,
+          text: out.text,
+          files: out.files,
+          filename: outName,
+          title: 'Conversion Complete',
+          badge: `${(t.out || 'CONVERTED').toUpperCase()} Ready`,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            files = []; family = null; formatId = null;
+            renderUpload();
+          }
+        });
+        return;
+      }
+
+      const sizeLine = out.blob ? _bytes(out.blob.size) : (out.files ? out.files.reduce((a, f) => a + (f.blob ? f.blob.size : 0), 0) + ' total' : '');
       const url = out.blob ? URL.createObjectURL(out.blob) : '';
       const fmtKey = (t.out || '').toLowerCase();
       const isPdf = /pdf|pdfa/i.test(fmtKey) || (out.blob && out.blob.type === 'application/pdf');
@@ -15043,6 +15536,21 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function renderResult(out) {
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'pdf-flatten', name: 'Flatten PDF', category: 'PDF' },
+          blob: out.blob,
+          filename: out.filename,
+          title: 'Flatten Complete',
+          badge: 'Static Ink Baked',
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            file = null;
+            renderUpload();
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(out.blob);
       const smartTip = 'Interactive forms and layers baked into static ink. You can also compress or sign it:';
       const smartTools = [
@@ -15276,37 +15784,19 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     doc: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
   };
 
-  function tinySecuredPdf(baseName, mode) {
-    const tag = mode === 'unlock' ? 'unlocked' : 'protected';
-    const text = `FileKit ${tag} · ${baseName}`.slice(0, 60).replace(/[()\\]/g, '');
-    const objs = [];
-    objs.push('1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n');
-    objs.push('2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n');
-    objs.push('3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n');
-    const stream = `BT /F1 14 Tf 72 720 Td (${text}) Tj ET`;
-    objs.push(`4 0 obj<< /Length ${stream.length} >>stream\n${stream}\nendstream\nendobj\n`);
-    objs.push('5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n');
-    let body = '%PDF-1.4\n';
-    const offsets = [0];
-    for (const o of objs) { offsets.push(body.length); body += o; }
-    const xrefStart = body.length;
-    let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-    for (let i = 1; i <= objs.length; i++) xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
-    body += xref + `trailer<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-    return {
-      blob: new Blob([new TextEncoder().encode(body)], { type: 'application/pdf' }),
-      filename: `${baseName}-${tag}.pdf`,
-    };
-  }
-
   function mountProtect(container, tool) {
     container.innerHTML = '';
     container.className = 'cpdf-root prot-root';
+
+    const getBytesU8 = async f => new Uint8Array(await f.arrayBuffer());
+    const getPdfLib = async () => window.PDFLib || (typeof getPdfLibEngine === 'function' ? await getPdfLibEngine() : window.PDFLib);
 
     let file = null;
     let mode = (tool && tool.id === 'pdf-flatten') ? 'flatten' : (tool && tool.id === 'pdf-unlock') ? 'unlock' : 'protect';
     let password = '';
     let confirmPw = '';
+    let ownerPassword = '';
+    let showAdvanced = false;
     let showPw = false;
     let permPrint = true;
     let permCopy = true;
@@ -15360,6 +15850,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       file = f;
       password = '';
       confirmPw = '';
+      ownerPassword = '';
+      showAdvanced = false;
       currentPage = 1;
       totalPages = 1;
       pdfDoc = null;
@@ -15380,7 +15872,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (mode === 'flatten') return true;
       if (!password || password.length < 1) return false;
       if (mode === 'protect') {
-        if (password.length < 1) return false;
+        if (!confirmPw || confirmPw !== password) return false;
       }
       return true;
     }
@@ -15412,12 +15904,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         isLockedDoc = false;
         totalPages = pdfDoc.numPages || 1;
         renderPagePreview(currentPage);
+        updateStagePager();
         syncModeCards();
       } catch (err) {
         if (err?.name === 'PasswordException' || String(err?.message || '').toLowerCase().includes('password')) {
           isLockedDoc = true;
           mode = 'unlock';
           renderLockedStage();
+          updateStagePager();
           syncModeCards();
         } else {
           console.warn('[Protect] PDF preview loader', err);
@@ -15426,6 +15920,22 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             stage.innerHTML = buildHandcraftedIllustration('pdf', file.name, _bytes(file.size), 'stage');
           }
         }
+      }
+    }
+
+    function updateStagePager() {
+      const pager = container.querySelector('#prot-stage-pager');
+      if (!pager) return;
+      if (totalPages > 1 && fileFamily(file) === 'pdf' && !isLockedDoc) {
+        pager.style.display = 'flex';
+        const label = pager.querySelector('#prot-page-label');
+        if (label) label.textContent = `Page ${currentPage} of ${totalPages}`;
+        const prevBtn = pager.querySelector('#prot-page-prev');
+        const nextBtn = pager.querySelector('#prot-page-next');
+        if (prevBtn) prevBtn.disabled = (currentPage <= 1);
+        if (nextBtn) nextBtn.disabled = (currentPage >= totalPages);
+      } else {
+        pager.style.display = 'none';
       }
     }
 
@@ -15448,7 +15958,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         statusPill.innerHTML = `${I.lock} Password Encrypted`;
         statusPill.className = 'prot-meta-status is-locked';
       }
-    }    async function renderPagePreview(pageNum) {
+    }
+
+    async function renderPagePreview(pageNum) {
       if (!pdfDoc) return;
       const stage = container.querySelector('#prot-paper-container');
       if (!stage) return;
@@ -15485,6 +15997,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         stage.style.height = `${displayH}px`;
         stage.innerHTML = '';
         stage.appendChild(canvas);
+        updateStagePager();
       } catch (e) {
         if (e?.name !== 'RenderingCancelledException') {
           console.warn('[Protect] render page error', e);
@@ -15589,10 +16102,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const fam = fileFamily(file);
       const entropy = computeEntropy(password);
 
-      container.querySelectorAll('.cpdf-benchmark-card[data-mode]').forEach(card => {
-        const active = (card.dataset.mode === mode);
-        card.classList.toggle('is-active', active);
+      container.querySelectorAll('.prot-tab[data-mode]').forEach(tab => {
+        const active = (tab.dataset.mode === mode);
+        tab.classList.toggle('is-active', active);
       });
+
+      const matchPill = container.querySelector('#prot-match-pill');
+      if (matchPill) {
+        if (!confirmPw) {
+          matchPill.style.display = 'none';
+        } else if (confirmPw === password) {
+          matchPill.style.display = 'inline-flex';
+          matchPill.className = 'prot-match-pill is-match';
+          matchPill.textContent = '✓ Match';
+        } else {
+          matchPill.style.display = 'inline-flex';
+          matchPill.className = 'prot-match-pill is-mismatch';
+          matchPill.textContent = '✕ Mismatch';
+        }
+      }
 
       const ctaBtn = container.querySelector('#prot-studio-run');
       if (ctaBtn) {
@@ -15675,7 +16203,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 ` : buildHandcraftedIllustration((file.name || '').split('.').pop() || 'pdf', file.name, _bytes(file.size), 'stage')}
               </div>
 
-              <!-- Bottom-Attached Precision Status Bar (Identical to Compress) -->
+              <!-- Multipage Stage Pager (Floats over bottom of stage when totalPages > 1) -->
+              <div class="prot-stage-pager" id="prot-stage-pager" style="${(totalPages > 1 && fam === 'pdf' && !isLockedDoc) ? '' : 'display:none;'}">
+                <button type="button" class="prot-pager-btn" id="prot-page-prev" ${currentPage <= 1 ? 'disabled' : ''} title="Previous page" aria-label="Previous page">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span class="prot-pager-label" id="prot-page-label">Page ${currentPage} of ${totalPages}</span>
+                <button type="button" class="prot-pager-btn" id="prot-page-next" ${currentPage >= totalPages ? 'disabled' : ''} title="Next page" aria-label="Next page">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+
+              <!-- Bottom-Attached Precision Status Bar -->
               <div class="cpdf-benchmark-fileinfo-row">
                 <span class="cpdf-benchmark-fileinfo-text">${_esc(file.name)} (${_bytes(file.size)})</span>
                 <button type="button" class="cpdf-benchmark-btn-add" id="prot-replace-file" title="Change file">
@@ -15685,7 +16224,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               </div>
             </div>
 
-            <!-- Right Panel: Studio Inspector (Identical to Compress) -->
+            <!-- Right Panel: Zero-Scroll Precision Studio Inspector -->
             <div class="cpdf-benchmark-panel">
               <div class="cpdf-benchmark-panel-inner">
                 <!-- Top Header -->
@@ -15702,98 +16241,110 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   <!-- Image Mode Options -->
                   <div class="cpdf-cards-stack" role="radiogroup" aria-label="Image Security Mode">
                     <div class="cpdf-benchmark-card ${stripExif ? 'is-active' : ''}" id="prot-card-exif">
-                      <div class="cpdf-benchmark-radio">
-                        <div class="cpdf-benchmark-radio-dot"></div>
-                      </div>
+                      <div class="cpdf-benchmark-radio"><div class="cpdf-benchmark-radio-dot"></div></div>
                       <span class="cpdf-benchmark-card-label">Strip EXIF &amp; Location</span>
                     </div>
                     <div class="cpdf-benchmark-card ${addWatermark ? 'is-active' : ''}" id="prot-card-wm">
-                      <div class="cpdf-benchmark-radio">
-                        <div class="cpdf-benchmark-radio-dot"></div>
-                      </div>
+                      <div class="cpdf-benchmark-radio"><div class="cpdf-benchmark-radio-dot"></div></div>
                       <span class="cpdf-benchmark-card-label">Security Watermark</span>
                     </div>
                   </div>
 
                   <div class="prot-context-box" id="prot-wm-wrap" style="${addWatermark ? '' : 'display:none;'}">
-                    <input type="text" id="prot-wm-text" class="cpdf-target-inp" style="width:100%;height:38px;box-sizing:border-box;border-radius:6px;" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
+                    <input type="text" id="prot-wm-text" class="cpdf-target-inp" style="width:100%;height:34px;box-sizing:border-box;border-radius:6px;" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
                   </div>
                 ` : `
-                  <!-- Option Cards Stack (Identical to Compress) -->
-                  <div class="cpdf-cards-stack" role="radiogroup" aria-label="Security Mode">
-                    <!-- Option 1: Protect -->
-                    <div class="cpdf-benchmark-card ${isProtect ? 'is-active' : ''}" data-mode="protect">
-                      <div class="cpdf-benchmark-radio">
-                        <div class="cpdf-benchmark-radio-dot"></div>
-                      </div>
-                      <span class="cpdf-benchmark-card-label">Protect &amp; Encrypt</span>
-                    </div>
-
-                    <!-- Option 2: Unlock -->
-                    <div class="cpdf-benchmark-card ${isUnlock ? 'is-active' : ''}" data-mode="unlock">
-                      <div class="cpdf-benchmark-radio">
-                        <div class="cpdf-benchmark-radio-dot"></div>
-                      </div>
-                      <span class="cpdf-benchmark-card-label">Unlock &amp; Decrypt</span>
-                    </div>
-
-                    <!-- Option 3: Flatten -->
-                    <div class="cpdf-benchmark-card ${isFlatten ? 'is-active' : ''}" data-mode="flatten">
-                      <div class="cpdf-benchmark-radio">
-                        <div class="cpdf-benchmark-radio-dot"></div>
-                      </div>
-                      <span class="cpdf-benchmark-card-label">Flatten PDF</span>
-                    </div>
+                  <!-- Linear-Grade Segmented Mode Tabs -->
+                  <div class="prot-segmented-tabs" role="tablist" aria-label="Security Mode">
+                    <button type="button" class="prot-tab ${isProtect ? 'is-active' : ''}" data-mode="protect" role="tab">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <span>Protect</span>
+                    </button>
+                    <button type="button" class="prot-tab ${isUnlock ? 'is-active' : ''}" data-mode="unlock" role="tab">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                      <span>Unlock</span>
+                    </button>
+                    <button type="button" class="prot-tab ${isFlatten ? 'is-active' : ''}" data-mode="flatten" role="tab">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+                      <span>Flatten</span>
+                    </button>
                   </div>
 
                   <!-- Dynamic Context Area -->
                   <div class="prot-context-box" id="prot-context-area">
                     ${isFlatten ? `
                       <div class="prot-flatten-grid">
-                        <div class="prot-perm-chip ${optForms ? 'is-allowed' : 'is-blocked'}" id="prot-flat-forms" role="button" tabindex="0">
-                          <div class="prot-chip-top">
-                            <span class="prot-chip-icon">${I.edit}</span>
-                            <strong>Form Fields</strong>
-                          </div>
-                          <span class="prot-chip-badge">${optForms ? 'Bake Ink' : 'Ignore'}</span>
+                        <div class="prot-flat-chip ${optForms ? 'is-active' : ''}" id="prot-flat-forms" role="button" tabindex="0">
+                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.edit}</span> Forms</span>
+                          <span class="prot-chip-badge">${optForms ? 'Bake' : 'Skip'}</span>
                         </div>
-
-                        <div class="prot-perm-chip ${optAnnots ? 'is-allowed' : 'is-blocked'}" id="prot-flat-annots" role="button" tabindex="0">
-                          <div class="prot-chip-top">
-                            <span class="prot-chip-icon">${I.edit}</span>
-                            <strong>Annotations</strong>
-                          </div>
-                          <span class="prot-chip-badge">${optAnnots ? 'Bake Ink' : 'Ignore'}</span>
+                        <div class="prot-flat-chip ${optAnnots ? 'is-active' : ''}" id="prot-flat-annots" role="button" tabindex="0">
+                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.edit}</span> Annots</span>
+                          <span class="prot-chip-badge">${optAnnots ? 'Bake' : 'Skip'}</span>
                         </div>
-
-                        <div class="prot-perm-chip ${optLayers ? 'is-allowed' : 'is-blocked'}" id="prot-flat-layers" role="button" tabindex="0">
-                          <div class="prot-chip-top">
-                            <span class="prot-chip-icon">${I.doc}</span>
-                            <strong>Layers</strong>
-                          </div>
-                          <span class="prot-chip-badge">${optLayers ? 'Bake Ink' : 'Ignore'}</span>
+                        <div class="prot-flat-chip ${optLayers ? 'is-active' : ''}" id="prot-flat-layers" role="button" tabindex="0">
+                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.doc}</span> Layers</span>
+                          <span class="prot-chip-badge">${optLayers ? 'Bake' : 'Skip'}</span>
                         </div>
-
-                        <div class="prot-perm-chip ${optAppearances ? 'is-allowed' : 'is-blocked'}" id="prot-flat-apps" role="button" tabindex="0">
-                          <div class="prot-chip-top">
-                            <span class="prot-chip-icon">${I.eye}</span>
-                            <strong>Widgets</strong>
-                          </div>
-                          <span class="prot-chip-badge">${optAppearances ? 'Bake Ink' : 'Ignore'}</span>
+                        <div class="prot-flat-chip ${optAppearances ? 'is-active' : ''}" id="prot-flat-apps" role="button" tabindex="0">
+                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.eye}</span> Widgets</span>
+                          <span class="prot-chip-badge">${optAppearances ? 'Bake' : 'Skip'}</span>
                         </div>
                       </div>
                     ` : `
-                      <div class="prot-input-wrap" style="position:relative;display:flex;align-items:center;">
-                        <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Enter encryption password…' : 'Enter password to unlock…'}" value="${_esc(password)}" style="width:100%;height:38px;padding:0 36px 0 12px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:13.5px;color:#111827;background:#FFFFFF;outline:none;box-sizing:border-box;">
-                        <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility" style="position:absolute;right:8px;background:none;border:none;padding:4px;color:#64748B;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                          ${showPw ? I.eyeOff : I.eye}
-                        </button>
+                      <div class="prot-input-group">
+                        <div class="prot-input-wrap">
+                          <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Set encryption password…' : 'Enter decryption password…'}" value="${_esc(password)}">
+                          <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
+                            ${showPw ? I.eyeOff : I.eye}
+                          </button>
+                        </div>
+
+                        ${isProtect ? `
+                          <div class="prot-input-wrap">
+                            <input id="prot-pw-confirm" class="prot-input prot-input--confirm" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm password…" value="${_esc(confirmPw)}">
+                            <div id="prot-match-pill" class="prot-match-pill ${confirmPw ? (confirmPw === password ? 'is-match' : 'is-mismatch') : ''}" style="display:${confirmPw ? 'inline-flex' : 'none'};">
+                              ${confirmPw ? (confirmPw === password ? '✓ Match' : '✕ Mismatch') : ''}
+                            </div>
+                          </div>
+
+                          <!-- 3-Column Granular Permissions Strip -->
+                          <div class="prot-perm-row">
+                            <button type="button" class="prot-perm-btn ${permPrint ? 'is-active' : ''}" id="prot-perm-print" title="Allow/Block Printing">
+                              <span class="prot-perm-ico">${I.print}</span>
+                              <span class="prot-perm-txt">Print</span>
+                              <span class="prot-perm-dot"></span>
+                            </button>
+                            <button type="button" class="prot-perm-btn ${permCopy ? 'is-active' : ''}" id="prot-perm-copy" title="Allow/Block Copying Text">
+                              <span class="prot-perm-ico">${I.copy}</span>
+                              <span class="prot-perm-txt">Copy</span>
+                              <span class="prot-perm-dot"></span>
+                            </button>
+                            <button type="button" class="prot-perm-btn ${permEdit ? 'is-active' : ''}" id="prot-perm-edit" title="Allow/Block Editing">
+                              <span class="prot-perm-ico">${I.edit}</span>
+                              <span class="prot-perm-txt">Edit</span>
+                              <span class="prot-perm-dot"></span>
+                            </button>
+                          </div>
+
+                          <!-- Master Password Micro-Disclosure -->
+                          <button type="button" class="prot-master-toggle" id="prot-toggle-adv">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span>${showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)'}</span>
+                          </button>
+
+                          <div class="prot-master-box" id="prot-adv-body" style="${showAdvanced ? 'display: block;' : 'display: none;'}">
+                            <div class="prot-input-wrap">
+                              <input id="prot-owner-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Master / Owner password…" value="${_esc(ownerPassword)}" style="height:30px;font-size:11.5px;">
+                            </div>
+                          </div>
+                        ` : ''}
                       </div>
                     `}
                   </div>
                 `}
 
-                <!-- Compact Estimated Security Specification Box (Identical to Compress) -->
+                <!-- Compact Estimated Security Specification Box -->
                 <div class="cpdf-benchmark-est-box">
                   <div class="cpdf-benchmark-est-title">${isProtect ? 'Security Specification' : isFlatten ? 'Flattening Specification' : 'Decryption Status'}</div>
                   <div class="cpdf-benchmark-est-metrics">
@@ -15826,23 +16377,37 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         file = null; pdfDoc = null; renderUpload();
       });
 
-      // Mode Selection Cards
-      container.querySelectorAll('.cpdf-benchmark-card[data-mode]').forEach(card => {
-        card.addEventListener('click', () => {
-          mode = card.dataset.mode;
+      // Mode Selection Tabs
+      container.querySelectorAll('.prot-tab[data-mode]').forEach(tab => {
+        tab.addEventListener('click', () => {
+          mode = tab.dataset.mode;
           renderConfigure();
         });
       });
 
       // Password listeners
       const pwInp = container.querySelector('#prot-pw');
+      const confirmInp = container.querySelector('#prot-pw-confirm');
+      const ownerInp = container.querySelector('#prot-owner-pw');
       const ctaBtn = container.querySelector('#prot-studio-run');
 
       if (pwInp) {
         pwInp.addEventListener('input', () => {
           password = pwInp.value;
-          confirmPw = password;
           syncModeCards();
+        });
+      }
+
+      if (confirmInp) {
+        confirmInp.addEventListener('input', () => {
+          confirmPw = confirmInp.value;
+          syncModeCards();
+        });
+      }
+
+      if (ownerInp) {
+        ownerInp.addEventListener('input', () => {
+          ownerPassword = ownerInp.value;
         });
       }
 
@@ -15850,9 +16415,53 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       container.querySelector('#prot-toggle-eye')?.addEventListener('click', () => {
         showPw = !showPw;
         if (pwInp) pwInp.type = showPw ? 'text' : 'password';
+        if (confirmInp) confirmInp.type = showPw ? 'text' : 'password';
+        if (ownerInp) ownerInp.type = showPw ? 'text' : 'password';
         const eyeBtn = container.querySelector('#prot-toggle-eye');
         if (eyeBtn) eyeBtn.innerHTML = showPw ? I.eyeOff : I.eye;
       });
+
+      // Master Key disclosure toggle
+      const advToggle = container.querySelector('#prot-toggle-adv');
+      if (advToggle) {
+        advToggle.addEventListener('click', () => {
+          showAdvanced = !showAdvanced;
+          const body = container.querySelector('#prot-adv-body');
+          if (body) body.style.display = showAdvanced ? 'block' : 'none';
+          const txt = advToggle.querySelector('span');
+          if (txt) txt.textContent = showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)';
+        });
+      }
+
+      // Multipage Stage Pager Buttons
+      container.querySelector('#prot-page-prev')?.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderPagePreview(currentPage);
+        }
+      });
+      container.querySelector('#prot-page-next')?.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderPagePreview(currentPage);
+        }
+      });
+
+      // Permission button toggles
+      const bindPermBtn = (id, getter, setter) => {
+        const btn = container.querySelector(id);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          const newVal = !getter();
+          setter(newVal);
+          btn.classList.toggle('is-active', newVal);
+          syncModeCards();
+        });
+      };
+
+      bindPermBtn('#prot-perm-print', () => permPrint, v => { permPrint = v; });
+      bindPermBtn('#prot-perm-copy', () => permCopy, v => { permCopy = v; });
+      bindPermBtn('#prot-perm-edit', () => permEdit, v => { permEdit = v; });
 
       // Flatten Target Chips
       const bindFlatChip = (id, getter, setter) => {
@@ -15861,9 +16470,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         chip.addEventListener('click', () => {
           const newVal = !getter();
           setter(newVal);
-          chip.className = `prot-perm-chip ${newVal ? 'is-allowed' : 'is-blocked'}`;
+          chip.classList.toggle('is-active', newVal);
           const badge = chip.querySelector('.prot-chip-badge');
-          if (badge) badge.textContent = newVal ? 'Bake Ink' : 'Ignore';
+          if (badge) badge.textContent = newVal ? 'Bake' : 'Skip';
         });
       };
 
@@ -15988,53 +16597,54 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           const cleanBlob = await new Promise(r => canvas.toBlob(r, outMime, 0.96));
           output = { blob: cleanBlob, filename: `${base()}-secured${outExt}` };
         } else if (isFlatten) {
-          // PDF Flatten
-          const toolDef = window.FF?.registry?.get?.('pdf-flatten');
-          if (toolDef && typeof toolDef.run === 'function' && file) {
-            const engine = toolDef.engine ? await toolDef.engine() : null;
-            const result = await toolDef.run({ file, engine, inputs: {
-              forms: optForms, annotations: optAnnots, layers: optLayers, appearances: optAppearances,
-            }});
-            if (result?.blob) output = { blob: result.blob, filename: result.filename || `${base()}-flat.pdf` };
-            else if (result instanceof Blob) output = { blob: result, filename: `${base()}-flat.pdf` };
-            else if (result?.bytes) output = { blob: new Blob([result.bytes], { type: 'application/pdf' }), filename: `${base()}-flat.pdf` };
+          const lib = await getPdfLib();
+          const bytes = await getBytesU8(file);
+          const doc = await lib.PDFDocument.load(bytes, { ignoreEncryption: true, throwOnInvalidObject: false });
+          try {
+            const form = doc.getForm();
+            if (form) form.flatten();
+          } catch (e) {
+            console.warn('[Protect] Form flatten fallback:', e);
           }
+          const flatBytes = await doc.save({ useObjectStreams: false });
+          output = { blob: new Blob([flatBytes], { type: 'application/pdf' }), filename: `${base()}-flat.pdf` };
+        } else if (isProtect) {
+          const lib = await getPdfLib();
+          const bytes = await getBytesU8(file);
+          const encFn = window.FF?.encryptPdfDocument || encryptPdfDocument;
+          const encBytes = await encFn(bytes, password, {
+            ownerPassword: ownerPassword || password,
+            printing: permPrint,
+            copying: permCopy,
+            modifying: permEdit,
+            annotating: permEdit
+          }, lib);
+          output = { blob: new Blob([encBytes], { type: 'application/pdf' }), filename: `${base()}-protected.pdf` };
         } else {
-          // PDF / Generic Encryptor & Decryptor
-          const toolId = mode === 'unlock' ? 'pdf-unlock' : 'pdf-protect';
-          const toolDef = window.FF?.registry?.get?.(toolId) || window.FF?.registry?.get?.('pdf-protect');
-          if (toolDef && typeof toolDef.run === 'function') {
-            const engine = toolDef.engine ? await toolDef.engine() : null;
-            const res = await toolDef.run({
-              file,
-              engine,
-              inputs: {
-                password,
-                userPassword: password,
-                ownerPassword: password,
-                mode,
-                allowPrinting: permPrint,
-                allowCopying: permCopy,
-                allowEditing: permEdit,
-              }
-            });
-            if (res?.blob) output = { blob: res.blob, filename: res.filename || `${base()}-${mode === 'unlock' ? 'unlocked' : 'protected'}.pdf` };
-            else if (res instanceof Blob) output = { blob: res, filename: `${base()}-${mode === 'unlock' ? 'unlocked' : 'protected'}.pdf` };
-          }
+          // Unlock
+          const lib = await getPdfLib();
+          const bytes = await getBytesU8(file);
+          const decFn = window.FF?.decryptPdfDocument || decryptPdfDocument;
+          const unlockedBytes = await decFn(bytes, password, lib);
+          output = { blob: new Blob([unlockedBytes], { type: 'application/pdf' }), filename: `${base()}-unlocked.pdf` };
         }
       } catch (err) {
-        console.warn('[Protect] pipeline execution', err);
+        console.error('[Protect] pipeline execution error:', err);
+        alert('Operation failed: ' + (err?.message || 'Error processing document'));
+        renderConfigure();
+        return;
       }
 
-      if (!output) {
-        output = tinySecuredPdf(base(), mode);
+      if (!output || !output.blob) {
+        alert('Security processing failed to generate file.');
+        renderConfigure();
+        return;
       }
 
       renderResult(output);
     }
 
     function renderResult(out) {
-      const url = URL.createObjectURL(out.blob);
       const isProtect = mode === 'protect';
       const isFlatten = mode === 'flatten';
       const isUnlock = mode === 'unlock';
@@ -16048,8 +16658,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             ? 'Protection Applied' 
             : 'Document Unlocked';
 
-      const tagLabel = isFlatten ? 'Flattened PDF' : isProtect ? 'Protected PDF' : isUnlock ? 'Unlocked PDF' : 'Clean Image';
       const badgeText = isProtect ? '256-bit AES Encrypted' : isUnlock ? 'Decrypted & Open' : isFlatten ? 'Static Ink Baked' : 'EXIF Cleaned';
+
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool,
+          blob: out.blob,
+          filename: out.filename,
+          title,
+          badge: badgeText,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            file = null;
+            renderUpload();
+          }
+        });
+        return;
+      }
+
+      const url = URL.createObjectURL(out.blob);
 
       const smartTip = isProtect 
         ? 'Your file is encrypted with 256-bit AES. You can also optimize or sign it:' 
@@ -17512,9 +18139,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function renderResult(out) {
+      container.classList.remove('img-workspace-active');
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id, name: meta.title, category: 'Image' },
+          blob: out.blob,
+          filename: out.filename,
+          title: meta.title || 'Image Ready',
+          onBacktrack: () => {
+            if (isCanvasTool) renderWorkspace();
+            else renderConfigure();
+          },
+          onAgain: () => {
+            file = null; clearPreview(); renderUpload();
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(out.blob);
       const isPdf = (out.filename || '').toLowerCase().endsWith('.pdf') || out.blob.type === 'application/pdf';
-      container.classList.remove('img-workspace-active');
       container.innerHTML = `
         <header class="cpdf-hdr img-hdr">
           <div class="cpdf-hdr-icon img-hdr-icon">${icon()}</div>
@@ -18394,9 +19037,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function renderResult(out) {
+      container.classList.remove('pmore-ws-active');
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id, name: meta.title, category: 'PDF' },
+          blob: out.blob,
+          filename: out.filename,
+          title: meta.title || 'Document Ready',
+          onBacktrack: () => {
+            if (meta.flow === 'canvas') renderCanvas();
+            else if (meta.flow === 'pages') renderPages();
+            else renderForm();
+          },
+          onAgain: () => {
+            file = null; renderUpload();
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(out.blob);
       const isTxt = (out.filename || '').endsWith('.txt') || out.blob.type === 'text/plain';
-      container.classList.remove('pmore-ws-active');
       container.innerHTML = `
         <header class="cpdf-hdr pmore-hdr">
           <div class="cpdf-hdr-icon pmore-hdr-icon">${icon()}</div>
@@ -18859,6 +19519,22 @@ trailer<</Root 1 0 R>>`;
     }
 
     function renderResult() {
+      if (!outCache?.blob) return;
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id, name: meta.title, category: 'Documents' },
+          blob: outCache.blob,
+          filename: outCache.filename,
+          text: outCache.text,
+          title: 'Conversion Complete',
+          badge: `${(outCache.filename || '').split('.').pop()?.toUpperCase() || 'DOC'} Ready`,
+          onBacktrack: () => renderConvert(),
+          onAgain: () => {
+            file = null; source = ''; outCache = null; renderUpload();
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(outCache.blob);
       const stage = container.querySelector('.doc-stage');
       if (!stage) return;
@@ -19744,6 +20420,22 @@ trailer<</Root 1 0 R>>`;
 
     // Creative result canvas — preview + done badge + actions.
     function renderResult(out) {
+      if (window.FF?.renderUnifiedResult && out?.blob) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id, name: meta.title, category: 'Audio' },
+          blob: out.blob,
+          filename: out.filename,
+          title: meta.title || 'Audio Ready',
+          badge: `${(out.filename || '').split('.').pop()?.toUpperCase() || 'AUDIO'} Track`,
+          onBacktrack: () => route(),
+          onAgain: () => {
+            clearUrl(); decoded = null; file = null; files = [];
+            if (meta.flow === 'generate') renderGenerate();
+            else renderUpload(meta.video ? 'Drop a video file' : meta.flow === 'merge' ? 'Drop 2+ audio files' : 'Drop an audio file', meta.sub);
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(out.blob);
       const isAudio = out.preview === 'audio' || /^audio\//.test(out.mime || '');
       const isImage = out.preview === 'image' || /^image\//.test(out.mime || '');
@@ -20068,6 +20760,20 @@ trailer<</Root 1 0 R>>`;
     }
 
     function renderResult(out) {
+      if (window.FF?.renderUnifiedResult && out?.blob) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id, name: meta.title, category: 'Video' },
+          blob: out.blob,
+          filename: out.filename,
+          title: meta.title || 'Video Ready',
+          badge: `${(out.filename || '').split('.').pop()?.toUpperCase() || 'VIDEO'} File`,
+          onBacktrack: () => render(),
+          onAgain: () => {
+            clearUrl(); file = null; files = []; renderUpload();
+          }
+        });
+        return;
+      }
       const url = URL.createObjectURL(out.blob);
       const isVideo = out.preview === 'video' || /^video\//.test(out.mime || '');
       const isImage = out.preview === 'image' || /^image\//.test(out.mime || '');
@@ -20770,7 +21476,7 @@ trailer<</Root 1 0 R>>`;
       <div class="qr-gen-body">
         <div class="qr-gen-controls">
           <div class="qr-gen-head"><strong>${isBar ? 'Barcode' : 'QR code'}</strong><span>${isBar ? 'Generate a 1D barcode from any text' : 'Generate a scannable QR code from any text or URL'}</span></div>
-          <label class="qr-gen-field"><span>Content</span><textarea id="qr-gen-text" rows="3" placeholder="${isBar ? 'e.g. 123456789012 or any text' : 'https://… or any text'}">${isBar ? '123456789012' : 'https://fileforge.app'}</textarea></label>
+          <label class="qr-gen-field"><span>Content</span><textarea id="qr-gen-text" rows="3" placeholder="${isBar ? 'e.g. 123456789012 or any text' : 'https://… or any text'}">${isBar ? '123456789012' : 'https://filekit.cc'}</textarea></label>
           <div class="qr-gen-row">
             <label class="qr-gen-field"><span>${fmtLabel}</span><select id="qr-gen-fmt">${fmtOptions.map(o => `<option value="${o}">${o}</option>`).join('')}</select></label>
             ${isBar ? '' : `<label class="qr-gen-field"><span>Module size</span><select id="qr-gen-cell"><option value="6">Small</option><option value="9" selected>Medium</option><option value="12">Large</option></select></label>`}
@@ -20977,6 +21683,59 @@ trailer<</Root 1 0 R>>`;
     /* QR & barcode generators (standalone workspaces) */
     'qr-generate':      () => window.__ffMountQrGen,
     'barcode-generate': () => window.__ffMountQrGen,
+    /* Password Studio Pro (Standalone workspace) */
+    'password-gen':       () => (c, t) => {
+      if (typeof window.__ffMountPasswordStudio === 'function') {
+        window.__ffMountPasswordStudio(c, t);
+      } else {
+        const check = setInterval(() => {
+          if (typeof window.__ffMountPasswordStudio === 'function') {
+            clearInterval(check);
+            window.__ffMountPasswordStudio(c, t);
+          }
+        }, 25);
+        setTimeout(() => clearInterval(check), 4000);
+      }
+    },
+    'password-generator': () => (c, t) => {
+      if (typeof window.__ffMountPasswordStudio === 'function') {
+        window.__ffMountPasswordStudio(c, t);
+      } else {
+        const check = setInterval(() => {
+          if (typeof window.__ffMountPasswordStudio === 'function') {
+            clearInterval(check);
+            window.__ffMountPasswordStudio(c, t);
+          }
+        }, 25);
+        setTimeout(() => clearInterval(check), 4000);
+      }
+    },
+    'password':           () => (c, t) => {
+      if (typeof window.__ffMountPasswordStudio === 'function') {
+        window.__ffMountPasswordStudio(c, t);
+      } else {
+        const check = setInterval(() => {
+          if (typeof window.__ffMountPasswordStudio === 'function') {
+            clearInterval(check);
+            window.__ffMountPasswordStudio(c, t);
+          }
+        }, 25);
+        setTimeout(() => clearInterval(check), 4000);
+      }
+    },
+    'password-strength':  () => (c, t) => {
+      if (typeof window.__ffMountPasswordStudio === 'function') {
+        window.__ffMountPasswordStudio(c, t);
+      } else {
+        const check = setInterval(() => {
+          if (typeof window.__ffMountPasswordStudio === 'function') {
+            clearInterval(check);
+            window.__ffMountPasswordStudio(c, t);
+          }
+        }, 25);
+        setTimeout(() => clearInterval(check), 4000);
+      }
+    },
     /* Spreadsheets — CSV ↔ Excel with grid preview */
     'csv-to-excel':  () => window.__ffMountSheetPro,
     'excel-to-csv':  () => window.__ffMountSheetPro,
@@ -24047,8 +24806,6 @@ trailer<</Root 1 0 R>>`;
       /* ── Step 4: Flagship 2-Column Result Studio (Compress Match) ── */
       async function renderResult(res) {
         exitBleed();
-        container.classList.add('cpdf-root', 'conv-root');
-
         const isPdfOut = res.name.endsWith('.pdf');
         const isZipOut = res.name.endsWith('.zip');
         const outSize = _bytes(res.blob.size);
@@ -24081,6 +24838,22 @@ trailer<</Root 1 0 R>>`;
           titleText = 'Extraction Complete';
           subTitleText = 'Selected pages extracted successfully';
           badgeText = isZipOut ? 'Extracted ZIP' : 'Extracted PDF';
+        }
+
+        if (window.FF?.renderUnifiedResult) {
+          window.FF.renderUnifiedResult(container, {
+            tool: { id: mode ? `pdf-${mode}` : 'organize', name: 'Organize PDF', category: 'PDF' },
+            blob: res.blob,
+            filename: res.name,
+            title: titleText,
+            badge: badgeText,
+            onBacktrack: () => renderWorkbench(),
+            onAgain: () => {
+              items = [];
+              renderUpload();
+            }
+          });
+          return;
         }
 
         const smartTools = isPdfOut ? [

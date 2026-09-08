@@ -81,6 +81,8 @@
       <div class="pro-body" data-pro-body></div>
       <div class="pro-result" data-pro-result hidden></div>`;
     return {
+      container,
+      tool,
       toolbar: container.querySelector('.pro-toolbar'),
       body: container.querySelector('.pro-body'),
       result: container.querySelector('.pro-result'),
@@ -89,8 +91,31 @@
     };
   }
 
-  function resultBar(s, { ok = true, title, msg, actions = [] }) {
+  function resultBar(s, { ok = true, title, msg, actions = [], blob, filename, tool, onBacktrack, onAgain }) {
+    if (ok && window.FF?.renderUnifiedResult && s?.container) {
+      let resultBlob = blob;
+      let resultName = filename;
+      if (!resultBlob && actions && actions.length) {
+        const dl = actions.find(a => a.blob || (typeof a.filename === 'string' && a.filename));
+        if (dl?.blob) resultBlob = dl.blob;
+        if (dl?.filename) resultName = dl.filename;
+      }
+      if (resultBlob) {
+        window.FF.renderUnifiedResult(s.container, {
+          tool: tool || s.tool || { id: 'tool', name: title || 'File Tool', category: 'Tool' },
+          blob: resultBlob,
+          filename: resultName || (tool?.id ? `${tool.id}.out` : 'processed-file'),
+          title: title || 'Processing Complete',
+          badge: msg || '100% Local Sandbox',
+          onBacktrack: onBacktrack || (() => { if (typeof s.renderWorkspace === 'function') s.renderWorkspace(); }),
+          onAgain: onAgain || (() => { if (typeof s.renderDrop === 'function') s.renderDrop(); })
+        });
+        return;
+      }
+    }
+
     const el = s.result;
+    if (!el) return;
     el.hidden = false;
     el.className = 'pro-result' + (ok ? ' is-ok' : ' is-err');
     el.innerHTML = `<span class="pro-result-ico">${ok ? checkIco : '!'}</span>
@@ -617,7 +642,15 @@
           s.runBtn.disabled = true; s.runBtn.textContent = 'Converting…';
           try {
             const out = await tool.run({ file, engine: await load.opentype() });
-            resultBar(s, { ok: true, title: 'Converted to OTF', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+            resultBar(s, {
+              ok: true,
+              title: 'Converted to OTF',
+              msg: `${out.filename} · ${bytes(out.blob.size)}`,
+              blob: out.blob,
+              filename: out.filename,
+              tool,
+              actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+            });
           } catch (e) { resultBar(s, { ok: false, title: 'Could not convert', msg: e.message }); }
           finally { s.runBtn.disabled = false; s.runBtn.textContent = 'Convert to OTF'; }
         });
@@ -680,7 +713,15 @@
         try {
           const level = +s.body.querySelector('[data-k=level]').value;
           const out = await tool.run({ files: current, inputs: { level } });
-          resultBar(s, { ok: true, title: isTar ? 'TAR.GZ ready' : 'ZIP ready', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: isTar ? 'TAR.GZ ready' : 'ZIP ready',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not create archive', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -710,7 +751,15 @@
         setBusy(s, true, 'Splitting…');
         try {
           const out = await tool.run({ file, inputs: { mb: document.querySelector('#split-mb').value } });
-          resultBar(s, { ok: true, title: 'Parts ready', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'Parts ready',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not split', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -732,7 +781,15 @@
         setBusy(s, true, 'Extracting…');
         try {
           const out = await tool.run({ file, inputs: { action: s.body.querySelector('[data-k=action]').value } });
-          resultBar(s, { ok: true, title: 'Extraction ready', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'Extraction ready',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not extract', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -770,7 +827,15 @@
         setBusy(s, true, 'Building report…');
         try {
           const out = await tool.run({ file, inputs: { sql: document.querySelector('#sql-query').value, exportFormat: document.querySelector('#sql-fmt').value } });
-          resultBar(s, { ok: true, title: 'Report ready', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'Report ready',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not inspect', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -914,7 +979,15 @@
           chapters.forEach((c, i) => { map['chapter-' + String(i + 1).padStart(2, '0') + '.html'] = new TextEncoder().encode(c.html); });
           const zip = fflate.zipSync(map, { level: 6 });
           const blob = new Blob([zip], { type: 'application/zip' });
-          resultBar(s, { ok: true, title: 'Chapters exported', msg: `${chapters.length} HTML files in chapters.zip`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, 'chapters.zip') }] });
+          resultBar(s, {
+            ok: true,
+            title: 'Chapters exported',
+            msg: `${chapters.length} HTML files in chapters.zip`,
+            blob,
+            filename: 'chapters.zip',
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, 'chapters.zip') }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not export', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -952,7 +1025,19 @@
           document.querySelector('#cv-meta').textContent = 'No cover';
         }
       })();
-      s.runBtn.addEventListener('click', () => { if (coverBlob) download(coverBlob, coverName); });
+      s.runBtn.addEventListener('click', () => {
+        if (coverBlob) {
+          resultBar(s, {
+            ok: true,
+            title: 'Cover exported',
+            msg: `${coverName} · ${bytes(coverBlob.size)}`,
+            blob: coverBlob,
+            filename: coverName,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(coverBlob, coverName) }]
+          });
+        }
+      });
     }
 
     function bodyMetadata(file) {
@@ -986,7 +1071,16 @@
           ep.files[ep.opfPath] = new TextEncoder().encode(opfStr);
           const zip = fflate.zipSync(ep.files, { level: 6 });
           const blob = new Blob([zip], { type: 'application/epub+zip' });
-          resultBar(s, { ok: true, title: 'EPUB repackaged', msg: `${baseName(file.name)}-edited.epub · ${bytes(blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, baseName(file.name) + '-edited.epub') }] });
+          const outName = `${baseName(file.name)}-edited.epub`;
+          resultBar(s, {
+            ok: true,
+            title: 'EPUB repackaged',
+            msg: `${outName} · ${bytes(blob.size)}`,
+            blob,
+            filename: outName,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, outName) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not repackage', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -1079,7 +1173,15 @@
             cgst: document.querySelector('#inv-cgst').value, sgst: document.querySelector('#inv-sgst').value,
           };
           const out = await tool.run({ inputs });
-          resultBar(s, { ok: true, title: 'Invoice generated', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'Invoice generated',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not generate', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -1143,7 +1245,15 @@
             tax: document.querySelector('#pos-tax').value,
           };
           const out = await tool.run({ inputs });
-          resultBar(s, { ok: true, title: 'Receipt generated', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'Receipt generated',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not generate', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -1199,7 +1309,15 @@
             setBusy(s, true, 'Building summary…');
             try {
               const out = await tool.run({ file, inputs: { output: 'csv', rate: 'auto' } });
-              resultBar(s, { ok: true, title: 'Summary ready', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+              resultBar(s, {
+                ok: true,
+                title: 'Summary ready',
+                msg: `${out.filename} · ${bytes(out.blob.size)}`,
+                blob: out.blob,
+                filename: out.filename,
+                tool,
+                actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+              });
             } catch (e) { resultBar(s, { ok: false, title: 'Could not build summary', msg: e.message }); }
             finally { setBusy(s, false); }
           });
@@ -1287,7 +1405,12 @@
                 onProgress: (p, l) => setBusy(s, true, l || 'Rendering…'),
               });
               resultBar(s, {
-                ok: true, title: 'Audiogram ready', msg: `${out.filename} · ${bytes(out.blob.size)}`,
+                ok: true,
+                title: 'Audiogram ready',
+                msg: `${out.filename} · ${bytes(out.blob.size)}`,
+                blob: out.blob,
+                filename: out.filename,
+                tool,
                 actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
               });
             } catch (e) { resultBar(s, { ok: false, title: 'Could not render', msg: e.message }); }
@@ -1387,7 +1510,15 @@
         setBusy(s, true, 'Converting…');
         try {
           const out = await tool.run({ file, inputs: { delimiter: s.body.querySelector('[data-k=delim]').value, sheetName: s.body.querySelector('[data-k=sheet]').value } });
-          resultBar(s, { ok: true, title: 'XLSX ready', msg: `${out.filename} · ${bytes(out.blob.size)} · ${aoa.length} rows`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'XLSX ready',
+            msg: `${out.filename} · ${bytes(out.blob.size)} · ${aoa.length} rows`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not convert', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -1425,7 +1556,15 @@
         setBusy(s, true, 'Converting…');
         try {
           const out = await tool.run({ file, inputs: { sheet: (+sheetSel.value || 0) + 1, delimiter: s.body.querySelector('[data-k=delim]').value } });
-          resultBar(s, { ok: true, title: 'CSV ready', msg: `${out.filename} · ${bytes(out.blob.size)}`, actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }] });
+          resultBar(s, {
+            ok: true,
+            title: 'CSV ready',
+            msg: `${out.filename} · ${bytes(out.blob.size)}`,
+            blob: out.blob,
+            filename: out.filename,
+            tool,
+            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }]
+          });
         } catch (e) { resultBar(s, { ok: false, title: 'Could not convert', msg: e.message }); }
         finally { setBusy(s, false); }
       });
@@ -1624,10 +1763,14 @@
           s.body.querySelector('.pro-bgr-out').src = pngUrl;
           s.toolbar.innerHTML = `<span class="pro-dim">${esc(file.name)}</span><span class="pro-live">Transparent PNG ready</span>`;
           const outBlob = await new Promise((res, rej) => out.canvas.toBlob((b) => b ? res(b) : rej(new Error('Could not encode PNG.')), 'image/png'));
+          const outName = `${baseName(file.name)}-bg-removed.png`;
           resultBar(s, {
             ok: true, title: 'Background removed',
             msg: `${img.naturalWidth}×${img.naturalHeight}px → transparent PNG · processed on-device`,
-            actions: [{ label: 'Download PNG', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(outBlob, `${U.baseName(file.name)}-bg-removed.png`) }],
+            blob: outBlob,
+            filename: outName,
+            tool,
+            actions: [{ label: 'Download PNG', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(outBlob, outName) }],
           });
         } catch (e) {
           bgrOnProg = null;
@@ -1642,7 +1785,2143 @@
     }
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FILEKIT QR CODE STUDIO PRO — GOLD-STANDARD SIDERAIL WORKBENCH
+     48px Unified Action Toolbar, 380px Inspector Rail & Dot-Matrix Stage
+     ═══════════════════════════════════════════════════════════════════════════ */
+  async function mountQrStudioPro(container, tool) {
+    container.innerHTML = '';
+    container.className = 'org-shell qr-studio-shell';
+
+    const QRGEN = ['vendor/qrcode-generator.js', 'sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k'];
+    await U.loadScript(...QRGEN);
+
+    const state = {
+      type: 'url',
+      url: 'https://filekit.cc',
+      wifi: { ssid: 'FileKit_Network', password: '', encryption: 'WPA', hidden: false },
+      vcard: { firstName: 'Alex', lastName: 'Morgan', phone: '+1 555 234 5678', email: 'alex@example.com', company: 'FileKit Inc.', title: 'Lead Designer', url: 'https://filekit.cc' },
+      email: { to: 'support@filekit.cc', subject: 'Inquiry', body: 'Hello FileKit Team,' },
+      sms: { phone: '+1 555 019 2831', message: 'Hello from FileKit QR!' },
+      text: 'FileKit — 100% Private Offline File Suite',
+      fgColor: '#18181B',
+      bgColor: '#FFFFFF',
+      isTransparent: false,
+      eyeStyle: 'square',
+      dotStyle: 'square',
+      ecc: 'M',
+      margin: 3,
+      logoDataUrl: null,
+      logoImg: null,
+      logoPreset: null,
+      exportFormat: 'png',
+      zoom: 100
+    };
+
+    const PRESET_SVGS = {
+      link: `<svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>`,
+      wifi: `<svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
+      star: `<svg viewBox="0 0 24 24" fill="#EAB308" stroke="#CA8A04" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+      whatsapp: `<svg viewBox="0 0 24 24" fill="#22C55E"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>`,
+      linkedin: `<svg viewBox="0 0 24 24" fill="#0A66C2"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.67 1.67 0 1 0 0-3.34 1.67 1.67 0 0 0 0 3.34m1.39 9.74v-8.37H5.07v8.37h2.78z"/></svg>`,
+      github: `<svg viewBox="0 0 24 24" fill="#18181B"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`,
+      globe: `<svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`
+    };
+
+    function svgToDataUrl(svgString) {
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+    }
+
+    function getPayload() {
+      switch (state.type) {
+        case 'url': {
+          let u = (state.url || '').trim();
+          if (!u) return 'https://filekit.cc';
+          if (!/^https?:\/\//i.test(u) && !/^mailto:/i.test(u)) u = 'https://' + u;
+          return u;
+        }
+        case 'wifi': {
+          const enc = state.wifi.encryption || 'WPA';
+          const s = state.wifi.ssid || 'Network';
+          const p = state.wifi.password || '';
+          const h = state.wifi.hidden ? 'H:true;' : '';
+          return `WIFI:T:${enc};S:${s};P:${p};${h};`;
+        }
+        case 'vcard': {
+          const fn = `${state.vcard.firstName || ''} ${state.vcard.lastName || ''}`.trim() || 'Contact';
+          return [
+            'BEGIN:VCARD',
+            'VERSION:3.0',
+            `N:${state.vcard.lastName || ''};${state.vcard.firstName || ''};;;`,
+            `FN:${fn}`,
+            state.vcard.company ? `ORG:${state.vcard.company}` : '',
+            state.vcard.title ? `TITLE:${state.vcard.title}` : '',
+            state.vcard.phone ? `TEL:${state.vcard.phone}` : '',
+            state.vcard.email ? `EMAIL:${state.vcard.email}` : '',
+            state.vcard.url ? `URL:${state.vcard.url}` : '',
+            'END:VCARD'
+          ].filter(Boolean).join('\n');
+        }
+        case 'email': {
+          const to = state.email.to || '';
+          const sub = encodeURIComponent(state.email.subject || '');
+          const body = encodeURIComponent(state.email.body || '');
+          return `mailto:${to}?subject=${sub}&body=${body}`;
+        }
+        case 'sms': {
+          const ph = state.sms.phone || '';
+          const msg = state.sms.message || '';
+          return `SMSTO:${ph}:${msg}`;
+        }
+        case 'text':
+        default:
+          return state.text || 'FileKit — Every file task. One private toolkit.';
+      }
+    }
+
+    function getContrastRatio(hex1, hex2) {
+      function getLuminance(hex) {
+        if (!hex || hex === 'transparent') return 1;
+        const c = hex.replace('#', '');
+        const r = parseInt(c.substr(0, 2), 16) / 255;
+        const g = parseInt(c.substr(2, 2), 16) / 255;
+        const b = parseInt(c.substr(4, 2), 16) / 255;
+        const a = [r, g, b].map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+      }
+      const l1 = getLuminance(hex1) + 0.05;
+      const l2 = getLuminance(hex2) + 0.05;
+      return l1 > l2 ? l1 / l2 : l2 / l1;
+    }
+
+    container.innerHTML = `
+      <header class="org-unified-toolbar qr-unified-toolbar">
+        <div class="org-toolbar-left qr-toolbar-left">
+          <div class="qr-brand-wrap">
+            <span class="qr-brand-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
+              </svg>
+            </span>
+            <strong class="qr-brand-title">QR Code Studio Pro</strong>
+            <span class="qr-security-badge" title="Zero network requests. Everything runs locally in browser.">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              100% Private
+            </span>
+          </div>
+          <button type="button" class="org-btn-add-files qr-btn-reset" id="qr-reset-btn" title="Reset all settings to defaults">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>Reset</span>
+          </button>
+        </div>
+
+        <div class="org-toolbar-center qr-toolbar-center">
+          <div class="org-segmented-modes qr-type-segmented" role="tablist">
+            <button type="button" class="org-mode-tab qr-type-tab is-active" data-type="url"><span class="qr-tab-ico">🔗</span><span>URL</span></button>
+            <button type="button" class="org-mode-tab qr-type-tab" data-type="wifi"><span class="qr-tab-ico">📶</span><span>Wi-Fi</span></button>
+            <button type="button" class="org-mode-tab qr-type-tab" data-type="vcard"><span class="qr-tab-ico">👤</span><span>vCard</span></button>
+            <button type="button" class="org-mode-tab qr-type-tab" data-type="email"><span class="qr-tab-ico">✉️</span><span>Email</span></button>
+            <button type="button" class="org-mode-tab qr-type-tab" data-type="sms"><span class="qr-tab-ico">💬</span><span>SMS</span></button>
+            <button type="button" class="org-mode-tab qr-type-tab" data-type="text"><span class="qr-tab-ico">📝</span><span>Text</span></button>
+          </div>
+        </div>
+
+        <div class="org-toolbar-right qr-toolbar-right">
+          <div class="qr-scannability-chip is-good" id="qr-scannability-chip" title="Real-time WCAG contrast calculation">
+            <span class="scannability-dot"></span>
+            <span class="scannability-text">100% Scannable</span>
+          </div>
+
+          <div class="org-segmented-modes org-segmented-mini qr-fmt-segmented">
+            <button type="button" class="org-mode-tab qr-fmt-tab is-active" data-fmt="png">PNG</button>
+            <button type="button" class="org-mode-tab qr-fmt-tab" data-fmt="svg">SVG</button>
+          </div>
+
+          <button type="button" class="etxt-btn-finish qr-primary-cta" id="qr-download-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="qr-download-btn-text">Download QR</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="qr-studio-stage">
+        <!-- Left Inspector Rail (380px) -->
+        <aside class="qr-inspector-rail">
+          <!-- Section 1: Content Payload -->
+          <div class="qr-rail-section">
+            <div class="pro-panel-subhead">Content Payload</div>
+            <div class="qr-dynamic-form" id="qr-dynamic-form"></div>
+          </div>
+
+          <!-- Section 2: Colors & Contrast -->
+          <div class="qr-rail-section">
+            <div class="pro-panel-subhead">Colors &amp; Palette</div>
+            <div class="qr-color-controls">
+              <div class="qr-color-row">
+                <label class="qr-label-mini">Foreground</label>
+                <div class="qr-color-input-wrap">
+                  <input type="color" id="qr-fg-color" value="#18181B">
+                  <span class="qr-hex-label" id="qr-fg-hex">#18181B</span>
+                </div>
+              </div>
+              <div class="qr-swatches-grid" id="qr-fg-swatches">
+                <button type="button" class="qr-swatch-dot is-active" data-color="#18181B" style="background:#18181B;" title="Obsidian Slate"></button>
+                <button type="button" class="qr-swatch-dot" data-color="#00B0FF" style="background:#00B0FF;" title="Electric Cyan"></button>
+                <button type="button" class="qr-swatch-dot" data-color="#10B981" style="background:#10B981;" title="Emerald Green"></button>
+                <button type="button" class="qr-swatch-dot" data-color="#7C3AED" style="background:#7C3AED;" title="Royal Purple"></button>
+                <button type="button" class="qr-swatch-dot" data-color="#F43F5E" style="background:#F43F5E;" title="Sunset Rose"></button>
+                <button type="button" class="qr-swatch-dot" data-color="#D97706" style="background:#D97706;" title="Amber Gold"></button>
+              </div>
+
+              <div class="qr-color-row" style="margin-top: 12px;">
+                <label class="qr-label-mini">Background</label>
+                <div class="qr-color-input-wrap">
+                  <input type="color" id="qr-bg-color" value="#FFFFFF">
+                  <span class="qr-hex-label" id="qr-bg-hex">#FFFFFF</span>
+                </div>
+              </div>
+              <label class="qr-checkbox-row">
+                <input type="checkbox" id="qr-trans-bg">
+                <span>Transparent Background (PNG/SVG)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Section 3: Pattern & Eye Geometry -->
+          <div class="qr-rail-section">
+            <div class="pro-panel-subhead">Pattern &amp; Eye Geometry</div>
+            <div class="qr-shape-controls">
+              <label class="qr-label-mini">Corner Eye Shape</label>
+              <div class="qr-pill-selector" id="qr-eye-styles">
+                <button type="button" class="qr-shape-pill is-active" data-eye="square">Square</button>
+                <button type="button" class="qr-shape-pill" data-eye="rounded">Soft Round</button>
+                <button type="button" class="qr-shape-pill" data-eye="circle">Bullseye</button>
+              </div>
+
+              <label class="qr-label-mini" style="margin-top: 12px;">Body Module Shape</label>
+              <div class="qr-pill-selector" id="qr-dot-styles">
+                <button type="button" class="qr-shape-pill is-active" data-dot="square">Sharp Square</button>
+                <button type="button" class="qr-shape-pill" data-dot="dots">Circular Dots</button>
+                <button type="button" class="qr-shape-pill" data-dot="rounded">Rounded</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Logo & Badges -->
+          <div class="qr-rail-section">
+            <div class="pro-panel-subhead">Logo &amp; Center Badge</div>
+            <div class="qr-logo-controls">
+              <input type="file" id="qr-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
+              <div class="qr-logo-btn-row">
+                <button type="button" class="org-btn-add-files qr-btn-upload-logo" id="qr-upload-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Upload Custom Logo</span>
+                </button>
+                <button type="button" class="qr-btn-remove-logo" id="qr-clear-logo" hidden title="Remove Logo">✕</button>
+              </div>
+
+              <div class="qr-preset-badges-wrap">
+                <span class="qr-badges-sublabel">Or pick standard badge:</span>
+                <div class="qr-badges-flex" id="qr-badge-list">
+                  <button type="button" class="qr-badge-pill" data-badge="link" title="Link">🔗</button>
+                  <button type="button" class="qr-badge-pill" data-badge="wifi" title="Wi-Fi">📶</button>
+                  <button type="button" class="qr-badge-pill" data-badge="star" title="Star">⭐</button>
+                  <button type="button" class="qr-badge-pill" data-badge="whatsapp" title="WhatsApp">💬</button>
+                  <button type="button" class="qr-badge-pill" data-badge="linkedin" title="LinkedIn">💼</button>
+                  <button type="button" class="qr-badge-pill" data-badge="github" title="GitHub">💻</button>
+                  <button type="button" class="qr-badge-pill" data-badge="globe" title="Globe">🌐</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Advanced Margins & ECC -->
+          <div class="qr-rail-section">
+            <div class="pro-panel-subhead">Precision &amp; Error Correction</div>
+            <div class="qr-adv-controls">
+              <div class="qr-control-row">
+                <label class="qr-label-mini">Error Correction</label>
+                <select class="qr-select-depth" id="qr-ecc-select">
+                  <option value="L">Low (7% recovery)</option>
+                  <option value="M" selected>Medium (15% recovery)</option>
+                  <option value="Q">Quartile (25% recovery)</option>
+                  <option value="H">High (30% recovery — Safe for Logos)</option>
+                </select>
+              </div>
+              <div class="qr-control-row" style="margin-top: 10px;">
+                <div class="qr-slider-header">
+                  <label class="qr-label-mini">Quiet Zone Margin</label>
+                  <span class="qr-slider-badge" id="qr-margin-val">3 modules</span>
+                </div>
+                <input type="range" class="qr-range-slider" id="qr-margin-slider" min="0" max="6" value="3">
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Center Stage: Dot Matrix Stage with Floating Paper Card -->
+        <main class="qr-canvas-stage">
+          <div class="qr-paper-card" id="qr-paper-card">
+            <div class="qr-paper-inner">
+              <canvas id="qr-stage-canvas" width="360" height="360"></canvas>
+            </div>
+            <div class="qr-card-meta">
+              <span class="qr-meta-payload" id="qr-info-payload">https://filekit.cc</span>
+              <span class="qr-meta-dot">•</span>
+              <span class="qr-meta-ecc" id="qr-info-ecc">ECC: Level M (15%)</span>
+            </div>
+          </div>
+
+          <!-- Floating Canvas Bottom Dock -->
+          <div class="qr-floating-dock">
+            <div class="qr-dock-zoom">
+              <button type="button" class="qr-dock-btn" id="qr-zoom-out" title="Zoom Out">−</button>
+              <span class="qr-dock-zoom-val" id="qr-zoom-val">100%</span>
+              <button type="button" class="qr-dock-btn" id="qr-zoom-in" title="Zoom In">+</button>
+            </div>
+            <span class="qr-dock-sep"></span>
+            <button type="button" class="qr-dock-btn qr-dock-action" id="qr-copy-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span id="qr-copy-label">Copy Image</span>
+            </button>
+            <button type="button" class="qr-dock-btn qr-dock-action" id="qr-print-btn" title="Print QR Code">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>Print</span>
+            </button>
+          </div>
+        </main>
+      </div>`;
+
+    const canvas = container.querySelector('#qr-stage-canvas');
+    const paperCard = container.querySelector('#qr-paper-card');
+    const dynamicForm = container.querySelector('#qr-dynamic-form');
+    const contrastChip = container.querySelector('#qr-scannability-chip');
+    const payloadEl = container.querySelector('#qr-info-payload');
+    const eccInfoEl = container.querySelector('#qr-info-ecc');
+
+    // Dynamic Form Builder
+    function renderDynamicForm() {
+      if (state.type === 'url') {
+        dynamicForm.innerHTML = `
+          <div class="qr-form-field">
+            <label>Destination Website URL</label>
+            <div class="qr-input-prefix-wrap">
+              <span class="qr-prefix-ico">🌐</span>
+              <input type="text" id="qr-input-url" class="qr-input-text" placeholder="https://yourwebsite.com" value="${esc(state.url)}">
+            </div>
+          </div>`;
+        const urlInput = dynamicForm.querySelector('#qr-input-url');
+        urlInput.addEventListener('input', () => { state.url = urlInput.value; draw(); });
+      } else if (state.type === 'wifi') {
+        dynamicForm.innerHTML = `
+          <div class="qr-form-field">
+            <label>Network Name (SSID)</label>
+            <input type="text" id="qr-wifi-ssid" class="qr-input-text" placeholder="e.g. Office_5G" value="${esc(state.wifi.ssid)}">
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>Wi-Fi Password</label>
+            <input type="text" id="qr-wifi-pass" class="qr-input-text" placeholder="Password (leave blank if open)" value="${esc(state.wifi.password)}">
+          </div>
+          <div class="qr-form-row-2" style="margin-top:8px;">
+            <div class="qr-form-field">
+              <label>Security</label>
+              <select id="qr-wifi-enc" class="qr-select-depth">
+                <option value="WPA" ${state.wifi.encryption === 'WPA' ? 'selected' : ''}>WPA/WPA2/WPA3</option>
+                <option value="WEP" ${state.wifi.encryption === 'WEP' ? 'selected' : ''}>WEP</option>
+                <option value="nopass" ${state.wifi.encryption === 'nopass' ? 'selected' : ''}>Open (No password)</option>
+              </select>
+            </div>
+            <label class="qr-checkbox-row" style="margin-top: 22px;">
+              <input type="checkbox" id="qr-wifi-hidden" ${state.wifi.hidden ? 'checked' : ''}>
+              <span>Hidden SSID</span>
+            </label>
+          </div>`;
+        dynamicForm.querySelector('#qr-wifi-ssid').addEventListener('input', (e) => { state.wifi.ssid = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-wifi-pass').addEventListener('input', (e) => { state.wifi.password = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-wifi-enc').addEventListener('change', (e) => { state.wifi.encryption = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-wifi-hidden').addEventListener('change', (e) => { state.wifi.hidden = e.target.checked; draw(); });
+      } else if (state.type === 'vcard') {
+        dynamicForm.innerHTML = `
+          <div class="qr-form-row-2">
+            <div class="qr-form-field">
+              <label>First Name</label>
+              <input type="text" id="qr-vc-fn" class="qr-input-text" value="${esc(state.vcard.firstName)}">
+            </div>
+            <div class="qr-form-field">
+              <label>Last Name</label>
+              <input type="text" id="qr-vc-ln" class="qr-input-text" value="${esc(state.vcard.lastName)}">
+            </div>
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>Phone Number</label>
+            <input type="tel" id="qr-vc-phone" class="qr-input-text" placeholder="+1 555 019 2831" value="${esc(state.vcard.phone)}">
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>Email Address</label>
+            <input type="email" id="qr-vc-email" class="qr-input-text" placeholder="name@company.com" value="${esc(state.vcard.email)}">
+          </div>
+          <div class="qr-form-row-2" style="margin-top:8px;">
+            <div class="qr-form-field">
+              <label>Company</label>
+              <input type="text" id="qr-vc-org" class="qr-input-text" value="${esc(state.vcard.company)}">
+            </div>
+            <div class="qr-form-field">
+              <label>Job Title</label>
+              <input type="text" id="qr-vc-title" class="qr-input-text" value="${esc(state.vcard.title)}">
+            </div>
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>Website / Portfolio URL</label>
+            <input type="url" id="qr-vc-url" class="qr-input-text" value="${esc(state.vcard.url)}">
+          </div>`;
+        dynamicForm.querySelector('#qr-vc-fn').addEventListener('input', (e) => { state.vcard.firstName = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-vc-ln').addEventListener('input', (e) => { state.vcard.lastName = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-vc-phone').addEventListener('input', (e) => { state.vcard.phone = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-vc-email').addEventListener('input', (e) => { state.vcard.email = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-vc-org').addEventListener('input', (e) => { state.vcard.company = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-vc-title').addEventListener('input', (e) => { state.vcard.title = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-vc-url').addEventListener('input', (e) => { state.vcard.url = e.target.value; draw(); });
+      } else if (state.type === 'email') {
+        dynamicForm.innerHTML = `
+          <div class="qr-form-field">
+            <label>Recipient Email</label>
+            <input type="email" id="qr-em-to" class="qr-input-text" placeholder="support@filekit.cc" value="${esc(state.email.to)}">
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>Subject Line</label>
+            <input type="text" id="qr-em-sub" class="qr-input-text" placeholder="Partnership Inquiry" value="${esc(state.email.subject)}">
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>Prefilled Email Message</label>
+            <textarea id="qr-em-body" class="qr-textarea-depth" rows="3" placeholder="Hello...">${esc(state.email.body)}</textarea>
+          </div>`;
+        dynamicForm.querySelector('#qr-em-to').addEventListener('input', (e) => { state.email.to = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-em-sub').addEventListener('input', (e) => { state.email.subject = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-em-body').addEventListener('input', (e) => { state.email.body = e.target.value; draw(); });
+      } else if (state.type === 'sms') {
+        dynamicForm.innerHTML = `
+          <div class="qr-form-field">
+            <label>Phone Number</label>
+            <input type="tel" id="qr-sms-phone" class="qr-input-text" placeholder="+1 555 019 2831" value="${esc(state.sms.phone)}">
+          </div>
+          <div class="qr-form-field" style="margin-top:8px;">
+            <label>SMS Text Message</label>
+            <textarea id="qr-sms-msg" class="qr-textarea-depth" rows="3" placeholder="Hello from FileKit QR!">${esc(state.sms.message)}</textarea>
+          </div>`;
+        dynamicForm.querySelector('#qr-sms-phone').addEventListener('input', (e) => { state.sms.phone = e.target.value; draw(); });
+        dynamicForm.querySelector('#qr-sms-msg').addEventListener('input', (e) => { state.sms.message = e.target.value; draw(); });
+      } else if (state.type === 'text') {
+        dynamicForm.innerHTML = `
+          <div class="qr-form-field">
+            <label>Plain Text / Notes</label>
+            <textarea id="qr-plain-text" class="qr-textarea-depth" rows="4" placeholder="Enter any text payload...">${esc(state.text)}</textarea>
+          </div>`;
+        dynamicForm.querySelector('#qr-plain-text').addEventListener('input', (e) => { state.text = e.target.value; draw(); });
+      }
+    }
+
+    renderDynamicForm();
+
+    // Type Tabs
+    const typeTabs = container.querySelectorAll('.qr-type-tab');
+    typeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        typeTabs.forEach(t => t.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        state.type = tab.dataset.type;
+        renderDynamicForm();
+        draw();
+      });
+    });
+
+    // Foreground Color & Swatches
+    const fgInput = container.querySelector('#qr-fg-color');
+    const fgHex = container.querySelector('#qr-fg-hex');
+    const fgSwatches = container.querySelectorAll('.qr-swatch-dot');
+    fgInput.addEventListener('input', () => {
+      state.fgColor = fgInput.value;
+      fgHex.textContent = state.fgColor.toUpperCase();
+      fgSwatches.forEach(s => s.classList.toggle('is-active', s.dataset.color.toLowerCase() === state.fgColor.toLowerCase()));
+      draw();
+    });
+    fgSwatches.forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        fgSwatches.forEach(s => s.classList.remove('is-active'));
+        swatch.classList.add('is-active');
+        state.fgColor = swatch.dataset.color;
+        fgInput.value = state.fgColor;
+        fgHex.textContent = state.fgColor.toUpperCase();
+        draw();
+      });
+    });
+
+    // Background Color & Trans
+    const bgInput = container.querySelector('#qr-bg-color');
+    const bgHex = container.querySelector('#qr-bg-hex');
+    const transBg = container.querySelector('#qr-trans-bg');
+    bgInput.addEventListener('input', () => {
+      state.bgColor = bgInput.value;
+      bgHex.textContent = state.bgColor.toUpperCase();
+      draw();
+    });
+    transBg.addEventListener('change', () => {
+      state.isTransparent = transBg.checked;
+      bgInput.disabled = state.isTransparent;
+      draw();
+    });
+
+    // Shape Pill Pickers
+    const eyePills = container.querySelectorAll('#qr-eye-styles .qr-shape-pill');
+    eyePills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        eyePills.forEach(p => p.classList.remove('is-active'));
+        pill.classList.add('is-active');
+        state.eyeStyle = pill.dataset.eye;
+        draw();
+      });
+    });
+
+    const dotPills = container.querySelectorAll('#qr-dot-styles .qr-shape-pill');
+    dotPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        dotPills.forEach(p => p.classList.remove('is-active'));
+        pill.classList.add('is-active');
+        state.dotStyle = pill.dataset.dot;
+        draw();
+      });
+    });
+
+    // Logo Upload & Badges
+    const logoFileInput = container.querySelector('#qr-logo-file');
+    const uploadBtn = container.querySelector('#qr-upload-btn');
+    const clearLogoBtn = container.querySelector('#qr-clear-logo');
+    const badgeBtns = container.querySelectorAll('.qr-badge-pill');
+
+    uploadBtn.addEventListener('click', () => logoFileInput.click());
+    logoFileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target.result;
+        state.logoDataUrl = dataUrl;
+        const im = new Image();
+        im.onload = () => {
+          state.logoImg = im;
+          state.ecc = 'H'; // Auto safe high ECC for logo scannability
+          eccSelect.value = 'H';
+          clearLogoBtn.hidden = false;
+          badgeBtns.forEach(b => b.classList.remove('is-active'));
+          draw();
+        };
+        im.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    clearLogoBtn.addEventListener('click', () => {
+      state.logoDataUrl = null;
+      state.logoImg = null;
+      state.logoPreset = null;
+      clearLogoBtn.hidden = true;
+      logoFileInput.value = '';
+      badgeBtns.forEach(b => b.classList.remove('is-active'));
+      draw();
+    });
+
+    badgeBtns.forEach(badge => {
+      badge.addEventListener('click', () => {
+        const bType = badge.dataset.badge;
+        badgeBtns.forEach(b => b.classList.remove('is-active'));
+        badge.classList.add('is-active');
+        state.logoPreset = bType;
+        const svgStr = PRESET_SVGS[bType];
+        if (svgStr) {
+          const dataUrl = svgToDataUrl(svgStr);
+          state.logoDataUrl = dataUrl;
+          const im = new Image();
+          im.onload = () => {
+            state.logoImg = im;
+            state.ecc = 'H';
+            eccSelect.value = 'H';
+            clearLogoBtn.hidden = false;
+            draw();
+          };
+          im.src = dataUrl;
+        }
+      });
+    });
+
+    // Margin & ECC
+    const eccSelect = container.querySelector('#qr-ecc-select');
+    const marginSlider = container.querySelector('#qr-margin-slider');
+    const marginVal = container.querySelector('#qr-margin-val');
+
+    eccSelect.addEventListener('change', () => {
+      state.ecc = eccSelect.value;
+      draw();
+    });
+    marginSlider.addEventListener('input', () => {
+      state.margin = parseInt(marginSlider.value, 10) || 0;
+      marginVal.textContent = `${state.margin} modules`;
+      draw();
+    });
+
+    // Format Segmented Toggle
+    const fmtTabs = container.querySelectorAll('.qr-fmt-tab');
+    const dlBtnText = container.querySelector('#qr-download-btn-text');
+    fmtTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        fmtTabs.forEach(t => t.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        state.exportFormat = tab.dataset.fmt;
+        dlBtnText.textContent = state.exportFormat === 'svg' ? 'Download SVG' : 'Download PNG';
+      });
+    });
+
+    // Zoom Controls
+    const zoomInBtn = container.querySelector('#qr-zoom-in');
+    const zoomOutBtn = container.querySelector('#qr-zoom-out');
+    const zoomValEl = container.querySelector('#qr-zoom-val');
+
+    function updateZoom(delta) {
+      state.zoom = Math.max(50, Math.min(200, state.zoom + delta));
+      zoomValEl.textContent = `${state.zoom}%`;
+      canvas.style.transform = `scale(${state.zoom / 100})`;
+    }
+    zoomInBtn.addEventListener('click', () => updateZoom(15));
+    zoomOutBtn.addEventListener('click', () => updateZoom(-15));
+
+    // Drawing Routine
+    function draw() {
+      const payload = getPayload();
+      payloadEl.textContent = payload.length > 40 ? payload.substring(0, 38) + '…' : payload;
+      eccInfoEl.textContent = `ECC: Level ${state.ecc} (${state.ecc === 'H' ? '30%' : state.ecc === 'Q' ? '25%' : state.ecc === 'M' ? '15%' : '7%'})`;
+
+      const cr = getContrastRatio(state.fgColor, state.isTransparent ? '#FFFFFF' : state.bgColor);
+      if (cr >= 3.8) {
+        contrastChip.className = 'qr-scannability-chip is-good';
+        contrastChip.innerHTML = `<span class="scannability-dot"></span><span class="scannability-text">100% Scannable (${cr.toFixed(1)}:1)</span>`;
+      } else {
+        contrastChip.className = 'qr-scannability-chip is-warn';
+        contrastChip.innerHTML = `<span class="scannability-dot"></span><span class="scannability-text">Low Contrast (${cr.toFixed(1)}:1)</span>`;
+      }
+
+      try {
+        const qr = window.qrcode(0, state.ecc);
+        qr.addData(payload);
+        qr.make();
+
+        const count = qr.getModuleCount();
+        const margin = state.margin;
+        const totalModules = count + margin * 2;
+        const targetSize = 720;
+        const cellSize = Math.floor(targetSize / totalModules);
+        const actualDim = cellSize * totalModules;
+
+        canvas.width = actualDim;
+        canvas.height = actualDim;
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, actualDim, actualDim);
+        if (!state.isTransparent) {
+          ctx.fillStyle = state.bgColor;
+          ctx.fillRect(0, 0, actualDim, actualDim);
+        }
+
+        function isEye(r, c) {
+          if (r < 7 && c < 7) return 'tl';
+          if (r < 7 && c >= count - 7) return 'tr';
+          if (r >= count - 7 && c < 7) return 'bl';
+          return null;
+        }
+
+        const center = Math.floor(count / 2);
+        const logoR = state.logoImg ? Math.ceil((count * 0.22) / 2) : 0;
+        function isLogoCutout(r, c) {
+          if (!state.logoImg) return false;
+          return r >= center - logoR && r <= center + logoR && c >= center - logoR && c <= center + logoR;
+        }
+
+        function roundRect(c, x, y, w, h, r, fill) {
+          c.beginPath();
+          c.moveTo(x + r, y);
+          c.arcTo(x + w, y, x + w, y + h, r);
+          c.arcTo(x + w, y + h, x, y + h, r);
+          c.arcTo(x, y + h, x, y, r);
+          c.arcTo(x, y, x + w, y, r);
+          c.closePath();
+          c.fillStyle = fill;
+          c.fill();
+        }
+
+        function drawEye(startR, startC) {
+          const x = (margin + startC) * cellSize;
+          const y = (margin + startR) * cellSize;
+          const eyeSize = 7 * cellSize;
+          ctx.fillStyle = state.fgColor;
+
+          if (state.eyeStyle === 'circle') {
+            ctx.beginPath();
+            ctx.arc(x + eyeSize / 2, y + eyeSize / 2, eyeSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (!state.isTransparent) {
+              ctx.fillStyle = state.bgColor;
+              ctx.beginPath();
+              ctx.arc(x + eyeSize / 2, y + eyeSize / 2, eyeSize * 5 / 14, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.clearRect(x + eyeSize * 2 / 14, y + eyeSize * 2 / 14, eyeSize * 10 / 14, eyeSize * 10 / 14);
+            }
+
+            ctx.fillStyle = state.fgColor;
+            ctx.beginPath();
+            ctx.arc(x + eyeSize / 2, y + eyeSize / 2, eyeSize * 3 / 14, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (state.eyeStyle === 'rounded') {
+            const radOuter = cellSize * 2;
+            const radInner = cellSize * 1.2;
+            roundRect(ctx, x, y, eyeSize, eyeSize, radOuter, state.fgColor);
+            
+            if (!state.isTransparent) {
+              roundRect(ctx, x + cellSize, y + cellSize, eyeSize - cellSize * 2, eyeSize - cellSize * 2, radOuter * 0.7, state.bgColor);
+            } else {
+              ctx.clearRect(x + cellSize, y + cellSize, eyeSize - cellSize * 2, eyeSize - cellSize * 2);
+            }
+            roundRect(ctx, x + cellSize * 2, y + cellSize * 2, eyeSize - cellSize * 4, eyeSize - cellSize * 4, radInner, state.fgColor);
+          } else {
+            ctx.fillRect(x, y, eyeSize, eyeSize);
+            if (!state.isTransparent) {
+              ctx.fillStyle = state.bgColor;
+              ctx.fillRect(x + cellSize, y + cellSize, eyeSize - cellSize * 2, eyeSize - cellSize * 2);
+            } else {
+              ctx.clearRect(x + cellSize, y + cellSize, eyeSize - cellSize * 2, eyeSize - cellSize * 2);
+            }
+            ctx.fillStyle = state.fgColor;
+            ctx.fillRect(x + cellSize * 2, y + cellSize * 2, eyeSize - cellSize * 4, eyeSize - cellSize * 4);
+          }
+        }
+
+        // Draw Modules
+        ctx.fillStyle = state.fgColor;
+        for (let r = 0; r < count; r++) {
+          for (let c = 0; c < count; c++) {
+            if (isEye(r, c) || isLogoCutout(r, c)) continue;
+            if (qr.isDark(r, c)) {
+              const x = (margin + c) * cellSize;
+              const y = (margin + r) * cellSize;
+              if (state.dotStyle === 'dots') {
+                ctx.beginPath();
+                ctx.arc(x + cellSize / 2, y + cellSize / 2, (cellSize / 2) * 0.92, 0, Math.PI * 2);
+                ctx.fill();
+              } else if (state.dotStyle === 'rounded') {
+                roundRect(ctx, x, y, cellSize * 0.94, cellSize * 0.94, cellSize * 0.35, state.fgColor);
+              } else {
+                ctx.fillRect(x, y, cellSize, cellSize);
+              }
+            }
+          }
+        }
+
+        drawEye(0, 0);
+        drawEye(0, count - 7);
+        drawEye(count - 7, 0);
+
+        if (state.logoImg) {
+          const cutoutDim = (logoR * 2 + 1) * cellSize;
+          const logoX = (margin + center - logoR) * cellSize;
+          const logoY = (margin + center - logoR) * cellSize;
+
+          roundRect(ctx, logoX, logoY, cutoutDim, cutoutDim, cellSize * 1.5, '#FFFFFF');
+          ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+          ctx.lineWidth = Math.max(1, cellSize * 0.25);
+          ctx.stroke();
+
+          const pad = cutoutDim * 0.15;
+          ctx.drawImage(state.logoImg, logoX + pad, logoY + pad, cutoutDim - pad * 2, cutoutDim - pad * 2);
+        }
+
+      } catch (err) {
+        console.error('QR draw error:', err);
+      }
+    }
+
+    function generateSvgString() {
+      const payload = getPayload();
+      const qr = window.qrcode(0, state.ecc);
+      qr.addData(payload);
+      qr.make();
+
+      const count = qr.getModuleCount();
+      const margin = state.margin;
+      const totalModules = count + margin * 2;
+      const cellSize = 10;
+      const dim = totalModules * cellSize;
+
+      let svg = `<svg viewBox="0 0 ${dim} ${dim}" width="${dim}" height="${dim}" xmlns="http://www.w3.org/2000/svg">\n`;
+      if (!state.isTransparent) {
+        svg += `  <rect width="${dim}" height="${dim}" fill="${state.bgColor}"/>\n`;
+      }
+
+      function isEye(r, c) {
+        if (r < 7 && c < 7) return true;
+        if (r < 7 && c >= count - 7) return true;
+        if (r >= count - 7 && c < 7) return true;
+        return false;
+      }
+
+      const center = Math.floor(count / 2);
+      const logoR = state.logoImg ? Math.ceil((count * 0.22) / 2) : 0;
+      function isLogoCutout(r, c) {
+        if (!state.logoImg) return false;
+        return r >= center - logoR && r <= center + logoR && c >= center - logoR && c <= center + logoR;
+      }
+
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          if (isEye(r, c) || isLogoCutout(r, c)) continue;
+          if (qr.isDark(r, c)) {
+            const x = (margin + c) * cellSize;
+            const y = (margin + r) * cellSize;
+            if (state.dotStyle === 'dots') {
+              svg += `  <circle cx="${x + cellSize / 2}" cy="${y + cellSize / 2}" r="${cellSize * 0.45}" fill="${state.fgColor}"/>\n`;
+            } else if (state.dotStyle === 'rounded') {
+              svg += `  <rect x="${x}" y="${y}" width="${cellSize * 0.94}" height="${cellSize * 0.94}" rx="${cellSize * 0.3}" fill="${state.fgColor}"/>\n`;
+            } else {
+              svg += `  <rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${state.fgColor}"/>\n`;
+            }
+          }
+        }
+      }
+
+      function svgEye(startR, startC) {
+        const x = (margin + startC) * cellSize;
+        const y = (margin + startR) * cellSize;
+        const s = 7 * cellSize;
+        if (state.eyeStyle === 'circle') {
+          svg += `  <circle cx="${x + s / 2}" cy="${y + s / 2}" r="${s / 2}" fill="${state.fgColor}"/>\n`;
+          svg += `  <circle cx="${x + s / 2}" cy="${y + s / 2}" r="${s * 5 / 14}" fill="${state.isTransparent ? '#FFFFFF' : state.bgColor}"/>\n`;
+          svg += `  <circle cx="${x + s / 2}" cy="${y + s / 2}" r="${s * 3 / 14}" fill="${state.fgColor}"/>\n`;
+        } else if (state.eyeStyle === 'rounded') {
+          svg += `  <rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${cellSize * 2}" fill="${state.fgColor}"/>\n`;
+          svg += `  <rect x="${x + cellSize}" y="${y + cellSize}" width="${s - cellSize * 2}" height="${s - cellSize * 2}" rx="${cellSize * 1.4}" fill="${state.isTransparent ? '#FFFFFF' : state.bgColor}"/>\n`;
+          svg += `  <rect x="${x + cellSize * 2}" y="${y + cellSize * 2}" width="${s - cellSize * 4}" height="${s - cellSize * 4}" rx="${cellSize * 1.2}" fill="${state.fgColor}"/>\n`;
+        } else {
+          svg += `  <rect x="${x}" y="${y}" width="${s}" height="${s}" fill="${state.fgColor}"/>\n`;
+          svg += `  <rect x="${x + cellSize}" y="${y + cellSize}" width="${s - cellSize * 2}" height="${s - cellSize * 2}" fill="${state.isTransparent ? '#FFFFFF' : state.bgColor}"/>\n`;
+          svg += `  <rect x="${x + cellSize * 2}" y="${y + cellSize * 2}" width="${s - cellSize * 4}" height="${s - cellSize * 4}" fill="${state.fgColor}"/>\n`;
+        }
+      }
+
+      svgEye(0, 0);
+      svgEye(0, count - 7);
+      svgEye(count - 7, 0);
+
+      if (state.logoDataUrl) {
+        const cutoutDim = (logoR * 2 + 1) * cellSize;
+        const logoX = (margin + center - logoR) * cellSize;
+        const logoY = (margin + center - logoR) * cellSize;
+        const pad = cutoutDim * 0.15;
+        svg += `  <rect x="${logoX}" y="${logoY}" width="${cutoutDim}" height="${cutoutDim}" rx="${cellSize * 1.5}" fill="#FFFFFF" stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>\n`;
+        svg += `  <image x="${logoX + pad}" y="${logoY + pad}" width="${cutoutDim - pad * 2}" height="${cutoutDim - pad * 2}" href="${state.logoDataUrl}"/>\n`;
+      }
+
+      svg += `</svg>`;
+      return svg;
+    }
+
+    // Download Button
+    const dlBtn = container.querySelector('#qr-download-btn');
+    dlBtn.addEventListener('click', () => {
+      const filename = `qrcode-${state.type}-${Date.now()}.${state.exportFormat}`;
+      if (state.exportFormat === 'svg') {
+        const svgContent = generateSvgString();
+        const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        download(blob, filename);
+      } else {
+        canvas.toBlob((blob) => {
+          if (blob) download(blob, filename);
+        }, 'image/png', 1.0);
+      }
+    });
+
+    // Copy to Clipboard
+    const copyBtn = container.querySelector('#qr-copy-btn');
+    const copyLabel = container.querySelector('#qr-copy-label');
+    copyBtn.addEventListener('click', async () => {
+      try {
+        canvas.toBlob(async (blob) => {
+          if (blob && navigator.clipboard?.write) {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            copyLabel.textContent = '✓ Copied!';
+            copyBtn.classList.add('is-copied');
+            setTimeout(() => {
+              copyLabel.textContent = 'Copy Image';
+              copyBtn.classList.remove('is-copied');
+            }, 2000);
+          } else {
+            const svgContent = generateSvgString();
+            await navigator.clipboard.writeText(svgContent);
+            copyLabel.textContent = '✓ Copied SVG!';
+            setTimeout(() => { copyLabel.textContent = 'Copy Image'; }, 2000);
+          }
+        }, 'image/png');
+      } catch (e) {
+        console.warn('Clipboard write error:', e);
+      }
+    });
+
+    // Print Button
+    container.querySelector('#qr-print-btn')?.addEventListener('click', () => {
+      const dataUrl = canvas.toDataURL('image/png');
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write(`
+          <html>
+            <head><title>Print QR Code - FileKit</title></head>
+            <body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#fff;">
+              <div style="text-align:center;">
+                <img src="${dataUrl}" style="max-width:360px;height:auto;" />
+                <p style="font-family:sans-serif;font-size:14px;color:#333;margin-top:16px;">${esc(getPayload())}</p>
+              </div>
+              <script>window.onload = () => { window.print(); window.close(); };<\/script>
+            </body>
+          </html>
+        `);
+        w.document.close();
+      }
+    });
+
+    // Reset Handler
+    container.querySelector('#qr-reset-btn')?.addEventListener('click', () => {
+      state.type = 'url';
+      state.url = 'https://filekit.cc';
+      state.fgColor = '#18181B';
+      state.bgColor = '#FFFFFF';
+      state.isTransparent = false;
+      state.eyeStyle = 'square';
+      state.dotStyle = 'square';
+      state.ecc = 'M';
+      state.margin = 3;
+      state.logoDataUrl = null;
+      state.logoImg = null;
+      state.logoPreset = null;
+      state.zoom = 100;
+      marginSlider.value = 3;
+      marginVal.textContent = '3 modules';
+      fgInput.value = '#18181B';
+      fgHex.textContent = '#18181B';
+      bgInput.value = '#FFFFFF';
+      bgHex.textContent = '#FFFFFF';
+      transBg.checked = false;
+      eccSelect.value = 'M';
+      clearLogoBtn.hidden = true;
+      zoomValEl.textContent = '100%';
+      canvas.style.transform = 'scale(1)';
+      typeTabs.forEach(t => t.classList.toggle('is-active', t.dataset.type === 'url'));
+      eyePills.forEach(p => p.classList.toggle('is-active', p.dataset.eye === 'square'));
+      dotPills.forEach(p => p.classList.toggle('is-active', p.dataset.dot === 'square'));
+      fgSwatches.forEach(s => s.classList.toggle('is-active', s.dataset.color === '#18181B'));
+      badgeBtns.forEach(b => b.classList.remove('is-active'));
+      renderDynamicForm();
+      draw();
+    });
+
+    // Initial render
+    draw();
+  }
+
+  /* ==========================================================================
+     PASSWORD GENERATOR STUDIO PRO — GOLD-STANDARD SIDERAWL CRAFT
+     ========================================================================== */
+
+  function mountPasswordStudioPro(container, tool) {
+    if (!container) return;
+
+    // Diceware English Wordlist (~1,300 words)
+    const WORDS = [
+      'ability','able','aboard','about','above','accept','accord','account','across','action','active','actor','actual',
+      'adapt','address','adjust','admit','adopt','advance','advice','affair','affect','afford','afraid','after','again',
+      'against','agency','agenda','agent','agree','ahead','airport','alarm','album','alert','alien','alive','allow',
+      'almost','alone','along','alpha','already','alter','always','amaze','amber','ambition','amend','amid','among',
+      'amount','anchor','ancient','angel','anger','angle','animal','animate','ankle','announce','annual','another','answer',
+      'anthem','antic','anvil','anxiety','anybody','anyhow','anymore','anyone','anyway','anywhere','apart','apology','appeal',
+      'appear','applaud','apple','apply','appoint','approve','apron','arcade','arch','archive','arctic','arena','argue',
+      'armor','army','aroma','around','arrange','array','arrest','arrive','arrow','arson','artery','artist','ascend',
+      'ashamed','asleep','aspect','assault','assert','assess','asset','assign','assist','assume','assure','astonish','astute',
+      'athlete','atlas','atom','atomic','attach','attack','attain','attempt','attend','attire','attitude','attorney','attract',
+      'auction','audit','august','author','auto','autumn','avatar','avenue','average','aviator','avoid','await','awake',
+      'award','aware','awesome','awful','awkward','axis','baboon','baby','bachelor','backbone','backdrop','background','badge',
+      'badger','baggage','baker','balance','balcony','bamboo','banana','bandit','banner','barber','barely','bargain','barrel',
+      'barrier','base','basic','basket','battery','battle','beach','beacon','beam','beauty','become','before','begin',
+      'behave','behind','belief','belong','beloved','benefit','berth','beside','bestow','better','between','beyond','bicycle',
+      'bifocal','billion','binary','biology','birch','biscuit','bishop','bitter','bizarre','black','blade','blanket','blaze',
+      'blend','blessing','blimp','blind','blink','bliss','blizzard','block','blossom','blouse','blueprint','board','boating',
+      'boldly','bolster','bombay','bonding','bonfire','bonus','booster','border','botany','boulder','boundary','bounty','bouquet',
+      'bowling','boxing','bracket','bravery','breach','breeze','bridge','bright','brisk','broad','bronze','brother','bubble',
+      'budget','buffalo','builder','bullet','bundle','bunker','burden','bureau','burglar','burial','burnout','business','butter',
+      'cabin','cabinet','cactus','cadence','calcium','calendar','calmly','camera','campaign','canary','candle','canvas','canyon',
+      'capable','capital','captain','capture','caravan','carbon','cardinal','careful','cargo','carrier','cascade','castle','casual',
+      'catapult','catch','category','cavalry','cavern','ceiling','celery','cement','census','century','cereal','certain','chainsaw',
+      'chalice','chamber','champion','chance','change','channel','chapter','charcoal','charger','charity','charter','chatter','checkup',
+      'cheering','chemical','cherish','chestnut','chisel','chocolate','cholera','chronic','circuit','citizen','citrus','civilian','clarity',
+      'classic','classify','claymore','cleaning','client','climate','climb','clinic','clipping','cloak','cloister','closet','clothing',
+      'cloud','clover','cluster','coastal','cobalt','cockpit','coconut','cohesive','coinage','collapse','collect','colony','column',
+      'combine','comfort','command','commerce','commit','common','compact','company','compass','compile','complete','complex','comply',
+      'compose','compound','compress','compute','comrade','conceal','concept','concern','concert','conclude','concrete','condense','conduct',
+      'confer','confess','confide','confirm','conflict','conform','confuse','conquer','consent','conserve','consider','consign','console',
+      'constant','consume','contact','contain','content','contest','context','continue','contour','contract','contrast','control','convene',
+      'convert','convince','coolant','copper','coral','cordial','corner','coronet','correct','corridor','corrupt','cosmetic','cosmos',
+      'cottage','cotton','council','counsel','counter','country','courage','courier','covenant','coverage','cowboy','cradle','crafty',
+      'crater','crayon','creative','creator','creature','credit','creek','crest','crevice','cricket','criminal','crimson','criteria',
+      'critical','crooked','crossbar','crowded','crucial','crusade','crust','crystal','culprit','culture','cupboard','curator','curious',
+      'currency','curtain','cushion','custody','custom','cylinder','dagger','daily','damage','dancing','danger','darkness','darling',
+      'database','daylight','dazzle','deadline','decadent','december','decision','declare','decoder','decorate','decrease','dedicate','defense',
+      'definite','defrost','delicate','delight','deliver','delta','demand','demise','democracy','denial','density','deposit','depth',
+      'deputy','derby','descend','desert','design','desire','despair','destiny','destroy','detect','detergent','detour','device',
+      'devote','diagonal','diagram','dialogue','diamond','dictate','diesel','differ','digital','dignity','dilemma','dimension','dinner',
+      'diploma','direct','director','disable','disaster','disciple','disclose','discount','discover','disease','disguise','dishonor','diskette',
+      'dismantle','dispatch','display','dispose','dispute','dissolve','distance','distinct','district','distrust','divert','divide','divine',
+      'document','dolphin','domain','dominant','donation','donkey','doorstep','dormant','double','dove','draft','dragon','drainage',
+      'dramatic','drawing','drift','driver','dropkick','drummer','dryer','dubious','duchess','ductile','dugout','dulcet','durable',
+      'duration','dynamic','dynasty','eager','eagle','early','earnest','earth','easel','eastern','ebony','eccentric','echo','eclipse',
+      'ecology','economy','ecstasy','edition','educate','effective','efficacy','effort','elastic','elbow','elder','elect','electric',
+      'element','elephant','elevate','eligible','elite','elixir','elmwood','elongate','elusive','embark','embassy','emblem','emerald',
+      'emergency','emission','emotion','emperor','emphasis','empire','employ','empower','emulate','enable','enact','enchant','enclose',
+      'encore','encroach','encrypt','endanger','endeavor','endless','endorse','endure','energetic','enforce','engage','engine','enhance',
+      'enjoy','enormous','enough','enrich','ensemble','ensure','entangle','enter','entire','entrust','entry','envelope','envoy'
+    ];
+
+    const NATO = {
+      'a': 'Alpha', 'b': 'Bravo', 'c': 'Charlie', 'd': 'Delta', 'e': 'Echo',
+      'f': 'Foxtrot', 'g': 'Golf', 'h': 'Hotel', 'i': 'India', 'j': 'Juliett',
+      'k': 'Kilo', 'l': 'Lima', 'm': 'Mike', 'n': 'November', 'o': 'Oscar',
+      'p': 'Papa', 'q': 'Quebec', 'r': 'Romeo', 's': 'Sierra', 't': 'Tango',
+      'u': 'Uniform', 'v': 'Victor', 'w': 'Whiskey', 'x': 'X-ray', 'y': 'Yankee',
+      'z': 'Zulu', '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three',
+      '4': 'Four', '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight',
+      '9': 'Niner', '-': 'Hyphen', '_': 'Underscore', '.': 'Period', '@': 'At',
+      '!': 'Exclamation', '#': 'Hash', '$': 'Dollar', '%': 'Percent', '&': 'Ampersand',
+      '*': 'Asterisk', '+': 'Plus', '?': 'Question', '=': 'Equals'
+    };
+
+    const state = {
+      mode: 'password', // 'password' | 'passphrase' | 'pin' | 'bulk'
+      length: 24,
+      useUpper: true,
+      useLower: true,
+      useNumbers: true,
+      useSymbols: true,
+      avoidAmbiguous: true,
+      avoidRepeating: false,
+      wordCount: 4,
+      separator: '-',
+      casing: 'capitalize', // 'capitalize' | 'lower' | 'upper'
+      appendNumber: true,
+      appendSymbol: false,
+      phraseWords: [],
+      phraseNumber: '',
+      phraseSymbol: '',
+      pinLength: 6,
+      avoidObviousPin: true,
+      bulkCount: 10,
+      bulkList: [],
+      currentPassword: '',
+      isMasked: false
+    };
+
+    function esc(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function syncSlider(slider) {
+      if (!slider) return;
+      const min = parseFloat(slider.min) || 0;
+      const max = parseFloat(slider.max) || 100;
+      const val = parseFloat(slider.value) || 0;
+      const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+      slider.style.setProperty('--pct', `${pct}%`);
+    }
+
+    function secureRandomInt(max) {
+      if (max <= 1) return 0;
+      const mask = (2 << (31 - Math.clz32(max - 1))) - 1;
+      const arr = new Uint32Array(1);
+      let rand;
+      do {
+        crypto.getRandomValues(arr);
+        rand = arr[0] & mask;
+      } while (rand >= max);
+      return rand;
+    }
+
+    function generateSinglePassword() {
+      let chars = '';
+      const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+      const upperAmb = 'IO';
+      const lower = 'abcdefghijkmnopqrstuvwxyz';
+      const lowerAmb = 'l';
+      const numbers = '23456789';
+      const numbersAmb = '01';
+      const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+      let u = state.avoidAmbiguous ? upper : upper + upperAmb;
+      let l = state.avoidAmbiguous ? lower : lower + lowerAmb;
+      let n = state.avoidAmbiguous ? numbers : numbers + numbersAmb;
+      let s = symbols;
+
+      if (state.useUpper) chars += u;
+      if (state.useLower) chars += l;
+      if (state.useNumbers) chars += n;
+      if (state.useSymbols) chars += s;
+
+      if (!chars) {
+        chars = l;
+      }
+
+      let guaranteed = [];
+      if (state.useUpper && u.length) guaranteed.push(u[secureRandomInt(u.length)]);
+      if (state.useLower && l.length) guaranteed.push(l[secureRandomInt(l.length)]);
+      if (state.useNumbers && n.length) guaranteed.push(n[secureRandomInt(n.length)]);
+      if (state.useSymbols && s.length) guaranteed.push(s[secureRandomInt(s.length)]);
+
+      const remaining = Math.max(0, state.length - guaranteed.length);
+      const res = [...guaranteed];
+      
+      let lastChar = '';
+      for (let i = 0; i < remaining; i++) {
+        let attempts = 0;
+        let c = '';
+        do {
+          c = chars[secureRandomInt(chars.length)];
+          attempts++;
+        } while (state.avoidRepeating && c === lastChar && attempts < 10);
+        res.push(c);
+        lastChar = c;
+      }
+
+      // Cryptographic Fisher-Yates shuffle
+      for (let i = res.length - 1; i > 0; i--) {
+        const j = secureRandomInt(i + 1);
+        [res[i], res[j]] = [res[j], res[i]];
+      }
+
+      return res.join('');
+    }
+
+    function generatePassphrase() {
+      const count = state.wordCount;
+      const words = [];
+      for (let i = 0; i < count; i++) {
+        let w = WORDS[secureRandomInt(WORDS.length)];
+        if (state.casing === 'capitalize') {
+          w = w.charAt(0).toUpperCase() + w.slice(1);
+        } else if (state.casing === 'upper') {
+          w = w.toUpperCase();
+        } else {
+          w = w.toLowerCase();
+        }
+        words.push(w);
+      }
+      state.phraseWords = words;
+      state.phraseNumber = state.appendNumber ? String(secureRandomInt(90) + 10) : '';
+      const syms = '!@#$%&*';
+      state.phraseSymbol = state.appendSymbol ? syms[secureRandomInt(syms.length)] : '';
+
+      let phrase = words.join(state.separator);
+      if (state.phraseNumber) {
+        phrase += state.separator + state.phraseNumber;
+      }
+      if (state.phraseSymbol) {
+        phrase += state.phraseSymbol;
+      }
+      return phrase;
+    }
+
+    function reRollPhraseWord(index) {
+      if (index < 0 || index >= state.phraseWords.length) return;
+      let w = WORDS[secureRandomInt(WORDS.length)];
+      if (state.casing === 'capitalize') {
+        w = w.charAt(0).toUpperCase() + w.slice(1);
+      } else if (state.casing === 'upper') {
+        w = w.toUpperCase();
+      } else {
+        w = w.toLowerCase();
+      }
+      state.phraseWords[index] = w;
+      let phrase = state.phraseWords.join(state.separator);
+      if (state.phraseNumber) {
+        phrase += state.separator + state.phraseNumber;
+      }
+      if (state.phraseSymbol) {
+        phrase += state.phraseSymbol;
+      }
+      state.currentPassword = phrase;
+      renderView();
+    }
+
+    function generatePin() {
+      const len = state.pinLength;
+      const obviousPatterns = ['1234', '1111', '0000', '2580', '1212', '4321', '6969', '123456', '111111', '000000', '123123'];
+      let pin = '';
+      let attempts = 0;
+      do {
+        pin = '';
+        for (let i = 0; i < len; i++) {
+          pin += secureRandomInt(10).toString();
+        }
+        attempts++;
+      } while (state.avoidObviousPin && obviousPatterns.includes(pin) && attempts < 20);
+      return pin;
+    }
+
+    function calculateEntropy(pwd) {
+      if (!pwd) return { bits: 0, verdict: 'Empty', crackTime: 'Instant', poolSize: 0 };
+      
+      let pool = 0;
+      if (state.mode === 'passphrase') {
+        const wordBits = state.wordCount * Math.log2(WORDS.length);
+        const numBits = state.appendNumber ? Math.log2(90) : 0;
+        const symBits = state.appendSymbol ? Math.log2(7) : 0;
+        const bits = Math.round(wordBits + numBits + symBits);
+        return {
+          bits,
+          verdict: bits < 45 ? 'Weak' : bits < 65 ? 'Fair' : bits < 85 ? 'Strong' : 'Ultra-Strong',
+          crackTime: estimateCrackTime(bits),
+          poolSize: WORDS.length
+        };
+      }
+
+      if (state.mode === 'pin') {
+        const bits = Math.round(pwd.length * Math.log2(10));
+        return {
+          bits,
+          verdict: bits < 20 ? 'Weak' : bits < 30 ? 'Fair' : 'Strong',
+          crackTime: estimateCrackTime(bits),
+          poolSize: 10
+        };
+      }
+
+      if (/[a-z]/.test(pwd)) pool += 26;
+      if (/[A-Z]/.test(pwd)) pool += 26;
+      if (/[0-9]/.test(pwd)) pool += 10;
+      if (/[^a-zA-Z0-9]/.test(pwd)) pool += 32;
+
+      const bits = Math.round(pwd.length * Math.log2(pool || 1));
+      let verdict = 'Weak';
+      if (bits >= 110) verdict = 'Ultra-Strong';
+      else if (bits >= 80) verdict = 'Strong';
+      else if (bits >= 55) verdict = 'Fair';
+
+      return {
+        bits,
+        verdict,
+        crackTime: estimateCrackTime(bits),
+        poolSize: pool
+      };
+    }
+
+    function estimateCrackTime(entropyBits) {
+      if (entropyBits <= 28) return 'Instant';
+      if (entropyBits <= 38) return '< 1 Second';
+      if (entropyBits <= 48) return '~4.2 Minutes';
+      if (entropyBits <= 56) return '~3.1 Days';
+      if (entropyBits <= 64) return '~8.2 Months';
+      if (entropyBits <= 72) return '~175 Years';
+      if (entropyBits <= 82) return '~180,000 Years';
+      if (entropyBits <= 95) return '~140 Million Years';
+      return 'Trillions of Years';
+    }
+
+    function formatSyntaxStream(pwd) {
+      if (state.isMasked) {
+        if (state.mode === 'pin') {
+          return `<div class="pass-pin-grid">${[...pwd].map(() => `<div class="pass-pin-cell is-masked">•</div>`).join('')}</div>`;
+        }
+        return `<span class="pass-char-masked">${'•'.repeat(Math.min(pwd.length, 36))}</span>`;
+      }
+
+      if (state.mode === 'pin') {
+        return `<div class="pass-pin-grid">${[...pwd].map(c => `<div class="pass-pin-cell">${esc(c)}</div>`).join('')}</div>`;
+      }
+
+      if (state.mode === 'passphrase') {
+        const wordsHtml = state.phraseWords.map((w, idx) => `
+          <button type="button" class="pass-word-pill" data-word-idx="${idx}" title="Click to re-roll this word">${esc(w)}</button>
+        `).join(`<span class="pass-word-sep">${esc(state.separator)}</span>`);
+
+        let extras = '';
+        if (state.phraseNumber) {
+          extras += `<span class="pass-word-sep">${esc(state.separator)}</span><span class="pass-word-num">${esc(state.phraseNumber)}</span>`;
+        }
+        if (state.phraseSymbol) {
+          extras += `<span class="pass-word-sym">${esc(state.phraseSymbol)}</span>`;
+        }
+
+        return `<div class="pass-phrase-ribbon">${wordsHtml}${extras}</div>`;
+      }
+
+      return [...pwd].map(c => {
+        if (/[A-Z]/.test(c)) return `<span class="pass-c-upper">${esc(c)}</span>`;
+        if (/[a-z]/.test(c)) return `<span class="pass-c-lower">${esc(c)}</span>`;
+        if (/[0-9]/.test(c)) return `<span class="pass-c-num">${esc(c)}</span>`;
+        if (/[-_.\s]/.test(c)) return `<span class="pass-c-sep">${esc(c)}</span>`;
+        return `<span class="pass-c-sym">${esc(c)}</span>`;
+      }).join('');
+    }
+
+    function generate() {
+      if (state.mode === 'password') {
+        state.currentPassword = generateSinglePassword();
+      } else if (state.mode === 'passphrase') {
+        state.currentPassword = generatePassphrase();
+      } else if (state.mode === 'pin') {
+        state.currentPassword = generatePin();
+      } else if (state.mode === 'bulk') {
+        state.bulkList = [];
+        for (let i = 0; i < state.bulkCount; i++) {
+          state.bulkList.push(generateSinglePassword());
+        }
+        state.currentPassword = state.bulkList[0] || '';
+      }
+      renderView();
+    }
+
+    container.innerHTML = `
+      <div class="pass-studio-shell">
+        <!-- 48px Fixed Unified Action Toolbar (Robust Flex Layout, Zero Collision) -->
+        <header class="pass-unified-toolbar">
+          <div class="pass-toolbar-left">
+            <div class="pass-brand-wrap">
+              <span class="pass-brand-icon" title="Password Studio Pro">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 2l-2 2m-1.5 1.5L14 9a5 5 0 1 0 3 3l3.5-3.5a2.121 2.121 0 0 0 0-3L21 2Z"/>
+                  <circle cx="7.5" cy="16.5" r="1.5" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="pass-brand-title">Password Studio</span>
+              <span class="pass-security-badge" title="Cryptographically Secure Pseudo-Random Number Generator">CSPRNG</span>
+            </div>
+            <button type="button" class="pass-btn-reset" id="pass-reset-btn" title="Reset all options to defaults">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div class="pass-toolbar-center">
+            <div class="pass-mode-segmented" role="tablist">
+              <button type="button" class="pass-mode-tab is-active" data-mode="password">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-1.5 1.5L14 9a5 5 0 1 0 3 3l3.5-3.5a2.121 2.121 0 0 0 0-3L21 2Z"/></svg>
+                <span>Password</span>
+              </button>
+              <button type="button" class="pass-mode-tab" data-mode="passphrase">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+                <span>Passphrase</span>
+              </button>
+              <button type="button" class="pass-mode-tab" data-mode="pin">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16.5" r="1.5"/></svg>
+                <span>PIN</span>
+              </button>
+              <button type="button" class="pass-mode-tab" data-mode="bulk">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="13" height="13" rx="2"/><path d="M4 8v12a2 2 0 0 0 2 2h12"/></svg>
+                <span>Bulk</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="pass-toolbar-right">
+            <div class="pass-entropy-pill is-good" id="pass-entropy-chip" title="Shannon & NIST Entropy Bit Strength">
+              <span class="pass-entropy-dot"></span>
+              <span id="pass-entropy-chip-text">128 bits</span>
+            </div>
+
+            <button type="button" class="pass-btn-regen" id="pass-regen-btn" title="Generate new credentials (Shortcut: Spacebar)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24L21 7"/><polyline points="21 3 21 7 17 7"/></svg>
+              <span>Regenerate</span>
+              <kbd class="pass-kbd">Space</kbd>
+            </button>
+
+            <button type="button" class="pass-primary-cta" id="pass-copy-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span id="pass-copy-text">Copy</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="pass-studio-stage">
+          <!-- Left Inspector Rail (Compact 340px, Zero-Scroll) -->
+          <aside class="pass-inspector-rail">
+            <div class="pass-inspector-content">
+              <!-- Dynamic Controls Section -->
+              <div class="pass-rail-section" id="pass-dynamic-controls"></div>
+
+              <!-- Phonetic / Dictation Tag Stream -->
+              <div class="pass-rail-section" id="pass-phonetic-section">
+                <div class="pass-sec-title">Phonetic Dictation</div>
+                <div class="pass-phonetic-stream" id="pass-phonetic-stream"></div>
+              </div>
+
+              <!-- Cryptographic Profile Card -->
+              <div class="pass-rail-section pass-crypto-stats">
+                <div class="pass-sec-title">Security Profile</div>
+                <div class="pass-stats-grid">
+                  <div class="pass-stat-item">
+                    <span class="pass-stat-k">Entropy</span>
+                    <strong class="pass-stat-v" id="pass-stat-entropy">128 bits</strong>
+                  </div>
+                  <div class="pass-stat-item">
+                    <span class="pass-stat-k">Crack Resistance</span>
+                    <strong class="pass-stat-v" id="pass-stat-crack">Millions of Years</strong>
+                  </div>
+                  <div class="pass-stat-item">
+                    <span class="pass-stat-k">Pool Size</span>
+                    <strong class="pass-stat-v" id="pass-stat-pool">84 chars</strong>
+                  </div>
+                  <div class="pass-stat-item">
+                    <span class="pass-stat-k">CSPRNG Method</span>
+                    <strong class="pass-stat-v">Web Crypto</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Center Stage: Dot Matrix & Floating Credential Card -->
+          <main class="pass-canvas-stage">
+            <div class="pass-hero-card" id="pass-hero-card">
+              <!-- Card Header -->
+              <div class="pass-hero-card-header">
+                <div class="pass-hero-mode-badge" id="pass-hero-mode-badge">SECURE CREDENTIAL</div>
+                <div class="pass-hero-strength-pill" id="pass-hero-strength-pill">
+                  <span class="pass-hero-strength-dot"></span>
+                  <span id="pass-hero-strength-text">Ultra-Strong Protection</span>
+                </div>
+              </div>
+
+              <!-- Single Mode Display -->
+              <div class="pass-single-view" id="pass-single-view">
+                <div class="pass-output-box" id="pass-output-box" title="Click anywhere to copy to clipboard">
+                  <div class="pass-output-content" id="pass-output-content">
+                    <div class="pass-syntax-stream" id="pass-syntax-stream"></div>
+                  </div>
+                  <div class="pass-output-actions">
+                    <button type="button" class="pass-box-action-btn" id="pass-hero-mask-btn" title="Toggle Mask / Reveal">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button type="button" class="pass-box-action-btn" id="pass-hero-regen-btn" title="Regenerate (Shortcut: Spacebar)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24L21 7"/><polyline points="21 3 21 7 17 7"/></svg>
+                    </button>
+                    <button type="button" class="pass-box-action-btn" id="pass-hero-copy-btn" title="Copy to Clipboard">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Animated 4-Bar Strength Meter -->
+                <div class="pass-strength-row">
+                  <div class="pass-meter-bars" id="pass-meter-bars">
+                    <span class="pass-meter-segment active is-ultra"></span>
+                    <span class="pass-meter-segment active is-ultra"></span>
+                    <span class="pass-meter-segment active is-ultra"></span>
+                    <span class="pass-meter-segment active is-ultra"></span>
+                  </div>
+                  <span class="pass-crack-hint" id="pass-crack-hint">GPU Cluster crack time: Trillions of Years</span>
+                </div>
+              </div>
+
+              <!-- Bulk Mode Display -->
+              <div class="pass-bulk-view" id="pass-bulk-view" hidden>
+                <div class="pass-bulk-header">
+                  <span class="pass-bulk-count-badge" id="pass-bulk-badge">10 Generated Credentials</span>
+                  <div class="pass-bulk-actions">
+                    <button type="button" class="pass-btn-micro" id="pass-export-csv-btn">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <span>CSV</span>
+                    </button>
+                    <button type="button" class="pass-btn-micro" id="pass-export-txt-btn">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <span>TXT</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="pass-bulk-list-container" id="pass-bulk-list-container"></div>
+              </div>
+
+              <!-- Card Bottom Utility Dock -->
+              <div class="pass-card-dock">
+                <button type="button" class="pass-dock-btn" id="pass-json-copy-btn" title="Copy Credential Metadata JSON">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+                  <span>Copy JSON</span>
+                </button>
+                <span class="pass-dock-vsep"></span>
+                <button type="button" class="pass-dock-btn" id="pass-mask-toggle">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span id="pass-mask-label">Mask</span>
+                </button>
+                <span class="pass-dock-vsep"></span>
+                <button type="button" class="pass-dock-btn" id="pass-print-btn" title="Print Vault Emergency Card">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  <span>Print Vault Card</span>
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    `;
+
+    const dynamicControlsEl = container.querySelector('#pass-dynamic-controls');
+    const phoneticStreamEl = container.querySelector('#pass-phonetic-stream');
+    const phoneticSectionEl = container.querySelector('#pass-phonetic-section');
+    const syntaxStreamEl = container.querySelector('#pass-syntax-stream');
+    const outputBoxEl = container.querySelector('#pass-output-box');
+    const heroMaskBtn = container.querySelector('#pass-hero-mask-btn');
+    const heroRegenBtn = container.querySelector('#pass-hero-regen-btn');
+    const heroCopyBtn = container.querySelector('#pass-hero-copy-btn');
+    const strengthBarsEl = container.querySelector('#pass-meter-bars');
+    const crackHintEl = container.querySelector('#pass-crack-hint');
+    const heroModeBadgeEl = container.querySelector('#pass-hero-mode-badge');
+    const heroStrengthPillEl = container.querySelector('#pass-hero-strength-pill');
+    const heroStrengthTextEl = container.querySelector('#pass-hero-strength-text');
+    const entropyChipEl = container.querySelector('#pass-entropy-chip');
+    const entropyChipTextEl = container.querySelector('#pass-entropy-chip-text');
+    const statEntropyEl = container.querySelector('#pass-stat-entropy');
+    const statCrackEl = container.querySelector('#pass-stat-crack');
+    const statPoolEl = container.querySelector('#pass-stat-pool');
+    const copyBtn = container.querySelector('#pass-copy-btn');
+    const copyTextEl = container.querySelector('#pass-copy-text');
+    const regenBtn = container.querySelector('#pass-regen-btn');
+    const maskBtn = container.querySelector('#pass-mask-toggle');
+    const maskLabelEl = container.querySelector('#pass-mask-label');
+    const singleViewEl = container.querySelector('#pass-single-view');
+    const bulkViewEl = container.querySelector('#pass-bulk-view');
+    const bulkListContainerEl = container.querySelector('#pass-bulk-list-container');
+    const bulkBadgeEl = container.querySelector('#pass-bulk-badge');
+    const jsonCopyBtn = container.querySelector('#pass-json-copy-btn');
+
+    function renderDynamicControls() {
+      if (state.mode === 'password') {
+        dynamicControlsEl.innerHTML = `
+          <div class="pass-sec-title">Length &amp; Character Sets</div>
+          <div class="pass-control-group">
+            <div class="pass-slider-row">
+              <label class="pass-label-mini">Length</label>
+              <span class="pass-slider-bubble" id="pass-len-val">${state.length} chars</span>
+            </div>
+            <input type="range" class="pass-range-slider" id="pass-len-slider" min="6" max="64" value="${state.length}">
+            <div class="pass-preset-pills">
+              <button type="button" class="pass-preset-pill ${state.length === 12 ? 'is-active' : ''}" data-val="12">12</button>
+              <button type="button" class="pass-preset-pill ${state.length === 16 ? 'is-active' : ''}" data-val="16">16</button>
+              <button type="button" class="pass-preset-pill ${state.length === 24 ? 'is-active' : ''}" data-val="24">24</button>
+              <button type="button" class="pass-preset-pill ${state.length === 32 ? 'is-active' : ''}" data-val="32">32</button>
+              <button type="button" class="pass-preset-pill ${state.length === 48 ? 'is-active' : ''}" data-val="48">48</button>
+            </div>
+          </div>
+
+          <div class="pass-tiles-grid">
+            <label class="pass-tile-card ${state.useUpper ? 'is-active' : ''}">
+              <input type="checkbox" id="pass-chk-upper" ${state.useUpper ? 'checked' : ''} class="pass-sr-only">
+              <span class="pass-tile-dot dot-upper"></span>
+              <span class="pass-tile-text">Uppercase (A-Z)</span>
+              <span class="pass-tile-check">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </label>
+            <label class="pass-tile-card ${state.useLower ? 'is-active' : ''}">
+              <input type="checkbox" id="pass-chk-lower" ${state.useLower ? 'checked' : ''} class="pass-sr-only">
+              <span class="pass-tile-dot dot-lower"></span>
+              <span class="pass-tile-text">Lowercase (a-z)</span>
+              <span class="pass-tile-check">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </label>
+            <label class="pass-tile-card ${state.useNumbers ? 'is-active' : ''}">
+              <input type="checkbox" id="pass-chk-num" ${state.useNumbers ? 'checked' : ''} class="pass-sr-only">
+              <span class="pass-tile-dot dot-num"></span>
+              <span class="pass-tile-text">Numbers (0-9)</span>
+              <span class="pass-tile-check">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </label>
+            <label class="pass-tile-card ${state.useSymbols ? 'is-active' : ''}">
+              <input type="checkbox" id="pass-chk-sym" ${state.useSymbols ? 'checked' : ''} class="pass-sr-only">
+              <span class="pass-tile-dot dot-sym"></span>
+              <span class="pass-tile-text">Symbols (!@#$)</span>
+              <span class="pass-tile-check">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </label>
+          </div>
+
+          <div class="pass-switch-rows">
+            <label class="pass-switch-card">
+              <span class="pass-switch-label-wrap">
+                <span class="pass-switch-title">Exclude Ambiguous</span>
+                <span class="pass-switch-hint">Avoids 0, O, 1, l, I</span>
+              </span>
+              <span class="pass-switch-control">
+                <input type="checkbox" id="pass-chk-ambig" class="pass-switch-input" ${state.avoidAmbiguous ? 'checked' : ''}>
+                <span class="pass-switch-track"><span class="pass-switch-thumb"></span></span>
+              </span>
+            </label>
+            <label class="pass-switch-card">
+              <span class="pass-switch-label-wrap">
+                <span class="pass-switch-title">Avoid Repeating</span>
+                <span class="pass-switch-hint">No consecutive duplicates</span>
+              </span>
+              <span class="pass-switch-control">
+                <input type="checkbox" id="pass-chk-repeat" class="pass-switch-input" ${state.avoidRepeating ? 'checked' : ''}>
+                <span class="pass-switch-track"><span class="pass-switch-thumb"></span></span>
+              </span>
+            </label>
+          </div>`;
+
+        const slider = dynamicControlsEl.querySelector('#pass-len-slider');
+        const sliderVal = dynamicControlsEl.querySelector('#pass-len-val');
+        syncSlider(slider);
+
+        slider.addEventListener('input', () => {
+          state.length = parseInt(slider.value, 10);
+          sliderVal.textContent = `${state.length} chars`;
+          syncSlider(slider);
+          updatePillActive();
+          generate();
+        });
+
+        const pills = dynamicControlsEl.querySelectorAll('.pass-preset-pill');
+        function updatePillActive() {
+          pills.forEach(p => p.classList.toggle('is-active', parseInt(p.dataset.val, 10) === state.length));
+        }
+
+        pills.forEach(p => {
+          p.addEventListener('click', () => {
+            state.length = parseInt(p.dataset.val, 10);
+            slider.value = state.length;
+            sliderVal.textContent = `${state.length} chars`;
+            syncSlider(slider);
+            updatePillActive();
+            generate();
+          });
+        });
+
+        function bindTile(id, prop) {
+          const chk = dynamicControlsEl.querySelector(`#${id}`);
+          const card = chk.closest('.pass-tile-card');
+          chk.addEventListener('change', (e) => {
+            state[prop] = e.target.checked;
+            card.classList.toggle('is-active', state[prop]);
+            generate();
+          });
+        }
+
+        bindTile('pass-chk-upper', 'useUpper');
+        bindTile('pass-chk-lower', 'useLower');
+        bindTile('pass-chk-num', 'useNumbers');
+        bindTile('pass-chk-sym', 'useSymbols');
+
+        dynamicControlsEl.querySelector('#pass-chk-ambig').addEventListener('change', (e) => {
+          state.avoidAmbiguous = e.target.checked;
+          generate();
+        });
+        dynamicControlsEl.querySelector('#pass-chk-repeat').addEventListener('change', (e) => {
+          state.avoidRepeating = e.target.checked;
+          generate();
+        });
+
+      } else if (state.mode === 'passphrase') {
+        dynamicControlsEl.innerHTML = `
+          <div class="pass-sec-title">Passphrase Structure</div>
+          <div class="pass-control-group">
+            <div class="pass-slider-row">
+              <label class="pass-label-mini">Word Count</label>
+              <span class="pass-slider-bubble" id="pass-wc-val">${state.wordCount} words</span>
+            </div>
+            <input type="range" class="pass-range-slider" id="pass-wc-slider" min="3" max="8" value="${state.wordCount}">
+            <div class="pass-preset-pills">
+              <button type="button" class="pass-preset-pill ${state.wordCount === 3 ? 'is-active' : ''}" data-val="3">3</button>
+              <button type="button" class="pass-preset-pill ${state.wordCount === 4 ? 'is-active' : ''}" data-val="4">4</button>
+              <button type="button" class="pass-preset-pill ${state.wordCount === 5 ? 'is-active' : ''}" data-val="5">5</button>
+              <button type="button" class="pass-preset-pill ${state.wordCount === 6 ? 'is-active' : ''}" data-val="6">6</button>
+              <button type="button" class="pass-preset-pill ${state.wordCount === 8 ? 'is-active' : ''}" data-val="8">8</button>
+            </div>
+          </div>
+
+          <div class="pass-form-row-2" style="margin-top: 6px;">
+            <div class="pass-form-field">
+              <label class="pass-label-mini">Separator</label>
+              <select id="pass-sep-select" class="pass-select-depth">
+                <option value="-" ${state.separator === '-' ? 'selected' : ''}>Hyphen (-)</option>
+                <option value="_" ${state.separator === '_' ? 'selected' : ''}>Underscore (_)</option>
+                <option value="." ${state.separator === '.' ? 'selected' : ''}>Period (.)</option>
+                <option value=" " ${state.separator === ' ' ? 'selected' : ''}>Space ( )</option>
+              </select>
+            </div>
+            <div class="pass-form-field">
+              <label class="pass-label-mini">Casing</label>
+              <select id="pass-case-select" class="pass-select-depth">
+                <option value="capitalize" ${state.casing === 'capitalize' ? 'selected' : ''}>Capitalize</option>
+                <option value="lower" ${state.casing === 'lower' ? 'selected' : ''}>lowercase</option>
+                <option value="upper" ${state.casing === 'upper' ? 'selected' : ''}>UPPERCASE</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pass-switch-rows" style="margin-top: 6px;">
+            <label class="pass-switch-card">
+              <span class="pass-switch-label-wrap">
+                <span class="pass-switch-title">Append Number</span>
+                <span class="pass-switch-hint">Appends 2-digit number (e.g. -42)</span>
+              </span>
+              <span class="pass-switch-control">
+                <input type="checkbox" id="pass-chk-num-end" class="pass-switch-input" ${state.appendNumber ? 'checked' : ''}>
+                <span class="pass-switch-track"><span class="pass-switch-thumb"></span></span>
+              </span>
+            </label>
+            <label class="pass-switch-card">
+              <span class="pass-switch-label-wrap">
+                <span class="pass-switch-title">Append Symbol</span>
+                <span class="pass-switch-hint">Appends special symbol (e.g. #)</span>
+              </span>
+              <span class="pass-switch-control">
+                <input type="checkbox" id="pass-chk-sym-end" class="pass-switch-input" ${state.appendSymbol ? 'checked' : ''}>
+                <span class="pass-switch-track"><span class="pass-switch-thumb"></span></span>
+              </span>
+            </label>
+          </div>`;
+
+        const slider = dynamicControlsEl.querySelector('#pass-wc-slider');
+        const sliderVal = dynamicControlsEl.querySelector('#pass-wc-val');
+        syncSlider(slider);
+
+        slider.addEventListener('input', () => {
+          state.wordCount = parseInt(slider.value, 10);
+          sliderVal.textContent = `${state.wordCount} words`;
+          syncSlider(slider);
+          pills.forEach(p => p.classList.toggle('is-active', parseInt(p.dataset.val, 10) === state.wordCount));
+          generate();
+        });
+
+        const pills = dynamicControlsEl.querySelectorAll('.pass-preset-pill');
+        pills.forEach(p => {
+          p.addEventListener('click', () => {
+            state.wordCount = parseInt(p.dataset.val, 10);
+            slider.value = state.wordCount;
+            sliderVal.textContent = `${state.wordCount} words`;
+            syncSlider(slider);
+            pills.forEach(pl => pl.classList.toggle('is-active', parseInt(pl.dataset.val, 10) === state.wordCount));
+            generate();
+          });
+        });
+
+        dynamicControlsEl.querySelector('#pass-sep-select').addEventListener('change', (e) => { state.separator = e.target.value; generate(); });
+        dynamicControlsEl.querySelector('#pass-case-select').addEventListener('change', (e) => { state.casing = e.target.value; generate(); });
+        dynamicControlsEl.querySelector('#pass-chk-num-end').addEventListener('change', (e) => { state.appendNumber = e.target.checked; generate(); });
+        dynamicControlsEl.querySelector('#pass-chk-sym-end').addEventListener('change', (e) => { state.appendSymbol = e.target.checked; generate(); });
+
+      } else if (state.mode === 'pin') {
+        dynamicControlsEl.innerHTML = `
+          <div class="pass-sec-title">PIN Configuration</div>
+          <div class="pass-control-group">
+            <label class="pass-label-mini">PIN Digits</label>
+            <div class="pass-pill-selector" id="pass-pin-pills">
+              <button type="button" class="pass-shape-pill ${state.pinLength === 4 ? 'is-active' : ''}" data-len="4">4 Digits</button>
+              <button type="button" class="pass-shape-pill ${state.pinLength === 6 ? 'is-active' : ''}" data-len="6">6 Digits</button>
+              <button type="button" class="pass-shape-pill ${state.pinLength === 8 ? 'is-active' : ''}" data-len="8">8 Digits</button>
+              <button type="button" class="pass-shape-pill ${state.pinLength === 12 ? 'is-active' : ''}" data-len="12">12 Digits</button>
+            </div>
+          </div>
+
+          <div class="pass-switch-rows" style="margin-top: 10px;">
+            <label class="pass-switch-card">
+              <span class="pass-switch-label-wrap">
+                <span class="pass-switch-title">Filter Predictable Patterns</span>
+                <span class="pass-switch-hint">Rejects sequences (1234, 1111)</span>
+              </span>
+              <span class="pass-switch-control">
+                <input type="checkbox" id="pass-chk-obvious-pin" class="pass-switch-input" ${state.avoidObviousPin ? 'checked' : ''}>
+                <span class="pass-switch-track"><span class="pass-switch-thumb"></span></span>
+              </span>
+            </label>
+          </div>`;
+
+        dynamicControlsEl.querySelectorAll('.pass-shape-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            dynamicControlsEl.querySelectorAll('.pass-shape-pill').forEach(p => p.classList.remove('is-active'));
+            pill.classList.add('is-active');
+            state.pinLength = parseInt(pill.dataset.len, 10);
+            generate();
+          });
+        });
+        dynamicControlsEl.querySelector('#pass-chk-obvious-pin').addEventListener('change', (e) => { state.avoidObviousPin = e.target.checked; generate(); });
+
+      } else if (state.mode === 'bulk') {
+        dynamicControlsEl.innerHTML = `
+          <div class="pass-sec-title">Batch Generation Parameters</div>
+          <div class="pass-control-group">
+            <div class="pass-slider-row">
+              <label class="pass-label-mini">Quantity</label>
+              <span class="pass-slider-bubble" id="pass-bulk-qty-val">${state.bulkCount} items</span>
+            </div>
+            <input type="range" class="pass-range-slider" id="pass-bulk-qty-slider" min="5" max="50" step="5" value="${state.bulkCount}">
+            <div class="pass-preset-pills">
+              <button type="button" class="pass-preset-pill ${state.bulkCount === 10 ? 'is-active' : ''}" data-val="10">10</button>
+              <button type="button" class="pass-preset-pill ${state.bulkCount === 20 ? 'is-active' : ''}" data-val="20">20</button>
+              <button type="button" class="pass-preset-pill ${state.bulkCount === 30 ? 'is-active' : ''}" data-val="30">30</button>
+              <button type="button" class="pass-preset-pill ${state.bulkCount === 50 ? 'is-active' : ''}" data-val="50">50</button>
+            </div>
+          </div>
+
+          <div class="pass-control-group" style="margin-top: 10px;">
+            <div class="pass-slider-row">
+              <label class="pass-label-mini">Length per Password</label>
+              <span class="pass-slider-bubble" id="pass-bulk-len-val">${state.length} chars</span>
+            </div>
+            <input type="range" class="pass-range-slider" id="pass-bulk-len-slider" min="8" max="48" value="${state.length}">
+          </div>`;
+
+        const qtySlider = dynamicControlsEl.querySelector('#pass-bulk-qty-slider');
+        const qtyVal = dynamicControlsEl.querySelector('#pass-bulk-qty-val');
+        const qtyPills = dynamicControlsEl.querySelectorAll('.pass-preset-pill');
+        syncSlider(qtySlider);
+
+        qtySlider.addEventListener('input', () => {
+          state.bulkCount = parseInt(qtySlider.value, 10);
+          qtyVal.textContent = `${state.bulkCount} items`;
+          syncSlider(qtySlider);
+          qtyPills.forEach(p => p.classList.toggle('is-active', parseInt(p.dataset.val, 10) === state.bulkCount));
+          generate();
+        });
+
+        qtyPills.forEach(p => {
+          p.addEventListener('click', () => {
+            state.bulkCount = parseInt(p.dataset.val, 10);
+            qtySlider.value = state.bulkCount;
+            qtyVal.textContent = `${state.bulkCount} items`;
+            syncSlider(qtySlider);
+            qtyPills.forEach(pl => pl.classList.toggle('is-active', parseInt(pl.dataset.val, 10) === state.bulkCount));
+            generate();
+          });
+        });
+
+        const lenSlider = dynamicControlsEl.querySelector('#pass-bulk-len-slider');
+        const lenVal = dynamicControlsEl.querySelector('#pass-bulk-len-val');
+        syncSlider(lenSlider);
+        lenSlider.addEventListener('input', () => {
+          state.length = parseInt(lenSlider.value, 10);
+          lenVal.textContent = `${state.length} chars`;
+          syncSlider(lenSlider);
+          generate();
+        });
+      }
+    }
+
+    function renderPhonetics(pwd) {
+      if (state.mode === 'bulk' || state.isMasked) {
+        phoneticSectionEl.hidden = true;
+        return;
+      }
+      phoneticSectionEl.hidden = false;
+      const chars = [...pwd].slice(0, 10);
+      phoneticStreamEl.innerHTML = chars.map(c => {
+        const key = c.toLowerCase();
+        const natoWord = NATO[key] || c;
+        return `<span class="pass-phonetic-chip"><b class="pass-ph-c">${esc(c)}</b><span class="pass-ph-w">${esc(natoWord)}</span></span>`;
+      }).join('');
+    }
+
+    function renderView() {
+      const entropy = calculateEntropy(state.currentPassword);
+      
+      // Update Toolbar Compact Pill
+      entropyChipTextEl.textContent = `${entropy.bits} bits`;
+      entropyChipEl.className = `pass-entropy-pill is-${entropy.verdict === 'Ultra-Strong' || entropy.verdict === 'Strong' ? 'good' : entropy.verdict === 'Fair' ? 'warn' : 'weak'}`;
+      
+      // Update Metrics
+      statEntropyEl.textContent = `${entropy.bits} bits`;
+      statCrackEl.textContent = entropy.crackTime;
+      statPoolEl.textContent = `${entropy.poolSize} characters`;
+
+      // Update Hero Header Badge
+      const modeLabelMap = {
+        'password': 'RANDOM PASSWORD',
+        'passphrase': 'DICEWARE PASSPHRASE',
+        'pin': 'NUMERIC PIN CODE',
+        'bulk': 'BATCH CREDENTIALS'
+      };
+      heroModeBadgeEl.textContent = modeLabelMap[state.mode] || 'CREDENTIAL';
+      heroStrengthTextEl.textContent = `${entropy.verdict} Security`;
+      heroStrengthPillEl.className = `pass-hero-strength-pill is-${entropy.verdict === 'Ultra-Strong' || entropy.verdict === 'Strong' ? 'good' : entropy.verdict === 'Fair' ? 'warn' : 'weak'}`;
+
+      if (state.mode === 'bulk') {
+        singleViewEl.hidden = true;
+        bulkViewEl.hidden = false;
+        bulkBadgeEl.textContent = `${state.bulkList.length} Generated Credentials`;
+        bulkListContainerEl.innerHTML = state.bulkList.map((p, idx) => `
+          <div class="pass-bulk-row">
+            <span class="pass-bulk-idx">${idx + 1}</span>
+            <code class="pass-bulk-code">${formatSyntaxStream(p)}</code>
+            <button type="button" class="pass-bulk-copy-btn" data-pwd="${esc(p)}" title="Copy">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+        `).join('');
+
+        bulkListContainerEl.querySelectorAll('.pass-bulk-copy-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const val = btn.dataset.pwd;
+            await navigator.clipboard.writeText(val);
+            btn.classList.add('is-copied');
+            setTimeout(() => btn.classList.remove('is-copied'), 1500);
+          });
+        });
+      } else {
+        singleViewEl.hidden = false;
+        bulkViewEl.hidden = true;
+        syntaxStreamEl.innerHTML = formatSyntaxStream(state.currentPassword);
+
+        // Bind click on word pills if in passphrase mode
+        if (state.mode === 'passphrase' && !state.isMasked) {
+          syntaxStreamEl.querySelectorAll('.pass-word-pill').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const idx = parseInt(btn.dataset.wordIdx, 10);
+              reRollPhraseWord(idx);
+            });
+          });
+        }
+        
+        // Strength bar fill
+        const meterCount = entropy.bits >= 110 ? 4 : entropy.bits >= 80 ? 3 : entropy.bits >= 50 ? 2 : 1;
+        const segments = strengthBarsEl.querySelectorAll('.pass-meter-segment');
+        segments.forEach((seg, i) => {
+          seg.className = `pass-meter-segment ${i < meterCount ? 'active is-' + (meterCount === 4 ? 'ultra' : meterCount === 3 ? 'strong' : meterCount === 2 ? 'fair' : 'weak') : ''}`;
+        });
+        crackHintEl.textContent = `GPU Cluster crack time: ${entropy.crackTime}`;
+      }
+
+      renderPhonetics(state.currentPassword);
+    }
+
+    // Event: Mode Tabs
+    const modeTabs = container.querySelectorAll('.pass-mode-tab');
+    modeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        modeTabs.forEach(t => t.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        state.mode = tab.dataset.mode;
+        renderDynamicControls();
+        generate();
+      });
+    });
+
+    // Event: Regenerate
+    function doRegen() {
+      regenBtn.classList.add('is-spinning');
+      heroRegenBtn?.classList.add('is-spinning');
+      setTimeout(() => {
+        regenBtn.classList.remove('is-spinning');
+        heroRegenBtn?.classList.remove('is-spinning');
+      }, 250);
+      generate();
+    }
+
+    regenBtn.addEventListener('click', doRegen);
+    heroRegenBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      doRegen();
+    });
+
+    // Event: Spacebar shortcut for instant regeneration
+    const keyHandler = (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        doRegen();
+      }
+    };
+    window.addEventListener('keydown', keyHandler);
+
+    // Event: Copy Single Password
+    async function doCopy() {
+      try {
+        const textToCopy = state.mode === 'bulk' ? state.bulkList.join('\n') : state.currentPassword;
+        await navigator.clipboard.writeText(textToCopy);
+        copyTextEl.textContent = 'Copied!';
+        copyBtn.classList.add('is-copied');
+        heroCopyBtn?.classList.add('is-copied');
+        outputBoxEl?.classList.add('is-copied');
+        setTimeout(() => {
+          copyTextEl.textContent = state.mode === 'bulk' ? 'Copy All' : 'Copy';
+          copyBtn.classList.remove('is-copied');
+          heroCopyBtn?.classList.remove('is-copied');
+          outputBoxEl?.classList.remove('is-copied');
+        }, 1800);
+      } catch (err) {
+        console.warn('Clipboard write error:', err);
+      }
+    }
+
+    copyBtn.addEventListener('click', doCopy);
+    heroCopyBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      doCopy();
+    });
+
+    outputBoxEl?.addEventListener('click', (e) => {
+      if (e.target.closest('.pass-output-actions') || e.target.closest('.pass-word-pill')) {
+        return;
+      }
+      doCopy();
+    });
+
+    // Event: Mask Toggle
+    function toggleMask() {
+      state.isMasked = !state.isMasked;
+      maskLabelEl.textContent = state.isMasked ? 'Reveal' : 'Mask';
+      maskBtn.classList.toggle('is-active', state.isMasked);
+      heroMaskBtn?.classList.toggle('is-active', state.isMasked);
+      if (heroMaskBtn) {
+        heroMaskBtn.innerHTML = state.isMasked
+          ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`
+          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+      }
+      renderView();
+    }
+
+    maskBtn.addEventListener('click', toggleMask);
+    heroMaskBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMask();
+    });
+
+    // Event: Copy JSON
+    jsonCopyBtn?.addEventListener('click', async () => {
+      const ent = calculateEntropy(state.currentPassword);
+      const data = {
+        password: state.currentPassword,
+        mode: state.mode,
+        entropyBits: ent.bits,
+        verdict: ent.verdict,
+        crackTime: ent.crackTime,
+        poolSize: ent.poolSize,
+        csprng: 'Web Crypto API (SubtleCrypto)',
+        generatedAt: new Date().toISOString()
+      };
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      const lbl = jsonCopyBtn.querySelector('span');
+      if (lbl) {
+        const orig = lbl.textContent;
+        lbl.textContent = 'Copied JSON!';
+        jsonCopyBtn.classList.add('is-active');
+        setTimeout(() => {
+          lbl.textContent = orig;
+          jsonCopyBtn.classList.remove('is-active');
+        }, 1600);
+      }
+    });
+
+    // Event: Reset Button
+    container.querySelector('#pass-reset-btn')?.addEventListener('click', () => {
+      state.mode = 'password';
+      state.length = 24;
+      state.useUpper = true;
+      state.useLower = true;
+      state.useNumbers = true;
+      state.useSymbols = true;
+      state.avoidAmbiguous = true;
+      state.avoidRepeating = false;
+      state.isMasked = false;
+      maskLabelEl.textContent = 'Mask';
+      maskBtn.classList.remove('is-active');
+      heroMaskBtn?.classList.remove('is-active');
+      modeTabs.forEach(t => t.classList.toggle('is-active', t.dataset.mode === 'password'));
+      renderDynamicControls();
+      generate();
+    });
+
+    function download(blob, filename) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    container.querySelector('#pass-export-csv-btn')?.addEventListener('click', () => {
+      let csv = 'Index,Password,Length,EntropyBits\n';
+      state.bulkList.forEach((p, i) => {
+        const ent = calculateEntropy(p);
+        csv += `${i + 1},"${p}",${p.length},${ent.bits}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      download(blob, `passwords-bulk-${Date.now()}.csv`);
+    });
+
+    container.querySelector('#pass-export-txt-btn')?.addEventListener('click', () => {
+      const txt = state.bulkList.join('\n');
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+      download(blob, `passwords-bulk-${Date.now()}.txt`);
+    });
+
+    // Event: Print Emergency Vault Card
+    container.querySelector('#pass-print-btn')?.addEventListener('click', () => {
+      const ent = calculateEntropy(state.currentPassword);
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write(`
+          <html>
+            <head>
+              <title>FileKit — Emergency Security Vault Card</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #18181B; }
+                .card { border: 2px solid #18181B; border-radius: 12px; padding: 24px 32px; max-width: 540px; margin: 0 auto; }
+                .head { display: flex; justify-content: space-between; border-bottom: 1px solid #E4E4E7; padding-bottom: 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #71717A; }
+                .pwd { font-family: monospace; font-size: 20px; font-weight: 700; background: #F4F4F5; padding: 14px 18px; border-radius: 8px; margin: 20px 0; word-break: break-all; text-align: center; }
+                .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; border-top: 1px solid #E4E4E7; padding-top: 14px; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="head">
+                  <span>FileKit Security Vault Card</span>
+                  <span>100% Client CSPRNG</span>
+                </div>
+                <div class="pwd">${esc(state.currentPassword)}</div>
+                <div class="meta">
+                  <div>Entropy: <b>${ent.bits} bits</b></div>
+                  <div>Rating: <b>${ent.verdict}</b></div>
+                  <div>Generated: <b>${new Date().toLocaleString()}</b></div>
+                  <div>Algorithm: <b>Web Crypto API</b></div>
+                </div>
+              </div>
+              <script>window.onload = () => { window.print(); window.close(); };<\/script>
+            </body>
+          </html>
+        `);
+        w.document.close();
+      }
+    });
+
+    // Cleanup key listener on unmount
+    const observer = new MutationObserver(() => {
+      if (!document.body.contains(container)) {
+        window.removeEventListener('keydown', keyHandler);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Initial mount
+    renderDynamicControls();
+    generate();
+  }
+
   /* ─── Export dispatchers ─── */
+  window.__ffMountQrStudio = (c, t) => mountQrStudioPro(c, t);
+  window.__ffMountPasswordStudio = (c, t) => mountPasswordStudioPro(c, t);
   window.__ffMountBgRemovePro = (c, t) => mountBgRemovePro(c, t);
   window.__ffMountUtilPro = (c, t) => mountUtilPro(c, t);
   window.__ffMountSheetPro = (c, t) => mountSheetPro(c, t);
@@ -1655,3 +3934,4 @@
     window.FF.boot();
   }
 })();
+
