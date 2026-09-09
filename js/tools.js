@@ -4511,11 +4511,24 @@
       const activeFile = files[0];
       const totalOriginalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
       const targetBytes = (customUnit === 'MB' ? customTargetKB * 1024 * 1024 : customTargetKB * 1024);
-      
+
+      // Phase 6 (honesty): real outcomes vary wildly by content (a loose 100MB
+      // report vs an already-compressed receipt). Show an honest estimate BAND
+      // per family+tier instead of a fake exact "-50%" — the exact, measured %
+      // is shown after the run.
+      const fam = familyOf(activeFile);
+      const BAND = {
+        pdf:    { balanced: ['-30%', '-75%'], light: ['-15%', '-35%'], maximum: ['-50%', '-95%'] },
+        image:  { balanced: ['-20%', '-60%'], light: ['-5%', '-25%'], maximum: ['-40%', '-85%'] },
+        video:  { balanced: ['-40%', '-80%'], light: ['-15%', '-40%'], maximum: ['-60%', '-92%'] },
+        audio:  { balanced: ['-40%', '-85%'], light: ['-10%', '-30%'], maximum: ['-50%', '-90%'] },
+      };
+      const FAM_DEFAULT = BAND.pdf;
+      const famBand = BAND[fam] || FAM_DEFAULT;
       const estMap = {
-        balanced: { label: 'Basic', pct: '-50%', factor: 0.50 },
-        light: { label: 'Moderate', pct: '-20%', factor: 0.80 },
-        maximum: { label: 'Strong', pct: '-75%', factor: 0.25 },
+        balanced: { label: 'Basic', pct: `${famBand.balanced[0]} to ${famBand.balanced[1]}`, factor: 0.50 },
+        light: { label: 'Moderate', pct: `${famBand.light[0]} to ${famBand.light[1]}`, factor: 0.80 },
+        maximum: { label: 'Strong', pct: `${famBand.maximum[0]} to ${famBand.maximum[1]}`, factor: 0.25 },
         custom: { 
           label: 'Target Size', 
           pct: totalOriginalBytes > 0 ? `${Math.round((Math.min(targetBytes, totalOriginalBytes) / totalOriginalBytes - 1) * 100)}%` : '-50%', 
@@ -4529,7 +4542,7 @@
         : Math.max(1000, Math.round(totalOriginalBytes * currentEst.factor));
       const estNewFormatted = `~${_bytes(estBytes)}`;
       const estOldFormatted = _bytes(totalOriginalBytes);
-      const estPctFormatted = `(${currentEst.pct})`;
+      const estPctFormatted = `(est. ${currentEst.pct})`;
 
       const fileInfoText = !isBatch 
         ? `${_esc(activeFile.name)} (${_bytes(activeFile.size)})`
@@ -5270,6 +5283,36 @@
           const rasterPageCount = keepPages ? (numPages - keepPages.size) : 0;
           const isMixed = keepPages !== null && keepPages.size > 0 && keepPages.size < numPages;
 
+          // ─── Phase 4: font-subsetting candidate (pdf-lib copyPages subsets
+          // embedded fonts to the glyphs actually used on the copied pages). ───
+          // Pure-text born-digital docs with big embedded fonts shrink a lot this
+          // way with ZERO quality loss (glyph outlines are preserved exactly).
+          let subsetBlob = null;
+          let subsetBuilt = false;
+          async function buildSubsetPdf() {
+            if (!surgeryDoc || numPages < 1 || numPages > 160) return null;
+            try {
+              onProgress?.(0.25, 'Subsetting embedded fonts…');
+              const sOut = await PDFLib.PDFDocument.create();
+              const idxs = [];
+              for (let i = 0; i < numPages; i++) idxs.push(i);
+              const pages = await sOut.copyPages(surgeryDoc, idxs);
+              for (const pg of pages) sOut.addPage(pg);
+              const bytes = await sOut.save({ useObjectStreams: true });
+              return bytes.length < file.size ? new Blob([bytes], { type: 'application/pdf' }) : null;
+            } catch (e) {
+              console.warn('[Subset Exception]', e);
+              return null;
+            }
+          }
+          const bestVectorOf = (a, b) => {
+            const cands = [a, b].filter(Boolean);
+            if (!cands.length) return { blob: file, which: 'original' };
+            cands.sort((x, y) => x.size - y.size);
+            if (cands[0].size >= file.size) return { blob: file, which: 'original' };
+            return cands[0] === b ? { blob: b, which: 'subset' } : { blob: a, which: 'surgery' };
+          };
+
           // ─── Stage 2: Tier Evaluation & Decision ───
           const surgerySize = surgeryBlob ? surgeryBlob.size : file.size;
           const surgerySavings = (1 - surgerySize / file.size) * 100;
@@ -5278,13 +5321,15 @@
           if (selectedTier === 'light') {
             onProgress?.(1, 'Optimized with 100% vector text preservation!');
             try { doc.destroy(); } catch {}
-            const bestBlob = (surgeryBlob && surgeryBlob.size < file.size) ? surgeryBlob : file;
+            const subset = await buildSubsetPdf();
+            if (subset) subsetBlob = subset, subsetBuilt = true;
+            const { blob: bestBlob, which } = bestVectorOf(surgeryBlob, subset);
             return {
               blob: bestBlob,
               filename: U.baseName(file.name) + '-compressed.pdf',
               mime: 'application/pdf',
               preview: 'pdf',
-              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings }
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings, usedSubset: which === 'subset', subsetBuilt }
             };
           }
 
@@ -5292,12 +5337,15 @@
           if (selectedTier === 'balanced' && surgeryBlob && surgerySavings >= 20 && !isMixed) {
             onProgress?.(1, 'Vector structure & images compressed successfully!');
             try { doc.destroy(); } catch {}
+            const subset = await buildSubsetPdf();
+            if (subset) subsetBlob = subset, subsetBuilt = true;
+            const { blob: bestBlob, which } = bestVectorOf(surgeryBlob, subset);
             return {
-              blob: surgeryBlob,
+              blob: bestBlob,
               filename: U.baseName(file.name) + '-compressed.pdf',
               mime: 'application/pdf',
               preview: 'pdf',
-              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings }
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings, usedSubset: which === 'subset', subsetBuilt }
             };
           }
 
@@ -5309,13 +5357,15 @@
               ? 'Optimized with 100% text & vector preservation!'
               : 'Already optimized — text & vectors preserved as-is.');
             try { doc.destroy(); } catch {}
-            const bestBlob = (surgeryBlob && surgeryBlob.size < file.size) ? surgeryBlob : file;
+            const subset = await buildSubsetPdf();
+            if (subset) subsetBlob = subset, subsetBuilt = true;
+            const { blob: bestBlob, which } = bestVectorOf(surgeryBlob, subset);
             return {
               blob: bestBlob,
               filename: U.baseName(file.name) + '-compressed.pdf',
               mime: 'application/pdf',
               preview: 'pdf',
-              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings }
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings, usedSubset: which === 'subset', subsetBuilt }
             };
           }
 
@@ -5469,11 +5519,17 @@
           // Eligible candidates depend on text presence so we NEVER destroy the
           // text layer of born-digital pages:
           //   textFree  : surgery, raster(whole)
-          //   has text  : surgery, hybrid(rasterizes only scan pages)
+          //   has text  : surgery, hybrid(rasterizes only scan pages), subset(fonts)
+          // Font-subsetting candidate for max/custom text docs (Phase 4).
+          if (!textFree && !subsetBlob && surgeryDoc && numPages >= 1 && numPages <= 160 && selectedTier !== 'balanced') {
+            const subset = await buildSubsetPdf();
+            if (subset) subsetBlob = subset, subsetBuilt = true;
+          }
           const elig = [];
           if (surgeryBlob && surgeryBlob.size < file.size) elig.push({ blob: surgeryBlob, v: true, kind: 'surgery' });
           if (textFree && rasterBlob && rasterBlob.size < file.size) elig.push({ blob: rasterBlob, v: false, kind: 'raster' });
           if (!textFree && hybridBlob && hybridBlob.size < file.size) elig.push({ blob: hybridBlob, v: true, kind: 'hybrid' });
+          if (!textFree && subsetBlob && subsetBlob.size < file.size) elig.push({ blob: subsetBlob, v: true, kind: 'subset' });
 
           let finalBlob = file;
           let finalKind = 'original';
@@ -5490,9 +5546,10 @@
             finalKind = elig[0].kind;
           }
 
-          const vectorPreserved = finalKind === 'surgery' || finalKind === 'hybrid' || finalKind === 'original';
+          const vectorPreserved = finalKind === 'surgery' || finalKind === 'hybrid' || finalKind === 'original' || finalKind === 'subset';
           const usedRaster = finalKind === 'raster';
           const usedHybrid = finalKind === 'hybrid';
+          const usedSubset = finalKind === 'subset';
           onProgress?.(1, 'Compression complete!');
           return {
             blob: finalBlob,
@@ -5503,6 +5560,7 @@
               tier: selectedTier, vectorPreserved, hasSelectableText,
               textPageCount, rasterPageCount, usedHybrid, hybridRasterized, hybridBuilt,
               surgerySavings, textCharsSampled,
+              usedSubset, subsetBuilt,
               mono: window.__ffMonoStat ? { pages: window.__ffMonoStat.pages, picked: window.__ffMonoStat.picked, failedPng: window.__ffMonoStat.failedPng } : null,
               usedRaster
             }
@@ -6037,6 +6095,16 @@
       const outName = !isBatch ? firstRes.result.filename : `${U.baseName(files[0].name)}-compressed.zip`;
 
       if (window.FF?.renderUnifiedResult) {
+        // Phase 6: show a measured (not promised) quality label derived from the
+        // engine metrics of what was actually produced.
+        const _mk = firstRes.result?.metrics;
+        let qualityBadge = 'Perceptually lossless';
+        if (_mk) {
+          if (_mk.usedRaster) qualityBadge = 'Standard fidelity';
+          else if (_mk.usedSubset) qualityBadge = 'Lossless · fonts subset';
+          else if (_mk.usedHybrid) qualityBadge = 'High fidelity';
+          else if (_mk.untouched) qualityBadge = 'Unchanged (protected)';
+        }
         window.FF.renderUnifiedResult(container, {
           tool: { id: 'pdf-compress', name: 'Compress File', category: 'PDF' },
           blob: !isBatch ? firstRes.result.blob : undefined,
@@ -6044,6 +6112,7 @@
           filename: outName,
           title: 'Compression Complete',
           badge: isBatch ? `${results.length} Files Compressed` : (win ? `-${redPct}% Size Reduction` : 'Optimized File'),
+          qualityBadge,
           reductionPct: redPct,
           originalBytes: oTot,
           resultBytes: cTot,

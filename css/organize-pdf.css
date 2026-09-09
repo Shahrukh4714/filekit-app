@@ -2568,6 +2568,20 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   color: #16A34A !important;
 }
 
+.org-res-quality-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #0F766E !important;
+  background: #CCFBF1 !important;
+  border: 1px solid #99F6E4 !important;
+  border-radius: 9999px !important;
+  padding: 2px 9px !important;
+  margin-left: 6px !important;
+}
+
 .cpdf-benchmark-track {
   height: 3px !important;
   background: #DCFCE7 !important;

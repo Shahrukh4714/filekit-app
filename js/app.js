@@ -527,11 +527,11 @@
 
     // Benchmark/test hook: expose result blob + metrics for automated verification
     // (benchmark/pdf-bench.js). Harmless in production.
-    try {
-      const hook = { blob, filename, originalBytes: opts.originalBytes ?? null, resultBytes: opts.resultBytes ?? (blob ? blob.size : null), reductionPct: opts.reductionPct ?? null, metrics: opts.metrics ?? null };
-      container._ffResult = hook;
-      window._ffLastResult = hook;
-    } catch {}
+try {
+        const hook = { blob, filename, originalBytes: opts.originalBytes ?? null, resultBytes: opts.resultBytes ?? (blob ? blob.size : null), reductionPct: opts.reductionPct ?? null, metrics: opts.metrics ?? null, qualityBadge: opts.qualityBadge ?? null };
+        container._ffResult = hook;
+        window._ffLastResult = hook;
+      } catch {}
 
     let titleText = opts.title || (
       isPdf ? (tool.id?.includes('merge') ? 'Merge Complete' :
@@ -789,6 +789,7 @@
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                     Ready
                   </span>
+                  ${opts.qualityBadge ? `<span class="org-res-quality-badge" title="Quality tier determined from measured engine output">✓ ${_esc(opts.qualityBadge)}</span>` : ''}
                 </div>
                 <div class="cpdf-benchmark-track" style="margin: 6px 0;">
                   <div class="cpdf-benchmark-bar" style="width: ${hasSavings ? Math.max(10, Math.round((Number(opts.resultBytes) / Number(opts.originalBytes)) * 100)) : 100}%; background: #16A34A !important;"></div>
