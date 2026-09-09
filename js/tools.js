@@ -852,7 +852,7 @@
   const loadFf = () => U.loadScript(...L.ff).then(() => window.fflate);
   const textOut = (t, name, mime = 'text/plain') => ({ preview: 'text', text: t, filename: name, mime, blob: new Blob([t], { type: mime }) });
   const stripTags = (html) => { const d = new DOMParser().parseFromString(html, 'text/html'); return d.body.textContent || ''; };
-  const getText = async (file, inputs) => { let raw = inputs.source ?? ''; if (!raw && file) raw = await file.text(); if (!raw) throw new Error('Type text or drop a file.'); return raw; };
+  const getText = async (file, inputs) => { let raw = inputs?.source ?? ''; if (!raw && file) raw = await file.text(); if (!raw) throw new Error('Type text or drop a file.'); return raw; };
   const escT = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const extOfF = (f) => String(f?.name || '').split('.').pop().toLowerCase();
   const dec = new TextDecoder();
@@ -904,6 +904,7 @@
 
   /* Shared text/html extraction: DOCX via mammoth, ODT via content.xml, RTF via stripper. */
   const officeText = async (file, mammoth) => {
+    if (!file) throw new Error('Drop a Word (.docx), OpenDocument (.odt) or RTF (.rtf) file to convert.');
     const ext = extOfF(file);
     if (ext === 'odt') return (await odtParas(file)).map((p) => p.replace(/^## /, '')).join('\n');
     if (ext === 'rtf') return rtfToText(await file.text());
@@ -911,6 +912,7 @@
     return r.value;
   };
   const officeHtml = async (file, mammoth) => {
+    if (!file) throw new Error('Drop a Word (.docx), OpenDocument (.odt) or RTF (.rtf) file to convert.');
     const ext = extOfF(file);
     if (ext === 'odt' || ext === 'rtf') {
       const paras = ext === 'odt' ? await odtParas(file) : rtfToText(await file.text()).split('\n').map((s) => s.trim()).filter(Boolean);
@@ -998,7 +1000,15 @@
       return textOut(txt, U.baseName(file.name) + '.txt');
     } });
   R({ id: 'html-to-txt', category: 'Text', name: 'HTML to TXT', description: 'Strip HTML into plain text.', accepts: ['html', 'htm', 'txt'],
-    async run({ file }) { return textOut(stripTags(await file.text()).replace(/\n{3,}/g, '\n\n').trim(), U.baseName(file.name) + '.txt'); } });
+    async run({ file }) {
+      // Block boundaries become newlines first — textContent alone fuses
+      // "<h1>Hi</h1><p>Body</p>" into "HiBody".
+      const raw = await file.text();
+      const blocked = raw
+        .replace(/<(br|hr)(\s[^>]*)?\/?>/gi, '\n')
+        .replace(/<\/(p|h[1-6]|div|li|ul|ol|tr|table|section|article|header|footer|blockquote|pre)>/gi, '\n');
+      return textOut(stripTags(blocked).replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim(), U.baseName(file.name) + '.txt');
+    } });
 
   const DOC = ['txt', 'md', 'log', 'csv', 'html'];
   const to = (t, n = 'out.txt') => textOut(t, n);
@@ -2491,6 +2501,7 @@
 
   R({ id: 'excel-to-json', category: 'Spreadsheets', name: 'Excel to JSON', description: 'Convert every spreadsheet sheet into JSON rows.', accepts: ['xlsx', 'xls', 'ods'], engine: () => U.loadScript(...V.xlsx).then(() => window.XLSX),
     async run({ file, engine }) {
+      if (!file) throw new Error('Drop an Excel (.xlsx, .xls) or OpenDocument (.ods) file to convert.');
       const wb = engine.read(await file.arrayBuffer(), { type: 'array' });
       const out = {};
       for (const name of wb.SheetNames) out[name] = engine.utils.sheet_to_json(wb.Sheets[name]);
@@ -3930,36 +3941,69 @@
      noise). Closes most of the JBIG2 gap with zero new dependencies. The page
      is emitted as an 8-bit-gray PDF via pdf-lib embedPng only when the canvas
      really is bilevel-ish; otherwise callers keep the JPEG path. */
-  function bilevelFromCanvas(ctx2d, maxDimPixelAnalysis) {
+  /* ── Phase 3/4 codec: one-pass raster analysis + mono/gray encoders ──
+     Closes the noisy-scan gap with an Otsu adaptive threshold (background
+     gradients, halftone and faint ink no longer disqualify a page from the
+     1-bit path), and adds an 8-bit grayscale PNG candidate for low-saturation
+     color scans (DeviceGray ≈ 1 channel vs JPEG's 3). */
+
+  function analyzePageRaster(ctx2d) {
     try {
       const W = ctx2d.canvas.width, H = ctx2d.canvas.height;
       if (!W || !H || W * H > 40e6) return null;
       const id = ctx2d.getImageData(0, 0, W, H);
       const d = id.data;
       const n = W * H;
-      let black = 0, white = 0, other = 0, color = 0;
-      const step = n > 6e6 ? 2 : 1;            // sample half the pixels on huge pages
+      const step = n > 6e6 ? 2 : 1;
+      const hist = new Uint32Array(256);
+      let color = 0;
+      let black = 0, white = 0, other = 0;
       for (let i = 0; i < n; i += step) {
         const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
         const mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
         const mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
-        if (mx - mn > 26) { color++; continue; }          // saturated -> not a document page
-        if (lum < 112) black++;
-        else if (lum > 198) white++;
+        if (mx - mn > 26) { color++; continue; }
+        hist[Math.min(255, Math.round(lum))]++;
+      }
+      // Otsu between-class variance threshold
+      const totS = n / step;
+      let sum = 0;
+      for (let k = 0; k < 256; k++) sum += k * hist[k];
+      let sumB = 0, wB = 0, maxVar = -1, threshold = 128;
+      for (let k = 0; k < 256; k++) {
+        wB += hist[k];
+        if (wB === 0) continue;
+        const wF = totS - wB;
+        if (wF === 0) break;
+        sumB += k * hist[k];
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
+        const v = wB * wF * (mB - mF) * (mB - mF);
+        if (v > maxVar) { maxVar = v; threshold = k; }
+      }
+      const margin = Math.max(24, (255 - threshold) * 0.12);
+      for (let i = 0; i < n; i += step) {
+        const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        const mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+        const mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+        if (mx - mn > 26) continue;
+        if (lum < threshold - margin) black++;
+        else if (lum > threshold + margin) white++;
         else other++;
       }
       const tot = black + white + other + color;
-      const otherRatio = (other + color) / tot;
+      const colorRatio = color / tot;
+      const otherRatio = other / tot;
       const blackRatio = black / tot;
-      // Bilevel document page: overwhelmingly near-black/near-white, has real ink,
-      // and is not a fully black page.
-      const likely = otherRatio < 0.045 && blackRatio > 0.001 && blackRatio < 0.85 && white > black;
-      if (!likely) return { likely: false, png: null, blackRatio, otherRatio };
+      return { W, H, id, d, step, colorRatio, otherRatio, blackRatio, threshold };
+    } catch (e) { return null; }
+  }
 
-      // Encode 1-bit: bit 0 = black ink (PNG gray sample 0 = black, matches PDF
-      // DeviceGray 0 = black), bit 1 = white paper -> paper rows read 0xFF and
-      // Up-filter to near-zero bytes that Deflate collapses.
+  function encodeMonoPng(a, threshold) {
+    try {
+      const { W, H, d } = a;
       const rowBytes = Math.max(1, Math.ceil(W / 8));
       const raw = new Uint8Array(rowBytes * H);
       raw.fill(0xFF);
@@ -3968,11 +4012,9 @@
         for (let x = 0; x < W; x++) {
           const i = (y * W + x);
           const lum = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
-          if (lum < 112) raw[rowOff + (x >> 3)] &= ~(1 << (7 - (x & 7)));
+          if (lum < threshold) raw[rowOff + (x >> 3)] &= ~(1 << (7 - (x & 7)));
         }
       }
-      // PNG filtering: Up (2) on every scanline (first line's "prior" is zeros,
-      // so Up == None for it). Prefix each line with its filter type.
       const filtered = new Uint8Array(rowBytes * H + H);
       for (let y = 0; y < H; y++) {
         const dst = y * (rowBytes + 1);
@@ -3982,16 +4024,12 @@
         for (let k = 0; k < rowBytes; k++) filtered[dst + 1 + k] = (cur[k] - (prev ? prev[k] : 0)) & 0xFF;
       }
       const fflate = window.fflate;
-      if (!fflate) return { likely: true, png: null, blackRatio, otherRatio };
+      if (!fflate) return null;
       const deflated = fflate.zlibSync(filtered, { level: 9 });
-
       const ihdr = new Uint8Array(13);
       const ihdv = new DataView(ihdr.buffer);
       ihdv.setUint32(0, W); ihdv.setUint32(4, H);
-      ihdr[8] = 1;   // bit depth 1
-      ihdr[9] = 0;   // grayscale
-      ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
-
+      ihdr[8] = 1; ihdr[9] = 0;
       let outLen = 8 + 12 + 13 + 12 + deflated.length + 12;
       const out = new Uint8Array(outLen);
       out.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
@@ -3999,37 +4037,86 @@
       const ch1 = pngChunk('IHDR', ihdr); out.set(ch1, o); o += ch1.length;
       const ch2 = pngChunk('IDAT', deflated); out.set(ch2, o); o += ch2.length;
       const ch3 = pngChunk('IEND', new Uint8Array(0)); out.set(ch3, o);
-      return { likely: true, png: out, blackRatio, otherRatio, rowBytes };
-    } catch (e) {
-      return null;
-    }
+      return out;
+    } catch (e) { return null; }
   }
 
-  /* Embed the better of JPEG vs bilevel-PNG for a rasterized page into outPdf.
-     Returns { img, bytesLen, usedMono }. Tracks counters on window.__ffMonoStat
-     so the benchmark can prove the 1-bit path fired. */
+  function encodeGray8Png(a) {
+    try {
+      const { W, H, d } = a;
+      const raw = new Uint8Array(W * H);
+      for (let i = 0; i < W * H; i++) raw[i] = Math.round(0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]);
+      const filtered = new Uint8Array(W * H + H);
+      for (let y = 0; y < H; y++) {
+        const dst = y * (W + 1);
+        filtered[dst] = 2;
+        const cur = raw.subarray(y * W, (y + 1) * W);
+        const prev = y > 0 ? raw.subarray((y - 1) * W, y * W) : null;
+        for (let k = 0; k < W; k++) filtered[dst + 1 + k] = (cur[k] - (prev ? prev[k] : 0)) & 0xFF;
+      }
+      const fflate = window.fflate;
+      if (!fflate) return null;
+      const deflated = fflate.zlibSync(filtered, { level: 9 });
+      const ihdr = new Uint8Array(13);
+      const ihdv = new DataView(ihdr.buffer);
+      ihdv.setUint32(0, W); ihdv.setUint32(4, H);
+      ihdr[8] = 8; ihdr[9] = 0;
+      let outLen = 8 + 12 + 13 + 12 + deflated.length + 12;
+      const out = new Uint8Array(outLen);
+      out.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
+      let o = 8;
+      const ch1 = pngChunk('IHDR', ihdr); out.set(ch1, o); o += ch1.length;
+      const ch2 = pngChunk('IDAT', deflated); out.set(ch2, o); o += ch2.length;
+      const ch3 = pngChunk('IEND', new Uint8Array(0)); out.set(ch3, o);
+      return out;
+    } catch (e) { return null; }
+  }
+
+  /* Embed the best of JPEG vs bilevel-PNG vs grayscale-PNG for a rasterized
+     page into outPdf. Returns { img, bytesLen, usedMono, usedGray }. */
   async function embedPageRaster(outPdf, ctx2d, quality) {
-    if (!window.__ffMonoStat) window.__ffMonoStat = { pages: 0, picked: 0, failedPng: 0, jpegBytes: 0, monoBytes: 0 };
+    if (!window.__ffMonoStat) window.__ffMonoStat = { pages: 0, picked: 0, failedPng: 0, grayPicked: 0, jpegBytes: 0, monoBytes: 0 };
     const st = window.__ffMonoStat;
     st.pages++;
     const jBlob = await new Promise(r => ctx2d.canvas.toBlob(r, 'image/jpeg', quality));
     const jBytes = new Uint8Array(await jBlob.arrayBuffer());
-    let mono = null;
-    try { mono = bilevelFromCanvas(ctx2d); } catch (e) { mono = null; }
-    if (mono && mono.likely && mono.png && mono.png.length < jBytes.length * 0.85) {
-      try {
-        const img = await outPdf.embedPng(mono.png);
-        st.picked++;
-        st.jpegBytes += jBytes.length;
-        st.monoBytes += mono.png.length;
-        return { img, bytesLen: mono.png.length, usedMono: true };
-      } catch (pngErr) {
-        st.failedPng++;
-        // pdf-lib rejected the 1-bit PNG — fall back to JPEG.
+    const a = analyzePageRaster(ctx2d);
+
+    // Clean bilevel (Otsu) page -> 1-bit mono beats JPEG massively.
+    if (a) {
+      const monoLikely = a.otherRatio < 0.08 && a.colorRatio < 0.01 && a.blackRatio > 0.001 && a.blackRatio < 0.9 && (1 - a.blackRatio) > 0.05;
+      if (monoLikely) {
+        const mono = encodeMonoPng(a, a.threshold);
+        if (mono && mono.length < jBytes.length * 0.85) {
+          try {
+            const img = await outPdf.embedPng(mono);
+            st.picked++;
+            st.jpegBytes += jBytes.length;
+            st.monoBytes += mono.length;
+            return { img, bytesLen: mono.length, usedMono: true, usedGray: false };
+          } catch (pngErr) {
+            st.failedPng++;
+          }
+        }
+      }
+      // Low-saturation scan (gray photo/paper) -> 8-bit grayscale PNG
+      // (DeviceGray 1 channel) when it beats JPEG.
+      const grayLikely = a.colorRatio < 0.015;
+      if (grayLikely) {
+        const gray = encodeGray8Png(a);
+        if (gray && gray.length < jBytes.length * 0.92) {
+          try {
+            const img = await outPdf.embedPng(gray);
+            st.grayPicked++;
+            st.jpegBytes += jBytes.length;
+            st.monoBytes += gray.length;
+            return { img, bytesLen: gray.length, usedMono: false, usedGray: true };
+          } catch (pngErr2) {}
+        }
       }
     }
     const img = await outPdf.embedJpg(jBytes);
-    return { img, bytesLen: jBytes.length, usedMono: false };
+    return { img, bytesLen: jBytes.length, usedMono: false, usedGray: false };
   }
 
   /* ── Helper: In-Place Raster Image Compression Buffer (Industry-Grade) ── */
@@ -5234,15 +5321,24 @@
       };
 
       try {
-        const results = [];
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i];
-          const fam = familyOf(f);
-          onProgress(i / files.length, `Compressing ${i + 1}/${files.length} — ${f.name}`);
-          const res = await runByFamily(f, fam, p, (sub, text) =>
-            onProgress((i + sub) / files.length, text || `Compressing ${i + 1}/${files.length} — ${f.name}`));
-          results.push({ file: f, family: fam, result: res });
-        }
+        // Phase 5: small concurrency pool for multi-file batches (2 at a time).
+        // Sequential within a file (progress bar stays truthful); the pool only
+        // overlaps independent files. Memory-bounded for large media.
+        const pool = 2;
+        const results = new Array(files.length);
+        let cursor = 0;
+        const worker = async () => {
+          while (cursor < files.length) {
+            const i = cursor++;
+            const f = files[i];
+            const fam = familyOf(f);
+            onProgress(i / files.length, `Compressing ${i + 1}/${files.length} — ${f.name}`);
+            const res = await runByFamily(f, fam, p, (sub, text) =>
+              onProgress((i + sub) / files.length, text || `Compressing ${i + 1}/${files.length} — ${f.name}`));
+            results[i] = { file: f, family: fam, result: res };
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(pool, files.length) }, () => worker()));
         onProgress(1, 'Complete!');
         await new Promise(r => setTimeout(r, 400));
         renderResult(results);
@@ -5745,26 +5841,26 @@
             if (!needRaster) {
               onProgress?.(1, 'Target approached with text preserved — skipping raster.');
             } else {
-              // Custom target size adaptive search
+              // ─── Exact custom-target: binary search on quality (then scale) ───
+              // Converges the raster output onto the requested target within ~2%.
               const estimatedPageBudget = targetBytesAllocated / Math.max(1, numPages);
               let s = estimatedPageBudget < 40000 ? 1.2 : estimatedPageBudget < 80000 ? 1.5 : 1.8;
               let q = estimatedPageBudget < 40000 ? 0.45 : estimatedPageBudget < 80000 ? 0.58 : 0.70;
-              let r1 = await renderRasterPdf(s, q);
-              if (r1.size <= targetBytesAllocated) {
-                rasterBlob = r1;
-              } else {
-                const ratio = targetBytesAllocated / r1.size;
-                s = Math.max(0.85, s * Math.sqrt(ratio) * 0.92);
-                q = Math.max(0.30, q * Math.sqrt(ratio) * 0.90);
-                let r2 = await renderRasterPdf(s, q);
-                if (r2.size <= targetBytesAllocated) {
-                  rasterBlob = r2;
+              let bestFit = null; // largest render <= target
+              for (let it = 0; it < 6; it++) {
+                const r = await renderRasterPdf(s, q);
+                if (r.size <= targetBytesAllocated && (!bestFit || r.size > bestFit.size)) bestFit = r;
+                const err = r.size / targetBytesAllocated;
+                if (err >= 0.98 && err <= 1.02) { rasterBlob = r; break; }
+                if (err > 1.02) {
+                  q *= Math.sqrt(1 / err) * 0.97;
+                  if (q < 0.20) { q = 0.20; s *= 0.85; }
                 } else {
-                  s = Math.max(0.70, s * 0.85);
-                  q = Math.max(0.25, q * 0.85);
-                  rasterBlob = await renderRasterPdf(s, q);
+                  q = Math.min(0.95, q * Math.sqrt(err) * 1.03);
                 }
+                rasterBlob = r;
               }
+              if (bestFit && (!rasterBlob || bestFit.size < rasterBlob.size || rasterBlob.size > targetBytesAllocated)) rasterBlob = bestFit;
             }
           }
 
@@ -5870,7 +5966,7 @@
               textPageCount, rasterPageCount, usedHybrid, hybridRasterized, hybridBuilt,
               surgerySavings, textCharsSampled,
               usedSubset, subsetBuilt,
-              mono: window.__ffMonoStat ? { pages: window.__ffMonoStat.pages, picked: window.__ffMonoStat.picked, failedPng: window.__ffMonoStat.failedPng } : null,
+              mono: window.__ffMonoStat ? { pages: window.__ffMonoStat.pages, picked: window.__ffMonoStat.picked, failedPng: window.__ffMonoStat.failedPng, grayPicked: window.__ffMonoStat.grayPicked } : null,
               usedRaster
             }
           };
