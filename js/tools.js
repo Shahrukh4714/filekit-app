@@ -44,6 +44,20 @@
     });
   }
 
+  // EXIF orientation → canvas transform (source w/h). Dest dims swap for 5-8.
+  function exifTransform(or, w, h) {
+    switch (Number(or) || 1) {
+      case 2: return { w, h, m: [-1, 0, 0, 1, w, 0] };
+      case 3: return { w, h, m: [-1, 0, 0, -1, w, h] };
+      case 4: return { w, h, m: [1, 0, 0, -1, 0, h] };
+      case 5: return { w: h, h: w, m: [0, 1, 1, 0, 0, 0] };
+      case 6: return { w: h, h: w, m: [0, 1, -1, 0, h, 0] };
+      case 7: return { w: h, h: w, m: [0, -1, -1, 0, h, w] };
+      case 8: return { w: h, h: w, m: [0, -1, 1, 0, 0, w] };
+      default: return { w, h, m: null };
+    }
+  }
+
   window.FF.register({
     id: 'image-convert',
     category: 'Images',
@@ -59,7 +73,18 @@
     async run({ file, inputs, onProgress }) {
       onProgress?.(0.1, 'Decoding…');
       const img = await loadImage(file);
-      let { width, height } = img;
+      // EXIF orientation (phone photos): canvas ignores it, so portraits
+      // come out sideways unless we bake the rotation in. JPEG/TIFF only.
+      let orientation = 1;
+      try {
+        if (/\.jpe?g$/i.test(file.name || '') || file.type === 'image/jpeg') {
+          const exifr = await window.FF.util.loadScript('vendor/exifr.js', 'sha384-KrOocIA+lZcNUz2MDavnT/FuX+CbTREJihUi0bp8QUSwhE2AkGTNpv2b7yMbBkx5').then(() => window.exifr);
+          const tag = await exifr.parse(file, ['orientation']);
+          orientation = (tag && tag.orientation) || 1;
+        }
+      } catch (_) { orientation = 1; }
+      const oriented = exifTransform(orientation, img.naturalWidth || img.width, img.naturalHeight || img.height);
+      let { w: width, h: height } = oriented;
       const mw = Number(inputs.maxWidth) || 0;
       if (mw > 0 && width > mw) { height = Math.round((height * mw) / width); width = mw; }
 
@@ -68,7 +93,18 @@
       canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (inputs.format === 'jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height); }
-      ctx.drawImage(img, 0, 0, width, height);
+      ctx.save();
+      if (oriented.m) {
+        // Orientation matrix is built for natural size; scale to output size
+        ctx.scale(width / oriented.w, height / oriented.h);
+        ctx.transform(...oriented.m);
+        ctx.drawImage(img, 0, 0);
+      } else if (width !== img.width || height !== img.height) {
+        ctx.drawImage(img, 0, 0, width, height);
+      } else {
+        ctx.drawImage(img, 0, 0);
+      }
+      ctx.restore();
 
       onProgress?.(0.8, 'Encoding…');
       const type = MIME[inputs.format];
@@ -1545,6 +1581,7 @@
       onProgress?.((i - 1) / doc.numPages * 0.7, `Reading page ${i}/${doc.numPages}`);
       const page = await doc.getPage(i);
       const tc = await page.getTextContent();
+      const pageVp = page.getViewport({ scale: 1 });
       const sizes = [];
       const raw = [];
       for (const it of tc.items) {
@@ -1557,6 +1594,12 @@
           w: Math.abs(it.width || 0),
           bold: /bold|black|heavy|demi|bd/i.test(fn), italic: /italic|oblique/i.test(fn), font: fn });
       }
+      let links = [];
+      try {
+        const anns = await page.getAnnotations();
+        links = (anns || []).filter((a) => a.subtype === 'Link' && (a.url || a.dest) && a.rect)
+          .map((a) => ({ url: a.url || null, dest: a.dest || null, x0: a.rect[0], y0: a.rect[1], x1: a.rect[2], y1: a.rect[3] }));
+      } catch (_) {}
       sizes.sort((a, b) => a - b);
       const median = sizes.length ? sizes[Math.floor(sizes.length / 2)] : 11;
       // Group into visual lines by y-band
@@ -1670,7 +1713,16 @@
       if (fillByShow.length === raw.length && raw.length) {
         raw.forEach((r, idx) => { if (fillByShow[idx]) r.color = fillByShow[idx]; });
       }
-      pages.push({ lines, images, median, frames: segs });
+      // Resolve pdf.js fontName → BaseFont name (for DOCX font embedding
+      // matching): objects are cached after the operator-list walk above.
+      const fontNames = {};
+      for (const fn of new Set(raw.map((r) => r.font))) {
+        try {
+          const fobj = await page.commonObjs.get(fn);
+          if (fobj && fobj.name) fontNames[fn] = String(fobj.name).replace(/^[A-Z]{6}\+/, '');
+        } catch (_) {}
+      }
+      pages.push({ lines, images, median, frames: segs, w: pageVp.width, h: pageVp.height, links, fonts: fontNames });
       onProgress?.(i / doc.numPages * 0.7, `Reading page ${i}/${doc.numPages}`);
     }
     return pages;
@@ -1704,6 +1756,153 @@
     } catch (_) { return null; }
   }
 
+  /* ── Embedded-font plumbing: PDF font programs → subsetted DOCX fontTable ── */
+
+  /* Walk the PDF object tree via pdf-lib and pull every embedded font
+     program (FontFile / FontFile2 / FontFile3) plus its BaseFont name.
+     Standard-14 fonts have no FontFile streams so they never appear. */
+  async function extractPdfFontFiles(pdfBytes) {
+    try {
+      const PDFLib = await loadLib();
+      const F2 = await loadFf();
+      const inflate = (b) => {
+        try {
+          if (b && (b[0] === 0x78)) return F2.unzlibSync(b);
+        } catch (_) {}
+        return b;
+      };
+      const doc = await PDFLib.PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      const found = [];
+      const seen = new Set();
+      const baseSeen = [];
+      const PdfName = PDFLib.PDFName;
+      const snip = (v) => { try { return v ? (v.decodeText ? v.decodeText() : '') : ''; } catch (_) { return ''; } };
+      const tryFontDict = (f0) => {
+        try {
+          let f = f0;
+          if (!f || typeof f.get !== 'function') return;
+          if (snip(f.get(PdfName.of('Subtype'))) === 'Type0') {
+            const df = f.lookup(PdfName.of('DescendantFonts'));
+            if (df && typeof df.lookup === 'function') { const first = df.lookup(0); if (first) f = first; }
+          }
+          const base = snip(f.lookup(PdfName.of('BaseFont'))).replace(/^[A-Z]{6}\+/, '');
+          baseSeen.push('[' + (base || '?') + ']');
+          const desc = f.lookup(PdfName.of('FontDescriptor'));
+          if (!desc || !base) return;
+          for (const key of ['FontFile2', 'FontFile3', 'FontFile']) {
+            try {
+              const sf = desc.lookup(PdfName.of(key));
+              if (!sf || typeof sf.getContents !== 'function') continue;
+              const rb = inflate(sf.getContents());
+              console.debug('[p2w:extract] inflate', key, rb.length, Array.from(rb.slice(0, 8)).map((x) => x.toString(16)));
+              const b = rb;
+              if (!b || b.length < 512 || b.length > 6e6 || seen.has(base)) continue;
+              seen.add(base);
+              found.push({ base, bytes: b });
+            } catch (_) {}
+          }
+        } catch (_) {}
+      };
+      for (const pg of (doc.getPages() || [])) {
+        try {
+          const res = pg.node && pg.node.Resources && pg.node.Resources();
+          if (!res || !res.get) continue;
+          const fdict = res.lookup(PdfName.of('Font'));
+          if (!fdict || typeof fdict.keys !== 'function') continue;
+          for (const k of fdict.keys()) { try { tryFontDict(fdict.lookup(k)); } catch (_) {} }
+        } catch (_) {}
+      }
+      console.debug('[p2w:extract] baseFonts:', baseSeen.join(' '), 'files:', found.length);
+      return found;
+    } catch (e) {
+      console.debug('[p2w:extract]', e && e.message || e);
+      return [];
+    }
+  }
+
+  /* Subset each program to the characters actually on the document
+     (fontkit) and return {base, name, bytes, fontKey}. */
+  async function subsetDocxFonts(pdfBytes, charset) {
+    const extracted = await extractPdfFontFiles(pdfBytes);
+    if (!extracted.length) return [];
+    let fontkit = null;
+    try { fontkit = await U.loadScript('vendor/fontkit.umd.min.js').then(() => window.fontkit); } catch (_) {}
+    if (!fontkit || typeof fontkit.create !== 'function') return [];
+    const cps = [...new Set(String(charset || ''))].map((ch) => ch.codePointAt(0)).filter((cp) => cp > 0x20);
+    const out = [];
+    for (const f of extracted) {
+      try {
+        const kf = fontkit.create(new Uint8Array(f.bytes));
+        const subset = kf.createSubset();
+        let added = 0;
+        for (const cp of cps) {
+          const g = kf.glyphForCodePoint(cp);
+          if (g && g.id) { try { subset.useGlyph(g.id); added++; } catch (_) {} }
+        }
+        if (added < 8) continue; // font never really used in the doc
+        const subBytes = subset.encode();
+        const name = String(kf.postscriptName || f.base || '').replace(/[^\x21-\x7E]/g, '').trim();
+        if (!name || subBytes.length > 4e6) continue;
+        out.push({ base: f.base, name: name.length > 63 ? name.slice(0, 63) : name, bytes: subBytes, fontKey: uuidV4() });
+      } catch (e) {
+        console.debug('[p2w:subset]', f && f.base, e && e.message || e);
+      }
+    }
+    return out.slice(0, 10);
+  }
+
+  /* OOXML embedded-font obfuscation: XOR the first 32 bytes with the
+     hex-decoded bytes of w:fontKey (older Word requires this). */
+  function obfuscateFont(bytes, fontKey) {
+    const hex = String(fontKey || '').replace(/[{}\s]/g, '').replace(/-/g, '').slice(0, 32);
+    if (hex.length < 32) return bytes;
+    const key = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) key[i] = parseInt(hex.substr(i * 2, 2), 16);
+    const out = bytes.slice(0);
+    for (let i = 0; i < 32 && i < out.length; i++) out[i] = out[i] ^ key[i];
+    return out;
+  }
+
+  function uuidV4() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+
+  /* Picture-perfect: each page rendered at 2x, one page image per section
+     with the page's true size. Text is not editable — by design. */
+  function buildDocxImagePages(pageImages) {
+    const enc = new TextEncoder();
+    const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    let mediaId = 0;
+    const media = {};
+    const rels = [];
+    let body = '';
+    for (const pg of pageImages) {
+      mediaId++;
+      media[`word/media/image${mediaId}.png`] = pg.bytes;
+      const cx = Math.round((pg.w || 612) * 9525);
+      const cy = Math.round((pg.h || 792) * 9525);
+      const rId = `rIdImg${mediaId}`;
+      rels.push(`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${mediaId}.png"/>`);
+      const pgW = Math.round((pg.w || 612) * 20);
+      const pgH = Math.round((pg.h || 792) * 20);
+      body += `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${mediaId}" name="Image${mediaId}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${mediaId}" name="Image${mediaId}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:pPr><w:sectPr><w:pgSz w:w="${pgW}" w:h="${pgH}"/><w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0"/></w:sectPr></w:pPr></w:p>`;
+    }
+    const relsXml = `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.join('')}`;
+    return {
+      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`),
+      '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
+      'word/document.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}</w:body></w:document>`),
+      'word/_rels/document.xml.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relsXml}</Relationships>`),
+      'word/styles.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="${W}"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`),
+    };
+    for (const [k, v] of Object.entries(media)) files[k] = v;
+    return files;
+  }
+
   /* Build a real, openable .docx (OOXML package) from paragraphs of text. */
   function buildDocx(title, paras) {
     const enc = new TextEncoder();
@@ -1718,20 +1917,79 @@
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`),
     };
   }
-
-  /* Build a fidelity DOCX: headings, bold/italic, lists, tables, images. */
-  function buildDocxRich(title, richPages) {
+  /* Build a fidelity DOCX: headings, bold/italic, lists, tables, images.
+     opts.mode: 'editable' (default) | 'exact' | 'picture' (handled earlier)
+     opts.fonts: [{base, name, bytes, fontKey}] — embedded fonts. */
+  function buildDocxRich(title, richPages, opts = {}) {
+    if (opts.mode === 'exact') return buildExactDocx(title, richPages, opts);
     const enc = new TextEncoder();
     const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    const embMap = Object.fromEntries((opts.fonts || []).map((f) => [f.base, f.name]));
+    let curFonts = {};
+    let curLinks = [];
     const runXml = (r) => {
       const props = [];
       if (r.bold) props.push('<w:b/>');
       if (r.italic) props.push('<w:i/>');
       if (r.color) props.push(`<w:color w:val="${escXml(r.color)}"/>`);
+      const emb = embMap[(curFonts[r.font] || '').replace(/^[A-Z]{6}\+/, '')];
+      if (emb) props.push(`<w:rFonts w:ascii="${escXml(emb)}" w:hAnsi="${escXml(emb)}" w:cs="${escXml(emb)}"/>`);
       const sz = Math.min(48, Math.max(16, Math.round((r.size || 11) * 2)));
       props.push(`<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>`);
       return `<w:r><w:rPr>${props.join('')}</w:rPr><w:t xml:space="preserve">${escXml(r.str)} </w:t></w:r>`;
     };
+    // Live hyperlinks from PDF Link annotations (rect-matched to runs).
+    let linkSeq = 0;
+    const linkRels = new Map();
+    const linkForRun = (r) => {
+      if (!curLinks.length) return null;
+      const rr = { x0: r.x || 0, x1: (r.x || 0) + (r.w || 0), y: r.y || 0 };
+      for (const L of curLinks) {
+        if (!L.url) continue;
+        if (rr.y <= L.y1 + 3 && rr.y >= L.y0 - 3 && rr.x0 >= L.x0 - 3 && rr.x1 <= L.x1 + 3) return L;
+      }
+      return null;
+    };
+    const linkRId = (url) => {
+      if (linkRels.has(url)) return linkRels.get(url);
+      const id = `rIdLink${++linkSeq}`;
+      linkRels.set(url, id);
+      rels.push(`<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${escXml(url)}" TargetMode="External"/>`);
+      return id;
+    };
+    const emitRunSeg = (runs) => {
+      let out = '';
+      let cur = [];
+      let curLink = null;
+      const flush = () => {
+        if (!cur.length) return;
+        const rx = cur.map(runXml).join('');
+        out += curLink ? `<w:hyperlink r:id="${linkRId(curLink.url)}">${rx}</w:hyperlink>` : rx;
+        cur = [];
+      };
+      for (const r of runs) {
+        const L = linkForRun(r);
+        const key = L ? L.url : null;
+        if (key !== (curLink ? curLink.url : null)) { flush(); curLink = key ? L : null; }
+        cur.push(r);
+      }
+      flush();
+      return out;
+    };
+    // Word font obfuscation + fontTable plumbing (built only when fonts exist).
+    const embFonts = (opts.fonts || []).filter((f) => f && f.bytes && f.name);
+    let fontCt = '';
+    const fontParts = {};
+    if (embFonts.length) {
+      rels.push('<Relationship Id="rIdFT" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" Target="fontTable.xml"/>');
+      for (let i = 0; i < embFonts.length; i++) {
+        const id = `rIdFB${i + 1}`;
+        const fn = `fonts/font${i + 1}.odttf`;
+        rels.push(`<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/font" Target="${fn}"/>`);
+        fontCt += `<Override PartName="/word/${fn}" ContentType="application/vnd.openxmlformats-officedocument.obfuscatedFont"/>`;
+        fontParts[`word/${fn}`] = obfuscateFont(embFonts[i].bytes, embFonts[i].fontKey);
+      }
+    }
     const isBullet = (t) => /^[•▪‣–—-]\s+/.test(t);
     const isOrdered = (t) => /^\d+[.\)]\s+/.test(t);
     let mediaId = 0;
@@ -1777,12 +2035,12 @@
         : ln.runs;
       if (ratio > 1.35 && ln.text.length <= 120 && !bullet && !ordered) {
         const style = ratio > 1.6 ? 'Heading1' : 'Heading2';
-        return `<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr>${(cleanRuns.length ? cleanRuns : ln.runs).map(runXml).join('')}</w:p>`;
+        return `<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr>${emitRunSeg(cleanRuns.length ? cleanRuns : ln.runs)}</w:p>`;
       } else if (bullet || ordered) {
         const numId = bullet ? 1 : 2;
-        return `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="${numId}"/></w:numPr></w:pPr>${(cleanRuns.length ? cleanRuns : [{ str: ln.text.replace(/^[•▪‣–—-]\s+/, '').replace(/^\d+[.\)]\s+/, ''), size: 11 }]).map(runXml).join('')}</w:p>`;
+        return `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="${numId}"/></w:numPr></w:pPr>${emitRunSeg(cleanRuns.length ? cleanRuns : [{ str: ln.text.replace(/^[•▪‣–—-]\s+/, '').replace(/^\d+[.\)]\s+/, ''), size: 11 }])}</w:p>`;
       }
-      return `<w:p>${ln.runs.map(runXml).join('')}</w:p>`;
+      return `<w:p>${emitRunSeg(ln.runs)}</w:p>`;
     };
     // Re-split a row's runs at gap bounds AND vertical rulings crossing
     // the row, then trim all-empty edge columns (page-border margins).
@@ -1880,6 +2138,8 @@
     const headNorm = normLine(headText), footNorm = normLine(footText);
     let body = '';
     richPages.forEach((pg, pi) => {
+      curFonts = pg.fonts || {};
+      curLinks = pg.links || [];
       body += `<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">${escXml('Page ' + (pi + 1))}</w:t></w:r></w:p>`;
       // Header/footer lines live in the section chrome, not the body
       let lines = pg.lines;
@@ -1972,7 +2232,7 @@
       if (pi < richPages.length - 1) body += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
     });
     const files = {
-      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>${headText ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : ''}${footText ? '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' : ''}</Types>`),
+      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>${headText ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : ''}${footText ? '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' : ''}${fontCt ? '<Override PartName="/word/fontTable.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' : ''}${fontCt}</Types>`),
       '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
       'word/document.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>${headText ? '<w:headerReference w:type="default" r:id="rIdH" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>' : ''}${footText ? '<w:footerReference w:type="default" r:id="rIdF" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>' : ''}</w:sectPr></w:body></w:document>`),
       'word/styles.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="${W}"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:color w:val="2E74B5"/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/></w:style></w:styles>`),
@@ -1989,11 +2249,67 @@
       files['word/_rels/document.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`);
       files['word/footer1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="${W}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${escXml(footText)}</w:t></w:r></w:p></w:ftr>`);
     }
+    if (embFonts.length) {
+      files['word/fontTable.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:fonts xmlns:w="${W}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${embFonts.map((f, i) => `<w:font w:name="${escXml(f.name)}"><w:name w:val="${escXml(f.name)}"/><w:embedRegular r:id="rIdFB${i + 1}" w:fontKey="{${f.fontKey}}"/></w:font>`).join('')}</w:fonts>`);
+      Object.assign(files, fontParts);
+    }
     for (const [k, v] of Object.entries(media)) files[k] = v;
     return files;
   }
 
+  /* Exact-layout: every line pinned in a text box at its true PDF position.
+     No reflow, no table/heading inference — the page never moves. */
+  function buildExactDocx(title, richPages, opts) {
+    const enc = new TextEncoder();
+    const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    const WPS = 'http://schemas.microsoft.com/office/word/2010/wordprocessingShape';
+    const embMap = Object.fromEntries((opts.fonts || []).map((f) => [f.base, f.name]));
+    const rels = ['<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'];
+    let body = '';
+    let boxId = 0;
+    for (const pg of richPages) {
+      const curFonts = pg.fonts || {};
+      const pageH = pg.h || 792;
+      for (const ln of (pg.lines || [])) {
+        const runs = (ln.runs || []).filter((r) => r && isFinite(r.x) && isFinite(r.y));
+        if (!runs.length) continue;
+        const xs = runs.map((r) => r.x), ys = runs.map((r) => r.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs.map((x, i) => (x || 0) + (runs[i].w || 0)));
+        const baseY = Math.max(...ys);
+        const size = ln.maxSize || runs[0]?.size || 11;
+        const offX = Math.max(0, Math.round(minX * 12700) - 1800);
+        const offY = Math.max(0, Math.round((pageH - baseY - size * 1.05) * 12700) - 1800);
+        const cx = Math.max(1200, Math.round((maxX - minX) * 12700) + 3600);
+        const cy = Math.max(1200, Math.round(size * 1.5 * 12700) + 3600);
+        boxId++;
+        const runsXml = runs.map((r) => {
+          const props = [];
+          if (r.bold) props.push('<w:b/>');
+          if (r.italic) props.push('<w:i/>');
+          if (r.color) props.push(`<w:color w:val="${escXml(r.color)}"/>`);
+          const emb = embMap[(curFonts[r.font] || '').replace(/^[A-Z]{6}\+/, '')];
+          if (emb) props.push(`<w:rFonts w:ascii="${escXml(emb)}" w:hAnsi="${escXml(emb)}" w:cs="${escXml(emb)}"/>`);
+          const sz = Math.min(48, Math.max(16, Math.round((r.size || 11) * 2)));
+          props.push(`<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>`);
+          return `<w:r><w:rPr>${props.join('')}</w:rPr><w:t xml:space="preserve">${escXml(r.str)}</w:t></w:r>`;
+        }).join('');
+        body += `<w:p><w:r><w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${boxId}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="page"><wp:posOffset>${offX}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="page"><wp:posOffset>${offY}</wp:posOffset></wp:positionV><wp:extent cx="${cx}" cy="${cy}"/><wp:wrapNone/><wp:docPr id="${boxId}" name="Textbox${boxId}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="${WPS}"><wps:wsp xmlns:wps="${WPS}"><wps:txbx><w:txbxContent><w:p>${runsXml}</w:p></w:txbxContent></wps:txbx><wps:bodyPr/><wps:style/></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r></w:p>`;
+      }
+      const pgW = Math.round((pg.w || 612) * 20), pgH = Math.round((pg.h || 792) * 20);
+      body += `<w:p><w:pPr><w:sectPr><w:pgSz w:w="${pgW}" w:h="${pgH}"/><w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:pPr></w:p>`;
+    }
+    return {
+      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`),
+      '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
+      'word/document.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}</w:body></w:document>`),
+      'word/_rels/document.xml.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`),
+      'word/styles.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="${W}"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:sz w:val="22"/></w:rPr></w:style></w:styles>`),
+    };
+  }
+
   /* Hindi + English edge stopwords — never strip these as "fragments". */
+  try { window.__p2wDebug = { extractPdfFontFiles, subsetDocxFonts, buildDocxRich, buildDocxImagePages, buildExactDocx }; } catch (_) {}
   const HI_STOP = new Set(('का की के को से में पर है हैं था थे थी हो हुआ हुए हुई और या यह वह ये वे जो तो भी न ही तक लिए साथ द्वारा रहा रहे रही जाता उनका उनके अपनी अपने इस उस इन सब कुछ क्या कब तथा एवं अपना अपने जिस तिस कोई किसी गया गयी गये').split(' '));
   const EN_EDGE_STOP = new Set(('a an i to of in on is as at or by it he we me us my up do go so am pm no').split(' '));
   /* Single-confusion alternatives for date-component repair (1/4/7 etc.). */
@@ -2510,10 +2826,43 @@
     } });
 
   R({ id: 'pdf-to-word', category: 'PDF', name: 'PDF to Word',
-    description: 'Convert PDF text, tables, lists, headings and images into an editable Word (.docx). Scanned PDFs need OCR first.',
+    description: 'Convert PDF text, tables, lists, headings and images into an editable Word (.docx). Choose Editable, Exact layout, or Picture perfect. Scanned PDFs need OCR first.',
     accepts: ['pdf'], maxBytes: 200e6,
-    async run({ file, onProgress }) {
+    fields: [
+      { key: 'mode', label: 'Conversion mode', type: 'select', default: 'editable', options: [
+        { value: 'editable', label: 'Editable — real paragraphs, headings, lists, tables' },
+        { value: 'exact', label: 'Exact layout — text boxes pinned to PDF positions' },
+        { value: 'picture', label: 'Picture perfect — one page image per section' },
+      ] },
+    ],
+    async run({ file, inputs, onProgress }) {
       const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
+      const mode = (inputs && inputs.mode) || 'editable';
+      if (mode === 'picture') {
+        // Picture perfect: every page rendered at 2x into the DOCX, one
+        // page-image per section with the page's true size. Text not editable.
+        onProgress?.(0.05, 'Rendering pages…');
+        const pdfjs = await loadJs();
+        const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+        const pages = [];
+        for (let p = 1; p <= doc.numPages; p++) {
+          const page = await doc.getPage(p);
+          const v1 = page.getViewport({ scale: 1 });
+          const scale = Math.min(2, 2400 / Math.max(v1.width, 1));
+          const vp = page.getViewport({ scale });
+          const c = document.createElement('canvas');
+          c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+          await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+          const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+          if (blob) pages.push({ bytes: new Uint8Array(await blob.arrayBuffer()), w: v1.width, h: v1.height });
+          onProgress?.(0.05 + (p / doc.numPages) * 0.85, `Rendering page ${p}/${doc.numPages}`);
+        }
+        if (!pages.length) throw new Error('Could not render any pages — the PDF may be corrupted.');
+        onProgress?.(0.95, 'Packing DOCX…');
+        const zip = (await loadFf()).zipSync(buildDocxImagePages(pages), { level: 6 });
+        onProgress?.(1, 'Done');
+        return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
+      }
       // Pre-warm the OCR worker in parallel with text extraction, so a
       // scanned PDF pays ~0s extra for WASM + model load (5-10s otherwise).
       const ocrWarm = (async () => {
@@ -2574,7 +2923,13 @@
         return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
       }
       onProgress?.(0.85, 'Building Word document…');
-      const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), rich), { level: 6 });
+      let embeddedFonts = [];
+      if (mode === 'editable') {
+        // Rebuild + embed the PDF's own fonts, subsetted to used glyphs.
+        const charset = rich.reduce((a, p) => a + p.lines.reduce((x, l) => x + (l.text || ''), ''), '');
+        try { embeddedFonts = await subsetDocxFonts(new Uint8Array(await file.arrayBuffer()), charset); } catch (_) {}
+      }
+      const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), rich, { mode, fonts: embeddedFonts }), { level: 6 });
       onProgress?.(1, 'Done');
       return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
     }
@@ -4084,7 +4439,11 @@
 
     // Clean bilevel (Otsu) page -> 1-bit mono beats JPEG massively.
     if (a) {
-      const monoLikely = a.otherRatio < 0.08 && a.colorRatio < 0.01 && a.blackRatio > 0.001 && a.blackRatio < 0.9 && (1 - a.blackRatio) > 0.05;
+      // STRONG-gate: only pages that are genuinely TWO-TONE get binarized.
+      // Any real mid-tone (photos, gray shading, light stamps) or saturated
+      // color keeps its tone — Strong must never silently turn a document
+      // black & white. (True contract scans have otherRatio ~0.)
+      const monoLikely = a.otherRatio < 0.02 && a.colorRatio < 0.004 && a.blackRatio > 0.001 && a.blackRatio < 0.9 && (1 - a.blackRatio) > 0.05;
       if (monoLikely) {
         const mono = encodeMonoPng(a, a.threshold);
         if (mono && mono.length < jBytes.length * 0.85) {
@@ -14985,7 +15344,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
   const TARGETS = {
     pdf: [
-      T(M.office, 'Word', 'DOCX', 'docx', '#2B579A', 'pdf-to-word', 'Editable Word document'),
+      T(M.office, 'Word', 'DOCX', 'docx', '#2B579A', 'pdf-to-word', 'Editable Word document', { mode: 'editable' }),
       T(M.office, 'Excel', 'XLSX', 'xlsx', '#217346', 'pdf-to-excel', 'Tables to spreadsheet'),
       T(M.office, 'PowerPoint', 'PPTX', 'pptx', '#C43E1C', 'pdf-to-ppt', 'One slide per page'),
       T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#4B4B4B', 'pdf-grayscale', 'Pages in black & white'),
@@ -16152,6 +16511,22 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   <div class="conv-info-sub">${fileInfoSub}</div>
                 </div>
 
+                ${t.tool === 'pdf-to-word' && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-docx-modes" id="conv-docx-modes" role="radiogroup" aria-label="PDF to Word conversion mode">
+                  <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}">
+                    <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.3l-4.75 4.4 1.15 6.7L12 17.3l-5.9 3.1 1.15-6.7L2.5 9.3l6.6-1.04L12 2z"/></svg><span>Editable</span><span class="conv-docx-best">BEST</span></span>
+                    <span class="conv-docx-mode-sub">Real paragraphs, headings, lists, tables &amp; links</span>
+                  </button>
+                  <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'exact' ? 'active' : ''}" data-mode="exact" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'exact' ? 'true' : 'false'}">
+                    <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 5H5v14h3M16 5h3v14h-3"/></svg><span>Exact layout</span></span>
+                    <span class="conv-docx-mode-sub">Text boxes pinned to the PDF's exact positions</span>
+                  </button>
+                  <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'picture' ? 'active' : ''}" data-mode="picture" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'picture' ? 'true' : 'false'}">
+                    <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg><span>Picture perfect</span></span>
+                    <span class="conv-docx-mode-sub">One high-res page image per section, not editable</span>
+                  </button>
+                </div>` : ''}
+
                 ${fields.length > 0 ? `
                 <button type="button" class="conv-studio-btn-gear ${isSettingsOpen ? 'active' : ''}" id="conv-gear-btn" title="Conversion Settings">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="18" height="18">
@@ -16372,7 +16747,30 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           cfg[k] = inp.value;
           const valDisplay = container.querySelector(`#cfg-${k}-val`);
           if (valDisplay) valDisplay.textContent = inp.value;
+          if (k === 'mode') {
+            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card').forEach((c) => {
+              const on = c.dataset.mode === inp.value;
+              c.classList.toggle('active', on);
+              c.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+          }
         };
+      });
+
+      // Mode picker: mirror ihatepdf's visible 3-mode chooser; same state
+      // as the gear field (cfg.mode) so both stay in sync.
+      container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.mode;
+          cfg.mode = m;
+          container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card').forEach((c) => {
+            const on = c === card;
+            c.classList.toggle('active', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const sel = container.querySelector('#cfg-mode');
+          if (sel) sel.value = m;
+        });
       });
 
       // Trigger conversion run

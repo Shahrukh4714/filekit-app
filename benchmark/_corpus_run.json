@@ -18,7 +18,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5508,
+      "wallMs": 5461,
       "issues": []
     },
     {
@@ -44,7 +44,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6460,
+      "wallMs": 5451,
       "issues": []
     },
     {
@@ -70,7 +70,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6461,
+      "wallMs": 5462,
       "issues": []
     },
     {
@@ -90,32 +90,12 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5463,
+      "wallMs": 5469,
       "issues": []
     },
     {
       "file": "120  RULES OF GRAMMAR.pdf",
       "tier": "balanced",
-      "status": "PASS",
-      "origBytes": 3771,
-      "outBytes": 1739,
-      "ratio": 0.461,
-      "reductionPct": 54,
-      "hasText": true,
-      "protected": false,
-      "ssim": 1,
-      "psnr": 100,
-      "vectorPreserved": true,
-      "surgerySavings": 50.8,
-      "usedSubset": true,
-      "subsetBuilt": true,
-      "mono": null,
-      "wallMs": 5474,
-      "issues": []
-    },
-    {
-      "file": "120  RULES OF GRAMMAR.pdf",
-      "tier": "maximum",
       "status": "PASS",
       "origBytes": 3771,
       "outBytes": 1738,
@@ -126,7 +106,27 @@
       "ssim": 1,
       "psnr": 100,
       "vectorPreserved": true,
-      "surgerySavings": 50.9,
+      "surgerySavings": 50.8,
+      "usedSubset": true,
+      "subsetBuilt": true,
+      "mono": null,
+      "wallMs": 5444,
+      "issues": []
+    },
+    {
+      "file": "120  RULES OF GRAMMAR.pdf",
+      "tier": "maximum",
+      "status": "PASS",
+      "origBytes": 3771,
+      "outBytes": 1739,
+      "ratio": 0.461,
+      "reductionPct": 54,
+      "hasText": true,
+      "protected": false,
+      "ssim": 1,
+      "psnr": 100,
+      "vectorPreserved": true,
+      "surgerySavings": 50.8,
       "usedRaster": false,
       "usedHybrid": false,
       "usedSubset": true,
@@ -136,7 +136,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 5448,
+      "wallMs": 5468,
       "issues": []
     },
     {
@@ -156,7 +156,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 38466,
+      "wallMs": 18934,
       "issues": []
     },
     {
@@ -176,7 +176,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 38773,
+      "wallMs": 19855,
       "issues": []
     },
     {
@@ -202,7 +202,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 38047,
+      "wallMs": 19080,
       "issues": []
     },
     {
@@ -222,7 +222,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 36279,
+      "wallMs": 19590,
       "issues": []
     },
     {
@@ -230,7 +230,7 @@
       "tier": "balanced",
       "status": "PASS",
       "origBytes": 3372285,
-      "outBytes": 3319285,
+      "outBytes": 3319283,
       "ratio": 0.984,
       "reductionPct": 2,
       "hasText": true,
@@ -242,7 +242,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 37453,
+      "wallMs": 18222,
       "issues": []
     },
     {
@@ -268,7 +268,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 38246,
+      "wallMs": 19032,
       "issues": []
     },
     {
@@ -276,7 +276,7 @@
       "tier": "light",
       "status": "PASS",
       "origBytes": 84949,
-      "outBytes": 78819,
+      "outBytes": 78820,
       "ratio": 0.928,
       "reductionPct": 7,
       "hasText": true,
@@ -288,7 +288,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6446,
+      "wallMs": 5441,
       "issues": []
     },
     {
@@ -308,7 +308,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6451,
+      "wallMs": 5444,
       "issues": []
     },
     {
@@ -316,7 +316,7 @@
       "tier": "maximum",
       "status": "PASS",
       "origBytes": 84949,
-      "outBytes": 78359,
+      "outBytes": 78360,
       "ratio": 0.922,
       "reductionPct": 8,
       "hasText": true,
@@ -334,7 +334,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6484,
+      "wallMs": 5437,
       "issues": []
     },
     {
@@ -354,7 +354,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6475,
+      "wallMs": 5420,
       "issues": []
     },
     {
@@ -374,7 +374,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6524,
+      "wallMs": 5442,
       "issues": []
     },
     {
@@ -400,7 +400,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6511,
+      "wallMs": 6450,
       "issues": []
     },
     {
@@ -420,7 +420,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6489,
+      "wallMs": 5443,
       "issues": []
     },
     {
@@ -440,7 +440,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6483,
+      "wallMs": 5460,
       "issues": []
     },
     {
@@ -448,7 +448,7 @@
       "tier": "maximum",
       "status": "PASS",
       "origBytes": 221065,
-      "outBytes": 172251,
+      "outBytes": 172250,
       "ratio": 0.779,
       "reductionPct": 22,
       "hasText": true,
@@ -466,7 +466,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6492,
+      "wallMs": 5436,
       "issues": []
     },
     {
@@ -474,7 +474,7 @@
       "tier": "light",
       "status": "PASS",
       "origBytes": 180659,
-      "outBytes": 128337,
+      "outBytes": 128336,
       "ratio": 0.71,
       "reductionPct": 29,
       "hasText": true,
@@ -486,7 +486,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6462,
+      "wallMs": 5434,
       "issues": []
     },
     {
@@ -494,7 +494,7 @@
       "tier": "balanced",
       "status": "PASS",
       "origBytes": 180659,
-      "outBytes": 116390,
+      "outBytes": 116389,
       "ratio": 0.644,
       "reductionPct": 36,
       "hasText": true,
@@ -506,7 +506,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6481,
+      "wallMs": 5434,
       "issues": []
     },
     {
@@ -514,7 +514,7 @@
       "tier": "maximum",
       "status": "PASS",
       "origBytes": 180659,
-      "outBytes": 107605,
+      "outBytes": 107604,
       "ratio": 0.596,
       "reductionPct": 40,
       "hasText": true,
@@ -532,7 +532,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6476,
+      "wallMs": 5446,
       "issues": []
     },
     {
@@ -551,7 +551,7 @@
       "vectorPreserved": true,
       "surgerySavings": 0,
       "mono": null,
-      "wallMs": 5469,
+      "wallMs": 5435,
       "issues": []
     },
     {
@@ -570,7 +570,7 @@
       "vectorPreserved": true,
       "surgerySavings": 0,
       "mono": null,
-      "wallMs": 5469,
+      "wallMs": 5470,
       "issues": []
     },
     {
@@ -589,7 +589,7 @@
       "vectorPreserved": true,
       "surgerySavings": 0,
       "mono": null,
-      "wallMs": 5463,
+      "wallMs": 5458,
       "issues": []
     },
     {
@@ -609,7 +609,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5455,
+      "wallMs": 5445,
       "issues": []
     },
     {
@@ -635,7 +635,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 9217,
+      "wallMs": 6528,
       "issues": []
     },
     {
@@ -643,7 +643,7 @@
       "tier": "maximum",
       "status": "PASS",
       "origBytes": 279744,
-      "outBytes": 279176,
+      "outBytes": 279172,
       "ratio": 0.998,
       "reductionPct": 0,
       "hasText": false,
@@ -661,7 +661,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 8979,
+      "wallMs": 6545,
       "issues": []
     },
     {
@@ -681,7 +681,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5456,
+      "wallMs": 5454,
       "issues": []
     },
     {
@@ -701,7 +701,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5457,
+      "wallMs": 5443,
       "issues": []
     },
     {
@@ -727,7 +727,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6464,
+      "wallMs": 5449,
       "issues": []
     },
     {
@@ -747,7 +747,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6475,
+      "wallMs": 5450,
       "issues": []
     },
     {
@@ -767,7 +767,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6489,
+      "wallMs": 5430,
       "issues": []
     },
     {
@@ -793,7 +793,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6476,
+      "wallMs": 5439,
       "issues": []
     },
     {
@@ -813,7 +813,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5472,
+      "wallMs": 5450,
       "issues": []
     },
     {
@@ -821,7 +821,7 @@
       "tier": "balanced",
       "status": "PASS",
       "origBytes": 58604,
-      "outBytes": 53908,
+      "outBytes": 53909,
       "ratio": 0.92,
       "reductionPct": 8,
       "hasText": true,
@@ -829,11 +829,11 @@
       "ssim": 1,
       "psnr": 58.4,
       "vectorPreserved": true,
-      "surgerySavings": 7.6,
+      "surgerySavings": 7.7,
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5475,
+      "wallMs": 5464,
       "issues": []
     },
     {
@@ -859,7 +859,7 @@
         "picked": 0,
         "failedPng": 0
       },
-      "wallMs": 6478,
+      "wallMs": 5450,
       "issues": []
     },
     {
@@ -867,7 +867,7 @@
       "tier": "light",
       "status": "PASS",
       "origBytes": 363911,
-      "outBytes": 261449,
+      "outBytes": 261450,
       "ratio": 0.718,
       "reductionPct": 28,
       "hasText": false,
@@ -879,7 +879,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5436,
+      "wallMs": 5448,
       "issues": []
     },
     {
@@ -887,7 +887,7 @@
       "tier": "balanced",
       "status": "PASS",
       "origBytes": 363911,
-      "outBytes": 132356,
+      "outBytes": 132357,
       "ratio": 0.364,
       "reductionPct": 64,
       "hasText": false,
@@ -899,7 +899,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5439,
+      "wallMs": 5450,
       "issues": []
     },
     {
@@ -925,7 +925,7 @@
         "picked": 1,
         "failedPng": 0
       },
-      "wallMs": 7737,
+      "wallMs": 7031,
       "issues": []
     },
     {
@@ -945,7 +945,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5439,
+      "wallMs": 5453,
       "issues": []
     },
     {
@@ -965,7 +965,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5455,
+      "wallMs": 5432,
       "issues": []
     },
     {
@@ -991,7 +991,7 @@
         "picked": 1,
         "failedPng": 0
       },
-      "wallMs": 5444,
+      "wallMs": 5466,
       "issues": []
     },
     {
@@ -999,7 +999,7 @@
       "tier": "light",
       "status": "PASS",
       "origBytes": 272666,
-      "outBytes": 231673,
+      "outBytes": 231674,
       "ratio": 0.85,
       "reductionPct": 15,
       "hasText": true,
@@ -1011,7 +1011,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 5457,
+      "wallMs": 6447,
       "issues": []
     },
     {
@@ -1031,7 +1031,7 @@
       "usedSubset": true,
       "subsetBuilt": true,
       "mono": null,
-      "wallMs": 6543,
+      "wallMs": 6452,
       "issues": []
     },
     {
@@ -1057,7 +1057,7 @@
         "picked": 1,
         "failedPng": 0
       },
-      "wallMs": 5448,
+      "wallMs": 6438,
       "issues": []
     },
     {
@@ -1080,7 +1080,7 @@
       "usedSubset": null,
       "subsetBuilt": null,
       "mono": null,
-      "wallMs": 5458,
+      "wallMs": 5447,
       "issues": []
     },
     {
@@ -1103,7 +1103,7 @@
       "usedSubset": null,
       "subsetBuilt": null,
       "mono": null,
-      "wallMs": 5465,
+      "wallMs": 5450,
       "issues": []
     },
     {
@@ -1126,7 +1126,7 @@
       "usedSubset": null,
       "subsetBuilt": null,
       "mono": null,
-      "wallMs": 5442,
+      "wallMs": 5433,
       "issues": []
     }
   ]
