@@ -29,3 +29,6 @@ node_modules/
 __pycache__/
 *.pyc
 
+
+# Benchmark corpus (user-supplied real documents)
+benchmark/samples/

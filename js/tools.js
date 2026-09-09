@@ -264,6 +264,13 @@
   const range = (str, max) => { if (!str || !str.trim()) return [...Array(max).keys()]; const set = new Set();
     for (const part of String(str).split(',')) { const m = part.trim().split('-'); if (m.length === 2) { for (let i = +m[0]; i <= +m[1]; i++) if (i >= 1 && i <= max) set.add(i - 1); } else { const n = +m[0]; if (n >= 1 && n <= max) set.add(n - 1); } } return [...set].sort((a, b) => a - b); };
   const pagesField = { key: 'pages', label: 'Pages (e.g. 1-3,5 · blank = all)', type: 'text', default: '' };
+  async function renderPage(pdfjs, pageProxy, scale) {
+    const vp = pageProxy.getViewport({ scale: scale || 1.5 });
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+    await pageProxy.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    return c;
+  }
   // --- Pure JS Standard PDF Security Handler (Revision 3, 128-bit) ---
   function fkMd5(input) {
     const bytes = (typeof input === 'string')
@@ -1518,6 +1525,145 @@
     return pages;
   }
 
+  /* Read a PDF's text layer with run-level styling, per page (P1 fidelity). */
+  async function pdfRichPages(file, pdfjs, onProgress) {
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const pages = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      onProgress?.((i - 1) / doc.numPages * 0.7, `Reading page ${i}/${doc.numPages}`);
+      const page = await doc.getPage(i);
+      const tc = await page.getTextContent();
+      const sizes = [];
+      const raw = [];
+      for (const it of tc.items) {
+        if (!it.str || !it.str.trim()) continue;
+        const t = it.transform || [0, 0, 0, 0, 0, 0];
+        const size = Math.abs(it.height || t[0] || 11) || 11;
+        sizes.push(size);
+        const fn = String(it.fontName || '');
+        raw.push({ x: t[4] || 0, y: t[5] || 0, str: it.str, size,
+          w: Math.abs(it.width || 0),
+          bold: /bold|black|heavy|demi|bd/i.test(fn), italic: /italic|oblique/i.test(fn), font: fn });
+      }
+      sizes.sort((a, b) => a - b);
+      const median = sizes.length ? sizes[Math.floor(sizes.length / 2)] : 11;
+      // Group into visual lines by y-band
+      const rows = new Map();
+      for (const r of raw) {
+        const key = Math.round(r.y / 2) * 2;
+        if (!rows.has(key)) rows.set(key, []);
+        rows.get(key).push(r);
+      }
+      const lines = [...rows.entries()].sort((a, b) => b[0] - a[0]).map(([yKey, items]) => {
+        items.sort((a, b) => a.x - b.x);
+        const text = items.map((r) => r.str).join(' ').replace(/\s+/g, ' ').trim();
+        const maxSize = Math.max(...items.map((r) => r.size));
+        return { y: yKey, text, runs: items, maxSize, median };
+      }).filter((l) => l.text);
+      // Embedded raster images (CTM-tracked for reading-order anchoring),
+      // ruling-line segments (for grid-table reconstruction) and fill
+      // colors (for faithful run color) — one operator-list walk.
+      const images = [];
+      const segs = [];
+      const fillByShow = [];
+      try {
+        const ops = await page.getOperatorList();
+        const OPS = pdfjs.OPS;
+        let ctm = [1, 0, 0, 1, 0, 0];
+        const stack = [];
+        const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+        const apply = (x, y) => [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]];
+        let curFill = null;
+        let path = [];
+        const toCss = (c) => {
+          if (!c) return null;
+          const v = c.map((n) => Math.max(0, Math.min(1, +n || 0)));
+          let r, g, b;
+          if (v.length >= 3) { r = v[0]; g = v[1]; b = v[2]; }
+          else { r = g = b = v[0]; }
+          const hex = [r, g, b].map((n) => Math.round(n * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+          return hex === '000000' ? null : hex;
+        };
+        const commitPath = (asFill) => {
+          for (const s of path) {
+            const p0 = apply(s[0], s[1]), p1 = apply(s[2], s[3]);
+            const dx = Math.abs(p1[0] - p0[0]), dy = Math.abs(p1[1] - p0[1]);
+            if (asFill && Math.min(dx, dy) > 2.5) continue; // filled rects: only thin rules
+            if (!asFill && Math.min(dx, dy) > 1.5) continue; // stroked: only straight rules
+            if (Math.max(dx, dy) < 8) continue;
+            segs.push({ x0: Math.min(p0[0], p1[0]), x1: Math.max(p0[0], p1[0]), y0: Math.min(p0[1], p1[1]), y1: Math.max(p0[1], p1[1]) });
+          }
+          path = [];
+        };
+        for (let k = 0; k < ops.fnArray.length; k++) {
+          const fn = ops.fnArray[k], args = ops.argsArray[k] || [];
+          if (fn === OPS.save) { stack.push(ctm.slice()); continue; }
+          if (fn === OPS.restore) { if (stack.length) ctm = stack.pop(); continue; }
+          if (fn === OPS.transform) { try { ctm = mul(ctm, args); } catch (_) {} continue; }
+          if (OPS.setFillRGBColor !== undefined && fn === OPS.setFillRGBColor) { curFill = toCss(args); continue; }
+          if (OPS.setFillGray !== undefined && fn === OPS.setFillGray) { curFill = toCss([args[0], args[0], args[0]]); continue; }
+          if (OPS.setFillCMYKColor !== undefined && fn === OPS.setFillCMYKColor) {
+            const c = args[0] || 0, m = args[1] || 0, y = args[2] || 0, kk = args[3] || 0;
+            curFill = toCss([1 - Math.min(1, c + kk), 1 - Math.min(1, m + kk), 1 - Math.min(1, y + kk)]);
+            continue;
+          }
+          if ((OPS.showText !== undefined && fn === OPS.showText) || (OPS.showTextAligned !== undefined && fn === OPS.showTextAligned)) { fillByShow.push(curFill); continue; }
+          if (OPS.moveTo !== undefined && fn === OPS.moveTo) { path.push([args[0], args[1], args[0], args[1]]); continue; }
+          if (OPS.lineTo !== undefined && fn === OPS.lineTo) {
+            if (path.length) { const last = path[path.length - 1]; path.push([last[2], last[3], args[0], args[1]]); }
+            else path.push([args[0], args[1], args[0], args[1]]);
+            continue;
+          }
+          if (OPS.rectangle !== undefined && fn === OPS.rectangle) {
+            const x = args[0], y = args[1], w = args[2], h = args[3];
+            path.push([x, y, x + w, y], [x + w, y, x + w, y + h], [x + w, y + h, x, y + h], [x, y + h, x, y]);
+            continue;
+          }
+          if ((OPS.stroke !== undefined && (fn === OPS.stroke || fn === OPS.closeStroke)) ||
+              (OPS.fill !== undefined && (fn === OPS.fill || fn === OPS.eoFill))) {
+            commitPath(!(OPS.stroke !== undefined && (fn === OPS.stroke || fn === OPS.closeStroke)));
+            continue;
+          }
+          if (fn !== OPS.paintImageXObject || images.length >= 6) continue;
+          const name = ops.argsArray[k][0];
+          try {
+            // objs.get never resolves for missing objects — race a timeout
+            // so one bad reference can't stall the whole conversion.
+            const img = await Promise.race([
+              new Promise((res) => { try { page.objs.get(name, res); } catch (_) { res(null); } }),
+              new Promise((res) => setTimeout(() => res(null), 5000)),
+            ]);
+            if (!img || !img.width || !img.height || img.width * img.height > 9000000) continue;
+            if (img.width < 60 && img.height < 60) continue; // icons/bullets: noise, not content
+            const c = document.createElement('canvas');
+            c.width = img.width; c.height = img.height;
+            const ctx = c.getContext('2d');
+            const id = ctx.createImageData(img.width, img.height);
+            const src = img.data, kind = img.kind;
+            for (let s = 0, d = 0; d < id.data.length; d += 4) {
+              if (kind === 3) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = src[s + 3]; s += 4; }
+              else if (kind === 2) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = 255; s += 3; }
+              else { id.data[d] = id.data[d + 1] = id.data[d + 2] = src[s]; id.data[d + 3] = 255; s += 1; }
+            }
+            ctx.putImageData(id, 0, 0);
+            const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+            if (!blob) continue;
+            images.push({ bytes: new Uint8Array(await blob.arrayBuffer()), w: img.width, h: img.height,
+              y: ctm[5], ih: Math.abs(ctm[3]) || 0 });
+          } catch (_) {}
+        }
+      } catch (_) {}
+      // Assign fill colors to runs only on exact 1:1 show-text alignment;
+      // otherwise leave black (a wrong color is worse than none).
+      if (fillByShow.length === raw.length && raw.length) {
+        raw.forEach((r, idx) => { if (fillByShow[idx]) r.color = fillByShow[idx]; });
+      }
+      pages.push({ lines, images, median, frames: segs });
+      onProgress?.(i / doc.numPages * 0.7, `Reading page ${i}/${doc.numPages}`);
+    }
+    return pages;
+  }
+
   /* Build a real, openable .docx (OOXML package) from paragraphs of text. */
   function buildDocx(title, paras) {
     const enc = new TextEncoder();
@@ -1533,7 +1679,641 @@
     };
   }
 
+  /* Build a fidelity DOCX: headings, bold/italic, lists, tables, images. */
+  function buildDocxRich(title, richPages) {
+    const enc = new TextEncoder();
+    const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    const runXml = (r) => {
+      const props = [];
+      if (r.bold) props.push('<w:b/>');
+      if (r.italic) props.push('<w:i/>');
+      if (r.color) props.push(`<w:color w:val="${escXml(r.color)}"/>`);
+      const sz = Math.min(48, Math.max(16, Math.round((r.size || 11) * 2)));
+      props.push(`<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>`);
+      return `<w:r><w:rPr>${props.join('')}</w:rPr><w:t xml:space="preserve">${escXml(r.str)} </w:t></w:r>`;
+    };
+    const isBullet = (t) => /^[•▪‣–—-]\s+/.test(t);
+    const isOrdered = (t) => /^\d+[.\)]\s+/.test(t);
+    let mediaId = 0;
+    const media = {};
+    const rels = [
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>',
+    ];
+    const emitImage = (im) => {
+      mediaId++;
+      media[`word/media/image${mediaId}.png`] = im.bytes;
+      const maxW = 5029200;
+      let cx = Math.round(im.w * 9525);
+      let cy = Math.round(im.h * 9525);
+      if (cx > maxW) { cy = Math.round(cy * maxW / cx); cx = maxW; }
+      const rId = `rIdImg${mediaId}`;
+      rels.push(`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${mediaId}.png"/>`);
+      return `<w:p><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${mediaId}" name="Image${mediaId}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${mediaId}" name="Image${mediaId}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+    };
+    // Split a line's runs into cells at wide x-gaps; returns {cells, bounds}
+    // where bounds are the x-positions of column breaks (for alignment checks).
+    const splitCells = (ln, gapTol) => {
+      const sorted = [...ln.runs].sort((a, b) => a.x - b.x);
+      const cells = [];
+      let cur = [];
+      const bounds = [];
+      for (let i = 0; i < sorted.length; i++) {
+        cur.push(sorted[i]);
+        if (i < sorted.length - 1 && sorted[i + 1].x - sorted[i].x > gapTol) {
+          cells.push(cur); cur = [];
+          bounds.push(Math.round((sorted[i].x + sorted[i + 1].x) / 2));
+        }
+      }
+      if (cur.length) cells.push(cur);
+      return { cells, bounds };
+    };
+    const emitPara = (ln, median) => {
+      const ratio = (ln.maxSize || 11) / (median || 11);
+      const bullet = isBullet(ln.text);
+      const ordered = !bullet && isOrdered(ln.text);
+      const cleanRuns = ln.runs.length && (bullet || ordered)
+        ? ln.runs.map((r, i) => (i === 0 ? { ...r, str: String(r.str).replace(/^[•▪‣–—\-\d\.\)\s]+/, '') } : r)).filter((r) => String(r.str || '').trim())
+        : ln.runs;
+      if (ratio > 1.35 && ln.text.length <= 120 && !bullet && !ordered) {
+        const style = ratio > 1.6 ? 'Heading1' : 'Heading2';
+        return `<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr>${(cleanRuns.length ? cleanRuns : ln.runs).map(runXml).join('')}</w:p>`;
+      } else if (bullet || ordered) {
+        const numId = bullet ? 1 : 2;
+        return `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="${numId}"/></w:numPr></w:pPr>${(cleanRuns.length ? cleanRuns : [{ str: ln.text.replace(/^[•▪‣–—-]\s+/, '').replace(/^\d+[.\)]\s+/, ''), size: 11 }]).map(runXml).join('')}</w:p>`;
+      }
+      return `<w:p>${ln.runs.map(runXml).join('')}</w:p>`;
+    };
+    // Re-split a row's runs at gap bounds AND vertical rulings crossing
+    // the row, then trim all-empty edge columns (page-border margins).
+    const refineCells = (ln, gapTol, frames) => {
+      const y = (ln.runs.reduce((a, r) => a + (r.y || 0), 0) / Math.max(1, ln.runs.length)) || (ln.y || 0);
+      const breaks = new Set();
+      const sorted = [...ln.runs].sort((a, b) => a.x - b.x);
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].x - sorted[i - 1].x > gapTol) breaks.add(Math.round((sorted[i].x + sorted[i - 1].x) / 2));
+      }
+      for (const v of (frames || [])) {
+        if (v.x1 - v.x0 > 1.5) continue; // vertical only
+        if ((v.y0 || 0) - 4 <= y && y <= (v.y1 || 0) + 4 && (v.y1 - v.y0) >= 10) {
+          breaks.add(Math.round((v.x0 + v.x1) / 2));
+        }
+      }
+      const stops = [...breaks].sort((a, b) => a - b);
+      const cells = stops.length ? Array.from({ length: stops.length + 1 }, () => []) : [[]];
+      for (const r of sorted) {
+        let c = 0;
+        while (c < stops.length && r.x >= stops[c]) c++;
+        cells[c].push(r);
+      }
+      return cells;
+    };
+    const normLine = (t) => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    // Repeated first/last body lines across pages → real header/footer.
+    const findEdgeRepeat = (richPages, edge) => {
+      if (!richPages || richPages.length < 2) return '';
+      const counts = new Map();
+      for (const pg of richPages) {
+        if (!pg.lines.length) continue;
+        const ln = edge === 0 ? pg.lines[0] : pg.lines[pg.lines.length - 1];
+        const n = normLine(ln.text);
+        if (n.length < 4) continue;
+        const e = counts.get(n);
+        if (e) { e.n++; if (ln.text.length > e.text.length) e.text = ln.text; }
+        else counts.set(n, { n: 1, text: ln.text });
+      }
+      const need = Math.max(2, Math.ceil(richPages.length / 2));
+      for (const e of counts.values()) if (e.n >= need) return e.text;
+      return '';
+    };
+    // Two-column pages: widest empty vertical band in the middle half,
+    // spanning most of the height. Tables suppress (handled separately).
+    const twoColSplit = (pg) => {
+      if (!pg.lines || pg.lines.length < 6) return null;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const ln of pg.lines) for (const r of ln.runs) {
+        if (r.x < minX) minX = r.x;
+        if (r.x > maxX) maxX = r.x;
+        const y = r.y || ln.y || 0;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      if (!(maxX > minX)) return null;
+      const lo = minX + (maxX - minX) * 0.25, hi = minX + (maxX - minX) * 0.75;
+      const edges = [];
+      for (const ln of pg.lines) for (const r of ln.runs) edges.push(r.x);
+      edges.sort((a, b) => a - b);
+      let best = null;
+      for (let i = 1; i < edges.length; i++) {
+        const a = edges[i - 1], b = edges[i];
+        if (b < lo || a > hi) continue; // gap must overlap the middle band
+        if (!best || b - a > best[1] - best[0]) best = [a, b];
+      }
+      if (!best || best[1] - best[0] < (maxX - minX) * 0.12) return null;
+      const mid = (best[0] + best[1]) / 2;
+      // Full-width lines (tables, headings) veto column splitting
+      for (const ln of pg.lines) {
+        const hasL = ln.runs.some((r) => r.x < mid), hasR = ln.runs.some((r) => r.x >= mid);
+        if (hasL && hasR) return null;
+      }
+      const h = Math.max(1, maxY - minY);
+      // Require vertical overlap: both sides cover the middle 50% of height
+      const covers = (side) => {
+        let a = Infinity, b = -Infinity;
+        for (const ln of pg.lines) {
+          const inSide = ln.runs.some((r) => (side < 0 ? r.x < mid : r.x >= mid));
+          if (!inSide) continue;
+          for (const r of ln.runs) { const y = r.y || ln.y || 0; if (y < a) a = y; if (y > b) b = y; }
+        }
+        return (b - a) >= h * 0.5;
+      };
+      if (!covers(-1) || !covers(1)) return null;
+      const L = pg.lines.filter((ln) => ln.runs.every((r) => r.x < mid));
+      const R = pg.lines.filter((ln) => ln.runs.every((r) => r.x >= mid));
+      const M = pg.lines.filter((ln) => !L.includes(ln) && !R.includes(ln));
+      if (!L.length || !R.length) return null;
+      return { L, R, M };
+    };
+    // Repeated edge lines (running heads/footings) → real header/footer parts
+    const headText = findEdgeRepeat(richPages, 0);
+    const footText = findEdgeRepeat(richPages, 1);
+    const headNorm = normLine(headText), footNorm = normLine(footText);
+    let body = '';
+    richPages.forEach((pg, pi) => {
+      body += `<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">${escXml('Page ' + (pi + 1))}</w:t></w:r></w:p>`;
+      // Header/footer lines live in the section chrome, not the body
+      let lines = pg.lines;
+      if (headNorm && lines.length && normLine(lines[0].text) === headNorm) lines = lines.slice(1);
+      if (footNorm && lines.length && normLine(lines[lines.length - 1].text) === footNorm) lines = lines.slice(0, -1);
+      // Adaptive table detection: font-scaled gaps + ruling-line snaps,
+      // column breaks must align across consecutive rows (within 10pt).
+      const gapTol = Math.max(18, (pg.median || 11) * 2.2);
+      const alignTol = 10;
+      const cellBounds = (cells) => cells.slice(1).map((c) => Math.round(((c[0] || {}).x) || 0));
+      const buildFlow = (lns) => {
+        const flow = [];
+        let curTable = [];
+        const boundsMatch = (a, b) => {
+          if (!a.length || !b.length) return false;
+          let shared = 0;
+          for (const x of a) if (b.some((y) => Math.abs(x - y) <= alignTol)) shared++;
+          return shared >= Math.min(a.length, b.length, 2) && shared >= 1;
+        };
+        const flushTable = () => {
+          let okRun = 0;
+          for (let i = 0; i < curTable.length; i++) {
+            if (i === 0 || boundsMatch(curTable[i - 1].bounds, curTable[i].bounds)) okRun++;
+            else break;
+          }
+          if (curTable.length >= 2 && okRun >= 2) flow.push({ table: curTable });
+          else curTable.forEach((r) => flow.push({ line: r.ln }));
+          curTable = [];
+        };
+        for (const ln of lns) {
+          const cells = refineCells(ln, gapTol, pg.frames);
+          const bounds = cellBounds(cells);
+          if (cells.length >= 2 && ln.runs.length >= 3) curTable.push({ ln, cells, bounds });
+          else { flushTable(); flow.push({ line: ln }); }
+        }
+        flushTable();
+        return flow;
+      };
+      let flow = buildFlow(lines);
+      if (!flow.some((f) => f.table)) {
+        const cs = twoColSplit({ lines, median: pg.median });
+        if (cs && !cs.M.length) flow = [...buildFlow(cs.L), ...buildFlow(cs.R)];
+      }
+      // Interleave anchored images at their reading-order (y) position
+      const imgs = [...(pg.images || [])].sort((a, b) => (b.y || 0) - (a.y || 0));
+      const emitTable = (rows) => {
+        let nCols = Math.max(...rows.map((r) => r.cells.length));
+        // Trim all-empty edge columns (page-border margins from grid snaps)
+        const colEmpty = (c) => rows.every((r) => !(r.cells[c] || []).length);
+        let lead = 0;
+        while (lead < nCols && colEmpty(lead)) lead++;
+        let trail = 0;
+        while (trail < nCols - lead && colEmpty(nCols - 1 - trail)) trail++;
+        if (nCols - lead - trail < 2) {
+          return rows.map((tr) => emitPara(tr.ln, 11)).join('');
+        }
+        const norm = rows.map((tr) => ({ ln: tr.ln, cells: tr.cells.slice(lead, nCols - trail) }));
+        nCols = nCols - lead - trail;
+        let h = '<w:p><w:r><w:t xml:space="preserve"></w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="BFBFBF"/><w:left w:val="single" w:sz="4" w:color="BFBFBF"/><w:bottom w:val="single" w:sz="4" w:color="BFBFBF"/><w:right w:val="single" w:sz="4" w:color="BFBFBF"/><w:insideH w:val="single" w:sz="4" w:color="BFBFBF"/><w:insideV w:val="single" w:sz="4" w:color="BFBFBF"/></w:tblBorders></w:tblPr><w:tblGrid>';
+        for (let c = 0; c < nCols; c++) h += '<w:gridCol w:w="2880"/>';
+        h += '</w:tblGrid>';
+        for (const tr of norm) {
+          h += '<w:tr>';
+          for (let c = 0; c < nCols; c++) {
+            const cellRuns = tr.cells[c] || [];
+            if (c === tr.cells.length - 1 && tr.cells.length < nCols) {
+              const span = nCols - c;
+              h += `<w:tc><w:tcPr><w:tcW w:w="${2880 * span}" w:type="dxa"/><w:gridSpan w:val="${span}"/></w:tcPr><w:p>${cellRuns.map(runXml).join('') || '<w:r><w:t xml:space="preserve"></w:t></w:r>'}</w:p></w:tc>`;
+              break;
+            }
+            h += `<w:tc><w:tcPr><w:tcW w:w="2880" w:type="dxa"/></w:tcPr><w:p>${cellRuns.map(runXml).join('') || '<w:r><w:t xml:space="preserve"></w:t></w:r>'}</w:p></w:tc>`;
+          }
+          h += '</w:tr>';
+        }
+        return h + '</w:tbl>';
+      };
+      let imgIdx = 0;
+      for (const item of flow) {
+        if (item.table) {
+          body += emitTable(item.table);
+          continue;
+        }
+        const ln = item.line;
+        while (imgIdx < imgs.length && (imgs[imgIdx].y || 0) >= (ln.y || 0)) {
+          body += emitImage(imgs[imgIdx++]);
+        }
+        body += emitPara(ln, pg.median);
+      }
+      while (imgIdx < imgs.length) body += emitImage(imgs[imgIdx++]);
+      if (pi < richPages.length - 1) body += '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+    });
+    const files = {
+      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>${headText ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : ''}${footText ? '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' : ''}</Types>`),
+      '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
+      'word/document.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>${headText ? '<w:headerReference w:type="default" r:id="rIdH" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>' : ''}${footText ? '<w:footerReference w:type="default" r:id="rIdF" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>' : ''}</w:sectPr></w:body></w:document>`),
+      'word/styles.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="${W}"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:color w:val="1F4E79"/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:color w:val="2E74B5"/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/></w:style></w:styles>`),
+      'word/numbering.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="${W}"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num></w:numbering>`),
+      'word/_rels/document.xml.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`),
+    };
+    if (headText) {
+      rels.push('<Relationship Id="rIdH" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>');
+      files['word/_rels/document.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`);
+      files['word/header1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr xmlns:w="${W}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${escXml(headText)}</w:t></w:r></w:p></w:hdr>`);
+    }
+    if (footText) {
+      rels.push('<Relationship Id="rIdF" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>');
+      files['word/_rels/document.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`);
+      files['word/footer1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="${W}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="666666"/></w:rPr><w:t xml:space="preserve">${escXml(footText)}</w:t></w:r></w:p></w:ftr>`);
+    }
+    for (const [k, v] of Object.entries(media)) files[k] = v;
+    return files;
+  }
+
+  /* Hindi + English edge stopwords — never strip these as "fragments". */
+  const HI_STOP = new Set(('का की के को से में पर है हैं था थे थी हो हुआ हुए हुई और या यह वह ये वे जो तो भी न ही तक लिए साथ द्वारा रहा रहे रही जाता उनका उनके अपनी अपने इस उस इन सब कुछ क्या कब तथा एवं अपना अपने जिस तिस कोई किसी गया गयी गये').split(' '));
+  const EN_EDGE_STOP = new Set(('a an i to of in on is as at or by it he we me us my up do go so am pm no').split(' '));
+  /* Single-confusion alternatives for date-component repair (1/4/7 etc.). */
+  const DATE_CONF = { '0': ['O', '8'], 'O': ['0'], '1': ['4', '7'], '4': ['1', '7'], '7': ['1', '4'], '2': ['Z'], 'Z': ['2'], '3': ['8', '9'], '8': ['3', '6'], '6': ['5', '8'], '5': ['6'], '9': ['3'], 'B': ['8'] };
+  function fixDateToken(tok) {
+    let m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(tok);
+    if (m) {
+      const day = +m[1], mon = +m[2];
+      if (day >= 1 && day <= 31 && mon >= 1 && mon <= 12) return tok;
+      // Try unique single-confusion repair of the invalid component only
+      const badIdx = (mon < 1 || mon > 12) ? 2 : 1;
+      const comp = m[badIdx];
+      const cands = new Set();
+      for (let p = 0; p < 2; p++) {
+        for (const alt of (DATE_CONF[comp[p]] || [])) {
+          const nc = comp.slice(0, p) + alt + comp.slice(p + 1);
+          if (!/^\d{2}$/.test(nc)) continue;
+          const v = +nc;
+          if (badIdx === 2 ? (v >= 1 && v <= 12) : (v >= 1 && v <= 31)) cands.add(nc);
+        }
+      }
+      if (cands.size !== 1) return tok;
+      const fixed = [m[1], m[2], m[3]];
+      fixed[badIdx - 1] = [...cands][0];
+      return fixed.join('/');
+    }
+    // Dropped-digit form DD/M/YYYY or D/DD/YYYY: try prefixing 1/2/3 on the
+    // short invalid component; accept only a unique valid result.
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(tok);
+    if (!m) return tok;
+    const d = m[1], mo = m[2];
+    const dOk = +d >= 1 && +d <= 31 && d.length === 2;
+    const mOk = +mo >= 1 && +mo <= 12 && mo.length === 2;
+    if ((dOk || d.length !== 1) && (mOk || mo.length !== 1)) return tok;
+    const fixShort = (comp, lo, hi) => {
+      if (comp.length !== 1 || +comp === 0) {
+        // "0" or invalid: prefix candidates
+        const out = new Set();
+        for (const p of ['1', '2', '3']) {
+          const nc = p + comp;
+          if (+nc >= lo && +nc <= hi) out.add(nc);
+        }
+        return out;
+      }
+      return new Set();
+    };
+    if (mo.length === 1 && !mOk) {
+      const c = fixShort(mo, 1, 12);
+      if (c.size === 1) return `${d}/${[...c][0]}/${m[3]}`;
+    }
+    if (d.length === 1 && !dOk) {
+      const c = fixShort(d, 1, 31);
+      if (c.size === 1) return `${[...c][0]}/${mo}/${m[3]}`;
+    }
+    return tok;
+  }
+  /* Domain lexicon for OCR post-correction (admit cards, exams, forms).
+     Corrects only unambiguous cases: word length >= 6 with exactly one
+     dictionary candidate at Levenshtein distance 1. Leaders run the same
+     dictionary pass; without it, Tesseract confusions (B/8, H/T) persist. */
+  const OCR_LEXICON = [
+    'staff', 'selection', 'commission', 'central', 'region', 'admit', 'admission',
+    'certificate', 'examination', 'candidate', 'registration', 'password',
+    'reporting', 'closing', 'venue', 'instructions', 'general', 'intelligence',
+    'reasoning', 'knowledge', 'awareness', 'quantitative', 'aptitude', 'english',
+    'comprehension', 'objective', 'police', 'delhi', 'armed', 'forces', 'paper',
+    'tier', 'subject', 'questions', 'marks', 'maximum', 'number', 'gender',
+    'category', 'address', 'birth', 'january', 'february', 'march', 'april',
+    'august', 'september', 'october', 'november', 'december', 'highway',
+    'pradesh', 'photograph', 'original', 'identity', 'proof', 'certificate',
+    'mismatch', 'allowed', 'appear', 'safely', 'result', 'against', 'through',
+    'before', 'after', 'between', 'school', 'college', 'passport', 'driving',
+    'license', 'ministry', 'defence', 'transparent', 'bottle', 'without',
+    'permission', 'candidature', 'cancelled', 'provisional', 'satisfy',
+    'conditions', 'electronic', 'devices', 'strictly', 'possession', 'liable',
+    'proceedings', 'future', 'venue', 'morning', 'server', 'question', 'palette',
+    'answer', 'review', 'section', 'button', 'profile', 'language', 'navigate',
+    'corner', 'still', 'follow', 'their', 'there', 'these', 'those', 'should',
+    'would', 'could', 'about', 'every', 'during', 'under', 'video', 'watch',
+    'timer', 'screen', 'contact', 'handheld', 'metal', 'detector', 'biometric',
+    'thumb', 'impression', 'signature', 'legend', 'summary', 'choice', 'option',
+    'response', 'clear', 'change', 'select', 'deselect', 'shuffle', 'highlighted',
+    'automatically', 'convenience', 'assure', 'notice', 'inebriated',
+  ];
+  const _lexByLen = {};
+  for (const w of OCR_LEXICON) { (_lexByLen[w.length] = _lexByLen[w.length] || []).push(w); }
+  function _ed1(a, b) {
+    // True iff Levenshtein distance between a and b is exactly 1
+    if (a === b) return false;
+    const la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > 1) return false;
+    let i = 0, j = 0, edits = 0;
+    while (i < la && j < lb) {
+      if (a[i] === b[j]) { i++; j++; }
+      else if (++edits > 1) return false;
+      else if (la === lb) { i++; j++; }
+      else if (la > lb) i++;
+      else j++;
+    }
+    return (edits + (la - i) + (lb - j)) === 1;
+  }
+  function lexCorrect(word) {
+    const low = String(word || '').toLowerCase();
+    if (low.length < 6 || /[^a-z]/.test(low)) return null;
+    const cands = [];
+    for (let L = low.length - 1; L <= low.length + 1; L++) {
+      for (const d of (_lexByLen[L] || [])) if (_ed1(low, d)) cands.push(d);
+    }
+    if (cands.length !== 1) return null;
+    const fix = cands[0];
+    const letters = String(word).replace(/[^A-Za-z]/g, '');
+    const upper = letters.replace(/[^A-Z]/g, '').length;
+    if (upper >= Math.max(2, letters.length - 1)) return fix.toUpperCase();
+    if (/^[A-Z]/.test(word)) return fix[0].toUpperCase() + fix.slice(1);
+    return fix;
+  }
+  function lexLine(text) {
+    let out = String(text || '').replace(/[A-Za-z]{6,}/g, (w) => lexCorrect(w) || w)
+      // Scheme fix: Tttps:// or ttps:// (dropped-h) at URL start
+      .replace(/\b[Tt]?ttps:\/\//g, 'https://')
+      // OCR-dropped slash: https:/www → https://www
+      .replace(/https:\/(?!\/)www/i, 'https://www');
+    // Repair invalid date components with a unique confusion candidate
+    out = out.replace(/\b\d{2}\/\d{2}\/\d{4}\b/g, (m) => fixDateToken(m));
+    // Repair emails/URLs split by stray spaces: "a @ b.com", "gmail .com"
+    out = out.replace(/([A-Za-z0-9])\s+@\s*([A-Za-z0-9])/g, '$1@$2')
+      .replace(/([A-Za-z0-9])\s+(\.[A-Za-z]{2,}\b)/g, '$1$2');
+    // Strip stray edge splinters (photo/barcode/gutter fragments) on long
+    // lines: 1-2 char edge tokens that are neither short values, numbers,
+    // nor Hindi stopwords. Max 2 per edge; inner tokens untouched.
+    const parts = out.split(' ');
+    if (parts.length >= 5) {
+      const keepEdge = (tok) => {
+        const t = tok.replace(/^[^A-Za-z0-9\u0900-\u097F]+|[^A-Za-z0-9\u0900-\u097F]+$/g, '');
+        if (!t) return false;
+        if (t.length > 2) return true;
+        if (/^(No|NO|Yes|YES|Male|OBC|AM|PM|\d{2,3})$/i.test(t)) return true;
+        if (/\d\s*[:/]\s*\d/.test(t)) return true;
+        if (HI_STOP.has(t)) return true;
+        if (EN_EDGE_STOP.has(t.toLowerCase())) return true;
+        return false;
+      };
+      let cut = 0;
+      while (parts.length >= 5 && cut < 2 && !keepEdge(parts[0])) { parts.shift(); cut++; }
+      cut = 0;
+      while (parts.length >= 5 && cut < 2 && !keepEdge(parts[parts.length - 1])) { parts.pop(); cut++; }
+      out = parts.join(' ');
+    }
+    return out;
+  }
+
+  /* Shared OCR line scrubber (Word + PPT scanned paths): drops gutter /
+     barcode / photo / icon garbage lines before building output. */
+  const ocrCleanLine = (l) => {
+    let t = String(l || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    const borderHits = (t.match(/STAFF SELECTION COMMISSION/g) || []).length;
+    if (borderHits >= 2) return '';
+    if (/^[^A-Za-z0-9\u0900-\u097F]{1,4}$/.test(t)) return '';
+    if (!/\s/.test(t) && t.length > 30 && !/[.?@=:;\/_#-]{2,}/.test(t)) return '';
+    const hasWord = (s) => /[A-Za-z0-9\u0900-\u097F]{3,}/.test(s)
+      || /\d\s*[:/]\s*\d/.test(s)
+      || /^(No|NO|Yes|YES|Male|OBC|AM|PM|\d{2,3})$/i.test(s);
+    if (!hasWord(t)) return '';
+    t = t.replace(/(^|\s)[§©#¢|_—–\-\\[\]]{1,3}(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    const hw = /[A-Za-z0-9\u0900-\u097F]{3,}/.test(t)
+      || /\d\s*[:/]\s*\d/.test(t)
+      || /^(No|NO|Yes|YES|Male|OBC|AM|PM|\d{2,3})$/i.test(t);
+    if (!hw) return '';
+    return t;
+  };
+
   /* Build a real, openable .pptx from slides ({ title, body }). */
+  /* Rich PPTX builder: real titles, bullet/numbered paragraphs, tables,
+     pictures, shrink-to-fit bodies. No truncation — content completeness
+     is the gate; overflow shrinks instead of clipping. */
+  function pptRunXml(runs) {
+    return runs.map((r) => {
+      const props = [`lang="en-US"`, `sz="${Math.min(4000, Math.max(1000, Math.round((r.size || 12) * 100)))}"`];
+      if (r.bold) props.push('b="1"');
+      if (r.italic) props.push('i="1"');
+      const solid = r.color ? `<a:solidFill><a:srgbClr val="${escXml(r.color)}"/></a:solidFill>` : '';
+      return `<a:r><a:rPr ${props.join(' ')}/>${solid}<a:t>${escXml(r.str)} </a:t></a:r>`;
+    }).join('');
+  }
+  function pptParaXml(text, runs, kind) {
+    // kind: 'title' | 'bullet' | 'ordered' | 'body'
+    let pr = '<a:pPr/>';
+    if (kind === 'bullet') pr = '<a:pPr marL="342900" indent="-342900"><a:buChar char="•"/><a:buSzPct val="100000"/><a:buClr><a:schemeClr val="tx1"/></a:buClr></a:pPr>';
+    else if (kind === 'ordered') pr = '<a:pPr marL="342900" indent="-342900"><a:buAutoNum type="arabicPeriod"/><a:buSzPct val="100000"/></a:pPr>';
+    const body = runs && runs.length ? pptRunXml(runs) : `<a:r><a:rPr lang="en-US" sz="1400"/><a:t>${escXml(text)}</a:t></a:r>`;
+    return `<a:p>${pr}${body}</a:p>`;
+  }
+  function pptKindOf(text) {
+    if (/^[•▪‣–—-]\s+/.test(text)) return 'bullet';
+    if (/^\d+[.\)]\s+/.test(text)) return 'ordered';
+    return 'body';
+  }
+  function pptTableXml(tbl, colW) {
+    // tbl: array of rows, each an array of cell paragraph-XML strings
+    const nCols = Math.max(...tbl.map((r) => r.length));
+    const w = Math.floor(colW / nCols);
+    const grid = Array.from({ length: nCols }, () => `<a:gridCol w="${w}"/>`).join('');
+    const rows = tbl.map((cells) => {
+      const tds = [];
+      for (let c = 0; c < nCols; c++) {
+        const ps = cells[c] || '<a:p><a:r><a:rPr lang="en-US" sz="1200"/><a:t> </a:t></a:r></a:p>';
+        tds.push(`<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${ps}</a:txBody><a:tcPr><a:lnL><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnL><a:lnR><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnR><a:lnT><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnT><a:lnB><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnB></a:tcPr></a:tc>`);
+      }
+      return `<a:tr h="274320">${tds.join('')}</a:tr>`;
+    }).join('');
+    return { xml: `<a:tbl><a:tblPr/><a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl>`, rows: tbl.length };
+  }
+  function buildPptxRich(title, richSlides) {
+    const enc = new TextEncoder();
+    const n = Math.max(1, richSlides.length);
+    const files = {};
+    const slideOverrides = [];
+    const slideIds = [];
+    const slideRels = [];
+    let hasPng = false;
+    richSlides.forEach((pg, i) => {
+      const id = i + 1;
+      slideOverrides.push(`<Override PartName="/ppt/slides/slide${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`);
+      slideIds.push(`<p:sldId id="${256 + i}" r:id="rId${id + 1}"/>`);
+      slideRels.push(`<Relationship Id="rId${id + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${id}.xml"/>`);
+      // Title: biggest line if heading-like, else Page N
+      let titleText = `Page ${id}`;
+      let bodyLines = pg.lines || [];
+      if (bodyLines.length) {
+        const med = pg.median || 11;
+        const scored = bodyLines.map((ln) => ({ ln, r: (ln.maxSize || 11) / med }));
+        const big = scored.filter((s) => s.r > 1.4 && s.ln.text.length <= 120 && pptKindOf(s.ln.text) === 'body')
+          .sort((a, b) => b.r - a.r)[0];
+        if (big) {
+          titleText = big.ln.text;
+          bodyLines = bodyLines.filter((ln) => ln !== big.ln);
+        }
+      }
+      // Table detection on body lines (gap + alignment, same gate as Word)
+      const gapTol = Math.max(18, (pg.median || 11) * 2.2);
+      const splitRow = (ln) => {
+        const sorted = [...ln.runs].sort((a, b) => a.x - b.x);
+        const cells = [[]];
+        const bounds = [];
+        for (let k = 0; k < sorted.length; k++) {
+          cells[cells.length - 1].push(sorted[k]);
+          if (k < sorted.length - 1 && sorted[k + 1].x - sorted[k].x > gapTol) {
+            bounds.push(Math.round((sorted[k].x + sorted[k + 1].x) / 2));
+            cells.push([]);
+          }
+        }
+        return { cells, bounds };
+      };
+      const flow = [];
+      let cur = [];
+      const match = (a, b) => {
+        if (!a.length || !b.length) return false;
+        let s = 0;
+        for (const x of a) if (b.some((y) => Math.abs(x - y) <= 10)) s++;
+        return s >= Math.min(a.length, b.length, 2) && s >= 1;
+      };
+      const flush = () => {
+        let ok = 0;
+        for (let k = 0; k < cur.length; k++) {
+          if (k === 0 || match(cur[k - 1].bounds, cur[k].bounds)) ok++;
+          else break;
+        }
+        if (cur.length >= 2 && ok >= 2) flow.push({ table: cur });
+        else cur.forEach((r) => flow.push({ line: r.ln }));
+        cur = [];
+      };
+      for (const ln of bodyLines) {
+        const { cells, bounds } = splitRow(ln);
+        if (cells.length >= 2 && ln.runs.length >= 3) cur.push({ ln, cells, bounds });
+        else { flush(); flow.push({ line: ln }); }
+      }
+      flush();
+      // Emit shapes top→bottom with a running cursor
+      let cursorY = 1524000;
+      let shapeId = 10;
+      const shapes = [];
+      const relsExtra = [];
+      const bodyParas = [];
+      const flushParas = () => {
+        if (!bodyParas.length) return;
+        const h = Math.min(4800600, 400000 + bodyParas.length * 260000);
+        const realH = Math.min(h, Math.max(600000, 6400000 - cursorY));
+        shapes.push(`<p:sp><p:nvSpPr><p:cNvPr id="${shapeId++}" name="Body ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="8229600" cy="${realH}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="square"><a:normAutofit fontScale="100000" lnSpcReduction="20000"/></a:bodyPr><a:lstStyle/>${bodyParas.join('')}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp>`);
+        cursorY += realH + 150000;
+        bodyParas.length = 0;
+      };
+      for (const item of flow) {
+        if (item.table) {
+          flushParas();
+          const rows = item.table.map((tr) => {
+            const maxC = Math.max(...item.table.map((r) => r.cells.length));
+            const cells = tr.cells.map((c) => {
+              const kind = pptKindOf(c.map((r) => r.str).join(' ').trim());
+              return pptParaXml('', c, kind === 'body' ? 'body' : kind);
+            });
+            while (cells.length < maxC) cells.push('<a:p><a:r><a:rPr lang="en-US" sz="1200"/><a:t> </a:t></a:r></a:p>');
+            return cells;
+          });
+          const t = pptTableXml(rows, 8229600);
+          const th = Math.min(t.rows * 300000, Math.max(600000, 6400000 - cursorY));
+          shapes.push(`<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${shapeId++}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="8229600" cy="${th}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">${t.xml}</a:graphicData></a:graphic></p:graphicFrame>`);
+          cursorY += th + 150000;
+          continue;
+        }
+        const ln = item.line;
+        const kind = pptKindOf(ln.text);
+        const runs = (kind === 'body') ? ln.runs : ln.runs.map((r, k) => (k === 0 ? { ...r, str: String(r.str).replace(/^[•▪‣–—\-\d\.\)\s]+/, '') } : r)).filter((r) => String(r.str || '').trim());
+        bodyParas.push(pptParaXml(ln.text, runs.length ? runs : ln.runs, kind));
+      }
+      flushParas();
+      for (const im of (pg.images || []).slice(0, 4)) {
+        hasPng = true;
+        const rid = `rIdImg${shapeId}`;
+        relsExtra.push(`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}_${shapeId}.png"/>`);
+        files[`ppt/media/image${id}_${shapeId}.png`] = im.bytes;
+        let cx = Math.round(im.w * 9525), cy = Math.round(im.h * 9525);
+        const maxW = 4000000;
+        if (cx > maxW) { cy = Math.round(cy * maxW / cx); cx = maxW; }
+        if (cursorY + cy > 6400000) cy = Math.max(400000, 6400000 - cursorY);
+        shapes.push(`<p:pic><p:nvPicPr><p:cNvPr id="${shapeId}" name="Image ${id}"/><p:cNvPicPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="2572000" y="${cursorY}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`);
+        shapeId++;
+        cursorY += cy + 150000;
+      }
+      files[`ppt/slides/slide${id}.xml`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="304800"/><a:ext cx="8229600" cy="1066800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200" b="1"/><a:t>${escXml(titleText.slice(0, 200))}</a:t></a:r><a:endParaRPr lang="en-US" sz="3200"/></a:p></p:txBody></p:sp>${shapes.join('')}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+      files[`ppt/slides/_rels/slide${id}.xml.rels`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${relsExtra.join('')}</Relationships>`);
+    });
+    files['[Content_Types].xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${hasPng ? '<Default Extension="png" ContentType="image/png"/>' : ''}<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides.join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
+    files['_rels/.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
+    files['docProps/core.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escXml(title)}</dc:title><dc:creator>FileKit</dc:creator><cp:lastModifiedBy>FileKit</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`);
+    files['docProps/app.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>FileKit</Application><Slides>${n}</Slides></Properties>`);
+    files['ppt/presentation.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slideIds.join('')}</p:sldIdLst><p:sldSz cx="9144000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
+    files['ppt/_rels/presentation.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${slideRels.join('')}</Relationships>`);
+    files['ppt/slideMasters/slideMaster1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`);
+    files['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
+    files['ppt/slideLayouts/slideLayout1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
+    files['ppt/slideLayouts/_rels/slideLayout1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
+    files['ppt/theme/theme1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F497D"/></a:dk2><a:lt2><a:srgbClr val="EEECE1"/></a:lt2><a:accent1><a:srgbClr val="4F81BD"/></a:accent1><a:accent2><a:srgbClr val="C0504D"/></a:accent2><a:accent3><a:srgbClr val="9BBB59"/></a:accent3><a:accent4><a:srgbClr val="8064A2"/></a:accent4><a:accent5><a:srgbClr val="4BACC6"/></a:accent5><a:accent6><a:srgbClr val="F79646"/></a:accent6><a:hlink><a:srgbClr val="0000FF"/></a:hlink><a:folHlink><a:srgbClr val="800080"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`);
+    return files;
+  }
+
   function buildPptx(title, slides) {
     const enc = new TextEncoder();
     const n = Math.max(1, slides.length);
@@ -1630,24 +2410,112 @@
     } });
 
   R({ id: 'pdf-to-word', category: 'PDF', name: 'PDF to Word',
-    description: 'Extract the text layer into a real, editable Word (.docx) document — one page per section. Scanned PDFs need OCR first.',
+    description: 'Convert PDF text, tables, lists, headings and images into an editable Word (.docx). Scanned PDFs need OCR first.',
     accepts: ['pdf'], maxBytes: 200e6,
     async run({ file, onProgress }) {
-      const pages = await pdfTextLines(file, await loadJs(), onProgress);
-      const paras = [];
-      pages.forEach((t, i) => { paras.push(`Page ${i + 1}`); paras.push(...t.split('\n').map((l) => l.trim()).filter(Boolean)); });
-      const zip = (await loadFf()).zipSync(buildDocx(U.baseName(file.name), paras), { level: 6 });
+      const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
+      // Pre-warm the OCR worker in parallel with text extraction, so a
+      // scanned PDF pays ~0s extra for WASM + model load (5-10s otherwise).
+      const ocrWarm = (async () => {
+        try { await window.__ffScanApi?.getOrInitOcrWorker?.('hin+eng'); } catch (_) {}
+      })();
+      const rich = await pdfRichPages(file, await loadJs(), (r, t) => onProgress?.(r * 0.5, t));
+      const chars = rich.reduce((a, p) => a + p.lines.reduce((x, l) => x + l.text.length, 0), 0);
+      const imgs = rich.reduce((a, p) => a + p.images.length, 0);
+      if (!chars && !imgs) {
+        // Scanned PDF: push-notify, auto-OCR, then convert — no dead-end error.
+        notify('Scanned PDF detected — running on-device OCR, then converting to Word…', 'info');
+        onProgress?.(0.05, 'Scanned PDF detected — starting OCR…');
+        if (!window.__ffOcrEngine) { try { await ocrWarm; } catch (_) {} }
+        if (!window.__ffOcrEngine) throw new Error('Scanned PDF detected, but the OCR engine is still loading — open OCR PDF once, then retry Word conversion.');
+        let ocrText = '';
+        try {
+          const ocrOut = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR in progress — ${Math.round(r * 100)}%`), 'hin+eng');
+          ocrText = String(ocrOut && ocrOut.text || '');
+          // If combined model yields nothing readable, retry English-only before giving up.
+        } catch (e) {
+          throw new Error('Auto-OCR failed (' + (e.message || e) + '). Try OCR PDF directly for a clearer scan.');
+        }
+        if (!ocrText.trim()) {
+          // Combined model blank — retry English-only (e.g. pure-English scan
+          // where the Hindi component added noise) before giving up.
+          notify('First OCR pass was blank — retrying English-only…', 'info');
+          try {
+            const retry = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR retry — ${Math.round(r * 100)}%`), 'eng');
+            ocrText = String(retry && retry.text || '');
+          } catch (_) {}
+        }
+        if (!ocrText.trim()) throw new Error('OCR finished but recognised no text — the scan may be too blurry or blank.');
+        notify('OCR complete — building your Word document…', 'success');
+        onProgress?.(0.8, 'OCR complete — building Word…');
+        // Scrub gutter/barcode/photo garbage, then lexicon repair.
+        const pages = ocrText.split(/\n*── Page \d+ ──\n*/).map((s) => s.trim()).filter(Boolean);
+        const ocrRich = (pages.length ? pages : [ocrText]).map((t) => ({
+          median: 11,
+          images: [],
+          lines: t.split('\n').map((l) => lexLine(ocrCleanLine(l))).filter(Boolean).map((text) => ({
+            text, maxSize: 11, median: 11,
+            runs: [{ x: 0, str: text, size: 11, bold: false, italic: false, font: 'ocr' }],
+          })),
+        }));
+        const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), ocrRich), { level: 6 });
+        onProgress?.(1, 'Done');
+        notify('Word document ready — converted from OCR text.', 'success');
+        return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
+      }
+      onProgress?.(0.85, 'Building Word document…');
+      const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), rich), { level: 6 });
+      onProgress?.(1, 'Done');
       return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
     }
   });
 
   R({ id: 'pdf-to-ppt', category: 'PDF', name: 'PDF to PowerPoint',
-    description: 'Turn each PDF page into a real, openable PowerPoint (.pptx) slide carrying the page text.',
+    description: 'Turn each PDF page into a styled PowerPoint slide: titles, bullets, tables, images. Scanned PDFs go through OCR first.',
     accepts: ['pdf'], maxBytes: 200e6,
     async run({ file, onProgress }) {
-      const pages = await pdfTextLines(file, await loadJs(), onProgress);
-      const slides = pages.map((t, i) => ({ title: `Page ${i + 1}`, body: t || '(blank page)' }));
-      const zip = (await loadFf()).zipSync(buildPptx(U.baseName(file.name), slides), { level: 6 });
+      const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
+      const ocrWarm = (async () => {
+        try { await window.__ffScanApi?.getOrInitOcrWorker?.('hin+eng'); } catch (_) {}
+      })();
+      const rich = await pdfRichPages(file, await loadJs(), (r, t) => onProgress?.(r * 0.5, t));
+      const chars = rich.reduce((a, p) => a + p.lines.reduce((x, l) => x + l.text.length, 0), 0);
+      const imgs = rich.reduce((a, p) => a + p.images.length, 0);
+      if (!chars && !imgs) {
+        notify('Scanned PDF detected — running on-device OCR, then building slides…', 'info');
+        try { await ocrWarm; } catch (_) {}
+        if (!window.__ffOcrEngine) throw new Error('Scanned PDF detected, but the OCR engine is still loading — try again in a moment.');
+        let ocrText = '';
+        try {
+          const ocrOut = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR ${Math.round(r * 100)}%`), 'hin+eng');
+          ocrText = String(ocrOut && ocrOut.text || '');
+        } catch (e) {
+          throw new Error('Auto-OCR failed (' + (e.message || e) + ').');
+        }
+        if (!ocrText.trim()) {
+          try {
+            const retry = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR retry ${Math.round(r * 100)}%`), 'eng');
+            ocrText = String(retry && retry.text || '');
+          } catch (_) {}
+        }
+        if (!ocrText.trim()) throw new Error('OCR recognised no text — the scan may be too blurry.');
+        notify('OCR complete — building your presentation…', 'success');
+        const pages = ocrText.split(/\n*── Page \d+ ──\n*/).map((s) => s.trim()).filter(Boolean);
+        const ocrSlides = (pages.length ? pages : [ocrText]).map((t) => ({
+          median: 11, images: [],
+            lines: t.split('\n').map((l) => lexLine(ocrCleanLine(l))).filter(Boolean).map((text) => ({
+            text, maxSize: 11, median: 11,
+            runs: [{ x: 0, str: text, size: 11, bold: false, italic: false, font: 'ocr' }],
+          })),
+        }));
+        const zip = (await loadFf()).zipSync(buildPptxRich(U.baseName(file.name), ocrSlides), { level: 6 });
+        onProgress?.(1, 'Done');
+        notify('Presentation ready — built from OCR text.', 'success');
+        return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
+      }
+      onProgress?.(0.85, 'Building presentation…');
+      const zip = (await loadFf()).zipSync(buildPptxRich(U.baseName(file.name), rich), { level: 6 });
+      onProgress?.(1, 'Done');
       return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
     }
   });
@@ -1864,21 +2732,231 @@
     }
   });
 
-  R({ id: 'pdf-to-excel', category: 'PDF', name: 'PDF to Excel', description: 'Extract text laid out as rows/columns into an XLSX (best-effort).',
-    accepts: ['pdf'], engine: async () => ({ J: await loadJs(), X: await U.loadScript(...V.xlsx).then(() => window.XLSX) }),
-    async run({ file, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await u8(file) }).promise; const wb = engine.X.utils.book_new();
-      for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const tc = await (await pdf.getPage(p)).getTextContent(); const rows = {};
-        for (const it of tc.items) { const y = Math.round(it.transform[5]); (rows[y] = rows[y] || []).push([it.transform[4], it.str]); }
-        const aoa = Object.keys(rows).map(Number).sort((a, b) => b - a).map((y) => rows[y].sort((a, b) => a[0] - b[0]).map((c) => c[1]));
-        engine.X.utils.book_append_sheet(wb, engine.X.utils.aoa_to_sheet(aoa), 'Page ' + p); }
-      const out = engine.X.write(wb, { type: 'array', bookType: 'xlsx' }); return { blob: new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: U.baseName(file.name) + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', preview: 'download' }; } });
+  /* Minimal styled XLSX writer (OOXML): shared strings, header style,
+     numbers, column widths, freeze panes, autofilter, merges. SheetJS
+     community cannot persist styles — hand-rolled like our DOCX writer. */
+  function buildXlsx(sheets) {
+    const enc = new TextEncoder();
+    const ss = [];
+    const ssIdx = new Map();
+    const strId = (s) => {
+      s = String(s ?? '');
+      if (ssIdx.has(s)) return ssIdx.get(s);
+      ssIdx.set(s, ss.length);
+      ss.push(s);
+      return ss.length - 1;
+    };
+    const colName = (i) => {
+      let n = '';
+      i++;
+      while (i > 0) { const m = (i - 1) % 26; n = String.fromCharCode(65 + m) + n; i = Math.floor((i - 1) / 26); }
+      return n;
+    };
+    const sheetXmls = sheets.map((sh, si) => {
+      const nCols = Math.max(1, ...sh.rows.map((r) => r.length));
+      const widths = [];
+      for (let c = 0; c < nCols; c++) {
+        let w = 10;
+        for (const r of sh.rows) {
+          const cell = r[c];
+          const len = cell == null ? 0 : (cell.num != null ? String(cell.num).length + 2 : String(cell.v ?? '').length);
+          if (len + 2 > w) w = Math.min(60, len + 2);
+        }
+        widths.push(w);
+      }
+      let rowsXml = '';
+      sh.rows.forEach((r, ri) => {
+        let cellsXml = '';
+        for (let c = 0; c < nCols; c++) {
+          const cell = r[c];
+          const ref = colName(c) + (ri + 1);
+          if (cell == null) { cellsXml += `<c r="${ref}"/>`; continue; }
+          if (cell.num != null && Number.isFinite(cell.num)) {
+            const st = ri === sh.header ? 1 : (cell.pct ? 2 : 0);
+            cellsXml += `<c r="${ref}" t="n"${st ? ` s="${st}"` : ''}><v>${cell.num}</v></c>`;
+          } else {
+            cellsXml += `<c r="${ref}" t="s"${ri === sh.header ? ' s="1"' : ''}><v>${strId(cell.v ?? '')}</v></c>`;
+          }
+        }
+        rowsXml += `<row r="${ri + 1}">${cellsXml}</row>`;
+      });
+      const dim = `A1:${colName(nCols - 1)}${Math.max(1, sh.rows.length)}`;
+      const freeze = sh.header >= 0 ? `<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>` : '';
+      const filter = sh.header >= 0 && sh.rows.length > 1 ? `<autoFilter ref="A${sh.header + 1}:${colName(nCols - 1)}${sh.rows.length}"/>` : '';
+      const merges = (sh.merges || []).map(([a, b]) => `<mergeCell ref="${a}:${b}"/>`).join('');
+      // Schema order matters (strict viewers show blank otherwise):
+      // dimension, sheetViews, cols, sheetData, autoFilter, mergeCells.
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="${dim}"/>${freeze}<cols>${widths.map((w, c) => `<col min="${c + 1}" max="${c + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${rowsXml}</sheetData>${filter}${merges ? `<mergeCells count="${sh.merges.length}">${merges}</mergeCells>` : ''}</worksheet>`;
+    });
+    const files = {
+      '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>`),
+      '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`),
+      'xl/workbook.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${escXml(String(s.name || ('Page ' + (i + 1))).slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`),
+      'xl/_rels/workbook.xml.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdSS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>`),
+      'xl/styles.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF1F4E79"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E1F2"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="1" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs></styleSheet>`),
+      'xl/sharedStrings.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${ss.length}" uniqueCount="${ss.length}">${ss.map((s) => `<si><t xml:space="preserve">${escXml(s)}</t></si>`).join('')}</sst>`),
+    };
+    sheetXmls.forEach((x, i) => { files[`xl/worksheets/sheet${i + 1}.xml`] = enc.encode(x); });
+    return files;
+  }
+
+  /* Numeric text → { v, pct } or null (percent/currency aware). */
+  function excelNum(s) {
+    const t = String(s ?? '').trim();
+    if (!t) return null;
+    const m = /^([₹$€£¥]?)\s*([\d,]+(?:\.\d+)?)\s*(%?)$/.exec(t);
+    if (!m) return null;
+    const n = Number(m[2].replace(/,/g, ''));
+    if (!Number.isFinite(n)) return null;
+    return m[3] ? { v: n / 100, pct: true } : { v: n };
+  }
+
+  R({ id: 'pdf-to-excel', category: 'PDF', name: 'PDF to Excel', description: 'Extract tables into a styled XLSX: aligned columns, header row, real numbers, autofilter.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    engine: async () => ({ J: await loadJs(), F: await loadFf() }),
+    async run({ file, engine, onProgress }) {
+      const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
+      const pdf = await engine.J.getDocument({ data: await u8(file) }).promise;
+      const sheets = [];
+      let scanned = true;
+      for (let p = 1; p <= pdf.numPages; p++) {
+        onProgress?.((p - 1) / pdf.numPages * 0.8, `Reading page ${p}/${pdf.numPages}`);
+        const tc = await (await pdf.getPage(p)).getTextContent();
+        const items = (tc.items || []).filter((it) => it.str && String(it.str).trim()).map((it) => ({
+          x: it.transform ? it.transform[4] : 0, y: it.transform ? it.transform[5] : 0,
+          str: String(it.str), size: Math.abs(it.height || (it.transform ? it.transform[0] : 11)) || 11,
+          bold: /bold|black|heavy|demi|bd/i.test(String(it.fontName || '')),
+        }));
+        if (!items.length) {
+          sheets.push({ name: 'Page ' + p, rows: [], header: -1 });
+          continue;
+        }
+        scanned = false;
+        const sizes = items.map((r) => r.size).sort((a, b) => a - b);
+        const med = sizes[Math.floor(sizes.length / 2)] || 11;
+        const gapTol = Math.max(18, med * 2.2);
+        // Row bands
+        const bands = new Map();
+        for (const r of items) {
+          const k = Math.round(r.y / 3) * 3;
+          if (!bands.has(k)) bands.set(k, []);
+          bands.get(k).push(r);
+        }
+        const bandList = [...bands.entries()].sort((a, b) => b[0] - a[0]).map(([, rs]) => rs.sort((a, b) => a.x - b.x));
+        // Global column edges: breaks recurring across rows. Keys are
+        // clustered within 12pt first — exact matching breaks on jitter.
+        const votes = new Map();
+        for (const rs of bandList) {
+          for (let i = 1; i < rs.length; i++) {
+            if (rs[i].x - rs[i - 1].x > gapTol) {
+              const b = Math.round((rs[i].x + rs[i - 1].x) / 2);
+              votes.set(b, (votes.get(b) || 0) + 1);
+            }
+          }
+        }
+        const keys = [...votes.keys()].sort((a, b) => a - b);
+        const groups = [];
+        for (const k of keys) {
+          const g = groups[groups.length - 1];
+          if (g && k - g.last <= 12) { g.sum += k * votes.get(k); g.n += votes.get(k); g.last = k; }
+          else groups.push({ sum: k * votes.get(k), n: votes.get(k), last: k });
+        }
+        const edges = groups.filter((g) => g.n >= 2).map((g) => Math.round(g.sum / g.n)).sort((a, b) => a - b);
+        const colOf = (x) => { let c = 0; while (c < edges.length && x >= edges[c] - 5) c++; return c; };
+        const nCols = edges.length + 1;
+        // Grid needs either 3+ multi-cell rows, or 2 rows with 3+ columns —
+        // two prose lines with wide word gaps align by chance too easily.
+        const multiRows = bandList.filter((rs) => {
+          const cells = new Set(rs.map((r) => colOf(r.x)));
+          return cells.size >= 2;
+        }).length;
+        const useGrid = edges.length >= 1 && (multiRows >= 3 || (multiRows >= 2 && nCols >= 3));
+        const rows = [];
+        const merges = [];
+        for (const rs of bandList) {
+          if (useGrid) {
+            const cells = Array.from({ length: nCols }, () => []);
+            for (const r of rs) cells[Math.min(colOf(r.x), nCols - 1)].push(r);
+            // Single occupied cell spanning → merge row
+            const filled = cells.map((c, i) => (c.length ? i : -1)).filter((i) => i >= 0);
+            if (filled.length === 1 && nCols >= 3) {
+              const all = cells.flat().map((r) => r.str).join(' ').replace(/\s+/g, ' ').trim();
+              const row = [{ v: all }];
+              for (let c = 1; c < nCols; c++) row.push(null);
+              merges.push([`A${rows.length + 1}`, `${colNameOf(nCols - 1)}${rows.length + 1}`]);
+              rows.push(row);
+              continue;
+            }
+            rows.push(cells.map((c) => {
+              const t = c.map((r) => r.str).join(' ').replace(/\s+/g, ' ').trim();
+              if (!t) return null;
+              const num = excelNum(t);
+              return num ? { num: num.v, pct: num.pct } : { v: t };
+            }));
+          } else {
+            const t = rs.map((r) => r.str).join(' ').replace(/\s+/g, ' ').trim();
+            if (!t) continue;
+            const num = excelNum(t);
+            rows.push([num ? { num: num.v, pct: num.pct } : { v: t }]);
+          }
+        }
+        // Header: first row with any bold — but a merged title row is a
+        // title, not a header: promote the row beneath it instead.
+        // colNameOf is hoisted (function declaration) for the merge refs above.
+        function colNameOf(i) {
+          let n = '';
+          i++;
+          while (i > 0) { const m = (i - 1) % 26; n = String.fromCharCode(65 + m) + n; i = Math.floor((i - 1) / 26); }
+          return n;
+        }
+        let header = -1;
+        if (rows.length > 1) {
+          const firstBand = bandList.find((rs) => rs.map((r) => r.str).join(' ').trim());
+          if (firstBand && firstBand.some((r) => r.bold)) header = 0;
+          const filled0 = rows[0] ? rows[0].filter((c) => c != null).length : 0;
+          if (header === 0 && filled0 <= 1 && rows.length > 1) {
+            const filled1 = rows[1].filter((c) => c != null).length;
+            header = filled1 >= 2 ? 1 : -1;
+          }
+        }
+        sheets.push({ name: 'Page ' + p, rows, header, merges });
+        onProgress?.(p / pdf.numPages * 0.8, `Page ${p}/${pdf.numPages}`);
+      }
+      // Never ship an empty workbook silently — that always means the
+      // source had no usable text on any page.
+      const dataRows = sheets.reduce((a, s) => a + s.rows.filter((r) => r.some((c) => c != null && String(c.v ?? c.num ?? '').trim() !== '')).length, 0);
+      if (!scanned && !dataRows) {
+        throw new Error('No extractable text found on any page — if this is a scanned PDF, the scan may be blank or unreadable.');
+      }
+      if (scanned) {
+        notify('Scanned PDF detected — running on-device OCR, then building the spreadsheet…', 'info');
+        if (!window.__ffOcrEngine) throw new Error('Scanned PDF detected but the OCR engine is still loading — try again in a moment.');
+        const ocrOut = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.8 + r * 0.15, `OCR ${Math.round(r * 100)}%`), 'hin+eng');
+        const text = String(ocrOut && ocrOut.text || '');
+        if (!text.trim()) throw new Error('OCR recognised no text — the scan may be too blurry.');
+        const pages = text.split(/\n*── Page \d+ ──\n*/).map((s) => s.trim()).filter(Boolean);
+        const ocrSheets = (pages.length ? pages : [text]).map((t, i) => ({
+          name: 'Page ' + (i + 1), header: -1,
+          rows: t.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => [{ v: l }]),
+        }));
+        const zip = engine.F.zipSync(buildXlsx(ocrSheets), { level: 6 });
+        onProgress?.(1, 'Done');
+        notify('Spreadsheet ready — built from OCR text.', 'success');
+        return { blob: new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: U.baseName(file.name) + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', preview: 'download' };
+      }
+      const zip = engine.F.zipSync(buildXlsx(sheets), { level: 6 });
+      onProgress?.(1, 'Done');
+      return { blob: new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: U.baseName(file.name) + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', preview: 'download' }; } });
 
   R({ id: 'pdf-extract-images', category: 'PDF', name: 'Extract images', description: 'Pull embedded raster images out of a PDF (ZIP).',
     accepts: ['pdf'], engine: async () => ({ J: await loadJs(), F: await U.loadScript(...V.ff).then(() => window.fflate) }),
     async run({ file, engine, onProgress }) { const pdfjs = engine.J; const pdf = await pdfjs.getDocument({ data: await u8(file) }).promise; const out = {}; let idx = 0;
       for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const page = await pdf.getPage(p); const ops = await page.getOperatorList();
         for (let i = 0; i < ops.fnArray.length; i++) { if (ops.fnArray[i] !== pdfjs.OPS.paintImageXObject) continue; const name = ops.argsArray[i][0];
-          try { const img = await new Promise((res) => page.objs.get(name, res)); if (!img || !img.width) continue; const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); const id = ctx.createImageData(img.width, img.height); const src = img.data; const kind = img.kind;
+          try { const img = await Promise.race([
+              new Promise((res) => { try { page.objs.get(name, res); } catch (_) { res(null); } }),
+              new Promise((res) => setTimeout(() => res(null), 5000)),
+            ]); if (!img || !img.width) continue; const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); const id = ctx.createImageData(img.width, img.height); const src = img.data; const kind = img.kind;
             for (let s = 0, d = 0; d < id.data.length; d += 4) { if (kind === 3) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = src[s + 3]; s += 4; } else if (kind === 2) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = 255; s += 3; } else { id.data[d] = id.data[d + 1] = id.data[d + 2] = src[s]; id.data[d + 3] = 255; s += 1; } }
             ctx.putImageData(id, 0, 0); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); out[`image-${++idx}.png`] = new Uint8Array(await blob.arrayBuffer()); } catch {} }
       }
@@ -2713,6 +3791,132 @@
     finalGlb.set(newBinBuffer, binStart + 8);
     if (finalGlb.length < rawBytes.length) return finalGlb;
     return rawBytes;
+  }
+
+  /* ── Helper: PNG CRC (shares the indexed-PNG static table) ── */
+  function pngChunkCrc(crcTable, bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function pngChunk(type, data) {
+    const t = new TextEncoder().encode(type);
+    const out = new Uint8Array(12 + data.length);
+    const dv = new DataView(out.buffer);
+    dv.setUint32(0, data.length);
+    out.set(t, 4); out.set(data, 8);
+    const crcIn = new Uint8Array(4 + data.length);
+    crcIn.set(t, 0); crcIn.set(data, 4);
+    dv.setUint32(8 + data.length, pngChunkCrc(PNG_STATIC_CRC_TABLE, crcIn));
+    return out;
+  }
+
+  /* ── Phase 3 (interim): 1-bit bilevel PNG encoder (Flate via fflate) ──
+     Scanned TEXT pages (near-black ink on near-white paper) encode far smaller
+     as 1-bit + PNG Up-filtering + Deflate than as JPEG (which adds halftone
+     noise). Closes most of the JBIG2 gap with zero new dependencies. The page
+     is emitted as an 8-bit-gray PDF via pdf-lib embedPng only when the canvas
+     really is bilevel-ish; otherwise callers keep the JPEG path. */
+  function bilevelFromCanvas(ctx2d, maxDimPixelAnalysis) {
+    try {
+      const W = ctx2d.canvas.width, H = ctx2d.canvas.height;
+      if (!W || !H || W * H > 40e6) return null;
+      const id = ctx2d.getImageData(0, 0, W, H);
+      const d = id.data;
+      const n = W * H;
+      let black = 0, white = 0, other = 0, color = 0;
+      const step = n > 6e6 ? 2 : 1;            // sample half the pixels on huge pages
+      for (let i = 0; i < n; i += step) {
+        const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        const mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+        const mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+        if (mx - mn > 26) { color++; continue; }          // saturated -> not a document page
+        if (lum < 112) black++;
+        else if (lum > 198) white++;
+        else other++;
+      }
+      const tot = black + white + other + color;
+      const otherRatio = (other + color) / tot;
+      const blackRatio = black / tot;
+      // Bilevel document page: overwhelmingly near-black/near-white, has real ink,
+      // and is not a fully black page.
+      const likely = otherRatio < 0.045 && blackRatio > 0.001 && blackRatio < 0.85 && white > black;
+      if (!likely) return { likely: false, png: null, blackRatio, otherRatio };
+
+      // Encode 1-bit: bit 0 = black ink (PNG gray sample 0 = black, matches PDF
+      // DeviceGray 0 = black), bit 1 = white paper -> paper rows read 0xFF and
+      // Up-filter to near-zero bytes that Deflate collapses.
+      const rowBytes = Math.max(1, Math.ceil(W / 8));
+      const raw = new Uint8Array(rowBytes * H);
+      raw.fill(0xFF);
+      for (let y = 0; y < H; y++) {
+        const rowOff = y * rowBytes;
+        for (let x = 0; x < W; x++) {
+          const i = (y * W + x);
+          const lum = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+          if (lum < 112) raw[rowOff + (x >> 3)] &= ~(1 << (7 - (x & 7)));
+        }
+      }
+      // PNG filtering: Up (2) on every scanline (first line's "prior" is zeros,
+      // so Up == None for it). Prefix each line with its filter type.
+      const filtered = new Uint8Array(rowBytes * H + H);
+      for (let y = 0; y < H; y++) {
+        const dst = y * (rowBytes + 1);
+        filtered[dst] = 2;
+        const cur = raw.subarray(y * rowBytes, (y + 1) * rowBytes);
+        const prev = y > 0 ? raw.subarray((y - 1) * rowBytes, y * rowBytes) : null;
+        for (let k = 0; k < rowBytes; k++) filtered[dst + 1 + k] = (cur[k] - (prev ? prev[k] : 0)) & 0xFF;
+      }
+      const fflate = window.fflate;
+      if (!fflate) return { likely: true, png: null, blackRatio, otherRatio };
+      const deflated = fflate.zlibSync(filtered, { level: 9 });
+
+      const ihdr = new Uint8Array(13);
+      const ihdv = new DataView(ihdr.buffer);
+      ihdv.setUint32(0, W); ihdv.setUint32(4, H);
+      ihdr[8] = 1;   // bit depth 1
+      ihdr[9] = 0;   // grayscale
+      ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+
+      let outLen = 8 + 12 + 13 + 12 + deflated.length + 12;
+      const out = new Uint8Array(outLen);
+      out.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
+      let o = 8;
+      const ch1 = pngChunk('IHDR', ihdr); out.set(ch1, o); o += ch1.length;
+      const ch2 = pngChunk('IDAT', deflated); out.set(ch2, o); o += ch2.length;
+      const ch3 = pngChunk('IEND', new Uint8Array(0)); out.set(ch3, o);
+      return { likely: true, png: out, blackRatio, otherRatio, rowBytes };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* Embed the better of JPEG vs bilevel-PNG for a rasterized page into outPdf.
+     Returns { img, bytesLen, usedMono }. Tracks counters on window.__ffMonoStat
+     so the benchmark can prove the 1-bit path fired. */
+  async function embedPageRaster(outPdf, ctx2d, quality) {
+    if (!window.__ffMonoStat) window.__ffMonoStat = { pages: 0, picked: 0, failedPng: 0, jpegBytes: 0, monoBytes: 0 };
+    const st = window.__ffMonoStat;
+    st.pages++;
+    const jBlob = await new Promise(r => ctx2d.canvas.toBlob(r, 'image/jpeg', quality));
+    const jBytes = new Uint8Array(await jBlob.arrayBuffer());
+    let mono = null;
+    try { mono = bilevelFromCanvas(ctx2d); } catch (e) { mono = null; }
+    if (mono && mono.likely && mono.png && mono.png.length < jBytes.length * 0.85) {
+      try {
+        const img = await outPdf.embedPng(mono.png);
+        st.picked++;
+        st.jpegBytes += jBytes.length;
+        st.monoBytes += mono.png.length;
+        return { img, bytesLen: mono.png.length, usedMono: true };
+      } catch (pngErr) {
+        st.failedPng++;
+        // pdf-lib rejected the 1-bit PNG — fall back to JPEG.
+      }
+    }
+    const img = await outPdf.embedJpg(jBytes);
+    return { img, bytesLen: jBytes.length, usedMono: false };
   }
 
   /* ── Helper: In-Place Raster Image Compression Buffer (Industry-Grade) ── */
@@ -3752,6 +4956,7 @@
       // 1. PDF Files (SqueezeCore™ In-Place Stream Surgery & Adaptive Compression Engine)
       if (family === 'pdf') {
         let doc = null;
+        let needsUserPassword = false;
         try {
           const pdfjs = window.pdfjsLib || await loadJs();
           const PDFLib = window.PDFLib || await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
@@ -3761,18 +4966,46 @@
           }
           const rawBuf = await file.arrayBuffer();
 
+          // Phase 1 (parity): do NOT bail on a password error here. Some PDFs are
+          // "secured" with only an owner password (openable without one, e.g. many
+          // gov-issued docs). pdf-lib strict load below can still decrypt+re-stream
+          // those. Only a real user (open) password stops us — decided after both
+          // pdf.js and pdf-lib have had a chance.
           try {
             doc = await pdfjs.getDocument({ data: new Uint8Array(rawBuf.slice(0)) }).promise;
           } catch (pwErr) {
             if (pwErr.name === 'PasswordException' || pwErr.code === 1) {
-              window.FF?.util?.toast?.(`"${file.name}" is password-protected.`, 'warn');
-              return { blob: file, filename: file.name, mime: 'application/pdf', preview: 'pdf', isProtected: true };
+              needsUserPassword = true;
+              doc = null;
+            } else {
+              throw pwErr;
             }
-            throw pwErr;
           }
 
-          const numPages = doc.numPages;
+          const numPages = doc ? doc.numPages : 0;
           onProgress?.(0.08, 'Analyzing PDF structure & vector streams…');
+
+          // ─── Industry benchmark: detect selectable text layer ───
+          // Born-digital PDFs (text present) must NEVER be full-page rasterized
+          // on balanced/custom tiers — raster destroys selectability/search.
+          // Scanned PDFs (no text) may use the raster path.
+          let hasSelectableText = false;
+          let textCharsSampled = 0;
+          if (doc) {
+            try {
+              const sampleN = Math.min(numPages, 3);
+              for (let ti = 1; ti <= sampleN; ti++) {
+                const tPage = await doc.getPage(ti);
+                const tc = await tPage.getTextContent();
+                const s = (tc.items || []).map(it => it.str || '').join('').trim();
+                textCharsSampled += s.length;
+                tPage.cleanup();
+                if (textCharsSampled >= 20) { hasSelectableText = true; break; }
+              }
+            } catch (textDetectErr) {
+              hasSelectableText = false;
+            }
+          }
 
           let surgeryDoc = null;
           let surgeryReplaced = 0;
@@ -3780,7 +5013,11 @@
 
           // ─── Stage 1: In-Place Stream Surgery & Vector Preservation ───
           try {
-            surgeryDoc = await PDFLib.PDFDocument.load(new Uint8Array(rawBuf.slice(0)), { ignoreEncryption: true });
+            // Strict load (no ignoreEncryption): ignoreEncryption silently emits
+            // corrupted output on genuinely encrypted files — never use it. If the
+            // file needs a real user password this load throws and we keep the file
+            // untouched below; if only owner-password it decrypts fine and compresses.
+            surgeryDoc = await PDFLib.PDFDocument.load(new Uint8Array(rawBuf.slice(0)));
             const context = surgeryDoc.context;
             const indirectObjects = context.enumerateIndirectObjects();
 
@@ -3991,6 +5228,48 @@
             console.warn('[Stream Surgery Exception]', surgeryErr);
           }
 
+          // ─── Phase 1 gate: real user-password protection (or unreadable) ───
+          // pdf.js failed AND strict pdf-lib failed => cannot decrypt => leave the
+          // file byte-identical. Owner-only/"secured" PDFs (openable, no user pw)
+          // succeed in one of the loads above and fall through to be compressed.
+          if (!doc && !surgeryDoc) {
+            if (needsUserPassword) {
+              window.FF?.util?.toast?.(`"${file.name}" needs its password to compress. File kept unchanged.`, 'warn');
+            } else {
+              window.FF?.util?.toast?.(`"${file.name}" could not be parsed. File kept unchanged.`, 'warn');
+            }
+            try { doc?.destroy(); } catch {}
+            return {
+              blob: file, filename: file.name, mime: 'application/pdf', preview: 'pdf',
+              isProtected: needsUserPassword,
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText: false, surgerySavings: 0, untouched: 'password-or-unreadable' }
+            };
+          }
+
+          // ─── Phase 2: per-page text map for hybrid (vector) optimization ───
+          // Keep pages WITH selectable text as vector copies; rasterize only the
+          // scan pages. Enables: balanced to compress mixed scan+text docs, and
+          // maximum to stop destroying the text layer of born-digital PDFs.
+          let keepPages = null;          // Set<pageIdx 1..numPages> or null (n/a)
+          if (doc && surgeryDoc && selectedTier !== 'light' && numPages >= 1 && numPages <= 160) {
+            try {
+              keepPages = new Set();
+              for (let pi = 1; pi <= numPages; pi++) {
+                const pp = await doc.getPage(pi);
+                const ptc = await pp.getTextContent();
+                pp.cleanup();
+                let n = 0;
+                for (const it of ptc.items || []) n += (it.str || '').length;
+                if (n >= 4) keepPages.add(pi);
+              }
+            } catch (keepErr) {
+              keepPages = null;
+            }
+          }
+          const textPageCount = keepPages ? keepPages.size : (hasSelectableText ? 1 : 0);
+          const rasterPageCount = keepPages ? (numPages - keepPages.size) : 0;
+          const isMixed = keepPages !== null && keepPages.size > 0 && keepPages.size < numPages;
+
           // ─── Stage 2: Tier Evaluation & Decision ───
           const surgerySize = surgeryBlob ? surgeryBlob.size : file.size;
           const surgerySavings = (1 - surgerySize / file.size) * 100;
@@ -4004,24 +5283,44 @@
               blob: bestBlob,
               filename: U.baseName(file.name) + '-compressed.pdf',
               mime: 'application/pdf',
-              preview: 'pdf'
+              preview: 'pdf',
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings }
             };
           }
 
           // If Balanced (Recommended) and stream surgery saved >= 20%:
-          if (selectedTier === 'balanced' && surgeryBlob && surgerySavings >= 20) {
+          if (selectedTier === 'balanced' && surgeryBlob && surgerySavings >= 20 && !isMixed) {
             onProgress?.(1, 'Vector structure & images compressed successfully!');
             try { doc.destroy(); } catch {}
             return {
               blob: surgeryBlob,
               filename: U.baseName(file.name) + '-compressed.pdf',
               mime: 'application/pdf',
-              preview: 'pdf'
+              preview: 'pdf',
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings }
+            };
+          }
+
+          // Industry rule: balanced + selectable text => NEVER full-page rasterize.
+          // For pure-text docs return the best vector result now; mixed scan+text
+          // docs fall through so scan pages can be rasterized (Phase 2 hybrid).
+          if (selectedTier === 'balanced' && hasSelectableText && !isMixed) {
+            onProgress?.(1, surgeryBlob && surgeryBlob.size < file.size
+              ? 'Optimized with 100% text & vector preservation!'
+              : 'Already optimized — text & vectors preserved as-is.');
+            try { doc.destroy(); } catch {}
+            const bestBlob = (surgeryBlob && surgeryBlob.size < file.size) ? surgeryBlob : file;
+            return {
+              blob: bestBlob,
+              filename: U.baseName(file.name) + '-compressed.pdf',
+              mime: 'application/pdf',
+              preview: 'pdf',
+              metrics: { tier: selectedTier, vectorPreserved: true, hasSelectableText, surgerySavings }
             };
           }
 
           // If Target Size mode and stream surgery already reached <= targetBytes:
-          if (selectedTier === 'custom' && targetBytesAllocated > 0 && surgeryBlob && surgeryBlob.size <= targetBytesAllocated) {
+          if (selectedTier === 'custom' && targetBytesAllocated > 0 && surgeryBlob && surgeryBlob.size <= targetBytesAllocated && !isMixed) {
             onProgress?.(1, `Target reached (${_bytes(surgeryBlob.size)} <= ${_bytes(targetBytesAllocated)})!`);
             try { doc.destroy(); } catch {}
             return {
@@ -4031,6 +5330,10 @@
               preview: 'pdf'
             };
           }
+
+          // Pure-scan or no raster renderer available (password-only decrypted):
+          // hybrid/vector paths need pdf.js rendering — keep going only when we can.
+          const canRaster = !!doc;
 
           // ─── Stage 3: High-Efficiency Adaptive Page Optimizer ───
           onProgress?.(0.60, 'Applying high-efficiency compression…');
@@ -4053,9 +5356,7 @@
               await pg.render({ canvasContext: ctx, viewport: vp }).promise;
               pg.cleanup();
 
-              const jBlob = await new Promise(r => cvs.toBlob(r, 'image/jpeg', quality));
-              const jBytes = new Uint8Array(await jBlob.arrayBuffer());
-              const img = await outPdf.embedJpg(jBytes);
+              const { img } = await embedPageRaster(outPdf, ctx, quality);
               const vp1 = pg.getViewport({ scale: 1 });
               const outPage = outPdf.addPage([vp1.width, vp1.height]);
               outPage.drawImage(img, { x: 0, y: 0, width: vp1.width, height: vp1.height });
@@ -4067,73 +5368,144 @@
 
           let rasterBlob = null;
 
-          if (selectedTier === 'maximum') {
-            // Extreme / Smallest: 1.55 scale (~112 DPI), quality 0.60
-            rasterBlob = await renderRasterPdf(1.55, 0.60);
-          } else if (selectedTier === 'balanced') {
-            // Balanced: 1.95 scale (~140 DPI), quality 0.74
+          // Full-page raster is only permitted when the document has NO selectable
+          // text pages. If any page is born-digital we use hybrid below, which
+          // rasterizes only the scan pages and copies the vector pages.
+          const textFree = textPageCount === 0;
+
+          if (canRaster && selectedTier === 'maximum' && textFree) {
+            // Extreme / Smallest on pure scans: ~133 DPI (scale 1.85) at q0.70
+            // (calibrated: previous 112 DPI/q0.60 visibly degraded scans, SSIM 0.85).
+            rasterBlob = await renderRasterPdf(1.85, 0.70);
+          } else if (canRaster && selectedTier === 'balanced' && textFree) {
+            // Balanced + scanned (no text layer): raster is industry-standard.
             rasterBlob = await renderRasterPdf(1.95, 0.74);
-          } else if (selectedTier === 'custom' && targetBytesAllocated > 0) {
-            // Custom target size adaptive search
-            const estimatedPageBudget = targetBytesAllocated / Math.max(1, numPages);
-            let s = estimatedPageBudget < 40000 ? 1.2 : estimatedPageBudget < 80000 ? 1.5 : 1.8;
-            let q = estimatedPageBudget < 40000 ? 0.45 : estimatedPageBudget < 80000 ? 0.58 : 0.70;
-            let r1 = await renderRasterPdf(s, q);
-            if (r1.size <= targetBytesAllocated) {
-              rasterBlob = r1;
+          } else if (canRaster && selectedTier === 'custom' && targetBytesAllocated > 0) {
+            const surgeryMiss = surgeryBlob ? (surgeryBlob.size - targetBytesAllocated) / targetBytesAllocated : 1;
+            const needRaster = textFree || surgeryMiss > 0.15;
+            if (!needRaster) {
+              onProgress?.(1, 'Target approached with text preserved — skipping raster.');
             } else {
-              const ratio = targetBytesAllocated / r1.size;
-              s = Math.max(0.85, s * Math.sqrt(ratio) * 0.92);
-              q = Math.max(0.30, q * Math.sqrt(ratio) * 0.90);
-              let r2 = await renderRasterPdf(s, q);
-              if (r2.size <= targetBytesAllocated) {
-                rasterBlob = r2;
+              // Custom target size adaptive search
+              const estimatedPageBudget = targetBytesAllocated / Math.max(1, numPages);
+              let s = estimatedPageBudget < 40000 ? 1.2 : estimatedPageBudget < 80000 ? 1.5 : 1.8;
+              let q = estimatedPageBudget < 40000 ? 0.45 : estimatedPageBudget < 80000 ? 0.58 : 0.70;
+              let r1 = await renderRasterPdf(s, q);
+              if (r1.size <= targetBytesAllocated) {
+                rasterBlob = r1;
               } else {
-                s = Math.max(0.70, s * 0.85);
-                q = Math.max(0.25, q * 0.85);
-                rasterBlob = await renderRasterPdf(s, q);
+                const ratio = targetBytesAllocated / r1.size;
+                s = Math.max(0.85, s * Math.sqrt(ratio) * 0.92);
+                q = Math.max(0.30, q * Math.sqrt(ratio) * 0.90);
+                let r2 = await renderRasterPdf(s, q);
+                if (r2.size <= targetBytesAllocated) {
+                  rasterBlob = r2;
+                } else {
+                  s = Math.max(0.70, s * 0.85);
+                  q = Math.max(0.25, q * 0.85);
+                  rasterBlob = await renderRasterPdf(s, q);
+                }
               }
+            }
+          }
+
+          // ─── Phase 2: Hybrid optimizer (vector text pages + raster scan pages) ───
+          // Only for mixed documents (some pages text, some scanned). Keeps every
+          // selectable-text page as an untouched vector copy via pdf-lib copyPages
+          // (preserving links/annotations where possible) and re-renders only the
+          // scan pages. Candidate competes against surgery below.
+          let hybridBlob = null;
+          let hybridRasterized = 0;
+          let hybridBuilt = false;
+          if (canRaster && surgeryDoc && isMixed && rasterPageCount > 0) {
+            const hyScale = selectedTier === 'balanced' ? 1.95 : 1.85;
+            const hyQuality = selectedTier === 'balanced' ? 0.74 : 0.70;
+            try {
+              const hOut = await PDFLib.PDFDocument.create();
+              const hCvs = document.createElement('canvas');
+              const hCtx = hCvs.getContext('2d', { alpha: false });
+              hCtx.imageSmoothingEnabled = true;
+              hCtx.imageSmoothingQuality = 'high';
+              for (let hi = 1; hi <= numPages; hi++) {
+                if (keepPages.has(hi)) {
+                  try {
+                    const [cp] = await hOut.copyPages(surgeryDoc, [hi - 1]);
+                    hOut.addPage(cp);
+                    continue;
+                  } catch (cpErr) {
+                    console.warn('[Hybrid copy page]', hi, cpErr);
+                  }
+                }
+                hybridRasterized++;
+                onProgress?.(0.60 + (hi / numPages) * 0.35, `Hybrid ${hi}/${numPages} (vector + scan page)…`);
+                const hPg = await doc.getPage(hi);
+                const hVp = hPg.getViewport({ scale: hyScale });
+                hCvs.width = Math.max(1, Math.round(hVp.width));
+                hCvs.height = Math.max(1, Math.round(hVp.height));
+                hCtx.fillStyle = '#FFFFFF';
+                hCtx.fillRect(0, 0, hCvs.width, hCvs.height);
+                await hPg.render({ canvasContext: hCtx, viewport: hVp }).promise;
+                hPg.cleanup();
+                const { img: hImg } = await embedPageRaster(hOut, hCtx, hyQuality);
+                const hVp1 = hPg.getViewport({ scale: 1 });
+                const hPage = hOut.addPage([hVp1.width, hVp1.height]);
+                hPage.drawImage(hImg, { x: 0, y: 0, width: hVp1.width, height: hVp1.height });
+              }
+              hCvs.width = 0; hCvs.height = 0;
+              const hBytes = await hOut.save({ useObjectStreams: true });
+              hybridBuilt = true;
+              if (hBytes.length < file.size) {
+                hybridBlob = new Blob([hBytes], { type: 'application/pdf' });
+              }
+            } catch (hyErr) {
+              console.warn('[Hybrid Exception]', hyErr);
+              hybridBlob = null;
             }
           }
 
           try { doc.destroy(); } catch {}
 
-          // Compare candidates (surgeryBlob vs rasterBlob vs original)
+          // ─── Candidate selection ───
+          // Eligible candidates depend on text presence so we NEVER destroy the
+          // text layer of born-digital pages:
+          //   textFree  : surgery, raster(whole)
+          //   has text  : surgery, hybrid(rasterizes only scan pages)
+          const elig = [];
+          if (surgeryBlob && surgeryBlob.size < file.size) elig.push({ blob: surgeryBlob, v: true, kind: 'surgery' });
+          if (textFree && rasterBlob && rasterBlob.size < file.size) elig.push({ blob: rasterBlob, v: false, kind: 'raster' });
+          if (!textFree && hybridBlob && hybridBlob.size < file.size) elig.push({ blob: hybridBlob, v: true, kind: 'hybrid' });
+
           let finalBlob = file;
+          let finalKind = 'original';
+
           if (selectedTier === 'custom' && targetBytesAllocated > 0) {
-            if (rasterBlob && rasterBlob.size <= targetBytesAllocated) {
-              finalBlob = rasterBlob;
-            } else if (surgeryBlob && surgeryBlob.size <= targetBytesAllocated) {
-              finalBlob = surgeryBlob;
-            } else if (rasterBlob) {
-              finalBlob = rasterBlob;
-            } else if (surgeryBlob && surgeryBlob.size < file.size) {
-              finalBlob = surgeryBlob;
-            }
-          } else if (selectedTier === 'maximum') {
-            if (rasterBlob && surgeryBlob) {
-              finalBlob = (rasterBlob.size < surgeryBlob.size) ? rasterBlob : surgeryBlob;
-            } else if (rasterBlob && rasterBlob.size < file.size) {
-              finalBlob = rasterBlob;
-            } else if (surgeryBlob && surgeryBlob.size < file.size) {
-              finalBlob = surgeryBlob;
-            }
-          } else {
-            if (surgeryBlob && surgeryBlob.size < file.size && surgerySavings >= 15) {
-              finalBlob = surgeryBlob;
-            } else if (rasterBlob && rasterBlob.size < file.size && (!surgeryBlob || rasterBlob.size < surgeryBlob.size)) {
-              finalBlob = rasterBlob;
-            } else if (surgeryBlob && surgeryBlob.size < file.size) {
-              finalBlob = surgeryBlob;
-            }
+            // Prefer a text-preserving candidate that hits (or near-hits) target.
+            let hit = elig.filter(e => e.kind !== 'raster' && e.blob.size <= targetBytesAllocated * 1.15);
+            if (!hit.length) hit = elig.filter(e => e.blob.size <= targetBytesAllocated);
+            if (!hit.length && elig.length) hit = elig.slice().sort((a, b) => a.blob.size - b.blob.size).slice(0, 1);
+            if (hit.length) { finalBlob = hit[0].blob; finalKind = hit[0].kind; }
+          } else if (elig.length) {
+            elig.sort((a, b) => a.blob.size - b.blob.size);
+            finalBlob = elig[0].blob;
+            finalKind = elig[0].kind;
           }
 
+          const vectorPreserved = finalKind === 'surgery' || finalKind === 'hybrid' || finalKind === 'original';
+          const usedRaster = finalKind === 'raster';
+          const usedHybrid = finalKind === 'hybrid';
           onProgress?.(1, 'Compression complete!');
           return {
             blob: finalBlob,
             filename: U.baseName(file.name) + '-compressed.pdf',
             mime: 'application/pdf',
-            preview: 'pdf'
+            preview: 'pdf',
+            metrics: {
+              tier: selectedTier, vectorPreserved, hasSelectableText,
+              textPageCount, rasterPageCount, usedHybrid, hybridRasterized, hybridBuilt,
+              surgerySavings, textCharsSampled,
+              mono: window.__ffMonoStat ? { pages: window.__ffMonoStat.pages, picked: window.__ffMonoStat.picked, failedPng: window.__ffMonoStat.failedPng } : null,
+              usedRaster
+            }
           };
         } catch (pdfErr) {
           console.warn('[PDF Compress fallback to original]', pdfErr);
@@ -4676,6 +6048,7 @@
           originalBytes: oTot,
           resultBytes: cTot,
           savedBytes: saved,
+          metrics: !isBatch ? (firstRes.result.metrics || null) : null,
           onBacktrack: () => renderConfigure(),
           onAgain: () => { files = []; renderUpload(); }
         });
@@ -14087,7 +15460,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
     function showErr(msg) {
       const box = container.querySelector('#conv-err');
-      if (box) { box.textContent = msg; box.hidden = false; }
+      if (box) { box.textContent = msg; box.hidden = false; box.style.display = 'block'; }
+      if (window.FF?.util?.toast) { try { window.FF.util.toast(msg, 'error'); } catch (_) {} }
     }
 
     let files = [];
@@ -14345,6 +15719,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               </div>
 
             </div>
+
+            <div id="conv-err" hidden style="display:none;max-width:640px;margin:12px auto 0;padding:10px 14px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:13px;font-weight:600;text-align:center;"></div>
 
             <!-- Compact Inline Options Bar -->
             ${fields.length > 0 && isSettingsOpen ? `

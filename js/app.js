@@ -525,6 +525,14 @@
 
     const url = blob ? URL.createObjectURL(blob) : '';
 
+    // Benchmark/test hook: expose result blob + metrics for automated verification
+    // (benchmark/pdf-bench.js). Harmless in production.
+    try {
+      const hook = { blob, filename, originalBytes: opts.originalBytes ?? null, resultBytes: opts.resultBytes ?? (blob ? blob.size : null), reductionPct: opts.reductionPct ?? null, metrics: opts.metrics ?? null };
+      container._ffResult = hook;
+      window._ffLastResult = hook;
+    } catch {}
+
     let titleText = opts.title || (
       isPdf ? (tool.id?.includes('merge') ? 'Merge Complete' :
                tool.id?.includes('split') ? 'Split Complete' :
