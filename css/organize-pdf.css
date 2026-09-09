@@ -2582,6 +2582,22 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   margin-left: 6px !important;
 }
 
+.cpdf-benchmark-card-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase !important;
+  color: #0369A1 !important;
+  background: #E0F2FE !important;
+  border: 1px solid #BAE6FD !important;
+  border-radius: 9999px !important;
+  padding: 1px 8px !important;
+  margin-top: 4px !important;
+  width: max-content !important;
+}
+
 .cpdf-benchmark-track {
   height: 3px !important;
   background: #DCFCE7 !important;

@@ -58,6 +58,58 @@
     }
   }
 
+  // EXIF APP1 helpers: transplant preserves metadata (date, GPS, camera)
+  // across JPEG→JPEG converts. Only valid when pixels aren't resized, and
+  // the orientation tag is normalized to 1 (rotation is baked into pixels).
+  function extractApp1(u8) {
+    if (u8[0] !== 0xFF || u8[1] !== 0xD8) return null;
+    let p = 2;
+    while (p + 4 <= u8.length) {
+      if (u8[p] !== 0xFF) break;
+      const m = u8[p + 1];
+      if (m === 0xD8 || m === 0xD9 || (m >= 0xD0 && m <= 0xD7) || m === 0x01) { p += 2; continue; }
+      const len = (u8[p + 2] << 8) | u8[p + 3];
+      if (len < 2) break;
+      if (m === 0xE1 && u8[p + 4] === 0x45 && u8[p + 5] === 0x78 && u8[p + 6] === 0x69 && u8[p + 7] === 0x66) {
+        return u8.slice(p, p + 2 + len);
+      }
+      if (m === 0xDA) break;
+      p += 2 + len;
+    }
+    return null;
+  }
+  function normalizeOrientation(seg) {
+    try {
+      const ts = 10; // 4 (marker+len) + 6 ("Exif\0\0")
+      const bo = String.fromCharCode(seg[ts], seg[ts + 1]);
+      const le = bo === 'II';
+      if (bo !== 'II' && bo !== 'MM') return null;
+      const dv = new DataView(seg.buffer, seg.byteOffset, seg.byteLength);
+      if (dv.getUint16(ts + 2, le) !== 42) return null;
+      const out = seg.slice();
+      const odv = new DataView(out.buffer, out.byteOffset, out.byteLength);
+      let ifd = ts + odv.getUint32(ts + 4, le);
+      for (let depth = 0; depth < 3; depth++) {
+        if (ifd + 2 > out.length) return null;
+        const n = odv.getUint16(ifd, le);
+        for (let i = 0; i < n; i++) {
+          const e = ifd + 2 + i * 12;
+          if (e + 12 > out.length) return null;
+          if (odv.getUint16(e, le) === 0x0112) {
+            if (odv.getUint16(e + 2, le) !== 3 || odv.getUint32(e + 4, le) !== 1) return null;
+            odv.setUint16(e + 8, 1, le);
+            return out;
+          }
+        }
+        if (ifd + 2 + n * 12 + 4 > out.length) return null;
+        const next = odv.getUint32(ifd + 2 + n * 12, le);
+        if (!next) return out;
+        ifd = ts + next;
+      }
+      return out;
+    } catch (_) { return null; }
+  }
+
   window.FF.register({
     id: 'image-convert',
     category: 'Images',
@@ -69,10 +121,23 @@
       { key: 'format', label: 'Output format', type: 'select', default: 'webp', options: ['webp', 'png', 'jpeg'] },
       { key: 'quality', label: 'Quality', type: 'range', default: 85, min: 10, max: 100, step: 1, help: 'JPEG/WebP only' },
       { key: 'maxWidth', label: 'Max width (px, 0 = keep)', type: 'number', default: 0, min: 0, step: 1 },
+      { key: 'matte', label: 'JPEG background', type: 'select', default: 'white', options: ['white', 'black'], help: 'Used only when transparency is flattened to JPEG' },
     ],
     async run({ file, inputs, onProgress }) {
+      const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
       onProgress?.(0.1, 'Decoding…');
       const img = await loadImage(file);
+      // Animated GIF honesty: canvas keeps the first frame only.
+      try {
+        if (/\.gif$/i.test(file.name || '') || file.type === 'image/gif') {
+          const head = new Uint8Array(await file.slice(0, Math.min(file.size, 1048576)).arrayBuffer());
+          let frames = 0;
+          for (let i = 0; i + 1 < head.length && frames < 2; i++) {
+            if (head[i] === 0x21 && head[i + 1] === 0xF9) frames++;
+          }
+          if (frames > 1) notify('Animated GIF detected — exporting the first frame only.', 'info');
+        }
+      } catch (_) {}
       // EXIF orientation (phone photos): canvas ignores it, so portraits
       // come out sideways unless we bake the rotation in. JPEG/TIFF only.
       let orientation = 1;
@@ -92,7 +157,6 @@
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext('2d');
-      if (inputs.format === 'jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height); }
       ctx.save();
       if (oriented.m) {
         // Orientation matrix is built for natural size; scale to output size
@@ -105,6 +169,25 @@
         ctx.drawImage(img, 0, 0);
       }
       ctx.restore();
+      if (inputs.format === 'jpeg') {
+        // Alpha honesty: sample for real transparency, then flatten onto
+        // the chosen matte instead of silently dropping it on white.
+        let hasAlpha = false;
+        try {
+          const d = ctx.getImageData(0, 0, width, height).data;
+          const step = Math.max(4, Math.floor(d.length / 2000 / 4) * 4);
+          for (let i = 3; i < d.length; i += step) {
+            if (d[i] < 250) { hasAlpha = true; break; }
+          }
+        } catch (_) {}
+        const matte = inputs.matte === 'black' ? '#000' : '#fff';
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = matte;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+        if (hasAlpha) notify(`Transparency flattened on ${inputs.matte || 'white'} matte — choose PNG or WebP to keep it.`, 'info');
+      }
 
       onProgress?.(0.8, 'Encoding…');
       const type = MIME[inputs.format];
@@ -112,9 +195,29 @@
       const blob = await new Promise((res, rej) =>
         canvas.toBlob((b) => (b ? res(b) : rej(new Error('Encoding failed.'))), type, q));
 
+      // EXIF transplant: JPEG→JPEG at identical dims keeps date/GPS/camera
+      // bytes; anything else (resize, format change) correctly drops them.
+      let outBlob = blob;
+      const isJpegIn = /\.jpe?g$/i.test(file.name || '') || file.type === 'image/jpeg';
+      if (inputs.format === 'jpeg' && isJpegIn && width === oriented.w && height === oriented.h) {
+        try {
+          const src = new Uint8Array(await file.arrayBuffer());
+          const enc = new Uint8Array(await blob.arrayBuffer());
+          const seg = extractApp1(src);
+          const fixed = seg && normalizeOrientation(seg);
+          if (fixed && enc[0] === 0xFF && enc[1] === 0xD8) {
+            const merged = new Uint8Array(2 + fixed.length + enc.length - 2);
+            merged.set(enc.slice(0, 2), 0);
+            merged.set(fixed, 2);
+            merged.set(enc.slice(2), 2 + fixed.length);
+            outBlob = new Blob([merged], { type });
+          }
+        } catch (_) { /* metadata is a bonus, never fail the convert */ }
+      }
+
       onProgress?.(1, 'Done');
       const name = window.FF.util.baseName(file.name) + '.' + (inputs.format === 'jpeg' ? 'jpg' : inputs.format);
-      return { blob, filename: name, mime: type, preview: 'image' };
+      return { blob: outBlob, filename: name, mime: type, preview: 'image' };
     },
   });
 })();
@@ -1820,33 +1923,22 @@
     }
   }
 
-  /* Subset each program to the characters actually on the document
-     (fontkit) and return {base, name, bytes, fontKey}. */
+  /* Prepare embedded fonts: PDF programs are normally already subsetted by
+     their producer, so we embed as-is (≤ 4 MB each, ≤ 10 fonts) and give
+     each an OOXML font key for Word's obfuscation. Returns [] on any issue —
+     no embedded fonts is never fatal. */
   async function subsetDocxFonts(pdfBytes, charset) {
     const extracted = await extractPdfFontFiles(pdfBytes);
     if (!extracted.length) return [];
-    let fontkit = null;
-    try { fontkit = await U.loadScript('vendor/fontkit.umd.min.js').then(() => window.fontkit); } catch (_) {}
-    if (!fontkit || typeof fontkit.create !== 'function') return [];
-    const cps = [...new Set(String(charset || ''))].map((ch) => ch.codePointAt(0)).filter((cp) => cp > 0x20);
     const out = [];
     for (const f of extracted) {
       try {
-        const kf = fontkit.create(new Uint8Array(f.bytes));
-        const subset = kf.createSubset();
-        let added = 0;
-        for (const cp of cps) {
-          const g = kf.glyphForCodePoint(cp);
-          if (g && g.id) { try { subset.useGlyph(g.id); added++; } catch (_) {} }
-        }
-        if (added < 8) continue; // font never really used in the doc
-        const subBytes = subset.encode();
-        const name = String(kf.postscriptName || f.base || '').replace(/[^\x21-\x7E]/g, '').trim();
-        if (!name || subBytes.length > 4e6) continue;
-        out.push({ base: f.base, name: name.length > 63 ? name.slice(0, 63) : name, bytes: subBytes, fontKey: uuidV4() });
-      } catch (e) {
-        console.debug('[p2w:subset]', f && f.base, e && e.message || e);
-      }
+        const b = new Uint8Array(f.bytes);
+        if (b.length < 2048 || b.length > 4e6) continue;
+        const name = String(f.base || 'Embedded' + out.length).replace(/[^\x21-\x7E]/g, '').trim();
+        if (!name) continue;
+        out.push({ base: f.base, name: name.length > 63 ? name.slice(0, 63) : name, bytes: b, fontKey: uuidV4() });
+      } catch (_) {}
     }
     return out.slice(0, 10);
   }
@@ -1927,6 +2019,12 @@
     const embMap = Object.fromEntries((opts.fonts || []).map((f) => [f.base, f.name]));
     let curFonts = {};
     let curLinks = [];
+    let mediaId = 0;
+    const media = {};
+    const rels = [
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>',
+    ];
     const runXml = (r) => {
       const props = [];
       if (r.bold) props.push('<w:b/>');
@@ -1992,12 +2090,6 @@
     }
     const isBullet = (t) => /^[•▪‣–—-]\s+/.test(t);
     const isOrdered = (t) => /^\d+[.\)]\s+/.test(t);
-    let mediaId = 0;
-    const media = {};
-    const rels = [
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
-      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>',
-    ];
     const emitImage = (im) => {
       mediaId++;
       media[`word/media/image${mediaId}.png`] = im.bytes;
@@ -5270,7 +5362,7 @@
       // is shown after the run.
       const fam = familyOf(activeFile);
       const BAND = {
-        pdf:    { balanced: ['-30%', '-75%'], light: ['-15%', '-35%'], maximum: ['-50%', '-95%'] },
+        pdf:    { balanced: ['-40%', '-50%'], light: ['-20%', '-30%'], maximum: ['-60%', '-70%'] },
         image:  { balanced: ['-20%', '-60%'], light: ['-5%', '-25%'], maximum: ['-40%', '-85%'] },
         video:  { balanced: ['-40%', '-80%'], light: ['-15%', '-40%'], maximum: ['-60%', '-92%'] },
         audio:  { balanced: ['-40%', '-85%'], light: ['-10%', '-30%'], maximum: ['-50%', '-90%'] },
@@ -5278,9 +5370,9 @@
       const FAM_DEFAULT = BAND.pdf;
       const famBand = BAND[fam] || FAM_DEFAULT;
       const estMap = {
-        balanced: { label: 'Basic', pct: `${famBand.balanced[0]} to ${famBand.balanced[1]}`, factor: 0.50 },
-        light: { label: 'Moderate', pct: `${famBand.light[0]} to ${famBand.light[1]}`, factor: 0.80 },
-        maximum: { label: 'Strong', pct: `${famBand.maximum[0]} to ${famBand.maximum[1]}`, factor: 0.25 },
+        balanced: { label: 'Medium', pct: `${famBand.balanced[0]} to ${famBand.balanced[1]}`, factor: 0.50 },
+        light: { label: 'Light', pct: `${famBand.light[0]} to ${famBand.light[1]}`, factor: 0.80 },
+        maximum: { label: 'Heavy', pct: `${famBand.maximum[0]} to ${famBand.maximum[1]}`, factor: 0.25 },
         custom: { 
           label: 'Target Size', 
           pct: totalOriginalBytes > 0 ? `${Math.round((Math.min(targetBytes, totalOriginalBytes) / totalOriginalBytes - 1) * 100)}%` : '-50%', 
@@ -5348,39 +5440,46 @@
 
                 <!-- Option Cards Stack -->
                 <div class="cpdf-cards-stack" role="radiogroup" aria-label="Compression Tier">
-                  <!-- Option 1: Basic -->
+                  <!-- Option 1: Medium (industry default) -->
                   <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
                     <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Basic</span>
-                      <span class="cpdf-benchmark-card-sub">Recommended · Smart vector &amp; image compression</span>
+                      <span class="cpdf-benchmark-card-label">Medium</span>
+                      <span class="cpdf-benchmark-card-sub">General Use · ~150 DPI · looks identical on screen</span>
+                      <span class="cpdf-benchmark-card-tag">Recommended</span>
+                    </div>
+                    <div class="cpdf-benchmark-card-right">
+                      <span class="cpdf-benchmark-pill-smallest">40–50%</span>
                     </div>
                   </div>
 
-                  <!-- Option 2: Moderate -->
+                  <!-- Option 2: Light -->
                   <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
                     <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Moderate</span>
-                      <span class="cpdf-benchmark-card-sub">High Quality · 100% text fidelity, minimal loss</span>
+                      <span class="cpdf-benchmark-card-label">Light</span>
+                      <span class="cpdf-benchmark-card-sub">Professional Print · 300 DPI · indistinguishable from original</span>
+                    </div>
+                    <div class="cpdf-benchmark-card-right">
+                      <span class="cpdf-benchmark-pill-smallest">20–30%</span>
                     </div>
                   </div>
 
-                  <!-- Option 3: Strong -->
+                  <!-- Option 3: Heavy -->
                   <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
                     <div class="cpdf-benchmark-radio">
                       <div class="cpdf-benchmark-radio-dot"></div>
                     </div>
                     <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Strong</span>
-                      <span class="cpdf-benchmark-card-sub">Extreme · Maximum reduction (Smallest file)</span>
+                      <span class="cpdf-benchmark-card-label">Heavy</span>
+                      <span class="cpdf-benchmark-card-sub">Maximum Compression · smallest file · text sharp, photos softer</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">Smallest</span>
+                      <span class="cpdf-benchmark-pill-smallest">60–70%</span>
                     </div>
                   </div>
 
@@ -16246,6 +16345,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         if (f.key === 'format' && hideFormat) return false;         // already chosen by the target select
         if (f.key === 'targetFormat' && hideTarget) return false;
         if (t.tool === 'image-convert' && f.key === 'quality' && t.inputs.format === 'png') return false; // lossless
+        if (t.tool === 'image-convert' && f.key === 'matte' && t.inputs.format !== 'jpeg') return false; // matte only matters for JPEG
         if (t.tool === 'audio-convert' && f.key === 'br' && !/mp3|ogg|m4a/.test(t.inputs.format || '')) return false; // lossless
         return true;
       });
