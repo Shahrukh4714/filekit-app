@@ -1414,7 +1414,13 @@
 
   async function bufferToWavFile(ab, name) { return wavOut(ab, name); }
 
-  async function encodeWithMediaRecorder(ab, mime, ext) {
+  const parseBr = (br, fallback) => {
+    const m = /^(\d+)\s*k$/i.exec(String(br || ''));
+    return m ? Number(m[1]) * 1000 : fallback;
+  };
+
+  async function encodeWithMediaRecorder(ab, mime, srcName, br, requestedFmt) {
+    const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
     const list = typeof MediaRecorder !== 'undefined' ? (MediaRecorder.isTypeSupported ? [
       mime,
       'audio/webm;codecs=opus',
@@ -1431,7 +1437,10 @@
     src.buffer = ab;
     src.connect(dest);
     const chunks = [];
-    const rec = new MediaRecorder(dest.stream, { mimeType: type });
+    const recOpts = { mimeType: type };
+    const bps = parseBr(br, 0);
+    if (bps > 0) recOpts.audioBitsPerSecond = bps;
+    const rec = new MediaRecorder(dest.stream, recOpts);
     const done = new Promise((resolve, reject) => {
       rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
       rec.onerror = () => reject(new Error('MediaRecorder failed'));
@@ -1444,8 +1453,13 @@
     const blob = await done;
     try { ctx.close?.(); } catch {}
     const outMime = type.startsWith('audio/mp4') ? 'audio/mp4' : type.startsWith('audio/ogg') ? 'audio/ogg' : type.startsWith('audio/mpeg') ? 'audio/mpeg' : 'audio/webm';
-    const outExt = outMime.includes('mp4') ? 'm4a' : outMime.includes('ogg') ? 'ogg' : outMime.includes('mpeg') ? 'mp3' : 'webm';
-    return { blob, filename: U.baseName(name || 'audio') + '.' + (ext || outExt), mime: outMime, preview: 'audio' };
+    const actualExt = outMime.includes('mp4') ? 'm4a' : outMime.includes('ogg') ? 'ogg' : outMime.includes('mpeg') ? 'mp3' : 'webm';
+    // Never mislabel: if the browser substituted a codec, say so and name it.
+    const want = String(requestedFmt || '').toLowerCase();
+    const normWant = want === 'aac' ? 'm4a' : want;
+    const swapped = !!normWant && normWant !== actualExt;
+    if (swapped) notify(`This browser can't encode ${normWant.toUpperCase()} directly — delivered ${actualExt.toUpperCase()} instead.`, 'info');
+    return { blob, filename: U.baseName(srcName || 'audio') + '.' + actualExt, mime: outMime, preview: 'audio' };
   }
 
   async function encodeViaFFmpeg(file, fmt, br) {
@@ -1456,7 +1470,7 @@
     let args;
     if (fmt === 'mp3') args = ['-i', INP, '-vn', '-c:a', 'libmp3lame', '-b:a', br || '192k', out];
     else if (fmt === 'aac' || fmt === 'm4a') args = ['-i', INP, '-vn', '-c:a', 'aac', '-b:a', br || '192k', out];
-    else if (fmt === 'ogg') args = ['-i', INP, '-vn', '-c:a', 'libvorbis', '-q:a', '5', out];
+    else if (fmt === 'ogg') args = ['-i', INP, '-vn', '-c:a', 'libvorbis', '-q:a', ({ '96k': '3', '128k': '4', '160k': '5', '192k': '5', '256k': '6', '320k': '7' })[br] || '5', out];
     else if (fmt === 'opus') args = ['-i', INP, '-vn', '-c:a', 'libopus', '-b:a', br || '128k', 'output.opus'];
     else if (fmt === 'flac') args = ['-i', INP, '-vn', '-c:a', 'flac', out];
     else if (fmt === 'wav') args = ['-i', INP, '-vn', out];
@@ -1479,6 +1493,7 @@
       { key: 'br', label: 'Bitrate (lossy)', type: 'select', default: '192k', options: ['96k', '128k', '160k', '192k', '256k', '320k'] },
     ],
     async run({ file, inputs }) {
+      const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
       const fmt = (inputs.format || 'wav').toLowerCase();
       const br = inputs.br || '192k';
       if (fmt === 'wav') return wavOut(await decode(file), U.baseName(file.name) + '.wav');
@@ -1492,14 +1507,18 @@
               fmt === 'm4a' || fmt === 'aac' ? 'audio/mp4' :
               fmt === 'ogg' || fmt === 'opus' ? 'audio/ogg;codecs=opus' :
               'audio/webm;codecs=opus';
-            return await encodeWithMediaRecorder(ab, mime, fmt === 'opus' ? 'opus' : fmt === 'aac' ? 'm4a' : fmt);
+            return await encodeWithMediaRecorder(ab, mime, file.name, br, fmt);
           } catch (e2) {
-            // last resort wav
+            // last resort wav — named honestly, never mislabeled
+            notify('Could not encode the requested format here — delivered lossless WAV instead.', 'info');
             return wavOut(ab, U.baseName(file.name) + '-fallback.wav');
           }
         }
         if (fmt === 'flac') {
-          try { return await encodeViaFFmpeg(file, 'flac', br); } catch { return wavOut(ab, U.baseName(file.name) + '-fallback.wav'); }
+          try { return await encodeViaFFmpeg(file, 'flac', br); } catch {
+            notify('FLAC encoding unavailable — delivered lossless WAV instead.', 'info');
+            return wavOut(ab, U.baseName(file.name) + '-fallback.wav');
+          }
         }
         return wavOut(ab, U.baseName(file.name) + '.wav');
       }
@@ -1700,8 +1719,20 @@
       let links = [];
       try {
         const anns = await page.getAnnotations();
-        links = (anns || []).filter((a) => a.subtype === 'Link' && (a.url || a.dest) && a.rect)
-          .map((a) => ({ url: a.url || null, dest: a.dest || null, x0: a.rect[0], y0: a.rect[1], x1: a.rect[2], y1: a.rect[3] }));
+        links = (anns || []).filter((a) => a.subtype === 'Link' && (a.url || a.dest) && a.rect);
+        links = await Promise.all(links.map(async (a) => {
+          let destPage = null;
+          if (!a.url && a.dest) {
+            try {
+              let dest = a.dest;
+              if (typeof dest === 'string') dest = await doc.getDestination(dest);
+              if (Array.isArray(dest) && dest[0]) {
+                try { destPage = await doc.getPageIndex(dest[0]) + 1; } catch (_) {}
+              }
+            } catch (_) {}
+          }
+          return { url: a.url || null, destPage, x0: a.rect[0], y0: a.rect[1], x1: a.rect[2], y1: a.rect[3] };
+        }));
       } catch (_) {}
       sizes.sort((a, b) => a - b);
       const median = sizes.length ? sizes[Math.floor(sizes.length / 2)] : 11;
@@ -1877,7 +1908,6 @@
       const doc = await PDFLib.PDFDocument.load(pdfBytes, { ignoreEncryption: true });
       const found = [];
       const seen = new Set();
-      const baseSeen = [];
       const PdfName = PDFLib.PDFName;
       const snip = (v) => { try { return v ? (v.decodeText ? v.decodeText() : '') : ''; } catch (_) { return ''; } };
       const tryFontDict = (f0) => {
@@ -1889,16 +1919,13 @@
             if (df && typeof df.lookup === 'function') { const first = df.lookup(0); if (first) f = first; }
           }
           const base = snip(f.lookup(PdfName.of('BaseFont'))).replace(/^[A-Z]{6}\+/, '');
-          baseSeen.push('[' + (base || '?') + ']');
           const desc = f.lookup(PdfName.of('FontDescriptor'));
           if (!desc || !base) return;
           for (const key of ['FontFile2', 'FontFile3', 'FontFile']) {
             try {
               const sf = desc.lookup(PdfName.of(key));
               if (!sf || typeof sf.getContents !== 'function') continue;
-              const rb = inflate(sf.getContents());
-              console.debug('[p2w:extract] inflate', key, rb.length, Array.from(rb.slice(0, 8)).map((x) => x.toString(16)));
-              const b = rb;
+              const b = inflate(sf.getContents());
               if (!b || b.length < 512 || b.length > 6e6 || seen.has(base)) continue;
               seen.add(base);
               found.push({ base, bytes: b });
@@ -1915,10 +1942,8 @@
           for (const k of fdict.keys()) { try { tryFontDict(fdict.lookup(k)); } catch (_) {} }
         } catch (_) {}
       }
-      console.debug('[p2w:extract] baseFonts:', baseSeen.join(' '), 'files:', found.length);
       return found;
-    } catch (e) {
-      console.debug('[p2w:extract]', e && e.message || e);
+    } catch (_) {
       return [];
     }
   }
@@ -1984,7 +2009,7 @@
       body += `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${mediaId}" name="Image${mediaId}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${mediaId}" name="Image${mediaId}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:pPr><w:sectPr><w:pgSz w:w="${pgW}" w:h="${pgH}"/><w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="0" w:footer="0"/></w:sectPr></w:pPr></w:p>`;
     }
     const relsXml = `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${rels.join('')}`;
-    return {
+    const files = {
       '[Content_Types].xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`),
       '_rels/.rels': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
       'word/document.xml': enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}</w:body></w:document>`),
@@ -2043,7 +2068,7 @@
       if (!curLinks.length) return null;
       const rr = { x0: r.x || 0, x1: (r.x || 0) + (r.w || 0), y: r.y || 0 };
       for (const L of curLinks) {
-        if (!L.url) continue;
+        if (!L.url && !L.destPage) continue;
         if (rr.y <= L.y1 + 3 && rr.y >= L.y0 - 3 && rr.x0 >= L.x0 - 3 && rr.x1 <= L.x1 + 3) return L;
       }
       return null;
@@ -2062,13 +2087,17 @@
       const flush = () => {
         if (!cur.length) return;
         const rx = cur.map(runXml).join('');
-        out += curLink ? `<w:hyperlink r:id="${linkRId(curLink.url)}">${rx}</w:hyperlink>` : rx;
+        if (curLink) {
+          out += curLink.url
+            ? `<w:hyperlink r:id="${linkRId(curLink.url)}">${rx}</w:hyperlink>`
+            : `<w:hyperlink w:anchor="page${curLink.destPage}">${rx}</w:hyperlink>`;
+        } else out += rx;
         cur = [];
       };
       for (const r of runs) {
         const L = linkForRun(r);
-        const key = L ? L.url : null;
-        if (key !== (curLink ? curLink.url : null)) { flush(); curLink = key ? L : null; }
+        const key = L ? (L.url || ('pg:' + L.destPage)) : null;
+        if (key !== (curLink ? (curLink.url || ('pg:' + curLink.destPage)) : null)) { flush(); curLink = L || null; }
         cur.push(r);
       }
       flush();
@@ -2229,10 +2258,12 @@
     const footText = findEdgeRepeat(richPages, 1);
     const headNorm = normLine(headText), footNorm = normLine(footText);
     let body = '';
+    let bmId = 0;
     richPages.forEach((pg, pi) => {
       curFonts = pg.fonts || {};
       curLinks = pg.links || [];
-      body += `<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">${escXml('Page ' + (pi + 1))}</w:t></w:r></w:p>`;
+      bmId++;
+      body += `<w:p><w:bookmarkStart w:id="${bmId}" w:name="page${pi + 1}"/><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">${escXml('Page ' + (pi + 1))}</w:t></w:r><w:bookmarkEnd w:id="${bmId}"/></w:p>`;
       // Header/footer lines live in the section chrome, not the body
       let lines = pg.lines;
       if (headNorm && lines.length && normLine(lines[0].text) === headNorm) lines = lines.slice(1);
@@ -2245,16 +2276,22 @@
       const buildFlow = (lns) => {
         const flow = [];
         let curTable = [];
-        const boundsMatch = (a, b) => {
+        const boundsMatch = (a, b, refA, refB) => {
           if (!a.length || !b.length) return false;
           let shared = 0;
           for (const x of a) if (b.some((y) => Math.abs(x - y) <= alignTol)) shared++;
-          return shared >= Math.min(a.length, b.length, 2) && shared >= 1;
+          if (shared >= Math.min(a.length, b.length, 2) && shared >= 1) return true;
+          // Absolute x differs (e.g. centered header cells): fall back to
+          // normalized position within each row (tolerance = 16% of width).
+          const normA = (Math.min(a[0], a[a.length - 1]) - (refA?.minX || 0)) / Math.max(1, refA?.span || 1);
+          const normB = (Math.min(b[0], b[b.length - 1]) - (refB?.minX || 0)) / Math.max(1, refB?.span || 1);
+          if (Math.abs(normA - normB) <= 0.16 && Math.abs((a[a.length - 1] - a[0]) / Math.max(1, refA?.span || 1) - (b[b.length - 1] - b[0]) / Math.max(1, refB?.span || 1)) <= 0.16) return true;
+          return false;
         };
         const flushTable = () => {
           let okRun = 0;
           for (let i = 0; i < curTable.length; i++) {
-            if (i === 0 || boundsMatch(curTable[i - 1].bounds, curTable[i].bounds)) okRun++;
+            if (i === 0 || boundsMatch(curTable[i - 1].bounds, curTable[i].bounds, curTable[i - 1].ref, curTable[i].ref)) okRun++;
             else break;
           }
           if (curTable.length >= 2 && okRun >= 2) flow.push({ table: curTable });
@@ -2264,7 +2301,14 @@
         for (const ln of lns) {
           const cells = refineCells(ln, gapTol, pg.frames);
           const bounds = cellBounds(cells);
-          if (cells.length >= 2 && ln.runs.length >= 3) curTable.push({ ln, cells, bounds });
+          const cs = cells[0] || [];
+          const lastCell = cells[cells.length - 1] || [];
+          const lastRun = lastCell[lastCell.length - 1];
+          const runRef = {
+            minX: cs.length ? (cs[0].x || 0) : 0,
+            span: Math.max(1, ((lastRun && lastRun.x + (lastRun.w || 0)) || 0) - (cs[0] ? (cs[0].x || 0) : 0)),
+          };
+          if (cells.length >= 2 && ln.runs.length >= 3) curTable.push({ ln, cells, bounds, ref: runRef });
           else { flushTable(); flow.push({ line: ln }); }
         }
         flushTable();
@@ -2277,32 +2321,65 @@
       }
       // Interleave anchored images at their reading-order (y) position
       const imgs = [...(pg.images || [])].sort((a, b) => (b.y || 0) - (a.y || 0));
-      const emitTable = (rows) => {
-        let nCols = Math.max(...rows.map((r) => r.cells.length));
-        // Trim all-empty edge columns (page-border margins from grid snaps)
-        const colEmpty = (c) => rows.every((r) => !(r.cells[c] || []).length);
-        let lead = 0;
-        while (lead < nCols && colEmpty(lead)) lead++;
-        let trail = 0;
-        while (trail < nCols - lead && colEmpty(nCols - 1 - trail)) trail++;
-        if (nCols - lead - trail < 2) {
-          return rows.map((tr) => emitPara(tr.ln, 11)).join('');
+      // Global column grid: cluster every row's cell starts + vertical frame
+      // rules → x-stops. Each row is re-assigned to grid columns by run
+      // center, and consecutive empty columns merge into gridSpan cells
+      // (merged/borderless table support for both ruled and divider-free).
+      const collectStops = (rows) => {
+        const cands = [];
+        for (const r of rows) {
+          const cells = r.cells || [];
+          for (let i = 1; i < cells.length; i++) if (cells[i] && cells[i][0]) cands.push(Math.round(cells[i][0].x));
         }
-        const norm = rows.map((tr) => ({ ln: tr.ln, cells: tr.cells.slice(lead, nCols - trail) }));
-        nCols = nCols - lead - trail;
+        for (const v of (pg.frames || [])) {
+          if ((v.x1 - v.x0) > 1.5) continue; // vertical only
+          if ((v.y1 - v.y0) >= 10) cands.push(Math.round((v.x0 + v.x1) / 2));
+        }
+        if (!cands.length) return [];
+        cands.sort((a, b) => a - b);
+        const stops = [];
+        for (const x of cands) {
+          if (!stops.length || Math.abs(stops[stops.length - 1] - x) > alignTol * 1.4) stops.push(x);
+        }
+        return stops;
+      };
+      const emitTable = (rows) => {
+        const stops = collectStops(rows);
+        const nCols = stops.length + 1;
+        const assign = (runs) => {
+          const grid = Array.from({ length: nCols }, () => []);
+          for (const r of runs) {
+            const cx = (r.x || 0) + (r.w || 0) / 2;
+            let c = 0;
+            while (c < stops.length && cx > stops[c]) c++;
+            grid[c].push(r);
+          }
+          return grid;
+        };
+        const norm = rows.map((tr) => ({ ln: tr.ln, grid: assign((tr.cells || []).flat()) }));
+        const colEmptyAll = (c) => norm.every((r) => !(r.grid[c] || []).length);
+        if (nCols < 2 || (colEmptyAll(0) && colEmptyAll(nCols - 1))) {
+          return norm.map((r) => emitPara(r.ln, 11)).join('');
+        }
         let h = '<w:p><w:r><w:t xml:space="preserve"></w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="BFBFBF"/><w:left w:val="single" w:sz="4" w:color="BFBFBF"/><w:bottom w:val="single" w:sz="4" w:color="BFBFBF"/><w:right w:val="single" w:sz="4" w:color="BFBFBF"/><w:insideH w:val="single" w:sz="4" w:color="BFBFBF"/><w:insideV w:val="single" w:sz="4" w:color="BFBFBF"/></w:tblBorders></w:tblPr><w:tblGrid>';
-        for (let c = 0; c < nCols; c++) h += '<w:gridCol w:w="2880"/>';
+        for (let c = 0; c < nCols; c++) h += '<w:gridCol w:w="2280"/>';
         h += '</w:tblGrid>';
         for (const tr of norm) {
+          let first = -1, last = -1;
+          for (let c = 0; c < nCols; c++) if (tr.grid[c] && tr.grid[c].length) { if (first < 0) first = c; }
+          for (let c = nCols - 1; c >= 0; c--) if (tr.grid[c] && tr.grid[c].length) { last = c; break; }
+          if (first < 0) { first = 0; last = nCols - 1; }
           h += '<w:tr>';
-          for (let c = 0; c < nCols; c++) {
-            const cellRuns = tr.cells[c] || [];
-            if (c === tr.cells.length - 1 && tr.cells.length < nCols) {
-              const span = nCols - c;
-              h += `<w:tc><w:tcPr><w:tcW w:w="${2880 * span}" w:type="dxa"/><w:gridSpan w:val="${span}"/></w:tcPr><w:p>${cellRuns.map(runXml).join('') || '<w:r><w:t xml:space="preserve"></w:t></w:r>'}</w:p></w:tc>`;
-              break;
+          for (let c = first; c <= last; c++) {
+            const cellRuns = tr.grid[c] || [];
+            if (!cellRuns.length) {
+              let span = 1;
+              while (c + span <= last && !(tr.grid[c + span] || []).length) span++;
+              h += `<w:tc><w:tcPr><w:tcW w:w="${2280 * span}" w:type="dxa"/><w:gridSpan w:val="${span}"/></w:tcPr><w:p><w:r><w:t xml:space="preserve"></w:t></w:r></w:p></w:tc>`;
+              c += span - 1;
+              continue;
             }
-            h += `<w:tc><w:tcPr><w:tcW w:w="2880" w:type="dxa"/></w:tcPr><w:p>${cellRuns.map(runXml).join('') || '<w:r><w:t xml:space="preserve"></w:t></w:r>'}</w:p></w:tc>`;
+            h += `<w:tc><w:tcPr><w:tcW w:w="2280" w:type="dxa"/></w:tcPr><w:p>${cellRuns.map(runXml).join('') || '<w:r><w:t xml:space="preserve"></w:t></w:r>'}</w:p></w:tc>`;
           }
           h += '</w:tr>';
         }
@@ -2401,7 +2478,6 @@
   }
 
   /* Hindi + English edge stopwords — never strip these as "fragments". */
-  try { window.__p2wDebug = { extractPdfFontFiles, subsetDocxFonts, buildDocxRich, buildDocxImagePages, buildExactDocx }; } catch (_) {}
   const HI_STOP = new Set(('का की के को से में पर है हैं था थे थी हो हुआ हुए हुई और या यह वह ये वे जो तो भी न ही तक लिए साथ द्वारा रहा रहे रही जाता उनका उनके अपनी अपने इस उस इन सब कुछ क्या कब तथा एवं अपना अपने जिस तिस कोई किसी गया गयी गये').split(' '));
   const EN_EDGE_STOP = new Set(('a an i to of in on is as at or by it he we me us my up do go so am pm no').split(' '));
   /* Single-confusion alternatives for date-component repair (1/4/7 etc.). */
@@ -2953,7 +3029,7 @@
         onProgress?.(0.95, 'Packing DOCX…');
         const zip = (await loadFf()).zipSync(buildDocxImagePages(pages), { level: 6 });
         onProgress?.(1, 'Done');
-        return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
+        return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'docx' };
       }
       // Pre-warm the OCR worker in parallel with text extraction, so a
       // scanned PDF pays ~0s extra for WASM + model load (5-10s otherwise).
@@ -3012,7 +3088,7 @@
         const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), ocrRich), { level: 6 });
         onProgress?.(1, 'Done');
         notify('Word document ready — converted from OCR text.', 'success');
-        return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
+        return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'docx' };
       }
       onProgress?.(0.85, 'Building Word document…');
       let embeddedFonts = [];
@@ -3023,7 +3099,7 @@
       }
       const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), rich, { mode, fonts: embeddedFonts }), { level: 6 });
       onProgress?.(1, 'Done');
-      return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'download' };
+      return { blob: new Blob([zip], { type: DOCX_MIME }), filename: U.baseName(file.name) + '.docx', mime: DOCX_MIME, preview: 'docx' };
     }
   });
 
@@ -5309,7 +5385,7 @@
               </label>
             </div>
 
-            <p class="drop-sub-text">Add any <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, <strong>Audio</strong>, or <strong>ZIP</strong> file to compress</p>
+            <p class="drop-sub-text">Drop a <strong>PDF</strong> to compress — images, video, audio &amp; ZIP also supported</p>
 
             <div class="supported-formats-row">
               <span class="fmt-label">Supported formats:</span>
@@ -5447,11 +5523,11 @@
                     </div>
                     <div class="cpdf-benchmark-card-text">
                       <span class="cpdf-benchmark-card-label">Medium</span>
-                      <span class="cpdf-benchmark-card-sub">General Use · ~150 DPI · looks identical on screen</span>
+                      <span class="cpdf-benchmark-card-sub">General Use · identical on screen · best for email &amp; office</span>
                       <span class="cpdf-benchmark-card-tag">Recommended</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">40–50%</span>
+                      <span class="cpdf-benchmark-pill-smallest">Email-ready</span>
                     </div>
                   </div>
 
@@ -5462,10 +5538,10 @@
                     </div>
                     <div class="cpdf-benchmark-card-text">
                       <span class="cpdf-benchmark-card-label">Light</span>
-                      <span class="cpdf-benchmark-card-sub">Professional Print · 300 DPI · indistinguishable from original</span>
+                      <span class="cpdf-benchmark-card-sub">Professional Print · near-lossless · best for portfolios &amp; print</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">20–30%</span>
+                      <span class="cpdf-benchmark-pill-smallest">Print-grade</span>
                     </div>
                   </div>
 
@@ -5476,10 +5552,10 @@
                     </div>
                     <div class="cpdf-benchmark-card-text">
                       <span class="cpdf-benchmark-card-label">Heavy</span>
-                      <span class="cpdf-benchmark-card-sub">Maximum Compression · smallest file · text sharp, photos softer</span>
+                      <span class="cpdf-benchmark-card-sub">Smallest file · text stays sharp · scanned pages may go black &amp; white, photos softer</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">60–70%</span>
+                      <span class="cpdf-benchmark-pill-smallest">Smallest</span>
                     </div>
                   </div>
 
@@ -5491,7 +5567,7 @@
                       </div>
                       <div class="cpdf-benchmark-card-text">
                         <span class="cpdf-benchmark-card-label">Exact Target Size</span>
-                        <span class="cpdf-benchmark-card-sub">Custom · Fit specific portal or email limits</span>
+                        <span class="cpdf-benchmark-card-sub">Fit a limit — e.g. under 1 MB for email &amp; upload portals</span>
                       </div>
                     </div>
                     ${selectedTier === 'custom' ? `
@@ -6425,6 +6501,8 @@
               surgerySavings, textCharsSampled,
               usedSubset, subsetBuilt,
               mono: window.__ffMonoStat ? { pages: window.__ffMonoStat.pages, picked: window.__ffMonoStat.picked, failedPng: window.__ffMonoStat.failedPng, grayPicked: window.__ffMonoStat.grayPicked } : null,
+              usedMono: !!(window.__ffMonoStat && window.__ffMonoStat.picked > 0),
+              usedGray: !!(window.__ffMonoStat && window.__ffMonoStat.grayPicked > 0),
               usedRaster
             }
           };
@@ -6968,14 +7046,33 @@
           else if (_mk.usedHybrid) qualityBadge = 'High fidelity';
           else if (_mk.untouched) qualityBadge = 'Unchanged (protected)';
         }
+        // Honest per-file quality note — what actually happened to THIS document.
+        let qualityNote = null;
+        if (_mk) {
+          const notes = [];
+          if (_mk.untouched) notes.push('Returned unchanged to protect the document');
+          else {
+            if (_mk.vectorPreserved && _mk.hasSelectableText) notes.push('Text stays selectable & searchable');
+            if (_mk.usedSubset) notes.push('Embedded fonts subset — appearance unchanged');
+            if (_mk.usedMono) notes.push('Scanned pages converted to compact black & white');
+            if (_mk.usedGray) notes.push('Color preserved — grayscale pages optimized');
+            if (_mk.usedHybrid) notes.push('Scan pages compressed, text pages kept vector');
+          }
+          if (notes.length) qualityNote = notes.join(' · ');
+        }
+        if (!win) {
+          qualityBadge = 'Already optimal';
+          qualityNote = qualityNote || 'Nothing to save without hurting quality — file kept as-is';
+        }
         window.FF.renderUnifiedResult(container, {
           tool: { id: 'pdf-compress', name: 'Compress File', category: 'PDF' },
           blob: !isBatch ? firstRes.result.blob : undefined,
           files: isBatch ? results.map(r => ({ name: r.result.filename || r.file?.name, blob: r.result.blob, size: r.result.blob?.size || 0 })) : undefined,
           filename: outName,
-          title: 'Compression Complete',
-          badge: isBatch ? `${results.length} Files Compressed` : (win ? `-${redPct}% Size Reduction` : 'Optimized File'),
+          title: win ? 'Compression Complete' : 'Already Optimized',
+          badge: isBatch ? `${results.length} Files Compressed` : (win ? `-${redPct}% Size Reduction` : 'No savings without quality loss'),
           qualityBadge,
+          qualityNote,
           reductionPct: redPct,
           originalBytes: oTot,
           resultBytes: cTot,
@@ -16346,7 +16443,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         if (f.key === 'targetFormat' && hideTarget) return false;
         if (t.tool === 'image-convert' && f.key === 'quality' && t.inputs.format === 'png') return false; // lossless
         if (t.tool === 'image-convert' && f.key === 'matte' && t.inputs.format !== 'jpeg') return false; // matte only matters for JPEG
-        if (t.tool === 'audio-convert' && f.key === 'br' && !/mp3|ogg|m4a/.test(t.inputs.format || '')) return false; // lossless
+        if (t.tool === 'audio-convert' && f.key === 'br' && !/mp3|ogg|m4a|opus|webm/.test(t.inputs.format || '')) return false; // lossless
         return true;
       });
     }
@@ -16615,15 +16712,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 <div class="conv-docx-modes" id="conv-docx-modes" role="radiogroup" aria-label="PDF to Word conversion mode">
                   <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}">
                     <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.3l-4.75 4.4 1.15 6.7L12 17.3l-5.9 3.1 1.15-6.7L2.5 9.3l6.6-1.04L12 2z"/></svg><span>Editable</span><span class="conv-docx-best">BEST</span></span>
-                    <span class="conv-docx-mode-sub">Real paragraphs, headings, lists, tables &amp; links</span>
+                    <span class="conv-docx-mode-sub">Real paragraphs, headings, lists &amp; tables</span>
                   </button>
                   <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'exact' ? 'active' : ''}" data-mode="exact" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'exact' ? 'true' : 'false'}">
                     <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 5H5v14h3M16 5h3v14h-3"/></svg><span>Exact layout</span></span>
-                    <span class="conv-docx-mode-sub">Text boxes pinned to the PDF's exact positions</span>
+                    <span class="conv-docx-mode-sub">Text boxes at exact PDF positions</span>
                   </button>
                   <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'picture' ? 'active' : ''}" data-mode="picture" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'picture' ? 'true' : 'false'}">
                     <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg><span>Picture perfect</span></span>
-                    <span class="conv-docx-mode-sub">One high-res page image per section, not editable</span>
+                    <span class="conv-docx-mode-sub">One page image per section</span>
                   </button>
                 </div>` : ''}
 

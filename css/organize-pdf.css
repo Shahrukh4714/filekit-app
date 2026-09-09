@@ -2598,6 +2598,21 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   width: max-content !important;
 }
 
+.org-res-quality-note {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #0F766E !important;
+  background: #F0FDFA !important;
+  border: 1px solid #99F6E4 !important;
+  border-radius: 8px !important;
+  padding: 5px 9px !important;
+  margin: 8px 0 2px !important;
+  line-height: 1.4 !important;
+}
+
 .cpdf-benchmark-track {
   height: 3px !important;
   background: #DCFCE7 !important;

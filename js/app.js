@@ -718,8 +718,12 @@ try {
           <!-- Left Stage: Dedicated Viewport with Standard A4 Proportions -->
           <div class="cpdf-benchmark-stage scan-result-stage org-result-stage" id="org-res-stage-wrap">
             <div class="org-stage-canvas-viewport" id="org-res-stage-viewport">
-              <div class="scan-paper-page org-res-paper" id="org-res-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 480px; max-height: calc(100vh - 220px);">
-                ${isPdf ? `
+              <div class="scan-paper-page org-res-paper ${opts.preview === 'docx' ? 'docx-preview-page' : ''}" id="org-res-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 480px; max-height: calc(100vh - 220px);">
+                ${opts.preview === 'docx' ? `
+                  <div class="docx-preview-container" id="docx-preview-root" style="width: 100%;">
+                    <div style="padding: 60px 40px; color: #94A3B8; font-size: 13px; font-weight: 500;">Rendering Word preview…</div>
+                  </div>
+                ` : isPdf ? `
                   <div style="padding: 60px 40px; color: #94A3B8; font-size: 13px; font-weight: 500;">Rendering document preview…</div>
                 ` : isImage && url ? `
                   <img src="${url}" alt="Preview" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06);" />
@@ -794,6 +798,7 @@ try {
                 <div class="cpdf-benchmark-track" style="margin: 6px 0;">
                   <div class="cpdf-benchmark-bar" style="width: ${hasSavings ? Math.max(10, Math.round((Number(opts.resultBytes) / Number(opts.originalBytes)) * 100)) : 100}%; background: #16A34A !important;"></div>
                 </div>
+                ${opts.qualityNote ? `<div class="org-res-quality-note">${_esc(opts.qualityNote)}</div>` : ''}
                 <div class="org-res-est-bottom">
                   <button type="button" class="org-res-backtrack-btn" id="org-backtrack-btn">
                     Need to adjust? <span class="org-res-backtrack-link">↶ Return to editor</span>
@@ -1139,6 +1144,25 @@ try {
 
         // 4. Convert to Word Document (.docx)
         if (targetExt === 'docx') {
+          // Full-fidelity engine first (when available) — paragraphs, headings,
+          // lists, tables, links and embedded fonts; falls back to the simple
+          // text-package path below if the PDF has no readable text layer.
+          if (isPdf && curBlob && window.FF?.registry && typeof window.FF.registry.get === 'function') {
+            const engine = window.FF.registry.get('pdf-to-word');
+            if (engine && typeof engine.run === 'function') {
+              try {
+                const out = await engine.run({ file: curBlob, inputs: { mode: 'editable' } });
+                if (out && out.blob) {
+                  dismissLoading();
+                  downloadBlob(out.blob, `${baseName}.docx`);
+                  window.FF?.util?.toast?.(`Exported to ${baseName}.docx`, 'success');
+                  return;
+                }
+              } catch (e) {
+                console.warn('[Convert] rich docx engine failed, falling back:', e);
+              }
+            }
+          }
           const fflate = window.fflate || (window.loadZip ? await window.loadZip() : null) || (window.FF?.util?.loadScript ? await window.FF.util.loadScript('vendor/fflate.js').then(() => window.fflate) : null);
           let rawText = '';
           if (isPdf && curBlob) {
@@ -1595,6 +1619,39 @@ try {
         const textPre = container.querySelector('#org-res-text-preview');
         if (textPre) textPre.textContent = txt.slice(0, 10000) + (txt.length > 10000 ? '\n\n… (preview truncated)' : '');
       }).catch(() => {});
+    }
+
+    // DOCX preview: render the actually-generated .docx (docx-preview, offline).
+    if (opts.preview === 'docx' && blob) {
+      const root = container.querySelector('#docx-preview-root');
+      if (root) {
+        (async () => {
+          try {
+            const load = (src) => window.FF?.util?.loadScript ? window.FF.util.loadScript(src) : null;
+            if (!window.JSZip) await load('vendor/jszip.min.js');
+            if (!window.docx) await load('vendor/docx-preview.min.js');
+            if (!window.docx || !window.docx.renderAsync) {
+              root.innerHTML = '<div style="padding:40px;color:#94A3B8;text-align:center;font-size:12.5px;">Preview engine unavailable — download to view the Word file.</div>';
+              return;
+            }
+            root.style.background = '#3F4652';
+            root.style.borderRadius = '6px';
+            root.style.padding = '16px 4px';
+            await window.docx.renderAsync(blob, root, null, {
+              inWrapper: true,
+              ignoreWidth: true,
+              className: 'docx',
+              breakPages: true,
+              ignoreLastRenderedPageBreak: true,
+              styleMap: { 'Callout': 'paragraph', 'Alert Box': 'paragraph' },
+            });
+            // Improve fidelity notes: textboxes/pictures rendered as-is by the engine.
+          } catch (e) {
+            console.warn('[UnifiedResult] docx preview error:', e);
+            root.innerHTML = '<div style="padding:40px;color:#94A3B8;text-align:center;font-size:12.5px;">Preview could not be rendered — your Word file is ready to download.</div>';
+          }
+        })();
+      }
     }
   }
 
@@ -4274,7 +4331,7 @@ try {
 
         const TASK_DATA = {
           compress: {
-            sub: 'Add any <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, <strong>Audio</strong>, or <strong>ZIP</strong> file to compress',
+            sub: 'Drop a <strong>PDF</strong> to compress — images, video, audio &amp; ZIP also supported',
             formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'VIDEO', cls: 'fmt-ppt' }, { name: 'AUDIO', cls: 'fmt-xls' }, { name: 'ZIP', cls: 'fmt-doc' }]
           },
           convert: {
