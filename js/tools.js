@@ -1500,7 +1500,9 @@
   const loadFf = () => U.loadScript(...V.ff).then(() => window.fflate);
   const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-  const escXml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+  // Strip XML 1.0-illegal chars (C0 controls from OCR/font decoding) BEFORE
+  // escaping — one such char rejects the whole package in PowerPoint/Word.
+  const escXml = (s) => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').replace(/̀-⟟]/g, '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
 
   /* Read a PDF's text layer grouped into visual lines, per page. */
   async function pdfTextLines(file, pdfjs, onProgress) {
@@ -1569,6 +1571,15 @@
       try {
         const ops = await page.getOperatorList();
         const OPS = pdfjs.OPS;
+        // Warm-render once: image objects only resolve during rendering.
+        // Without this, objs.get never fires and every image is skipped.
+        try {
+          const wvp = page.getViewport({ scale: 0.5 });
+          const wc = document.createElement('canvas');
+          wc.width = Math.max(1, Math.ceil(wvp.width));
+          wc.height = Math.max(1, Math.ceil(wvp.height));
+          await page.render({ canvasContext: wc.getContext('2d'), viewport: wvp }).promise;
+        } catch (_) {}
         let ctm = [1, 0, 0, 1, 0, 0];
         const stack = [];
         const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
@@ -1635,17 +1646,8 @@
             ]);
             if (!img || !img.width || !img.height || img.width * img.height > 9000000) continue;
             if (img.width < 60 && img.height < 60) continue; // icons/bullets: noise, not content
-            const c = document.createElement('canvas');
-            c.width = img.width; c.height = img.height;
-            const ctx = c.getContext('2d');
-            const id = ctx.createImageData(img.width, img.height);
-            const src = img.data, kind = img.kind;
-            for (let s = 0, d = 0; d < id.data.length; d += 4) {
-              if (kind === 3) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = src[s + 3]; s += 4; }
-              else if (kind === 2) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = 255; s += 3; }
-              else { id.data[d] = id.data[d + 1] = id.data[d + 2] = src[s]; id.data[d + 3] = 255; s += 1; }
-            }
-            ctx.putImageData(id, 0, 0);
+            const c = paintPdfImage(img);
+            if (!c) continue;
             const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
             if (!blob) continue;
             images.push({ bytes: new Uint8Array(await blob.arrayBuffer()), w: img.width, h: img.height,
@@ -1662,6 +1664,34 @@
       onProgress?.(i / doc.numPages * 0.7, `Reading page ${i}/${doc.numPages}`);
     }
     return pages;
+  }
+
+  /* Decode a pdf.js image object to canvas: modern {bitmap} shape or
+     legacy {data, kind} pixels (kind inferred from buffer length). */
+  function paintPdfImage(img) {
+    if (!img || !img.width || !img.height) return null;
+    try {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const ctx = c.getContext('2d');
+      if (img.bitmap) {
+        ctx.drawImage(img.bitmap, 0, 0);
+        return c;
+      }
+      if (!img.data) return null;
+      const w = img.width, h = img.height;
+      const px = img.data.length;
+      const kind = img.kind ?? (px === w * h * 4 ? 3 : px === w * h * 3 ? 2 : 1);
+      const id = ctx.createImageData(w, h);
+      const src = img.data;
+      for (let s = 0, d = 0; d < id.data.length; d += 4) {
+        if (kind === 3) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = src[s + 3]; s += 4; }
+        else if (kind === 2) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = 255; s += 3; }
+        else { const g = src[s]; id.data[d] = id.data[d + 1] = id.data[d + 2] = g; id.data[d + 3] = 255; s += 1; }
+      }
+      ctx.putImageData(id, 0, 0);
+      return c;
+    } catch (_) { return null; }
   }
 
   /* Build a real, openable .docx (OOXML package) from paragraphs of text. */
@@ -2105,6 +2135,65 @@
     return out;
   }
 
+  /* OCR word boxes → rich pages with real geometry (table/list/heading
+     detection works on scans exactly like born-digital text). Repairs are
+     token-level (count-preserving) so geometry never desyncs from text. */
+  function ocrPagesToRich(ocrPages) {
+    const repairTok = (s) => {
+      let t = String(s || '');
+      t = lexCorrect(t) || t;
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)) t = fixDateToken(t);
+      t = t.replace(/^[Tt]?ttps:\/\//, 'https://').replace(/^https:\/www/i, 'https://www');
+      return t;
+    };
+    const edgeKeep = (tok) => {
+      const t = String(tok || '').replace(/^[^A-Za-z0-9\u0900-\u097F]+|[^A-Za-z0-9\u0900-\u097F]+$/g, '');
+      if (!t) return false;
+      if (t.length > 2) return true;
+      if (/^(No|NO|Yes|YES|Male|OBC|AM|PM|\d{2,3})$/i.test(t)) return true;
+      if (/\d\s*[:/]\s*\d/.test(t)) return true;
+      if (HI_STOP.has(t)) return true;
+      if (EN_EDGE_STOP.has(t.toLowerCase())) return true;
+      return false;
+    };
+    return (ocrPages || []).map((pg) => {
+      const words = (pg.words || []).filter((w) => w.text);
+      if (!words.length) return { lines: [], images: [], median: 11 };
+      const hs = words.map((w) => Math.max(1, (w.y1 || 0) - (w.y0 || 0))).sort((a, b) => a - b);
+      const medH = hs[Math.floor(hs.length / 2)] || 20;
+      const tol = Math.max(4, medH * 0.5);
+      const bands = new Map();
+      for (const w of words) {
+        const k = Math.round(((w.y0 + w.y1) / 2) / tol) * tol;
+        if (!bands.has(k)) bands.set(k, []);
+        bands.get(k).push(w);
+      }
+      const median = Math.min(20, Math.max(8, Math.round(medH * 0.55)));
+      const lines = [...bands.entries()].sort((a, b) => a[0] - b[0]).map(([, ws]) => {
+        ws.sort((a, b) => a.x0 - b.x0);
+        let runs = ws.map((w) => ({
+          x: w.x0, y: (w.y0 + w.y1) / 2, str: repairTok(w.text),
+          size: Math.min(48, Math.max(10, Math.round(((w.y1 - w.y0) || medH) * 0.9))),
+          bold: false, italic: false, font: 'ocr',
+        })).filter((r) => String(r.str || '').trim());
+        if (!runs.length) return null;
+        const rawText = runs.map((r) => r.str).join(' ');
+        if (!ocrCleanLine(rawText)) return null;
+        if (runs.length >= 5) {
+          let cut = 0;
+          while (runs.length >= 5 && cut < 2 && !edgeKeep(runs[0].str)) { runs.shift(); cut++; }
+          cut = 0;
+          while (runs.length >= 5 && cut < 2 && !edgeKeep(runs[runs.length - 1].str)) { runs.pop(); cut++; }
+        }
+        if (!runs.length) return null;
+        const text = runs.map((r) => r.str).join(' ');
+        const maxSize = Math.max(...runs.map((r) => r.size));
+        return { y: runs[0].y, text, runs, maxSize, median };
+      }).filter(Boolean);
+      return { lines, images: [], median };
+    });
+  }
+
   /* Shared OCR line scrubber (Word + PPT scanned paths): drops gutter /
      barcode / photo / icon garbage lines before building output. */
   const ocrCleanLine = (l) => {
@@ -2429,9 +2518,11 @@
         if (!window.__ffOcrEngine) { try { await ocrWarm; } catch (_) {} }
         if (!window.__ffOcrEngine) throw new Error('Scanned PDF detected, but the OCR engine is still loading — open OCR PDF once, then retry Word conversion.');
         let ocrText = '';
+        let ocrPages = null;
         try {
           const ocrOut = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR in progress — ${Math.round(r * 100)}%`), 'hin+eng');
           ocrText = String(ocrOut && ocrOut.text || '');
+          ocrPages = ocrOut && ocrOut.ocrPages;
           // If combined model yields nothing readable, retry English-only before giving up.
         } catch (e) {
           throw new Error('Auto-OCR failed (' + (e.message || e) + '). Try OCR PDF directly for a clearer scan.');
@@ -2443,21 +2534,29 @@
           try {
             const retry = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR retry — ${Math.round(r * 100)}%`), 'eng');
             ocrText = String(retry && retry.text || '');
+            ocrPages = retry && retry.ocrPages;
           } catch (_) {}
         }
         if (!ocrText.trim()) throw new Error('OCR finished but recognised no text — the scan may be too blurry or blank.');
         notify('OCR complete — building your Word document…', 'success');
         onProgress?.(0.8, 'OCR complete — building Word…');
+        // Prefer word-box geometry (tables/lists survive); fall back to the
+        // flat-text pipeline when boxes are unavailable.
+        const geoRich = (ocrPages && ocrPages.some((p) => p.words && p.words.length))
+          ? ocrPagesToRich(ocrPages).filter((p) => p.lines.length)
+          : null;
         // Scrub gutter/barcode/photo garbage, then lexicon repair.
         const pages = ocrText.split(/\n*── Page \d+ ──\n*/).map((s) => s.trim()).filter(Boolean);
-        const ocrRich = (pages.length ? pages : [ocrText]).map((t) => ({
+        const flatRich = (pages.length ? pages : [ocrText]).map((t) => ({
           median: 11,
           images: [],
           lines: t.split('\n').map((l) => lexLine(ocrCleanLine(l))).filter(Boolean).map((text) => ({
             text, maxSize: 11, median: 11,
             runs: [{ x: 0, str: text, size: 11, bold: false, italic: false, font: 'ocr' }],
           })),
-        }));
+        })).filter((p) => p.lines.length);
+        const ocrRich = geoRich && geoRich.length ? geoRich : flatRich;
+        if (!ocrRich.length) throw new Error('OCR text was entirely gutter noise — the scan may be blank or undecipherable.');
         const zip = (await loadFf()).zipSync(buildDocxRich(U.baseName(file.name), ocrRich), { level: 6 });
         onProgress?.(1, 'Done');
         notify('Word document ready — converted from OCR text.', 'success');
@@ -2486,9 +2585,11 @@
         try { await ocrWarm; } catch (_) {}
         if (!window.__ffOcrEngine) throw new Error('Scanned PDF detected, but the OCR engine is still loading — try again in a moment.');
         let ocrText = '';
+        let ocrPages = null;
         try {
           const ocrOut = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR ${Math.round(r * 100)}%`), 'hin+eng');
           ocrText = String(ocrOut && ocrOut.text || '');
+          ocrPages = ocrOut && ocrOut.ocrPages;
         } catch (e) {
           throw new Error('Auto-OCR failed (' + (e.message || e) + ').');
         }
@@ -2496,18 +2597,24 @@
           try {
             const retry = await window.__ffOcrEngine.runPdfOcr(file, (r) => onProgress?.(0.05 + r * 0.7, `OCR retry ${Math.round(r * 100)}%`), 'eng');
             ocrText = String(retry && retry.text || '');
+            ocrPages = retry && retry.ocrPages;
           } catch (_) {}
         }
         if (!ocrText.trim()) throw new Error('OCR recognised no text — the scan may be too blurry.');
         notify('OCR complete — building your presentation…', 'success');
+        const geoSlides = (ocrPages && ocrPages.some((p) => p.words && p.words.length))
+          ? ocrPagesToRich(ocrPages).filter((p) => p.lines.length)
+          : null;
         const pages = ocrText.split(/\n*── Page \d+ ──\n*/).map((s) => s.trim()).filter(Boolean);
-        const ocrSlides = (pages.length ? pages : [ocrText]).map((t) => ({
+        const flatSlides = (pages.length ? pages : [ocrText]).map((t) => ({
           median: 11, images: [],
             lines: t.split('\n').map((l) => lexLine(ocrCleanLine(l))).filter(Boolean).map((text) => ({
             text, maxSize: 11, median: 11,
             runs: [{ x: 0, str: text, size: 11, bold: false, italic: false, font: 'ocr' }],
           })),
-        }));
+        })).filter((p) => p.lines.length);
+        const ocrSlides = geoSlides && geoSlides.length ? geoSlides : flatSlides;
+        if (!ocrSlides.length) throw new Error('OCR text was entirely gutter noise — the scan may be blank.');
         const zip = (await loadFf()).zipSync(buildPptxRich(U.baseName(file.name), ocrSlides), { level: 6 });
         onProgress?.(1, 'Done');
         notify('Presentation ready — built from OCR text.', 'success');
@@ -2951,14 +3058,20 @@
   R({ id: 'pdf-extract-images', category: 'PDF', name: 'Extract images', description: 'Pull embedded raster images out of a PDF (ZIP).',
     accepts: ['pdf'], engine: async () => ({ J: await loadJs(), F: await U.loadScript(...V.ff).then(() => window.fflate) }),
     async run({ file, engine, onProgress }) { const pdfjs = engine.J; const pdf = await pdfjs.getDocument({ data: await u8(file) }).promise; const out = {}; let idx = 0;
-      for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const page = await pdf.getPage(p); const ops = await page.getOperatorList();
+      for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const page = await pdf.getPage(p);
+        // Warm-render: objs resolve only during rendering (see pdfRichPages)
+        try {
+          const wvp = page.getViewport({ scale: 0.5 });
+          const wc = document.createElement('canvas');
+          wc.width = Math.max(1, Math.ceil(wvp.width)); wc.height = Math.max(1, Math.ceil(wvp.height));
+          await page.render({ canvasContext: wc.getContext('2d'), viewport: wvp }).promise;
+        } catch (_) {}
+        const ops = await page.getOperatorList();
         for (let i = 0; i < ops.fnArray.length; i++) { if (ops.fnArray[i] !== pdfjs.OPS.paintImageXObject) continue; const name = ops.argsArray[i][0];
           try { const img = await Promise.race([
               new Promise((res) => { try { page.objs.get(name, res); } catch (_) { res(null); } }),
               new Promise((res) => setTimeout(() => res(null), 5000)),
-            ]); if (!img || !img.width) continue; const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); const id = ctx.createImageData(img.width, img.height); const src = img.data; const kind = img.kind;
-            for (let s = 0, d = 0; d < id.data.length; d += 4) { if (kind === 3) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = src[s + 3]; s += 4; } else if (kind === 2) { id.data[d] = src[s]; id.data[d + 1] = src[s + 1]; id.data[d + 2] = src[s + 2]; id.data[d + 3] = 255; s += 3; } else { id.data[d] = id.data[d + 1] = id.data[d + 2] = src[s]; id.data[d + 3] = 255; s += 1; } }
-            ctx.putImageData(id, 0, 0); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); out[`image-${++idx}.png`] = new Uint8Array(await blob.arrayBuffer()); } catch {} }
+            ]); const c = paintPdfImage(img); if (!c) continue; const blob = await new Promise((r) => c.toBlob(r, 'image/png')); if (!blob) continue; out[`image-${++idx}.png`] = new Uint8Array(await blob.arrayBuffer()); } catch {} }
       }
       if (!idx) throw new Error('No extractable raster images found (they may be vector or inline).'); return { blob: new Blob([engine.F.zipSync(out, { level: 4 })], { type: 'application/zip' }), filename: U.baseName(file.name) + '-images.zip', mime: 'application/zip', preview: 'download' }; } });
 })();
@@ -4416,6 +4529,199 @@
       }
     }
 
+    /* ── Live analyzed size estimator (Phase 6) ──────────────────────────
+       Replaces static factor guesses with a REAL preflight probe:
+       - PDF: actually re-compresses FlateDecode streams (zlib level 9) and
+         samples the largest DCT image to calibrate per-tier JPEG savings.
+       - Image: actually encodes the pixels at each tier's quality/dimension.
+       Result is cached per file; tier clicks re-render instantly from cache. */
+    const IMG_TIER = {
+      light:    { q: 0.88, jq: 0.86, maxDim: 3840 },
+      balanced: { q: 0.78, jq: 0.74, maxDim: 2560 },
+      maximum:  { q: 0.65, jq: 0.60, maxDim: 1920 },
+    };
+    let _estCache = null; // { key, data:{tier:bytes} }
+    const _estFileKey = () => { const f = files[0]; return f ? `${f.size}:${f.name}` : ''; };
+
+    function loadImageBytes(buf) {
+      return new Promise((res, rej) => {
+        const u = URL.createObjectURL(new Blob([buf], { type: 'image/jpeg' }));
+        const im = new Image();
+        im.onload = () => { URL.revokeObjectURL(u); res(im); };
+        im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('decode failed')); };
+        im.src = u;
+      });
+    }
+
+    async function estimatePdfBytes(file) {
+      if (file.size > 80 * 1024 * 1024) return null; // avoid UI jank on huge files
+      const PDFLib = window.PDFLib || await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
+      const fflate = window.fflate || await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let doc = null;
+      try { doc = await PDFLib.PDFDocument.load(bytes.slice()); } catch { return null; }
+      let origFlate = 0, savedFlate = 0, dctTotal = 0, fontProgramBytes = 0, flateImageBytes = 0;
+      const dcts = []; // up to 3 largest DCT streams for real per-tier sampling
+      for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
+        const dict = obj.dict || (obj instanceof PDFLib.PDFRawStream ? obj.dict : null);
+        if (!dict) continue;
+        const filter = dict.get(PDFLib.PDFName.of('Filter'))?.asString?.();
+        const subtype = dict.get(PDFLib.PDFName.of('Subtype'))?.asString?.();
+        if (subtype === '/FontFile' || subtype === '/FontFile2' || subtype === '/FontFile3') {
+          fontProgramBytes += (obj.contents ? obj.contents.length : 0);
+        }
+        if (filter === '/FlateDecode' && obj.contents && obj.contents.length > 1024) {
+          if (subtype === '/Image') {
+            // PNG-style raster: surgery converts to JPEG at tier quality.
+            flateImageBytes += obj.contents.length;
+          } else {
+            try {
+              const u = fflate.unzlibSync(obj.contents);
+              const r = fflate.zlibSync(u, { level: 9 });
+              if (r.length < obj.contents.length) { origFlate += obj.contents.length; savedFlate += obj.contents.length - r.length; }
+            } catch (e) {}
+          }
+        } else if (filter === '/DCTDecode' && obj.contents && obj.contents.length > 2000) {
+          dctTotal += obj.contents.length;
+          if (dcts.length < 3) dcts.push({ size: obj.contents.length, data: obj.contents });
+          else {
+            dcts.sort((a, b) => a.size - b.size);
+            if (obj.contents.length > dcts[0].size) dcts[0] = { size: obj.contents.length, data: obj.contents };
+          }
+        }
+      }
+      const dctPerTier = { light: 0, balanced: 0, maximum: 0 };
+      let sampledRatio = { light: 1, balanced: 1, maximum: 1 };
+      if (dcts.length && dctTotal > 20000) {
+        const ratios = [];
+        for (const s of dcts) {
+          try {
+            const img = await loadImageBytes(s.data);
+            for (const t of ['light', 'balanced', 'maximum']) {
+              const p = IMG_TIER[t];
+              const w = Math.min(img.naturalWidth || 1, p.maxDim);
+              const h = Math.max(1, Math.round((img.naturalHeight || 1) * w / (img.naturalWidth || 1)));
+              const c = document.createElement('canvas'); c.width = w; c.height = h;
+              const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, 0, 0, w, h);
+              const b = await new Promise(r => c.toBlob(r, 'image/jpeg', p.jq));
+              const r = Math.min(1, (b ? b.size : s.size) / s.size);
+              dctPerTier[t] += s.size * (1 - r);
+              ratios.push({ t, r });
+              c.width = 0; c.height = 0;
+            }
+          } catch (e) {}
+        }
+        // extrapolate remaining DCT bytes by the average sampled ratio
+        for (const t of ['light', 'balanced', 'maximum']) {
+          const rs = ratios.filter(x => x.t === t);
+          if (rs.length) {
+            const avg = rs.reduce((a, x) => a + x.r, 0) / rs.length;
+            const sampledBytes = dcts.reduce((a, s) => a + s.size, 0);
+            const other = Math.max(0, dctTotal - sampledBytes);
+            dctPerTier[t] += other * (1 - avg);
+            sampledRatio[t] = avg;
+          }
+        }
+      }
+      // font glyph-subsetting heuristic: ~45% of embedded font program is usually
+      // unused glyphs dropped by pdf-lib copyPages rebuild
+      const fontSave = Math.max(0, fontProgramBytes * 0.45);
+      // PNG-style raster -> JPEG conversion (surgery converts FlateDecode images)
+      const flateImgKeep = { light: 0.78, balanced: 0.68, maximum: 0.58 };
+      const out = {};
+      for (const t of ['light', 'balanced', 'maximum']) {
+        const flateSave = Math.max(0, savedFlate);
+        const dctSave = Math.max(0, dctPerTier[t]);
+        const imgConvertSave = flateImageBytes > 0 ? Math.max(0, flateImageBytes * (1 - flateImgKeep[t])) : 0;
+        out[t] = Math.max(1000, Math.round(bytes.length - flateSave - dctSave - imgConvertSave - fontSave));
+      }
+      // Real copyPages font-subset rebuild (exact) for small/moderate docs — this
+      // is exactly what the engine can choose, so it caps the estimate honestly.
+      try {
+        if (file.size <= 6 * 1024 * 1024 && doc.getPageCount() <= 80) {
+          const sOut = await PDFLib.PDFDocument.create();
+          const idx = [];
+          for (let i = 0; i < doc.getPageCount(); i++) idx.push(i);
+          const sp = await sOut.copyPages(doc, idx);
+          for (const p of sp) sOut.addPage(p);
+          const sb = await sOut.save({ useObjectStreams: true });
+          if (sb.length < bytes.length) {
+            const sbMin = Math.max(1000, sb.length);
+            for (const t of ['light', 'balanced', 'maximum']) out[t] = Math.min(out[t], sbMin);
+          }
+        }
+      } catch (e) {}
+      try { doc = null; } catch (e) {}
+      return out;
+    }
+
+    async function estimateImageBytes(file) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const outMime = (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : 'image/webp';
+      const img = await loadImageBytes(await file.arrayBuffer());
+      const origW = img.naturalWidth || 1, origH = img.naturalHeight || 1;
+      const out = {};
+      for (const t of ['light', 'balanced', 'maximum']) {
+        const p = IMG_TIER[t];
+        const q = outMime === 'image/jpeg' ? p.jq : p.q;
+        let w = origW, h = origH;
+        if (w > p.maxDim || h > p.maxDim) {
+          if (w > h) { h = Math.round(h * p.maxDim / w); w = p.maxDim; }
+          else { w = Math.round(w * p.maxDim / h); h = p.maxDim; }
+        }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        if (outMime === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); }
+        ctx.drawImage(img, 0, 0, w, h);
+        const b = await new Promise(r => c.toBlob(r, outMime, q));
+        out[t] = Math.max(1000, b ? b.size : file.size);
+        c.width = 0; c.height = 0;
+      }
+      return out;
+    }
+
+    function setEstimateLabel(state) {
+      const el = container.querySelector('#comp-est-new-size');
+      if (!el) return;
+      const tot = files[0] ? files[0].size : 0;
+      if (state === 'loading') {
+        el.textContent = 'Analyzing…';
+        const p = container.querySelector('#comp-est-pct'); if (p) p.textContent = '(analyzing streams…)';
+        const bar = container.querySelector('#comp-est-bar'); if (bar) bar.style.width = '50%';
+        return;
+      }
+      if (state == null || typeof state !== 'number' || state <= 0) {
+        const p = container.querySelector('#comp-est-pct'); if (p) p.textContent = '(estimate varies by content)';
+        return;
+      }
+      el.textContent = `~${_bytes(state)}`;
+      const pct = tot > 0 ? Math.round((state / tot - 1) * 100) : 0;
+      const p = container.querySelector('#comp-est-pct');
+      if (p) p.textContent = `(analyzed ${pct <= 0 ? '−' : '+'}${Math.abs(pct)}%)`;
+      const bar = container.querySelector('#comp-est-bar');
+      if (bar) bar.style.width = `${Math.max(6, Math.min(100, Math.round(state / tot * 100)))}%`;
+    }
+
+    async function runEstimate() {
+      if (files.length !== 1 || selectedTier === 'custom') return;
+      const fam = familyOf(files[0]);
+      if (fam !== 'pdf' && fam !== 'image') return;
+      const key = _estFileKey();
+      if (_estCache && _estCache.key === key) { setEstimateLabel(_estCache.data[selectedTier]); return; }
+      setEstimateLabel('loading');
+      let data = null;
+      try {
+        data = fam === 'pdf' ? await estimatePdfBytes(files[0]) : await estimateImageBytes(files[0]);
+      } catch (e) { data = null; }
+      if (data && data[selectedTier]) {
+        _estCache = { key, data };
+        setEstimateLabel(data[selectedTier]);
+      } else {
+        const p = container.querySelector('#comp-est-pct'); if (p) p.textContent = '(estimate varies by content)';
+      }
+    }
+
     /* ── Step 1: Upload ─────────────────────────────── */
     function renderUpload() {
       container.innerHTML = `
@@ -4810,6 +5116,9 @@
       container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
         runCompress();
       });
+
+      // Live analyzed estimate (real stream/pixel probe, per tier).
+      runEstimate();
     }
 
     /* ── Step 3: Processing ── */
