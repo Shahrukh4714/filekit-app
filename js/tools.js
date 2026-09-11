@@ -4565,13 +4565,566 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     }
   });
 
+  /* ── Mastered PDF to HTML (Semantic Flow & Fixed Layout) Engine ─────── */
+  async function convertPdfToHtml(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'flow';
+    const embedImages = inputs?.embedImages !== 'no';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const richPages = await pdfRichPages(file, pdfjs, onProgress);
+    if (!richPages || !richPages.length) throw new Error('The PDF document contains no readable pages.');
+
+    const escHtml = (s) => String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const escAttr = (s) => String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    const u8ToBase64 = (bytes) => {
+      let binary = '';
+      const len = bytes.byteLength;
+      const chunk = 8192;
+      for (let i = 0; i < len; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunk, len)));
+      }
+      return btoa(binary);
+    };
+
+    const isBullet = (t) => /^[•▪‣–—-]\s+/.test(t);
+    const isOrdered = (t) => /^\d+[.\)]\s+/.test(t);
+
+    const isNumeric = (str) => {
+      const s = String(str || '').replace(/[$,₹€£%]/g, '').trim();
+      return s.length > 0 && !isNaN(Number(s));
+    };
+
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    const numPages = richPages.length;
+
+    // ── Mode 1: Semantic Flow (Responsive HTML5) ─────────────────────────
+    if (mode !== 'fixed') {
+      let docBody = '';
+
+      for (let pi = 0; pi < numPages; pi++) {
+        const pg = richPages[pi];
+        const median = pg.median || 11;
+        const gapTol = Math.max(16, median * 1.8);
+
+        // Split line into cells
+        const splitRowCells = (ln) => {
+          const sorted = [...ln.runs].sort((a, b) => a.x - b.x);
+          const cells = [];
+          let cur = [];
+          const bounds = [];
+          for (let i = 0; i < sorted.length; i++) {
+            cur.push(sorted[i]);
+            if (i < sorted.length - 1 && sorted[i + 1].x - (sorted[i].x + (sorted[i].w || 0)) > gapTol) {
+              cells.push(cur);
+              cur = [];
+              bounds.push(Math.round((sorted[i].x + sorted[i + 1].x) / 2));
+            }
+          }
+          if (cur.length) cells.push(cur);
+          return { cells, bounds };
+        };
+
+        const flow = [];
+        let curTable = [];
+
+        const flushTable = () => {
+          if (curTable.length >= 2) flow.push({ kind: 'table', rows: curTable });
+          else curTable.forEach((r) => flow.push({ kind: 'line', ln: r.ln }));
+          curTable = [];
+        };
+
+        for (const ln of pg.lines) {
+          const { cells, bounds } = splitRowCells(ln);
+          if (cells.length >= 2 && ln.runs.length >= 2) {
+            curTable.push({ ln, cells, bounds });
+          } else {
+            flushTable();
+            flow.push({ kind: 'line', ln });
+          }
+        }
+        flushTable();
+
+        let pageHtml = '';
+        if (numPages > 1) {
+          pageHtml += `  <div class="pdf-page-divider"><span class="pdf-page-pill">Page ${pi + 1} of ${numPages}</span></div>\n`;
+        }
+
+        let inList = null;
+        const closeList = () => {
+          if (inList) {
+            pageHtml += `  </${inList}>\n`;
+            inList = null;
+          }
+        };
+
+        for (const item of flow) {
+          if (item.kind === 'table') {
+            closeList();
+            const rows = item.rows;
+            const maxCols = Math.max(...rows.map((r) => r.cells.length));
+            pageHtml += '  <div class="pdf-table-wrapper"><table class="pdf-table">\n';
+            const isHeader = rows[0].cells.some((c) => c.some((r) => r.bold)) ||
+              /name|date|amount|fee|vehicle|total|class|description|no\b|id\b/i.test(rows[0].ln.text);
+            let startR = 0;
+            if (isHeader) {
+              pageHtml += '    <thead><tr>\n';
+              for (let c = 0; c < maxCols; c++) {
+                const cellRuns = rows[0].cells[c] || [];
+                const text = cellRuns.map((r) => (r.bold ? `<strong>${escHtml(r.str)}</strong>` : escHtml(r.str))).join(' ');
+                pageHtml += `      <th>${text || '&nbsp;'}</th>\n`;
+              }
+              pageHtml += '    </tr></thead>\n';
+              startR = 1;
+            }
+            pageHtml += '    <tbody>\n';
+            for (let r = startR; r < rows.length; r++) {
+              pageHtml += '      <tr>\n';
+              for (let c = 0; c < maxCols; c++) {
+                const cellRuns = rows[r].cells[c] || [];
+                const text = cellRuns.map((rn) => (rn.bold ? `<strong>${escHtml(rn.str)}</strong>` : escHtml(rn.str))).join(' ');
+                const rawStr = cellRuns.map((rn) => rn.str).join(' ').trim();
+                const isNum = isNumeric(rawStr);
+                pageHtml += `        <td${isNum ? ' class="num"' : ''}>${text || '&nbsp;'}</td>\n`;
+              }
+              pageHtml += '      </tr>\n';
+            }
+            pageHtml += '    </tbody>\n  </table></div>\n';
+          } else {
+            const ln = item.ln;
+            const text = ln.text;
+            if (isBullet(text)) {
+              if (inList !== 'ul') { closeList(); pageHtml += '  <ul class="pdf-list">\n'; inList = 'ul'; }
+              const cleanRuns = ln.runs.map((r, idx) => (idx === 0 ? { ...r, str: r.str.replace(/^[•▪‣–—\-\*]\s*/, '') } : r));
+              const lineText = cleanRuns.map((r) => (r.bold ? `<strong>${escHtml(r.str)}</strong>` : escHtml(r.str))).join(' ');
+              pageHtml += `    <li>${lineText}</li>\n`;
+              continue;
+            }
+            if (isOrdered(text)) {
+              if (inList !== 'ol') { closeList(); pageHtml += '  <ol class="pdf-list">\n'; inList = 'ol'; }
+              const cleanRuns = ln.runs.map((r, idx) => (idx === 0 ? { ...r, str: r.str.replace(/^\d+[.\)]\s*/, '') } : r));
+              const lineText = cleanRuns.map((r) => (r.bold ? `<strong>${escHtml(r.str)}</strong>` : escHtml(r.str))).join(' ');
+              pageHtml += `    <li>${lineText}</li>\n`;
+              continue;
+            }
+            closeList();
+
+            const ratio = (ln.maxSize || 11) / (median || 11);
+            const lineText = ln.runs.map((r) => (r.bold ? `<strong>${escHtml(r.str)}</strong>` : escHtml(r.str))).join(' ');
+            if (ratio >= 1.55 && text.length <= 100) {
+              pageHtml += `  <h1 class="pdf-h1">${lineText}</h1>\n`;
+            } else if (ratio >= 1.3 && text.length <= 120) {
+              pageHtml += `  <h2 class="pdf-h2">${lineText}</h2>\n`;
+            } else if ((ratio >= 1.15 || ln.runs.some((r) => r.bold)) && text.length <= 80 && !/[.!?]$/.test(text.trim())) {
+              pageHtml += `  <h3 class="pdf-h3">${lineText}</h3>\n`;
+            } else {
+              pageHtml += `  <p class="pdf-p">${lineText}</p>\n`;
+            }
+          }
+        }
+        closeList();
+
+        // Render embedded figures
+        if (embedImages && pg.images && pg.images.length) {
+          pageHtml += '  <div class="pdf-figures-grid">\n';
+          for (let i = 0; i < pg.images.length; i++) {
+            if (!pg.images[i].bytes) continue;
+            const b64 = u8ToBase64(pg.images[i].bytes);
+            pageHtml += `    <figure class="pdf-figure"><img src="data:image/png;base64,${b64}" alt="Figure ${i + 1}" class="pdf-img" loading="lazy" /></figure>\n`;
+          }
+          pageHtml += '  </div>\n';
+        }
+
+        docBody += `<article class="pdf-page-card" id="page-${pi + 1}">\n${pageHtml}</article>\n`;
+      }
+
+      const navPills = numPages > 1 ? `
+    <nav class="pdf-page-nav">
+      ${Array.from({ length: numPages }, (_, i) => `<a href="#page-${i + 1}" class="pdf-nav-pill">Page ${i + 1}</a>`).join('')}
+    </nav>` : '';
+
+      const fullHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escHtml(base)} — FileKit HTML</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #0891b2;
+      --primary-light: #ecfeff;
+      --primary-dark: #0e7490;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0f19;
+        --card-bg: #1e293b;
+        --text: #f8fafc;
+        --text-muted: #94a3b8;
+        --border: #334155;
+        --primary: #22d3ee;
+        --primary-light: #083344;
+        --primary-dark: #06b6d4;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      margin: 0;
+      padding: 32px 16px;
+    }
+    .pdf-doc-header {
+      max-width: 860px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .pdf-doc-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+    .pdf-doc-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: 1px solid var(--border);
+    }
+    .pdf-page-nav {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .pdf-nav-pill {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      transition: all 120ms ease;
+    }
+    .pdf-nav-pill:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .pdf-page-card {
+      max-width: 860px;
+      margin: 0 auto 24px auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+    .pdf-page-divider {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 16px;
+    }
+    .pdf-page-pill {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .pdf-h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      margin: 1.5rem 0 0.75rem 0;
+      line-height: 1.25;
+    }
+    .pdf-h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem 0;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.35rem;
+    }
+    .pdf-h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1rem 0 0.35rem 0;
+      color: var(--primary);
+    }
+    .pdf-p {
+      margin: 0.5rem 0;
+      color: var(--text);
+    }
+    .pdf-list {
+      margin: 0.5rem 0 0.75rem 1.25rem;
+      padding: 0;
+    }
+    .pdf-list li {
+      margin: 0.25rem 0;
+    }
+    .pdf-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1.25rem 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .pdf-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+    .pdf-table th {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .pdf-table tbody tr:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    .pdf-table td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+    .pdf-figures-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin: 24px 0;
+      justify-content: center;
+    }
+    .pdf-figure {
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .pdf-img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    @media print {
+      body { background: #fff !important; padding: 0 !important; }
+      .pdf-doc-header, .pdf-page-divider { display: none !important; }
+      .pdf-page-card { border: none !important; box-shadow: none !important; padding: 0 !important; max-width: 100% !important; margin: 0 0 40px 0 !important; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="pdf-doc-header">
+    <h4 class="pdf-doc-title">${escHtml(base)}</h4>
+    <span class="pdf-doc-badge">${numPages} ${numPages === 1 ? 'Page' : 'Pages'}</span>
+    ${navPills}
+  </div>
+  ${docBody}
+</body>
+</html>`;
+
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      return {
+        blob,
+        filename: base + '.html',
+        mime: 'text/html',
+        preview: 'text',
+        text: fullHtml,
+        metrics: {
+          Mode: 'Semantic Flow',
+          Pages: numPages,
+          Size: formatBytes(blob.size),
+        },
+      };
+    }
+
+    // ── Mode 2: Fixed Page Layout (Pixel-Accurate) ───────────────────────
+    let pagesFixed = '';
+    for (let pi = 0; pi < numPages; pi++) {
+      const pg = richPages[pi];
+      const pw = pg.w || 595;
+      const ph = pg.h || 842;
+
+      let fixedRuns = '';
+      for (const ln of pg.lines) {
+        for (const r of ln.runs) {
+          if (!r.str || !r.str.trim()) continue;
+          const top = Math.max(0, ph - (r.y || 0) - (r.size || 11));
+          const weight = r.bold ? 'font-weight: bold;' : '';
+          const style = r.italic ? 'font-style: italic;' : '';
+          const color = r.color && r.color !== '000000' ? `color: #${r.color};` : '';
+          fixedRuns += `    <span style="position: absolute; left: ${r.x.toFixed(1)}px; top: ${top.toFixed(1)}px; font-size: ${r.size.toFixed(1)}px; ${weight}${style}${color}">${escHtml(r.str)}</span>\n`;
+        }
+      }
+
+      let fixedImgs = '';
+      if (embedImages && pg.images && pg.images.length) {
+        for (const im of pg.images) {
+          if (!im.bytes) continue;
+          const b64 = u8ToBase64(im.bytes);
+          const top = Math.max(0, ph - (im.y || 0) - (im.ih || im.h));
+          fixedImgs += `    <img src="data:image/png;base64,${b64}" style="position: absolute; left: ${im.x.toFixed(1)}px; top: ${top.toFixed(1)}px; width: ${im.iw.toFixed(1)}px; height: ${im.ih.toFixed(1)}px;" />\n`;
+        }
+      }
+
+      let fixedLinks = '';
+      if (pg.links && pg.links.length) {
+        for (const l of pg.links) {
+          if (!l.url && !l.destPage) continue;
+          const href = l.url ? escAttr(l.url) : `#fixed-page-${l.destPage}`;
+          const top = Math.max(0, ph - (l.y1 || 0));
+          const w = Math.abs((l.x1 || 0) - (l.x0 || 0));
+          const h = Math.abs((l.y1 || 0) - (l.y0 || 0));
+          fixedLinks += `    <a href="${href}" class="pdf-fixed-link" style="position: absolute; left: ${l.x0}px; top: ${top}px; width: ${w}px; height: ${h}px;" ${l.url ? 'target="_blank" rel="noopener"' : ''}></a>\n`;
+        }
+      }
+
+      pagesFixed += `
+  <div class="pdf-fixed-page-wrapper">
+    <div class="pdf-fixed-badge">Page ${pi + 1} of ${numPages}</div>
+    <div class="pdf-fixed-page" id="fixed-page-${pi + 1}" style="width: ${pw}px; height: ${ph}px;">
+      ${fixedImgs}
+      ${fixedRuns}
+      ${fixedLinks}
+    </div>
+  </div>\n`;
+    }
+
+    const fixedFullHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escHtml(base)} (Fixed Layout) — FileKit HTML</title>
+  <style>
+    body {
+      background: #475569;
+      margin: 0;
+      padding: 32px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .pdf-fixed-page-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .pdf-fixed-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      backdrop-filter: blur(4px);
+    }
+    .pdf-fixed-page {
+      position: relative;
+      background: #ffffff;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .pdf-fixed-page span {
+      white-space: pre;
+      line-height: 1;
+      color: #000;
+    }
+    .pdf-fixed-link {
+      background: rgba(37, 99, 235, 0.1);
+      border-bottom: 1px dashed #2563eb;
+      cursor: pointer;
+    }
+    .pdf-fixed-link:hover {
+      background: rgba(37, 99, 235, 0.25);
+    }
+    @media print {
+      body { background: transparent !important; padding: 0 !important; }
+      .pdf-fixed-badge { display: none !important; }
+      .pdf-fixed-page-wrapper { margin-bottom: 0 !important; page-break-after: always; }
+      .pdf-fixed-page { box-shadow: none !important; border-radius: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+  ${pagesFixed}
+</body>
+</html>`;
+
+    const blob = new Blob([fixedFullHtml], { type: 'text/html' });
+    return {
+      blob,
+      filename: base + '-fixed.html',
+      mime: 'text/html',
+      preview: 'text',
+      text: fixedFullHtml,
+      metrics: {
+        Mode: 'Fixed Layout',
+        Pages: numPages,
+        Size: formatBytes(blob.size),
+      },
+    };
+  }
+
   R({ id: 'pdf-to-html', category: 'PDF', name: 'PDF to HTML',
-    description: 'Export the text layer as a clean, readable standalone HTML page per PDF page.',
+    description: 'Convert PDF into clean, responsive semantic HTML5 or pixel-accurate fixed layout.',
     accepts: ['pdf'], maxBytes: 200e6,
-    async run({ file, onProgress }) {
-      const pages = await pdfTextLines(file, await loadJs(), onProgress);
-      const html = buildHtml(U.baseName(file.name), pages);
-      return { blob: new Blob([html], { type: 'text/html' }), filename: U.baseName(file.name) + '.html', mime: 'text/html', preview: 'download' };
+    fields: [
+      { key: 'mode', label: 'Layout Mode', type: 'select', default: 'flow', options: [
+        { value: 'flow', label: 'Semantic Flow (Responsive HTML5)' },
+        { value: 'fixed', label: 'Fixed Page Layout (Pixel-Accurate)' }
+      ] },
+      { key: 'embedImages', label: 'Embed Images', type: 'select', default: 'yes', options: [
+        { value: 'yes', label: 'Yes (inline base64 images)' },
+        { value: 'no', label: 'No (text only)' }
+      ] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfToHtml(file, inputs, onProgress);
     }
   });
 
@@ -17780,7 +18333,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       T(M.office, 'PowerPoint', 'PPTX', 'pptx', '#C43E1C', 'pdf-to-ppt', 'One slide per page'),
       T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#4B4B4B', 'pdf-grayscale', 'Pages in black & white'),
       T(M.office, 'Compressed PDF', 'PDF', 'pdf', '#0F766E', 'pdf-compress', 'Smaller file size', { quality: 60, scale: '1.5' }),
-      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pdf-to-html', 'Web-ready page'),
+      T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pdf-to-html', 'Responsive semantic HTML5 or pixel-accurate page', { mode: 'flow' }),
       T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Text layer only'),
       T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'pdf-to-csv', 'Table-style rows', { delim: ',' }),
       T(M.web, 'Summary', 'TXT', 'txt', '#DC2626', 'pdf-summarize', 'Key sentences', { length: 'medium' }),
@@ -18986,6 +19539,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 </div>
                 <div class="conv-mode-seg-desc" id="conv-img-mode-desc">${String(cfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page')) === 'extract' ? 'Pull embedded photos &amp; figures only' : 'Render full pages as high-resolution images'}</div>` : ''}
 
+                ${(t.tool === 'pdf-to-html') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-html-modes" id="conv-html-modes" role="radiogroup" aria-label="PDF to HTML conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-html-mode-card ${String(cfg.mode || 'flow') === 'flow' ? 'active' : ''}" data-mode="flow" role="radio" aria-checked="${String(cfg.mode || 'flow') === 'flow' ? 'true' : 'false'}" data-desc="Responsive semantic HTML5 with styled tables" title="Semantic Flow: Responsive semantic HTML5 with styled tables">
+                    <span class="conv-seg-star">★</span> Flow
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-html-mode-card ${String(cfg.mode || 'flow') === 'fixed' ? 'active' : ''}" data-mode="fixed" role="radio" aria-checked="${String(cfg.mode || 'flow') === 'fixed' ? 'true' : 'false'}" data-desc="Pixel-accurate layout matching original PDF pages" title="Fixed Layout: Pixel-accurate layout matching original PDF pages">
+                    Fixed
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-html-mode-desc">${String(cfg.mode || 'flow') === 'fixed' ? 'Pixel-accurate layout matching original PDF pages' : 'Responsive semantic HTML5 with styled tables'}</div>` : ''}
+
                 ${(t.tool === 'pdf-to-ppt' || t.tool === 'to-ppt') && /\.pdf$/i.test(currentFile.name || '') ? `
                 <div class="conv-mode-segmented conv-pptx-modes" id="conv-pptx-modes" role="radiogroup" aria-label="PDF to PowerPoint conversion mode">
                   <button type="button" class="conv-mode-seg-btn conv-pptx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}" data-desc="Native shapes, titles, bullets &amp; tables" title="Editable: Native shapes, titles, bullets &amp; tables">
@@ -19221,7 +19785,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           const valDisplay = container.querySelector(`#cfg-${k}-val`);
           if (valDisplay) valDisplay.textContent = inp.value;
           if (k === 'mode') {
-            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card, #conv-pptx-modes .conv-pptx-mode-card, #conv-word-modes .conv-word-mode-card, #conv-img-modes .conv-img-mode-card').forEach((c) => {
+            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card, #conv-pptx-modes .conv-pptx-mode-card, #conv-word-modes .conv-word-mode-card, #conv-img-modes .conv-img-mode-card, #conv-html-modes .conv-html-mode-card').forEach((c) => {
               const on = c.dataset.mode === inp.value;
               c.classList.toggle('active', on);
               c.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -19274,6 +19838,22 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             c.setAttribute('aria-checked', on ? 'true' : 'false');
           });
           const descEl = container.querySelector('#conv-img-mode-desc');
+          if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+          const sel = container.querySelector('#cfg-mode');
+          if (sel) sel.value = m;
+        });
+      });
+
+      container.querySelectorAll('#conv-html-modes .conv-html-mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.mode;
+          cfg.mode = m;
+          container.querySelectorAll('#conv-html-modes .conv-html-mode-card').forEach((c) => {
+            const on = c === card;
+            c.classList.toggle('active', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const descEl = container.querySelector('#conv-html-mode-desc');
           if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
           const sel = container.querySelector('#cfg-mode');
           if (sel) sel.value = m;

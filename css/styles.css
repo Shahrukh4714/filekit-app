@@ -51167,7 +51167,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-word-modes,
 .conv-docx-modes,
 .conv-pptx-modes,
-.conv-img-modes {
+.conv-img-modes,
+.conv-html-modes {
   display: flex !important;
   background: #F1F5F9 !important;
   border: 1px solid #E2E8F0 !important;
@@ -51184,7 +51185,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-word-mode-card,
 .conv-docx-mode-card,
 .conv-pptx-mode-card,
-.conv-img-mode-card {
+.conv-img-mode-card,
+.conv-html-mode-card {
   appearance: none !important;
   -webkit-appearance: none !important;
   flex: 1 1 0 !important;
@@ -51214,7 +51216,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-word-mode-card:hover,
 .conv-docx-mode-card:hover,
 .conv-pptx-mode-card:hover,
-.conv-img-mode-card:hover {
+.conv-img-mode-card:hover,
+.conv-html-mode-card:hover {
   color: #1E293B !important;
   background: rgba(255, 255, 255, 0.6) !important;
   border-color: transparent !important;
@@ -51256,6 +51259,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-img-modes .conv-img-mode-card.active,
 #conv-img-modes .active {
   color: #EA580C !important;
+}
+.conv-html-modes .conv-html-mode-card.active,
+#conv-html-modes .active {
+  color: #0891B2 !important;
 }
 
 .conv-seg-star {
