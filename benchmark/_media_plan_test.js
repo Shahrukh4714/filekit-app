@@ -94,5 +94,16 @@ check('low-bitrate Opus copied into WebM', args(q[0]).includes('-c:a copy'), arg
 q = plansFor('video', 'mp4', 'balanced', { audioBr: '128k' }, { probe: null });
 check('no probe -> safe encode default', args(q[0]).includes('-c:a libfdk_aac'), args(q[0]));
 
+// --- normalize, denoise, webm target ---
+q = plansFor('audio', 'm4a', 'balanced', { audioBr: '128k' }, { normalize: true });
+check('normalize adds loudnorm filter', args(q[0]).includes('-af loudnorm=I=-16:TP=-1.5:LRA=11'), args(q[0]));
+q = plansFor('video', 'mp4', 'maximum', { audioBr: '96k' }, { probe: { acodec: 'aac', aKbps: 200 } });
+check('heavy tier adds hqdn3d denoise', args(q[0]).includes('hqdn3d=1:1:2:2'), args(q[0]));
+q = plansFor('video', 'mp4', 'balanced', { audioBr: '128k' }, { probe: { acodec: 'aac', aKbps: 200 } });
+check('balanced tier has no denoise', !args(q[0]).includes('hqdn3d'), args(q[0]));
+q = plansFor('video', 'webm', 'custom', { audioBr: '128k' }, { targetBytes: 200000, duration: 10, probe: { acodec: 'opus', aKbps: 64 } });
+check('webm target is two-pass', Array.isArray(q[0].passes) && q[0].passes.length === 2 && q[0].passes[0].args.join(' ').includes('-pass 1'));
+check('webm target copies efficient opus', q[0].passes[1].args.join(' ').includes('-c:a copy'));
+
 console.log(`\nMedia plan test: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

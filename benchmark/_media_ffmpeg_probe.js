@@ -97,6 +97,8 @@ function parseArgs(core, args) {
   await runCase('audio maximum m4a', m4a, 'audio', 'm4a', 'maximum', { audioBr: '96k' });
   await runCase('audio balanced m4a', m4a, 'audio', 'm4a', 'balanced', { audioBr: '128k' });
   await runCase('audio balanced mp3', mp3, 'audio', 'mp3', 'balanced', { audioBr: '128k' });
+  await runCase('audio normalize m4a', m4a, 'audio', 'm4a', 'balanced', { audioBr: '128k' }, { normalize: true });
+  await runCase('video TARGET webm 2-pass', av, 'video', 'webm', 'custom', { audioBr: '64k' }, { targetBytes: 60000, duration: 3.02, probe: { acodec: 'aac', aKbps: 84 } });
   await runCase('video TARGET 150KB (2-pass)', av, 'video', 'mp4', 'custom', { videoBr: '750k', audioBr: '64k' }, { targetBytes: 60000, duration: 3.02 });
 
   // Verify resolution capping against a real 1080p source (the sample is 360p).

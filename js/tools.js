@@ -5253,39 +5253,44 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
 
   function mediaFpsCap(tier) { return tier === 'maximum' ? 30 : 0; }
 
-  function mediaVideoFilter(cap, fpsCap, probe) {
+  function mediaVideoFilter(cap, fpsCap, probe, denoise) {
     let vf = mediaScaleFilter(cap);
     // Only cap frame rate when the source actually exceeds it (never upsample).
     if (fpsCap && probe && probe.fps > fpsCap) vf += ',fps=' + fpsCap;
+    // Heavy tier: a mild temporal denoise removes grain that wastes bits.
+    if (denoise) vf += ',hqdn3d=1:1:2:2';
     return vf;
   }
 
   /* Prefer copying the audio stream when the source codec already fits the
      target container and is no larger than the tier's audio budget. This avoids
-     the re-encode + bloat that simple compressors introduce. */
-  function mediaAudioArgs(webm, audioBr, probe) {
+     the re-encode + bloat that simple compressors introduce. Loudness
+     normalization needs a decode, so copy is skipped when it is on. */
+  function mediaAudioArgs(webm, audioBr, probe, normalize) {
     const targetKbps = parseInt(String(audioBr), 10) || 128;
     const src = (probe && probe.acodec) ? String(probe.acodec).toLowerCase() : '';
     const srcOk = !!(probe && probe.aKbps > 0 && probe.aKbps <= targetKbps);
+    const codec = webm ? ['-c:a', 'libopus', '-b:a', audioBr] : ['-c:a', 'libfdk_aac', '-b:a', audioBr];
+    if (normalize) return codec.concat(['-af', 'loudnorm=I=-16:TP=-1.5:LRA=11']);
     if (webm) {
       if (srcOk && /opus|vorbis/.test(src)) return ['-c:a', 'copy'];
-      return ['-c:a', 'libopus', '-b:a', audioBr];
+      return codec;
     }
     if (srcOk && src === 'aac') return ['-c:a', 'copy'];
-    return ['-c:a', 'libfdk_aac', '-b:a', audioBr];
+    return codec;
   }
 
-  function buildVideoPlan(inName, ext, tier, p, probe) {
+  function buildVideoPlan(inName, ext, tier, p, probe, normalize) {
     p = p || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
     const cap = tier === 'light' ? 1080 : (tier === 'maximum' ? 640 : 720);
     const crf = tier === 'maximum' ? 31 : (tier === 'light' ? 22 : 27);
     const audioBr = p.audioBr || '128k';
     const isCustom = tier === 'custom' && p.videoBr;
-    const vf = mediaVideoFilter(cap, mediaFpsCap(tier), probe);
+    const vf = mediaVideoFilter(cap, mediaFpsCap(tier), probe, tier === 'maximum');
     const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', vf, '-pix_fmt', 'yuv420p'];
     const rate = isCustom ? ['-b:v', p.videoBr] : ['-crf', String(crf), '-b:v', '0'];
-    const audio = mediaAudioArgs(webm, audioBr, probe);
+    const audio = mediaAudioArgs(webm, audioBr, probe, normalize);
     if (webm) {
       const codecArgs = tier === 'light'
         ? ['-c:v', 'libvpx'].concat(rate, ['-deadline', 'good', '-cpu-used', '5'])
@@ -5305,14 +5310,14 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     };
   }
 
-  function buildAudioPlan(inName, ext, tier, p) {
+  function buildAudioPlan(inName, ext, tier, p, normalize) {
     p = p || {};
     const a = mediaAudioCodecFor(ext);
     const audioBr = p.audioBr || '128k';
-    return {
-      args: ['-i', inName, '-vn', '-c:a', a.codec, '-b:a', audioBr, 'out.' + a.out],
-      out: 'out.' + a.out, mime: a.mime, outExt: a.out
-    };
+    const args = ['-i', inName, '-vn', '-c:a', a.codec, '-b:a', audioBr];
+    if (normalize) args.push('-af', 'loudnorm=I=-16:TP=-1.5:LRA=11');
+    args.push('out.' + a.out);
+    return { args, out: 'out.' + a.out, mime: a.mime, outExt: a.out };
   }
 
   function buildVideoFallback(inName, p) {
@@ -5373,7 +5378,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
   /* Exact-target video plan: derive the video bitrate from the target byte
      budget and duration, then run true two-pass x264 (1-pass VBR for WebM).
      Kept as a multi-pass plan so the caller can drive both passes. */
-  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p, probe) {
+  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p, probe, normalize) {
     p = p || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
     const audioBr = p.audioBr || '128k';
@@ -5383,17 +5388,22 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     if (!isFinite(videoKbps) || videoKbps < 40) videoKbps = 40;
     if (videoKbps > 20000) videoKbps = 20000;
     const vbr = videoKbps + 'k';
-    const vf = mediaVideoFilter(720, 30, probe);
+    const vf = mediaVideoFilter(720, 30, probe, false);
     const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', vf, '-pix_fmt', 'yuv420p'];
-    const audio = mediaAudioArgs(webm, audioBr, probe);
+    const audio = mediaAudioArgs(webm, audioBr, probe, normalize);
+    const log = 'ffpass';
     if (webm) {
+      // Two-pass VP9 for an accurate size target (matches the MP4 path).
       return {
-        args: ['-i', inName].concat(map,
-          ['-c:v', 'libvpx-vp9', '-b:v', vbr, '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1'].concat(audio, ['out.webm'])),
+        passes: [
+          { args: ['-i', inName].concat(map, ['-c:v', 'libvpx-vp9', '-b:v', vbr, '-deadline', 'good',
+              '-cpu-used', '4', '-row-mt', '1', '-pass', '1', '-passlogfile', log, '-an', '-f', 'webm', 'p1.webm']), out: 'p1.webm' },
+          { args: ['-i', inName].concat(map, ['-c:v', 'libvpx-vp9', '-b:v', vbr, '-deadline', 'good',
+              '-cpu-used', '4', '-row-mt', '1', '-pass', '2', '-passlogfile', log], audio, ['out.webm']), out: 'out.webm' }
+        ],
         out: 'out.webm', mime: 'video/webm', outExt: 'webm'
       };
     }
-    const log = 'ffpass';
     return {
       passes: [
         { args: ['-i', inName].concat(map, ['-c:v', 'libx264', '-preset', 'veryfast', '-b:v', vbr,
@@ -5416,16 +5426,17 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     const targetBytes = opts.targetBytes || 0;
     const duration = opts.duration || 0;
     const probe = opts.probe || null;
+    const normalize = !!opts.normalize;
     const plans = [];
     if (family === 'video') {
       if (tier === 'custom' && targetBytes > 0 && duration > 0) {
-        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p, probe));
+        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p, probe, normalize));
       } else {
-        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p, probe));
+        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p, probe, normalize));
       }
       plans.push(buildVideoFallback(inName, p));
     } else {
-      plans.push(buildAudioPlan(inName, ext, tier, p));
+      plans.push(buildAudioPlan(inName, ext, tier, p, normalize));
       plans.push(buildAudioFallback(inName, p));
     }
     return plans;
@@ -7168,6 +7179,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     /** @type {File[]} */
     let files  = [];
     let selectedTier = 'balanced';
+    let normalizeLoudness = false;
     let output = 'zip';
 
     const MAX_BYTES = 200 * 1024 * 1024;
@@ -7655,6 +7667,15 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
                   </div>
                 </div>
 
+                ${(fam === 'video' || fam === 'audio') && !isBatch ? `
+                <label class="cpdf-media-opt" for="comp-normalize-loudness">
+                  <input type="checkbox" id="comp-normalize-loudness" class="cpdf-media-opt-input"${normalizeLoudness ? ' checked' : ''} />
+                  <span class="cpdf-media-opt-text">
+                    <span class="cpdf-media-opt-title">Normalize loudness</span>
+                    <span class="cpdf-media-opt-sub">Even out volume to −16 LUFS (EBU R128)</span>
+                  </span>
+                </label>` : ''}
+
                 <div class="cpdf-benchmark-est-box">
                   <div class="cpdf-benchmark-est-title">${isBatch ? 'Total estimated output' : 'Estimated new file size'}</div>
                   <div class="cpdf-benchmark-est-metrics">
@@ -7810,6 +7831,9 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
       container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
         runCompress();
       });
+
+      const normBox = container.querySelector('#comp-normalize-loudness');
+      if (normBox) normBox.onchange = () => { normalizeLoudness = !!normBox.checked; };
 
       // Live analyzed estimate (real stream/pixel probe, per tier).
       runEstimate();
@@ -8843,7 +8867,8 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
           const duration = (probe && probe.duration > 0)
             ? probe.duration
             : ((targetBytes > 0 && family === 'video') ? await mediaDuration(file) : 0);
-          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration, probe });
+          const normalize = normalizeLoudness && !(probe && probe.hasAudio === false);
+          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration, probe, normalize });
           const onProg = (lo, hi, label) => (typeof onProgress === 'function')
             ? (f) => { try { onProgress(lo + (hi - lo) * (f || 0), label); } catch (e) {} }
             : undefined;
@@ -8865,12 +8890,20 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
               const bytes = data instanceof Uint8Array ? data : new Uint8Array(data || []);
               if (!bytes.length) continue;
               if (bytes.length < file.size) {
+                const allArgs = (plan.passes ? plan.passes.map((x) => x.args.join(' ')) : [plan.args.join(' ')]).join(' ');
                 return {
                   blob: new Blob([bytes], { type: plan.mime }),
                   filename: U.baseName(file.name) + '-compressed.' + plan.outExt,
                   mime: plan.mime,
                   preview: family,
-                  metrics: { mediaTier: selectedTier, mediaCodec: plan.outExt }
+                  metrics: {
+                    mediaCodec: plan.outExt,
+                    mediaTier: selectedTier,
+                    mediaHeight: (probe && probe.height) || 0,
+                    mediaKbps: duration > 0 ? Math.round(bytes.length * 8 / duration / 1000) : 0,
+                    mediaAudioCopied: allArgs.includes('-c:a copy'),
+                    mediaNormalized: normalize
+                  }
                 };
               }
               // Encoded successfully but larger — no point trying later plans.
@@ -9230,6 +9263,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
           if (_mk.usedRaster) qualityBadge = 'Standard fidelity';
           else if (_mk.usedSubset) qualityBadge = 'Lossless · fonts subset';
           else if (_mk.usedHybrid) qualityBadge = 'High fidelity';
+          else if (_mk.mediaCodec) qualityBadge = 'Media compressed';
           else if (_mk.untouched) qualityBadge = 'Unchanged (protected)';
         }
         // Honest per-file quality note — what actually happened to THIS document.
@@ -9238,6 +9272,15 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
           const notes = [];
           if (_mk.untouched) notes.push('Returned unchanged to protect the document');
           else {
+            if (_mk.mediaCodec) {
+              notes.push(_mk.mediaCodec === 'mp4' ? 'MP4 · H.264 + AAC'
+                : _mk.mediaCodec === 'webm' ? 'WebM · VP9 + Opus'
+                : String(_mk.mediaCodec).toUpperCase());
+              if (_mk.mediaHeight) notes.push(_mk.mediaHeight + 'p');
+              if (_mk.mediaKbps) notes.push('~' + _mk.mediaKbps + ' kbps');
+              if (_mk.mediaAudioCopied) notes.push('audio kept as-is');
+              if (_mk.mediaNormalized) notes.push('loudness normalized');
+            }
             if (_mk.vectorPreserved && _mk.hasSelectableText) notes.push('Text stays selectable & searchable');
             if (_mk.usedSubset) notes.push('Embedded fonts subset — appearance unchanged');
             if (_mk.usedMono) notes.push('Scanned pages converted to compact black & white');

@@ -32651,6 +32651,37 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   padding-left: 28px !important;
 }
 
+.cpdf-media-opt {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  margin-top: 8px !important;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 160ms ease-out, background-color 160ms ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cpdf-media-opt:hover { border-color: #CBD5E1 !important; }
+}
+
+.cpdf-media-opt-input {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+  accent-color: #0F172A;
+  cursor: pointer;
+}
+
+.cpdf-media-opt-text { display: flex !important; flex-direction: column !important; gap: 1px !important; }
+.cpdf-media-opt-title { font-size: 12.5px !important; font-weight: 600 !important; color: #0F172A !important; line-height: 1.2 !important; }
+.cpdf-media-opt-sub { font-size: 11px !important; color: #64748B !important; line-height: 1.2 !important; }
+
 .cpdf-target-inp {
   width: 80px !important;
   height: 28px !important;
