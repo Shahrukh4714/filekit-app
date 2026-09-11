@@ -5477,7 +5477,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
 
   /* HEIC/HEIF: shallow ISO-BMFF box walk for ICC (rICC/prof) and multi-image. */
   function analyzeHeicSource(b) {
-    const r = { icc: false, multi: false, width: 0, height: 0 };
+    const r = { icc: false, multi: false, highBitDepth: false, width: 0, height: 0 };
     const end = Math.min(b.length, IMAGE_SOURCE_PROBE_BYTES);
     let mdats = 0;
     const walk = (start, stop) => {
@@ -5498,6 +5498,10 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
         else if (type === 'iprp' || type === 'ipco') walk(p + hdr, p + size);
         else if (type === 'rICC' || type === 'prof') r.icc = true;
         else if (type === 'colr' && imgAscii(b, p + hdr + 4, 4) === 'prof') r.icc = true;
+        else if (type === 'hvcC' && p + hdr + 18 <= b.length) {
+          // bitDepthLumaMinus8 is the low 3 bits at payload offset 17.
+          if ((b[p + hdr + 17] & 0x07) > 0) r.highBitDepth = true;
+        }
         else if (type === 'mdat') { mdats++; if (mdats > 1) r.multi = true; }
         p += size;
       }
@@ -5544,6 +5548,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
         const h = analyzeHeicSource(bytes);
         out.width = h.width; out.height = h.height;
         if (h.multi) return markUnsafe(out, 'multi-image HEIC');
+        if (h.highBitDepth) return markUnsafe(out, '10-bit HDR HEIC');
         if (h.icc) return markUnsafe(out, 'embedded color profile');
       } else if (e === 'bmp') {
         const bmp = analyzeBmpSource(bytes);
