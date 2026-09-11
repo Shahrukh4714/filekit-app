@@ -5327,6 +5327,335 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     return t;
   })();
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     IMAGE FAMILY — source inspection, safety guards & modern encoders
+     ───────────────────────────────────────────────────────────────────────
+     Canvas re-encoding silently drops color profiles, flattens >8-bit data,
+     mangles CMYK and destroys animation. We inspect the container header and,
+     when re-encoding would lose fidelity, return the original untouched.
+     The encoders (AVIF / progressive MozJPEG / lossless WebP) are vendored
+     WASM, loaded lazily and raced against the canvas result; the smaller
+     candidate wins. Every helper lives in the compress IIFE scope.
+     ═══════════════════════════════════════════════════════════════════════ */
+  const IMAGE_SOURCE_PROBE_BYTES = 131072;
+  const MAX_SAFE_CANVAS_PIXELS = 16 * 1024 * 1024;
+  const MAX_SAFE_CANVAS_SIDE = 4096;
+  const IMAGE_OUTPUT_FORMATS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif' };
+
+  /* Minimal integer/string readers over a Uint8Array (big- and little-endian). */
+  function imgU16BE(b, o) { return (b[o] << 8) | b[o + 1]; }
+  function imgU32BE(b, o) { return ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0; }
+  function imgU16LE(b, o) { return b[o] | (b[o + 1] << 8); }
+  function imgU32LE(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+  function imgAscii(b, o, n) { let s = ''; for (let i = 0; i < n && o + i < b.length; i++) s += String.fromCharCode(b[o + i]); return s; }
+
+  /* JPEG: walk marker segments once; record ICC profile, CMYK (4-component)
+     colour space, sample precision and dimensions. */
+  function analyzeJpegSource(b) {
+    const r = { icc: false, cmyk: false, bits: 8, width: 0, height: 0 };
+    let o = 2;
+    while (o + 1 < b.length) {
+      if (b[o] !== 0xFF) { o++; continue; }
+      const marker = b[o + 1];
+      if (marker === 0xFF) { o++; continue; }        // fill byte
+      if (marker === 0x00) { o += 2; continue; }     // stuffed byte
+      o += 2;
+      if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) continue;
+      if (marker === 0xD9 || marker === 0xDA) break; // EOI or start of scan
+      if (o + 2 > b.length) break;
+      const len = imgU16BE(b, o);
+      if (len < 2 || o + len > b.length) break;
+      if (marker === 0xE2) {
+        if (imgAscii(b, o + 2, 11) === 'ICC_PROFILE') r.icc = true;
+      } else if (marker === 0xC0 || marker === 0xC1 || marker === 0xC2 || marker === 0xC3 ||
+                 (marker >= 0xC5 && marker <= 0xCB) || (marker >= 0xCD && marker <= 0xCF)) {
+        r.bits = b[o + 2];
+        r.height = imgU16BE(b, o + 3);
+        r.width = imgU16BE(b, o + 5);
+        if (b[o + 7] === 4) r.cmyk = true;           // 4 components => CMYK/YCCK
+      }
+      o += len;
+    }
+    return r;
+  }
+
+  /* PNG: read IHDR plus the chunk stream for iCCP (profile) and acTL (APNG). */
+  function analyzePngSource(b) {
+    const r = { icc: false, animated: false, bits: 8, width: 0, height: 0, indexed: false };
+    if (b.length < 26 || imgAscii(b, 12, 4) !== 'IHDR') return r;
+    r.width = imgU32BE(b, 16);
+    r.height = imgU32BE(b, 20);
+    r.bits = b[24];
+    r.indexed = b[25] === 3;
+    let o = 8;
+    while (o + 12 <= b.length) {
+      const len = imgU32BE(b, o);
+      const type = imgAscii(b, o + 4, 4);
+      if (type === 'acTL') r.animated = true;
+      else if (type === 'iCCP') r.icc = true;
+      else if (type === 'IEND') break;
+      if (len > b.length) break;
+      o += 12 + len;
+    }
+    return r;
+  }
+
+  /* WebP: read VP8X flags for ICCP/ANIM, then scan chunks as a fallback. */
+  function analyzeWebpSource(b) {
+    const r = { icc: false, animated: false, width: 0, height: 0 };
+    if (b.length < 16 || imgAscii(b, 0, 4) !== 'RIFF' || imgAscii(b, 8, 4) !== 'WEBP') return r;
+    if (imgAscii(b, 12, 4) === 'VP8X' && b.length >= 30) {
+      const flags = b[20];
+      r.icc = !!(flags & 0x20);
+      r.animated = !!(flags & 0x02);
+      r.width = 1 + (imgU32LE(b, 24) & 0xFFFFFF);
+      r.height = 1 + (imgU32LE(b, 27) & 0xFFFFFF);
+    }
+    let o = 12, guard = 0;
+    while (o + 8 <= b.length && guard++ < 4096) {
+      const id = imgAscii(b, o, 4);
+      const sz = imgU32LE(b, o + 4);
+      if (id === 'ICCP') r.icc = true;
+      else if (id === 'ANIM') r.animated = true;
+      o += 8 + sz + (sz & 1);
+      if (o <= 12) break;
+    }
+    return r;
+  }
+
+  /* GIF: animated when more than one image descriptor follows the header. */
+  function analyzeGifSource(b) {
+    const r = { animated: false, width: 0, height: 0 };
+    if (b.length < 13 || imgAscii(b, 0, 3) !== 'GIF') return r;
+    r.width = imgU16LE(b, 6);
+    r.height = imgU16LE(b, 8);
+    let frames = 0;
+    for (let i = 13; i < b.length; i++) {
+      if (b[i] === 0x2C) { frames++; if (frames > 1) break; }
+      else if (b[i] === 0x3B) break;
+    }
+    r.animated = frames > 1;
+    return r;
+  }
+
+  /* TIFF: walk the first IFD for dimensions, bits/sample and ICC tag 34675. */
+  function analyzeTiffSource(b) {
+    const r = { icc: false, bits: 8, width: 0, height: 0 };
+    const le = b.length > 8 && b[0] === 0x49 && b[1] === 0x49;
+    const be = b.length > 8 && b[0] === 0x4D && b[1] === 0x4D;
+    if (!le && !be) return r;
+    const u16 = (o) => (le ? imgU16LE(b, o) : imgU16BE(b, o));
+    const u32 = (o) => (le ? imgU32LE(b, o) : imgU32BE(b, o));
+    const ifd = u32(4);
+    if (ifd + 2 > b.length) return r;
+    const count = u16(ifd);
+    for (let i = 0; i < count; i++) {
+      const e = ifd + 2 + i * 12;
+      if (e + 12 > b.length) break;
+      const tag = u16(e);
+      const type = u16(e + 2);
+      const val = type === 3 ? u16(e + 8) : (type === 4 ? u32(e + 8) : 0);
+      if (tag === 256) r.width = val;
+      else if (tag === 257) r.height = val;
+      else if (tag === 258) r.bits = val;
+      else if (tag === 34675) r.icc = true;
+    }
+    return r;
+  }
+
+  /* BMP: size, bit depth and (for BITMAPV5HEADER) an embedded ICC profile. */
+  function analyzeBmpSource(b) {
+    const r = { icc: false, bits: 0, width: 0, height: 0 };
+    if (b.length < 54 || b[0] !== 0x42 || b[1] !== 0x4D) return r;
+    r.width = imgU32LE(b, 18);
+    r.height = imgU32LE(b, 22);
+    r.bits = imgU16LE(b, 28);
+    const hdrSize = imgU32LE(b, 14);
+    if (hdrSize >= 124 && b.length >= 14 + 114 && imgU32LE(b, 14 + 110) > 0) r.icc = true;
+    return r;
+  }
+
+  /* HEIC/HEIF: shallow ISO-BMFF box walk for ICC (rICC/prof) and multi-image. */
+  function analyzeHeicSource(b) {
+    const r = { icc: false, multi: false, width: 0, height: 0 };
+    const end = Math.min(b.length, IMAGE_SOURCE_PROBE_BYTES);
+    let mdats = 0;
+    const walk = (start, stop) => {
+      let p = start, guard = 0;
+      while (p + 8 <= stop && guard++ < 2048) {
+        let size = imgU32BE(b, p);
+        const type = imgAscii(b, p + 4, 4);
+        let hdr = 8;
+        if (size === 1) {
+          if (p + 16 > stop) break;
+          size = imgU32BE(b, p + 8) * 4294967296 + imgU32BE(b, p + 12);
+          hdr = 16;
+        } else if (size === 0) {
+          size = stop - p;
+        }
+        if (size < hdr || p + size > stop) break;
+        if (type === 'meta') walk(p + hdr + 4, p + size);
+        else if (type === 'iprp' || type === 'ipco') walk(p + hdr, p + size);
+        else if (type === 'rICC' || type === 'prof') r.icc = true;
+        else if (type === 'colr' && imgAscii(b, p + hdr + 4, 4) === 'prof') r.icc = true;
+        else if (type === 'mdat') { mdats++; if (mdats > 1) r.multi = true; }
+        p += size;
+      }
+    };
+    walk(0, end);
+    return r;
+  }
+
+  function markUnsafe(out, reason) { out.preserve = true; out.reason = reason; return out; }
+
+  /* Decide whether an image can be re-encoded without losing fidelity.
+     Returns { supported, preserve, reason, width, height }. */
+  function inspectRasterSource(bytes, ext) {
+    const out = { supported: true, preserve: false, reason: '', width: 0, height: 0 };
+    const e = String(ext || '').toLowerCase();
+    try {
+      if (e === 'jpg' || e === 'jpeg' || e === 'jfif') {
+        const j = analyzeJpegSource(bytes);
+        out.width = j.width; out.height = j.height;
+        if (j.cmyk) return markUnsafe(out, 'CMYK color image');
+        if (j.bits > 8) return markUnsafe(out, j.bits + '-bit color depth');
+        if (j.icc) return markUnsafe(out, 'embedded color profile');
+      } else if (e === 'png') {
+        const p = analyzePngSource(bytes);
+        out.width = p.width; out.height = p.height;
+        if (p.animated) return markUnsafe(out, 'animated PNG (APNG)');
+        if (p.bits > 8) return markUnsafe(out, p.bits + '-bit color depth');
+        if (p.icc) return markUnsafe(out, 'embedded color profile');
+      } else if (e === 'webp') {
+        const w = analyzeWebpSource(bytes);
+        out.width = w.width; out.height = w.height;
+        if (w.animated) return markUnsafe(out, 'animated WebP');
+        if (w.icc) return markUnsafe(out, 'embedded color profile');
+      } else if (e === 'gif') {
+        const g = analyzeGifSource(bytes);
+        out.width = g.width; out.height = g.height;
+        if (g.animated) return markUnsafe(out, 'animated GIF');
+      } else if (e === 'tiff' || e === 'tif') {
+        const t = analyzeTiffSource(bytes);
+        out.width = t.width; out.height = t.height;
+        if (t.icc) return markUnsafe(out, 'embedded color profile');
+        if (t.bits > 8) return markUnsafe(out, t.bits + '-bit color depth');
+      } else if (e === 'heic' || e === 'heif') {
+        const h = analyzeHeicSource(bytes);
+        out.width = h.width; out.height = h.height;
+        if (h.multi) return markUnsafe(out, 'multi-image HEIC');
+        if (h.icc) return markUnsafe(out, 'embedded color profile');
+      } else if (e === 'bmp') {
+        const bmp = analyzeBmpSource(bytes);
+        out.width = bmp.width; out.height = bmp.height;
+        if (bmp.icc) return markUnsafe(out, 'embedded color profile');
+        if (bmp.bits > 32) return markUnsafe(out, bmp.bits + '-bit color depth');
+      } else if (e === 'psd' || e === 'dds' || e === 'cur' || e === 'ico' ||
+                 e === 'tga' || e === 'ppm' || e === 'pgm' || e === 'pbm') {
+        return markUnsafe(out, 'unsupported image container');
+      }
+      if (out.width > MAX_SAFE_CANVAS_SIDE || out.height > MAX_SAFE_CANVAS_SIDE ||
+          out.width * out.height > MAX_SAFE_CANVAS_PIXELS) {
+        return markUnsafe(out, 'image exceeds safe canvas size');
+      }
+    } catch (err) {
+      return markUnsafe({ supported: false, width: 0, height: 0 }, 'unrecognized image data');
+    }
+    return out;
+  }
+
+  /* Normalise an encoded blob's MIME/extension to what was actually produced. */
+  function canonicalImageOutput(blob, fallbackMime, fallbackExt) {
+    const actualMime = (blob && blob.type) || fallbackMime;
+    const actualExt = IMAGE_OUTPUT_FORMATS[actualMime];
+    if (!actualExt) return { blob, mime: fallbackMime, ext: fallbackExt };
+    return { blob, mime: actualMime, ext: actualExt };
+  }
+
+  function encodeCanvasImage(canvas, requestedMime, quality, fallbackExt) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((encoded) => {
+        if (!encoded) { reject(new Error('Canvas encoding failed.')); return; }
+        resolve(canonicalImageOutput(encoded, requestedMime, fallbackExt));
+      }, requestedMime, quality);
+    });
+  }
+
+  /* Vendored WASM encoders. Dynamic import() in a classic script resolves
+     against the script path (dist/js/…), so we always build document-absolute
+     URLs. Loaded once, lazily; a failed load resets so a later call can retry. */
+  function imageVendorUrl(file) { return new URL(file, document.baseURI).href; }
+
+  async function loadVendorEncoder(modulePath, wasmPath, label) {
+    const [factory, wasmRes] = await Promise.all([
+      import(/* @vite-ignore */ imageVendorUrl(modulePath)),
+      fetch(imageVendorUrl(wasmPath))
+    ]);
+    if (!wasmRes.ok) throw new Error(label + ' wasm unavailable');
+    const wasmBinary = new Uint8Array(await wasmRes.arrayBuffer());
+    return factory.default({ wasmBinary, noInitialRun: true });
+  }
+
+  const AVIF_ENCODE_DEFAULTS = {
+    quality: 40, qualityAlpha: 40, denoiseLevel: 0, tileColsLog2: 0, tileRowsLog2: 0,
+    speed: 6, subsample: 1, chromaDeltaQ: false, sharpness: 0, tune: 0,
+    enableSharpYUV: false, bitDepth: 8, lossless: false
+  };
+  let __avifModulePromise = null;
+  async function encodeAvifMain(imageData, opts) {
+    if (!__avifModulePromise) {
+      __avifModulePromise = loadVendorEncoder('vendor/avif/avif_enc.js', 'vendor/avif/avif_enc.wasm', 'AVIF');
+      __avifModulePromise.catch(() => { __avifModulePromise = null; });
+    }
+    const mod = await __avifModulePromise;
+    if (!mod || typeof mod.encode !== 'function') throw new Error('AVIF encoder unavailable');
+    const rgba = new Uint8Array(imageData.data.buffer, imageData.data.byteOffset, imageData.data.byteLength);
+    const out = mod.encode(rgba, imageData.width, imageData.height, { ...AVIF_ENCODE_DEFAULTS, ...opts });
+    if (!out) throw new Error('AVIF encoding failed.');
+    return new Uint8Array(out.buffer ? out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) : out);
+  }
+
+  const MOZJPEG_ENCODE_DEFAULTS = {
+    quality: 75, baseline: false, arithmetic: false, progressive: true,
+    optimize_coding: true, smoothing: 0, color_space: 3, quant_table: 3,
+    trellis_multipass: false, trellis_opt_zero: false, trellis_opt_table: false,
+    trellis_loops: 1, auto_subsample: true, chroma_subsample: 2,
+    separate_chroma_quality: false, chroma_quality: 75
+  };
+  let __mozjpegModulePromise = null;
+  async function encodeMozjpegMain(imageData, opts) {
+    if (!__mozjpegModulePromise) {
+      __mozjpegModulePromise = loadVendorEncoder('vendor/mozjpeg/mozjpeg_enc.js', 'vendor/mozjpeg/mozjpeg_enc.wasm', 'MozJPEG');
+      __mozjpegModulePromise.catch(() => { __mozjpegModulePromise = null; });
+    }
+    const mod = await __mozjpegModulePromise;
+    if (!mod || typeof mod.encode !== 'function') throw new Error('MozJPEG encoder unavailable');
+    const out = mod.encode(imageData.data, imageData.width, imageData.height, { ...MOZJPEG_ENCODE_DEFAULTS, ...opts });
+    if (!out) throw new Error('MozJPEG encoding failed.');
+    return new Uint8Array(out.buffer ? out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) : out);
+  }
+
+  const WEBP_LOSSLESS_DEFAULTS = {
+    quality: 100, target_size: 0, target_PSNR: 0, method: 4, sns_strength: 50,
+    filter_strength: 60, filter_sharpness: 0, filter_type: 1, partitions: 0,
+    segments: 4, pass: 1, show_compressed: 0, preprocessing: 0, autofilter: 0,
+    partition_limit: 0, alpha_compression: 1, alpha_filtering: 1, alpha_quality: 100,
+    lossless: 1, exact: 1, image_hint: 0, emulate_jpeg_size: 0, thread_level: 0,
+    low_memory: 0, near_lossless: 100, use_delta_palette: 0, use_sharp_yuv: 0
+  };
+  let __webpLosslessModulePromise = null;
+  async function encodeLosslessWebpMain(imageData) {
+    if (!__webpLosslessModulePromise) {
+      __webpLosslessModulePromise = loadVendorEncoder('vendor/webp/webp_enc.js', 'vendor/webp/webp_enc.wasm', 'WebP');
+      __webpLosslessModulePromise.catch(() => { __webpLosslessModulePromise = null; });
+    }
+    const mod = await __webpLosslessModulePromise;
+    if (!mod || typeof mod.encode !== 'function') throw new Error('WebP encoder unavailable');
+    const out = mod.encode(imageData.data, imageData.width, imageData.height, { ...WEBP_LOSSLESS_DEFAULTS });
+    if (!out) throw new Error('WebP encoding failed.');
+    return new Uint8Array(out.buffer ? out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) : out);
+  }
+
   function encodeIndexedPng(rgbaBytes, width, height) {
     if (!rgbaBytes || width <= 0 || height <= 0 || !window.fflate) return null;
     const totalPixels = width * height;
@@ -7958,6 +8287,22 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
             return { blob: file, filename: file.name, mime: 'image/svg+xml', preview: 'image' };
           }
 
+          // Safety inspection: never re-encode data the canvas cannot represent
+          // faithfully (color profiles, CMYK, >8-bit, animation, oversized bitmaps).
+          try {
+            const probe = new Uint8Array(await file.slice(0, IMAGE_SOURCE_PROBE_BYTES).arrayBuffer());
+            const info = inspectRasterSource(probe, ext);
+            if (info.preserve) {
+              return {
+                blob: file,
+                filename: file.name,
+                mime: file.type || 'image/jpeg',
+                preview: 'image',
+                metrics: { untouched: true, reason: info.reason }
+              };
+            }
+          } catch (probeErr) { /* if probing fails, fall through to the normal path */ }
+
           let sourceBlob = file;
           if (ext === 'heic' || ext === 'heif') {
             if (typeof window.heic2any !== 'function') {
@@ -8036,6 +8381,22 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
                 };
               }
             } catch (pngErr) {}
+            // PNG Engine 2: lossless WebP beats PNG on >256-color flat art
+            // (screenshots, UI, diagrams) with zero quality loss.
+            try {
+              const lwCvs = renderResampled(origW, origH, false);
+              const lwData = lwCvs.getContext('2d').getImageData(0, 0, origW, origH);
+              lwCvs.width = 0; lwCvs.height = 0;
+              const lw = await encodeLosslessWebpMain(lwData);
+              if (lw && lw.length < file.size) {
+                return {
+                  blob: new Blob([lw], { type: 'image/webp' }),
+                  filename: `${U.baseName(file.name)}-compressed.webp`,
+                  mime: 'image/webp',
+                  preview: 'image'
+                };
+              }
+            } catch (lwErr) {}
             outMime = 'image/webp';
             outExt = 'webp';
           } else if (ext === 'bmp' || ext === 'tiff' || ext === 'tga' || ext === 'ppm') {
@@ -8101,8 +8462,36 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
               }
             }
             const cvs = renderResampled(w, h, outMime === 'image/jpeg');
-            bestBlob = await new Promise(r => cvs.toBlob(r, outMime, targetQuality));
+            const baseline = await encodeCanvasImage(cvs, outMime, targetQuality, outExt);
+            bestBlob = baseline.blob; outMime = baseline.mime; outExt = baseline.ext;
+
+            // Race progressive MozJPEG against the canvas baseline JPEG.
+            if (outMime === 'image/jpeg') {
+              try {
+                const id = cvs.getContext('2d').getImageData(0, 0, cvs.width, cvs.height);
+                const mq = Math.max(1, Math.min(100, Math.round(targetQuality * 100)));
+                const mz = await encodeMozjpegMain(id, { quality: mq, chroma_quality: mq });
+                if (mz.length < bestBlob.size) bestBlob = new Blob([mz], { type: 'image/jpeg' });
+              } catch (mzErr) {}
+            }
+            // Maximum tier: race lossy AVIF (best bytes-per-quality).
+            if (selectedTier === 'maximum') {
+              try {
+                const id = cvs.getContext('2d').getImageData(0, 0, cvs.width, cvs.height);
+                const avifQ = outMime === 'image/jpeg' ? 38 : 45;
+                const av = await encodeAvifMain(id, { quality: avifQ, qualityAlpha: avifQ, speed: 6 });
+                if (av.length < bestBlob.size) {
+                  bestBlob = new Blob([av], { type: 'image/avif' });
+                  outMime = 'image/avif'; outExt = 'avif';
+                }
+              } catch (avifErr) {}
+            }
             cvs.width = 0; cvs.height = 0;
+          }
+
+          if (bestBlob) {
+            const canon = canonicalImageOutput(bestBlob, outMime, outExt);
+            bestBlob = canon.blob; outMime = canon.mime; outExt = canon.ext;
           }
 
           if (bestBlob && (bestBlob.size < file.size || ext === 'bmp' || ext === 'tiff' || ext === 'tga')) {
