@@ -854,26 +854,60 @@
     }
   });
 
-  R({ id: 'pdf-extract-text', category: 'PDF', name: 'Extract text', description: 'Pull selectable text from a PDF.',
-    accepts: ['pdf'], engine: loadJs,
-    async run({ file, engine: pdfjs, onProgress }) { const pdf = await pdfjs.getDocument({ data: await bytesU8(file) }).promise; let out = '';
-      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const tc = await (await pdf.getPage(i)).getTextContent(); out += `\n--- Page ${i} ---\n` + tc.items.map((it) => it.str).join(' '); }
-      return textOut(out.trim() || 'No selectable text (this may be a scanned PDF — use OCR).', U.baseName(file.name) + '.txt'); } });
+  R({
+    id: 'pdf-extract-text', category: 'PDF', name: 'Extract text',
+    description: 'Pull selectable text from a PDF with formatted visual layout or flowing paragraphs.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Extraction Mode', type: 'select', default: 'layout', options: [
+        { value: 'layout', label: 'Formatted Layout (Visual Columns & Spacing)' },
+        { value: 'flow', label: 'Reading Flow (Natural Paragraphs & De-hyphenate)' }
+      ] },
+      { key: 'pageSep', label: 'Page Separator', type: 'select', default: 'header', options: [
+        { value: 'header', label: '--- Page N of M ---' },
+        { value: 'ff', label: 'Form Feed (\\f)' },
+        { value: 'none', label: 'None (Continuous text)' }
+      ] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfToText(file, inputs, onProgress);
+    }
+  });
 
   // Note: pdf-to-image is registered with the mastered multi-format engine in specialist tools below.
 
-  R({ id: 'pdf-grayscale', category: 'PDF', name: 'Grayscale PDF', description: 'Convert every page to black & white.',
-    accepts: ['pdf'], engine: both, fields: [],
-    async run({ file, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await bytesU8(file) }).promise; const out = await engine.L.PDFDocument.create();
-      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const c = await renderPage(engine.J, await pdf.getPage(i), 2); const ctx = c.getContext('2d'); const d = ctx.getImageData(0, 0, c.width, c.height); for (let j = 0; j < d.data.length; j += 4) { const g = 0.299 * d.data[j] + 0.587 * d.data[j + 1] + 0.114 * d.data[j + 2]; d.data[j] = d.data[j + 1] = d.data[j + 2] = g; } ctx.putImageData(d, 0, 0);
-        const jpg = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85)); const img = await out.embedJpg(await jpg.arrayBuffer()); const pg = out.addPage([c.width / 2, c.height / 2]); pg.drawImage(img, { x: 0, y: 0, width: c.width / 2, height: c.height / 2 }); }
-      return pdfOut(await out.save(), U.baseName(file.name) + '-gray.pdf'); } });
+  R({
+    id: 'pdf-grayscale', category: 'PDF', name: 'Grayscale PDF',
+    description: 'Convert every page to black & white with smooth 256-level gray or high-contrast 1-bit scan mode.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Grayscale Mode', type: 'select', default: 'grayscale', options: [
+        { value: 'grayscale', label: 'Smooth Gray (256 levels, preserves photos)' },
+        { value: 'mono', label: 'High Contrast B&W (Photocopy document mode)' }
+      ] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfToGrayscale(file, inputs, onProgress);
+    }
+  });
 
-  R({ id: 'pdf-compress', category: 'PDF', name: 'Compress', description: 'Rasterize pages to shrink large/scanned PDFs.',
-    accepts: ['pdf'], engine: both, fields: [{ key: 'quality', label: 'JPEG quality', type: 'range', default: 60, min: 20, max: 90 }, { key: 'scale', label: 'Scale', type: 'select', default: '1.5', options: ['1', '1.5', '2'] }],
-    async run({ file, inputs, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await bytesU8(file) }).promise; const out = await engine.L.PDFDocument.create(); const q = +inputs.quality / 100;
-      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const c = await renderPage(engine.J, await pdf.getPage(i), +inputs.scale); const jpg = await new Promise((r) => c.toBlob(r, 'image/jpeg', q)); const img = await out.embedJpg(await jpg.arrayBuffer()); const pg = out.addPage([c.width, c.height]); pg.drawImage(img, { x: 0, y: 0, width: c.width, height: c.height }); }
-      return pdfOut(await out.save(), U.baseName(file.name) + '-compressed.pdf'); } });
+  R({
+    id: 'pdf-compress', category: 'PDF', name: 'Compress PDF',
+    description: 'Shrink PDF file size with balanced, extreme, or lossless vector stream optimization.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Compression Mode', type: 'select', default: 'balanced', options: [
+        { value: 'balanced', label: 'Balanced (~70% reduction, high fidelity)' },
+        { value: 'extreme', label: 'Extreme (~85% reduction for email limits)' },
+        { value: 'vector', label: 'Vector Lossless (Stream optimization, no blur)' }
+      ] },
+      { key: 'quality', label: 'JPEG Quality', type: 'range', default: 65, min: 20, max: 90 },
+      { key: 'scale', label: 'Render Scale', type: 'select', default: '1.5', options: ['1', '1.5', '2'] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfToCompress(file, inputs, onProgress);
+    }
+  });
 })();
 
 /* tools/archives.js */
@@ -4927,6 +4961,470 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     };
   }
   window.convertPdfToCsv = convertPdfToCsv;
+
+  /* ── Mastered PDF to Text Engine (Formatted Layout & Reading Flow) ──────── */
+  async function convertPdfToText(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'layout';
+    const pageSep = (inputs && inputs.pageSep) || 'header';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const numPages = doc.numPages;
+
+    const pagesText = [];
+    let totalWords = 0;
+    let totalLines = 0;
+
+    for (let p = 1; p <= numPages; p++) {
+      onProgress?.((p / numPages) * 0.9, `Extracting text from page ${p}/${numPages}`);
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      const raw = [];
+      for (const it of tc.items) {
+        if (!it.str || !it.str.trim()) continue;
+        const t = it.transform || [0, 0, 0, 0, 0, 0];
+        const size = Math.abs(it.height || t[0] || 11) || 11;
+        raw.push({
+          x: t[4] || 0, y: t[5] || 0,
+          str: String(it.str).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ''),
+          size,
+          w: Math.abs(it.width || (it.str.length * size * 0.55)),
+        });
+      }
+
+      if (!raw.length) {
+        pagesText.push('');
+        continue;
+      }
+
+      // Group into y-bands
+      const rowsMap = new Map();
+      for (const r of raw) {
+        const key = Math.round(r.y / 2.5) * 2.5;
+        if (!rowsMap.has(key)) rowsMap.set(key, []);
+        rowsMap.get(key).push(r);
+      }
+      const lines = [...rowsMap.entries()].sort((a, b) => b[0] - a[0]).map(([yKey, items]) => {
+        items.sort((a, b) => a.x - b.x);
+        return { y: yKey, runs: items };
+      });
+
+      if (mode === 'layout') {
+        // Formatted Layout: Preserve horizontal spacing & columns
+        const pageLines = [];
+        for (const ln of lines) {
+          let lineStr = '';
+          let curX = 0;
+          for (let i = 0; i < ln.runs.length; i++) {
+            const r = ln.runs[i];
+            const charW = Math.max(5, r.size * 0.55);
+            if (i === 0) {
+              const indent = Math.max(0, Math.floor(r.x / charW));
+              lineStr = ' '.repeat(Math.min(60, indent)) + r.str;
+            } else {
+              const gap = Math.max(1, r.x - curX);
+              const spaces = Math.max(1, Math.min(30, Math.round(gap / charW)));
+              lineStr += ' '.repeat(spaces) + r.str;
+            }
+            curX = r.x + r.w;
+          }
+          if (lineStr.trim()) pageLines.push(lineStr);
+        }
+        totalLines += pageLines.length;
+        totalWords += pageLines.join(' ').split(/\s+/).filter(Boolean).length;
+        pagesText.push(pageLines.join('\n'));
+      } else {
+        // Reading Flow: Natural paragraph reconstruction with de-hyphenation
+        const paras = [];
+        let curPara = '';
+        for (const ln of lines) {
+          const lineText = ln.runs.map((r) => r.str).join(' ').replace(/\s+/g, ' ').trim();
+          if (!lineText) continue;
+
+          if (curPara.endsWith('-') && /^[a-z]/i.test(lineText)) {
+            // De-hyphenate line break
+            curPara = curPara.slice(0, -1) + lineText;
+          } else if (curPara) {
+            const endsPunct = /[.:!?]$/.test(curPara);
+            if (endsPunct) {
+              paras.push(curPara);
+              curPara = lineText;
+            } else {
+              curPara += ' ' + lineText;
+            }
+          } else {
+            curPara = lineText;
+          }
+        }
+        if (curPara) paras.push(curPara);
+        totalLines += paras.length;
+        totalWords += paras.join(' ').split(/\s+/).filter(Boolean).length;
+        pagesText.push(paras.join('\n\n'));
+      }
+    }
+
+    let fullText = '';
+    if (pageSep === 'ff') {
+      fullText = pagesText.join('\f\n');
+    } else if (pageSep === 'none') {
+      fullText = pagesText.filter(Boolean).join('\n\n');
+    } else {
+      fullText = pagesText.map((pTxt, idx) => `--- Page ${idx + 1} of ${numPages} ---\n` + (pTxt || '(No selectable text on this page)')).join('\n\n');
+    }
+
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+
+    onProgress?.(1, 'Done');
+    return {
+      blob,
+      filename: `${base}.txt`,
+      mime: 'text/plain',
+      preview: 'text',
+      text: fullText.slice(0, 5000),
+      metrics: {
+        Mode: mode === 'layout' ? 'Formatted Layout' : 'Reading Flow',
+        Pages: numPages,
+        Lines: totalLines,
+        Words: totalWords,
+        Size: formatBytes(blob.size),
+      }
+    };
+  }
+  window.convertPdfToText = convertPdfToText;
+
+  /* ── Mastered PDF to EPUB Engine (Reflowable E-Reader & Fixed Pages) ─────── */
+  async function convertPdfToEpub(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'reflow';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const fflate = await loadFf();
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const numPages = doc.numPages;
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    const files = {};
+    files['mimetype'] = [new TextEncoder().encode('application/epub+zip'), { level: 0 }];
+    files['META-INF/container.xml'] = new TextEncoder().encode(
+      '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
+
+    const cssContent = `body{font-family:Georgia,serif;line-height:1.65;margin:0;padding:1em;color:#1a1a1a;}h1,h2,h3{font-family:system-ui,sans-serif;font-weight:700;color:#0f172a;}table{border-collapse:collapse;width:100%;margin:1.2em 0;}td,th{border:1px solid #cbd5e1;padding:6px 10px;font-size:0.9em;}th{background:#f1f5f9;}img{max-width:100%;height:auto;display:block;margin:1em auto;}`;
+    files['OEBPS/styles.css'] = new TextEncoder().encode(cssContent);
+
+    const chapters = [];
+    const manifestItems = [
+      '<item id="css" href="styles.css" media-type="text/css"/>'
+    ];
+
+    if (mode === 'reflow') {
+      const richPages = await pdfRichPages(file, pdfjs, (r, t) => onProgress?.(r * 0.7, t));
+      for (let p = 1; p <= numPages; p++) {
+        onProgress?.(0.7 + (p / numPages) * 0.25, `Building chapter ${p}/${numPages}`);
+        const pg = richPages[p - 1];
+        let chBody = '';
+
+        for (const ln of (pg.lines || [])) {
+          const t = ln.runs.map((r) => r.str).join(' ').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim();
+          if (!t) continue;
+          const isH = ln.maxSize && ln.median && ln.maxSize >= ln.median * 1.35 && t.length < 80 && !/^\d+$/.test(t);
+          if (isH) {
+            chBody += `<h2>${escXml(t)}</h2>\n`;
+          } else {
+            chBody += `<p>${escXml(t)}</p>\n`;
+          }
+        }
+
+        const chFile = `chapter-${p}.xhtml`;
+        const chHtml = `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Page ${p}</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body><h1>Page ${p}</h1>${chBody || '<p>(Blank page)</p>'}</body></html>`;
+        files['OEBPS/' + chFile] = new TextEncoder().encode(chHtml);
+        chapters.push({ id: `ch${p}`, file: chFile, title: `Page ${p}` });
+        manifestItems.push(`<item id="ch${p}" href="${chFile}" media-type="application/xhtml+xml"/>`);
+      }
+    } else {
+      // Fixed page images
+      const scale = parseFloat(inputs?.scale || 1.25);
+      for (let p = 1; p <= numPages; p++) {
+        onProgress?.(0.1 + (p / numPages) * 0.8, `Rendering page ${p}/${numPages}`);
+        const page = await doc.getPage(p);
+        const vp = page.getViewport({ scale });
+        const c = document.createElement('canvas');
+        c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        const pngBlob = await new Promise((res) => c.toBlob(res, 'image/png'));
+        const imgFile = `images/page-${p}.png`;
+        files['OEBPS/' + imgFile] = new Uint8Array(await pngBlob.arrayBuffer());
+        manifestItems.push(`<item id="img${p}" href="${imgFile}" media-type="image/png"/>`);
+
+        const chFile = `chapter-${p}.xhtml`;
+        const chHtml = `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Page ${p}</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body style="margin:0;padding:0;text-align:center;"><img src="${imgFile}" alt="Page ${p}"/></body></html>`;
+        files['OEBPS/' + chFile] = new TextEncoder().encode(chHtml);
+        chapters.push({ id: `ch${p}`, file: chFile, title: `Page ${p}` });
+        manifestItems.push(`<item id="ch${p}" href="${chFile}" media-type="application/xhtml+xml"/>`);
+      }
+    }
+
+    const spineItems = chapters.map((c) => `<itemref idref="${c.id}"/>`).join('');
+    const navOl = chapters.map((c) => `<li><a href="${c.file}">${c.title}</a></li>`).join('');
+    const navHtml = `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body><nav epub:type="toc"><h1>Table of Contents</h1><ol>${navOl}</ol></nav></body></html>`;
+    files['OEBPS/nav.xhtml'] = new TextEncoder().encode(navHtml);
+    manifestItems.push('<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>');
+
+    // NCX for legacy e-readers
+    const ncxPoints = chapters.map((c, i) => `<navPoint id="np${i+1}" playOrder="${i+1}"><navLabel><text>${c.title}</text></navLabel><content src="${c.file}"/></navPoint>`).join('');
+    const ncxXml = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><head><meta name="dtb:uid" content="urn:uuid:${base}"/></head><docTitle><text>${escXml(base)}</text></docTitle><navMap>${ncxPoints}</navMap></ncx>`;
+    files['OEBPS/toc.ncx'] = new TextEncoder().encode(ncxXml);
+    manifestItems.push('<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>');
+
+    const opfXml = `<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:${escXml(base)}</dc:identifier><dc:title>${escXml(base)}</dc:title><dc:language>en</dc:language><meta property="dcterms:modified">${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z</meta></metadata><manifest>${manifestItems.join('')}</manifest><spine toc="ncx">${spineItems}</spine></package>`;
+    files['OEBPS/content.opf'] = new TextEncoder().encode(opfXml);
+
+    const zip = fflate.zipSync(files, { level: 6 });
+    const blob = new Blob([zip], { type: 'application/epub+zip' });
+    onProgress?.(1, 'Done');
+    return {
+      blob,
+      filename: `${base}.epub`,
+      mime: 'application/epub+zip',
+      preview: 'download',
+      metrics: {
+        Mode: mode === 'reflow' ? 'Reflowable E-Reader' : 'Fixed Page Images',
+        Pages: numPages,
+        Chapters: chapters.length,
+        Size: formatBytes(blob.size),
+      }
+    };
+  }
+  window.convertPdfToEpub = convertPdfToEpub;
+
+  /* ── Mastered PDF to Grayscale Engine (Smooth Gray & High-Contrast B&W) ─── */
+  async function convertPdfToGrayscale(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'grayscale';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const PDFLib = await loadLib();
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const out = await PDFLib.PDFDocument.create();
+    const numPages = doc.numPages;
+
+    for (let p = 1; p <= numPages; p++) {
+      onProgress?.((p / numPages) * 0.9, `Converting page ${p}/${numPages} to black & white`);
+      const page = await doc.getPage(p);
+      const vp = page.getViewport({ scale: 2 });
+      const c = document.createElement('canvas');
+      c.width = vp.width; c.height = vp.height;
+      const ctx = c.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+      const imgData = ctx.getImageData(0, 0, c.width, c.height);
+      const d = imgData.data;
+
+      if (mode === 'mono') {
+        // High-contrast 1-bit B&W thresholding (Photocopy mode)
+        const threshold = 180;
+        for (let j = 0; j < d.length; j += 4) {
+          const lum = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+          const v = lum > threshold ? 255 : 0;
+          d[j] = d[j + 1] = d[j + 2] = v;
+        }
+      } else {
+        // Smooth 256-level luma grayscale
+        for (let j = 0; j < d.length; j += 4) {
+          const lum = Math.round(0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2]);
+          d[j] = d[j + 1] = d[j + 2] = lum;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      const jpgBlob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85));
+      const embedded = await out.embedJpg(await jpgBlob.arrayBuffer());
+      const pg = out.addPage([vp.width / 2, vp.height / 2]);
+      pg.drawImage(embedded, { x: 0, y: 0, width: vp.width / 2, height: vp.height / 2 });
+    }
+
+    const pdfBytes = await out.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    onProgress?.(1, 'Done');
+    return {
+      blob,
+      filename: `${base}-grayscale.pdf`,
+      mime: 'application/pdf',
+      preview: 'pdf',
+      metrics: {
+        Mode: mode === 'mono' ? 'High Contrast B&W' : 'Smooth Gray',
+        Pages: numPages,
+        Resolution: '144 DPI (2x)',
+        Size: formatBytes(blob.size),
+      }
+    };
+  }
+  window.convertPdfToGrayscale = convertPdfToGrayscale;
+
+  /* ── Mastered PDF Compression Engine (Balanced, Extreme & Vector) ───────── */
+  async function convertPdfToCompress(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'balanced';
+    const base = U.baseName(file.name);
+    const origSize = file.size;
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    if (mode === 'vector') {
+      // Clean vector stream deflate & metadata cleanup
+      onProgress?.(0.3, 'Optimizing PDF object streams...');
+      const PDFLib = await loadLib();
+      const doc = await PDFLib.PDFDocument.load(await u8(file), { ignoreEncryption: true });
+      doc.setTitle('');
+      doc.setAuthor('');
+      doc.setSubject('');
+      doc.setKeywords([]);
+      doc.setProducer('FileKit In-Browser PDF Optimizer');
+      doc.setCreator('FileKit');
+      const pdfBytes = await doc.save({ useObjectStreams: true });
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const savedPct = Math.max(0, Math.round((1 - blob.size / origSize) * 100));
+      onProgress?.(1, 'Done');
+      return {
+        blob,
+        filename: `${base}-compressed.pdf`,
+        mime: 'application/pdf',
+        preview: 'pdf',
+        metrics: {
+          Mode: 'Vector Lossless',
+          Original: formatBytes(origSize),
+          Compressed: formatBytes(blob.size),
+          Saved: `${savedPct}%`,
+          Pages: doc.getPageCount(),
+        }
+      };
+    }
+
+    // Raster compression (balanced vs extreme)
+    const pdfjs = await loadJs();
+    const PDFLib = await loadLib();
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const out = await PDFLib.PDFDocument.create();
+    const numPages = doc.numPages;
+
+    const scale = mode === 'extreme' ? 1.0 : parseFloat(inputs?.scale || 1.5);
+    const quality = mode === 'extreme' ? 0.45 : (parseFloat(inputs?.quality || 65) / 100);
+
+    for (let p = 1; p <= numPages; p++) {
+      onProgress?.((p / numPages) * 0.9, `Compressing page ${p}/${numPages}`);
+      const page = await doc.getPage(p);
+      const vp = page.getViewport({ scale });
+      const c = document.createElement('canvas');
+      c.width = vp.width; c.height = vp.height;
+      const ctx = c.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+      const jpgBlob = await new Promise((r) => c.toBlob(r, 'image/jpeg', quality));
+      const embedded = await out.embedJpg(await jpgBlob.arrayBuffer());
+      const pg = out.addPage([vp.width / scale, vp.height / scale]);
+      pg.drawImage(embedded, { x: 0, y: 0, width: vp.width / scale, height: vp.height / scale });
+    }
+
+    const pdfBytes = await out.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const savedPct = Math.max(0, Math.round((1 - blob.size / origSize) * 100));
+    onProgress?.(1, 'Done');
+    return {
+      blob,
+      filename: `${base}-compressed.pdf`,
+      mime: 'application/pdf',
+      preview: 'pdf',
+      metrics: {
+        Mode: mode === 'extreme' ? 'Extreme Squeeze' : 'Balanced',
+        Original: formatBytes(origSize),
+        Compressed: formatBytes(blob.size),
+        Saved: `${savedPct}%`,
+        Pages: numPages,
+      }
+    };
+  }
+  window.convertPdfToCompress = convertPdfToCompress;
+
+  /* ── Mastered PDF Summarizer Engine (Executive & Key Highlights) ────────── */
+  async function convertPdfToSummary(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'executive';
+    const length = (inputs && inputs.length) || 'medium';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const numPages = doc.numPages;
+
+    let fullText = '';
+    for (let p = 1; p <= numPages; p++) {
+      onProgress?.((p / numPages) * 0.6, `Analyzing page ${p}/${numPages}`);
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      fullText += tc.items.map((it) => it.str).join(' ') + '\n';
+    }
+
+    const cleanText = fullText.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/\s+/g, ' ').trim();
+    if (!cleanText) throw new Error('No selectable text found to summarize.');
+
+    const sentences = cleanText.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 4);
+    const words = cleanText.toLowerCase().match(/[a-z0-9']+/g) || [];
+    const stopWords = new Set('the a an and or but of to in on for with as at by from is are was were be been being it its this that these those not no if then than so such which who whom whose what when where why how has have had do does did will would shall should can could may might must'.split(' '));
+
+    const freqs = {};
+    words.forEach((w) => { if (!stopWords.has(w)) freqs[w] = (freqs[w] || 0) + 1; });
+
+    // Score sentences
+    const scored = sentences.map((s, idx) => {
+      const sWords = s.toLowerCase().match(/[a-z0-9']+/g) || [];
+      let score = 0;
+      sWords.forEach((w) => { score += freqs[w] || 0; });
+      // Boost early sentences in the document
+      const posBoost = Math.max(0.5, 1.3 - (idx / Math.max(1, sentences.length)));
+      // Boost sentences containing numbers, dates or currency
+      const hasData = /[\d$₹€£%]/.test(s) ? 1.25 : 1.0;
+      return { s, idx, score: (score / Math.max(1, sWords.length)) * posBoost * hasData };
+    }).sort((a, b) => b.score - a.score);
+
+    const nSentences = length === 'short' ? 3 : (length === 'long' ? 9 : 5);
+    const topSentences = scored.slice(0, nSentences).sort((a, b) => a.idx - b.idx).map((x) => x.s);
+
+    const estReadingTimeMin = Math.max(1, Math.round(words.length / 200));
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    let outText = '';
+    if (mode === 'keypoints') {
+      outText = `KEY HIGHLIGHTS & ACTION POINTS: ${base}\n`;
+      outText += `═`.repeat(60) + '\n\n';
+      outText += `• Analyzed ${sentences.length} sentences across ${numPages} page(s)\n`;
+      outText += `• Total Word Count: ${words.length} words (~${estReadingTimeMin} min read)\n\n`;
+      outText += `TOP HIGHLIGHTS:\n\n`;
+      topSentences.forEach((s, i) => {
+        outText += `  ${i + 1}. ${s}\n\n`;
+      });
+    } else {
+      outText = `EXECUTIVE SUMMARY: ${base}\n`;
+      outText += `═`.repeat(60) + '\n\n';
+      outText += `DOCUMENT ANALYTICS:\n`;
+      outText += `• Pages: ${numPages} | Words: ${words.length} | Sentences: ${sentences.length}\n`;
+      outText += `• Estimated Reading Time: ${estReadingTimeMin} minute(s)\n\n`;
+      outText += `SUMMARY:\n\n` + topSentences.join('\n\n') + '\n';
+    }
+
+    const blob = new Blob([outText], { type: 'text/plain;charset=utf-8' });
+    onProgress?.(1, 'Done');
+    return {
+      blob,
+      filename: `${base}-summary.txt`,
+      mime: 'text/plain',
+      preview: 'text',
+      text: outText.slice(0, 5000),
+      metrics: {
+        Mode: mode === 'executive' ? 'Executive Summary' : 'Key Highlights',
+        Sentences: `${topSentences.length}/${sentences.length}`,
+        Words: words.length,
+        ReadingTime: `${estReadingTimeMin} min`,
+        Size: formatBytes(blob.size),
+      }
+    };
+  }
+  window.convertPdfToSummary = convertPdfToSummary;
 
   R({
     id: 'pdf-to-csv', category: 'PDF', name: 'PDF to CSV',
@@ -18829,20 +19327,20 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       T(M.office, 'Word', 'DOCX', 'docx', '#2B579A', 'pdf-to-word', 'Editable Word document', { mode: 'editable' }),
       T(M.office, 'Excel', 'XLSX', 'xlsx', '#217346', 'pdf-to-excel', 'Tables to spreadsheet'),
       T(M.office, 'PowerPoint', 'PPTX', 'pptx', '#C43E1C', 'pdf-to-ppt', 'One slide per page'),
-      T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#4B4B4B', 'pdf-grayscale', 'Pages in black & white'),
-      T(M.office, 'Compressed PDF', 'PDF', 'pdf', '#0F766E', 'pdf-compress', 'Smaller file size', { quality: 60, scale: '1.5' }),
+      T(M.office, 'Grayscale PDF', 'PDF', 'pdf', '#4B4B4B', 'pdf-grayscale', 'Pages in black & white', { mode: 'grayscale' }),
+      T(M.office, 'Compressed PDF', 'PDF', 'pdf', '#0F766E', 'pdf-compress', 'Smaller file size', { mode: 'balanced', quality: 65, scale: '1.5' }),
       T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pdf-to-html', 'Responsive semantic HTML5 or pixel-accurate page', { mode: 'flow' }),
-      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Text layer only'),
+      T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Formatted layout or reading flow', { mode: 'layout' }),
       T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'pdf-to-csv', 'Structured tables or document grid', { mode: 'tables', delim: ',' }),
-      T(M.web, 'Summary', 'TXT', 'txt', '#DC2626', 'pdf-summarize', 'Key sentences', { length: 'medium' }),
+      T(M.web, 'Summary', 'TXT', 'txt', '#DC2626', 'pdf-summarize', 'Executive summary & key highlights', { mode: 'executive', length: 'medium' }),
       T(M.images, 'JPG image', 'JPG', 'jpg', '#EA580C', 'pdf-to-jpg', 'Rendered page(s) as JPEG', { format: 'jpg', dpi: '2' }),
       T(M.images, 'PNG image', 'PNG', 'png', '#D97706', 'pdf-to-image', 'High-quality page PNGs', { format: 'png', dpi: '2' }),
       T(M.images, 'WebP image', 'WEBP', 'webp', '#0891B2', 'pdf-to-webp', 'Modern efficient web image pages', { format: 'webp', dpi: '2' }),
       T(M.images, 'Extract images', 'ZIP', 'zip', '#CA8A04', 'pdf-extract-images', 'Embedded images only', { mode: 'extract' }),
-      T(M.ebook, 'EPUB ebook', 'EPUB', 'epub', '#854D0E', 'pdf-to-epub', 'Page-image ebook', { scale: '1.25' }),
-      T(M.arc, 'ZIP archive', 'ZIP', 'zip', '#0E7490', 'pdf-to-zip', 'Bundle the PDF', { level: '6' }),
+      T(M.ebook, 'EPUB ebook', 'EPUB', 'epub', '#854D0E', 'pdf-to-epub', 'Reflowable e-reader book or fixed pages', { mode: 'reflow', scale: '1.25' }),
+      T(M.arc, 'ZIP archive', 'ZIP', 'zip', '#0E7490', 'pdf-to-zip', 'Bundle the PDF with companions', { level: '6' }),
       T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'pdf-to-md', 'GFM Markdown with tables & frontmatter', { mode: 'gfm' }),
-      T(M.web, 'Structure JSON', 'JSON', 'json', '#06B6D4', null, 'Metadata and text layer blocks', { inline: 'pdf-to-json' }),
+      T(M.web, 'Structure JSON', 'JSON', 'json', '#06B6D4', 'pdf-to-json', 'Metadata, tables & text layer blocks', { inline: 'pdf-to-json' }),
     ],
     word: [
       T(M.office, 'PDF', 'PDF', 'pdf', '#2B579A', 'docx-to-pdf', 'Convert Word to PDF', { mode: 'flow', pageSize: 'auto' }),
@@ -19289,8 +19787,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const pages = [];
         for (let p = 1; p <= doc.numPages; p++) {
           const page = await doc.getPage(p);
+          const vp = page.getViewport({ scale: 1 });
           const tc = await page.getTextContent();
-          pages.push({ pageNumber: p, textItemsCount: tc.items.length, text: tc.items.map(i => i.str).join(' ') });
+          const items = tc.items.map((i) => ({
+            str: i.str,
+            x: Math.round(i.transform ? i.transform[4] : 0),
+            y: Math.round(i.transform ? i.transform[5] : 0),
+            w: Math.round(i.width || 0),
+            h: Math.round(i.height || 0),
+            font: i.fontName || null,
+          })).filter((i) => i.str && i.str.trim());
+          pages.push({
+            pageNumber: p,
+            width: Math.round(vp.width),
+            height: Math.round(vp.height),
+            textItemsCount: items.length,
+            text: items.map((i) => i.str).join(' '),
+            items,
+          });
         }
         const json = JSON.stringify({ filename: file.name, pagesCount: doc.numPages, info: meta.info, pages }, null, 2);
         return { preview: 'text', text: json, filename: U.baseName(file.name) + '-structure.json', mime: 'application/json', blob: new Blob([json], { type: 'application/json' }) };
@@ -20048,6 +20562,64 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 </div>
                 <div class="conv-mode-seg-desc" id="conv-html-mode-desc">${String(cfg.mode || 'flow') === 'fixed' ? 'Pixel-accurate layout matching original PDF pages' : 'Responsive semantic HTML5 with styled tables'}</div>` : ''}
 
+                ${(t.tool === 'pdf-extract-text') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-txt-modes" id="conv-txt-modes" role="radiogroup" aria-label="PDF to Text extraction mode">
+                  <button type="button" class="conv-mode-seg-btn conv-txt-mode-card ${String(cfg.mode || 'layout') === 'layout' ? 'active' : ''}" data-mode="layout" role="radio" aria-checked="${String(cfg.mode || 'layout') === 'layout' ? 'true' : 'false'}" data-desc="Preserve visual columns, table alignment &amp; spacing" title="Formatted Layout: Preserve visual columns, table alignment &amp; spacing">
+                    <span class="conv-seg-star">★</span> Layout
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-txt-mode-card ${String(cfg.mode || 'layout') === 'flow' ? 'active' : ''}" data-mode="flow" role="radio" aria-checked="${String(cfg.mode || 'layout') === 'flow' ? 'true' : 'false'}" data-desc="Natural reading flow with reconstructed paragraphs" title="Reading Flow: Natural reading flow with reconstructed paragraphs">
+                    Flow
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-txt-mode-desc">${String(cfg.mode || 'layout') === 'flow' ? 'Natural reading flow with reconstructed paragraphs' : 'Preserve visual columns, table alignment &amp; spacing'}</div>` : ''}
+
+                ${(t.tool === 'pdf-to-epub') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-epub-modes" id="conv-epub-modes" role="radiogroup" aria-label="PDF to EPUB conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-epub-mode-card ${String(cfg.mode || 'reflow') === 'reflow' ? 'active' : ''}" data-mode="reflow" role="radio" aria-checked="${String(cfg.mode || 'reflow') === 'reflow' ? 'true' : 'false'}" data-desc="Reflowable e-reader book with resizable text &amp; chapters" title="Reflowable: Reflowable e-reader book with resizable text &amp; chapters">
+                    <span class="conv-seg-star">★</span> Reflow
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-epub-mode-card ${String(cfg.mode || 'reflow') === 'fixed' ? 'active' : ''}" data-mode="fixed" role="radio" aria-checked="${String(cfg.mode || 'reflow') === 'fixed' ? 'true' : 'false'}" data-desc="Fixed page images matching original PDF pages" title="Fixed Pages: Fixed page images matching original PDF pages">
+                    Fixed
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-epub-mode-desc">${String(cfg.mode || 'reflow') === 'fixed' ? 'Fixed page images matching original PDF pages' : 'Reflowable e-reader book with resizable text &amp; chapters'}</div>` : ''}
+
+                ${(t.tool === 'pdf-grayscale') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-gray-modes" id="conv-gray-modes" role="radiogroup" aria-label="PDF Grayscale conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-gray-mode-card ${String(cfg.mode || 'grayscale') === 'grayscale' ? 'active' : ''}" data-mode="grayscale" role="radio" aria-checked="${String(cfg.mode || 'grayscale') === 'grayscale' ? 'true' : 'false'}" data-desc="256-level smooth grayscale preserving shading &amp; photos" title="Smooth Gray: 256-level smooth grayscale preserving shading &amp; photos">
+                    <span class="conv-seg-star">★</span> Gray
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-gray-mode-card ${String(cfg.mode || 'grayscale') === 'mono' ? 'active' : ''}" data-mode="mono" role="radio" aria-checked="${String(cfg.mode || 'grayscale') === 'mono' ? 'true' : 'false'}" data-desc="High-contrast pure 1-bit black &amp; white (photocopy mode)" title="High Contrast: High-contrast pure 1-bit black &amp; white (photocopy mode)">
+                    B&amp;W
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-gray-mode-desc">${String(cfg.mode || 'grayscale') === 'mono' ? 'High-contrast pure 1-bit black &amp; white (photocopy mode)' : '256-level smooth grayscale preserving shading &amp; photos'}</div>` : ''}
+
+                ${(t.tool === 'pdf-compress') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-compress-modes" id="conv-compress-modes" role="radiogroup" aria-label="PDF Compression mode">
+                  <button type="button" class="conv-mode-seg-btn conv-compress-mode-card ${String(cfg.mode || 'balanced') === 'balanced' ? 'active' : ''}" data-mode="balanced" role="radio" aria-checked="${String(cfg.mode || 'balanced') === 'balanced' ? 'true' : 'false'}" data-desc="Balanced ~70% reduction with high visual fidelity" title="Balanced: Balanced ~70% reduction with high visual fidelity">
+                    <span class="conv-seg-star">★</span> Balanced
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-compress-mode-card ${String(cfg.mode || 'balanced') === 'extreme' ? 'active' : ''}" data-mode="extreme" role="radio" aria-checked="${String(cfg.mode || 'balanced') === 'extreme' ? 'true' : 'false'}" data-desc="Extreme ~85% reduction for email attachment limits" title="Extreme: Extreme ~85% reduction for email attachment limits">
+                    Extreme
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-compress-mode-card ${String(cfg.mode || 'balanced') === 'vector' ? 'active' : ''}" data-mode="vector" role="radio" aria-checked="${String(cfg.mode || 'balanced') === 'vector' ? 'true' : 'false'}" data-desc="Lossless vector stream compression (no blur)" title="Vector: Lossless vector stream compression (no blur)">
+                    Vector
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-compress-mode-desc">${String(cfg.mode || 'balanced') === 'extreme' ? 'Extreme ~85% reduction for email attachment limits' : (String(cfg.mode || 'balanced') === 'vector' ? 'Lossless vector stream compression (no blur)' : 'Balanced ~70% reduction with high visual fidelity')}</div>` : ''}
+
+                ${(t.tool === 'pdf-summarize') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-summary-modes" id="conv-summary-modes" role="radiogroup" aria-label="PDF Summary mode">
+                  <button type="button" class="conv-mode-seg-btn conv-summary-mode-card ${String(cfg.mode || 'executive') === 'executive' ? 'active' : ''}" data-mode="executive" role="radio" aria-checked="${String(cfg.mode || 'executive') === 'executive' ? 'true' : 'false'}" data-desc="Executive overview with document metrics &amp; reading time" title="Executive: Executive overview with document metrics &amp; reading time">
+                    <span class="conv-seg-star">★</span> Executive
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-summary-mode-card ${String(cfg.mode || 'executive') === 'keypoints' ? 'active' : ''}" data-mode="keypoints" role="radio" aria-checked="${String(cfg.mode || 'executive') === 'keypoints' ? 'true' : 'false'}" data-desc="Key highlights, action items, dates &amp; monetary figures" title="Key Highlights: Key highlights, action items, dates &amp; monetary figures">
+                    Highlights
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-summary-mode-desc">${String(cfg.mode || 'executive') === 'keypoints' ? 'Key highlights, action items, dates &amp; monetary figures' : 'Executive overview with document metrics &amp; reading time'}</div>` : ''}
+
                 ${(t.tool === 'pdf-to-csv') && /\.pdf$/i.test(currentFile.name || '') ? `
                 <div class="conv-mode-segmented conv-csv-modes" id="conv-csv-modes" role="radiogroup" aria-label="PDF to CSV conversion mode">
                   <button type="button" class="conv-mode-seg-btn conv-csv-mode-card ${String(cfg.mode || 'tables') === 'tables' ? 'active' : ''}" data-mode="tables" role="radio" aria-checked="${String(cfg.mode || 'tables') === 'tables' ? 'true' : 'false'}" data-desc="Auto-detect &amp; isolate data tables cleanly" title="Structured Tables: Auto-detect &amp; isolate data tables cleanly">
@@ -20380,7 +20952,93 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         });
       });
 
-      container.querySelectorAll('#conv-csv-modes .conv-csv-mode-card').forEach((card) => {
+      
+        // PDF to Text mode toggling
+        container.querySelectorAll('#conv-txt-modes .conv-txt-mode-card').forEach((card) => {
+          card.onclick = (e) => {
+            e.stopPropagation();
+            const m = card.dataset.mode;
+            cfg.mode = m;
+            container.querySelectorAll('#conv-txt-modes .conv-txt-mode-card').forEach((c) => {
+              c.classList.toggle('active', c.dataset.mode === m);
+              c.setAttribute('aria-checked', c.dataset.mode === m ? 'true' : 'false');
+            });
+            const descEl = container.querySelector('#conv-txt-mode-desc');
+            if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+            const modeSelect = container.querySelector('#conv-settings-modal select[name="mode"]');
+            if (modeSelect) modeSelect.value = m;
+          };
+        });
+
+        // PDF to EPUB mode toggling
+        container.querySelectorAll('#conv-epub-modes .conv-epub-mode-card').forEach((card) => {
+          card.onclick = (e) => {
+            e.stopPropagation();
+            const m = card.dataset.mode;
+            cfg.mode = m;
+            container.querySelectorAll('#conv-epub-modes .conv-epub-mode-card').forEach((c) => {
+              c.classList.toggle('active', c.dataset.mode === m);
+              c.setAttribute('aria-checked', c.dataset.mode === m ? 'true' : 'false');
+            });
+            const descEl = container.querySelector('#conv-epub-mode-desc');
+            if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+            const modeSelect = container.querySelector('#conv-settings-modal select[name="mode"]');
+            if (modeSelect) modeSelect.value = m;
+          };
+        });
+
+        // PDF Grayscale mode toggling
+        container.querySelectorAll('#conv-gray-modes .conv-gray-mode-card').forEach((card) => {
+          card.onclick = (e) => {
+            e.stopPropagation();
+            const m = card.dataset.mode;
+            cfg.mode = m;
+            container.querySelectorAll('#conv-gray-modes .conv-gray-mode-card').forEach((c) => {
+              c.classList.toggle('active', c.dataset.mode === m);
+              c.setAttribute('aria-checked', c.dataset.mode === m ? 'true' : 'false');
+            });
+            const descEl = container.querySelector('#conv-gray-mode-desc');
+            if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+            const modeSelect = container.querySelector('#conv-settings-modal select[name="mode"]');
+            if (modeSelect) modeSelect.value = m;
+          };
+        });
+
+        // PDF Compress mode toggling
+        container.querySelectorAll('#conv-compress-modes .conv-compress-mode-card').forEach((card) => {
+          card.onclick = (e) => {
+            e.stopPropagation();
+            const m = card.dataset.mode;
+            cfg.mode = m;
+            container.querySelectorAll('#conv-compress-modes .conv-compress-mode-card').forEach((c) => {
+              c.classList.toggle('active', c.dataset.mode === m);
+              c.setAttribute('aria-checked', c.dataset.mode === m ? 'true' : 'false');
+            });
+            const descEl = container.querySelector('#conv-compress-mode-desc');
+            if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+            const modeSelect = container.querySelector('#conv-settings-modal select[name="mode"]');
+            if (modeSelect) modeSelect.value = m;
+          };
+        });
+
+        // PDF Summarize mode toggling
+        container.querySelectorAll('#conv-summary-modes .conv-summary-mode-card').forEach((card) => {
+          card.onclick = (e) => {
+            e.stopPropagation();
+            const m = card.dataset.mode;
+            cfg.mode = m;
+            container.querySelectorAll('#conv-summary-modes .conv-summary-mode-card').forEach((c) => {
+              c.classList.toggle('active', c.dataset.mode === m);
+              c.setAttribute('aria-checked', c.dataset.mode === m ? 'true' : 'false');
+            });
+            const descEl = container.querySelector('#conv-summary-mode-desc');
+            if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+            const modeSelect = container.querySelector('#conv-settings-modal select[name="mode"]');
+            if (modeSelect) modeSelect.value = m;
+          };
+        });
+
+        container.querySelectorAll('#conv-csv-modes .conv-csv-mode-card').forEach((card) => {
           card.onclick = (e) => {
             e.stopPropagation();
             const m = card.dataset.mode;

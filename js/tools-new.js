@@ -1458,43 +1458,20 @@
   /* PDF to EPUB */
   R({
     id: 'pdf-to-epub', category: 'PDF', name: 'PDF to EPUB',
-    description: 'Export a PDF as an EPUB ebook — each page becomes an image so the layout is preserved (no reflowable text).',
+    description: 'Export a PDF as an EPUB ebook — reflowable text with chapters or fixed high-res page images.',
     accepts: ['pdf'], maxBytes: 200e6,
-    fields: [{ key: 'scale', label: 'Image quality', type: 'select', default: '1.25', options: ['1', '1.25', '1.5'] }],
+    fields: [
+      { key: 'mode', label: 'Ebook Mode', type: 'select', default: 'reflow', options: [
+        { value: 'reflow', label: 'Reflowable E-Reader (Chapters & Resizable Text)' },
+        { value: 'fixed', label: 'Fixed Page Images (Comics & Visual Documents)' }
+      ] },
+      { key: 'scale', label: 'Image Scale', type: 'select', default: '1.25', options: ['1', '1.25', '1.5'] }
+    ],
     async run({ file, inputs, onProgress }) {
-      const pdfjs = await load.pdfjs();
-      const fflate = await load.fflate();
-      const { pages } = await renderPdf(pdfjs, await u8(file), +inputs.scale, onProgress);
-      if (pages.length > 120) throw new Error('This tool supports up to 120 pages.');
-      const base = U.baseName(file.name);
-      const files = {};
-      files['mimetype'] = [new TextEncoder().encode('application/epub+zip'), { level: 0 }];
-      files['META-INF/container.xml'] = new TextEncoder().encode(
-        '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>');
-      const chapters = [];
-      const images = [];
-      for (let i = 0; i < pages.length; i++) {
-        const png = await canvasPng(pages[i].canvas);
-        files['OEBPS/images/page-' + (i + 1) + '.png'] = png;
-        images.push({ id: 'img' + (i + 1), file: 'images/page-' + (i + 1) + '.png' });
-        chapters.push({
-          id: 'c' + (i + 1),
-          file: 'chapter-' + (i + 1) + '.xhtml',
-          html: '<?xml version="1.0" encoding="utf-8"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Page ' + (i + 1) + '</title></head><body><img src="images/page-' + (i + 1) + '.png" alt="Page ' + (i + 1) + '"/></body></html>',
-        });
-        onProgress && onProgress(0.8 + (0.2 * (i + 1)) / pages.length);
+      if (typeof window.convertPdfToEpub === 'function') {
+        return window.convertPdfToEpub(file, inputs, onProgress);
       }
-      const manifest = images.map((im) => `<item id="${im.id}" href="${im.file}" media-type="image/png"/>`).join('') +
-        chapters.map((ch) => `<item id="${ch.id}" href="${ch.file}" media-type="application/xhtml+xml"/>`).join('');
-      const spine = chapters.map((ch) => `<itemref idref="${ch.id}"/>`).join('');
-      const nav = chapters.map((ch, i) => `<li><a href="${ch.file}">Page ${i + 1}</a></li>`).join('');
-      files['OEBPS/content.opf'] = new TextEncoder().encode(
-        '<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">' + base + '</dc:identifier><dc:title>' + base + '</dc:title><dc:language>en</dc:language><meta property="dcterms:modified">' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z</meta></metadata><manifest>' + manifest + '</manifest><spine>' + spine + '</spine></package>');
-      files['OEBPS/nav.xhtml'] = new TextEncoder().encode(
-        '<?xml version="1.0" encoding="utf-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title></head><body><nav epub:type="toc"><h1>Contents</h1><ol>' + nav + '</ol></nav></body></html>');
-      chapters.forEach((ch) => { files['OEBPS/' + ch.file] = new TextEncoder().encode(ch.html); });
-      const zip = fflate.zipSync(files, { level: 6 });
-      return { blob: new Blob([zip], { type: 'application/epub+zip' }), filename: base + '.epub', mime: 'application/epub+zip', metrics: { Pages: pages.length, 'EPUB size': bytes(zip.length) } };
+      throw new Error('PDF to EPUB engine is loading...');
     },
   });
 
@@ -1646,36 +1623,23 @@
     },
   });
 
-  /* Summarize PDF (extractive) */
+  /* Summarize PDF */
   R({
     id: 'pdf-summarize', category: 'PDF', name: 'Summarize PDF',
-    description: 'Extractive summary built from the text layer — picks the most representative sentences. No AI model, runs instantly offline.',
+    description: 'Extractive summary built from the text layer — executive overview or key actionable highlights.',
     accepts: ['pdf'], maxBytes: 200e6,
-    fields: [{ key: 'length', label: 'Summary length', type: 'select', default: 'medium', options: ['short', 'medium', 'long'] }],
-    async run({ file, inputs }) {
-      const pdfjs = await load.pdfjs();
-      const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
-      let full = '';
-      for (let i = 1; i <= doc.numPages; i++) {
-        const page = await doc.getPage(i);
-        const tc = await page.getTextContent();
-        full += (tc.items.map((it) => it.str).join(' ')) + '\n';
+    fields: [
+      { key: 'mode', label: 'Summary Mode', type: 'select', default: 'executive', options: [
+        { value: 'executive', label: 'Executive Summary (Metrics & Overview)' },
+        { value: 'keypoints', label: 'Key Highlights & Action Points' }
+      ] },
+      { key: 'length', label: 'Summary length', type: 'select', default: 'medium', options: ['short', 'medium', 'long'] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      if (typeof window.convertPdfToSummary === 'function') {
+        return window.convertPdfToSummary(file, inputs, onProgress);
       }
-      const text = full.replace(/\s+/g, ' ').trim();
-      const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 4);
-      const counts = {};
-      const stop = new Set('the a an and or but of to in on for with as at by from is are was were be been being it its this that these those not no if then than so such which who whom whose what when where why how'.split(' '));
-      text.toLowerCase().match(/[a-z0-9']+/g).forEach((w) => { if (!stop.has(w)) counts[w] = (counts[w] || 0) + 1; });
-      const scored = sentences.map((s) => {
-        const words = s.toLowerCase().match(/[a-z0-9']+/g) || [];
-        let score = 0;
-        words.forEach((w) => { score += counts[w] || 0; });
-        return { s, score: score / Math.max(1, words.length) };
-      }).sort((a, b) => b.score - a.score);
-      const n = inputs.length === 'short' ? 3 : inputs.length === 'long' ? 8 : 5;
-      const summary = scored.slice(0, n).sort((a, b) => sentences.indexOf(a.s) - sentences.indexOf(b.s)).map((x) => x.s).join(' ');
-      const out = 'Summary (' + sentences.length + ' sentences read, ' + text.split(/\s+/).length + ' words)\n\n' + summary;
-      return textOut(out, U.baseName(file.name) + '-summary.txt');
+      throw new Error('PDF Summary engine is loading...');
     },
   });
 

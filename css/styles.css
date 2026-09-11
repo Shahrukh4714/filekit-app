@@ -51170,7 +51170,12 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-img-modes,
 .conv-html-modes,
 .conv-md-modes,
-.conv-csv-modes {
+.conv-csv-modes,
+.conv-txt-modes,
+.conv-epub-modes,
+.conv-gray-modes,
+.conv-compress-modes,
+.conv-summary-modes {
   display: flex !important;
   background: #F1F5F9 !important;
   border: 1px solid #E2E8F0 !important;
@@ -51275,6 +51280,26 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-csv-modes .conv-csv-mode-card.active,
 #conv-csv-modes .active {
   color: #16A34A !important;
+}
+.conv-txt-modes .conv-txt-mode-card.active,
+#conv-txt-modes .active {
+  color: #7C3AED !important;
+}
+.conv-epub-modes .conv-epub-mode-card.active,
+#conv-epub-modes .active {
+  color: #854D0E !important;
+}
+.conv-gray-modes .conv-gray-mode-card.active,
+#conv-gray-modes .active {
+  color: #4B4B4B !important;
+}
+.conv-compress-modes .conv-compress-mode-card.active,
+#conv-compress-modes .active {
+  color: #0F766E !important;
+}
+.conv-summary-modes .conv-summary-mode-card.active,
+#conv-summary-modes .active {
+  color: #DC2626 !important;
 }
 
 .conv-seg-star {
