@@ -4607,6 +4607,25 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
 
     const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
 
+    const isHeadingCandidate = (str) => {
+      const s = String(str || '').trim();
+      if (!s || s.length > 100) return false;
+      if (/^[\d\s\/\-\:\.\,\|\+\#\(\)]+$/.test(s)) return false;
+      if (/\b(?:am|pm)\b/i.test(s) && /\d+:\d+/.test(s)) return false;
+      if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) return false;
+      const words = s.split(/\s+/);
+      if (words.filter((w) => /^\d+$/.test(w)).length >= words.length / 2) return false;
+      return true;
+    };
+
+    const isContentFigure = (img) => {
+      if (!img || !img.w || !img.h) return false;
+      if (img.w < 28 || img.h < 28) return false;
+      const ratio = img.w / img.h;
+      if (ratio > 5.5 || ratio < 0.18) return false;
+      return true;
+    };
+
     const numPages = richPages.length;
 
     // ── Mode 1: Semantic Flow (Responsive HTML5) ─────────────────────────
@@ -4722,11 +4741,11 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
 
             const ratio = (ln.maxSize || 11) / (median || 11);
             const lineText = ln.runs.map((r) => (r.bold ? `<strong>${escHtml(r.str)}</strong>` : escHtml(r.str))).join(' ');
-            if (ratio >= 1.55 && text.length <= 100) {
+            if (ratio >= 1.55 && text.length <= 100 && isHeadingCandidate(text)) {
               pageHtml += `  <h1 class="pdf-h1">${lineText}</h1>\n`;
-            } else if (ratio >= 1.3 && text.length <= 120) {
+            } else if (ratio >= 1.3 && text.length <= 120 && isHeadingCandidate(text)) {
               pageHtml += `  <h2 class="pdf-h2">${lineText}</h2>\n`;
-            } else if ((ratio >= 1.15 || ln.runs.some((r) => r.bold)) && text.length <= 80 && !/[.!?]$/.test(text.trim())) {
+            } else if ((ratio >= 1.15 || ln.runs.some((r) => r.bold)) && text.length <= 80 && !/[.!?]$/.test(text.trim()) && isHeadingCandidate(text)) {
               pageHtml += `  <h3 class="pdf-h3">${lineText}</h3>\n`;
             } else {
               pageHtml += `  <p class="pdf-p">${lineText}</p>\n`;
@@ -4735,15 +4754,18 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
         }
         closeList();
 
-        // Render embedded figures
+        // Render embedded figures (excluding thin margin borders)
         if (embedImages && pg.images && pg.images.length) {
-          pageHtml += '  <div class="pdf-figures-grid">\n';
-          for (let i = 0; i < pg.images.length; i++) {
-            if (!pg.images[i].bytes) continue;
-            const b64 = u8ToBase64(pg.images[i].bytes);
-            pageHtml += `    <figure class="pdf-figure"><img src="data:image/png;base64,${b64}" alt="Figure ${i + 1}" class="pdf-img" loading="lazy" /></figure>\n`;
+          const contentImgs = pg.images.filter(isContentFigure);
+          if (contentImgs.length) {
+            pageHtml += '  <div class="pdf-figures-grid">\n';
+            for (let i = 0; i < contentImgs.length; i++) {
+              if (!contentImgs[i].bytes) continue;
+              const b64 = u8ToBase64(contentImgs[i].bytes);
+              pageHtml += `    <figure class="pdf-figure"><img src="data:image/png;base64,${b64}" alt="Figure ${i + 1}" class="pdf-img" loading="lazy" /></figure>\n`;
+            }
+            pageHtml += '  </div>\n';
           }
-          pageHtml += '  </div>\n';
         }
 
         docBody += `<article class="pdf-page-card" id="page-${pi + 1}">\n${pageHtml}</article>\n`;
@@ -4978,55 +5000,59 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
       };
     }
 
-    // ── Mode 2: Fixed Page Layout (Pixel-Accurate) ───────────────────────
+    // ── Mode 2: High-Fidelity Fixed Page Layout (Pixel-Accurate) ─────────
+    const pdfDoc = await pdfjs.getDocument({ data: await u8(file) }).promise;
     let pagesFixed = '';
-    for (let pi = 0; pi < numPages; pi++) {
-      const pg = richPages[pi];
-      const pw = pg.w || 595;
-      const ph = pg.h || 842;
 
-      let fixedRuns = '';
-      for (const ln of pg.lines) {
-        for (const r of ln.runs) {
-          if (!r.str || !r.str.trim()) continue;
-          const top = Math.max(0, ph - (r.y || 0) - (r.size || 11));
-          const weight = r.bold ? 'font-weight: bold;' : '';
-          const style = r.italic ? 'font-style: italic;' : '';
-          const color = r.color && r.color !== '000000' ? `color: #${r.color};` : '';
-          fixedRuns += `    <span style="position: absolute; left: ${r.x.toFixed(1)}px; top: ${top.toFixed(1)}px; font-size: ${r.size.toFixed(1)}px; ${weight}${style}${color}">${escHtml(r.str)}</span>\n`;
-        }
+    for (let pi = 1; pi <= numPages; pi++) {
+      onProgress?.(0.7 + (pi / numPages) * 0.25, `Rendering page ${pi}/${numPages}`);
+      const page = await pdfDoc.getPage(pi);
+      const vp = page.getViewport({ scale: 1 });
+      const vpHigh = page.getViewport({ scale: 1.5 }); // Crisp 1.5x resolution
+
+      // Crisp background canvas capturing all vector tables, borders, lines & graphics
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(vpHigh.width);
+      canvas.height = Math.ceil(vpHigh.height);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vpHigh }).promise;
+      const bgDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+
+      // Selectable/searchable text overlay
+      const tc = await page.getTextContent();
+      let textOverlay = '';
+      for (const it of tc.items) {
+        if (!it.str || !it.str.trim()) continue;
+        const t = it.transform || [0, 0, 0, 0, 0, 0];
+        const size = Math.abs(it.height || t[0] || 11) || 11;
+        const top = Math.max(0, vp.height - t[5] - size);
+        textOverlay += `      <span class="pdf-fixed-run" style="position: absolute; left: ${t[4].toFixed(1)}px; top: ${top.toFixed(1)}px; font-size: ${size.toFixed(1)}px; height: ${size.toFixed(1)}px; line-height: 1;">${escHtml(it.str)}</span>\n`;
       }
 
-      let fixedImgs = '';
-      if (embedImages && pg.images && pg.images.length) {
-        for (const im of pg.images) {
-          if (!im.bytes) continue;
-          const b64 = u8ToBase64(im.bytes);
-          const top = Math.max(0, ph - (im.y || 0) - (im.ih || im.h));
-          fixedImgs += `    <img src="data:image/png;base64,${b64}" style="position: absolute; left: ${im.x.toFixed(1)}px; top: ${top.toFixed(1)}px; width: ${im.iw.toFixed(1)}px; height: ${im.ih.toFixed(1)}px;" />\n`;
-        }
-      }
-
-      let fixedLinks = '';
-      if (pg.links && pg.links.length) {
-        for (const l of pg.links) {
+      // Hyperlink annotations overlay
+      let linksOverlay = '';
+      const pgRich = richPages[pi - 1];
+      if (pgRich?.links && pgRich.links.length) {
+        for (const l of pgRich.links) {
           if (!l.url && !l.destPage) continue;
           const href = l.url ? escAttr(l.url) : `#fixed-page-${l.destPage}`;
-          const top = Math.max(0, ph - (l.y1 || 0));
+          const top = Math.max(0, vp.height - (l.y1 || 0));
           const w = Math.abs((l.x1 || 0) - (l.x0 || 0));
           const h = Math.abs((l.y1 || 0) - (l.y0 || 0));
-          fixedLinks += `    <a href="${href}" class="pdf-fixed-link" style="position: absolute; left: ${l.x0}px; top: ${top}px; width: ${w}px; height: ${h}px;" ${l.url ? 'target="_blank" rel="noopener"' : ''}></a>\n`;
+          linksOverlay += `      <a href="${href}" class="pdf-fixed-link" style="position: absolute; left: ${l.x0}px; top: ${top}px; width: ${w}px; height: ${h}px;" ${l.url ? 'target="_blank" rel="noopener"' : ''}></a>\n`;
         }
       }
 
       pagesFixed += `
   <div class="pdf-fixed-page-wrapper">
-    <div class="pdf-fixed-badge">Page ${pi + 1} of ${numPages}</div>
-    <div class="pdf-fixed-page" id="fixed-page-${pi + 1}" style="width: ${pw}px; height: ${ph}px;">
-      ${fixedImgs}
-      ${fixedRuns}
-      ${fixedLinks}
-    </div>
+    <div class="pdf-fixed-badge">Page ${pi} of ${numPages}</div>
+    <div class="pdf-fixed-page" id="fixed-page-${pi}" style="width: ${vp.width}px; height: ${vp.height}px;">
+      <img class="pdf-fixed-bg" src="${bgDataUrl}" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block;" alt="Page ${pi}" />
+      <div class="pdf-fixed-text-layer" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: auto;">
+${textOverlay}      </div>
+${linksOverlay}    </div>
   </div>\n`;
     }
 
@@ -5037,8 +5063,9 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escHtml(base)} (Fixed Layout) — FileKit HTML</title>
   <style>
+    * { box-sizing: border-box; }
     body {
-      background: #475569;
+      background: #525659;
       margin: 0;
       padding: 32px 16px;
       display: flex;
@@ -5069,9 +5096,14 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
       border-radius: 4px;
       overflow: hidden;
     }
-    .pdf-fixed-page span {
+    .pdf-fixed-run {
       white-space: pre;
-      line-height: 1;
+      color: transparent;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .pdf-fixed-run::selection {
+      background: rgba(37, 99, 235, 0.35);
       color: #000;
     }
     .pdf-fixed-link {
@@ -5083,7 +5115,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
       background: rgba(37, 99, 235, 0.25);
     }
     @media print {
-      body { background: transparent !important; padding: 0 !important; }
+      body { background: transparent !important; padding: 0 !important; gap: 0 !important; }
       .pdf-fixed-badge { display: none !important; }
       .pdf-fixed-page-wrapper { margin-bottom: 0 !important; page-break-after: always; }
       .pdf-fixed-page { box-shadow: none !important; border-radius: 0 !important; }
