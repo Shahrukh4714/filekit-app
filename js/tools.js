@@ -5581,6 +5581,93 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     });
   }
 
+  /* Content-adaptive quality: structural similarity (SSIM) over 8-bit
+     grayscale planes. We compare a small downscaled reference against the
+     decoded candidate and step quality down while the result stays within the
+     allowed structural-similarity budget — better bytes/quality than a single
+     fixed quality, without a size target. SSIM is pure and unit-tested. */
+  function computeSsim(a, b) {
+    const n = Math.min(a.length, b.length);
+    if (!n) return 1;
+    let meanA = 0, meanB = 0;
+    for (let i = 0; i < n; i++) { meanA += a[i]; meanB += b[i]; }
+    meanA /= n; meanB /= n;
+    let varA = 0, varB = 0, cov = 0;
+    for (let i = 0; i < n; i++) {
+      const da = a[i] - meanA, db = b[i] - meanB;
+      varA += da * da; varB += db * db; cov += da * db;
+    }
+    varA /= n; varB /= n; cov /= n;
+    const C1 = 6.5025, C2 = 58.5225; // (0.01*255)^2, (0.03*255)^2
+    return ((2 * meanA * meanB + C1) * (2 * cov + C2)) /
+           ((meanA * meanA + meanB * meanB + C1) * (varA + varB + C2));
+  }
+
+  const SSIM_PROBE_SIDE = 256;
+
+  function canvasGrayPlane(canvas, side) {
+    const scale = Math.min(1, side / Math.max(canvas.width, canvas.height));
+    const w = Math.max(1, Math.round(canvas.width * scale));
+    const h = Math.max(1, Math.round(canvas.height * scale));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    cx.imageSmoothingEnabled = true;
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(canvas, 0, 0, w, h);
+    const data = cx.getImageData(0, 0, w, h).data;
+    const gray = new Uint8Array(w * h);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      gray[j] = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
+    }
+    c.width = 0; c.height = 0;
+    return { gray, w, h };
+  }
+
+  async function blobGrayPlane(blob, w, h) {
+    let bmp = null;
+    try { bmp = await createImageBitmap(blob); } catch (e) { return null; }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    cx.imageSmoothingEnabled = true;
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) bmp.close();
+    const data = cx.getImageData(0, 0, w, h).data;
+    const gray = new Uint8Array(w * h);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      gray[j] = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
+    }
+    c.width = 0; c.height = 0;
+    return gray;
+  }
+
+  /* Returns { blob, quality } — the smallest encoding that stays at/above the
+     SSIM threshold — or null when the browser can't decode for comparison. */
+  async function chooseQualityForCanvas(canvas, mime, baseQ, threshold) {
+    try {
+      if (typeof createImageBitmap !== 'function') return null;
+      const ref = canvasGrayPlane(canvas, SSIM_PROBE_SIDE);
+      const candidates = [baseQ];
+      if (baseQ > 0.45) candidates.push(Math.max(0.3, baseQ - 0.1));
+      if (baseQ > 0.6) candidates.push(Math.max(0.3, baseQ - 0.2));
+      let fallback = null;
+      let best = null;
+      for (const q of candidates) {
+        const b = await new Promise((r) => canvas.toBlob(r, mime, q));
+        if (!b) continue;
+        if (!fallback || b.size < fallback.size) fallback = b;
+        const plane = await blobGrayPlane(b, ref.w, ref.h);
+        if (!plane) return null;
+        if (computeSsim(ref.gray, plane) >= threshold && (!best || b.size < best.size)) best = b;
+      }
+      return best ? { blob: best, quality: baseQ } : (fallback ? { blob: fallback, quality: baseQ } : null);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /* Vendored WASM encoders. Dynamic import() in a classic script resolves
      against the script path (dist/js/…), so we always build document-absolute
      URLs. Loaded once, lazily; a failed load resets so a later call can retry. */
@@ -8462,7 +8549,15 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
               }
             }
             const cvs = renderResampled(w, h, outMime === 'image/jpeg');
-            const baseline = await encodeCanvasImage(cvs, outMime, targetQuality, outExt);
+            // Content-adaptive quality: keep the smallest encoding that stays
+            // within the structural-similarity budget for this tier.
+            let baseline = null;
+            if (outMime === 'image/webp' || outMime === 'image/jpeg') {
+              const ssimThreshold = selectedTier === 'maximum' ? 0.985 : (selectedTier === 'light' ? 0.972 : 0.978);
+              const adaptive = await chooseQualityForCanvas(cvs, outMime, targetQuality, ssimThreshold);
+              if (adaptive) baseline = { blob: adaptive.blob, mime: outMime, ext: outExt };
+            }
+            if (!baseline) baseline = await encodeCanvasImage(cvs, outMime, targetQuality, outExt);
             bestBlob = baseline.blob; outMime = baseline.mime; outExt = baseline.ext;
 
             // Race progressive MozJPEG against the canvas baseline JPEG.
