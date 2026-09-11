@@ -8981,8 +8981,14 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
           if (notes.length) qualityNote = notes.join(' · ');
         }
         if (!win) {
-          qualityBadge = 'Already optimal';
-          qualityNote = qualityNote || 'Nothing to save without hurting quality — file kept as-is';
+          if (_mk && _mk.untouched) {
+            // Preserved on purpose — say why instead of a generic "optimal".
+            qualityBadge = 'Unchanged (protected)';
+            if (_mk.reason) qualityNote = 'Kept original — ' + _mk.reason;
+          } else {
+            qualityBadge = 'Already optimal';
+            qualityNote = qualityNote || 'Nothing to save without hurting quality — file kept as-is';
+          }
         }
         window.FF.renderUnifiedResult(container, {
           tool: { id: 'pdf-compress', name: 'Compress File', category: 'PDF' },
