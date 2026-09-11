@@ -5251,21 +5251,47 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     return { codec: 'libmp3lame', out: 'mp3', mime: 'audio/mpeg' };
   }
 
-  function buildVideoPlan(inName, ext, tier, p) {
+  function mediaFpsCap(tier) { return tier === 'maximum' ? 30 : 0; }
+
+  function mediaVideoFilter(cap, fpsCap, probe) {
+    let vf = mediaScaleFilter(cap);
+    // Only cap frame rate when the source actually exceeds it (never upsample).
+    if (fpsCap && probe && probe.fps > fpsCap) vf += ',fps=' + fpsCap;
+    return vf;
+  }
+
+  /* Prefer copying the audio stream when the source codec already fits the
+     target container and is no larger than the tier's audio budget. This avoids
+     the re-encode + bloat that simple compressors introduce. */
+  function mediaAudioArgs(webm, audioBr, probe) {
+    const targetKbps = parseInt(String(audioBr), 10) || 128;
+    const src = (probe && probe.acodec) ? String(probe.acodec).toLowerCase() : '';
+    const srcOk = !!(probe && probe.aKbps > 0 && probe.aKbps <= targetKbps);
+    if (webm) {
+      if (srcOk && /opus|vorbis/.test(src)) return ['-c:a', 'copy'];
+      return ['-c:a', 'libopus', '-b:a', audioBr];
+    }
+    if (srcOk && src === 'aac') return ['-c:a', 'copy'];
+    return ['-c:a', 'libfdk_aac', '-b:a', audioBr];
+  }
+
+  function buildVideoPlan(inName, ext, tier, p, probe) {
     p = p || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
     const cap = tier === 'light' ? 1080 : (tier === 'maximum' ? 640 : 720);
     const crf = tier === 'maximum' ? 31 : (tier === 'light' ? 22 : 27);
     const audioBr = p.audioBr || '128k';
     const isCustom = tier === 'custom' && p.videoBr;
-    const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', mediaScaleFilter(cap), '-pix_fmt', 'yuv420p'];
+    const vf = mediaVideoFilter(cap, mediaFpsCap(tier), probe);
+    const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', vf, '-pix_fmt', 'yuv420p'];
     const rate = isCustom ? ['-b:v', p.videoBr] : ['-crf', String(crf), '-b:v', '0'];
+    const audio = mediaAudioArgs(webm, audioBr, probe);
     if (webm) {
       const codecArgs = tier === 'light'
         ? ['-c:v', 'libvpx'].concat(rate, ['-deadline', 'good', '-cpu-used', '5'])
         : ['-c:v', 'libvpx-vp9'].concat(rate, ['-deadline', 'good', '-cpu-used', '4', '-row-mt', '1']);
       return {
-        args: ['-i', inName].concat(map, codecArgs, ['-c:a', 'libopus', '-b:a', audioBr, 'out.webm']),
+        args: ['-i', inName].concat(map, codecArgs, audio, ['out.webm']),
         out: 'out.webm', mime: 'video/webm', outExt: 'webm'
       };
     }
@@ -5274,8 +5300,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     // the real core), so HEVC is not offered.
     const codecArgs = ['-c:v', 'libx264'].concat(rate, ['-preset', 'veryfast', '-tag:v', 'avc1']);
     return {
-      args: ['-i', inName].concat(map, codecArgs,
-        ['-c:a', 'libfdk_aac', '-b:a', audioBr, '-movflags', '+faststart', 'out.mp4']),
+      args: ['-i', inName].concat(map, codecArgs, audio, ['-movflags', '+faststart', 'out.mp4']),
       out: 'out.mp4', mime: 'video/mp4', outExt: 'mp4'
     };
   }
@@ -5324,10 +5349,31 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     });
   }
 
+  /* Parse `ffmpeg -i` output into stream facts (pure function; unit-tested). */
+  function parseMediaProbe(text) {
+    const info = { duration: 0, width: 0, height: 0, fps: 0, vcodec: '', acodec: '', aKbps: 0, hasAudio: false };
+    if (!text) return info;
+    const d = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(text);
+    if (d) info.duration = (+d[1]) * 3600 + (+d[2]) * 60 + (+d[3]);
+    const v = /Video:\s*([A-Za-z0-9._-]+)(?:\s*\([^)]*\))?[^\n]*?(\d{2,5})x(\d{2,5})[^\n]*?([\d.]+)\s*fps/i.exec(text);
+    if (v) { info.vcodec = v[1].trim().toLowerCase(); info.width = +v[2]; info.height = +v[3]; info.fps = parseFloat(v[4]) || 0; }
+    const a = /Audio:\s*([A-Za-z0-9._-]+)(?:\s*\([^)]*\))?[^\n]*?(\d+)\s*kb\/s/i.exec(text);
+    if (a) { info.acodec = a[1].trim().toLowerCase(); info.aKbps = +a[2]; info.hasAudio = true; }
+    return info;
+  }
+
+  /* Ask the ffmpeg worker for stream facts. Returns null when unavailable. */
+  async function probeMedia(file) {
+    try {
+      if (!(window.FF && window.FF.media && typeof window.FF.media.probe === 'function')) return null;
+      return parseMediaProbe(await window.FF.media.probe(file));
+    } catch (e) { return null; }
+  }
+
   /* Exact-target video plan: derive the video bitrate from the target byte
      budget and duration, then run true two-pass x264 (1-pass VBR for WebM).
      Kept as a multi-pass plan so the caller can drive both passes. */
-  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p) {
+  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p, probe) {
     p = p || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
     const audioBr = p.audioBr || '128k';
@@ -5337,12 +5383,13 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     if (!isFinite(videoKbps) || videoKbps < 40) videoKbps = 40;
     if (videoKbps > 20000) videoKbps = 20000;
     const vbr = videoKbps + 'k';
-    const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', mediaScaleFilter(720), '-pix_fmt', 'yuv420p'];
+    const vf = mediaVideoFilter(720, 30, probe);
+    const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', vf, '-pix_fmt', 'yuv420p'];
+    const audio = mediaAudioArgs(webm, audioBr, probe);
     if (webm) {
       return {
         args: ['-i', inName].concat(map,
-          ['-c:v', 'libvpx-vp9', '-b:v', vbr, '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1',
-           '-c:a', 'libopus', '-b:a', audioBr, 'out.webm']),
+          ['-c:v', 'libvpx-vp9', '-b:v', vbr, '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1'].concat(audio, ['out.webm'])),
         out: 'out.webm', mime: 'video/webm', outExt: 'webm'
       };
     }
@@ -5352,8 +5399,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
         { args: ['-i', inName].concat(map, ['-c:v', 'libx264', '-preset', 'veryfast', '-b:v', vbr,
             '-pass', '1', '-passlogfile', log, '-an', '-f', 'mp4', 'p1.mp4']), out: 'p1.mp4' },
         { args: ['-i', inName].concat(map, ['-c:v', 'libx264', '-preset', 'veryfast', '-b:v', vbr,
-            '-pass', '2', '-passlogfile', log, '-c:a', 'libfdk_aac', '-b:a', audioBr,
-            '-movflags', '+faststart', 'out.mp4']), out: 'out.mp4' }
+            '-pass', '2', '-passlogfile', log], audio, ['-movflags', '+faststart', 'out.mp4']), out: 'out.mp4' }
       ],
       out: 'out.mp4', mime: 'video/mp4', outExt: 'mp4'
     };
@@ -5369,12 +5415,13 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     const inName = opts.inName;
     const targetBytes = opts.targetBytes || 0;
     const duration = opts.duration || 0;
+    const probe = opts.probe || null;
     const plans = [];
     if (family === 'video') {
       if (tier === 'custom' && targetBytes > 0 && duration > 0) {
-        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p));
+        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p, probe));
       } else {
-        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p));
+        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p, probe));
       }
       plans.push(buildVideoFallback(inName, p));
     } else {
@@ -8790,9 +8837,13 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
           const ext = U.extOf(file.name);
           const INP = 'input.' + (ext || 'bin');
           const targetBytes = (selectedTier === 'custom' && targetBytesAllocated > 0) ? targetBytesAllocated : 0;
-          // Exact-target video needs the duration; read it from the browser.
-          const duration = (targetBytes > 0 && family === 'video') ? await mediaDuration(file) : 0;
-          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration });
+          // Probe the source once: duration, fps, dimensions and audio codec/
+          // bitrate let us skip needless audio re-encodes and fps work.
+          const probe = (family === 'video') ? await probeMedia(file) : null;
+          const duration = (probe && probe.duration > 0)
+            ? probe.duration
+            : ((targetBytes > 0 && family === 'video') ? await mediaDuration(file) : 0);
+          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration, probe });
           const onProg = (lo, hi, label) => (typeof onProgress === 'function')
             ? (f) => { try { onProgress(lo + (hi - lo) * (f || 0), label); } catch (e) {} }
             : undefined;

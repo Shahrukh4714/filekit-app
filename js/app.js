@@ -318,6 +318,14 @@
       const r = await call('run', { inputs: inputData, args: args || [], out }, [], onProgress);
       return r instanceof Uint8Array ? r : new Uint8Array(r && r.data !== undefined ? r.data : r);
     },
+    async probe(file) {
+      await ensureWorker();
+      if (initError) throw initError;
+      const buf = await file.arrayBuffer();
+      const name = 'probe.' + ((file.name || '').split('.').pop() || 'bin');
+      const r = await call('probe', { name, data: buf }, [buf]);
+      return (r && r.probe) ? r.probe : '';
+    },
     async getFFmpeg(onProgress) {
       await ensureWorker();
       if (initError) throw initError;

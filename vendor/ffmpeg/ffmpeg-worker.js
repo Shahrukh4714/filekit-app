@@ -19,6 +19,7 @@
   var endResolve = null;
   var currentId = null;
   var durationSec = 0;
+  var logBuffer = [];
 
   function onOutput(message) {
     if (message === 'FFMPEG_END') {
@@ -58,8 +59,8 @@
     Core = await createFFmpegCore({
       wasmBinary: wasmBinary,
       mainScriptUrlOrBlob: 'ffmpeg-core.js',
-      print: function (m) { self.postMessage({ type: 'log', message: String(m) }); onOutput(String(m)); parseProgress(String(m)); },
-      printErr: function (m) { self.postMessage({ type: 'log', message: String(m) }); onOutput(String(m)); parseProgress(String(m)); },
+      print: function (m) { var s = String(m); logBuffer.push(s); self.postMessage({ type: 'log', message: s }); onOutput(s); parseProgress(s); },
+      printErr: function (m) { var s = String(m); logBuffer.push(s); self.postMessage({ type: 'log', message: s }); onOutput(s); parseProgress(s); },
       noInitialRun: true,
       noExitRuntime: true,
     });
@@ -128,6 +129,18 @@
         }
         try { Core.FS.unlink(msg.out); } catch (e3) {}
         post({ type: 'done', ok: true, code: code, data: data.buffer }, [data.buffer]);
+        return;
+      }
+
+      if (msg.type === 'probe') {
+        // Read stream metadata via `ffmpeg -i` (no output); returns the log text.
+        Core.FS.writeFile(msg.name, new Uint8Array(msg.data));
+        logBuffer = [];
+        currentId = id; durationSec = 0;
+        await runMain(['-hide_banner', '-i', msg.name]);
+        currentId = null;
+        try { Core.FS.unlink(msg.name); } catch (e6) {}
+        post({ type: 'done', ok: true, probe: logBuffer.join('\n') });
         return;
       }
 

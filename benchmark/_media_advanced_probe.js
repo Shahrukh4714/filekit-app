@@ -77,6 +77,14 @@ function parseArgs(core, args) {
   c = ff(['-i', 'src.mp4', '-vf', 'hqdn3d=1.5:1.5:6:6,scale=-2:min(480\\,ih)', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28', '-an', 'dn.mp4']);
   report('hqdn3d + scale runs', c === 0 && size('dn.mp4') > 0, 'code=' + c + ' out=' + size('dn.mp4'));
 
+  // ---- source probe via `ffmpeg -i` (no output) ----
+  logs = [];
+  const pp = parseArgs(Core, ['./ffmpeg', '-nostdin', '-y', '-hide_banner', '-i', 'src.mp4']);
+  try { main(pp.argc, pp.argv); } catch (e) {}
+  const probeText = logs.join('\n');
+  console.log('\n[probe] FFMPEG_END present: ' + logs.some((l) => l === 'FFMPEG_END'));
+  console.log('  ' + probeText.split('\n').filter((l) => /Duration|Video:|Audio:/.test(l)).join('\n  '));
+
   ['src.mp4', 'p1.null', 'out2pass.mp4', 'norm.m4a', 'fps15.mp4', 'dn.mp4', 'a.m4a'].forEach(unlink);
   logFiles.forEach(unlink);
 })().catch((e) => { console.error('FATAL', e && e.stack || e); process.exit(2); });

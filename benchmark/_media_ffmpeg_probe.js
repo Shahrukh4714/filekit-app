@@ -90,6 +90,7 @@ function parseArgs(core, args) {
   const mp3 = path.join(samples, '_test_audio.mp3');
 
   await runCase('video balanced mp4', av, 'video', 'mp4', 'balanced', { videoBr: '750k', audioBr: '128k' });
+  await runCase('video balanced mp4 (probe: copy audio)', av, 'video', 'mp4', 'balanced', { videoBr: '750k', audioBr: '128k' }, { probe: { fps: 30, acodec: 'aac', aKbps: 84 } });
   await runCase('video maximum mp4', av, 'video', 'mp4', 'maximum', { videoBr: '500k', audioBr: '96k' });
   await runCase('video light mp4', av, 'video', 'mp4', 'light', { videoBr: '1M', audioBr: '192k' });
   await runCase('video balanced -> webm', av, 'video', 'webm', 'balanced', { videoBr: '750k', audioBr: '128k' });
