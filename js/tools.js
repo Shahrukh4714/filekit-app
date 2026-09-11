@@ -5228,6 +5228,106 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     return 'code';
   };
 
+  /* ── Video & Audio: tier-aware transcode plans ──
+     Container-aware: MP4/MOV/AVI/… → H.264 (H.265 on Maximum) + AAC in MP4;
+     WebM/OGV/MKV → VP9 (VP8 on Light) + Opus in WebM. Resolution is capped
+     (never upscaled), quality is CRF-driven per tier, and a conservative
+     legacy fallback is always appended so a failed plan degrades gracefully.
+     Pure functions — unit-tested without a browser or the ffmpeg core. */
+  const MEDIA_VIDEO_CONTAINER = /^(webm|ogv|mkv)$/;
+  const MEDIA_HEVC_TIER = 'maximum';
+
+  function mediaScaleFilter(cap) {
+    // Cap the shorter-safe dimension (height) and never upscale: min(cap, ih).
+    return 'scale=-2:min(' + cap + '\\,ih)';
+  }
+
+  function mediaAudioCodecFor(ext) {
+    if (ext === 'm4a' || ext === 'aac' || ext === 'alac' || ext === 'mp4' || ext === 'm4v' || ext === 'mov') {
+      return { codec: 'libfdk_aac', out: 'm4a', mime: 'audio/mp4' };
+    }
+    if (ext === 'ogg' || ext === 'oga' || ext === 'opus' || ext === 'mka') {
+      return { codec: 'libopus', out: 'ogg', mime: 'audio/ogg' };
+    }
+    return { codec: 'libmp3lame', out: 'mp3', mime: 'audio/mpeg' };
+  }
+
+  function buildVideoPlan(inName, ext, tier, p) {
+    p = p || {};
+    const webm = MEDIA_VIDEO_CONTAINER.test(ext);
+    const cap = tier === 'light' ? 1080 : 720;
+    const crf = tier === 'maximum' ? 32 : (tier === 'light' ? 22 : 27);
+    const audioBr = p.audioBr || '128k';
+    const isCustom = tier === 'custom' && p.videoBr;
+    const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', mediaScaleFilter(cap), '-pix_fmt', 'yuv420p'];
+    const rate = isCustom ? ['-b:v', p.videoBr] : ['-crf', String(crf), '-b:v', '0'];
+    if (webm) {
+      const codecArgs = tier === 'light'
+        ? ['-c:v', 'libvpx'].concat(rate, ['-deadline', 'good', '-cpu-used', '5'])
+        : ['-c:v', 'libvpx-vp9'].concat(rate, ['-deadline', 'good', '-cpu-used', '4', '-row-mt', '1']);
+      return {
+        args: ['-i', inName].concat(map, codecArgs, ['-c:a', 'libopus', '-b:a', audioBr, 'out.webm']),
+        out: 'out.webm', mime: 'video/webm', outExt: 'webm'
+      };
+    }
+    const useHevc = tier === MEDIA_HEVC_TIER;
+    const codecArgs = ['-c:v', useHevc ? 'libx265' : 'libx264']
+      .concat(rate, ['-preset', 'veryfast', '-tag:v', useHevc ? 'hvc1' : 'avc1']);
+    return {
+      args: ['-i', inName].concat(map, codecArgs,
+        ['-c:a', 'libfdk_aac', '-b:a', audioBr, '-movflags', '+faststart', 'out.mp4']),
+      out: 'out.mp4', mime: 'video/mp4', outExt: 'mp4', hevc: useHevc
+    };
+  }
+
+  function buildAudioPlan(inName, ext, tier, p) {
+    p = p || {};
+    const a = mediaAudioCodecFor(ext);
+    const audioBr = p.audioBr || '128k';
+    return {
+      args: ['-i', inName, '-vn', '-c:a', a.codec, '-b:a', audioBr, 'out.' + a.out],
+      out: 'out.' + a.out, mime: a.mime, outExt: a.out
+    };
+  }
+
+  function buildVideoFallback(inName, p) {
+    p = p || {};
+    return {
+      args: ['-i', inName, '-map', '0:v', '-map', '0:a?', '-c:v', 'libvpx', '-b:v', p.videoBr || '600k', '-c:a', 'libvorbis', 'out.webm'],
+      out: 'out.webm', mime: 'video/webm', outExt: 'webm'
+    };
+  }
+
+  function buildAudioFallback(inName, p) {
+    p = p || {};
+    return {
+      args: ['-i', inName, '-vn', '-c:a', 'libmp3lame', '-ar', '44100', '-b:a', p.audioBr || '128k', 'out.mp3'],
+      out: 'out.mp3', mime: 'audio/mpeg', outExt: 'mp3'
+    };
+  }
+
+  /* Ordered plans: primary modern encode, then (for HEVC) an H.264 retry, then
+     the legacy settings. The caller stops at the first smaller result. */
+  function buildMediaPlans(opts) {
+    const family = opts.family;
+    const ext = opts.ext;
+    const tier = opts.tier;
+    const p = opts.params || {};
+    const inName = opts.inName;
+    const plans = [];
+    if (family === 'video') {
+      plans.push(buildVideoPlan(inName, ext, tier, p));
+      if (tier === MEDIA_HEVC_TIER && !MEDIA_VIDEO_CONTAINER.test(ext)) {
+        plans.push(buildVideoPlan(inName, ext, 'balanced', p));
+      }
+      plans.push(buildVideoFallback(inName, p));
+    } else {
+      plans.push(buildAudioPlan(inName, ext, tier, p));
+      plans.push(buildAudioFallback(inName, p));
+    }
+    return plans;
+  }
+
   /* ── Helper: Code & Markup Minifier ── */
   function minifyCodeOrXml(text, ext) {
     if (!text || typeof text !== 'string') return text;
@@ -8613,14 +8713,37 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
       if ((family === 'video' || family === 'audio') && window.FF && window.FF.media && typeof window.FF.media.run === 'function') {
         try {
           const FFm = window.FF.media;
-          const INP = 'input.' + (U.extOf(file.name) || 'bin');
-          if (family === 'video') {
-            const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-map', '0:v', '-map', '0:a?', '-c:v', 'libvpx', '-b:v', p.videoBr || '600k', '-c:a', 'libvorbis', 'output.webm'], out: 'output.webm', onProgress });
-            return { blob: new Blob([data.buffer || data], { type: 'video/webm' }), filename: U.baseName(file.name) + '-compressed.webm', mime: 'video/webm', preview: 'video' };
-          } else {
-            const data = await FFm.run({ inputs: [[INP, file]], args: ['-i', INP, '-vn', '-c:a', 'libmp3lame', '-ar', '44100', '-b:a', p.audioBr || '128k', 'output.mp3'], out: 'output.mp3', onProgress });
-            return { blob: new Blob([data.buffer || data], { type: 'audio/mpeg' }), filename: U.baseName(file.name) + '.mp3', mime: 'audio/mpeg', preview: 'audio' };
+          const ext = U.extOf(file.name);
+          const INP = 'input.' + (ext || 'bin');
+          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP });
+          for (const plan of plans) {
+            try {
+              const data = await FFm.run({ inputs: [[INP, file]], args: plan.args, out: plan.out, onProgress });
+              const bytes = data instanceof Uint8Array ? data : new Uint8Array(data || []);
+              if (!bytes.length) continue;
+              if (bytes.length < file.size) {
+                return {
+                  blob: new Blob([bytes], { type: plan.mime }),
+                  filename: U.baseName(file.name) + '-compressed.' + plan.outExt,
+                  mime: plan.mime,
+                  preview: family,
+                  metrics: { mediaTier: selectedTier, mediaCodec: plan.outExt }
+                };
+              }
+              // Encoded successfully but larger — no point trying later plans.
+              break;
+            } catch (planErr) {
+              console.warn('[Media Compress] plan failed, trying next', planErr);
+            }
           }
+          // Nothing smaller without quality loss — keep the original.
+          return {
+            blob: file,
+            filename: file.name,
+            mime: file.type || (family === 'audio' ? 'audio/mpeg' : 'video/mp4'),
+            preview: family,
+            metrics: { untouched: true, reason: 'already near-optimal' }
+          };
         } catch (mediaErr) {
           console.warn('[Media Compress fallback to fflate]', mediaErr);
         }
