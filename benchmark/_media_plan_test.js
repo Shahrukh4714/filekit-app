@@ -28,13 +28,12 @@ check('mp4/balanced scale caps at 720', a.includes('min(720'), a);
 check('mp4/balanced out.mp4', p[0].out === 'out.mp4' && p[0].mime === 'video/mp4' && p[0].outExt === 'mp4');
 check('mp4/balanced is a plan + fallback', p.length === 2);
 
-// Video → MP4 Maximum → HEVC primary, H.264 retry, legacy fallback
+// Video → MP4 Maximum (H.264; libx265 is unusable in the pthread-less core)
 p = plansFor('video', 'mp4', 'maximum', { videoBr: '500k', audioBr: '96k' });
-check('mp4/max uses libx265 primary', args(p[0]).includes('-c:v libx265'));
-check('mp4/max tags hvc1', args(p[0]).includes('-tag:v hvc1'));
-check('mp4/max has H.264 retry', args(p[1]).includes('-c:v libx264'));
-check('mp4/max third plan is legacy vp8', args(p[2]).includes('-c:v libvpx '));
-check('mp4/max CRF 32', args(p[0]).includes('-crf 32'));
+check('mp4/max uses libx264', args(p[0]).includes('-c:v libx264'));
+check('mp4/max never uses libx265', !args(p[0]).includes('libx265'));
+check('mp4/max CRF 31', args(p[0]).includes('-crf 31'));
+check('mp4/max is primary + legacy fallback', p.length === 2 && args(p[1]).includes('-c:v libvpx '));
 
 // Video → WebM
 p = plansFor('video', 'webm', 'balanced', { audioBr: '128k' });

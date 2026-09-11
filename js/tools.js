@@ -5235,7 +5235,6 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
      legacy fallback is always appended so a failed plan degrades gracefully.
      Pure functions — unit-tested without a browser or the ffmpeg core. */
   const MEDIA_VIDEO_CONTAINER = /^(webm|ogv|mkv)$/;
-  const MEDIA_HEVC_TIER = 'maximum';
 
   function mediaScaleFilter(cap) {
     // Cap the shorter-safe dimension (height) and never upscale: min(cap, ih).
@@ -5255,8 +5254,8 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
   function buildVideoPlan(inName, ext, tier, p) {
     p = p || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
-    const cap = tier === 'light' ? 1080 : 720;
-    const crf = tier === 'maximum' ? 32 : (tier === 'light' ? 22 : 27);
+    const cap = tier === 'light' ? 1080 : (tier === 'maximum' ? 640 : 720);
+    const crf = tier === 'maximum' ? 31 : (tier === 'light' ? 22 : 27);
     const audioBr = p.audioBr || '128k';
     const isCustom = tier === 'custom' && p.videoBr;
     const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', mediaScaleFilter(cap), '-pix_fmt', 'yuv420p'];
@@ -5270,13 +5269,14 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
         out: 'out.webm', mime: 'video/webm', outExt: 'webm'
       };
     }
-    const useHevc = tier === MEDIA_HEVC_TIER;
-    const codecArgs = ['-c:v', useHevc ? 'libx265' : 'libx264']
-      .concat(rate, ['-preset', 'veryfast', '-tag:v', useHevc ? 'hvc1' : 'avc1']);
+    // MP4 / MOV / AVI …: H.264 only. The vendored core is built without
+    // pthreads and libx265 aborts under thread emulation (verified against
+    // the real core), so HEVC is not offered.
+    const codecArgs = ['-c:v', 'libx264'].concat(rate, ['-preset', 'veryfast', '-tag:v', 'avc1']);
     return {
       args: ['-i', inName].concat(map, codecArgs,
         ['-c:a', 'libfdk_aac', '-b:a', audioBr, '-movflags', '+faststart', 'out.mp4']),
-      out: 'out.mp4', mime: 'video/mp4', outExt: 'mp4', hevc: useHevc
+      out: 'out.mp4', mime: 'video/mp4', outExt: 'mp4'
     };
   }
 
@@ -5306,8 +5306,8 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     };
   }
 
-  /* Ordered plans: primary modern encode, then (for HEVC) an H.264 retry, then
-     the legacy settings. The caller stops at the first smaller result. */
+  /* Ordered plans: primary modern encode, then the legacy settings. The caller
+     stops at the first smaller result. */
   function buildMediaPlans(opts) {
     const family = opts.family;
     const ext = opts.ext;
@@ -5317,9 +5317,6 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     const plans = [];
     if (family === 'video') {
       plans.push(buildVideoPlan(inName, ext, tier, p));
-      if (tier === MEDIA_HEVC_TIER && !MEDIA_VIDEO_CONTAINER.test(ext)) {
-        plans.push(buildVideoPlan(inName, ext, 'balanced', p));
-      }
       plans.push(buildVideoFallback(inName, p));
     } else {
       plans.push(buildAudioPlan(inName, ext, tier, p));
