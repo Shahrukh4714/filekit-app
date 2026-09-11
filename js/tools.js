@@ -4459,31 +4459,238 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escXml(title)}</title><style>body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:32px 20px;line-height:1.6;color:#1a1a1a}h1{font-size:26px;border-bottom:2px solid #ddd;padding-bottom:10px}.slide{margin:26px 0;padding:22px 20px;border:1px solid #eee;border-radius:10px;background:#fafafa}h2{font-size:14px;color:#C2410C;text-transform:uppercase;letter-spacing:.05em;margin-top:0}p{margin:7px 0}</style></head><body><h1>${escXml(title)}</h1>${body}</body></html>`;
   }
 
-  /* Heuristic PDF text → Markdown (list bullets, short-line headings, paragraphs). */
-  function textToMarkdown(text) {
-    const lines = (text || '').split('\n');
-    const out = [];
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i].trim();
-      if (!l) { out.push(''); continue; }
-      if (/^[\u2022\u25AA\u25CF\u25A0*\-]\s*/.test(l)) { out.push('- ' + l.replace(/^[\u2022\u25AA\u25CF\u25A0*\-]\s*/, '')); continue; }
-      if (/^\d+[.)]\s+/.test(l)) { out.push(l); continue; }
-      const next = (lines[i + 1] || '').trim();
-      const prev = (lines[i - 1] || '').trim();
-      if (l.length <= 64 && !/[.!?;:,]$/.test(l) && !next && prev) { out.push('## ' + l); continue; }
-      if (l.length <= 64 && !/[.!?;:,]$/.test(l) && next && next.length > l.length) { out.push('## ' + l); continue; }
-      out.push(l);
+  /* ── Mastered PDF to Markdown (GFM Tables & Obsidian Notes) Engine ──── */
+  async function convertPdfToMarkdown(file, inputs, onProgress) {
+    const mode = (inputs && inputs.mode) || 'gfm';
+    const includeFrontmatter = inputs?.frontmatter !== 'no';
+    const includeTables = inputs?.includeTables !== 'no';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const richPages = await pdfRichPages(file, pdfjs, onProgress);
+    if (!richPages || !richPages.length) throw new Error('The PDF document contains no readable pages.');
+
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    const isBullet = (t) => /^[•▪‣–—\-\*]\s+/.test(t);
+    const isOrdered = (t) => /^\d+[.\)]\s+/.test(t);
+
+    const isNumeric = (str) => {
+      const s = String(str || '').replace(/[$,₹€£%]/g, '').trim();
+      return s.length > 0 && !isNaN(Number(s));
+    };
+
+    const isHeadingCandidate = (str) => {
+      const s = String(str || '').trim();
+      if (!s || s.length > 100) return false;
+      if (/^[\d\s\/\-\:\.\,\|\+\#\(\)]+$/.test(s)) return false;
+      if (/\b(?:am|pm)\b/i.test(s) && /\d+:\d+/.test(s)) return false;
+      if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) return false;
+      const words = s.split(/\s+/);
+      if (words.filter((w) => /^\d+$/.test(w)).length >= words.length / 2) return false;
+      return true;
+    };
+
+    const formatRunsMd = (runs, links) => {
+      if (!runs || !runs.length) return '';
+      return runs.map((r) => {
+        let text = String(r.str || '').trim();
+        if (!text) return '';
+        text = text.replace(/\|/g, '\\|');
+        if (r.bold && r.italic) text = `***${text}***`;
+        else if (r.bold) text = `**${text}**`;
+        else if (r.italic) text = `*${text}*`;
+
+        if (links && links.length) {
+          const lk = links.find((l) => (l.url || l.destPage) &&
+            Math.max(l.x0, r.x) < Math.min(l.x1, r.x + (r.w || 20)) &&
+            Math.max(l.y0, r.y) < Math.min(l.y1, r.y + (r.size || 11)));
+          if (lk && lk.url) {
+            text = `[${text}](${lk.url})`;
+          } else if (lk && lk.destPage) {
+            text = `[${text}](#page-${lk.destPage})`;
+          }
+        }
+        return text;
+      }).join(' ').replace(/\s+/g, ' ');
+    };
+
+    const numPages = richPages.length;
+    const docDate = new Date().toISOString().split('T')[0];
+    let mdOutput = '';
+
+    if (includeFrontmatter) {
+      mdOutput += `---\ntitle: "${base.replace(/"/g, '\\"')}"\nsource: "${file.name.replace(/"/g, '\\"')}"\npages: ${numPages}\nconverted: "${docDate}"\nformat: "${mode === 'obsidian' ? 'Obsidian Note' : 'GitHub Flavored Markdown'}"\n---\n\n`;
     }
-    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+    let totalTablesCount = 0;
+
+    for (let pi = 0; pi < numPages; pi++) {
+      const pg = richPages[pi];
+      const median = pg.median || 11;
+      const gapTol = Math.max(16, median * 1.8);
+
+      if (numPages > 1) {
+        if (mode === 'obsidian') {
+          mdOutput += `## Page ${pi + 1} ^page-${pi + 1}\n\n`;
+        } else {
+          mdOutput += `<!-- Page ${pi + 1} of ${numPages} -->\n\n`;
+        }
+      }
+
+      const splitRowCells = (ln) => {
+        const sorted = [...ln.runs].sort((a, b) => a.x - b.x);
+        const cells = [];
+        let cur = [];
+        const bounds = [];
+        for (let i = 0; i < sorted.length; i++) {
+          cur.push(sorted[i]);
+          if (i < sorted.length - 1 && sorted[i + 1].x - (sorted[i].x + (sorted[i].w || 0)) > gapTol) {
+            cells.push(cur);
+            cur = [];
+            bounds.push(Math.round((sorted[i].x + sorted[i + 1].x) / 2));
+          }
+        }
+        if (cur.length) cells.push(cur);
+        return { cells, bounds };
+      };
+
+      const flow = [];
+      let curTable = [];
+
+      const flushTable = () => {
+        if (curTable.length >= 2 && includeTables) {
+          flow.push({ kind: 'table', rows: curTable });
+          totalTablesCount++;
+        } else {
+          curTable.forEach((r) => flow.push({ kind: 'line', ln: r.ln }));
+        }
+        curTable = [];
+      };
+
+      for (const ln of pg.lines) {
+        const { cells, bounds } = splitRowCells(ln);
+        if (cells.length >= 2 && ln.runs.length >= 2) {
+          curTable.push({ ln, cells, bounds });
+        } else {
+          flushTable();
+          flow.push({ kind: 'line', ln });
+        }
+      }
+      flushTable();
+
+      for (const item of flow) {
+        if (item.kind === 'table') {
+          const rows = item.rows;
+          const maxCols = Math.max(...rows.map((r) => r.cells.length));
+          if (maxCols >= 2) {
+            const colAligns = Array.from({ length: maxCols }, () => false);
+            for (let c = 0; c < maxCols; c++) {
+              let numCount = 0;
+              let valCount = 0;
+              for (const r of rows) {
+                const cellRuns = r.cells[c] || [];
+                const raw = cellRuns.map((rn) => rn.str).join(' ').trim();
+                if (raw) {
+                  valCount++;
+                  if (isNumeric(raw)) numCount++;
+                }
+              }
+              if (valCount > 0 && numCount >= valCount / 2) colAligns[c] = true;
+            }
+
+            let tableMd = '';
+            const firstRowCells = rows[0].cells;
+            const headerCells = [];
+            for (let c = 0; c < maxCols; c++) {
+              const runs = firstRowCells[c] || [];
+              headerCells.push(formatRunsMd(runs, pg.links) || ' ');
+            }
+            tableMd += `| ${headerCells.join(' | ')} |\n`;
+
+            const sepCells = colAligns.map((isNum) => (isNum ? '---:' : ':---'));
+            tableMd += `| ${sepCells.join(' | ')} |\n`;
+
+            for (let r = 1; r < rows.length; r++) {
+              const rowCells = [];
+              for (let c = 0; c < maxCols; c++) {
+                const runs = rows[r].cells[c] || [];
+                rowCells.push(formatRunsMd(runs, pg.links) || ' ');
+              }
+              tableMd += `| ${rowCells.join(' | ')} |\n`;
+            }
+            mdOutput += tableMd + '\n\n';
+            continue;
+          }
+        }
+
+        const ln = item.ln;
+        const text = ln.text.trim();
+        if (!text) continue;
+
+        const ratio = (ln.maxSize || 11) / (median || 11);
+        const formatted = formatRunsMd(ln.runs, pg.links);
+
+        if (isBullet(text)) {
+          const cleanText = text.replace(/^[•▪‣–—\-\*]\s*/, '');
+          const cleanRuns = ln.runs.map((r, idx) => (idx === 0 ? { ...r, str: r.str.replace(/^[•▪‣–—\-\*]\s*/, '') } : r));
+          mdOutput += `- ${formatRunsMd(cleanRuns, pg.links) || cleanText}\n`;
+        } else if (isOrdered(text)) {
+          mdOutput += `${formatted}\n`;
+        } else if (ratio >= 1.55 && text.length <= 100 && isHeadingCandidate(text)) {
+          mdOutput += `# ${formatted}\n\n`;
+        } else if (ratio >= 1.3 && text.length <= 120 && isHeadingCandidate(text)) {
+          mdOutput += `## ${formatted}\n\n`;
+        } else if ((ratio >= 1.15 || ln.runs.some((r) => r.bold)) && text.length <= 80 && !/[.!?]$/.test(text) && isHeadingCandidate(text)) {
+          mdOutput += `### ${formatted}\n\n`;
+        } else if (mode === 'obsidian' && /^(note|important|warning|caution):/i.test(text)) {
+          mdOutput += `> [!NOTE]\n> ${formatted}\n\n`;
+        } else {
+          mdOutput += `${formatted}\n\n`;
+        }
+      }
+
+      if (pi < numPages - 1) {
+        mdOutput += '---\n\n';
+      }
+    }
+
+    const cleanMd = mdOutput.replace(/\n{3,}/g, '\n\n').trim() + '\n';
+    const blob = new Blob([cleanMd], { type: 'text/markdown' });
+
+    return {
+      blob,
+      filename: base + '.md',
+      mime: 'text/markdown',
+      preview: 'text',
+      text: cleanMd,
+      metrics: {
+        Mode: mode === 'obsidian' ? 'Obsidian Note' : 'GFM Markdown',
+        Tables: totalTablesCount > 0 ? `${totalTablesCount} tables` : 'Text only',
+        Pages: numPages,
+        Size: formatBytes(blob.size),
+      },
+    };
   }
 
   R({ id: 'pdf-to-md', category: 'PDF', name: 'PDF to Markdown',
-    description: 'Convert the PDF text layer into clean Markdown (headings, lists, paragraphs).',
+    description: 'Convert PDF into clean GitHub Flavored Markdown (GFM) with tables, bold styling, and frontmatter.',
     accepts: ['pdf'], maxBytes: 200e6,
-    async run({ file, onProgress }) {
-      const pages = await pdfTextLines(file, await loadJs(), onProgress);
-      const md = pages.map((t, i) => `## Page ${i + 1}\n\n` + textToMarkdown(t)).join('\n\n---\n\n');
-      return textOut(md || '(no selectable text — this may be a scanned PDF; run OCR first)', U.baseName(file.name) + '.md', 'text/markdown');
+    fields: [
+      { key: 'mode', label: 'Markdown Format', type: 'select', default: 'gfm', options: [
+        { value: 'gfm', label: 'GitHub Flavored Markdown (GFM)' },
+        { value: 'obsidian', label: 'Obsidian Note (Callouts & Anchors)' }
+      ] },
+      { key: 'frontmatter', label: 'YAML Frontmatter', type: 'select', default: 'yes', options: [
+        { value: 'yes', label: 'Include metadata header' },
+        { value: 'no', label: 'Markdown only (no header)' }
+      ] },
+      { key: 'includeTables', label: 'Table Reconstruction', type: 'select', default: 'yes', options: [
+        { value: 'yes', label: 'Yes (GFM table grids)' },
+        { value: 'no', label: 'No (linear text flow)' }
+      ] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfToMarkdown(file, inputs, onProgress);
     }
   });
 
@@ -18375,7 +18582,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       T(M.images, 'Extract images', 'ZIP', 'zip', '#CA8A04', 'pdf-extract-images', 'Embedded images only', { mode: 'extract' }),
       T(M.ebook, 'EPUB ebook', 'EPUB', 'epub', '#854D0E', 'pdf-to-epub', 'Page-image ebook', { scale: '1.25' }),
       T(M.arc, 'ZIP archive', 'ZIP', 'zip', '#0E7490', 'pdf-to-zip', 'Bundle the PDF', { level: '6' }),
-      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'pdf-to-md', 'Clean Markdown from the text layer'),
+      T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'pdf-to-md', 'GFM Markdown with tables & frontmatter', { mode: 'gfm' }),
       T(M.web, 'Structure JSON', 'JSON', 'json', '#06B6D4', null, 'Metadata and text layer blocks', { inline: 'pdf-to-json' }),
     ],
     word: [
@@ -19582,6 +19789,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 </div>
                 <div class="conv-mode-seg-desc" id="conv-html-mode-desc">${String(cfg.mode || 'flow') === 'fixed' ? 'Pixel-accurate layout matching original PDF pages' : 'Responsive semantic HTML5 with styled tables'}</div>` : ''}
 
+                ${(t.tool === 'pdf-to-md') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-md-modes" id="conv-md-modes" role="radiogroup" aria-label="PDF to Markdown conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-md-mode-card ${String(cfg.mode || 'gfm') === 'gfm' ? 'active' : ''}" data-mode="gfm" role="radio" aria-checked="${String(cfg.mode || 'gfm') === 'gfm' ? 'true' : 'false'}" data-desc="GitHub Flavored Markdown with tables &amp; frontmatter" title="GFM: GitHub Flavored Markdown with tables &amp; frontmatter">
+                    <span class="conv-seg-star">★</span> GFM
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-md-mode-card ${String(cfg.mode || 'gfm') === 'obsidian' ? 'active' : ''}" data-mode="obsidian" role="radio" aria-checked="${String(cfg.mode || 'gfm') === 'obsidian' ? 'true' : 'false'}" data-desc="Clean note format with page anchors &amp; callouts" title="Obsidian: Clean note format with page anchors &amp; callouts">
+                    Obsidian
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-md-mode-desc">${String(cfg.mode || 'gfm') === 'obsidian' ? 'Clean note format with page anchors &amp; callouts' : 'GitHub Flavored Markdown with tables &amp; frontmatter'}</div>` : ''}
+
                 ${(t.tool === 'pdf-to-ppt' || t.tool === 'to-ppt') && /\.pdf$/i.test(currentFile.name || '') ? `
                 <div class="conv-mode-segmented conv-pptx-modes" id="conv-pptx-modes" role="radiogroup" aria-label="PDF to PowerPoint conversion mode">
                   <button type="button" class="conv-mode-seg-btn conv-pptx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}" data-desc="Native shapes, titles, bullets &amp; tables" title="Editable: Native shapes, titles, bullets &amp; tables">
@@ -19817,7 +20035,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           const valDisplay = container.querySelector(`#cfg-${k}-val`);
           if (valDisplay) valDisplay.textContent = inp.value;
           if (k === 'mode') {
-            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card, #conv-pptx-modes .conv-pptx-mode-card, #conv-word-modes .conv-word-mode-card, #conv-img-modes .conv-img-mode-card, #conv-html-modes .conv-html-mode-card').forEach((c) => {
+            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card, #conv-pptx-modes .conv-pptx-mode-card, #conv-word-modes .conv-word-mode-card, #conv-img-modes .conv-img-mode-card, #conv-html-modes .conv-html-mode-card, #conv-md-modes .conv-md-mode-card').forEach((c) => {
               const on = c.dataset.mode === inp.value;
               c.classList.toggle('active', on);
               c.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -19886,6 +20104,22 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             c.setAttribute('aria-checked', on ? 'true' : 'false');
           });
           const descEl = container.querySelector('#conv-html-mode-desc');
+          if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+          const sel = container.querySelector('#cfg-mode');
+          if (sel) sel.value = m;
+        });
+      });
+
+      container.querySelectorAll('#conv-md-modes .conv-md-mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.mode;
+          cfg.mode = m;
+          container.querySelectorAll('#conv-md-modes .conv-md-mode-card').forEach((c) => {
+            const on = c === card;
+            c.classList.toggle('active', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const descEl = container.querySelector('#conv-md-mode-desc');
           if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
           const sel = container.querySelector('#cfg-mode');
           if (sel) sel.value = m;
