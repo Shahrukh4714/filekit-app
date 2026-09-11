@@ -1,5 +1,5 @@
 /* FileKit Service Worker — Enables 100% offline document workflows */
-const CACHE_NAME = 'filekit-cache-v90';
+const CACHE_NAME = 'filekit-cache-v107';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -13,6 +13,12 @@ const PRECACHE_URLS = [
   '/dist/js/tools-new.min.js',
   '/dist/js/tools-premium.min.js',
   '/dist/js/tools-premium2.min.js',
+  '/js/pdf-compress-worker.js',
+  '/js/image-compress-worker.js',
+  '/vendor/avif/avif_enc.js',
+  '/vendor/avif/avif_enc.wasm',
+  '/vendor/mozjpeg/mozjpeg_enc.js',
+  '/vendor/mozjpeg/mozjpeg_enc.wasm',
   '/assets/favicon.svg',
   '/assets/filekit-icon-4colors.svg'
 ];
@@ -63,3 +69,15 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+

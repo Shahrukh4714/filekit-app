@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FileKit — Mobile Web View (real app)</title>
+<style>
+  :root{--ink:#0F172A;--slate:#334155;--muted:#64748B;--line:#E2E8F0;--bg:#EEF1F6;--frame:#FFFFFF}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:26px 18px 50px;display:flex;flex-direction:column;align-items:center;gap:16px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  h1{font-size:15px;font-weight:650;letter-spacing:-.01em}
+  .note{max-width:460px;font-size:12.5px;line-height:1.55;color:var(--muted);text-align:center}
+  .note b{color:var(--ink)}
+
+  .widths{display:flex;gap:8px}
+  .wbtn{font-size:12px;font-weight:600;color:var(--slate);background:var(--frame);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;transition:background .15s,color .15s}
+  .wbtn.active{color:#fff;background:var(--ink);border-color:var(--ink)}
+
+  /* Browser-tab frame (NOT a phone — this is web) */
+  .frame{background:var(--frame);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.05),0 18px 50px rgba(15,23,42,.12);display:flex;flex-direction:column;transition:width .35s cubic-bezier(.23,1,.32,1)}
+  .bar{display:flex;align-items:center;gap:10px;height:44px;padding:0 12px;border-bottom:1px solid var(--line);background:#F8FAFC}
+  .dots{display:flex;gap:6px}
+  .dots span{width:10px;height:10px;border-radius:50%}
+  .dots .r{background:#FF5F57}.dots .y{background:#FEBC2E}.dots .g{background:#28C840}
+  .addr{flex:1;display:flex;align-items:center;gap:7px;height:30px;background:var(--frame);border:1px solid var(--line);border-radius:8px;padding:0 12px;font-size:12px;color:var(--muted)}
+  .addr svg{flex:0 0 auto}
+  iframe{border:0;width:100%;height:calc((100vh - 200px));min-height:620px;background:#fff;flex:1}
+  .foot{font-size:11px;color:var(--muted)}
+  .foot code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--frame);border:1px solid var(--line);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+
+  <h1>FileKit — Mobile Web View</h1>
+  <p class="note">This is the <b>real FileKit web app</b> embedded at phone width — no phone chrome, no mockup. It uses its own responsive breakpoints, so the rail collapses and the bottom tab bar appears exactly as it will on a phone. Click into any tool (try <b>Crop Pages</b> or <b>Convert Video</b>) for the real workspace.</p>
+
+  <div class="widths">
+    <button class="wbtn" data-w="380">380px</button>
+    <button class="wbtn active" data-w="390">390px</button>
+    <button class="wbtn" data-w="430">430px</button>
+    <button class="wbtn" data-w="560">560px</button>
+  </div>
+
+  <div class="frame" id="frame">
+    <div class="bar">
+      <div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="addr">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        filekit.cc
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
+    </div>
+    <iframe id="app" src="index.html" title="FileKit app at mobile width"></iframe>
+  </div>
+
+  <p class="foot">Live & self-explanatory. Serve it with <code>python serve.py</code> then open <code>http://127.0.0.1:8000/mobile-preview.html</code>.</p>
+
+<script>
+  const frame=document.getElementById('frame'),app=document.getElementById('app');
+  document.querySelectorAll('.wbtn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.wbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    frame.style.width=b.dataset.w+'px';
+  }));
+</script>
+</body>
+</html>

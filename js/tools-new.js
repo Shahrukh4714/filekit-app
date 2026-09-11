@@ -602,21 +602,33 @@
 
         let worker;
         try {
-          const langPath = lang === 'eng'
-            ? base + 'vendor/tesseract'
-            : 'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0_fast';
+          // All bundled models live locally (no CDN — COEP blocks cross-origin).
+          // Supports combined langs e.g. 'hin+eng' for mixed-script documents.
           worker = await T.createWorker(lang, 1, {
             workerPath: base + 'vendor/tesseract/worker.min.js',
             corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
-            langPath,
+            langPath:   base + 'vendor/tesseract',
             workerBlobURL: false,
             gzip: false,
             logger: makeLogger(),
           });
         } catch (initErr) {
-          if (lang !== 'eng') {
-            console.warn('[OCR] Remote language model failed or blocked by COEP; falling back to local English OCR:', initErr);
-            _ocrNotify('Falling back to local OCR engine…');
+          const parts = String(lang || '').split('+');
+          if (parts.length > 1) {
+            console.warn('[OCR] Combined model failed, retrying English-only:', initErr);
+            _ocrNotify('Retrying with English model…');
+            worker = await T.createWorker('eng', 1, {
+              workerPath: base + 'vendor/tesseract/worker.min.js',
+              corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+              langPath:   base + 'vendor/tesseract',
+              workerBlobURL: false,
+              gzip: false,
+              logger: makeLogger(),
+            });
+            lang = 'eng';
+          } else if (lang !== 'eng') {
+            console.warn('[OCR] Language model missing, falling back to English:', initErr);
+            _ocrNotify('Language model missing — using English…');
             worker = await T.createWorker('eng', 1, {
               workerPath: base + 'vendor/tesseract/worker.min.js',
               corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
@@ -1147,26 +1159,74 @@
 
   window.__ffOcrEngine = {
     recognizeCanvases: ocrRecognize,
-    async runPdfOcr(file, onProgress) {
+    async runPdfOcr(file, onProgress, lang = 'eng') {
       const pdfjs = await load.pdfjs();
       const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
       const canvases = [];
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
         const vp1 = page.getViewport({ scale: 1 });
-        const sc = Math.min(2, 1600 / Math.max(vp1.width, vp1.height));
-        const vp = page.getViewport({ scale: sc });
+        // Higher res for small print (admit cards, forms): up to 2400px, min scale 2
+        const sc = Math.min(3, 2400 / Math.max(vp1.width, vp1.height));
+        const vp = page.getViewport({ scale: Math.max(sc, 2) });
         const canvas = document.createElement('canvas');
         canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
         await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-        canvases.push(canvas);
+        // Crop border strips (repeated margin text). Top/bottom stay tight
+        // (2%/3%) so date + URL footer lines survive; sides take 6%.
+        let cropped = canvas;
+        try {
+          const mx = Math.round(canvas.width * 0.06);
+          const myT = Math.round(canvas.height * 0.02);
+          const myB = Math.round(canvas.height * 0.03);
+          if (mx > 4 && canvas.width > 400 && myT + myB < canvas.height * 0.5) {
+            const n = document.createElement('canvas');
+            n.width = canvas.width - mx * 2; n.height = canvas.height - myT - myB;
+            n.getContext('2d').drawImage(canvas, mx, myT, n.width, n.height, 0, 0, n.width, n.height);
+            cropped = n;
+          }
+        } catch (_) {}
+        canvases.push(cropped);
         if (typeof onProgress === 'function') onProgress(0.04 + 0.12 * (i / doc.numPages));
       }
-      const fitted = canvases.map((c) => fitCanvas(c, 1200));
-      const results = await ocrRecognize(fitted, (p) => { if (typeof onProgress === 'function') onProgress(0.16 + 0.84 * p); });
+      const fitted = canvases.map((c) => fitCanvas(c, 2000));
+      // Auto-detect: fast English probe on page 1, then full run in the
+      // matched language. Non-Latin scripts get '+eng' so mixed documents
+      // (e.g. Hindi/English admit cards) keep both.
+      let useLang = lang || 'eng';
+      if (useLang === 'auto') {
+        try {
+          _ocrNotify('Detecting document language…');
+          const probe = await ocrRecognize(fitted.slice(0, 1), undefined, 'eng');
+          const detected = detectScriptLanguage(probe[0] && probe[0].text);
+          const nonLatin = ['hin', 'ara', 'rus', 'chi_sim', 'jpn', 'kor', 'tha'];
+          useLang = nonLatin.includes(detected) ? `${detected}+eng` : detected;
+          _ocrNotify(`Detected ${OCR_LANG_LABELS[detected] || detected} — recognizing…`);
+        } catch (_) { useLang = 'eng'; }
+      }
+      // Uniform text blocks (forms/admit cards) read far better with PSM 6 than auto.
+      try {
+        const w = await getOrInitOcrWorker(useLang);
+        if (w && typeof w.setParameters === 'function') {
+          await w.setParameters({ tessedit_pageseg_mode: '6' });
+        }
+      } catch (_) {}
+      const results = await ocrRecognize(fitted, (p) => { if (typeof onProgress === 'function') onProgress(0.16 + 0.84 * p); }, useLang);
       const text = results.map((r, i) => '── Page ' + (i + 1) + ' ──\n' + ((r.text || '').trim())).filter(Boolean).join('\n\n');
       if (!text.trim()) throw new Error('No text recognised — the scan may be too blurry or blank.');
-      return textOut(text, U.baseName(file.name) + '-ocr.txt');
+      // Word boxes (canvas pixels) so converters can recover tables/lists
+      // geometrically instead of flattening OCR text to paragraphs.
+      const ocrPages = results.map((r, i) => ({
+        words: ((r.words || []).map((w) => ({
+          text: String((w.text || '').trim()),
+          x0: w.bbox ? w.bbox.x0 : 0, y0: w.bbox ? w.bbox.y0 : 0,
+          x1: w.bbox ? w.bbox.x1 : 0, y1: w.bbox ? w.bbox.y1 : 0,
+          conf: w.confidence || 0,
+        }))).filter((w) => w.text),
+        cw: (fitted[i] && fitted[i].width) || 0,
+        ch: (fitted[i] && fitted[i].height) || 0,
+      }));
+      return Object.assign(textOut(text, U.baseName(file.name) + '-ocr.txt'), { ocrPages });
     },
   };
 
@@ -1239,7 +1299,7 @@
       if (!list.length) throw new Error('Drop at least one PDF.');
       const map = {};
       for (const f of list) map[U.baseName(f.name) + '.pdf'] = await u8(f);
-      const zip = fflate.zipSync(map, { level: +inputs.level });
+      const zip = fflate.zipSync(map, { level: +(inputs?.level ?? 6) });
       return { blob: new Blob([zip], { type: 'application/zip' }), filename: 'pdfs.zip', mime: 'application/zip', metrics: { Files: list.length, 'ZIP size': bytes(zip.length) } };
     },
   });
@@ -11287,7 +11347,9 @@
         outputText = objToYaml(parsedObj);
       } else if (target === 'xml') {
         function objToXml(o, tag = 'root') {
-          if (Array.isArray(o)) return o.map((it, i) => objToXml(it, 'row')).join('');
+          // Arrays get a real root element — sibling <row> without one is
+          // malformed XML that strict parsers reject.
+          if (Array.isArray(o)) return `<rows>${o.map((it) => objToXml(it, 'row')).join('')}</rows>`;
           let str = `<${tag}>`;
           if (typeof o === 'object' && o !== null) {
             for (const [k, v] of Object.entries(o)) {

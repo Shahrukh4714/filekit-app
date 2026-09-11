@@ -1,0 +1,68 @@
+{
+  "ts": 1789147559011,
+  "tools": [
+    "pdf-to-word",
+    "pdf-to-excel",
+    "pdf-to-ppt",
+    "docx-to-pdf",
+    "docx-to-html",
+    "docx-to-md",
+    "docx-to-txt"
+  ],
+  "res": {
+    "pdf-to-word": {
+      "ms": 306,
+      "bytes": 2586,
+      "xmlOk": true,
+      "wordRecall": 1,
+      "titleFound": true,
+      "bulletsFound": "2/2",
+      "tableCellsFound": "9/9",
+      "wTbl": 1
+    },
+    "pdf-to-excel": {
+      "ms": 165,
+      "bytes": 2726,
+      "xmlOk": true,
+      "wordRecall": 0,
+      "titleFound": false,
+      "bulletsFound": "0/2",
+      "tableCellsFound": "0/9",
+      "excelCells": "9/9",
+      "excelNumbers": 4
+    },
+    "pdf-to-ppt": {
+      "ms": 155,
+      "bytes": 7274,
+      "xmlOk": true,
+      "wordRecall": 1,
+      "titleFound": true,
+      "bulletsFound": "2/2",
+      "tableCellsFound": "9/9",
+      "aTbl": 1,
+      "bullets": 4
+    },
+    "docx-to-pdf": {
+      "ms": 31,
+      "bytes": 3903,
+      "validPdf": true,
+      "pageCount": 2,
+      "vectorQuality": "native-vector"
+    },
+    "docx-to-html": {
+      "ms": 86,
+      "chars": 2959,
+      "hasHtmlTag": true,
+      "hasTable": true
+    },
+    "docx-to-md": {
+      "ms": 76,
+      "chars": 541,
+      "hasMarkdownTable": true
+    },
+    "docx-to-txt": {
+      "ms": 72,
+      "chars": 301
+    }
+  }
+}

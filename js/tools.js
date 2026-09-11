@@ -860,11 +860,7 @@
       for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Page ${i}/${pdf.numPages}`); const tc = await (await pdf.getPage(i)).getTextContent(); out += `\n--- Page ${i} ---\n` + tc.items.map((it) => it.str).join(' '); }
       return textOut(out.trim() || 'No selectable text (this may be a scanned PDF — use OCR).', U.baseName(file.name) + '.txt'); } });
 
-  R({ id: 'pdf-to-image', category: 'PDF', name: 'PDF to image', description: 'Render each page to PNG (ZIP).',
-    accepts: ['pdf'], engine: jsZip, fields: [{ key: 'scale', label: 'Quality (scale)', type: 'select', default: '2', options: ['1', '1.5', '2', '3'] }],
-    async run({ file, inputs, engine, onProgress }) { const pdf = await engine.J.getDocument({ data: await bytesU8(file) }).promise; const out = {};
-      for (let i = 1; i <= pdf.numPages; i++) { onProgress?.(i / pdf.numPages, `Rendering ${i}/${pdf.numPages}`); const c = await renderPage(engine.J, await pdf.getPage(i), +inputs.scale); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); out[`page-${i}.png`] = new Uint8Array(await blob.arrayBuffer()); }
-      return zipOut(engine.F, out, U.baseName(file.name) + '-images.zip'); } });
+  // Note: pdf-to-image is registered with the mastered multi-format engine in specialist tools below.
 
   R({ id: 'pdf-grayscale', category: 'PDF', name: 'Grayscale PDF', description: 'Convert every page to black & white.',
     accepts: ['pdf'], engine: both, fields: [],
@@ -1047,6 +1043,41 @@
     const ext = extOfF(file);
     if (ext === 'odt') return (await odtParas(file)).map((p) => p.replace(/^## /, '')).join('\n');
     if (ext === 'rtf') return rtfToText(await file.text());
+    if (ext === 'pages') {
+      try {
+        const ff = await loadFf();
+        const zip = ff.unzipSync(new Uint8Array(await file.arrayBuffer()));
+        const preview = zip['QuickLook/Preview.pdf'];
+        if (preview) {
+          const pdfjs = await loadJs();
+          const doc = await pdfjs.getDocument({ data: preview }).promise;
+          const lines = [];
+          for (let p = 1; p <= doc.numPages; p++) {
+            const page = await doc.getPage(p);
+            const tc = await page.getTextContent();
+            lines.push(tc.items.map(i => i.str).join(' '));
+          }
+          return lines.join('\n\n');
+        }
+      } catch (_) {}
+    }
+    try {
+      if (mammoth) {
+        const html = (await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() })).value;
+        if (html && /<table/i.test(html)) {
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          doc.querySelectorAll('tr').forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll('th, td')).map(c => c.textContent.trim());
+            const line = cells.join('\t');
+            const p = doc.createElement('p');
+            p.textContent = line;
+            tr.parentNode.insertBefore(p, tr);
+          });
+          doc.querySelectorAll('table').forEach(t => t.remove());
+          return Array.from(doc.body.children).map(c => c.textContent.trim()).filter(Boolean).join('\n\n');
+        }
+      }
+    } catch (_) {}
     const r = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
     return r.value;
   };
@@ -1072,16 +1103,799 @@
     return { blob: new Blob([await doc.save()], { type: 'application/pdf' }), filename: name, mime: 'application/pdf', preview: 'download' };
   }
 
-  R({ id: 'docx-to-html', category: 'PDF', name: 'DOCX to HTML', description: 'Convert Word / OpenDocument / RTF to HTML.', accepts: ['docx', 'odt', 'rtf'], engine: loadMammoth,
-    async run({ file, engine }) { return textOut(await officeHtml(file, engine), U.baseName(file.name) + '.html', 'text/html'); } });
-  R({ id: 'docx-to-txt', category: 'PDF', name: 'DOCX to TXT', description: 'Extract plain text from Word / OpenDocument / RTF.', accepts: ['docx', 'odt', 'rtf'], engine: loadMammoth,
-    async run({ file, engine }) { return textOut(await officeText(file, engine), U.baseName(file.name) + '.txt'); } });
-  R({ id: 'docx-to-md', category: 'PDF', name: 'DOCX to Markdown', description: 'Convert Word / OpenDocument / RTF to Markdown.', accepts: ['docx', 'odt', 'rtf'],
+  /* ══ High-Fidelity Word to PDF Vector Compiler (OpenXML / ODT / RTF / Pages) ══ */
+  async function buildDocxToPdf(file, PDFLib, fflate, opts = {}, onProgress) {
+    const ext = extOfF(file);
+    const mode = opts.mode || 'flow';
+    const pageSize = opts.pageSize || 'auto';
+
+    if (ext === 'pages') {
+      try {
+        const zip = fflate.unzipSync(new Uint8Array(await file.arrayBuffer()));
+        const pdfEntry = Object.keys(zip).find(k => /QuickLook\/Preview\.pdf$/i.test(k) || /\.pdf$/i.test(k));
+        if (pdfEntry && zip[pdfEntry]) {
+          return { blob: new Blob([zip[pdfEntry]], { type: 'application/pdf' }), filename: U.baseName(file.name) + '.pdf', mime: 'application/pdf', preview: 'pdf' };
+        }
+      } catch (_) {}
+    }
+
+    if (ext === 'odt') {
+      try {
+        const paras = await odtParas(file);
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        const fontNorm = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+        let pw = pageSize === 'a4' ? 595.28 : 612;
+        let ph = pageSize === 'a4' ? 841.89 : 792;
+        let margin = mode === 'compact' ? 40 : 54;
+        let curPage = pdfDoc.addPage([pw, ph]);
+        let y = ph - margin;
+        const availW = pw - margin * 2;
+
+        for (const p of paras) {
+          const isH = p.startsWith('## ');
+          const raw = isH ? p.slice(3) : p;
+          const sz = isH ? 16 : 10.5;
+          const font = isH ? fontBold : fontNorm;
+          const color = isH ? PDFLib.rgb(0.1, 0.2, 0.4) : PDFLib.rgb(0.12, 0.15, 0.18);
+          const lineH = sz * 1.4;
+          y -= isH ? 12 : 4;
+          
+          const words = raw.split(/\s+/);
+          let curL = '';
+          for (const w of words) {
+            const test = curL ? curL + ' ' + w : w;
+            if (font.widthOfTextAtSize(test, sz) > availW && curL) {
+              if (y - lineH < margin) { curPage = pdfDoc.addPage([pw, ph]); y = ph - margin; }
+              curPage.drawText(curL, { x: margin, y: y - sz * 0.88, size: sz, font, color });
+              y -= lineH;
+              curL = w;
+            } else {
+              curL = test;
+            }
+          }
+          if (curL) {
+            if (y - lineH < margin) { curPage = pdfDoc.addPage([pw, ph]); y = ph - margin; }
+            curPage.drawText(curL, { x: margin, y: y - sz * 0.88, size: sz, font, color });
+            y -= lineH;
+          }
+        }
+        const total = pdfDoc.getPageCount();
+        for (let i = 0; i < total; i++) {
+          const pg = pdfDoc.getPage(i);
+          const ft = `Page ${i + 1} of ${total}`;
+          const fw = fontNorm.widthOfTextAtSize(ft, 8.5);
+          pg.drawText(ft, { x: (pw - fw) / 2, y: margin / 2, size: 8.5, font: fontNorm, color: PDFLib.rgb(0.55, 0.6, 0.65) });
+        }
+        return { blob: new Blob([await pdfDoc.save()], { type: 'application/pdf' }), filename: U.baseName(file.name) + '.pdf', mime: 'application/pdf', preview: 'pdf' };
+      } catch (e) {
+        console.warn('[ODT] Falling back to text-to-pdf:', e);
+      }
+    }
+
+    if (ext === 'rtf') {
+      try {
+        const text = rtfToText(await file.text());
+        return textToPdf(PDFLib, text, U.baseName(file.name) + '.pdf');
+      } catch (_) {}
+    }
+
+    try {
+      const docxBytes = new Uint8Array(await file.arrayBuffer());
+      const zip = fflate.unzipSync(docxBytes);
+      if (!zip['word/document.xml']) {
+        throw new Error('Not a valid Word document: missing word/document.xml');
+      }
+      onProgress?.(0.15, 'Parsing document structure…');
+      const dec = new TextDecoder('utf-8');
+      const local = (el) => el.localName || el.tagName.replace(/^.*:/, '');
+      const attr = (el, name) => {
+        if (!el) return null;
+        for (let i = 0; i < el.attributes.length; i++) {
+          const a = el.attributes[i];
+          if (a.localName === name || a.name === name || a.name.endsWith(':' + name)) return a.value;
+        }
+        return null;
+      };
+
+      const rels = {};
+      if (zip['word/_rels/document.xml.rels']) {
+        const dp = new DOMParser().parseFromString(dec.decode(zip['word/_rels/document.xml.rels']), 'application/xml');
+        Array.from(dp.getElementsByTagName('*')).forEach(el => {
+          if (local(el) === 'Relationship') {
+            const id = attr(el, 'Id');
+            if (id) rels[id] = { target: attr(el, 'Target') || '', type: attr(el, 'Type') || '' };
+          }
+        });
+      }
+
+      const numMap = {};
+      if (zip['word/numbering.xml']) {
+        const numDoc = new DOMParser().parseFromString(dec.decode(zip['word/numbering.xml']), 'application/xml');
+        const abstracts = {};
+        Array.from(numDoc.getElementsByTagName('*')).forEach(el => {
+          if (local(el) === 'abstractNum') {
+            const aId = attr(el, 'abstractNumId');
+            abstracts[aId] = {};
+            Array.from(el.getElementsByTagName('*')).forEach(lvl => {
+              if (local(lvl) === 'lvl') {
+                const ilvl = attr(lvl, 'ilvl') || '0';
+                const fmtEl = Array.from(lvl.getElementsByTagName('*')).find(x => local(x) === 'numFmt');
+                abstracts[aId][ilvl] = fmtEl ? attr(fmtEl, 'val') : 'bullet';
+              }
+            });
+          }
+        });
+        Array.from(numDoc.getElementsByTagName('*')).forEach(el => {
+          if (local(el) === 'num') {
+            const numId = attr(el, 'numId');
+            const aRef = Array.from(el.getElementsByTagName('*')).find(x => local(x) === 'abstractNumId');
+            const aId = aRef ? attr(aRef, 'val') : null;
+            if (numId && aId && abstracts[aId]) numMap[numId] = abstracts[aId];
+          }
+        });
+      }
+
+      const styles = {};
+      if (zip['word/styles.xml']) {
+        const sDoc = new DOMParser().parseFromString(dec.decode(zip['word/styles.xml']), 'application/xml');
+        Array.from(sDoc.getElementsByTagName('*')).forEach(el => {
+          if (local(el) === 'style' && attr(el, 'type') === 'paragraph') {
+            const sId = attr(el, 'styleId');
+            if (sId) {
+              const szEl = Array.from(el.getElementsByTagName('*')).find(x => local(x) === 'sz');
+              const colEl = Array.from(el.getElementsByTagName('*')).find(x => local(x) === 'color');
+              const bEl = Array.from(el.getElementsByTagName('*')).find(x => local(x) === 'b');
+              styles[sId] = {
+                sz: szEl ? parseInt(attr(szEl, 'val') || '22', 10) / 2 : undefined,
+                color: colEl ? attr(colEl, 'val') : undefined,
+                bold: bEl ? attr(bEl, 'val') !== '0' : undefined
+              };
+            }
+          }
+        });
+      }
+
+      const docXml = dec.decode(zip['word/document.xml']);
+      const docDom = new DOMParser().parseFromString(docXml, 'application/xml');
+      const body = Array.from(docDom.getElementsByTagName('*')).find(x => local(x) === 'body');
+      if (!body) throw new Error('Invalid Word document: missing <body> in document.xml');
+
+      let pageW = 612, pageH = 792;
+      let mLeft = 54, mRight = 54, mTop = 54, mBottom = 54;
+      const sectPr = Array.from(body.getElementsByTagName('*')).find(x => local(x) === 'sectPr');
+      if (sectPr) {
+        const pgSz = Array.from(sectPr.getElementsByTagName('*')).find(x => local(x) === 'pgSz');
+        if (pgSz) {
+          const wDxa = parseInt(attr(pgSz, 'w') || '12240', 10);
+          const hDxa = parseInt(attr(pgSz, 'h') || '15840', 10);
+          pageW = Math.round(wDxa / 20);
+          pageH = Math.round(hDxa / 20);
+          if (attr(pgSz, 'orient') === 'landscape' && pageW < pageH) {
+            const tmp = pageW; pageW = pageH; pageH = tmp;
+          }
+        }
+        const pgMar = Array.from(sectPr.getElementsByTagName('*')).find(x => local(x) === 'pgMar');
+        if (pgMar) {
+          mTop = Math.max(36, Math.min(108, Math.round(parseInt(attr(pgMar, 'top') || '1440', 10) / 20)));
+          mBottom = Math.max(36, Math.min(108, Math.round(parseInt(attr(pgMar, 'bottom') || '1440', 10) / 20)));
+          mLeft = Math.max(36, Math.min(108, Math.round(parseInt(attr(pgMar, 'left') || '1440', 10) / 20)));
+          mRight = Math.max(36, Math.min(108, Math.round(parseInt(attr(pgMar, 'right') || '1440', 10) / 20)));
+        }
+      }
+
+      if (pageSize === 'a4') { pageW = 595.28; pageH = 841.89; }
+      else if (pageSize === 'letter') { pageW = 612; pageH = 792; }
+      if (mode === 'compact') { mLeft = 40; mRight = 40; mTop = 40; mBottom = 40; }
+
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const fHelv = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const fHelvBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const fHelvOblique = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
+      const fHelvBoldOblique = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBoldOblique);
+      const fTimes = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman);
+      const fTimesBold = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRomanBold);
+      const fCourier = await pdfDoc.embedFont(PDFLib.StandardFonts.Courier);
+
+      const fonts = {
+        helv: { normal: fHelv, bold: fHelvBold, italic: fHelvOblique, boldItalic: fHelvBoldOblique },
+        times: { normal: fTimes, bold: fTimesBold, italic: fTimes, boldItalic: fTimesBold },
+        courier: { normal: fCourier, bold: fCourier, italic: fCourier, boldItalic: fCourier }
+      };
+
+      function sanitizeText(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/\u2014/g, '--')
+          .replace(/\u2013/g, '-')
+          .replace(/\u2026/g, '...')
+          .replace(/\u00A0/g, ' ')
+          .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          .replace(/[^\x00-\xFF]/g, (c) => c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x00-\xFF]/g, '?'));
+      }
+
+      function parseColor(hex) {
+        if (!hex || hex === 'auto') return PDFLib.rgb(0.12, 0.15, 0.18);
+        const clean = hex.replace('#', '');
+        if (clean.length === 6) {
+          return PDFLib.rgb(
+            parseInt(clean.substring(0, 2), 16) / 255,
+            parseInt(clean.substring(2, 4), 16) / 255,
+            parseInt(clean.substring(4, 6), 16) / 255
+          );
+        }
+        return PDFLib.rgb(0.12, 0.15, 0.18);
+      }
+
+      let curPage = pdfDoc.addPage([pageW, pageH]);
+      let cursorY = pageH - mTop;
+      const contentW = pageW - mLeft - mRight;
+
+      function newPage() {
+        curPage = pdfDoc.addPage([pageW, pageH]);
+        cursorY = pageH - mTop;
+      }
+
+      const embeddedImages = {};
+      async function getEmbeddedImage(rId) {
+        if (embeddedImages[rId]) return embeddedImages[rId];
+        const rel = rels[rId];
+        if (!rel || !rel.target) return null;
+        let target = rel.target.replace(/^\//, '');
+        if (!target.startsWith('word/')) target = 'word/' + target;
+        const imgBytes = zip[target];
+        if (!imgBytes) return null;
+        try {
+          let embedded;
+          if (/\.png$/i.test(target)) {
+            embedded = await pdfDoc.embedPng(imgBytes);
+          } else if (/\.jpe?g$/i.test(target)) {
+            embedded = await pdfDoc.embedJpg(imgBytes);
+          }
+          if (embedded) embeddedImages[rId] = embedded;
+          return embedded;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      const listCounters = {};
+      const children = Array.from(body.childNodes).filter(n => n.nodeType === 1 && (local(n) === 'p' || local(n) === 'tbl'));
+      onProgress?.(0.3, 'Formatting typography and layout…');
+
+      for (let cIndex = 0; cIndex < children.length; cIndex++) {
+        const node = children[cIndex];
+        const tag = local(node);
+        if (cIndex % 20 === 0 && children.length > 20) {
+          onProgress?.(0.3 + (cIndex / children.length) * 0.5, `Rendering elements (${cIndex}/${children.length})…`);
+        }
+
+        if (tag === 'p') {
+          const pPr = Array.from(node.childNodes).find(c => c.nodeType === 1 && local(c) === 'pPr');
+          const styleEl = pPr && Array.from(pPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'pStyle');
+          const styleId = styleEl ? (attr(styleEl, 'val') || '') : '';
+          const jcEl = pPr && Array.from(pPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'jc');
+          const jc = jcEl ? (attr(jcEl, 'val') || 'left') : 'left';
+
+          const numPr = pPr && Array.from(pPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'numPr');
+          let isList = false;
+          let listPrefix = '';
+          let listIndent = 0;
+
+          if (numPr) {
+            isList = true;
+            const ilvlEl = Array.from(numPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'ilvl');
+            const numIdEl = Array.from(numPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'numId');
+            const ilvl = ilvlEl ? (attr(ilvlEl, 'val') || '0') : '0';
+            const numId = numIdEl ? (attr(numIdEl, 'val') || '1') : '1';
+            const fmt = (numMap[numId] && numMap[numId][ilvl]) || 'bullet';
+            listIndent = (parseInt(ilvl, 10) + 1) * 16;
+
+            if (fmt === 'decimal') {
+              const k = `${numId}-${ilvl}`;
+              listCounters[k] = (listCounters[k] || 0) + 1;
+              listPrefix = `${listCounters[k]}.`;
+            } else if (fmt === 'lowerLetter') {
+              const k = `${numId}-${ilvl}`;
+              listCounters[k] = (listCounters[k] || 0) + 1;
+              listPrefix = `${String.fromCharCode(96 + ((listCounters[k] - 1) % 26 + 1))}.`;
+            } else {
+              listPrefix = '\u2022';
+            }
+          } else if (/bullet|list/i.test(styleId)) {
+            isList = true;
+            listPrefix = '\u2022';
+            listIndent = 16;
+          }
+
+          let defSize = 10.5;
+          let defBold = false;
+          let defColor = PDFLib.rgb(0.12, 0.15, 0.18);
+          let spaceBefore = 2;
+          let spaceAfter = 5;
+          let lineH = 14.5;
+
+          if (/title/i.test(styleId)) {
+            defSize = 22; defBold = true; defColor = parseColor('0F172A'); spaceBefore = 14; spaceAfter = 8; lineH = 28;
+          } else if (/subtitle/i.test(styleId)) {
+            defSize = 13; defColor = parseColor('475569'); spaceBefore = 0; spaceAfter = 8; lineH = 17;
+          } else if (/heading\s*1|^h1$/i.test(styleId) || styleId === 'Heading1') {
+            defSize = 17; defBold = true; defColor = parseColor('1B365D'); spaceBefore = 14; spaceAfter = 6; lineH = 23;
+          } else if (/heading\s*2|^h2$/i.test(styleId) || styleId === 'Heading2') {
+            defSize = 13.5; defBold = true; defColor = parseColor('2B579A'); spaceBefore = 10; spaceAfter = 4; lineH = 18;
+          } else if (/heading\s*3|^h3$/i.test(styleId) || styleId === 'Heading3') {
+            defSize = 11.5; defBold = true; defColor = parseColor('334155'); spaceBefore = 8; spaceAfter = 3; lineH = 15;
+          }
+
+          if (styles[styleId]) {
+            if (styles[styleId].sz !== undefined) defSize = styles[styleId].sz;
+            if (styles[styleId].bold !== undefined) defBold = styles[styleId].bold;
+            if (styles[styleId].color !== undefined) defColor = parseColor(styles[styleId].color);
+          }
+
+          const items = [];
+          function extractRuns(parentEl) {
+            for (const child of parentEl.childNodes) {
+              if (child.nodeType !== 1) continue;
+              const ctag = local(child);
+              if (ctag === 'r') {
+                const rPr = Array.from(child.childNodes).find(c => c.nodeType === 1 && local(c) === 'rPr');
+                const bEl = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'b');
+                const iEl = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'i');
+                const uEl = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'u');
+                const strikeEl = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'strike');
+                const szEl = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'sz');
+                const colEl = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'color');
+                const rFonts = rPr && Array.from(rPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'rFonts');
+
+                const b = bEl ? (attr(bEl, 'val') !== '0') : defBold;
+                const it = iEl ? (attr(iEl, 'val') !== '0') : false;
+                const u = !!uEl;
+                const strike = !!strikeEl;
+                const sz = szEl ? (parseInt(attr(szEl, 'val') || '22', 10) / 2) : defSize;
+                const col = colEl ? parseColor(attr(colEl, 'val')) : defColor;
+
+                let fontSet = fonts.helv;
+                if (rFonts) {
+                  const fName = attr(rFonts, 'ascii') || attr(rFonts, 'hAnsi') || '';
+                  if (/times|georgia|cambria/i.test(fName)) fontSet = fonts.times;
+                  else if (/courier|consolas|mono/i.test(fName)) fontSet = fonts.courier;
+                }
+                const activeFont = (b && it) ? fontSet.boldItalic : b ? fontSet.bold : it ? fontSet.italic : fontSet.normal;
+
+                for (const sub of child.childNodes) {
+                  if (sub.nodeType !== 1) continue;
+                  const stag = local(sub);
+                  if (stag === 't') {
+                    items.push({ type: 'text', text: sub.textContent || '', font: activeFont, size: sz, color: col, underline: u, strike });
+                  } else if (stag === 'tab') {
+                    items.push({ type: 'text', text: '    ', font: activeFont, size: sz, color: col, underline: false, strike: false });
+                  } else if (stag === 'br') {
+                    if (attr(sub, 'type') === 'page') items.push({ type: 'pageBreak' });
+                    else items.push({ type: 'lineBreak' });
+                  } else if (stag === 'drawing') {
+                    const blip = Array.from(sub.getElementsByTagName('*')).find(x => local(x) === 'blip');
+                    const extent = Array.from(sub.getElementsByTagName('*')).find(x => local(x) === 'extent');
+                    const rId = blip ? (attr(blip, 'embed') || attr(blip, 'r:embed')) : null;
+                    if (rId) {
+                      const cx = extent ? parseInt(attr(extent, 'cx') || '0', 10) : 0;
+                      const cy = extent ? parseInt(attr(extent, 'cy') || '0', 10) : 0;
+                      items.push({ type: 'drawing', rId, cx, cy });
+                    }
+                  }
+                }
+              } else if (ctag === 'hyperlink') {
+                extractRuns(child);
+              }
+            }
+          }
+
+          extractRuns(node);
+
+          if (!items.length) {
+            cursorY -= 8;
+            continue;
+          }
+
+          if (items.some(it => it.type === 'pageBreak')) {
+            newPage();
+            continue;
+          }
+
+          cursorY -= spaceBefore;
+          if (cursorY - lineH < mBottom) newPage();
+
+          const indentX = mLeft + listIndent;
+          const availW = contentW - listIndent;
+          if (isList && listPrefix) {
+            const prefFont = fonts.helv.bold;
+            const prefSize = defSize;
+            try {
+              curPage.drawText(sanitizeText(listPrefix), {
+                x: mLeft + Math.max(0, listIndent - 14),
+                y: cursorY - prefSize * 0.88,
+                size: prefSize,
+                font: prefFont,
+                color: defColor
+              });
+            } catch (_) {}
+          }
+
+          let curLineRuns = [];
+          let curLineWidth = 0;
+
+          function flushLine() {
+            if (!curLineRuns.length) return;
+            if (cursorY - lineH < mBottom) newPage();
+
+            let startX = indentX;
+            if (jc === 'center') startX = indentX + (availW - curLineWidth) / 2;
+            else if (jc === 'right') startX = indentX + (availW - curLineWidth);
+
+            let rx = startX;
+            for (const item of curLineRuns) {
+              const safe = sanitizeText(item.text);
+              if (safe) {
+                try {
+                  curPage.drawText(safe, {
+                    x: rx,
+                    y: cursorY - item.size * 0.88,
+                    size: item.size,
+                    font: item.font,
+                    color: item.color
+                  });
+                } catch (_) {}
+                let w = 0;
+                try { w = item.font.widthOfTextAtSize(safe, item.size); } catch (_) { w = item.size * 0.5 * safe.length; }
+                if (item.underline) {
+                  try {
+                    curPage.drawLine({
+                      start: { x: rx, y: cursorY - item.size * 0.94 },
+                      end: { x: rx + w, y: cursorY - item.size * 0.94 },
+                      thickness: 0.7,
+                      color: item.color
+                    });
+                  } catch (_) {}
+                }
+                if (item.strike) {
+                  try {
+                    curPage.drawLine({
+                      start: { x: rx, y: cursorY - item.size * 0.45 },
+                      end: { x: rx + w, y: cursorY - item.size * 0.45 },
+                      thickness: 0.7,
+                      color: item.color
+                    });
+                  } catch (_) {}
+                }
+                rx += w;
+              }
+            }
+            cursorY -= lineH;
+            curLineRuns = [];
+            curLineWidth = 0;
+          }
+
+          for (const item of items) {
+            if (item.type === 'lineBreak') {
+              flushLine();
+            } else if (item.type === 'drawing') {
+              flushLine();
+              const emb = await getEmbeddedImage(item.rId);
+              if (emb) {
+                let iw = item.cx ? item.cx / 12700 : emb.width;
+                let ih = item.cy ? item.cy / 12700 : emb.height;
+                if (iw > availW) {
+                  const scale = availW / iw;
+                  iw = availW;
+                  ih = ih * scale;
+                }
+                if (cursorY - ih < mBottom) newPage();
+                curPage.drawImage(emb, {
+                  x: indentX,
+                  y: cursorY - ih,
+                  width: iw,
+                  height: ih
+                });
+                cursorY -= (ih + 8);
+              }
+            } else if (item.type === 'text') {
+              const tokens = item.text.split(/(\s+)/);
+              for (const token of tokens) {
+                if (!token) continue;
+                const safe = sanitizeText(token);
+                let w = 0;
+                try { w = item.font.widthOfTextAtSize(safe, item.size); } catch (_) { w = item.size * 0.5 * safe.length; }
+                if (curLineWidth + w > availW && curLineWidth > 0) {
+                  flushLine();
+                }
+                curLineRuns.push({ text: safe, font: item.font, size: item.size, color: item.color, underline: item.underline, strike: item.strike });
+                curLineWidth += w;
+              }
+            }
+          }
+          flushLine();
+          cursorY -= spaceAfter;
+        }
+
+        else if (tag === 'tbl') {
+          const rows = Array.from(node.childNodes).filter(c => c.nodeType === 1 && local(c) === 'tr');
+          if (!rows.length) continue;
+
+          const grid = Array.from(node.childNodes).find(c => c.nodeType === 1 && local(c) === 'tblGrid');
+          const gridCols = grid ? Array.from(grid.childNodes).filter(c => c.nodeType === 1 && local(c) === 'gridCol') : [];
+
+          let colWidths = [];
+          if (gridCols.length) {
+            const totalGrid = gridCols.reduce((acc, c) => acc + parseInt(attr(c, 'w') || '1000', 10), 0);
+            colWidths = gridCols.map(c => (parseInt(attr(c, 'w') || '1000', 10) / totalGrid) * contentW);
+          } else {
+            const numCols = Math.max(...rows.map(r => Array.from(r.childNodes).filter(c => c.nodeType === 1 && local(c) === 'tc').length));
+            colWidths = Array(numCols).fill(contentW / Math.max(1, numCols));
+          }
+
+          cursorY -= 8;
+
+          for (let rIdx = 0; rIdx < rows.length; rIdx++) {
+            const row = rows[rIdx];
+            const rPr = Array.from(row.childNodes).find(c => c.nodeType === 1 && local(c) === 'trPr');
+            const isHeader = rIdx === 0 || (rPr && Array.from(rPr.childNodes).some(c => local(c) === 'tblHeader'));
+            const cells = Array.from(row.childNodes).filter(c => c.nodeType === 1 && local(c) === 'tc');
+
+            const cellData = [];
+            let maxLines = 1;
+
+            for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+              const tc = cells[cIdx];
+              const cw = colWidths[cIdx] || (contentW / cells.length);
+              const tcPr = Array.from(tc.childNodes).find(c => c.nodeType === 1 && local(c) === 'tcPr');
+              const shdEl = tcPr && Array.from(tcPr.childNodes).find(c => c.nodeType === 1 && local(c) === 'shd');
+              const fill = shdEl ? attr(shdEl, 'fill') : null;
+              const bgColor = isHeader ? PDFLib.rgb(0.93, 0.95, 0.98) : (fill && fill !== 'auto' ? parseColor(fill) : null);
+
+              const pEls = Array.from(tc.childNodes).filter(c => c.nodeType === 1 && local(c) === 'p');
+              const fontSize = isHeader ? 10 : 9.5;
+              const font = isHeader ? fonts.helv.bold : fonts.helv.normal;
+              const textColor = isHeader ? parseColor('1E3A8A') : parseColor('1F2937');
+              const padX = 6;
+              const textAvailW = Math.max(20, cw - padX * 2);
+
+              const lines = [];
+              for (const p of pEls) {
+                const text = sanitizeText((p.textContent || '').trim());
+                if (!text) continue;
+                const words = text.split(/\s+/);
+                let curL = '';
+                for (const w of words) {
+                  const test = curL ? curL + ' ' + w : w;
+                  let tw = 0;
+                  try { tw = font.widthOfTextAtSize(test, fontSize); } catch (_) { tw = test.length * fontSize * 0.5; }
+                  if (tw > textAvailW && curL) {
+                    lines.push(curL);
+                    curL = w;
+                  } else {
+                    curL = test;
+                  }
+                }
+                if (curL) lines.push(curL);
+              }
+              if (!lines.length) lines.push('');
+              maxLines = Math.max(maxLines, lines.length);
+              cellData.push({ width: cw, bgColor, lines, fontSize, font, textColor, padX });
+            }
+
+            const rowH = Math.max(22, maxLines * 13.5 + 9);
+            if (cursorY - rowH < mBottom) newPage();
+
+            let cx = mLeft;
+            for (const cd of cellData) {
+              if (cd.bgColor) {
+                curPage.drawRectangle({
+                  x: cx,
+                  y: cursorY - rowH,
+                  width: cd.width,
+                  height: rowH,
+                  color: cd.bgColor
+                });
+              }
+              curPage.drawRectangle({
+                x: cx,
+                y: cursorY - rowH,
+                width: cd.width,
+                height: rowH,
+                borderColor: PDFLib.rgb(0.8, 0.85, 0.9),
+                borderWidth: 0.75
+              });
+              let ty = cursorY - 14;
+              for (const line of cd.lines) {
+                if (line) {
+                  try {
+                    curPage.drawText(line, {
+                      x: cx + cd.padX,
+                      y: ty,
+                      size: cd.fontSize,
+                      font: cd.font,
+                      color: cd.textColor
+                    });
+                  } catch (_) {}
+                }
+                ty -= 12.5;
+              }
+              cx += cd.width;
+            }
+            cursorY -= rowH;
+          }
+          cursorY -= 8;
+        }
+      }
+
+      onProgress?.(0.85, 'Adding headers, footers & pagination…');
+      const totalPages = pdfDoc.getPageCount();
+      for (let i = 0; i < totalPages; i++) {
+        const p = pdfDoc.getPage(i);
+        const footerText = `Page ${i + 1} of ${totalPages}`;
+        const fw = fonts.helv.normal.widthOfTextAtSize(footerText, 8.5);
+        p.drawText(footerText, {
+          x: (pageW - fw) / 2,
+          y: Math.max(16, mBottom / 2),
+          size: 8.5,
+          font: fonts.helv.normal,
+          color: PDFLib.rgb(0.55, 0.6, 0.65)
+        });
+      }
+
+      onProgress?.(0.95, 'Saving PDF…');
+      const outBytes = await pdfDoc.save();
+      return {
+        blob: new Blob([outBytes], { type: 'application/pdf' }),
+        filename: U.baseName(file.name) + '.pdf',
+        mime: 'application/pdf',
+        preview: 'pdf'
+      };
+    } catch (err) {
+      console.warn('[DOCX to PDF] Vector OpenXML compiler failed, falling back to basic extraction:', err);
+      if (opts.mammoth) {
+        const txt = await officeText(file, opts.mammoth);
+        return textToPdf(PDFLib, txt, U.baseName(file.name) + '.pdf');
+      }
+      throw err;
+    }
+  }
+
+  R({ id: 'docx-to-html', category: 'PDF', name: 'DOCX to HTML', description: 'Convert Word / OpenDocument / RTF to a styled, responsive HTML document.', accepts: ['docx', 'odt', 'rtf', 'pages'],
+    engine: async () => ({ m: await loadMammoth() }),
+    async run({ file, engine }) {
+      const rawHtml = await officeHtml(file, engine.m);
+      const title = escT(U.baseName(file.name));
+      const fullHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: #1e293b;
+      background: #f8fafc;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .document-page {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 60px 72px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    }
+    h1, h2, h3, h4, h5, h6 { color: #0f172a; font-weight: 700; line-height: 1.3; margin-top: 1.6em; margin-bottom: 0.6em; }
+    h1 { font-size: 2em; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3em; }
+    h2 { font-size: 1.5em; color: #1e40af; }
+    h3 { font-size: 1.25em; color: #1e3a8a; }
+    p { margin: 0 0 1em 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.95em; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; vertical-align: top; }
+    th { background: #eff6ff; color: #1e3a8a; font-weight: 600; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    img { max-width: 100%; height: auto; border-radius: 6px; margin: 1em 0; }
+    ul, ol { padding-left: 24px; margin: 0 0 1.2em 0; }
+    li { margin-bottom: 0.4em; }
+    blockquote { border-left: 4px solid #3b82f6; margin: 1.5em 0; padding: 8px 16px; background: #f0f9ff; border-radius: 0 8px 8px 0; color: #1e3a8a; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.88em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+    @media (max-width: 768px) {
+      body { padding: 16px 8px; }
+      .document-page { padding: 32px 20px; border-radius: 8px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-page">
+    ${rawHtml}
+  </div>
+</body>
+</html>`;
+      return textOut(fullHtml, U.baseName(file.name) + '.html', 'text/html');
+    }
+  });
+
+  R({ id: 'docx-to-txt', category: 'PDF', name: 'DOCX to TXT', description: 'Extract clean plain text with preserved table structures from Word / OpenDocument / RTF.', accepts: ['docx', 'odt', 'rtf', 'pages'], engine: loadMammoth,
+    async run({ file, engine }) {
+      return textOut(await officeText(file, engine), U.baseName(file.name) + '.txt');
+    }
+  });
+
+  R({ id: 'docx-to-md', category: 'PDF', name: 'DOCX to Markdown', description: 'Convert Word / OpenDocument / RTF to clean GitHub-Flavored Markdown with tables.', accepts: ['docx', 'odt', 'rtf', 'pages'],
     engine: async () => ({ m: await loadMammoth(), T: await loadTurndown() }),
-    async run({ file, engine }) { const md = new engine.T({ headingStyle: 'atx' }).turndown(await officeHtml(file, engine.m)); return textOut(md, U.baseName(file.name) + '.md', 'text/markdown'); } });
-  R({ id: 'docx-to-pdf', category: 'PDF', name: 'DOCX to PDF', description: 'Convert Word / OpenDocument / RTF to a text PDF.', accepts: ['docx', 'odt', 'rtf'],
-    engine: async () => ({ m: await loadMammoth(), L: await loadPdfLib() }),
-    async run({ file, engine }) { return textToPdf(engine.L, await officeText(file, engine.m), U.baseName(file.name) + '.pdf'); } });
+    async run({ file, engine }) {
+      const html = await officeHtml(file, engine.m);
+      const td = new engine.T({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+      td.addRule('table', {
+        filter: 'table',
+        replacement: function (content, node) {
+          const rows = Array.from(node.querySelectorAll('tr'));
+          if (!rows.length) return '';
+          const matrix = rows.map(r => Array.from(r.querySelectorAll('th, td')).map(c => c.textContent.trim().replace(/\|/g, '\\|')));
+          if (!matrix.length || !matrix[0].length) return '';
+          const colCount = Math.max(...matrix.map(r => r.length));
+          const padRow = (r) => Array.from({ length: colCount }, (_, i) => r[i] || '');
+          const header = padRow(matrix[0]);
+          const sep = Array(colCount).fill('---');
+          const lines = [`| ${header.join(' | ')} |`, `| ${sep.join(' | ')} |`];
+          for (let i = 1; i < matrix.length; i++) {
+            lines.push(`| ${padRow(matrix[i]).join(' | ')} |`);
+          }
+          return '\n\n' + lines.join('\n') + '\n\n';
+        }
+      });
+      const md = td.turndown(html);
+      return textOut(md, U.baseName(file.name) + '.md', 'text/markdown');
+    }
+  });
+
+  R({
+    id: 'docx-to-pdf',
+    category: 'PDF',
+    name: 'DOCX to PDF',
+    description: 'Convert Word / OpenDocument / RTF to high-fidelity PDF with typography, vector tables, styles & embedded images.',
+    accepts: ['docx', 'odt', 'rtf', 'pages'],
+    fields: [
+      {
+        key: 'mode',
+        label: 'Layout Mode',
+        type: 'select',
+        default: 'flow',
+        options: [
+          { value: 'flow', label: 'Flow Document [BEST] — Crisp vector text, tables, styles & images' },
+          { value: 'exact', label: 'Exact Layout — Strict section geometry & native margins' },
+          { value: 'compact', label: 'Compact / Reading — Minimal reading flow, ideal for print' }
+        ]
+      },
+      {
+        key: 'pageSize',
+        label: 'Page Size',
+        type: 'select',
+        default: 'auto',
+        options: [
+          { value: 'auto', label: 'Auto (Match Document)' },
+          { value: 'a4', label: 'A4 (210 × 297 mm)' },
+          { value: 'letter', label: 'US Letter (8.5 × 11 in)' }
+        ]
+      }
+    ],
+    engine: async () => ({
+      L: await loadPdfLib(),
+      ff: await loadFf(),
+      m: await loadMammoth()
+    }),
+    async run({ file, inputs = {}, engine, onProgress }) {
+      return await buildDocxToPdf(file, engine.L, engine.ff, { ...inputs, mammoth: engine.m }, onProgress);
+    }
+  });
 
   R({ id: 'md-to-html', category: 'PDF', name: 'Markdown to HTML', description: 'Render Markdown to HTML.', accepts: ['md', 'markdown', 'txt'], optionalFile: true, engine: loadMarked,
     fields: [{ key: 'source', label: 'Markdown (or drop a file)', type: 'textarea', default: '# Hello\n\nSome **bold** text.' }],
@@ -1838,7 +2652,7 @@
             const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
             if (!blob) continue;
             images.push({ bytes: new Uint8Array(await blob.arrayBuffer()), w: img.width, h: img.height,
-              y: ctm[5], ih: Math.abs(ctm[3]) || 0 });
+              x: ctm[4] || 0, y: ctm[5] || 0, iw: Math.abs(ctm[0]) || img.width, ih: Math.abs(ctm[3]) || img.height });
           } catch (_) {}
         }
       } catch (_) {}
@@ -2710,94 +3524,172 @@
     return t;
   };
 
-  /* Build a real, openable .pptx from slides ({ title, body }). */
-  /* Rich PPTX builder: real titles, bullet/numbered paragraphs, tables,
-     pictures, shrink-to-fit bodies. No truncation — content completeness
-     is the gate; overflow shrinks instead of clipping. */
-  function pptRunXml(runs) {
-    return runs.map((r) => {
-      const props = [`lang="en-US"`, `sz="${Math.min(4000, Math.max(1000, Math.round((r.size || 12) * 100)))}"`];
-      if (r.bold) props.push('b="1"');
-      if (r.italic) props.push('i="1"');
-      const solid = r.color ? `<a:solidFill><a:srgbClr val="${escXml(r.color)}"/></a:solidFill>` : '';
-      return `<a:r><a:rPr ${props.join(' ')}/>${solid}<a:t>${escXml(r.str)} </a:t></a:r>`;
-    }).join('');
-  }
-  function pptParaXml(text, runs, kind) {
-    // kind: 'title' | 'bullet' | 'ordered' | 'body'
-    let pr = '<a:pPr/>';
-    if (kind === 'bullet') pr = '<a:pPr marL="342900" indent="-342900"><a:buChar char="•"/><a:buSzPct val="100000"/><a:buClr><a:schemeClr val="tx1"/></a:buClr></a:pPr>';
-    else if (kind === 'ordered') pr = '<a:pPr marL="342900" indent="-342900"><a:buAutoNum type="arabicPeriod"/><a:buSzPct val="100000"/></a:pPr>';
-    const body = runs && runs.length ? pptRunXml(runs) : `<a:r><a:rPr lang="en-US" sz="1400"/><a:t>${escXml(text)}</a:t></a:r>`;
-    return `<a:p>${pr}${body}</a:p>`;
-  }
-  function pptKindOf(text) {
-    if (/^[•▪‣–—-]\s+/.test(text)) return 'bullet';
-    if (/^\d+[.\)]\s+/.test(text)) return 'ordered';
-    return 'body';
-  }
-  function pptTableXml(tbl, colW) {
-    // tbl: array of rows, each an array of cell paragraph-XML strings
-    const nCols = Math.max(...tbl.map((r) => r.length));
+const PPT_THEME_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n\r\n<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"Office Theme\"><a:themeElements><a:clrScheme name=\"Office\"><a:dk1><a:sysClr val=\"windowText\" lastClr=\"000000\"/></a:dk1><a:lt1><a:sysClr val=\"window\" lastClr=\"FFFFFF\"/></a:lt1><a:dk2><a:srgbClr val=\"44546A\"/></a:dk2><a:lt2><a:srgbClr val=\"E7E6E6\"/></a:lt2><a:accent1><a:srgbClr val=\"4472C4\"/></a:accent1><a:accent2><a:srgbClr val=\"ED7D31\"/></a:accent2><a:accent3><a:srgbClr val=\"A5A5A5\"/></a:accent3><a:accent4><a:srgbClr val=\"FFC000\"/></a:accent4><a:accent5><a:srgbClr val=\"5B9BD5\"/></a:accent5><a:accent6><a:srgbClr val=\"70AD47\"/></a:accent6><a:hlink><a:srgbClr val=\"0563C1\"/></a:hlink><a:folHlink><a:srgbClr val=\"954F72\"/></a:folHlink></a:clrScheme><a:fontScheme name=\"Office\"><a:majorFont><a:latin typeface=\"Calibri Light\" panose=\"020F0302020204030204\"/><a:ea typeface=\"\"/><a:cs typeface=\"\"/><a:font script=\"Jpan\" typeface=\"游ゴシック Light\"/><a:font script=\"Hang\" typeface=\"맑은 고딕\"/><a:font script=\"Hans\" typeface=\"等线 Light\"/><a:font script=\"Hant\" typeface=\"新細明體\"/><a:font script=\"Arab\" typeface=\"Times New Roman\"/><a:font script=\"Hebr\" typeface=\"Times New Roman\"/><a:font script=\"Thai\" typeface=\"Angsana New\"/><a:font script=\"Ethi\" typeface=\"Nyala\"/><a:font script=\"Beng\" typeface=\"Vrinda\"/><a:font script=\"Gujr\" typeface=\"Shruti\"/><a:font script=\"Khmr\" typeface=\"MoolBoran\"/><a:font script=\"Knda\" typeface=\"Tunga\"/><a:font script=\"Guru\" typeface=\"Raavi\"/><a:font script=\"Cans\" typeface=\"Euphemia\"/><a:font script=\"Cher\" typeface=\"Plantagenet Cherokee\"/><a:font script=\"Yiii\" typeface=\"Microsoft Yi Baiti\"/><a:font script=\"Tibt\" typeface=\"Microsoft Himalaya\"/><a:font script=\"Thaa\" typeface=\"MV Boli\"/><a:font script=\"Deva\" typeface=\"Mangal\"/><a:font script=\"Telu\" typeface=\"Gautami\"/><a:font script=\"Taml\" typeface=\"Latha\"/><a:font script=\"Syrc\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Orya\" typeface=\"Kalinga\"/><a:font script=\"Mlym\" typeface=\"Kartika\"/><a:font script=\"Laoo\" typeface=\"DokChampa\"/><a:font script=\"Sinh\" typeface=\"Iskoola Pota\"/><a:font script=\"Mong\" typeface=\"Mongolian Baiti\"/><a:font script=\"Viet\" typeface=\"Times New Roman\"/><a:font script=\"Uigh\" typeface=\"Microsoft Uighur\"/><a:font script=\"Geor\" typeface=\"Sylfaen\"/><a:font script=\"Armn\" typeface=\"Arial\"/><a:font script=\"Bugi\" typeface=\"Leelawadee UI\"/><a:font script=\"Bopo\" typeface=\"Microsoft JhengHei\"/><a:font script=\"Java\" typeface=\"Javanese Text\"/><a:font script=\"Lisu\" typeface=\"Segoe UI\"/><a:font script=\"Mymr\" typeface=\"Myanmar Text\"/><a:font script=\"Nkoo\" typeface=\"Ebrima\"/><a:font script=\"Olck\" typeface=\"Nirmala UI\"/><a:font script=\"Osma\" typeface=\"Ebrima\"/><a:font script=\"Phag\" typeface=\"Phagspa\"/><a:font script=\"Syrn\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Syrj\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Syre\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Sora\" typeface=\"Nirmala UI\"/><a:font script=\"Tale\" typeface=\"Microsoft Tai Le\"/><a:font script=\"Talu\" typeface=\"Microsoft New Tai Lue\"/><a:font script=\"Tfng\" typeface=\"Ebrima\"/></a:majorFont><a:minorFont><a:latin typeface=\"Calibri\" panose=\"020F0502020204030204\"/><a:ea typeface=\"\"/><a:cs typeface=\"\"/><a:font script=\"Jpan\" typeface=\"游ゴシック\"/><a:font script=\"Hang\" typeface=\"맑은 고딕\"/><a:font script=\"Hans\" typeface=\"等线\"/><a:font script=\"Hant\" typeface=\"新細明體\"/><a:font script=\"Arab\" typeface=\"Arial\"/><a:font script=\"Hebr\" typeface=\"Arial\"/><a:font script=\"Thai\" typeface=\"Cordia New\"/><a:font script=\"Ethi\" typeface=\"Nyala\"/><a:font script=\"Beng\" typeface=\"Vrinda\"/><a:font script=\"Gujr\" typeface=\"Shruti\"/><a:font script=\"Khmr\" typeface=\"DaunPenh\"/><a:font script=\"Knda\" typeface=\"Tunga\"/><a:font script=\"Guru\" typeface=\"Raavi\"/><a:font script=\"Cans\" typeface=\"Euphemia\"/><a:font script=\"Cher\" typeface=\"Plantagenet Cherokee\"/><a:font script=\"Yiii\" typeface=\"Microsoft Yi Baiti\"/><a:font script=\"Tibt\" typeface=\"Microsoft Himalaya\"/><a:font script=\"Thaa\" typeface=\"MV Boli\"/><a:font script=\"Deva\" typeface=\"Mangal\"/><a:font script=\"Telu\" typeface=\"Gautami\"/><a:font script=\"Taml\" typeface=\"Latha\"/><a:font script=\"Syrc\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Orya\" typeface=\"Kalinga\"/><a:font script=\"Mlym\" typeface=\"Kartika\"/><a:font script=\"Laoo\" typeface=\"DokChampa\"/><a:font script=\"Sinh\" typeface=\"Iskoola Pota\"/><a:font script=\"Mong\" typeface=\"Mongolian Baiti\"/><a:font script=\"Viet\" typeface=\"Arial\"/><a:font script=\"Uigh\" typeface=\"Microsoft Uighur\"/><a:font script=\"Geor\" typeface=\"Sylfaen\"/><a:font script=\"Armn\" typeface=\"Arial\"/><a:font script=\"Bugi\" typeface=\"Leelawadee UI\"/><a:font script=\"Bopo\" typeface=\"Microsoft JhengHei\"/><a:font script=\"Java\" typeface=\"Javanese Text\"/><a:font script=\"Lisu\" typeface=\"Segoe UI\"/><a:font script=\"Mymr\" typeface=\"Myanmar Text\"/><a:font script=\"Nkoo\" typeface=\"Ebrima\"/><a:font script=\"Olck\" typeface=\"Nirmala UI\"/><a:font script=\"Osma\" typeface=\"Ebrima\"/><a:font script=\"Phag\" typeface=\"Phagspa\"/><a:font script=\"Syrn\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Syrj\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Syre\" typeface=\"Estrangelo Edessa\"/><a:font script=\"Sora\" typeface=\"Nirmala UI\"/><a:font script=\"Tale\" typeface=\"Microsoft Tai Le\"/><a:font script=\"Talu\" typeface=\"Microsoft New Tai Lue\"/><a:font script=\"Tfng\" typeface=\"Ebrima\"/></a:minorFont></a:fontScheme><a:fmtScheme name=\"Office\"><a:fillStyleLst><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill><a:gradFill rotWithShape=\"1\"><a:gsLst><a:gs pos=\"0\"><a:schemeClr val=\"phClr\"><a:lumMod val=\"110000\"/><a:satMod val=\"105000\"/><a:tint val=\"67000\"/></a:schemeClr></a:gs><a:gs pos=\"50000\"><a:schemeClr val=\"phClr\"><a:lumMod val=\"105000\"/><a:satMod val=\"103000\"/><a:tint val=\"73000\"/></a:schemeClr></a:gs><a:gs pos=\"100000\"><a:schemeClr val=\"phClr\"><a:lumMod val=\"105000\"/><a:satMod val=\"109000\"/><a:tint val=\"81000\"/></a:schemeClr></a:gs></a:gsLst><a:lin ang=\"5400000\" scaled=\"0\"/></a:gradFill><a:gradFill rotWithShape=\"1\"><a:gsLst><a:gs pos=\"0\"><a:schemeClr val=\"phClr\"><a:satMod val=\"103000\"/><a:lumMod val=\"102000\"/><a:tint val=\"94000\"/></a:schemeClr></a:gs><a:gs pos=\"50000\"><a:schemeClr val=\"phClr\"><a:satMod val=\"110000\"/><a:lumMod val=\"100000\"/><a:shade val=\"100000\"/></a:schemeClr></a:gs><a:gs pos=\"100000\"><a:schemeClr val=\"phClr\"><a:lumMod val=\"99000\"/><a:satMod val=\"120000\"/><a:shade val=\"78000\"/></a:schemeClr></a:gs></a:gsLst><a:lin ang=\"5400000\" scaled=\"0\"/></a:gradFill></a:fillStyleLst><a:lnStyleLst><a:ln w=\"6350\" cap=\"flat\" cmpd=\"sng\" algn=\"ctr\"><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill><a:prstDash val=\"solid\"/><a:miter lim=\"800000\"/></a:ln><a:ln w=\"12700\" cap=\"flat\" cmpd=\"sng\" algn=\"ctr\"><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill><a:prstDash val=\"solid\"/><a:miter lim=\"800000\"/></a:ln><a:ln w=\"19050\" cap=\"flat\" cmpd=\"sng\" algn=\"ctr\"><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill><a:prstDash val=\"solid\"/><a:miter lim=\"800000\"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst><a:outerShdw blurRad=\"57150\" dist=\"19050\" dir=\"5400000\" algn=\"ctr\" rotWithShape=\"0\"><a:srgbClr val=\"000000\"><a:alpha val=\"63000\"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill><a:solidFill><a:schemeClr val=\"phClr\"><a:tint val=\"95000\"/><a:satMod val=\"170000\"/></a:schemeClr></a:solidFill><a:gradFill rotWithShape=\"1\"><a:gsLst><a:gs pos=\"0\"><a:schemeClr val=\"phClr\"><a:tint val=\"93000\"/><a:satMod val=\"150000\"/><a:shade val=\"98000\"/><a:lumMod val=\"102000\"/></a:schemeClr></a:gs><a:gs pos=\"50000\"><a:schemeClr val=\"phClr\"><a:tint val=\"98000\"/><a:satMod val=\"130000\"/><a:shade val=\"90000\"/><a:lumMod val=\"103000\"/></a:schemeClr></a:gs><a:gs pos=\"100000\"><a:schemeClr val=\"phClr\"><a:shade val=\"63000\"/><a:satMod val=\"120000\"/></a:schemeClr></a:gs></a:gsLst><a:lin ang=\"5400000\" scaled=\"0\"/></a:gradFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/><a:extLst><a:ext uri=\"{05A4C25C-085E-4340-85A3-A5531E510DB2}\"><thm15:themeFamily xmlns:thm15=\"http://schemas.microsoft.com/office/thememl/2012/main\" name=\"Office Theme\" id=\"{62F939B6-93AF-4DB8-9C6B-D6C7DFDC589F}\" vid=\"{4A3C46E8-61CC-4603-A589-7422A47A8E4A}\"/></a:ext></a:extLst></a:theme>";
+const PPT_PAD = '<a:p><a:r><a:rPr lang="en-US" sz="1200"/><a:t> </a:t></a:r></a:p>';
+
+function pptRunXml(runs, linkFor) {
+  return (runs || []).map((r) => {
+    const props = [`lang="en-US"`, `sz="${Math.min(4000, Math.max(1000, Math.round((r.size || 12) * 100)))}"`];
+    if (r.bold) props.push('b="1"');
+    if (r.italic) props.push('i="1"');
+    const solid = r.ghost ? '<a:noFill/>' : (r.color ? `<a:solidFill><a:srgbClr val="${escXml(r.color)}"/></a:solidFill>` : '');
+    const lk = (typeof linkFor === 'function') ? linkFor(r) : null;
+    if (!lk) return `<a:r><a:rPr ${props.join(' ')}/>${solid}<a:t>${escXml(r.str)} </a:t></a:r>`;
+    return `<a:r><a:rPr ${props.join(' ')}>${solid}<a:hlinkClick r:id="${lk}"/></a:rPr><a:t>${escXml(r.str)} </a:t></a:r>`;
+  }).join('');
+}
+
+function pptParaXml(text, runs, kind, rtl, linkFor) {
+  let pr = '<a:pPr/>';
+  if (kind === 'bullet') pr = '<a:pPr marL="342900" indent="-342900"><a:buChar char="•"/><a:buSzPct val="100000"/><a:buClr><a:schemeClr val="tx1"/></a:buClr></a:pPr>';
+  else if (kind === 'ordered') pr = '<a:pPr marL="342900" indent="-342900"><a:buAutoNum type="arabicPeriod"/><a:buSzPct val="100000"/></a:pPr>';
+  if (rtl) pr = pr.replace('<a:pPr', '<a:pPr rtl="1"');
+  const body = runs && runs.length ? pptRunXml(runs, linkFor) : `<a:r><a:rPr lang="en-US" sz="1400"/><a:t>${escXml(text)}</a:t></a:r>`;
+  return `<a:p>${pr}${body}</a:p>`;
+}
+
+function pptKindOf(text) {
+  if (/^[•▪‣–—-]\s+/.test(text)) return 'bullet';
+  if (/^\d+[.\)]\s+/.test(text)) return 'ordered';
+  return 'body';
+}
+
+function pptTableXml(tbl, colW, widths) {
+  const nCols = Math.max(...tbl.map((r) => r.length));
+  let ws;
+  if (widths && widths.length === nCols) {
+    const tot = widths.reduce((a, b) => a + b, 0) || 1;
+    ws = widths.map((w) => Math.max(1, Math.round((w / tot) * colW)));
+    ws[ws.length - 1] = Math.max(1, colW - ws.slice(0, -1).reduce((a, b) => a + b, 0));
+  } else {
     const w = Math.floor(colW / nCols);
-    const grid = Array.from({ length: nCols }, () => `<a:gridCol w="${w}"/>`).join('');
-    const rows = tbl.map((cells) => {
-      const tds = [];
-      for (let c = 0; c < nCols; c++) {
-        const ps = cells[c] || '<a:p><a:r><a:rPr lang="en-US" sz="1200"/><a:t> </a:t></a:r></a:p>';
-        tds.push(`<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${ps}</a:txBody><a:tcPr><a:lnL><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnL><a:lnR><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnR><a:lnT><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnT><a:lnB><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnB></a:tcPr></a:tc>`);
-      }
-      return `<a:tr h="274320">${tds.join('')}</a:tr>`;
-    }).join('');
-    return { xml: `<a:tbl><a:tblPr/><a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl>`, rows: tbl.length };
+    ws = Array.from({ length: nCols }, () => w);
   }
-  function buildPptxRich(title, richSlides) {
-    const enc = new TextEncoder();
-    const n = Math.max(1, richSlides.length);
-    const files = {};
-    const slideOverrides = [];
-    const slideIds = [];
-    const slideRels = [];
-    let hasPng = false;
-    richSlides.forEach((pg, i) => {
-      const id = i + 1;
-      slideOverrides.push(`<Override PartName="/ppt/slides/slide${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`);
-      slideIds.push(`<p:sldId id="${256 + i}" r:id="rId${id + 1}"/>`);
-      slideRels.push(`<Relationship Id="rId${id + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${id}.xml"/>`);
-      // Title: biggest line if heading-like, else Page N
-      let titleText = `Page ${id}`;
-      let bodyLines = pg.lines || [];
-      if (bodyLines.length) {
-        const med = pg.median || 11;
-        const scored = bodyLines.map((ln) => ({ ln, r: (ln.maxSize || 11) / med }));
-        const big = scored.filter((s) => s.r > 1.4 && s.ln.text.length <= 120 && pptKindOf(s.ln.text) === 'body')
-          .sort((a, b) => b.r - a.r)[0];
-        if (big) {
-          titleText = big.ln.text;
-          bodyLines = bodyLines.filter((ln) => ln !== big.ln);
+  const grid = ws.map((w) => `<a:gridCol w="${w}"/>`).join('');
+  const borders = '<a:lnL><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnL><a:lnR><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnR><a:lnT><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnT><a:lnB><a:ln><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></a:lnB>';
+  const rows = tbl.map((cells) => {
+    const tds = [];
+    for (let c = 0; c < nCols; c++) {
+      const cell = cells[c];
+      if (cell == null || typeof cell === 'string') {
+        const ps = cell || PPT_PAD;
+        tds.push(`<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${ps}</a:txBody><a:tcPr>${borders}</a:tcPr></a:tc>`);
+        continue;
+      }
+      const at = `${cell.gridSpan > 1 ? ` gridSpan="${cell.gridSpan}"` : ''}${cell.rowSpan > 1 ? ` rowSpan="${cell.rowSpan}"` : ''}`;
+      const ps = cell.xml || PPT_PAD;
+      tds.push(`<a:tc${at}><a:txBody><a:bodyPr/><a:lstStyle/>${ps}</a:txBody><a:tcPr>${borders}</a:tcPr></a:tc>`);
+    }
+    return `<a:tr h="274320">${tds.join('')}</a:tr>`;
+  }).join('');
+  return { xml: `<a:tbl><a:tblPr/><a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl>`, rows: tbl.length };
+}
+
+function buildPptxRich(title, richSlides) {
+  const enc = new TextEncoder();
+  const n = Math.max(1, richSlides.length);
+  const files = {};
+  const slideOverrides = [];
+  const slideIds = [];
+  const slideRels = [];
+  let hasPng = false;
+
+  // Slide geometry: default 16:9 widescreen, adaptive to portrait or 4:3
+  let slideW = 12192000, slideH = 6858000;
+  const s0 = richSlides[0];
+  const pw0 = s0 && (s0.w || s0.pageW);
+  const ph0 = s0 && (s0.h || s0.pageH);
+  const isPortrait = pw0 && ph0 && ph0 > pw0;
+  if (isPortrait) {
+    slideW = Math.round(pw0 * 12700);
+    slideH = Math.round(ph0 * 12700);
+  } else if (pw0 && ph0 && Math.abs(pw0 / ph0 - 4/3) < 0.08) {
+    slideW = 9144000; slideH = 6858000;
+  }
+  const contentW = slideW - 914400;
+
+  const pptNormEdge = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const pptEdgeSet = (() => {
+    const set = new Set();
+    try {
+      if (!richSlides || richSlides.length < 3) return set;
+      const stat = new Map();
+      richSlides.forEach((pg2) => {
+        const seen = new Set();
+        for (const ln of (pg2.lines || [])) {
+          const kt = pptNormEdge(ln.text);
+          if (!kt || kt.length < 4) continue;
+          seen.add(kt + '|' + Math.round((ln.y || 0) / 4) * 4);
+        }
+        for (const item of seen) {
+          if (!stat.has(item)) stat.set(item, new Set());
+          stat.get(item).add(pg2);
+        }
+      });
+      for (const [k, vSet] of stat) {
+        if (vSet.size / richSlides.length > 0.6) set.add(k);
+      }
+    } catch (_) {}
+    return set;
+  })();
+  const pptEdgeKey = (ln) => {
+    const t = pptNormEdge(ln && ln.text);
+    return (!t || t.length < 4) ? null : t + '|' + Math.round((ln.y || 0) / 4) * 4;
+  };
+
+  richSlides.forEach((pg, i) => {
+    const id = i + 1;
+    slideOverrides.push(`<Override PartName="/ppt/slides/slide${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`);
+    slideIds.push(`<p:sldId id="${256 + i}" r:id="rId${id + 1}"/>`);
+    slideRels.push(`<Relationship Id="rId${id + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${id}.xml"/>`);
+
+    const rtlSlide = !!(pg.pageType && pg.pageType.rtl);
+    let slideLines = (pg.lines || []).filter((ln) => { const k = pptEdgeKey(ln); return !k || !pptEdgeSet.has(k); });
+    const formLines = slideLines.filter((ln) => (ln.runs || []).some((r) => r && r.field));
+    if (formLines.length) slideLines = slideLines.filter((ln) => !(ln.runs || []).some((r) => r && r.field));
+
+    let hlinkSeq = 0;
+    const hlinkRels = [];
+    const hlinkFor = (r) => {
+      if (!r) return null;
+      const links = pg.links || [];
+      if (!links.length) return null;
+      const rr = { x0: r.x || 0, x1: (r.x || 0) + (r.w || 0), y: r.y || 0 };
+      for (const L of links) {
+        if (!L.url) continue;
+        if (rr.y <= L.y1 + 3 && rr.y >= L.y0 - 3 && rr.x0 >= L.x0 - 3 && rr.x1 <= L.x1 + 3) {
+          let e = null;
+          for (const h of hlinkRels) if (h.url === L.url) { e = h; break; }
+          if (!e) { e = { url: L.url, rid: `rIdH${++hlinkSeq}` }; hlinkRels.push(e); }
+          return e.rid;
         }
       }
-      // Table detection on body lines (gap + alignment, same gate as Word)
-      const gapTol = Math.max(18, (pg.median || 11) * 2.2);
-      const splitRow = (ln) => {
-        const sorted = [...ln.runs].sort((a, b) => a.x - b.x);
-        const cells = [[]];
-        const bounds = [];
-        for (let k = 0; k < sorted.length; k++) {
-          cells[cells.length - 1].push(sorted[k]);
-          if (k < sorted.length - 1 && sorted[k + 1].x - sorted[k].x > gapTol) {
-            bounds.push(Math.round((sorted[k].x + sorted[k + 1].x) / 2));
-            cells.push([]);
-          }
+      return null;
+    };
+    const para = (text, runs, kind) => pptParaXml(text, runs, kind, rtlSlide, hlinkFor);
+
+    const gapTol = Math.max(18, (pg.median || 11) * 2.2);
+    const splitRow = (ln) => {
+      const sorted = [...(ln.runs || [])].sort((a, b) => a.x - b.x);
+      const cells = [[]];
+      const bounds = [];
+      for (let k = 0; k < sorted.length; k++) {
+        cells[cells.length - 1].push(sorted[k]);
+        if (k < sorted.length - 1 && sorted[k + 1].x - sorted[k].x > gapTol) {
+          bounds.push(Math.round((sorted[k].x + sorted[k + 1].x) / 2));
+          cells.push([]);
         }
-        return { cells, bounds };
-      };
+      }
+      return { cells, bounds };
+    };
+
+    const gapFlow = (lns) => {
       const flow = [];
       let cur = [];
       const match = (a, b) => {
         if (!a.length || !b.length) return false;
         let s = 0;
-        for (const x of a) if (b.some((y) => Math.abs(x - y) <= 10)) s++;
+        for (const x of a) if (b.some((y) => Math.abs(x - y) <= 24)) s++;
         return s >= Math.min(a.length, b.length, 2) && s >= 1;
       };
       const flush = () => {
@@ -2810,92 +3702,383 @@
         else cur.forEach((r) => flow.push({ line: r.ln }));
         cur = [];
       };
-      for (const ln of bodyLines) {
+      for (const ln of lns) {
         const { cells, bounds } = splitRow(ln);
-        if (cells.length >= 2 && ln.runs.length >= 3) cur.push({ ln, cells, bounds });
+        if (cells.length >= 2 && ln.runs.length >= 2) cur.push({ ln, cells, bounds });
         else { flush(); flow.push({ line: ln }); }
       }
       flush();
-      // Emit shapes top→bottom with a running cursor
-      let cursorY = 1524000;
-      let shapeId = 10;
-      const shapes = [];
-      const relsExtra = [];
-      const bodyParas = [];
-      const flushParas = () => {
-        if (!bodyParas.length) return;
-        const h = Math.min(4800600, 400000 + bodyParas.length * 260000);
-        const realH = Math.min(h, Math.max(600000, 6400000 - cursorY));
-        shapes.push(`<p:sp><p:nvSpPr><p:cNvPr id="${shapeId++}" name="Body ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="8229600" cy="${realH}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="square"><a:normAutofit fontScale="100000" lnSpcReduction="20000"/></a:bodyPr><a:lstStyle/>${bodyParas.join('')}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp>`);
-        cursorY += realH + 150000;
-        bodyParas.length = 0;
-      };
-      for (const item of flow) {
-        if (item.table) {
-          flushParas();
-          const rows = item.table.map((tr) => {
-            const maxC = Math.max(...item.table.map((r) => r.cells.length));
-            const cells = tr.cells.map((c) => {
-              const kind = pptKindOf(c.map((r) => r.str).join(' ').trim());
-              return pptParaXml('', c, kind === 'body' ? 'body' : kind);
-            });
-            while (cells.length < maxC) cells.push('<a:p><a:r><a:rPr lang="en-US" sz="1200"/><a:t> </a:t></a:r></a:p>');
-            return cells;
-          });
-          const t = pptTableXml(rows, 8229600);
-          const th = Math.min(t.rows * 300000, Math.max(600000, 6400000 - cursorY));
-          shapes.push(`<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${shapeId++}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="8229600" cy="${th}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">${t.xml}</a:graphicData></a:graphic></p:graphicFrame>`);
-          cursorY += th + 150000;
-          continue;
-        }
-        const ln = item.line;
-        const kind = pptKindOf(ln.text);
-        const runs = (kind === 'body') ? ln.runs : ln.runs.map((r, k) => (k === 0 ? { ...r, str: String(r.str).replace(/^[•▪‣–—\-\d\.\)\s]+/, '') } : r)).filter((r) => String(r.str || '').trim());
-        bodyParas.push(pptParaXml(ln.text, runs.length ? runs : ln.runs, kind));
+      return flow;
+    };
+
+    let titleShape = '';
+    let bodyLines = slideLines;
+    if (slideLines.length) {
+      const med = pg.median || 11;
+      const scored = slideLines.map((ln) => ({ ln, r: (ln.maxSize || 11) / med }));
+      const big = scored.filter((s) => s.r > 1.35 && s.ln.text.length <= 120 && pptKindOf(s.ln.text) === 'body')
+        .sort((a, b) => b.r - a.r)[0];
+      if (big) {
+        titleShape = `<p:sp><p:nvSpPr><p:cNvPr id="2" name="Title ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="304800"/><a:ext cx="${contentW}" cy="1066800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200" b="1"/><a:t>${escXml(big.ln.text.slice(0, 200))}</a:t></a:r><a:endParaRPr lang="en-US" sz="3200"/></a:p></p:txBody></p:sp>`;
+        bodyLines = slideLines.filter((ln) => ln !== big.ln);
       }
-      flushParas();
-      for (const im of (pg.images || []).slice(0, 4)) {
-        hasPng = true;
-        const rid = `rIdImg${shapeId}`;
-        relsExtra.push(`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}_${shapeId}.png"/>`);
-        files[`ppt/media/image${id}_${shapeId}.png`] = im.bytes;
-        let cx = Math.round(im.w * 9525), cy = Math.round(im.h * 9525);
+    }
+
+    const pptGapWidths = (table, nCols, colW) => {
+      const lens = Array.from({ length: nCols }, () => []);
+      for (const tr of table) {
+        const cells = tr.cells || [];
+        for (let c = 0; c < nCols; c++) {
+          const t = (cells[c] || []).map((r) => r.str).join(' ').replace(/\s+/g, ' ').trim();
+          if (t) lens[c].push(t.length);
+        }
+      }
+      const meds = lens.map((a) => {
+        if (!a.length) return 0;
+        const s = [...a].sort((x, y) => x - y);
+        return s[Math.floor(s.length / 2)];
+      });
+      const tot = meds.reduce((a, b) => a + b, 0);
+      if (!tot) return null;
+      return meds.map((m) => Math.max(0.06, m / tot) * colW);
+    };
+
+    const flow = gapFlow(bodyLines);
+
+    let cursorY = titleShape ? 1524000 : 457200;
+    let shapeId = 10;
+    const shapes = [];
+    const bgImages = [];
+    const fgImages = [];
+    const relsExtra = [];
+    const bodyParas = [];
+
+    const flushParas = () => {
+      if (!bodyParas.length) return;
+      const h = Math.min(4800600, 400000 + bodyParas.length * 260000);
+      const realH = Math.min(h, Math.max(600000, slideH - 457200 - cursorY));
+      shapes.push(`<p:sp><p:nvSpPr><p:cNvPr id="${shapeId++}" name="Body ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="${contentW}" cy="${realH}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="square"><a:normAutofit fontScale="100000" lnSpcReduction="20000"/></a:bodyPr><a:lstStyle/>${bodyParas.join('')}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp>`);
+      cursorY += realH + 150000;
+      bodyParas.length = 0;
+    };
+
+    for (const item of flow) {
+      if (item.table) {
+        flushParas();
+        const maxC = Math.max(...item.table.map((r) => r.cells.length));
+        const rows = item.table.map((tr) => {
+          const cells = tr.cells.map((c) => {
+            const kind = pptKindOf(c.map((r) => r.str).join(' ').trim());
+            return para('', c, kind === 'body' ? 'body' : kind);
+          });
+          while (cells.length < maxC) cells.push(PPT_PAD);
+          return cells;
+        });
+        const t = pptTableXml(rows, contentW, pptGapWidths(item.table, maxC, contentW));
+        const th = Math.min(t.rows * 300000, Math.max(600000, slideH - 457200 - cursorY));
+        shapes.push(`<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${shapeId++}" name="Table ${id}"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="${contentW}" cy="${th}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">${t.xml}</a:graphicData></a:graphic></p:graphicFrame>`);
+        cursorY += th + 150000;
+        continue;
+      }
+      const ln = item.line;
+      const kind = pptKindOf(ln.text);
+      if (isPortrait && kind === 'body' && ln.runs && ln.runs.length) {
+        const { cells } = splitRow(ln);
+        for (const c of cells) {
+          if (!c.length) continue;
+          const xs = c.map((r) => r.x || 0);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...c.map((r) => (r.x || 0) + (r.w || ((r.str || '').length * (r.size || 11) * 0.55))));
+          const size = Math.max(...c.map((r) => r.size || 11));
+          const offX = Math.max(0, Math.round(minX * 12700));
+          const offY = Math.max(0, Math.round(((pg.h || 842) - (ln.y || 0) - size * 1.05) * 12700));
+          const cx = Math.max(12000, Math.round((maxX - minX) * 12700) + 40000);
+          const cy = Math.max(12000, Math.round(size * 1.35 * 12700));
+          const pXml = para('', c, 'body');
+          shapes.push(`<p:sp><p:nvSpPr><p:cNvPr id="${shapeId++}" name="Text ${shapeId}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${offX}" y="${offY}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/>${pXml}<a:p><a:endParaRPr lang="en-US" sz="1100"/></a:p></p:txBody></p:sp>`);
+        }
+      } else {
+        const runs = (kind === 'body') ? ln.runs : ln.runs.map((r, k) => (k === 0 ? { ...r, str: String(r.str).replace(/^[•▪‣–—\-\d\.\)\s]+/, '') } : r)).filter((r) => String(r.str || '').trim());
+        bodyParas.push(para(ln.text, runs.length ? runs : ln.runs, kind));
+      }
+    }
+    flushParas();
+
+    if (formLines.length) {
+      const fParas = [para('Form fields', [], 'body')];
+      for (const ln of formLines) fParas.push(para(ln.text, ln.runs, 'body'));
+      const h = Math.min(4800600, 400000 + fParas.length * 260000);
+      const realH = Math.min(h, Math.max(600000, slideH - 457200 - cursorY));
+      shapes.push(`<p:sp><p:nvSpPr><p:cNvPr id="${shapeId++}" name="Form fields ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="${cursorY}"/><a:ext cx="${contentW}" cy="${realH}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="square"><a:normAutofit fontScale="100000" lnSpcReduction="20000"/></a:bodyPr><a:lstStyle/>${fParas.join('')}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp>`);
+      cursorY += realH + 150000;
+    }
+
+    for (const h of hlinkRels) relsExtra.push(`<Relationship Id="${h.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${escXml(h.url)}" TargetMode="External"/>`);
+
+    for (const im of (pg.images || []).slice(0, 6)) {
+      hasPng = true;
+      const rid = `rIdImg${shapeId}`;
+      relsExtra.push(`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${id}_${shapeId}.png"/>`);
+      files[`ppt/media/image${id}_${shapeId}.png`] = im.bytes;
+      let cx = Math.round((im.iw || im.w) * 12700);
+      let cy = Math.round((im.ih || im.h) * 12700);
+      let offX, offY;
+      if (isPortrait && im.x !== undefined && im.y !== undefined) {
+        offX = Math.max(0, Math.round(im.x * 12700));
+        offY = Math.max(0, Math.round(((pg.h || 842) - im.y - (im.ih || im.h)) * 12700));
+      } else {
         const maxW = 4000000;
         if (cx > maxW) { cy = Math.round(cy * maxW / cx); cx = maxW; }
-        if (cursorY + cy > 6400000) cy = Math.max(400000, 6400000 - cursorY);
-        shapes.push(`<p:pic><p:nvPicPr><p:cNvPr id="${shapeId}" name="Image ${id}"/><p:cNvPicPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="2572000" y="${cursorY}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`);
-        shapeId++;
+        offX = 2572000;
+        offY = cursorY;
         cursorY += cy + 150000;
       }
-      files[`ppt/slides/slide${id}.xml`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="304800"/><a:ext cx="8229600" cy="1066800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200" b="1"/><a:t>${escXml(titleText.slice(0, 200))}</a:t></a:r><a:endParaRPr lang="en-US" sz="3200"/></a:p></p:txBody></p:sp>${shapes.join('')}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
-      files[`ppt/slides/_rels/slide${id}.xml.rels`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      const picXml = `<p:pic><p:nvPicPr><p:cNvPr id="${shapeId}" name="Image ${id}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${offX}" y="${offY}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+      shapeId++;
+      if (cx > slideW * 0.4 && cy > slideH * 0.2) {
+        bgImages.push(picXml);
+      } else {
+        fgImages.push(picXml);
+      }
+    }
+
+    files[`ppt/slides/slide${id}.xml`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${bgImages.join('')}${titleShape}${shapes.join('')}${fgImages.join('')}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+    files[`ppt/slides/_rels/slide${id}.xml.rels`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${relsExtra.join('')}</Relationships>`);
-    });
-    files['[Content_Types].xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  });
+
+  files['[Content_Types].xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${hasPng ? '<Default Extension="png" ContentType="image/png"/>' : ''}<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides.join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
-    files['_rels/.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['_rels/.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
-    files['docProps/core.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['docProps/core.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escXml(title)}</dc:title><dc:creator>FileKit</dc:creator><cp:lastModifiedBy>FileKit</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`);
-    files['docProps/app.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['docProps/app.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>FileKit</Application><Slides>${n}</Slides></Properties>`);
-    files['ppt/presentation.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slideIds.join('')}</p:sldIdLst><p:sldSz cx="9144000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
-    files['ppt/_rels/presentation.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['ppt/presentation.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slideIds.join('')}</p:sldIdLst><p:sldSz cx="${slideW}" cy="${slideH}"/><p:notesSz cx="${slideH}" cy="${slideW}"/></p:presentation>`);
+  files['ppt/_rels/presentation.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${slideRels.join('')}</Relationships>`);
-    files['ppt/slideMasters/slideMaster1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['ppt/slideMasters/slideMaster1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`);
-    files['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
-    files['ppt/slideLayouts/slideLayout1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
+  files['ppt/slideLayouts/slideLayout1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
-    files['ppt/slideLayouts/_rels/slideLayout1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  files['ppt/slideLayouts/_rels/slideLayout1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
-    files['ppt/theme/theme1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F497D"/></a:dk2><a:lt2><a:srgbClr val="EEECE1"/></a:lt2><a:accent1><a:srgbClr val="4F81BD"/></a:accent1><a:accent2><a:srgbClr val="C0504D"/></a:accent2><a:accent3><a:srgbClr val="9BBB59"/></a:accent3><a:accent4><a:srgbClr val="8064A2"/></a:accent4><a:accent5><a:srgbClr val="4BACC6"/></a:accent5><a:accent6><a:srgbClr val="F79646"/></a:accent6><a:hlink><a:srgbClr val="0000FF"/></a:hlink><a:folHlink><a:srgbClr val="800080"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`);
-    return files;
+  files['ppt/theme/theme1.xml'] = enc.encode(PPT_THEME_XML);
+  return files;
+}
+
+/* ── Hybrid / Visual slide builders ─────────────────────────────────── */
+const PPT_SW = 12192000, PPT_SH = 6858000;
+
+function pptBgHexFromCorners(corners) {
+  try {
+    if (!corners || corners.length < 4) return null;
+    let spread = 0;
+    for (let i = 1; i < 4; i++) {
+      spread = Math.max(spread, Math.abs(corners[i][0] - corners[0][0]),
+        Math.abs(corners[i][1] - corners[0][1]), Math.abs(corners[i][2] - corners[0][2]));
+    }
+    if (spread > 60) return null;
+    const avg = [0, 1, 2].map((k) => Math.round((corners[0][k] + corners[1][k] + corners[2][k] + corners[3][k]) / 4));
+    const lum = (0.299 * avg[0] + 0.587 * avg[1] + 0.114 * avg[2]) / 255;
+    if (lum > 0.92) return null;
+    return avg.map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0')).join('').toUpperCase();
+  } catch (_) { return null; }
+}
+
+function pptFitBox(pageWpt, pageHpt, slideW, slideH) {
+  const sw = slideW || PPT_SW, sh = slideH || PPT_SH;
+  const pw = Math.max(1, pageWpt * 12700), ph = Math.max(1, pageHpt * 12700);
+  const k = Math.min(sw / pw, sh / ph);
+  const dw = pw * k, dh = ph * k;
+  return { k, dw, dh, ox: Math.round((sw - dw) / 2), oy: Math.round((sh - dh) / 2) };
+}
+
+function pptDeckShell(title, slides, slideW, slideH) {
+  const enc = new TextEncoder();
+  const files = {};
+  const sw = slideW || PPT_SW, sh = slideH || PPT_SH;
+  const slideOverrides = [], slideIds = [], slideRels = [];
+  slides.forEach((s, i) => {
+    const id = i + 1;
+    slideOverrides.push(`<Override PartName="/ppt/slides/slide${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`);
+    slideIds.push(`<p:sldId id="${256 + i}" r:id="rId${id + 1}"/>`);
+    slideRels.push(`<Relationship Id="rId${id + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${id}.xml"/>`);
+    files[`ppt/slides/slide${id}.xml`] = enc.encode(s.xml);
+    files[`ppt/slides/_rels/slide${id}.xml.rels`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>${(s.rels || []).join('')}</Relationships>`);
+    for (const [name, bytes] of (s.media || [])) files[name] = bytes;
+  });
+  const n = Math.max(1, slides.length);
+  files['[Content_Types].xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides.join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`);
+  files['_rels/.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
+  files['docProps/core.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${escXml(title)}</dc:title><dc:creator>FileKit</dc:creator><cp:lastModifiedBy>FileKit</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`);
+  files['docProps/app.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>FileKit</Application><Slides>${n}</Slides></Properties>`);
+  files['ppt/presentation.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slideIds.join('')}</p:sldIdLst><p:sldSz cx="${sw}" cy="${sh}"/><p:notesSz cx="${sh}" cy="${sw}"/></p:presentation>`);
+  files['ppt/_rels/presentation.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${slideRels.join('')}</Relationships>`);
+  files['ppt/slideMasters/slideMaster1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`);
+  files['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
+  files['ppt/slideLayouts/slideLayout1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
+  files['ppt/slideLayouts/_rels/slideLayout1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
+  files['ppt/theme/theme1.xml'] = enc.encode(PPT_THEME_XML);
+  return files;
+}
+
+async function pptRenderShot(page) {
+  const v1 = page.getViewport({ scale: 1 });
+  const sc = Math.min(2.5, 2400 / Math.max(1, v1.width, v1.height));
+  const vp = page.getViewport({ scale: sc });
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.ceil(vp.width)); c.height = Math.max(1, Math.ceil(vp.height));
+  await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+  let bg = null;
+  try {
+    const ctx = c.getContext('2d');
+    const patch = (px, py) => {
+      const d = ctx.getImageData(Math.max(0, px), Math.max(0, py), 5, 5).data;
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let k = 0; k < d.length; k += 4) { r += d[k]; g += d[k + 1]; b += d[k + 2]; n++; }
+      return [r / n, g / n, b / n];
+    };
+    bg = pptBgHexFromCorners([
+      patch(4, 4), patch(vp.width - 9, 4),
+      patch(4, vp.height - 9), patch(vp.width - 9, vp.height - 9),
+    ]);
+  } catch (_) {}
+  const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  return { bytes, bg, pageW: v1.width, pageH: v1.height };
+}
+
+function pptOverlayShapes(overlay, fit, pageH, baseShapeId, slideW, slideH) {
+  const shapes = [];
+  let sid = baseShapeId || 10;
+  for (const it of overlay) {
+    const text = String(it.text || '').replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+    const x0 = it.x0 != null ? it.x0 : 36;
+    const x1 = it.x1 != null ? it.x1 : (x0 + text.length * 7);
+    const base = it.base != null ? it.base : 36;
+    const szPt = Math.max(8, Math.min(48, it.size || 11));
+    const offX = Math.max(0, Math.round(fit.ox + x0 * 12700 * fit.k));
+    const offY = Math.max(0, Math.round(fit.oy + (pageH - base - szPt * 1.05) * 12700 * fit.k));
+    const cx = Math.max(12000, Math.round((x1 - x0) * 12700 * fit.k) + 36000);
+    const cy = Math.max(12000, Math.round(szPt * 1.35 * 12700 * fit.k));
+    const szVal = Math.round(szPt * 100 * fit.k);
+    shapes.push(`<p:sp><p:nvSpPr><p:cNvPr id="${sid++}" name="Ghost ${sid}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${offX}" y="${offY}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="${szVal}"><a:noFill/></a:rPr><a:t>${escXml(text)}</a:t></a:r><a:endParaRPr lang="en-US" sz="${szVal}"/></a:p></p:txBody></p:sp>`);
   }
+  return { shapes, nextId: sid };
+}
+
+function pptOcrOverlay(ocrPage, pageW, pageH) {
+  if (!ocrPage || !ocrPage.words || !ocrPage.words.length) return [];
+  const words = ocrPage.words;
+  const pw = ocrPage.width || pageW || 612;
+  const ph = ocrPage.height || pageH || 792;
+  const sx = (pageW || pw) / pw;
+  const sy = (pageH || ph) / ph;
+  return words.map((w) => ({
+    x0: w.bbox.x0 * sx,
+    x1: w.bbox.x1 * sx,
+    base: (ph - w.bbox.y1) * sy,
+    text: w.text,
+    size: Math.max(8, Math.round((w.bbox.y1 - w.bbox.y0) * sy * 0.8)),
+  }));
+}
+
+function pptBgEl(bg) {
+  return bg
+    ? `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${bg}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`
+    : '';
+}
+
+function buildPptxVisual(title, shots) {
+  let sw = PPT_SW, sh = PPT_SH;
+  if (shots[0] && shots[0].pageW && shots[0].pageH) {
+    const pw = shots[0].pageW, ph = shots[0].pageH;
+    if (ph > pw) {
+      sw = Math.round(pw * 12700);
+      sh = Math.round(ph * 12700);
+    } else {
+      const ar = pw / ph;
+      if (Math.abs(ar - 4/3) < 0.08) { sw = 9144000; sh = 6858000; }
+    }
+  }
+  const slides = shots.map((s, i) => {
+    const fit = pptFitBox(s.pageW, s.pageH, sw, sh);
+    const pic = `<p:pic><p:nvPicPr><p:cNvPr id="3" name="Page"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${fit.ox}" y="${fit.oy}"/><a:ext cx="${Math.round(fit.dw)}" cy="${Math.round(fit.dh)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+    return {
+      xml: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld>${pptBgEl(s.bg)}<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${pic}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`,
+      rels: [`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/shot${i + 1}.png"/>`],
+      media: [[`ppt/media/shot${i + 1}.png`, s.bytes]],
+    };
+  });
+  return pptDeckShell(title, slides, sw, sh);
+}
+
+function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
+  let sw = PPT_SW, sh = PPT_SH;
+  const s0 = (shots && shots[0]) || richSlides[0];
+  if (s0 && (s0.pageW || s0.w) && (s0.pageH || s0.h)) {
+    const pw = s0.pageW || s0.w, ph = s0.pageH || s0.h;
+    if (ph > pw) {
+      sw = Math.round(pw * 12700);
+      sh = Math.round(ph * 12700);
+    } else {
+      const ar = pw / ph;
+      if (Math.abs(ar - 4/3) < 0.08) { sw = 9144000; sh = 6858000; }
+    }
+  }
+  const slides = richSlides.map((pg, i) => {
+    const s = (shots && shots[i]) || (shots && shots[0]) || { pageW: pg.w || 612, pageH: pg.h || 792, bytes: new Uint8Array(), bg: null };
+    const fit = pptFitBox(s.pageW, s.pageH, sw, sh);
+    const pic = `<p:pic><p:nvPicPr><p:cNvPr id="3" name="Page"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${fit.ox}" y="${fit.oy}"/><a:ext cx="${Math.round(fit.dw)}" cy="${Math.round(fit.dh)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+    let overlay = [];
+    if (scannedOverlays && scannedOverlays[i]) {
+      overlay = scannedOverlays[i];
+    } else {
+      const edgeTexts = [];
+      for (const ln of (pg.lines || [])) {
+        const runs = ln.runs || [];
+        if (!runs.length) continue;
+        if (runs.some((r) => (r && r.y || 0) < 0 || r && r.field)) {
+          if (ln.text && ln.text.trim()) edgeTexts.push(ln.text.trim());
+          continue;
+        }
+        let minX = Infinity, maxX = -Infinity;
+        for (const r of runs) {
+          const w = (r.w > 0 && isFinite(r.w)) ? r.w : (String(r.str || '').length * (r.size || 11) * 0.55);
+          if (r.x < minX) minX = r.x;
+          if (r.x + w > maxX) maxX = r.x + w;
+        }
+        if (isFinite(minX) && ln.text.trim()) {
+          overlay.push({ x0: minX, base: ln.y, x1: maxX, text: ln.text.trim(), size: ln.maxSize || 11 });
+        }
+      }
+      if (edgeTexts.length) {
+        overlay.push({ x0: 36, base: 36, x1: s.pageW - 36, text: edgeTexts.join('  •  ').slice(0, 2000), size: 10 });
+      }
+    }
+    const ghost = pptOverlayShapes(overlay, fit, s.pageH, 10, sw, sh);
+    return {
+      xml: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld>${pptBgEl(s.bg)}<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${pic}${ghost.shapes.join('')}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`,
+      rels: [`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/shot${i + 1}.png"/>`],
+      media: [[`ppt/media/shot${i + 1}.png`, s.bytes]],
+    };
+  });
+  return pptDeckShell(title, slides, sw, sh);
+}
 
   function buildPptx(title, slides) {
     const enc = new TextEncoder();
@@ -2912,7 +4095,7 @@
       const bodyParas = (s.body || '').split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 12)
         .map((l) => `<a:p><a:r><a:rPr lang="en-US" sz="1400"/><a:t>${escXml(l.slice(0, 160))}</a:t></a:r></a:p>`).join('');
       files[`ppt/slides/slide${id}.xml`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="304800"/><a:ext cx="8229600" cy="1066800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200" b="1"/><a:t>${escXml(s.title)}</a:t></a:r><a:endParaRPr lang="en-US" sz="3200"/></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="1524000"/><a:ext cx="8229600" cy="4800600"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="none"/><a:lstStyle/>${bodyParas}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="304800"/><a:ext cx="8229600" cy="1066800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200" b="1"/><a:t>${escXml(s.title)}</a:t></a:r><a:endParaRPr lang="en-US" sz="3200"/></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="1524000"/><a:ext cx="8229600" cy="4800600"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr wrap="none"/><a:lstStyle/>${bodyParas}<a:p><a:endParaRPr lang="en-US" sz="1400"/></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
       files[`ppt/slides/_rels/slide${id}.xml.rels`] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>`);
     });
@@ -2936,10 +4119,10 @@
 <p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
     files['ppt/slideLayouts/_rels/slideLayout1.xml.rels'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
-    files['ppt/theme/theme1.xml'] = enc.encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F497D"/></a:dk2><a:lt2><a:srgbClr val="EEECE1"/></a:lt2><a:accent1><a:srgbClr val="4F81BD"/></a:accent1><a:accent2><a:srgbClr val="C0504D"/></a:accent2><a:accent3><a:srgbClr val="9BBB59"/></a:accent3><a:accent4><a:srgbClr val="8064A2"/></a:accent4><a:accent5><a:srgbClr val="4BACC6"/></a:accent5><a:accent6><a:srgbClr val="F79646"/></a:accent6><a:hlink><a:srgbClr val="0000FF"/></a:hlink><a:folHlink><a:srgbClr val="800080"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`);
+    files['ppt/theme/theme1.xml'] = enc.encode(PPT_THEME_XML);
     return files;
   }
+
 
   /* Build a real standalone HTML file from pages of text. */
   function buildHtml(title, pages) {
@@ -3104,10 +4287,33 @@
   });
 
   R({ id: 'pdf-to-ppt', category: 'PDF', name: 'PDF to PowerPoint',
-    description: 'Turn each PDF page into a styled PowerPoint slide: titles, bullets, tables, images. Scanned PDFs go through OCR first.',
+    description: 'Turn each PDF page into PowerPoint slides: titles, bullets, tables, images. Choose Editable, Smart Hybrid, or Visual only.',
     accepts: ['pdf'], maxBytes: 200e6,
-    async run({ file, onProgress }) {
+    fields: [
+      { key: 'mode', label: 'Conversion mode', type: 'select', default: 'editable', options: [
+        { value: 'editable', label: 'Editable — real shapes, titles, bullets & native tables' },
+        { value: 'hybrid', label: 'Smart Hybrid — pixel background + searchable text overlay' },
+        { value: 'visual', label: 'Visual Only — high-resolution canvas snapshot slides' },
+      ] },
+    ],
+    async run({ file, inputs, onProgress }) {
+      const mode = (inputs && inputs.mode) || 'editable';
       const notify = (msg, type) => { try { window.FF?.util?.toast?.(msg, type || 'info'); } catch (_) {} };
+      const pdfjs = await loadJs();
+      if (mode === 'visual') {
+        onProgress?.(0.05, 'Rendering slides…');
+        const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+        const shots = [];
+        for (let p = 1; p <= doc.numPages; p++) {
+          onProgress?.(0.05 + (p / doc.numPages) * 0.85, `Rendering slide ${p}/${doc.numPages}`);
+          shots.push(await pptRenderShot(await doc.getPage(p)));
+        }
+        if (!shots.length) throw new Error('Could not render any slides — the PDF may be corrupted.');
+        onProgress?.(0.95, 'Packing presentation…');
+        const zip = (await loadFf()).zipSync(buildPptxVisual(U.baseName(file.name), shots), { level: 6 });
+        onProgress?.(1, 'Done');
+        return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
+      }
       const ocrWarm = (async () => {
         try { await window.__ffScanApi?.getOrInitOcrWorker?.('hin+eng'); } catch (_) {}
       })();
@@ -3142,16 +4348,44 @@
         const pages = ocrText.split(/\n*── Page \d+ ──\n*/).map((s) => s.trim()).filter(Boolean);
         const flatSlides = (pages.length ? pages : [ocrText]).map((t) => ({
           median: 11, images: [],
-            lines: t.split('\n').map((l) => lexLine(ocrCleanLine(l))).filter(Boolean).map((text) => ({
+          lines: t.split('\n').map((l) => lexLine(ocrCleanLine(l))).filter(Boolean).map((text) => ({
             text, maxSize: 11, median: 11,
             runs: [{ x: 0, str: text, size: 11, bold: false, italic: false, font: 'ocr' }],
           })),
         })).filter((p) => p.lines.length);
         const ocrSlides = geoSlides && geoSlides.length ? geoSlides : flatSlides;
+        if (mode === 'hybrid') {
+          const doc2 = await pdfjs.getDocument({ data: await u8(file) }).promise;
+          const shots = [], overlays = [];
+          for (let p = 1; p <= doc2.numPages; p++) {
+            const page = await doc2.getPage(p);
+            const v1 = page.getViewport({ scale: 1 });
+            onProgress?.(0.8 + (p / doc2.numPages) * 0.15, `Rendering slide ${p}/${doc2.numPages}`);
+            shots.push(await pptRenderShot(page));
+            overlays.push(pptOcrOverlay(ocrPages && ocrPages[p - 1], v1.width, v1.height));
+          }
+          const zip = (await loadFf()).zipSync(buildPptxHybrid(U.baseName(file.name), ocrSlides, shots, overlays), { level: 6 });
+          onProgress?.(1, 'Done');
+          notify('Presentation ready — hybrid slides with searchable text.', 'success');
+          return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
+        }
         if (!ocrSlides.length) throw new Error('OCR text was entirely gutter noise — the scan may be blank.');
         const zip = (await loadFf()).zipSync(buildPptxRich(U.baseName(file.name), ocrSlides), { level: 6 });
         onProgress?.(1, 'Done');
         notify('Presentation ready — built from OCR text.', 'success');
+        return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
+      }
+      if (mode === 'hybrid') {
+        onProgress?.(0.55, 'Rendering slide backgrounds…');
+        const doc2 = await pdfjs.getDocument({ data: await u8(file) }).promise;
+        const shots = [];
+        for (let p = 1; p <= doc2.numPages; p++) {
+          onProgress?.(0.55 + (p / doc2.numPages) * 0.35, `Rendering slide ${p}/${doc2.numPages}`);
+          shots.push(await pptRenderShot(await doc2.getPage(p)));
+        }
+        onProgress?.(0.95, 'Packing presentation…');
+        const zip = (await loadFf()).zipSync(buildPptxHybrid(U.baseName(file.name), rich, shots, null), { level: 6 });
+        onProgress?.(1, 'Done');
         return { blob: new Blob([zip], { type: PPTX_MIME }), filename: U.baseName(file.name) + '.pptx', mime: PPTX_MIME, preview: 'download' };
       }
       onProgress?.(0.85, 'Building presentation…');
@@ -3341,27 +4575,230 @@
     }
   });
 
-  R({ id: 'pdf-to-jpg', category: 'PDF', name: 'PDF to JPG',
-    description: 'Render each page as a high-quality JPEG — a single image for one-page PDFs, a ZIP of JPGs for multi-page ones.',
-    accepts: ['pdf'], maxBytes: 200e6,
-    async run({ file, onProgress }) {
-      const pdfjs = await loadJs();
-      const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
-      const jpgs = [];
-      for (let i = 1; i <= doc.numPages; i++) {
-        onProgress?.(i / doc.numPages, `Rendering page ${i}/${doc.numPages}`);
-        const page = await doc.getPage(i);
-        const vp = page.getViewport({ scale: 1.5 });
-        const c = document.createElement('canvas');
-        c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
-        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-        const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85));
-        jpgs.push(new Uint8Array(await b.arrayBuffer()));
+  /* ── Mastered PDF to Images (JPG / PNG / WebP / Extract) Engine ─────── */
+  async function convertPdfPagesToImages(file, inputs, onProgress, defaultFormat = 'jpg') {
+    const mode = (inputs && inputs.mode) || 'page';
+    let rawFormat = (inputs && inputs.format) ? String(inputs.format).toLowerCase() : defaultFormat;
+    if (rawFormat === 'jpeg') rawFormat = 'jpg';
+    const format = ['jpg', 'png', 'webp'].includes(rawFormat) ? rawFormat : defaultFormat;
+    const mime = format === 'png' ? 'image/png' : (format === 'webp' ? 'image/webp' : 'image/jpeg');
+    const ext = format === 'png' ? 'png' : (format === 'webp' ? 'webp' : 'jpg');
+
+    // Scale: '1' -> 1.0 (72 DPI), '2' -> 2.0 (150 DPI), '3' -> 3.0 (300 DPI)
+    const scale = Math.max(0.5, Math.min(5.0, Number(inputs?.dpi || inputs?.scale || 2)));
+
+    // Quality: 0.1 to 1.0 (default 0.90 for JPEG / WebP)
+    let qRaw = inputs?.quality != null ? Number(inputs.quality) : 90;
+    if (qRaw > 1) qRaw = qRaw / 100;
+    const quality = Math.max(0.2, Math.min(1.0, qRaw));
+
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
+    const numPages = doc.numPages;
+    if (!numPages) throw new Error('The PDF document contains no pages.');
+
+    // ── Mode: Extract Embedded Images ────────────────────────────────────
+    if (mode === 'extract') {
+      onProgress?.(0.05, 'Scanning PDF for embedded images…');
+      const out = {};
+      let idx = 0;
+      const fflate = await loadFf();
+      for (let p = 1; p <= numPages; p++) {
+        onProgress?.(0.05 + (p / numPages) * 0.85, `Scanning page ${p}/${numPages}`);
+        const page = await doc.getPage(p);
+        try {
+          const wvp = page.getViewport({ scale: 0.5 });
+          const wc = document.createElement('canvas');
+          wc.width = Math.max(1, Math.ceil(wvp.width));
+          wc.height = Math.max(1, Math.ceil(wvp.height));
+          await page.render({ canvasContext: wc.getContext('2d'), viewport: wvp }).promise;
+        } catch (_) {}
+
+        const ops = await page.getOperatorList();
+        for (let i = 0; i < ops.fnArray.length; i++) {
+          if (ops.fnArray[i] !== pdfjs.OPS.paintImageXObject) continue;
+          const name = ops.argsArray[i][0];
+          try {
+            const img = await Promise.race([
+              new Promise((res) => { try { page.objs.get(name, res); } catch (_) { res(null); } }),
+              new Promise((res) => setTimeout(() => res(null), 5000)),
+            ]);
+            if (!img || !img.width || !img.height) continue;
+            const c = paintPdfImage(img);
+            if (!c) continue;
+            const b = await new Promise((r) => c.toBlob(r, mime, quality));
+            if (!b) continue;
+            idx++;
+            const padIdx = String(idx).padStart(2, '0');
+            out[`image-${padIdx}.${ext}`] = new Uint8Array(await b.arrayBuffer());
+          } catch (_) {}
+        }
       }
-      if (jpgs.length === 1) return { blob: new Blob([jpgs[0]], { type: 'image/jpeg' }), filename: U.baseName(file.name) + '.jpg', mime: 'image/jpeg', preview: 'image' };
-      const files = {}; jpgs.forEach((p, i) => { files[`page-${i + 1}.jpg`] = p; });
-      const zip = (await loadFf()).zipSync(files, { level: 4 });
-      return { blob: new Blob([zip], { type: 'application/zip' }), filename: U.baseName(file.name) + '-images.zip', mime: 'application/zip', preview: 'download', metrics: { Pages: jpgs.length } };
+
+      if (!idx) throw new Error('No embedded raster images found in this PDF (graphics may be vector paths).');
+      if (idx === 1) {
+        const singleBytes = Object.values(out)[0];
+        return {
+          blob: new Blob([singleBytes], { type: mime }),
+          filename: `${base}-extracted.${ext}`,
+          mime,
+          preview: 'image',
+          metrics: { Extracted: '1 image', Format: ext.toUpperCase() },
+        };
+      }
+      const zip = fflate.zipSync(out, { level: 6 });
+      return {
+        blob: new Blob([zip], { type: 'application/zip' }),
+        filename: `${base}-extracted-images.zip`,
+        mime: 'application/zip',
+        preview: 'download',
+        metrics: { Extracted: `${idx} images`, Format: ext.toUpperCase() },
+      };
+    }
+
+    // ── Mode: Page to Image (Full page rendering) ────────────────────────
+    const images = [];
+    const padLen = Math.max(2, String(numPages).length);
+    for (let p = 1; p <= numPages; p++) {
+      onProgress?.(0.05 + (p / numPages) * 0.85, `Rendering page ${p}/${numPages}`);
+      const page = await doc.getPage(p);
+      const vp = page.getViewport({ scale });
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.ceil(vp.width));
+      c.height = Math.max(1, Math.ceil(vp.height));
+      const ctx = c.getContext('2d');
+
+      // CRITICAL: Always paint solid white background first so transparent PDFs
+      // do not produce black artifacts in JPEG or dark fringes in PNG.
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const b = await new Promise((r) => c.toBlob(r, mime, quality));
+      images.push({
+        bytes: new Uint8Array(await b.arrayBuffer()),
+        w: c.width,
+        h: c.height,
+      });
+    }
+
+    if (images.length === 1) {
+      return {
+        blob: new Blob([images[0].bytes], { type: mime }),
+        filename: `${base}.${ext}`,
+        mime,
+        preview: 'image',
+        metrics: {
+          Resolution: `${images[0].w}×${images[0].h}`,
+          Format: ext.toUpperCase(),
+          DPI: scale <= 1.2 ? '72 DPI' : (scale <= 2.2 ? '150 DPI' : '300 DPI'),
+        },
+      };
+    }
+
+    const fflate = await loadFf();
+    const files = {};
+    images.forEach((img, i) => {
+      const pageNumStr = String(i + 1).padStart(padLen, '0');
+      files[`page-${pageNumStr}.${ext}`] = img.bytes;
+    });
+    const zip = fflate.zipSync(files, { level: 4 });
+    return {
+      blob: new Blob([zip], { type: 'application/zip' }),
+      filename: `${base}-images.zip`,
+      mime: 'application/zip',
+      preview: 'download',
+      metrics: {
+        Pages: images.length,
+        Format: ext.toUpperCase(),
+        DPI: scale <= 1.2 ? '72 DPI' : (scale <= 2.2 ? '150 DPI' : '300 DPI'),
+      },
+    };
+  }
+
+  R({ id: 'pdf-to-jpg', category: 'PDF', name: 'PDF to JPG',
+    description: 'Render PDF pages into high-quality JPEG images, or extract embedded images. 1-page PDFs download directly as JPG.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Conversion mode', type: 'select', default: 'page', options: [
+        { value: 'page', label: 'Page to Image — render entire page' },
+        { value: 'extract', label: 'Extract Images — pull embedded photos only' },
+      ] },
+      { key: 'dpi', label: 'Resolution (DPI)', type: 'select', default: '2', options: [
+        { value: '2', label: '150 DPI — High quality (recommended)' },
+        { value: '3', label: '300 DPI — Ultra / Print quality' },
+        { value: '1', label: '72 DPI — Standard web' },
+      ] },
+      { key: 'quality', label: 'JPEG quality', type: 'range', default: 90, min: 50, max: 100 },
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfPagesToImages(file, inputs, onProgress, 'jpg');
+    }
+  });
+
+  R({ id: 'pdf-to-image', category: 'PDF', name: 'PDF to Image',
+    description: 'Render PDF pages into high-resolution PNG images (or JPG/WebP). 1-page PDFs download directly as images.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Conversion mode', type: 'select', default: 'page', options: [
+        { value: 'page', label: 'Page to Image — render entire page' },
+        { value: 'extract', label: 'Extract Images — pull embedded photos only' },
+      ] },
+      { key: 'format', label: 'Output format', type: 'select', default: 'png', options: [
+        { value: 'png', label: 'PNG — Lossless, crisp text and graphics' },
+        { value: 'jpg', label: 'JPG — High quality, smaller file size' },
+        { value: 'webp', label: 'WebP — Modern web format' },
+      ] },
+      { key: 'dpi', label: 'Resolution (DPI)', type: 'select', default: '2', options: [
+        { value: '2', label: '150 DPI — High quality (recommended)' },
+        { value: '3', label: '300 DPI — Ultra / Print quality' },
+        { value: '1', label: '72 DPI — Standard web' },
+      ] },
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfPagesToImages(file, inputs, onProgress, 'png');
+    }
+  });
+
+  R({ id: 'pdf-to-png', category: 'PDF', name: 'PDF to PNG',
+    description: 'Render PDF pages into lossless, high-resolution PNG images.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Conversion mode', type: 'select', default: 'page', options: [
+        { value: 'page', label: 'Page to Image — render entire page' },
+        { value: 'extract', label: 'Extract Images — pull embedded photos only' },
+      ] },
+      { key: 'dpi', label: 'Resolution (DPI)', type: 'select', default: '2', options: [
+        { value: '2', label: '150 DPI — High quality (recommended)' },
+        { value: '3', label: '300 DPI — Ultra / Print quality' },
+        { value: '1', label: '72 DPI — Standard web' },
+      ] },
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfPagesToImages(file, { ...inputs, format: 'png' }, onProgress, 'png');
+    }
+  });
+
+  R({ id: 'pdf-to-webp', category: 'PDF', name: 'PDF to WebP',
+    description: 'Render PDF pages into ultra-efficient WebP images.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Conversion mode', type: 'select', default: 'page', options: [
+        { value: 'page', label: 'Page to Image — render entire page' },
+        { value: 'extract', label: 'Extract Images — pull embedded photos only' },
+      ] },
+      { key: 'dpi', label: 'Resolution (DPI)', type: 'select', default: '2', options: [
+        { value: '2', label: '150 DPI — High quality (recommended)' },
+        { value: '3', label: '300 DPI — Ultra / Print quality' },
+        { value: '1', label: '72 DPI — Standard web' },
+      ] },
+      { key: 'quality', label: 'WebP quality', type: 'range', default: 90, min: 50, max: 100 },
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfPagesToImages(file, { ...inputs, format: 'webp' }, onProgress, 'webp');
     }
   });
 
@@ -3589,25 +5026,19 @@
       onProgress?.(1, 'Done');
       return { blob: new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: U.baseName(file.name) + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', preview: 'download' }; } });
 
-  R({ id: 'pdf-extract-images', category: 'PDF', name: 'Extract images', description: 'Pull embedded raster images out of a PDF (ZIP).',
-    accepts: ['pdf'], engine: async () => ({ J: await loadJs(), F: await U.loadScript(...V.ff).then(() => window.fflate) }),
-    async run({ file, engine, onProgress }) { const pdfjs = engine.J; const pdf = await pdfjs.getDocument({ data: await u8(file) }).promise; const out = {}; let idx = 0;
-      for (let p = 1; p <= pdf.numPages; p++) { onProgress?.(p / pdf.numPages, `Page ${p}/${pdf.numPages}`); const page = await pdf.getPage(p);
-        // Warm-render: objs resolve only during rendering (see pdfRichPages)
-        try {
-          const wvp = page.getViewport({ scale: 0.5 });
-          const wc = document.createElement('canvas');
-          wc.width = Math.max(1, Math.ceil(wvp.width)); wc.height = Math.max(1, Math.ceil(wvp.height));
-          await page.render({ canvasContext: wc.getContext('2d'), viewport: wvp }).promise;
-        } catch (_) {}
-        const ops = await page.getOperatorList();
-        for (let i = 0; i < ops.fnArray.length; i++) { if (ops.fnArray[i] !== pdfjs.OPS.paintImageXObject) continue; const name = ops.argsArray[i][0];
-          try { const img = await Promise.race([
-              new Promise((res) => { try { page.objs.get(name, res); } catch (_) { res(null); } }),
-              new Promise((res) => setTimeout(() => res(null), 5000)),
-            ]); const c = paintPdfImage(img); if (!c) continue; const blob = await new Promise((r) => c.toBlob(r, 'image/png')); if (!blob) continue; out[`image-${++idx}.png`] = new Uint8Array(await blob.arrayBuffer()); } catch {} }
-      }
-      if (!idx) throw new Error('No extractable raster images found (they may be vector or inline).'); return { blob: new Blob([engine.F.zipSync(out, { level: 4 })], { type: 'application/zip' }), filename: U.baseName(file.name) + '-images.zip', mime: 'application/zip', preview: 'download' }; } });
+  R({ id: 'pdf-extract-images', category: 'PDF', name: 'Extract images',
+    description: 'Pull embedded raster images out of a PDF.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'format', label: 'Image format', type: 'select', default: 'png', options: [
+        { value: 'png', label: 'PNG — Original lossless quality' },
+        { value: 'jpg', label: 'JPG — Compressed photo format' },
+      ] },
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfPagesToImages(file, { ...inputs, mode: 'extract' }, onProgress, 'png');
+    }
+  });
 })();
 
 /* tools/json-format.js */
@@ -15549,17 +16980,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Text layer only'),
       T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'pdf-to-csv', 'Table-style rows', { delim: ',' }),
       T(M.web, 'Summary', 'TXT', 'txt', '#DC2626', 'pdf-summarize', 'Key sentences', { length: 'medium' }),
-      T(M.images, 'JPG image', 'JPG', 'jpg', '#EA580C', 'pdf-to-jpg', 'Rendered page(s) as JPEG'),
-      T(M.images, 'Page images', 'PNG (ZIP)', 'zip', '#D97706', 'pdf-to-image', 'High-quality page PNGs', { scale: '2' }),
-      T(M.images, 'WebP page images', 'WEBP (ZIP)', 'zip', '#0891B2', null, 'Modern efficient web image pages', { inline: 'pdf-to-webp', scale: '2' }),
-      T(M.images, 'Extract images', 'ZIP', 'zip', '#CA8A04', 'pdf-extract-images', 'Embedded images only'),
+      T(M.images, 'JPG image', 'JPG', 'jpg', '#EA580C', 'pdf-to-jpg', 'Rendered page(s) as JPEG', { format: 'jpg', dpi: '2' }),
+      T(M.images, 'PNG image', 'PNG', 'png', '#D97706', 'pdf-to-image', 'High-quality page PNGs', { format: 'png', dpi: '2' }),
+      T(M.images, 'WebP image', 'WEBP', 'webp', '#0891B2', 'pdf-to-webp', 'Modern efficient web image pages', { format: 'webp', dpi: '2' }),
+      T(M.images, 'Extract images', 'ZIP', 'zip', '#CA8A04', 'pdf-extract-images', 'Embedded images only', { mode: 'extract' }),
       T(M.ebook, 'EPUB ebook', 'EPUB', 'epub', '#854D0E', 'pdf-to-epub', 'Page-image ebook', { scale: '1.25' }),
       T(M.arc, 'ZIP archive', 'ZIP', 'zip', '#0E7490', 'pdf-to-zip', 'Bundle the PDF', { level: '6' }),
       T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'pdf-to-md', 'Clean Markdown from the text layer'),
       T(M.web, 'Structure JSON', 'JSON', 'json', '#06B6D4', null, 'Metadata and text layer blocks', { inline: 'pdf-to-json' }),
     ],
     word: [
-      T(M.office, 'PDF', 'PDF', 'pdf', '#DC2626', 'docx-to-pdf', 'Convert Word to PDF'),
+      T(M.office, 'PDF', 'PDF', 'pdf', '#2B579A', 'docx-to-pdf', 'Convert Word to PDF', { mode: 'flow', pageSize: 'auto' }),
       T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'docx-to-html', 'Web-ready markup'),
       T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'docx-to-txt', 'Raw text'),
       T(M.web, 'Markdown', 'MD', 'md', '#6D28D9', 'docx-to-md', 'Clean Markdown'),
@@ -15685,6 +17116,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
   const TOOL_INDEX = {};
   for (const [fam, targets] of Object.entries(TARGETS)) {
     for (const t of targets) if (t.tool) TOOL_INDEX[t.tool] = { family: fam, target: t };
+  }
+  if (TOOL_INDEX['docx-to-pdf']) {
+    TOOL_INDEX['word-to-pdf'] = TOOL_INDEX['docx-to-pdf'];
+    TOOL_INDEX['to-pdf'] = TOOL_INDEX['docx-to-pdf'];
   }
 
   function detectFamily(file) {
@@ -16709,20 +18144,57 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 </div>
 
                 ${t.tool === 'pdf-to-word' && /\.pdf$/i.test(currentFile.name || '') ? `
-                <div class="conv-docx-modes" id="conv-docx-modes" role="radiogroup" aria-label="PDF to Word conversion mode">
-                  <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}">
-                    <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.3l-4.75 4.4 1.15 6.7L12 17.3l-5.9 3.1 1.15-6.7L2.5 9.3l6.6-1.04L12 2z"/></svg><span>Editable</span><span class="conv-docx-best">BEST</span></span>
-                    <span class="conv-docx-mode-sub">Real paragraphs, headings, lists &amp; tables</span>
+                <div class="conv-mode-segmented conv-docx-modes" id="conv-docx-modes" role="radiogroup" aria-label="PDF to Word conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-docx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}" data-desc="Real paragraphs, headings, lists &amp; tables" title="Editable: Real paragraphs, headings, lists &amp; tables">
+                    <span class="conv-seg-star">★</span> Edit
                   </button>
-                  <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'exact' ? 'active' : ''}" data-mode="exact" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'exact' ? 'true' : 'false'}">
-                    <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 5H5v14h3M16 5h3v14h-3"/></svg><span>Exact layout</span></span>
-                    <span class="conv-docx-mode-sub">Text boxes at exact PDF positions</span>
+                  <button type="button" class="conv-mode-seg-btn conv-docx-mode-card ${String(cfg.mode || 'editable') === 'exact' ? 'active' : ''}" data-mode="exact" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'exact' ? 'true' : 'false'}" data-desc="Text boxes at exact PDF positions" title="Exact layout: Text boxes at exact PDF positions">
+                    Exact
                   </button>
-                  <button type="button" class="conv-docx-mode-card ${String(cfg.mode || 'editable') === 'picture' ? 'active' : ''}" data-mode="picture" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'picture' ? 'true' : 'false'}">
-                    <span class="conv-docx-mode-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg><span>Picture perfect</span></span>
-                    <span class="conv-docx-mode-sub">One page image per section</span>
+                  <button type="button" class="conv-mode-seg-btn conv-docx-mode-card ${String(cfg.mode || 'editable') === 'picture' ? 'active' : ''}" data-mode="picture" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'picture' ? 'true' : 'false'}" data-desc="One page image per section" title="Picture perfect: One page image per section">
+                    Picture
                   </button>
-                </div>` : ''}
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-docx-mode-desc">${String(cfg.mode || 'editable') === 'exact' ? 'Text boxes at exact PDF positions' : (String(cfg.mode || 'editable') === 'picture' ? 'One page image per section' : 'Real paragraphs, headings, lists &amp; tables')}</div>` : ''}
+
+                ${(t.tool === 'docx-to-pdf' || t.tool === 'word-to-pdf' || (t.out === 'PDF' && (family === 'word' || /\.(docx|odt|rtf|doc|pages)$/i.test(currentFile.name || '')))) ? `
+                <div class="conv-mode-segmented conv-word-modes" id="conv-word-modes" role="radiogroup" aria-label="Word to PDF conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-word-mode-card ${String(cfg.mode || 'flow') === 'flow' ? 'active' : ''}" data-mode="flow" role="radio" aria-checked="${String(cfg.mode || 'flow') === 'flow' ? 'true' : 'false'}" data-desc="Crisp vector text, tables &amp; styles" title="Flow Document: Crisp vector text, tables, styles &amp; images">
+                    <span class="conv-seg-star">★</span> Flow
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-word-mode-card ${String(cfg.mode || 'flow') === 'exact' ? 'active' : ''}" data-mode="exact" role="radio" aria-checked="${String(cfg.mode || 'flow') === 'exact' ? 'true' : 'false'}" data-desc="Strict section geometry &amp; native margins" title="Exact Layout: Strict section geometry &amp; native margins">
+                    Exact
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-word-mode-card ${String(cfg.mode || 'flow') === 'compact' ? 'active' : ''}" data-mode="compact" role="radio" aria-checked="${String(cfg.mode || 'flow') === 'compact' ? 'true' : 'false'}" data-desc="Minimal reading flow, ideal for print" title="Compact: Minimal reading flow, ideal for print">
+                    Compact
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-word-mode-desc">${String(cfg.mode || 'flow') === 'exact' ? 'Strict section geometry &amp; native margins' : (String(cfg.mode || 'flow') === 'compact' ? 'Minimal reading flow, ideal for print' : 'Crisp vector text, tables &amp; styles')}</div>` : ''}
+
+                ${(t.tool === 'pdf-to-image' || t.tool === 'pdf-to-jpg' || t.tool === 'pdf-to-png' || t.tool === 'pdf-to-webp' || t.tool === 'pdf-extract-images') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-img-modes" id="conv-img-modes" role="radiogroup" aria-label="PDF to Image conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-img-mode-card ${String(cfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page')) === 'page' ? 'active' : ''}" data-mode="page" role="radio" aria-checked="${String(cfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page')) === 'page' ? 'true' : 'false'}" data-desc="Render full pages as high-resolution images" title="Page to Image: Render full pages as high-resolution images">
+                    <span class="conv-seg-star">★</span> Pages
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-img-mode-card ${String(cfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page')) === 'extract' ? 'active' : ''}" data-mode="extract" role="radio" aria-checked="${String(cfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page')) === 'extract' ? 'true' : 'false'}" data-desc="Pull embedded photos &amp; figures only" title="Extract Images: Pull embedded photos &amp; figures only">
+                    Extract
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-img-mode-desc">${String(cfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page')) === 'extract' ? 'Pull embedded photos &amp; figures only' : 'Render full pages as high-resolution images'}</div>` : ''}
+
+                ${(t.tool === 'pdf-to-ppt' || t.tool === 'to-ppt') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-pptx-modes" id="conv-pptx-modes" role="radiogroup" aria-label="PDF to PowerPoint conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-pptx-mode-card ${String(cfg.mode || 'editable') === 'editable' ? 'active' : ''}" data-mode="editable" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'editable' ? 'true' : 'false'}" data-desc="Native shapes, titles, bullets &amp; tables" title="Editable: Native shapes, titles, bullets &amp; tables">
+                    <span class="conv-seg-star">★</span> Edit
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-pptx-mode-card ${String(cfg.mode || 'editable') === 'hybrid' ? 'active' : ''}" data-mode="hybrid" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'hybrid' ? 'true' : 'false'}" data-desc="Pixel background + searchable text" title="Smart Hybrid: Pixel background + searchable text">
+                    Hybrid
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-pptx-mode-card ${String(cfg.mode || 'editable') === 'visual' ? 'active' : ''}" data-mode="visual" role="radio" aria-checked="${String(cfg.mode || 'editable') === 'visual' ? 'true' : 'false'}" data-desc="High-res canvas snapshot slides" title="Visual Only: High-res canvas snapshot slides">
+                    Visual
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-pptx-mode-desc">${String(cfg.mode || 'editable') === 'hybrid' ? 'Pixel background + searchable text' : (String(cfg.mode || 'editable') === 'visual' ? 'High-res canvas snapshot slides' : 'Native shapes, titles, bullets &amp; tables')}</div>` : ''}
 
                 ${fields.length > 0 ? `
                 <button type="button" class="conv-studio-btn-gear ${isSettingsOpen ? 'active' : ''}" id="conv-gear-btn" title="Conversion Settings">
@@ -16945,7 +18417,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           const valDisplay = container.querySelector(`#cfg-${k}-val`);
           if (valDisplay) valDisplay.textContent = inp.value;
           if (k === 'mode') {
-            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card').forEach((c) => {
+            container.querySelectorAll('#conv-docx-modes .conv-docx-mode-card, #conv-pptx-modes .conv-pptx-mode-card, #conv-word-modes .conv-word-mode-card, #conv-img-modes .conv-img-mode-card').forEach((c) => {
               const on = c.dataset.mode === inp.value;
               c.classList.toggle('active', on);
               c.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -16965,6 +18437,56 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             c.classList.toggle('active', on);
             c.setAttribute('aria-checked', on ? 'true' : 'false');
           });
+          const descEl = container.querySelector('#conv-docx-mode-desc');
+          if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+          const sel = container.querySelector('#cfg-mode');
+          if (sel) sel.value = m;
+        });
+      });
+
+      container.querySelectorAll('#conv-pptx-modes .conv-pptx-mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.mode;
+          cfg.mode = m;
+          container.querySelectorAll('#conv-pptx-modes .conv-pptx-mode-card').forEach((c) => {
+            const on = c === card;
+            c.classList.toggle('active', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const descEl = container.querySelector('#conv-pptx-mode-desc');
+          if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+          const sel = container.querySelector('#cfg-mode');
+          if (sel) sel.value = m;
+        });
+      });
+
+      container.querySelectorAll('#conv-img-modes .conv-img-mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.mode;
+          cfg.mode = m;
+          container.querySelectorAll('#conv-img-modes .conv-img-mode-card').forEach((c) => {
+            const on = c === card;
+            c.classList.toggle('active', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const descEl = container.querySelector('#conv-img-mode-desc');
+          if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+          const sel = container.querySelector('#cfg-mode');
+          if (sel) sel.value = m;
+        });
+      });
+
+      container.querySelectorAll('#conv-word-modes .conv-word-mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const m = card.dataset.mode;
+          cfg.mode = m;
+          container.querySelectorAll('#conv-word-modes .conv-word-mode-card').forEach((c) => {
+            const on = c === card;
+            c.classList.toggle('active', on);
+            c.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const descEl = container.querySelector('#conv-word-mode-desc');
+          if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
           const sel = container.querySelector('#cfg-mode');
           if (sel) sel.value = m;
         });
@@ -21666,6 +23188,21 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
   async function runEngine(id, text, file) {
     const meta = META[id] || {};
     if (id === 'docx-to-pdf' || id === 'docx-to-html' || id === 'docx-to-txt' || id === 'docx-to-md') {
+      try {
+        const reg = window.FF?.registry?.get?.(id);
+        if (reg && typeof reg.run === 'function' && file) {
+          const engine = reg.engine ? await reg.engine() : undefined;
+          const out = await reg.run({ file, engine });
+          if (out?.blob) {
+            return { blob: out.blob, text: out.text || '', ext: id === 'docx-to-pdf' ? 'pdf' : (id === 'docx-to-html' ? 'html' : (id === 'docx-to-md' ? 'md' : 'txt')), mime: out.mime || 'application/octet-stream' };
+          }
+          if (out?.text) {
+            return { text: out.text, ext: id === 'docx-to-html' ? 'html' : (id === 'docx-to-md' ? 'md' : 'txt'), mime: out.mime || 'text/plain' };
+          }
+        }
+      } catch (e) {
+        console.warn('[mountDocuments] registry runner failed:', e);
+      }
       // Best-effort DOCX text extraction (no external deps): fall back to plain read.
       let raw = '';
       try { raw = await readTextFromFile(file); } catch { raw = ''; }
@@ -24024,10 +25561,10 @@ trailer<</Root 1 0 R>>`;
     'pdf-repair':     () => window.__ffMountPdfMore,
     'pdf-form-filler':() => window.__ffMountPdfMore,
     'pdf-to-pdf':     () => window.__ffMountPdfMore,
-    'docx-to-pdf':    () => window.__ffMountDocuments,
-    'docx-to-html':   () => window.__ffMountDocuments,
-    'docx-to-txt':    () => window.__ffMountDocuments,
-    'docx-to-md':     () => window.__ffMountDocuments,
+    'docx-to-pdf':    () => window.__ffMountConvert,
+    'docx-to-html':   () => window.__ffMountConvert,
+    'docx-to-txt':    () => window.__ffMountConvert,
+    'docx-to-md':     () => window.__ffMountConvert,
     'md-to-html':     () => window.__ffMountDocuments,
     'html-to-md':     () => window.__ffMountDocuments,
     'md-to-pdf':      () => window.__ffMountDocuments,
@@ -24234,8 +25771,12 @@ trailer<</Root 1 0 R>>`;
     'pdf-organize': () => window.__ffMountOrganize,
     'pdf-convert':  () => window.__ffMountConvert,
     'pdf-to-word':  () => window.__ffMountConvert,
+    'word-to-pdf':  () => window.__ffMountConvert,
+    'to-pdf':       () => window.__ffMountConvert,
     'pdf-to-excel': () => window.__ffMountConvert,
     'pdf-to-image': () => window.__ffMountConvert,
+    'pdf-to-png':   () => window.__ffMountConvert,
+    'pdf-to-webp':  () => window.__ffMountConvert,
     'pdf-to-ppt':   () => window.__ffMountConvert,
     'pdf-to-md':    () => window.__ffMountConvert,
     'pptx-to-pdf':  () => window.__ffMountConvert,

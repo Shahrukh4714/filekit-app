@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FileKit — Adaptive Tool Shell Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --surface:#FAFAFA; --card:#FFFFFF; --inset:#F8FAFC; --track:#F1F5F9;
+    --ink:#0F172A; --primary:#0F172A; --slate:#334155; --muted:#64748B;
+    --line:#E2E8F0; --line2:#CBD5E1; --emerald:#16A34A; --emerald-soft:#DCFCE7; --emerald-line:#BBF7D0;
+    --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:18px; --ease:cubic-bezier(.23,1,.32,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#EDF1F7;color:var(--ink);padding:30px 18px 70px;display:flex;flex-direction:column;align-items:center;gap:22px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  h1{font-size:17px;font-weight:700;letter-spacing:-.015em}
+  .note{max-width:860px;font-size:13px;line-height:1.6;color:var(--muted);text-align:center}
+  .note b{color:var(--ink)}
+  .row{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;align-items:flex-start}
+
+  /* ---------- browser frame (web view, not phone) ---------- */
+  .frame{position:relative;width:100%;max-width:720px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.05),0 18px 50px rgba(15,23,42,.10)}
+  .frame.phone{max-width:400px}
+  .bar{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-bottom:1px solid var(--line);background:#F8FAFC}
+  .dots{display:flex;gap:6px}.dots span{width:10px;height:10px;border-radius:50%}.dots .r{background:#FF5F57}.dots .y{background:#FEBC2E}.dots .g{background:#28C840}
+  .addr{flex:1;display:flex;align-items:center;gap:7px;height:29px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:0 12px;font-size:12px;color:var(--muted)}
+  .addr svg{flex:0 0 auto}
+  .frame-tag{position:absolute;top:11px;right:12px;font-size:10px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--inset);border:1px solid var(--line);border-radius:999px;padding:3px 9px;z-index:3}
+  .frame.phone .frame-tag{color:#166534;background:var(--emerald-soft);border-color:var(--emerald-line)}
+
+  /* ---------- THE SHELL (same DOM in both; class drives layout) ---------- */
+  .shell{background:var(--surface);display:flex;flex-direction:column;min-height:620px}
+  .nav{display:flex;background:var(--card);border-bottom:1px solid var(--line);overflow:auto;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .task{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:11px 15px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer;border:0;background:none;transition:color .15s var(--ease),background .15s var(--ease)}
+  .task svg{flex:0 0 auto;width:19px;height:19px}
+  .task.active{color:var(--primary);background:var(--inset)}
+  .main{display:flex;flex-direction:column;flex:1;min-height:0}
+
+  .canvas-col{order:1;flex:1;min-height:0;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .lbl{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .canvas{flex:1 1 auto;min-height:260px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 0 0 1px rgba(15,23,42,.02),0 1px 2px rgba(15,23,42,.04);position:relative;display:flex;align-items:center;justify-content:center;padding:26px;overflow:hidden}
+  .page{width:56%;max-width:240px;aspect-ratio:4/5.2;background:#fff;border-radius:4px;box-shadow:0 1px 2px rgba(15,23,42,.08),0 10px 28px rgba(15,23,42,.10);padding:18px 14px;display:flex;flex-direction:column;gap:9px}
+  .page .hl{height:8px;border-radius:2px;background:var(--line)}.page .hl.w90{width:90%}.page .hl.w76{width:76%}.page .hl.w60{width:60%}
+  .page .blk{height:30px;border-radius:5px;background:#EEF2FF;border:1px solid #E0E7FF}
+  .page .img{display:flex;gap:7px}.page .img span{flex:1;height:28px;border-radius:5px;background:#FDE68A;border:1px solid #FDE68A}
+  .canvas-badge{position:absolute;top:12px;right:12px;display:flex;gap:6px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--slate);box-shadow:0 1px 2px rgba(15,23,42,.05)}
+  .canvas-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--emerald)}
+  .canvas-hint{position:absolute;left:12px;bottom:12px;font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 9px}
+  .savings{display:flex;align-items:center;gap:12px;background:var(--emerald-soft);border:1px solid var(--emerald-line);border-radius:var(--r-md);padding:9px 12px}
+  .savings .big{font-size:18px;font-weight:750;font-variant-numeric:tabular-nums;color:var(--emerald);letter-spacing:-.02em}
+  .savings .meta{font-size:11px;color:#166534;line-height:1.35}.savings .meta b{display:block;font-size:12px}
+
+  .panel{order:2;background:var(--card);padding:6px 16px 16px;border-top:1px solid var(--line)}
+  .sheet-link{display:flex;align-items:center;justify-content:space-between;padding:13px 2px;font-size:13px;font-weight:650;cursor:pointer}
+  .sheet-link .sub{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:2px}
+  .sheet-link .chev{transition:transform .3s var(--ease);color:var(--muted)}
+  .sheet-body{max-height:0;overflow:hidden;transition:max-height .3s var(--ease)}
+  .shell.open .sheet-body{max-height:420px}
+  .shell.open .sheet-link .chev{transform:rotate(180deg)}
+  .step-list{display:flex;flex-direction:column;gap:8px;margin:6px 0 12px}
+  .step-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:600;color:var(--slate)}
+  .step-item .n{width:22px;height:22px;flex:0 0 auto;border-radius:50%;background:var(--track);color:var(--muted);font-weight:700;font-size:12px;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+  .step-item.done .n{background:var(--emerald-soft);color:var(--emerald)}
+  .step-item.active{border-color:var(--line2);color:var(--ink)}
+  .step-item.active .n{background:var(--primary);color:#fff}
+  .fld{border:1px solid var(--line);border-radius:var(--r-md);padding:13px;background:var(--card);margin-bottom:10px}
+  .fld-title{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em;margin-bottom:10px}
+  .fld-title .val{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{font-size:12px;font-weight:600;color:var(--slate);background:var(--inset);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 13px;cursor:pointer;transition:.15s var(--ease)}
+  .pill.active{color:#fff;background:var(--primary);border-color:var(--primary)}
+  .range{height:5px;background:var(--track);border-radius:999px;position:relative;margin-top:12px}
+  .range .fill{position:absolute;inset:0;width:60%;background:var(--primary);border-radius:999px}
+  .range .knob{position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#fff;border:1px solid var(--line);box-shadow:0 1px 3px rgba(15,23,42,.25)}
+  .cta-row{display:flex;gap:10px;margin-top:4px}
+  .btn-primary{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border:none;border-radius:var(--r-md);background:var(--primary);color:#fff;font-size:14px;font-weight:650;letter-spacing:-.01em;cursor:pointer;transition:transform .12s var(--ease),background .15s var(--ease);box-shadow:0 6px 16px rgba(15,23,42,.2)}
+  .btn-icon{width:48px;height:48px;flex:0 0 auto;border-radius:var(--r-md);background:var(--inset);border:1px solid var(--line);display:grid;place-items:center;color:var(--slate);cursor:pointer}
+
+  /* ================= ADAPTIVE SWITCHES ================= */
+  /* DESKTOP (.frame.wide): rail vertical left, [panel | canvas], sheet always open */
+  .frame.wide .shell{flex-direction:row}
+  .frame.wide .nav{flex-direction:column;width:200px;flex:0 0 auto;border-bottom:0;border-right:1px solid var(--line);padding:8px;overflow:visible}
+  .frame.wide .task{width:100%;border-radius:10px}
+  .frame.wide .main{flex-direction:row}
+  .frame.wide .panel{flex:0 0 320px;order:0;border-top:0;border-right:1px solid var(--line);padding:18px;overflow:auto}
+  .frame.wide .canvas-col{order:1;padding:16px}
+  .frame.wide .cta-row{margin-top:auto;padding-top:14px}
+  .frame.wide .sheet-link{display:none}
+  .frame.wide .sheet-body{max-height:none;overflow:visible}
+
+  /* PHONE (.frame.phone): single column, canvas-first, sheet collapsed, pinned cta */
+  .frame.phone .shell{min-height:600px}
+  .frame.phone .btn-primary{height:52px}
+  @media (max-width:1320px){.row{flex-direction:column;align-items:center}}
+</style>
+</head>
+<body>
+
+  <h1>FileKit — Adaptive Tool Shell (one layout, two widths)</h1>
+  <p class="note">The DOM below is <b>identical in both frames</b>. Only the width class (<code>wide</code> vs <code>phone</code>) changes the arrangement — exactly what a CSS media query does on a real phone browser. On the phone frame, tap <b>Compression settings</b> to open the bottom sheet.</p>
+
+  <!-- ================= DESKTOP ================= -->
+  <div class="frame wide">
+    <span class="frame-tag">Desktop · 1180px</span>
+    <div class="bar"><div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="addr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>filekit.cc/app/compress</div></div>
+    <div class="shell" id="shell-wide">
+      <nav class="nav">
+        <button class="task active" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg><span>Compress</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3M17 14H6l3 3"/></svg><span>Convert</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"/><path d="M14.3 7.7 9.7 12.3M12 9.5v2.9M9.5 12h2.9"/></svg><span>Organize</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.26 3.6 5.05 12.29c-.31.33-.61.98-.67 1.43l-.37 3.24c-.13 1.17.71 1.97 1.87 1.77l3.22-.55c.45-.08 1.08-.41 1.39-.75l8.21-8.69c1.42-1.5 2.06-3.21-.15-5.3-2.2-2.07-3.87-1.34-5.29.16z"/><path d="M11.89 5.05c.43 2.76 2.67 4.87 5.45 5.15M3 22h18"/></svg><span>Edit</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.49 2.23 5.5 4.11c-1.15.43-2.09 1.79-2.09 3.01v7.43c0 1.18.78 2.73 1.73 3.44l4.3 3.21c1.41 1.06 3.73 1.06 5.14 0l4.3-3.21c.95-.71 1.73-2.26 1.73-3.44V7.12c0-1.23-.94-2.59-2.09-3.02l-4.99-1.87c-.85-.31-2.21-.31-3.04 0z"/><circle cx="12" cy="10.5" r="2"/><path d="M12 12.5v3"/></svg><span>Protect</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/></svg><span>Scan</span></button>
+      </nav>
+      <div class="main">
+        <div class="canvas-col">
+          <span class="lbl">Live preview</span>
+          <div class="canvas">
+            <div class="page" aria-hidden="true">
+              <div class="hl w90"></div><div class="hl w76"></div><div class="blk"></div>
+              <div class="img"><span></span><span></span></div>
+              <div class="hl w60"></div><div class="hl w90"></div><div class="blk" style="height:24px"></div><div class="hl w76"></div>
+            </div>
+            <span class="canvas-badge"><span class="dot"></span> 12 pages</span>
+            <span class="canvas-hint">Pinch to zoom</span>
+          </div>
+          <div class="savings"><span class="big">−86%</span><span class="meta"><b>14.8 MB → 2.1 MB</b>Balanced · quality preserved</span></div>
+        </div>
+        <aside class="panel">
+          <div class="step-list">
+            <div class="step-item done"><span class="n">1</span>Choose file</div>
+            <div class="step-item active"><span class="n">2</span>Configure</div>
+            <div class="step-item"><span class="n">3</span>Download</div>
+          </div>
+          <div class="fld">
+            <div class="fld-title">Mode<span class="val">Balanced</span></div>
+            <div class="pills"><button class="pill">High</button><button class="pill active">Balanced</button><button class="pill">Lossless</button></div>
+          </div>
+          <div class="fld">
+            <div class="fld-title">Quality<span class="val">60%</span></div>
+            <div class="range"><span class="fill"></span><span class="knob"></span></div>
+          </div>
+          <div class="cta-row">
+            <button class="btn-icon" aria-label="More options"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+            <button class="btn-primary">Compress now<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.75 15.75 12 9 17.25"/></svg></button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PHONE ================= -->
+  <div class="frame phone">
+    <span class="frame-tag">Mobile · 390px</span>
+    <div class="bar"><div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div><div class="addr"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>filekit.cc/app/compress</div></div>
+    <div class="shell" id="shell-phone">
+      <nav class="nav">
+        <button class="task active" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg><span>Compress</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3M17 14H6l3 3"/></svg><span>Convert</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"/><path d="M14.3 7.7 9.7 12.3M12 9.5v2.9M9.5 12h2.9"/></svg><span>Organize</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.26 3.6 5.05 12.29c-.31.33-.61.98-.67 1.43l-.37 3.24c-.13 1.17.71 1.97 1.87 1.77l3.22-.55c.45-.08 1.08-.41 1.39-.75l8.21-8.69c1.42-1.5 2.06-3.21-.15-5.3-2.2-2.07-3.87-1.34-5.29.16z"/><path d="M11.89 5.05c.43 2.76 2.67 4.87 5.45 5.15M3 22h18"/></svg><span>Edit</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.49 2.23 5.5 4.11c-1.15.43-2.09 1.79-2.09 3.01v7.43c0 1.18.78 2.73 1.73 3.44l4.3 3.21c1.41 1.06 3.73 1.06 5.14 0l4.3-3.21c.95-.71 1.73-2.26 1.73-3.44V7.12c0-1.23-.94-2.59-2.09-3.02l-4.99-1.87c-.85-.31-2.21-.31-3.04 0z"/><circle cx="12" cy="10.5" r="2"/><path d="M12 12.5v3"/></svg><span>Protect</span></button>
+        <button class="task" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/></svg><span>Scan</span></button>
+      </nav>
+      <div class="main">
+        <aside class="panel">
+          <div class="sheet-link" data-toggle>
+            <span>Compression settings<span class="sub">Balanced · 60% saved</span></span>
+            <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="sheet-body">
+            <div class="step-list">
+              <div class="step-item done"><span class="n">1</span>Choose file</div>
+              <div class="step-item active"><span class="n">2</span>Configure</div>
+              <div class="step-item"><span class="n">3</span>Download</div>
+            </div>
+            <div class="fld">
+              <div class="fld-title">Mode<span class="val">Balanced</span></div>
+              <div class="pills"><button class="pill">High</button><button class="pill active">Balanced</button><button class="pill">Lossless</button></div>
+            </div>
+            <div class="fld">
+              <div class="fld-title">Quality<span class="val">60%</span></div>
+              <div class="range"><span class="fill"></span><span class="knob"></span></div>
+            </div>
+          </div>
+          <div class="cta-row">
+            <button class="btn-icon" aria-label="More options"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+            <button class="btn-primary">Compress now<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.75 15.75 12 9 17.25"/></svg></button>
+          </div>
+        </aside>
+        <div class="canvas-col">
+          <span class="lbl">Live preview</span>
+          <div class="canvas">
+            <div class="page" aria-hidden="true">
+              <div class="hl w90"></div><div class="hl w76"></div><div class="blk"></div>
+              <div class="img"><span></span><span></span></div>
+              <div class="hl w60"></div><div class="hl w90"></div><div class="blk" style="height:24px"></div><div class="hl w76"></div>
+            </div>
+            <span class="canvas-badge"><span class="dot"></span> 12 pages</span>
+            <span class="canvas-hint">Pinch to zoom</span>
+          </div>
+          <div class="savings"><span class="big">−86%</span><span class="meta"><b>14.8 MB → 2.1 MB</b>Balanced · quality preserved</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // interactions only — layout is pure CSS
+  document.querySelectorAll('.shell').forEach(shell=>{
+    shell.addEventListener('click',e=>{
+      const t=e.target.closest('.task');
+      if(t){shell.querySelectorAll('.task').forEach(x=>x.classList.remove('active'));t.classList.add('active');}
+      const pill=e.target.closest('.pill');
+      if(pill){const g=pill.parentElement;g.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));pill.classList.add('active');}
+      if(e.target.closest('[data-toggle]'))shell.classList.toggle('open');
+    });
+  });
+</script>
+</body>
+</html>

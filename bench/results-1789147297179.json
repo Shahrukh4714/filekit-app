@@ -1,0 +1,33 @@
+{
+  "ts": 1789147301263,
+  "tools": [
+    "docx-to-pdf",
+    "docx-to-html",
+    "docx-to-md",
+    "docx-to-txt"
+  ],
+  "res": {
+    "docx-to-pdf": {
+      "ms": 41,
+      "bytes": 3903,
+      "validPdf": true,
+      "pageCount": 2,
+      "vectorQuality": "native-vector"
+    },
+    "docx-to-html": {
+      "ms": 86,
+      "chars": 2959,
+      "hasHtmlTag": true,
+      "hasTable": true
+    },
+    "docx-to-md": {
+      "ms": 75,
+      "chars": 541,
+      "hasMarkdownTable": true
+    },
+    "docx-to-txt": {
+      "ms": 70,
+      "chars": 301
+    }
+  }
+}

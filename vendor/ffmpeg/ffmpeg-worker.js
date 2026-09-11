@@ -17,11 +17,33 @@
   'use strict';
   var Core = null;
   var endResolve = null;
+  var currentId = null;
+  var durationSec = 0;
 
   function onOutput(message) {
     if (message === 'FFMPEG_END') {
       if (endResolve) { var r = endResolve; endResolve = null; r(); }
     }
+  }
+
+  // Parse ffmpeg's output for total duration (stderr "Duration:") and current
+  // progress time. `-progress pipe:1` emits newline-terminated out_time_us
+  // lines on stdout, which flush reliably (unlike the buffered \r progress).
+  function parseProgress(text) {
+    var d = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(text);
+    if (d) { durationSec = (+d[1]) * 3600 + (+d[2]) * 60 + (+d[3]); return; }
+    if (durationSec <= 0 || currentId == null) return;
+    var sec = null;
+    var us = /out_time_us=(\d+)/.exec(text);
+    if (us) sec = (+us[1]) / 1e6;
+    else {
+      var t = /time=(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(text);
+      if (t) sec = (+t[1]) * 3600 + (+t[2]) * 60 + (+t[3]);
+    }
+    if (sec == null) return;
+    var frac = sec / durationSec;
+    if (frac < 0) frac = 0; if (frac > 1) frac = 1;
+    self.postMessage({ type: 'progress', id: currentId, frac: frac });
   }
 
   async function loadCore() {
@@ -36,8 +58,8 @@
     Core = await createFFmpegCore({
       wasmBinary: wasmBinary,
       mainScriptUrlOrBlob: 'ffmpeg-core.js',
-      print: function (m) { self.postMessage({ type: 'log', message: String(m) }); onOutput(String(m)); },
-      printErr: function (m) { self.postMessage({ type: 'log', message: String(m) }); onOutput(String(m)); },
+      print: function (m) { self.postMessage({ type: 'log', message: String(m) }); onOutput(String(m)); parseProgress(String(m)); },
+      printErr: function (m) { self.postMessage({ type: 'log', message: String(m) }); onOutput(String(m)); parseProgress(String(m)); },
       noInitialRun: true,
       noExitRuntime: true,
     });
@@ -59,7 +81,7 @@
 
   async function runMain(args) {
     var main = Core.cwrap('main', 'number', ['number', 'number']);
-    var parsed = parseArgs(Core, ['./ffmpeg', '-nostdin', '-y'].concat(args || []));
+    var parsed = parseArgs(Core, ['./ffmpeg', '-nostdin', '-y', '-progress', 'pipe:1'].concat(args || []));
     var done = new Promise(function (res) { endResolve = res; });
     var code = -1;
     try {
@@ -97,7 +119,9 @@
         for (var i = 0; i < msg.inputs.length; i++) {
           Core.FS.writeFile(msg.inputs[i][0], new Uint8Array(msg.inputs[i][1]));
         }
+        currentId = id; durationSec = 0;
         var code = await runMain(msg.args || []);
+        currentId = null;
         var data = Core.FS.readFile(msg.out);
         for (var k = 0; k < msg.inputs.length; k++) {
           try { Core.FS.unlink(msg.inputs[k][0]); } catch (e2) {}

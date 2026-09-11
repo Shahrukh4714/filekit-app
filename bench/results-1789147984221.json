@@ -1,0 +1,42 @@
+{
+  "ts": 1789147988591,
+  "tools": [
+    "pdf-to-word",
+    "pdf-to-excel",
+    "pdf-to-ppt"
+  ],
+  "res": {
+    "pdf-to-word": {
+      "ms": 297,
+      "bytes": 2586,
+      "xmlOk": true,
+      "wordRecall": 1,
+      "titleFound": true,
+      "bulletsFound": "2/2",
+      "tableCellsFound": "9/9",
+      "wTbl": 1
+    },
+    "pdf-to-excel": {
+      "ms": 159,
+      "bytes": 2726,
+      "xmlOk": true,
+      "wordRecall": 0,
+      "titleFound": false,
+      "bulletsFound": "0/2",
+      "tableCellsFound": "0/9",
+      "excelCells": "9/9",
+      "excelNumbers": 4
+    },
+    "pdf-to-ppt": {
+      "ms": 147,
+      "bytes": 7274,
+      "xmlOk": true,
+      "wordRecall": 1,
+      "titleFound": true,
+      "bulletsFound": "2/2",
+      "tableCellsFound": "9/9",
+      "aTbl": 1,
+      "bullets": 4
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "ts": 1789133917692,
+  "tools": [
+    "pdf-to-word"
+  ],
+  "res": {
+    "pdf-to-word": {
+      "ms": 302,
+      "bytes": 2452,
+      "xmlOk": true,
+      "wordRecall": 1,
+      "titleFound": true,
+      "bulletsFound": "2/2",
+      "tableCellsFound": "9/9",
+      "wTbl": 0
+    }
+  }
+}

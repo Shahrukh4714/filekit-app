@@ -1,0 +1,19 @@
+{
+  "ts": 1789134523232,
+  "tools": [
+    "pdf-to-ppt"
+  ],
+  "res": {
+    "pdf-to-ppt": {
+      "ms": 250,
+      "bytes": 6029,
+      "xmlOk": true,
+      "wordRecall": 1,
+      "titleFound": true,
+      "bulletsFound": "2/2",
+      "tableCellsFound": "9/9",
+      "aTbl": 1,
+      "bullets": 4
+    }
+  }
+}

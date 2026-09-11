@@ -235,10 +235,10 @@
   const pending = new Map();
   let initError = null;
 
-  function call(type, payload, transfer = []) {
+  function call(type, payload, transfer = [], onProgress = null) {
     return new Promise((resolve, reject) => {
       const id = ++seq;
-      pending.set(id, { resolve, reject });
+      pending.set(id, { resolve, reject, onProgress });
       const msg = Object.assign({ type, id }, payload);
       const transfers = Array.isArray(transfer) ? [...transfer] : [];
       if (!transfers.length && payload && Array.isArray(payload.inputs)) {
@@ -275,6 +275,10 @@
         }
         const p = pending.get(m.id);
         if (!p) return;
+        if (m.type === 'progress') {
+          if (p.onProgress) { try { p.onProgress(m.frac); } catch (e) {} }
+          return;
+        }
         pending.delete(m.id);
         if (m.ok) {
           if (m.data !== undefined) {
@@ -311,7 +315,7 @@
       for (const [name, file] of inputs) {
         inputData.push([name, await file.arrayBuffer()]);
       }
-      const r = await call('run', { inputs: inputData, args: args || [], out });
+      const r = await call('run', { inputs: inputData, args: args || [], out }, [], onProgress);
       return r instanceof Uint8Array ? r : new Uint8Array(r && r.data !== undefined ? r.data : r);
     },
     async getFFmpeg(onProgress) {
@@ -4774,6 +4778,15 @@ try {
         'ocr': window.__ffMountScan,
         'workflow-builder': window.__ffMountWorkflow,
         'workflow': window.__ffMountWorkflow,
+        'pdf-to-ppt': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'to-ppt': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'pdf-to-powerpoint': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'docx-to-pdf': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'word-to-pdf': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'to-pdf': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'docx-to-html': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'docx-to-txt': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
+        'docx-to-md': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
         'pdf-to-audio': window.__ffMountPdfAudio,
         'pdf-to-speech': window.__ffMountPdfAudio,
         'protect': window.__ffMountProtect,
@@ -6722,7 +6735,20 @@ try {
       'pdf-convert': window.__ffMountConvert,
       'pdf-to-word': window.__ffMountConvert,
       'pdf-to-excel': window.__ffMountConvert,
+      'pdf-to-ppt': window.__ffMountConvert,
+      'to-ppt': window.__ffMountConvert,
+      'pdf-to-powerpoint': window.__ffMountConvert,
+      'docx-to-pdf': window.__ffMountConvert,
+      'word-to-pdf': window.__ffMountConvert,
+      'to-pdf': window.__ffMountConvert,
+      'docx-to-html': window.__ffMountConvert,
+      'docx-to-txt': window.__ffMountConvert,
+      'docx-to-md': window.__ffMountConvert,
       'pdf-to-image': window.__ffMountConvert,
+      'pdf-to-jpg': window.__ffMountConvert,
+      'pdf-to-png': window.__ffMountConvert,
+      'pdf-to-webp': window.__ffMountConvert,
+      'pdf-extract-images': window.__ffMountConvert,
       'pdf-extract-text': window.__ffMountConvert,
       'pdf-to-md': window.__ffMountConvert,
       'pptx-to-pdf': window.__ffMountConvert,

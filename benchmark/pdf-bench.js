@@ -229,6 +229,9 @@ const EXIT_POLICY = (process.env.BENCH_EXIT || '').toUpperCase() === 'NONFAIL' ?
         surgerySavings: mtr ? (mtr.surgerySavings == null ? null : +mtr.surgerySavings.toFixed(1)) : null,
         usedRaster: mtr ? mtr.usedRaster : null,
         usedHybrid: mtr ? mtr.usedHybrid : null,
+        usedRebuild: mtr ? mtr.usedRebuild : null,
+        rebuildBuilt: mtr ? mtr.rebuildBuilt : null,
+        fontsSubset: mtr ? mtr.fontsSubset : null,
         mono: mtr && mtr.mono ? { pages: mtr.mono.pages, picked: mtr.mono.picked, failedPng: mtr.mono.failedPng } : null,
         wallMs, issues: checks,
       });
