@@ -4694,7 +4694,266 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     }
   });
 
-  R({ id: 'pptx-to-pdf', category: 'PDF', name: 'PowerPoint to PDF',
+  
+  /* ── Mastered PDF to CSV / TSV Engine (Structured Tables & Page Grid) ──── */
+  async function convertPdfToCsv(file, inputs, onProgress) {
+    let mode = (inputs && inputs.mode) || 'tables';
+    let delim = (inputs && inputs.delim) || ',';
+    if (delim === 'tab' || delim === '\t') delim = '	';
+    const useBom = inputs?.bom !== 'no';
+    const base = U.baseName(file.name);
+    const pdfjs = await loadJs();
+    const richPages = await pdfRichPages(file, pdfjs, onProgress);
+    if (!richPages || !richPages.length) throw new Error('The PDF document contains no readable pages.');
+
+    const formatBytes = (bytes) => (bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(2) + ' MB');
+
+    // RFC 4180 cell formatter
+    const formatCell = (val) => {
+      let s = String(val ?? '')
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const needsQuotes = s.includes(delim) || s.includes('"') || s.includes('\n') || s.includes('\r');
+      if (needsQuotes) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    };
+
+    const numPages = richPages.length;
+    const extractedTables = [];
+    let totalRows = 0;
+
+    for (let p = 1; p <= numPages; p++) {
+      onProgress?.(0.7 + (p / numPages) * 0.25, `Extracting tabular data from page ${p}/${numPages}`);
+      const pg = richPages[p - 1];
+      const lines = pg.lines || [];
+      if (!lines.length) continue;
+
+      const med = pg.median || 11;
+      const gapTol = Math.max(16, med * 1.8);
+
+      if (mode === 'tables') {
+        // Break lines into candidate table segments
+        const segments = [];
+        let curSeg = [];
+        for (let li = 0; li < lines.length; li++) {
+          const ln = lines[li];
+          const prevLn = li > 0 ? lines[li - 1] : null;
+          const vGap = prevLn ? Math.abs(prevLn.y - ln.y) : 0;
+
+          let tokenCount = 1;
+          for (let i = 1; i < ln.runs.length; i++) {
+            if (ln.runs[i].x - (ln.runs[i - 1].x + (ln.runs[i - 1].w || 0)) > gapTol) tokenCount++;
+          }
+
+          if (tokenCount >= 2 && (!prevLn || vGap <= 36)) {
+            curSeg.push(ln);
+          } else {
+            if (curSeg.length >= 2) segments.push(curSeg);
+            curSeg = tokenCount >= 2 ? [ln] : [];
+          }
+        }
+        if (curSeg.length >= 2) segments.push(curSeg);
+
+        // Process each segment into an aligned table
+        for (const seg of segments) {
+          const colGaps = [];
+          for (const ln of seg) {
+            for (let i = 1; i < ln.runs.length; i++) {
+              const gap = ln.runs[i].x - (ln.runs[i - 1].x + (ln.runs[i - 1].w || 0));
+              if (gap > gapTol) {
+                colGaps.push((ln.runs[i - 1].x + (ln.runs[i - 1].w || 0) + ln.runs[i].x) / 2);
+              }
+            }
+          }
+          colGaps.sort((a, b) => a - b);
+
+          const clusters = [];
+          for (const g of colGaps) {
+            const m = clusters.find((c) => Math.abs(g - c.mean) <= 16);
+            if (m) {
+              m.points.push(g);
+              m.mean = m.points.reduce((s, v) => s + v, 0) / m.points.length;
+            } else {
+              clusters.push({ points: [g], mean: g });
+            }
+          }
+          const minVotes = seg.length <= 2 ? 1 : 2;
+          const edges = clusters.filter((c) => c.points.length >= minVotes).map((c) => c.mean).sort((a, b) => a - b);
+          const nCols = edges.length + 1;
+          if (nCols < 2) continue;
+
+          const colOf = (x) => {
+            let c = 0;
+            while (c < edges.length && x >= edges[c]) c++;
+            return c;
+          };
+
+          const tableRows = [];
+          for (let li = 0; li < seg.length; li++) {
+            const ln = seg[li];
+            const cells = Array.from({ length: nCols }, () => []);
+            for (const r of ln.runs) {
+              cells[Math.min(colOf(r.x), nCols - 1)].push(r.str);
+            }
+
+            // Check if continuation of multi-line header / wrapped cell
+            const prevRow = tableRows[tableRows.length - 1];
+            const yDiff = prevRow ? Math.abs(prevRow.y - ln.y) : 999;
+            const canMerge = prevRow && yDiff <= 14 &&
+              cells.every((c, idx) => c.length === 0 || !prevRow.cells[idx] || prevRow.cells[idx].length === 0 || yDiff <= 8);
+
+            if (canMerge) {
+              for (let c = 0; c < nCols; c++) {
+                if (cells[c].length) {
+                  prevRow.cells[c] = (prevRow.cells[c] ? prevRow.cells[c] + ' ' : '') + cells[c].join(' ');
+                }
+              }
+            } else {
+              tableRows.push({
+                y: ln.y,
+                cells: cells.map((c) => c.join(' ').replace(/\s+/g, ' ').trim())
+              });
+            }
+          }
+
+          const formatted = tableRows
+            .filter((r) => r.cells.some((c) => c.length > 0))
+            .map((r) => r.cells.map(formatCell).join(delim));
+
+          if (formatted.length >= 2) {
+            totalRows += formatted.length;
+            extractedTables.push({
+              page: p,
+              cols: nCols,
+              rowsCount: formatted.length,
+              csv: formatted.join('\r\n')
+            });
+          }
+        }
+      } else {
+        // Full Page Grid Mode
+        const colGaps = [];
+        for (const ln of lines) {
+          for (let i = 1; i < ln.runs.length; i++) {
+            const gap = ln.runs[i].x - (ln.runs[i - 1].x + (ln.runs[i - 1].w || 0));
+            if (gap > gapTol) colGaps.push((ln.runs[i - 1].x + ln.runs[i - 1].w + ln.runs[i].x) / 2);
+          }
+        }
+        colGaps.sort((a, b) => a - b);
+        const clusters = [];
+        for (const g of colGaps) {
+          const m = clusters.find((c) => Math.abs(g - c.mean) <= 16);
+          if (m) {
+            m.points.push(g);
+            m.mean = m.points.reduce((s, v) => s + v, 0) / m.points.length;
+          } else {
+            clusters.push({ points: [g], mean: g });
+          }
+        }
+        const edges = clusters.filter((c) => c.points.length >= 2).map((c) => c.mean).sort((a, b) => a - b);
+        const nCols = edges.length + 1;
+        const colOf = (x) => {
+          let c = 0;
+          while (c < edges.length && x >= edges[c]) c++;
+          return c;
+        };
+
+        const gridRows = [];
+        for (const ln of lines) {
+          if (nCols >= 2) {
+            const cells = Array.from({ length: nCols }, () => []);
+            for (const r of ln.runs) cells[Math.min(colOf(r.x), nCols - 1)].push(r.str);
+            gridRows.push(cells.map((c) => formatCell(c.join(' '))).join(delim));
+          } else {
+            gridRows.push(formatCell(ln.runs.map((r) => r.str).join(' ')));
+          }
+        }
+        totalRows += gridRows.length;
+        extractedTables.push({
+          page: p,
+          cols: nCols,
+          rowsCount: gridRows.length,
+          csv: gridRows.join('\r\n')
+        });
+      }
+    }
+
+    // Assemble final CSV/TSV output
+    let fullCsv = '';
+    if (mode === 'tables') {
+      if (extractedTables.length === 0) {
+        // Fallback to raw text lines if no structured tables found
+        const fallbackLines = richPages.flatMap((pg) => pg.lines.map((l) => formatCell(l.runs.map((r) => r.str).join(' '))));
+        fullCsv = fallbackLines.join('\r\n');
+        totalRows = fallbackLines.length;
+      } else if (extractedTables.length === 1) {
+        fullCsv = extractedTables[0].csv;
+      } else {
+        fullCsv = extractedTables.map((t, idx) => {
+          const header = `# --- Table ${idx + 1} (Page ${t.page}, ${t.cols} Columns, ${t.rowsCount} Rows) ---`;
+          return header + '\r\n' + t.csv;
+        }).join('\r\n\r\n');
+      }
+    } else {
+      if (numPages === 1) {
+        fullCsv = extractedTables[0]?.csv || '';
+      } else {
+        fullCsv = extractedTables.map((t) => `# --- Page ${t.page} ---\r\n` + t.csv).join('\r\n\r\n');
+      }
+    }
+
+    const outExt = delim === '\t' ? 'tsv' : 'csv';
+    const outMime = delim === '\t' ? 'text/tab-separated-values' : 'text/csv';
+    const bomPrefix = useBom ? '\uFEFF' : '';
+    const blob = new Blob([bomPrefix + fullCsv], { type: `${outMime};charset=utf-8` });
+
+    onProgress?.(1, 'Done');
+    return {
+      blob,
+      filename: `${base}.${outExt}`,
+      mime: outMime,
+      preview: 'text',
+      text: fullCsv.slice(0, 5000),
+      metrics: {
+        Mode: mode === 'tables' ? 'Structured Tables' : 'Full Page Grid',
+        Tables: `${extractedTables.length} tables`,
+        Rows: `${totalRows} rows`,
+        Delimiter: delim === '\t' ? 'Tab (TSV)' : delim === ';' ? 'Semicolon (;)' : delim === '|' ? 'Pipe (|)' : 'Comma (,)',
+        Size: formatBytes(blob.size),
+      }
+    };
+  }
+  window.convertPdfToCsv = convertPdfToCsv;
+
+  R({
+    id: 'pdf-to-csv', category: 'PDF', name: 'PDF to CSV',
+    description: 'Extract tables or page text from a PDF into clean, aligned CSV or TSV with RFC 4180 quoting and UTF-8 BOM.',
+    accepts: ['pdf'], maxBytes: 200e6,
+    fields: [
+      { key: 'mode', label: 'Extraction Mode', type: 'select', default: 'tables', options: [
+        { value: 'tables', label: 'Structured Tables (Clean Data Tables)' },
+        { value: 'grid', label: 'Full Page Grid (Multi-Column Layout)' }
+      ] },
+      { key: 'delim', label: 'Delimiter', type: 'select', default: ',', options: [
+        { value: ',', label: 'Comma (,)' },
+        { value: ';', label: 'Semicolon (;)' },
+        { value: 'tab', label: 'Tab (TSV)' },
+        { value: '|', label: 'Pipe (|)' }
+      ] },
+      { key: 'bom', label: 'Excel UTF-8 BOM', type: 'select', default: 'yes', options: [
+        { value: 'yes', label: 'Yes (Native Excel diacritics & international text)' },
+        { value: 'no', label: 'No (Standard UTF-8)' }
+      ] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      return convertPdfToCsv(file, inputs, onProgress);
+    }
+  });
+
+R({ id: 'pptx-to-pdf', category: 'PDF', name: 'PowerPoint to PDF',
     description: 'Render each slide as a landscape text PDF page (PPTX or ODP).',
     accepts: ['pptx', 'odp'], maxBytes: 200e6,
     async run({ file, onProgress }) {
@@ -18574,7 +18833,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       T(M.office, 'Compressed PDF', 'PDF', 'pdf', '#0F766E', 'pdf-compress', 'Smaller file size', { quality: 60, scale: '1.5' }),
       T(M.web, 'HTML', 'HTML', 'html', '#0891B2', 'pdf-to-html', 'Responsive semantic HTML5 or pixel-accurate page', { mode: 'flow' }),
       T(M.web, 'Plain text', 'TXT', 'txt', '#7C3AED', 'pdf-extract-text', 'Text layer only'),
-      T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'pdf-to-csv', 'Table-style rows', { delim: ',' }),
+      T(M.web, 'CSV', 'CSV', 'csv', '#16A34A', 'pdf-to-csv', 'Structured tables or document grid', { mode: 'tables', delim: ',' }),
       T(M.web, 'Summary', 'TXT', 'txt', '#DC2626', 'pdf-summarize', 'Key sentences', { length: 'medium' }),
       T(M.images, 'JPG image', 'JPG', 'jpg', '#EA580C', 'pdf-to-jpg', 'Rendered page(s) as JPEG', { format: 'jpg', dpi: '2' }),
       T(M.images, 'PNG image', 'PNG', 'png', '#D97706', 'pdf-to-image', 'High-quality page PNGs', { format: 'png', dpi: '2' }),
@@ -19789,6 +20048,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 </div>
                 <div class="conv-mode-seg-desc" id="conv-html-mode-desc">${String(cfg.mode || 'flow') === 'fixed' ? 'Pixel-accurate layout matching original PDF pages' : 'Responsive semantic HTML5 with styled tables'}</div>` : ''}
 
+                ${(t.tool === 'pdf-to-csv') && /\.pdf$/i.test(currentFile.name || '') ? `
+                <div class="conv-mode-segmented conv-csv-modes" id="conv-csv-modes" role="radiogroup" aria-label="PDF to CSV conversion mode">
+                  <button type="button" class="conv-mode-seg-btn conv-csv-mode-card ${String(cfg.mode || 'tables') === 'tables' ? 'active' : ''}" data-mode="tables" role="radio" aria-checked="${String(cfg.mode || 'tables') === 'tables' ? 'true' : 'false'}" data-desc="Auto-detect &amp; isolate data tables cleanly" title="Structured Tables: Auto-detect &amp; isolate data tables cleanly">
+                    <span class="conv-seg-star">★</span> Tables
+                  </button>
+                  <button type="button" class="conv-mode-seg-btn conv-csv-mode-card ${String(cfg.mode || 'tables') === 'grid' ? 'active' : ''}" data-mode="grid" role="radio" aria-checked="${String(cfg.mode || 'tables') === 'grid' ? 'true' : 'false'}" data-desc="Align all document text into multi-column grid" title="Page Grid: Align all document text into multi-column grid">
+                    Grid
+                  </button>
+                </div>
+                <div class="conv-mode-seg-desc" id="conv-csv-mode-desc">${String(cfg.mode || 'tables') === 'grid' ? 'Align all document text into multi-column grid' : 'Auto-detect &amp; isolate data tables cleanly'}</div>` : ''}
+
                 ${(t.tool === 'pdf-to-md') && /\.pdf$/i.test(currentFile.name || '') ? `
                 <div class="conv-mode-segmented conv-md-modes" id="conv-md-modes" role="radiogroup" aria-label="PDF to Markdown conversion mode">
                   <button type="button" class="conv-mode-seg-btn conv-md-mode-card ${String(cfg.mode || 'gfm') === 'gfm' ? 'active' : ''}" data-mode="gfm" role="radio" aria-checked="${String(cfg.mode || 'gfm') === 'gfm' ? 'true' : 'false'}" data-desc="GitHub Flavored Markdown with tables &amp; frontmatter" title="GFM: GitHub Flavored Markdown with tables &amp; frontmatter">
@@ -20110,7 +20380,23 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         });
       });
 
-      container.querySelectorAll('#conv-md-modes .conv-md-mode-card').forEach((card) => {
+      container.querySelectorAll('#conv-csv-modes .conv-csv-mode-card').forEach((card) => {
+          card.onclick = (e) => {
+            e.stopPropagation();
+            const m = card.dataset.mode;
+            cfg.mode = m;
+            container.querySelectorAll('#conv-csv-modes .conv-csv-mode-card').forEach((c) => {
+              c.classList.toggle('active', c.dataset.mode === m);
+              c.setAttribute('aria-checked', c.dataset.mode === m ? 'true' : 'false');
+            });
+            const descEl = container.querySelector('#conv-csv-mode-desc');
+            if (descEl && card.dataset.desc) descEl.textContent = card.dataset.desc;
+            const modeSelect = container.querySelector('#conv-settings-modal select[name="mode"]');
+            if (modeSelect) modeSelect.value = m;
+          };
+        });
+
+        container.querySelectorAll('#conv-md-modes .conv-md-mode-card').forEach((card) => {
         card.addEventListener('click', () => {
           const m = card.dataset.mode;
           cfg.mode = m;

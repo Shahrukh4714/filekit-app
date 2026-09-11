@@ -51169,7 +51169,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-pptx-modes,
 .conv-img-modes,
 .conv-html-modes,
-.conv-md-modes {
+.conv-md-modes,
+.conv-csv-modes {
   display: flex !important;
   background: #F1F5F9 !important;
   border: 1px solid #E2E8F0 !important;
@@ -51270,6 +51271,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .conv-md-modes .conv-md-mode-card.active,
 #conv-md-modes .active {
   color: #6D28D9 !important;
+}
+.conv-csv-modes .conv-csv-mode-card.active,
+#conv-csv-modes .active {
+  color: #16A34A !important;
 }
 
 .conv-seg-star {

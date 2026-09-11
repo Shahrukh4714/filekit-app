@@ -1782,118 +1782,29 @@
   /* PDF to CSV */
   R({
     id: 'pdf-to-csv', category: 'PDF', name: 'PDF to CSV',
-    description: 'Extract table-like text from a PDF into a clean CSV with multi-column alignment.',
+    description: 'Extract tables or page text from a PDF into clean, aligned CSV or TSV with RFC 4180 quoting and UTF-8 BOM.',
     accepts: ['pdf'], maxBytes: 200e6,
-    fields: [{ key: 'delim', label: 'Delimiter', type: 'select', default: ',', options: [',', ';', 'tab'] }],
-    async run({ file, inputs }) {
-      const pdfjs = await load.pdfjs();
-      const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
-      const delim = inputs.delim === 'tab' ? '\t' : inputs.delim;
-      const q = (v) => { const s = String(v ?? '').replace(/\s+/g, ' ').trim(); return /[\s"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const allRows = [];
-      for (let i = 1; i <= doc.numPages; i++) {
-        const page = await doc.getPage(i);
-        const tc = await page.getTextContent();
-        const rawItems = [];
-        for (const it of tc.items) {
-          const str = (it.str || '').trim();
-          if (!str) continue;
-          const x = it.transform ? it.transform[4] : 0;
-          const y = it.transform ? it.transform[5] : 0;
-          const fontPt = Math.round(Math.hypot(it.transform?.[0] || 0, it.transform?.[1] || 0) || it.height || 10);
-          const w = it.width || (str.length * fontPt * 0.55);
-          const h = it.height || fontPt;
-          rawItems.push({ str: it.str, x, y, right: x + w, w, h, fontPt });
-        }
-        if (!rawItems.length) continue;
-        rawItems.sort((a, b) => b.y - a.y);
-        const lines = [];
-        for (const it of rawItems) {
-          let matched = null;
-          for (const line of lines) {
-            const tol = Math.max(3.5, Math.min(line.avgH, it.h) * 0.45);
-            if (Math.abs(it.y - line.y) <= tol) { matched = line; break; }
-          }
-          if (matched) {
-            matched.items.push(it);
-            matched.y = (matched.y * (matched.items.length - 1) + it.y) / matched.items.length;
-            matched.avgH = Math.max(matched.avgH, it.h);
-          } else {
-            lines.push({ y: it.y, avgH: it.h, items: [it] });
-          }
-        }
-        lines.sort((a, b) => b.y - a.y);
-
-        for (const line of lines) {
-          line.items.sort((a, b) => a.x - b.x);
-          const tokens = [];
-          for (const it of line.items) {
-            if (!tokens.length) { tokens.push({ ...it }); continue; }
-            const prev = tokens[tokens.length - 1];
-            const gap = it.x - prev.right;
-            const threshold = Math.max(14, prev.fontPt * 1.3);
-            if (gap <= threshold) {
-              const needsSpace = gap > 1.5 && !prev.str.endsWith(' ') && !it.str.startsWith(' ');
-              prev.str += (needsSpace ? ' ' : '') + it.str;
-              prev.right = Math.max(prev.right, it.right);
-              prev.w = prev.right - prev.x;
-            } else {
-              tokens.push({ ...it });
-            }
-          }
-          line.tokens = tokens;
-        }
-
-        const colStarts = [];
-        for (const line of lines) {
-          if (line.tokens.length >= 2) {
-            for (const t of line.tokens) colStarts.push(t.x);
-          }
-        }
-        if (!colStarts.length) {
-          for (const line of lines) {
-            for (const t of line.tokens) colStarts.push(t.x);
-          }
-        }
-        colStarts.sort((a, b) => a - b);
-        const clusters = [];
-        for (const x of colStarts) {
-          let matched = clusters.find((cl) => Math.abs(x - cl.meanX) <= 22);
-          if (matched) {
-            matched.points.push(x);
-            matched.meanX = matched.points.reduce((s, v) => s + v, 0) / matched.points.length;
-          } else {
-            clusters.push({ points: [x], meanX: x });
-          }
-        }
-        clusters.sort((a, b) => a.meanX - b.meanX);
-
-        for (const line of lines) {
-          if (!line.tokens.length) continue;
-          if (clusters.length <= 1) {
-            allRows.push([line.tokens.map((t) => t.str.trim()).join(' ')]);
-            continue;
-          }
-          if (line.tokens.length === 1 && (line.tokens[0].w > 180 || line.tokens[0].fontPt > 13)) {
-            allRows.push([line.tokens[0].str.trim()]);
-            continue;
-          }
-          const row = new Array(clusters.length).fill('');
-          for (const t of line.tokens) {
-            let bestIdx = 0;
-            let minDiff = Infinity;
-            for (let ci = 0; ci < clusters.length; ci++) {
-              const diff = Math.abs(t.x - clusters[ci].meanX);
-              if (diff < minDiff) { minDiff = diff; bestIdx = ci; }
-            }
-            row[bestIdx] = (row[bestIdx] ? row[bestIdx] + ' ' : '') + t.str.trim();
-          }
-          allRows.push(row);
-        }
+    fields: [
+      { key: 'mode', label: 'Extraction Mode', type: 'select', default: 'tables', options: [
+        { value: 'tables', label: 'Structured Tables (Clean Data Tables)' },
+        { value: 'grid', label: 'Full Page Grid (Multi-Column Layout)' }
+      ] },
+      { key: 'delim', label: 'Delimiter', type: 'select', default: ',', options: [
+        { value: ',', label: 'Comma (,)' },
+        { value: ';', label: 'Semicolon (;)' },
+        { value: 'tab', label: 'Tab (TSV)' },
+        { value: '|', label: 'Pipe (|)' }
+      ] },
+      { key: 'bom', label: 'Excel UTF-8 BOM', type: 'select', default: 'yes', options: [
+        { value: 'yes', label: 'Yes (Native Excel diacritics & international text)' },
+        { value: 'no', label: 'No (Standard UTF-8)' }
+      ] }
+    ],
+    async run({ file, inputs, onProgress }) {
+      if (typeof window.convertPdfToCsv === 'function') {
+        return window.convertPdfToCsv(file, inputs, onProgress);
       }
-      if (!allRows.length) throw new Error('No text found — this PDF may be a scanned image. Run OCR first.');
-      const csv = allRows.map((r) => r.map(q).join(delim)).join('\n');
-      return textOut(csv, U.baseName(file.name) + '.csv', 'text/csv');
+      throw new Error('PDF to CSV engine is loading...');
     },
   });
 
