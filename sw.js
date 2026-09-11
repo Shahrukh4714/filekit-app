@@ -1,5 +1,5 @@
 /* FileKit Service Worker — Enables 100% offline document workflows */
-const CACHE_NAME = 'filekit-cache-v107';
+const CACHE_NAME = 'filekit-cache-v108';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -19,6 +19,8 @@ const PRECACHE_URLS = [
   '/vendor/avif/avif_enc.wasm',
   '/vendor/mozjpeg/mozjpeg_enc.js',
   '/vendor/mozjpeg/mozjpeg_enc.wasm',
+  '/vendor/webp/webp_enc.js',
+  '/vendor/webp/webp_enc.wasm',
   '/assets/favicon.svg',
   '/assets/filekit-icon-4colors.svg'
 ];
