@@ -15,7 +15,9 @@ const { buildMediaPlans } = new Function(src.slice(start, end) + '\nreturn { bui
 let pass = 0, fail = 0;
 function check(name, cond, detail) { if (cond) { pass++; console.log('  ok   ' + name); } else { fail++; console.log('  FAIL ' + name + (detail ? ' -> ' + detail : '')); } }
 function args(plan) { return plan.args.join(' '); }
-function plansFor(family, ext, tier, params) { return buildMediaPlans({ family, ext, tier, params: params || {}, inName: 'input.' + ext }); }
+function plansFor(family, ext, tier, params, extra) {
+  return buildMediaPlans(Object.assign({ family, ext, tier, params: params || {}, inName: 'input.' + ext }, extra || {}));
+}
 
 // Video → MP4 (H.264)
 let p = plansFor('video', 'mp4', 'balanced', { videoBr: '750k', audioBr: '128k' });
@@ -43,9 +45,20 @@ check('webm/balanced out.webm', p[0].outExt === 'webm' && p[0].mime === 'video/w
 p = plansFor('video', 'webm', 'light', { audioBr: '192k' });
 check('webm/light uses vp8 (libvpx)', /\-c:v libvpx(?!-vp9)/.test(args(p[0])), args(p[0]));
 
-// Video custom bitrate
+// Video custom without a target falls back to balanced CRF
 p = plansFor('video', 'mp4', 'custom', { videoBr: '900k', audioBr: '128k' });
-check('custom uses -b:v 900k (no crf)', args(p[0]).includes('-b:v 900k') && !args(p[0]).includes('-crf'), args(p[0]));
+check('custom without target falls back to balanced CRF', args(p[0]).includes('-crf 27'), args(p[0]));
+
+// Exact target-size video (true two-pass)
+p = plansFor('video', 'mp4', 'custom', { videoBr: '750k', audioBr: '128k' }, { targetBytes: 2 * 1024 * 1024, duration: 60 });
+const pArgs = (i) => p[0].passes[i].args.join(' ');
+check('target plan is two-pass', Array.isArray(p[0].passes) && p[0].passes.length === 2);
+check('target pass1 has -pass 1', pArgs(0).includes('-pass 1'));
+check('target pass2 has -pass 2', pArgs(1).includes('-pass 2'));
+check('target pass2 has AAC + faststart', pArgs(1).includes('-c:a libfdk_aac') && pArgs(1).includes('-movflags +faststart'));
+check('target derives a bitrate (~143k)', /-b:v 143k/.test(pArgs(0)), pArgs(0));
+p = plansFor('video', 'mp4', 'custom', { videoBr: '750k', audioBr: '128k' }, { targetBytes: 2 * 1024 * 1024, duration: 0 });
+check('target w/o duration falls back to single-pass', !p[0].passes && args(p[0]).includes('-c:v libx264'));
 
 // Audio codec matching
 check('m4a → aac/m4a', (() => { const q = plansFor('audio', 'm4a', 'balanced', { audioBr: '128k' })[0]; return q.outExt === 'm4a' && q.mime === 'audio/mp4' && args(q).includes('libfdk_aac'); })());

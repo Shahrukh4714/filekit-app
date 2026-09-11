@@ -55,16 +55,22 @@ function parseArgs(core, args) {
   });
   const main = Core.cwrap('main', 'number', ['number', 'number']);
 
-  async function runCase(label, inputFile, family, ext, tier, params) {
+  async function runCase(label, inputFile, family, ext, tier, params, extra) {
     const inName = 'input.' + ext;
-    const plans = buildMediaPlans({ family, ext, tier, params: params || {}, inName });
+    const plans = buildMediaPlans(Object.assign({ family, ext, tier, params: params || {}, inName }, extra || {}));
     const plan = plans[0];
     logs = [];
     Core.FS.writeFile(inName, new Uint8Array(fs.readFileSync(inputFile)));
-    const parsed = parseArgs(Core, ['./ffmpeg', '-nostdin', '-y', '-progress', 'pipe:1'].concat(plan.args));
-    let code = -1;
-    try { code = main(parsed.argc, parsed.argv); }
-    catch (ex) { code = typeof ex === 'number' ? ex : (ex && ex.status != null ? ex.status : -1); }
+    const passes = plan.passes || [{ args: plan.args, out: plan.out }];
+    let code = 0;
+    for (let i = 0; i < passes.length; i++) {
+      const parsed = parseArgs(Core, ['./ffmpeg', '-nostdin', '-y', '-progress', 'pipe:1'].concat(passes[i].args));
+      let c = -1;
+      try { c = main(parsed.argc, parsed.argv); }
+      catch (ex) { c = typeof ex === 'number' ? ex : (ex && ex.status != null ? ex.status : -1); }
+      code = c;
+      if (i < passes.length - 1) { try { Core.FS.unlink(passes[i].out); } catch (e) {} }
+    }
     let outBytes = -1, ok = false;
     try { outBytes = Core.FS.readFile(plan.out).length; ok = true; } catch (e) { ok = false; }
     try { Core.FS.unlink(inName); } catch (e) {}
@@ -73,7 +79,7 @@ function parseArgs(core, args) {
     const tail = logs.filter((l) => /error|Error|not found|Invalid|failed|Unknown|No such|does not|Could not/i.test(l)).slice(-3);
     const verdict = ok && outBytes > 0 ? (outBytes < inBytes ? 'SMALLER' : 'larger') : 'FAILED';
     console.log(`\n[${label}] ${family}/${ext}/${tier} -> ${plan.out} code=${code} out=${outBytes} in=${inBytes} ${verdict}`);
-    console.log('  args: ' + plan.args.join(' '));
+    console.log('  args: ' + passes[passes.length - 1].args.join(' '));
     if (verdict === 'FAILED') console.log('  logs:\n    ' + logs.slice(-14).join('\n    '));
     else if (tail.length) console.log('  log: ' + tail.join(' | ').slice(0, 500));
     return ok && outBytes > 0;
@@ -90,6 +96,7 @@ function parseArgs(core, args) {
   await runCase('audio maximum m4a', m4a, 'audio', 'm4a', 'maximum', { audioBr: '96k' });
   await runCase('audio balanced m4a', m4a, 'audio', 'm4a', 'balanced', { audioBr: '128k' });
   await runCase('audio balanced mp3', mp3, 'audio', 'mp3', 'balanced', { audioBr: '128k' });
+  await runCase('video TARGET 150KB (2-pass)', av, 'video', 'mp4', 'custom', { videoBr: '750k', audioBr: '64k' }, { targetBytes: 60000, duration: 3.02 });
 
   // Verify resolution capping against a real 1080p source (the sample is 360p).
   function runArgs(args) {
@@ -121,3 +128,4 @@ function parseArgs(core, args) {
     ['big.mp4', 'cap720.mp4', 'cap640.mp4'].forEach((n) => { try { Core.FS.unlink(n); } catch (e) {} });
   }
 })().catch((e) => { console.error('FATAL', e && e.stack || e); process.exit(2); });
+

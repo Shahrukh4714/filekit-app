@@ -5306,6 +5306,59 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     };
   }
 
+  /* Read a media file's duration from the browser (no ffmpeg probe needed).
+     Returns 0 when the browser cannot decode the container. */
+  function mediaDuration(file) {
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (v) => { if (!done) { done = true; resolve(v); } };
+      try {
+        const u = URL.createObjectURL(file);
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => { const d = isFinite(v.duration) ? v.duration : 0; URL.revokeObjectURL(u); finish(d); };
+        v.onerror = () => { URL.revokeObjectURL(u); finish(0); };
+        v.src = u;
+        setTimeout(() => { URL.revokeObjectURL(u); finish(0); }, 8000);
+      } catch (e) { finish(0); }
+    });
+  }
+
+  /* Exact-target video plan: derive the video bitrate from the target byte
+     budget and duration, then run true two-pass x264 (1-pass VBR for WebM).
+     Kept as a multi-pass plan so the caller can drive both passes. */
+  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p) {
+    p = p || {};
+    const webm = MEDIA_VIDEO_CONTAINER.test(ext);
+    const audioBr = p.audioBr || '128k';
+    const audioKbps = parseInt(String(audioBr), 10) || 128;
+    const totalBits = Math.max(0, targetBytes * 8 * 0.97);
+    let videoKbps = Math.round((totalBits - audioKbps * 1000 * durationSec) / durationSec / 1000);
+    if (!isFinite(videoKbps) || videoKbps < 40) videoKbps = 40;
+    if (videoKbps > 20000) videoKbps = 20000;
+    const vbr = videoKbps + 'k';
+    const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', mediaScaleFilter(720), '-pix_fmt', 'yuv420p'];
+    if (webm) {
+      return {
+        args: ['-i', inName].concat(map,
+          ['-c:v', 'libvpx-vp9', '-b:v', vbr, '-deadline', 'good', '-cpu-used', '4', '-row-mt', '1',
+           '-c:a', 'libopus', '-b:a', audioBr, 'out.webm']),
+        out: 'out.webm', mime: 'video/webm', outExt: 'webm'
+      };
+    }
+    const log = 'ffpass';
+    return {
+      passes: [
+        { args: ['-i', inName].concat(map, ['-c:v', 'libx264', '-preset', 'veryfast', '-b:v', vbr,
+            '-pass', '1', '-passlogfile', log, '-an', '-f', 'mp4', 'p1.mp4']), out: 'p1.mp4' },
+        { args: ['-i', inName].concat(map, ['-c:v', 'libx264', '-preset', 'veryfast', '-b:v', vbr,
+            '-pass', '2', '-passlogfile', log, '-c:a', 'libfdk_aac', '-b:a', audioBr,
+            '-movflags', '+faststart', 'out.mp4']), out: 'out.mp4' }
+      ],
+      out: 'out.mp4', mime: 'video/mp4', outExt: 'mp4'
+    };
+  }
+
   /* Ordered plans: primary modern encode, then the legacy settings. The caller
      stops at the first smaller result. */
   function buildMediaPlans(opts) {
@@ -5314,9 +5367,15 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
     const tier = opts.tier;
     const p = opts.params || {};
     const inName = opts.inName;
+    const targetBytes = opts.targetBytes || 0;
+    const duration = opts.duration || 0;
     const plans = [];
     if (family === 'video') {
-      plans.push(buildVideoPlan(inName, ext, tier, p));
+      if (tier === 'custom' && targetBytes > 0 && duration > 0) {
+        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p));
+      } else {
+        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p));
+      }
       plans.push(buildVideoFallback(inName, p));
     } else {
       plans.push(buildAudioPlan(inName, ext, tier, p));
@@ -7417,6 +7476,24 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
         ? `${_esc(activeFile.name)} (${_bytes(activeFile.size)})`
         : `${files.length} files selected · ${_bytes(totalOriginalBytes)}`;
 
+      // Family-aware tier copy so video/audio never show PDF-flavoured text.
+      const tierCopy = fam === 'video' ? {
+        balanced: { sub: 'H.264 + AAC · ≈720p · best for sharing &amp; email', pill: 'Email-ready' },
+        light: { sub: 'Near-source detail · ≈1080p · larger file', pill: 'High fidelity' },
+        maximum: { sub: 'Smaller file · ≈640p · for messaging &amp; storage', pill: 'Smallest' },
+        target: 'Fit a limit — e.g. 25 MB email · 16 MB WhatsApp · 10 MB Discord'
+      } : fam === 'audio' ? {
+        balanced: { sub: '≈128 kbps · great for everyday listening · best for sharing', pill: 'Portable' },
+        light: { sub: 'Near-original quality · higher bitrate fidelity', pill: 'High fidelity' },
+        maximum: { sub: 'Smallest file · ≈96 kbps · for storage &amp; messaging', pill: 'Smallest' },
+        target: 'Fit a limit — e.g. 10 MB for email &amp; upload portals'
+      } : {
+        balanced: { sub: 'General Use · identical on screen · best for email &amp; office', pill: 'Email-ready' },
+        light: { sub: 'Professional Print · near-lossless · best for portfolios &amp; print', pill: 'Print-grade' },
+        maximum: { sub: 'Smallest file · text stays sharp · scanned pages may go black &amp; white, photos softer', pill: 'Smallest' },
+        target: 'Fit a limit — e.g. under 1 MB for email &amp; upload portals'
+      };
+
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
@@ -7472,11 +7549,11 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
                     </div>
                     <div class="cpdf-benchmark-card-text">
                       <span class="cpdf-benchmark-card-label">Medium</span>
-                      <span class="cpdf-benchmark-card-sub">General Use · identical on screen · best for email &amp; office</span>
+                      <span class="cpdf-benchmark-card-sub">${tierCopy.balanced.sub}</span>
                       <span class="cpdf-benchmark-card-tag">Recommended</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">Email-ready</span>
+                      <span class="cpdf-benchmark-pill-smallest">${tierCopy.balanced.pill}</span>
                     </div>
                   </div>
 
@@ -7487,10 +7564,10 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
                     </div>
                     <div class="cpdf-benchmark-card-text">
                       <span class="cpdf-benchmark-card-label">Light</span>
-                      <span class="cpdf-benchmark-card-sub">Professional Print · near-lossless · best for portfolios &amp; print</span>
+                      <span class="cpdf-benchmark-card-sub">${tierCopy.light.sub}</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">Print-grade</span>
+                      <span class="cpdf-benchmark-pill-smallest">${tierCopy.light.pill}</span>
                     </div>
                   </div>
 
@@ -7501,10 +7578,10 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
                     </div>
                     <div class="cpdf-benchmark-card-text">
                       <span class="cpdf-benchmark-card-label">Heavy</span>
-                      <span class="cpdf-benchmark-card-sub">Smallest file · text stays sharp · scanned pages may go black &amp; white, photos softer</span>
+                      <span class="cpdf-benchmark-card-sub">${tierCopy.maximum.sub}</span>
                     </div>
                     <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">Smallest</span>
+                      <span class="cpdf-benchmark-pill-smallest">${tierCopy.maximum.pill}</span>
                     </div>
                   </div>
 
@@ -7516,7 +7593,7 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
                       </div>
                       <div class="cpdf-benchmark-card-text">
                         <span class="cpdf-benchmark-card-label">Exact Target Size</span>
-                        <span class="cpdf-benchmark-card-sub">Fit a limit — e.g. under 1 MB for email &amp; upload portals</span>
+                        <span class="cpdf-benchmark-card-sub">${tierCopy.target}</span>
                       </div>
                     </div>
                     ${selectedTier === 'custom' ? `
@@ -8712,10 +8789,28 @@ function buildPptxHybrid(title, richSlides, shots, scannedOverlays) {
           const FFm = window.FF.media;
           const ext = U.extOf(file.name);
           const INP = 'input.' + (ext || 'bin');
-          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP });
+          const targetBytes = (selectedTier === 'custom' && targetBytesAllocated > 0) ? targetBytesAllocated : 0;
+          // Exact-target video needs the duration; read it from the browser.
+          const duration = (targetBytes > 0 && family === 'video') ? await mediaDuration(file) : 0;
+          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration });
+          const onProg = (lo, hi, label) => (typeof onProgress === 'function')
+            ? (f) => { try { onProgress(lo + (hi - lo) * (f || 0), label); } catch (e) {} }
+            : undefined;
           for (const plan of plans) {
             try {
-              const data = await FFm.run({ inputs: [[INP, file]], args: plan.args, out: plan.out, onProgress });
+              const passes = plan.passes || [{ args: plan.args, out: plan.out }];
+              let data = null;
+              for (let i = 0; i < passes.length; i++) {
+                const label = passes.length > 1
+                  ? ('Encoding pass ' + (i + 1) + ' of ' + passes.length + '…')
+                  : 'Compressing media…';
+                data = await FFm.run({
+                  inputs: [[INP, file]],
+                  args: passes[i].args,
+                  out: passes[i].out,
+                  onProgress: onProg(i / passes.length, (i + 1) / passes.length, label)
+                });
+              }
               const bytes = data instanceof Uint8Array ? data : new Uint8Array(data || []);
               if (!bytes.length) continue;
               if (bytes.length < file.size) {
