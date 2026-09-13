@@ -20,11 +20,11 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Dancing+Script:wght@600&family=Great+Vibes&family=Marck+Script&family=Playfair+Display:ital,wght@1,600&family=Sacramento&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@600&family=Dancing+Script:wght@600&family=Great+Vibes&family=Marck+Script&family=Playfair+Display:ital,wght@1,600&family=Sacramento&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dist/css/local-fonts.min.css"/>
-<link rel="stylesheet" href="dist/css/styles.min.css?v=20260910_v92"/>
-<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20260910_v92"/>
-<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20260910_v92"/>
+<link rel="stylesheet" href="dist/css/styles.min.css?v=20260913_v111"/>
+<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20260913_v111"/>
+<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20260913_v111"/>
 </head>
 <body>
 <div class="app">
@@ -61,7 +61,7 @@
 <button data-category="Video" type="button">Video</button>
 </nav>
 <div class="nav-spacer"></div>
-<button class="header-cta app-launch-btn" id="header-enter-app" type="button">Enter App →</button>
+<button class="header-cta app-launch-btn" id="header-enter-app" type="button">Open Workspace →</button>
 <button aria-controls="tool-drawer" aria-expanded="false" aria-label="Open navigation menu" class="mobile-menu" id="mobile-menu" type="button">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3.5" y1="6" x2="20.5" y2="6"></line>
@@ -97,7 +97,7 @@
     <h1 class="hero-title"><span class="hero-title-bold">Every file task.</span><br/><span class="hero-title-light">One <span class="hero-human-highlight"><span class="highlight-word">private</span><svg class="highlighter-marker-svg" viewBox="0 0 220 54" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M 6 34 C 45 24, 125 22, 212 26 C 217 30, 216 46, 209 50 C 158 53, 68 54, 8 50 C 2 46, 2 37, 6 34 Z" fill="rgba(169, 145, 247, 0.42)"/><path d="M 12 28 C 55 22, 140 20, 205 24 C 210 27, 208 42, 202 45 C 150 48, 62 49, 14 45 C 8 42, 8 32, 12 28 Z" fill="rgba(169, 145, 247, 0.48)"/><path d="M 4 36 C 30 30, 90 28, 160 30" stroke="#A991F7" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.3" fill="none"/></svg></span></span><br/><span class="hero-title-bold">toolkit.</span></h1>
     <p class="hero-subtext"><strong>Drag and drop</strong> to convert videos, images, audio, and documents locally. <span class="hero-hand-underline">Files never leave your device.<svg class="hand-drawn-green-line" viewBox="0 0 240 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M2.5 8.5 C 50 4.5, 110 9.5, 170 5.5 C 195 4, 220 7, 237.5 5" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></p>
     <div class="hero-actions">
-      <button class="primary-button hero-app-launch" id="hero-enter-app" type="button">Enter App →</button>
+      <button class="primary-button hero-app-launch" id="hero-enter-app" type="button">Open Free Workspace →</button>
       <button class="outline-button hero-outline" id="hero-explore" type="button">Browse tools</button>
     </div>
     <div class="hero-trust"><span>✓ No uploads</span><span>✓ No account</span><span>✓ Works offline</span></div>
@@ -180,7 +180,7 @@
 <p>Fast tools to convert, compress, edit, and organize your files for free.</p>
 </div>
 <div class="popular-grid" id="popular-grid"></div>
-<div class="center-action"><button class="primary-button" id="see-all-button" type="button">Enter App to See All Tools →</button></div>
+<div class="center-action"><button class="primary-button" id="see-all-button" type="button">Explore All 187+ Tools →</button></div>
 </section>
 
 <!-- =========================================================================
@@ -440,18 +440,14 @@
                   </div>
                 </div>
 
-                <!-- Center: Primary Action Vector with Exact 3D Pushable Convert Button -->
+                <!-- Center: Primary Action Vector with Depth Outline Button -->
                 <div class="htc-action-vector">
-                  <button type="button" class="conv-studio-btn-convert htc-conv-btn" title="Convert to PDF">
-                    <span class="shadow"></span>
-                    <span class="edge"></span>
-                    <span class="front">
-                      <span class="conv-btn-normal-content">
-                        <span>Convert to PDF</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" width="14" height="14">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
-                        </svg>
-                      </span>
+                  <button type="button" class="conv-studio-btn-convert depth-outline-btn htc-conv-btn" data-slot="depth-outline-button" data-size="sm" title="Convert to PDF">
+                    <span class="conv-btn-normal-content">
+                      <span>Convert to PDF</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="14" height="14" class="depth-btn-arrow">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
+                      </svg>
                     </span>
                   </button>
                   <div class="htc-action-file-info">File 1: 120 RU...GRAMMAR.docx</div>
@@ -1566,11 +1562,11 @@
   </div>
 </footer>
 </div>
-<script defer src="dist/js/app.min.js?v=20260910_v92"></script>
-<script defer src="dist/js/tools.min.js?v=20260910_v92"></script>
-<script defer src="dist/js/tools-new.min.js?v=20260910_v92"></script>
-<script defer src="dist/js/tools-premium.min.js?v=20260910_v92"></script>
-<script defer src="dist/js/tools-premium2.min.js?v=20260910_v92"></script>
+<script defer src="dist/js/app.min.js?v=20260913_v111"></script>
+<script defer src="dist/js/tools.min.js?v=20260913_v111"></script>
+<script defer src="dist/js/tools-new.min.js?v=20260913_v111"></script>
+<script defer src="dist/js/tools-premium.min.js?v=20260913_v111"></script>
+<script defer src="dist/js/tools-premium2.min.js?v=20260913_v111"></script>
 <script>
   if ('caches' in window) {
     caches.keys().then((keys) => {

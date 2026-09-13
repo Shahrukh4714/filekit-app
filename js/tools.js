@@ -6803,12 +6803,17 @@ ${linksOverlay}    </div>
   function mediaFpsCap(tier) { return tier === 'maximum' ? 30 : 0; }
 
   function mediaVideoFilter(cap, fpsCap, probe, denoise) {
-    let vf = mediaScaleFilter(cap);
-    // Only cap frame rate when the source actually exceeds it (never upsample).
-    if (fpsCap && probe && probe.fps > fpsCap) vf += ',fps=' + fpsCap;
-    // Heavy tier: a mild temporal denoise removes grain that wastes bits.
-    if (denoise) vf += ',hqdn3d=1:1:2:2';
-    return vf;
+    const parts = [];
+    if (cap && cap > 0) {
+      parts.push('scale=-2:min(' + cap + '\\,ih)');
+    }
+    if (fpsCap && fpsCap > 0) {
+      if (!probe || !probe.fps || probe.fps > fpsCap) {
+        parts.push('fps=' + fpsCap);
+      }
+    }
+    if (denoise) parts.push('hqdn3d=1:1:2:2');
+    return parts.length ? parts.join(',') : 'null';
   }
 
   /* Prefer copying the audio stream when the source codec already fits the
@@ -6829,17 +6834,41 @@ ${linksOverlay}    </div>
     return codec;
   }
 
-  function buildVideoPlan(inName, ext, tier, p, probe, normalize) {
+  function buildVideoPlan(inName, ext, tier, p, probe, normalize, strip) {
     p = p || {};
+    strip = strip || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
-    const cap = tier === 'light' ? 1080 : (tier === 'maximum' ? 640 : 720);
+
+    // Resolution override: 'original', '1080', '720', '480'
+    let cap = tier === 'light' ? 1080 : (tier === 'maximum' ? 640 : 720);
+    if (strip.video_1 === '1080') cap = 1080;
+    else if (strip.video_1 === '720') cap = 720;
+    else if (strip.video_1 === '480') cap = 480;
+    else if (strip.video_1 === 'original') cap = 0;
+
+    // Framerate override: 'original', '30', '24', '60'
+    let fpsCap = mediaFpsCap(tier);
+    if (strip.video_2 === '30') fpsCap = 30;
+    else if (strip.video_2 === '24') fpsCap = 24;
+    else if (strip.video_2 === '60') fpsCap = 60;
+    else if (strip.video_2 === 'original') fpsCap = 0;
+
     const crf = tier === 'maximum' ? 31 : (tier === 'light' ? 22 : 27);
-    const audioBr = p.audioBr || '128k';
+    const audioBr = strip.audio_1 || p.audioBr || '128k';
     const isCustom = tier === 'custom' && p.videoBr;
-    const vf = mediaVideoFilter(cap, mediaFpsCap(tier), probe, tier === 'maximum');
+    const vf = mediaVideoFilter(cap, fpsCap, probe, tier === 'maximum');
     const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', vf, '-pix_fmt', 'yuv420p'];
     const rate = isCustom ? ['-b:v', p.videoBr] : ['-crf', String(crf), '-b:v', '0'];
-    const audio = mediaAudioArgs(webm, audioBr, probe, normalize);
+
+    let audio;
+    if (strip.video_3 === 'mute') {
+      audio = ['-an'];
+    } else if (strip.video_3 === 'passthrough') {
+      audio = ['-c:a', 'copy'];
+    } else {
+      audio = mediaAudioArgs(webm, audioBr, probe, normalize);
+    }
+
     if (webm) {
       const codecArgs = tier === 'light'
         ? ['-c:v', 'libvpx'].concat(rate, ['-deadline', 'good', '-cpu-used', '5'])
@@ -6859,11 +6888,17 @@ ${linksOverlay}    </div>
     };
   }
 
-  function buildAudioPlan(inName, ext, tier, p, normalize) {
+  function buildAudioPlan(inName, ext, tier, p, normalize, strip) {
     p = p || {};
+    strip = strip || {};
     const a = mediaAudioCodecFor(ext);
-    const audioBr = p.audioBr || '128k';
+    const audioBr = strip.audio_1 || p.audioBr || (tier === 'light' ? '192k' : (tier === 'maximum' ? '96k' : '128k'));
     const args = ['-i', inName, '-vn', '-c:a', a.codec, '-b:a', audioBr];
+    if (strip.audio_2 === 'mono') {
+      args.push('-ac', '1');
+    } else if (strip.audio_2 === 'stereo') {
+      args.push('-ac', '2');
+    }
     if (normalize) args.push('-af', 'loudnorm=I=-16:TP=-1.5:LRA=11');
     args.push('out.' + a.out);
     return { args, out: 'out.' + a.out, mime: a.mime, outExt: a.out };
@@ -6927,19 +6962,42 @@ ${linksOverlay}    </div>
   /* Exact-target video plan: derive the video bitrate from the target byte
      budget and duration, then run true two-pass x264 (1-pass VBR for WebM).
      Kept as a multi-pass plan so the caller can drive both passes. */
-  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p, probe, normalize) {
+  function buildTargetVideoPlan(inName, ext, targetBytes, durationSec, p, probe, normalize, strip) {
     p = p || {};
+    strip = strip || {};
     const webm = MEDIA_VIDEO_CONTAINER.test(ext);
-    const audioBr = p.audioBr || '128k';
+    const audioBr = strip.audio_1 || p.audioBr || '128k';
     const audioKbps = parseInt(String(audioBr), 10) || 128;
+    const isMute = strip.video_3 === 'mute';
     const totalBits = Math.max(0, targetBytes * 8 * 0.97);
-    let videoKbps = Math.round((totalBits - audioKbps * 1000 * durationSec) / durationSec / 1000);
+    let videoKbps = Math.round((totalBits - (isMute ? 0 : audioKbps * 1000 * durationSec)) / durationSec / 1000);
     if (!isFinite(videoKbps) || videoKbps < 40) videoKbps = 40;
     if (videoKbps > 20000) videoKbps = 20000;
     const vbr = videoKbps + 'k';
-    const vf = mediaVideoFilter(720, 30, probe, false);
+    
+    let cap = 720;
+    if (strip.video_1 === '1080') cap = 1080;
+    else if (strip.video_1 === '720') cap = 720;
+    else if (strip.video_1 === '480') cap = 480;
+    else if (strip.video_1 === 'original') cap = 0;
+
+    let fpsCap = 30;
+    if (strip.video_2 === '60') fpsCap = 60;
+    else if (strip.video_2 === '24') fpsCap = 24;
+    else if (strip.video_2 === '30') fpsCap = 30;
+    else if (strip.video_2 === 'original') fpsCap = 0;
+
+    const vf = mediaVideoFilter(cap, fpsCap, probe, false);
     const map = ['-map', '0:v:0', '-map', '0:a?', '-vf', vf, '-pix_fmt', 'yuv420p'];
-    const audio = mediaAudioArgs(webm, audioBr, probe, normalize);
+    
+    let audio;
+    if (isMute) {
+      audio = ['-an'];
+    } else if (strip.video_3 === 'passthrough') {
+      audio = ['-c:a', 'copy'];
+    } else {
+      audio = mediaAudioArgs(webm, audioBr, probe, normalize);
+    }
     const log = 'ffpass';
     if (webm) {
       // Two-pass VP9 for an accurate size target (matches the MP4 path).
@@ -6976,16 +7034,17 @@ ${linksOverlay}    </div>
     const duration = opts.duration || 0;
     const probe = opts.probe || null;
     const normalize = !!opts.normalize;
+    const strip = opts.strip || {};
     const plans = [];
     if (family === 'video') {
       if (tier === 'custom' && targetBytes > 0 && duration > 0) {
-        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p, probe, normalize));
+        plans.push(buildTargetVideoPlan(inName, ext, targetBytes, duration, p, probe, normalize, strip));
       } else {
-        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p, probe, normalize));
+        plans.push(buildVideoPlan(inName, ext, tier === 'custom' ? 'balanced' : tier, p, probe, normalize, strip));
       }
       plans.push(buildVideoFallback(inName, p));
     } else {
-      plans.push(buildAudioPlan(inName, ext, tier, p, normalize));
+      plans.push(buildAudioPlan(inName, ext, tier, p, normalize, strip));
       plans.push(buildAudioFallback(inName, p));
     }
     return plans;
@@ -8212,13 +8271,38 @@ ${linksOverlay}    </div>
 
   /* Embed the best of JPEG vs bilevel-PNG vs grayscale-PNG for a rasterized
      page into outPdf. Returns { img, bytesLen, usedMono, usedGray }. */
-  async function embedPageRaster(outPdf, ctx2d, quality) {
+  async function embedPageRaster(outPdf, ctx2d, quality, strip) {
+    strip = strip || {};
     if (!window.__ffMonoStat) window.__ffMonoStat = { pages: 0, picked: 0, failedPng: 0, grayPicked: 0, jpegBytes: 0, monoBytes: 0 };
     const st = window.__ffMonoStat;
     st.pages++;
+    const a = analyzePageRaster(ctx2d);
+
+    // Explicit strip color mode overrides: 'mono', 'gray'
+    if (a && strip.pdf_1 === 'mono') {
+      const mono = encodeMonoPng(a, a.threshold || 128);
+      if (mono) {
+        try {
+          const img = await outPdf.embedPng(mono);
+          st.picked++;
+          st.monoBytes += mono.length;
+          return { img, bytesLen: mono.length, usedMono: true, usedGray: false };
+        } catch (e) {}
+      }
+    } else if (a && strip.pdf_1 === 'gray') {
+      const gray = encodeGray8Png(a);
+      if (gray) {
+        try {
+          const img = await outPdf.embedPng(gray);
+          st.grayPicked++;
+          st.monoBytes += gray.length;
+          return { img, bytesLen: gray.length, usedMono: false, usedGray: true };
+        } catch (e) {}
+      }
+    }
+
     const jBlob = await new Promise(r => ctx2d.canvas.toBlob(r, 'image/jpeg', quality));
     const jBytes = new Uint8Array(await jBlob.arrayBuffer());
-    const a = analyzePageRaster(ctx2d);
 
     // Clean bilevel (Otsu) page -> 1-bit mono beats JPEG massively.
     if (a) {
@@ -8357,235 +8441,229 @@ ${linksOverlay}    </div>
   /* ─── Handcrafted Illustrations & Visual Thumbnails Engine ─── */
   function buildHandcraftedIllustration(fmt, name, size, mode = false) {
     const f = (fmt || '').toLowerCase().replace(/^\./, '');
-    const escName = _esc(name || 'Document');
-    const escSize = _esc(size || '');
-    
     const isCompact = mode === 'compact' || mode === true || mode === 'card';
-    const isFillStage = mode === 'stage' || mode === 'fill';
 
-    let cardStyle = '';
-    if (isCompact) {
-      cardStyle = 'width: 100%; height: 100%; min-height: 120px; padding: 12px 10px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: transparent; font-family: Inter, system-ui, sans-serif;';
-    } else if (isFillStage) {
-      cardStyle = 'width: 330px; height: 466px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.4142; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05); font-family: Inter, system-ui, sans-serif; margin: auto;';
+    let bannerBg = '#334155';
+    let badgeText = (f || 'FILE').toUpperCase().slice(0, 5);
+    let innerContent = '';
+
+    if (/^(xlsx|xls|ods)$/i.test(f)) {
+      bannerBg = '#00C853';
+      badgeText = 'XLSX';
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '6px' : '12px'};">
+          <div style="display: flex; align-items: center; gap: ${isCompact ? '6px' : '12px'};">
+            <div style="width: ${isCompact ? '18px' : '36px'}; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC; flex-shrink: 0;"></div>
+            <div style="flex: 1; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: ${isCompact ? '6px' : '12px'};">
+            <div style="width: ${isCompact ? '18px' : '36px'}; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC; flex-shrink: 0;"></div>
+            <div style="flex: 1; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: ${isCompact ? '6px' : '12px'};">
+            <div style="width: ${isCompact ? '18px' : '36px'}; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC; flex-shrink: 0;"></div>
+            <div style="flex: 1; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC;"></div>
+          </div>
+        </div>`;
+    } else if (/^(csv|tsv)$/i.test(f)) {
+      bannerBg = '#00C853';
+      badgeText = 'CSV';
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '6px' : '12px'};">
+          <div style="display: flex; align-items: center; gap: ${isCompact ? '6px' : '12px'};">
+            <div style="width: ${isCompact ? '18px' : '36px'}; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC; flex-shrink: 0;"></div>
+            <div style="flex: 1; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: ${isCompact ? '6px' : '12px'};">
+            <div style="width: ${isCompact ? '18px' : '36px'}; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC; flex-shrink: 0;"></div>
+            <div style="flex: 1; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: ${isCompact ? '6px' : '12px'};">
+            <div style="width: ${isCompact ? '18px' : '36px'}; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC; flex-shrink: 0;"></div>
+            <div style="flex: 1; height: ${isCompact ? '18px' : '36px'}; border-radius: 4px; background: #86EFAC;"></div>
+          </div>
+        </div>`;
+    } else if (/^(docx|doc|odt|rtf|dotx|pages|wpd)$/i.test(f)) {
+      bannerBg = '#2B579A';
+      badgeText = 'DOCX';
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '9px'};">
+          <div style="width: 48%; height: ${isCompact ? '6px' : '12px'}; border-radius: 3px; background: #4285F4; margin-bottom: ${isCompact ? '3px' : '6px'};"></div>
+          <div style="width: 100%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #BFDBFE;"></div>
+          <div style="width: 90%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #BFDBFE;"></div>
+          <div style="width: 96%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #BFDBFE;"></div>
+          <div style="width: 58%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #BFDBFE;"></div>
+          <div style="width: 98%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #DBEAFE;"></div>
+          <div style="width: 76%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #DBEAFE;"></div>
+        </div>`;
+    } else if (/^(mp4|webm|mov|mkv|avi|m4v|ogv|flv|wmv)$/i.test(f)) {
+      bannerBg = '#E83E8C';
+      badgeText = (f || 'MP4').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; align-items: center; justify-content: center;">
+          <div style="width: ${isCompact ? '80px' : '150px'}; height: ${isCompact ? '54px' : '100px'}; border: 2px solid #FCE7F3; background: #FDF2F8; border-radius: ${isCompact ? '6px' : '10px'}; display: flex; align-items: center; justify-content: center; position: relative;">
+            <div style="width: ${isCompact ? '24px' : '44px'}; height: ${isCompact ? '24px' : '44px'}; border-radius: 50%; background: #E83E8C; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(232, 62, 140, 0.35);">
+              <svg width="${isCompact ? '10' : '18'}" height="${isCompact ? '10' : '18'}" viewBox="0 0 24 24" fill="#FFFFFF" style="margin-left: 2px;">
+                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+              </svg>
+            </div>
+          </div>
+        </div>`;
+    } else if (/^(pptx|ppt|odp|key|pps|ppsx)$/i.test(f)) {
+      bannerBg = '#EA580C';
+      badgeText = 'PPTX';
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '6px' : '10px'};">
+          <div style="width: 48%; height: ${isCompact ? '6px' : '10px'}; border-radius: 3px; background: #EA580C;"></div>
+          <div style="height: ${isCompact ? '44px' : '80px'}; display: flex; align-items: flex-end; justify-content: space-between; gap: ${isCompact ? '4px' : '8px'}; border-bottom: 2px solid #FED7AA; padding-bottom: 2px;">
+            <div style="flex: 1; height: 35%; border-radius: 3px 3px 0 0; background: #FED7AA;"></div>
+            <div style="flex: 1; height: 70%; border-radius: 3px 3px 0 0; background: #FDBA74;"></div>
+            <div style="flex: 1; height: 50%; border-radius: 3px 3px 0 0; background: #FED7AA;"></div>
+            <div style="flex: 1; height: 95%; border-radius: 3px 3px 0 0; background: #FB923C;"></div>
+          </div>
+        </div>`;
+    } else if (/^(pdf|pdfa)$/i.test(f)) {
+      bannerBg = '#DC2626';
+      badgeText = 'PDF';
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '6px' : '10px'};">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+            <div style="width: ${isCompact ? '18px' : '26px'}; height: ${isCompact ? '18px' : '26px'}; border-radius: 5px; background: #DC2626; color: #FFFFFF; font-size: ${isCompact ? '9px' : '12px'}; font-weight: 900; display: flex; align-items: center; justify-content: center; font-family: sans-serif;">P</div>
+            <div style="flex: 1; height: ${isCompact ? '6px' : '10px'}; border-radius: 3px; background: #FCA5A5;"></div>
+          </div>
+          <div style="display: flex; gap: ${isCompact ? '6px' : '10px'};">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: ${isCompact ? '4px' : '6px'};">
+              <div style="width: 100%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+              <div style="width: 85%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+              <div style="width: 95%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+              <div style="width: 60%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: ${isCompact ? '4px' : '6px'};">
+              <div style="width: 100%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+              <div style="width: 90%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+              <div style="width: 75%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+              <div style="width: 88%; height: ${isCompact ? '4px' : '6px'}; border-radius: 2px; background: #FECACA;"></div>
+            </div>
+          </div>
+        </div>`;
+    } else if (/^(epub|mobi|azw3|fb2)$/i.test(f)) {
+      bannerBg = '#D97706';
+      badgeText = (f || 'EPUB').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; align-items: center; justify-content: center; gap: ${isCompact ? '6px' : '10px'};">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: ${isCompact ? '4px' : '7px'};">
+            <div style="width: 100%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+            <div style="width: 85%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+            <div style="width: 90%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+            <div style="width: 60%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+          </div>
+          <div style="width: 2px; height: ${isCompact ? '44px' : '80px'}; border-radius: 1px; background: #D97706; opacity: 0.35;"></div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: ${isCompact ? '4px' : '7px'};">
+            <div style="width: 100%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+            <div style="width: 95%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+            <div style="width: 80%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+            <div style="width: 50%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #FDE68A;"></div>
+          </div>
+        </div>`;
+    } else if (/^(zip|tar|gz|7z|rar|bz2|xz|iso|tgz)$/i.test(f)) {
+      bannerBg = '#7C3AED';
+      badgeText = (f || 'ZIP').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: ${isCompact ? '3px' : '5px'};">
+          <div style="display: flex; gap: ${isCompact ? '10px' : '18px'}; align-items: center;">
+            <div style="width: ${isCompact ? '8px' : '14px'}; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #DDD6FE;"></div>
+            <div style="width: ${isCompact ? '8px' : '14px'}; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #DDD6FE;"></div>
+          </div>
+          <div style="display: flex; gap: ${isCompact ? '10px' : '18px'}; align-items: center;">
+            <div style="width: ${isCompact ? '8px' : '14px'}; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #DDD6FE;"></div>
+            <div style="width: ${isCompact ? '8px' : '14px'}; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #DDD6FE;"></div>
+          </div>
+          <div style="width: ${isCompact ? '22px' : '36px'}; height: ${isCompact ? '16px' : '26px'}; border-radius: 5px; background: #7C3AED; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(124,58,237,0.3); margin: 2px 0;">
+            <div style="width: ${isCompact ? '6px' : '10px'}; height: ${isCompact ? '7px' : '12px'}; border: 2px solid #FFFFFF; border-radius: 2px;"></div>
+          </div>
+          <div style="display: flex; gap: ${isCompact ? '10px' : '18px'}; align-items: center;">
+            <div style="width: ${isCompact ? '8px' : '14px'}; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #DDD6FE;"></div>
+            <div style="width: ${isCompact ? '8px' : '14px'}; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #DDD6FE;"></div>
+          </div>
+        </div>`;
+    } else if (/^(mp3|wav|ogg|m4a|flac|aac|wma|opus|aiff|mid|midi|audio)$/i.test(f)) {
+      bannerBg = '#4F46E5';
+      badgeText = (f || 'AUDIO').toUpperCase().slice(0, 5);
+      innerContent = `
+        <div style="width: 100%; height: ${isCompact ? '50px' : '90px'}; display: flex; align-items: center; justify-content: center; gap: ${isCompact ? '4px' : '7px'};">
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 30%; border-radius: 4px; background: #C7D2FE;"></div>
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 60%; border-radius: 4px; background: #A5B4FC;"></div>
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 85%; border-radius: 4px; background: #818CF8;"></div>
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 100%; border-radius: 4px; background: #4F46E5;"></div>
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 80%; border-radius: 4px; background: #818CF8;"></div>
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 55%; border-radius: 4px; background: #A5B4FC;"></div>
+          <div style="width: ${isCompact ? '4px' : '8px'}; height: 32%; border-radius: 4px; background: #C7D2FE;"></div>
+        </div>`;
+    } else if (/^(ttf|otf|woff|woff2|eot|font)$/i.test(f)) {
+      bannerBg = '#27272A';
+      badgeText = (f || 'FONT').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <span style="font-size: ${isCompact ? '32px' : '64px'}; font-weight: 900; font-family: 'Times New Roman', Georgia, serif; color: #27272A; line-height: 1;">Aa</span>
+          <div style="width: ${isCompact ? '40px' : '72px'}; height: 1px; background: #D4D4D8; border-top: 1px dashed #A1A1AA; margin-top: ${isCompact ? '3px' : '6px'};"></div>
+        </div>`;
+    } else if (/^(svg|ai|eps|psd|cdr|fig|sketch|xd)$/i.test(f)) {
+      bannerBg = '#C026D3';
+      badgeText = (f || 'SVG').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; align-items: center; justify-content: center;">
+          <div style="width: ${isCompact ? '44px' : '80px'}; height: ${isCompact ? '44px' : '80px'}; border: 2px dashed #E879F9; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 7px; height: 7px; background: #FFFFFF; border: 2px solid #C026D3; border-radius: 2px; position: absolute; top: -5px; left: -5px;"></div>
+            <div style="width: 7px; height: 7px; background: #FFFFFF; border: 2px solid #C026D3; border-radius: 2px; position: absolute; top: -5px; right: -5px;"></div>
+            <div style="width: 7px; height: 7px; background: #FFFFFF; border: 2px solid #C026D3; border-radius: 2px; position: absolute; bottom: -5px; left: -5px;"></div>
+            <div style="width: 7px; height: 7px; background: #FFFFFF; border: 2px solid #C026D3; border-radius: 2px; position: absolute; bottom: -5px; right: -5px;"></div>
+            <div style="width: ${isCompact ? '18px' : '34px'}; height: ${isCompact ? '18px' : '34px'}; border-radius: 50%; background: #FDF4FF; border: 1.5px solid #C026D3;"></div>
+          </div>
+        </div>`;
+    } else if (/^(json|xml|html|py|js|ts|css|sql|yaml|yml|sh|c|cpp|java|go|rs|php)$/i.test(f)) {
+      bannerBg = '#1E293B';
+      badgeText = (f || 'CODE').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '4px' : '8px'};">
+          <div style="width: 40%; height: ${isCompact ? '5px' : '9px'}; border-radius: 3px; background: #0284C7;"></div>
+          <div style="margin-left: 12px; width: 72%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #94A3B8;"></div>
+          <div style="margin-left: 24px; width: 55%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #CBD5E1;"></div>
+          <div style="margin-left: 12px; width: 62%; height: ${isCompact ? '4px' : '8px'}; border-radius: 3px; background: #94A3B8;"></div>
+          <div style="width: 32%; height: ${isCompact ? '5px' : '9px'}; border-radius: 3px; background: #0284C7;"></div>
+        </div>`;
     } else {
-      cardStyle = 'width: 330px; height: 466px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.4142; background: #FFFFFF; border-radius: 4px; padding: 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.05); margin: auto; font-family: Inter, system-ui, sans-serif;';
+      bannerBg = '#334155';
+      badgeText = (f || 'FILE').toUpperCase().slice(0, 4);
+      innerContent = `
+        <div style="width: 100%; display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '8px'};">
+          <div style="width: 44%; height: ${isCompact ? '6px' : '10px'}; border-radius: 3px; background: #737373; margin-bottom: 3px;"></div>
+          <div style="width: 100%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #E5E5E5;"></div>
+          <div style="width: 88%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #E5E5E5;"></div>
+          <div style="width: 94%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #E5E5E5;"></div>
+          <div style="width: 68%; height: ${isCompact ? '4px' : '7px'}; border-radius: 2px; background: #E5E5E5;"></div>
+        </div>`;
     }
 
-    // 0. PDF Documents
-    if (/pdf|pdfa/i.test(f)) {
+    if (isCompact) {
       return `
-        <div style="${cardStyle}">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '16px'};">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #DC2626; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '10px' : '12px'}; box-shadow: 0 2px 6px rgba(220,38,38,0.3);">PDF</div>
-              <div>
-                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
-                <div style="font-size: 9.5px; color: #64748B;">Portable Document</div>
-              </div>
-            </div>
-            <span style="font-size: 9px; font-weight: 700; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 2px 6px; border-radius: 4px;">PDF</span>
+        <div class="conv-doc-type-card" style="width: 100%; height: 100%; aspect-ratio: 1 / 1.414; background: #FFFFFF; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; margin: auto;">
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 12px 10px; box-sizing: border-box;">
+            ${innerContent}
           </div>
-          <div style="width: 55%; height: ${isCompact ? '6px' : '8px'}; background: #DC2626; border-radius: 3px; margin-bottom: ${isCompact ? '8px' : '12px'}; opacity: 0.9;"></div>
-          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'}; margin-bottom: ${isCompact ? '8px' : '14px'};">
-            <div style="width: 100%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 92%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 96%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 80%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-          </div>
-          <div style="width: 40%; height: ${isCompact ? '5px' : '7px'}; background: #94A3B8; border-radius: 3px; margin-bottom: ${isCompact ? '6px' : '10px'};"></div>
-          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'};">
-            <div style="width: 98%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 88%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 94%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-          </div>
-          <div style="margin-top: auto; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94A3B8;">
-            <span>PDF Document</span>
-            <span>${escSize}</span>
+          <div style="height: 32px; background: ${bannerBg}; display: flex; align-items: center; justify-content: center; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; flex-shrink: 0;">
+            <span style="color: #FFFFFF; font-size: 13px; font-weight: 900; letter-spacing: 0.04em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-transform: uppercase;">${badgeText}</span>
           </div>
         </div>`;
     }
 
-    // 1. Microsoft Word & Text Documents
-    if (/docx|doc|odt|rtf|word|document/i.test(f)) {
-      return `
-        <div style="${cardStyle}">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '16px'};">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '11px' : '13px'}; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">W</div>
-              <div>
-                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
-                <div style="font-size: 9.5px; color: #64748B;">Word Document</div>
-              </div>
-            </div>
-            <span style="font-size: 9px; font-weight: 700; background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; padding: 2px 6px; border-radius: 4px;">DOCX</span>
-          </div>
-          <div style="width: 55%; height: ${isCompact ? '6px' : '8px'}; background: #2563EB; border-radius: 3px; margin-bottom: ${isCompact ? '8px' : '12px'}; opacity: 0.9;"></div>
-          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'}; margin-bottom: ${isCompact ? '8px' : '14px'};">
-            <div style="width: 100%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 92%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 96%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 80%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-          </div>
-          <div style="width: 40%; height: ${isCompact ? '5px' : '7px'}; background: #94A3B8; border-radius: 3px; margin-bottom: ${isCompact ? '6px' : '10px'};"></div>
-          <div style="display: flex; flex-direction: column; gap: ${isCompact ? '5px' : '7px'};">
-            <div style="width: 98%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 88%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            <div style="width: 94%; height: ${isCompact ? '4px' : '6px'}; background: #E2E8F0; border-radius: 3px;"></div>
-            ${!isCompact ? `<div style="width: 70%; height: 6px; background: #E2E8F0; border-radius: 3px;"></div>` : ''}
-          </div>
-          <div style="margin-top: auto; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94A3B8;">
-            <span>Microsoft Word</span>
-            <span>${escSize}</span>
-          </div>
-        </div>`;
-    }
-
-    // 2. Excel & Spreadsheets
-    if (/xlsx|xls|ods|csv|tsv|excel|sheet/i.test(f)) {
-      return `
-        <div style="${cardStyle}">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '14px'};">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #16A34A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '11px' : '13px'}; box-shadow: 0 2px 6px rgba(22,163,74,0.3);">X</div>
-              <div>
-                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
-                <div style="font-size: 9.5px; color: #64748B;">Spreadsheet Workbook</div>
-              </div>
-            </div>
-            <span style="font-size: 9px; font-weight: 700; background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; padding: 2px 6px; border-radius: 4px;">XLSX</span>
-          </div>
-          <div style="border: 1px solid #CBD5E1; border-radius: 4px; overflow: hidden; margin-bottom: ${isCompact ? '8px' : '12px'};">
-            <div style="display: grid; grid-template-columns: 24px 1fr 1fr 1fr; background: #F1F5F9; border-bottom: 1px solid #CBD5E1; font-size: 9.5px; font-weight: 700; color: #475569; text-align: center; height: ${isCompact ? '18px' : '22px'}; align-items: center;">
-              <span style="border-right: 1px solid #CBD5E1;">#</span>
-              <span style="border-right: 1px solid #CBD5E1;">A</span>
-              <span style="border-right: 1px solid #CBD5E1;">B</span>
-              <span>C</span>
-            </div>
-            ${(isCompact ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6]).map(i => `
-              <div style="display: grid; grid-template-columns: 24px 1fr 1fr 1fr; border-bottom: ${i < (isCompact ? 4 : 6) ? '1px solid #E2E8F0' : 'none'}; font-size: 9.5px; height: ${isCompact ? '17px' : '21px'}; align-items: center; background: ${i % 2 === 0 ? '#F8FAFC' : '#FFFFFF'};">
-                <span style="color: #94A3B8; font-weight: 600; text-align: center; border-right: 1px solid #E2E8F0;">${i}</span>
-                <div style="padding: 0 6px; border-right: 1px solid #E2E8F0;"><div style="width: ${50 + (i*7)%40}%; height: 5px; background: #94A3B8; border-radius: 2px;"></div></div>
-                <div style="padding: 0 6px; border-right: 1px solid #E2E8F0;"><div style="width: ${40 + (i*11)%45}%; height: 5px; background: #CBD5E1; border-radius: 2px;"></div></div>
-                <div style="padding: 0 6px;"><div style="width: ${60 + (i*5)%30}%; height: 5px; background: #86EFAC; border-radius: 2px;"></div></div>
-              </div>
-            `).join('')}
-          </div>
-          <div style="margin-top: auto; padding-top: 8px; border-top: 1px dashed #E2E8F0; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94A3B8;">
-            <span>Structured Data</span>
-            <span>${escSize}</span>
-          </div>
-        </div>`;
-    }
-
-    // 3. PowerPoint Presentations
-    if (/pptx|ppt|odp|presentation|keynote/i.test(f)) {
-      return `
-        <div style="${cardStyle}">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: ${isCompact ? '8px' : '14px'};">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="width: ${isCompact ? '26px' : '32px'}; height: ${isCompact ? '26px' : '32px'}; border-radius: 6px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${isCompact ? '11px' : '13px'}; box-shadow: 0 2px 6px rgba(234,88,12,0.3);">P</div>
-              <div>
-                <div style="font-size: ${isCompact ? '11px' : '13px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '110px' : '160px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escName}</div>
-                <div style="font-size: 9.5px; color: #64748B;">Slide Presentation</div>
-              </div>
-            </div>
-            <span style="font-size: 9px; font-weight: 700; background: #FFEDD5; color: #C2410C; border: 1px solid #FED7AA; padding: 2px 6px; border-radius: 4px;">PPTX</span>
-          </div>
-          <div style="border: 1px solid #FED7AA; background: #FFF7ED; border-radius: 6px; padding: ${isCompact ? '8px' : '14px'}; flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 8px;">
-            <div style="width: 55%; height: ${isCompact ? '6px' : '8px'}; background: #EA580C; border-radius: 3px;"></div>
-            <div style="display: flex; flex-direction: column; gap: 6px; margin: 8px 0;">
-              <div style="width: 85%; height: 5px; background: #FDBA74; border-radius: 2px;"></div>
-              <div style="width: 65%; height: 5px; background: #FED7AA; border-radius: 2px;"></div>
-            </div>
-            <div style="display: flex; gap: 6px; align-items: flex-end; height: ${isCompact ? '40px' : '65px'};">
-              <div style="flex: 1; height: 40%; background: #FDBA74; border-radius: 2px 2px 0 0;"></div>
-              <div style="flex: 1; height: 75%; background: #FB923C; border-radius: 2px 2px 0 0;"></div>
-              <div style="flex: 1; height: 95%; background: #EA580C; border-radius: 2px 2px 0 0;"></div>
-              <div style="flex: 1; height: 60%; background: #FDBA74; border-radius: 2px 2px 0 0;"></div>
-            </div>
-          </div>
-          <div style="margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; color: #94A3B8;">
-            <span>Slide Deck</span>
-            <span>${escSize}</span>
-          </div>
-        </div>`;
-    }
-
-    // 4. ZIP & Archive Bundles
-    if (/zip|tar|gz|7z|rar|bz2|archive/i.test(f)) {
-      return `
-        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
-          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #FAF5FF; border: 1.5px solid #E9D5FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(124,58,237,0.12);">
-            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4M10 16h4"/></svg>
-          </div>
-          <span style="font-size: 9.5px; font-weight: 700; background: #F3E8FF; color: #7E22CE; border: 1px solid #E9D5FF; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">ZIP ARCHIVE</span>
-          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '230px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
-          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Compressed Bundle</div>
-        </div>`;
-    }
-
-    // 5. EPUB & eBooks
-    if (/epub|mobi|ebook|azw3/i.test(f)) {
-      return `
-        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
-          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #FFFBEB; border: 1.5px solid #FDE68A; color: #D97706; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(217,119,6,0.12);">
-            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
-          </div>
-          <span style="font-size: 9.5px; font-weight: 700; background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">EPUB EBOOK</span>
-          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '220px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
-          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Digital Book</div>
-        </div>`;
-    }
-
-    // 6. Audio Tracks
-    if (/mp3|wav|m4a|ogg|flac|aac|wma|audio/i.test(f)) {
-      return `
-        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
-          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #FAF5FF; border: 1.5px solid #DDD6FE; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(124,58,237,0.12);">
-            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          </div>
-          <span style="font-size: 9.5px; font-weight: 700; background: #F3E8FF; color: #6D28D9; border: 1px solid #DDD6FE; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">AUDIO TRACK</span>
-          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '220px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
-          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Audio Media</div>
-        </div>`;
-    }
-
-    // 7. Video Clips
-    if (/mp4|webm|mov|mkv|avi|flv|video/i.test(f)) {
-      return `
-        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
-          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #2563EB; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(37,99,235,0.12);">
-            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m10 8 6 4-6 4V8z"/></svg>
-          </div>
-          <span style="font-size: 9.5px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px;">VIDEO CLIP</span>
-          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '220px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
-          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Video Media</div>
-        </div>`;
-    }
-
-    // 8. Code & Developer Files
-    if (/json|xml|html|css|js|ts|py|sql|yaml|yml|code/i.test(f)) {
-      return `
-        <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
-          <div style="width: ${isCompact ? '44px' : '64px'}; height: ${isCompact ? '44px' : '64px'}; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #CBD5E1; color: #0F172A; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-            <svg width="${isCompact ? '22' : '32'}" height="${isCompact ? '22' : '32'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          </div>
-          <span style="font-size: 9.5px; font-weight: 700; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px; text-transform: uppercase;">${_esc(f)}</span>
-          <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '210px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
-          <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Source Code</div>
-        </div>`;
-    }
-
-    // 9. Generic Fallback Document Sheet
     return `
-      <div style="${cardStyle} align-items: center; justify-content: center; text-align: center;">
-        <div style="width: ${isCompact ? '44px' : '60px'}; height: ${isCompact ? '44px' : '60px'}; border-radius: 12px; background: #F1F5F9; border: 1.5px solid #CBD5E1; color: #475569; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-          <svg width="${isCompact ? '22' : '30'}" height="${isCompact ? '22' : '30'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      <div class="conv-doc-type-card" style="aspect-ratio: 1 / 1.414; width: min(300px, calc((100vh - 240px) * 0.707)); height: min(424px, calc(100vh - 240px)); max-width: 100%; background: #FFFFFF; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; margin: auto; position: relative;">
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px 20px; box-sizing: border-box;">
+          ${innerContent}
         </div>
-        <span style="font-size: 9.5px; font-weight: 700; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 9999px; margin-bottom: 8px; text-transform: uppercase;">${_esc(f || 'FILE')}</span>
-        <div style="font-size: ${isCompact ? '12px' : '14px'}; font-weight: 700; color: #0F172A; max-width: ${isCompact ? '140px' : '210px'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escName}</div>
-        <div style="font-size: 11px; color: #64748B; font-weight: 500;">${escSize} · Document</div>
+        <div style="height: 52px; background: ${bannerBg}; display: flex; align-items: center; justify-content: center; border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; flex-shrink: 0;">
+          <span style="color: #FFFFFF; font-size: 24px; font-weight: 900; letter-spacing: 0.04em; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-transform: uppercase;">${badgeText}</span>
+        </div>
       </div>`;
   }
 
@@ -8671,7 +8749,7 @@ ${linksOverlay}    </div>
   /* ─── Mount ─────────────────────────────────────────── */
   function mountCompressPDF(container, tool) {
     container.innerHTML = '';
-    container.classList.add('cpdf-root', 'conv-root');
+    container.classList.add('cpdf-root', 'comp-root');
 
     const U = window.FF && window.FF.util ? window.FF.util : {
       loadScript: (src, sri) => (window.FF?.util?.loadScript ? window.FF.util.loadScript(src, sri) : new Promise((res, rej) => {
@@ -8702,17 +8780,20 @@ ${linksOverlay}    </div>
 
     const _esc = (s) => (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] || c);
 
-    const ACCEPT_STR = '.pdf,.png,.jpg,.jpeg,.webp,.svg,.bmp,.tiff,.heic,.docx,.pptx,.xlsx,.epub,.fb2,.cbz,.zip,.mp4,.webm,.mov,.mp3,.wav';
+    const ACCEPT_STR = '.pdf,.png,.jpg,.jpeg,.webp,.svg,.bmp,.tiff,.tif,.heic,.heif,.gif,.avif,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.rtf,.odt,.epub,.fb2,.cbz,.zip,.tar,.gz,.mp4,.webm,.mov,.mkv,.avi,.mp3,.wav,.ogg,.m4a,.aac,.flac,.json,.xml,.html,.css,.js,.glb,.obj,.stl,.ttf,.otf,.woff';
 
     function familyOf(f) {
       const ext = (f?.name || '').split('.').pop().toLowerCase();
       if (/^(pdf)$/.test(ext)) return 'pdf';
-      if (/^(png|jpe?g|webp|svg|bmp|tiff?|heic|gif)$/.test(ext)) return 'image';
-      if (/^(mp4|webm|mov|mkv|avi)$/.test(ext)) return 'video';
-      if (/^(mp3|wav|ogg|m4a|aac|flac)$/.test(ext)) return 'audio';
-      if (/^(docx?|pptx?|xlsx?|rtf)$/.test(ext)) return 'office';
-      if (/^(epub|fb2|mobi)$/.test(ext)) return 'ebook';
-      if (/^(zip|tar|gz|tgz|cbz|cbr)$/.test(ext)) return 'archive';
+      if (/^(png|jpe?g|webp|svg|bmp|tiff?|heic|heif|gif|avif|tga|ppm|ico)$/.test(ext)) return 'image';
+      if (/^(mp4|webm|mov|mkv|avi|m4v|ogv|flv|wmv|3gp|ts)$/.test(ext)) return 'video';
+      if (/^(mp3|wav|ogg|m4a|aac|flac|wma|m4r|opus|aiff|alac)$/.test(ext)) return 'audio';
+      if (/^(docx?|pptx?|xlsx?|rtf|odt|odp|ods|pages|key|numbers)$/.test(ext)) return 'office';
+      if (/^(epub|fb2|mobi|azw3?|ibooks)$/.test(ext)) return 'ebook';
+      if (/^(zip|tar|gz|tgz|cbz|cbr|7z|rar|bz2|xz)$/.test(ext)) return 'archive';
+      if (/^(json|xml|html?|css|js|ts|py|sql|ya?ml|sh|c|cpp|java|go|rs|php|txt|csv|tsv|md)$/.test(ext)) return 'code';
+      if (/^(glb|gltf|obj|stl|ply|fbx|dae)$/.test(ext)) return 'model3d';
+      if (/^(ttf|otf|woff2?|eot)$/.test(ext)) return 'font';
       return 'other';
     }
 
@@ -8730,6 +8811,10 @@ ${linksOverlay}    </div>
     let selectedTier = 'balanced';
     let normalizeLoudness = false;
     let output = 'zip';
+    let compressAbort = false;
+    let customTargetKB = 200;
+    let customUnit = 'KB';
+    const stripParams = {};
 
     const MAX_BYTES = 200 * 1024 * 1024;
     const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
@@ -8748,17 +8833,6 @@ ${linksOverlay}    </div>
       renderConfigure();
     }
 
-    const pending = window.FF && window.FF.app && window.FF.app.pendingFiles;
-    if (pending && pending.length) {
-      const arr = Array.from(pending).filter(f => f && f.size <= MAX_BYTES);
-      if (arr.length) {
-        window.FF.app.pendingFiles = null;
-        files = arr;
-        renderConfigure();
-        return;
-      }
-    }
-
     /* ── Live analyzed size estimator (Phase 6) ──────────────────────────
        Replaces static factor guesses with a REAL preflight probe:
        - PDF: actually re-compresses FlateDecode streams (zlib level 9) and
@@ -8771,7 +8845,7 @@ ${linksOverlay}    </div>
       maximum:  { q: 0.65, jq: 0.60, maxDim: 1920 },
     };
     let _estCache = null; // { key, data:{tier:bytes} }
-    const _estFileKey = () => { const f = files[0]; return f ? `${f.size}:${f.name}` : ''; };
+    function _estFileKey() { const f = files[0]; return f ? `${f.size}:${f.name}` : ''; }
 
     function loadImageBytes(buf) {
       return new Promise((res, rej) => {
@@ -9030,9 +9104,6 @@ ${linksOverlay}    </div>
     }
 
     /* ── Step 2: Configure ── */
-    let customTargetKB = 200;
-    let customUnit = 'KB';
-
     function renderConfigure() {
       container.classList.add('cpdf-root');
       container.classList.remove('spdf-shell');
@@ -9102,6 +9173,232 @@ ${linksOverlay}    </div>
         target: 'Fit a limit — e.g. under 1 MB for email &amp; upload portals'
       };
 
+      const renderCustomSegment = (id, label, options, currentVal, paramKey) => {
+        const activeOpt = options.find(o => String(o.value) === String(currentVal)) || options[0];
+        return `
+          <div class="scan-segment-item scan-custom-select-trigger" data-id="${id}" data-param="${paramKey}" tabindex="0" role="button" aria-haspopup="listbox">
+            <span class="scan-segment-label">${_esc(label)}</span>
+            <div class="scan-segment-select-wrap">
+              <span class="scan-segment-val-text" id="val-${id}">${_esc(activeOpt.label)}</span>
+              <select id="${id}" class="scan-segment-select" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+                ${options.map(o => `<option value="${_esc(o.value)}" ${String(o.value) === String(currentVal) ? 'selected' : ''}>${_esc(o.label)}</option>`).join('')}
+              </select>
+              <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>`;
+      };
+
+      const renderSegmentedStrip = (family) => {
+        if (family === 'image') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Format', [
+                { value: 'original', label: 'Original' },
+                { value: 'webp', label: 'WebP' },
+                { value: 'jpeg', label: 'JPEG' },
+                { value: 'png', label: 'PNG' },
+                { value: 'avif', label: 'AVIF' }
+              ], stripParams['image_1'] || 'original', 'image_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Max Size', [
+                { value: 'original', label: 'Original' },
+                { value: '3840', label: '4K (3840)' },
+                { value: '1920', label: '1080p' },
+                { value: '1280', label: '720p' }
+              ], stripParams['image_2'] || 'original', 'image_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'EXIF Data', [
+                { value: 'strip', label: 'Strip EXIF' },
+                { value: 'preserve', label: 'Preserve' }
+              ], stripParams['image_3'] || 'strip', 'image_3')}
+            </div>`;
+        }
+        if (family === 'video') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Resolution', [
+                { value: 'original', label: 'Original' },
+                { value: '1080', label: '1080p' },
+                { value: '720', label: '720p' },
+                { value: '480', label: '480p' }
+              ], stripParams['video_1'] || 'original', 'video_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Framerate', [
+                { value: 'original', label: 'Original' },
+                { value: '30', label: '30 FPS' },
+                { value: '24', label: '24 FPS' },
+                { value: '60', label: '60 FPS' }
+              ], stripParams['video_2'] || 'original', 'video_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'Audio', [
+                { value: 'stereo', label: 'Stereo' },
+                { value: 'passthrough', label: 'Passthrough' },
+                { value: 'mute', label: 'Mute Audio' }
+              ], stripParams['video_3'] || 'stereo', 'video_3')}
+            </div>`;
+        }
+        if (family === 'audio') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Bitrate', [
+                { value: '128k', label: '128 kbps' },
+                { value: '192k', label: '192 kbps' },
+                { value: '96k', label: '96 kbps' },
+                { value: '320k', label: '320 kbps' }
+              ], stripParams['audio_1'] || '128k', 'audio_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Channels', [
+                { value: 'stereo', label: 'Stereo 2.0' },
+                { value: 'mono', label: 'Mono 1.0' }
+              ], stripParams['audio_2'] || 'stereo', 'audio_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'Loudness', [
+                { value: 'lufs16', label: '−16 LUFS' },
+                { value: 'original', label: 'Original' }
+              ], stripParams['audio_3'] || 'lufs16', 'audio_3')}
+            </div>`;
+        }
+        if (family === 'archive' || family === 'office' || family === 'ebook') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Engine', [
+                { value: 'l9', label: 'Ultra L9' },
+                { value: 'l6', label: 'Normal L6' },
+                { value: 'l1', label: 'Fast L1' }
+              ], stripParams['archive_1'] || 'l9', 'archive_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Media', [
+                { value: 'compress', label: 'Compress' },
+                { value: 'raw', label: 'Keep Raw' }
+              ], stripParams['archive_2'] || 'compress', 'archive_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'OS Files', [
+                { value: 'strip', label: 'Strip Junk' },
+                { value: 'preserve', label: 'Preserve' }
+              ], stripParams['archive_3'] || 'strip', 'archive_3')}
+            </div>`;
+        }
+        if (family === 'code' || family === 'data') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Engine', [
+                { value: 'l9', label: 'Ultra L9' },
+                { value: 'l6', label: 'Normal L6' },
+                { value: 'l1', label: 'Fast L1' }
+              ], stripParams['code_1'] || 'l9', 'code_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Whitespace', [
+                { value: 'minify', label: 'Minify' },
+                { value: 'preserve', label: 'Preserve' }
+              ], stripParams['code_2'] || 'minify', 'code_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'Comments', [
+                { value: 'strip', label: 'Strip Junk' },
+                { value: 'preserve', label: 'Preserve' }
+              ], stripParams['code_3'] || 'strip', 'code_3')}
+            </div>`;
+        }
+        if (family === 'model3d') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Textures', [
+                { value: '1080', label: '1080p' },
+                { value: '2048', label: '2K' },
+                { value: 'raw', label: 'Keep Raw' }
+              ], stripParams['m3d_1'] || '1080', 'm3d_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Precision', [
+                { value: 'standard', label: 'Standard' },
+                { value: 'high', label: 'High Detail' },
+                { value: 'compact', label: 'Compact' }
+              ], stripParams['m3d_2'] || 'standard', 'm3d_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'Metadata', [
+                { value: 'strip', label: 'Strip Junk' },
+                { value: 'preserve', label: 'Preserve' }
+              ], stripParams['m3d_3'] || 'strip', 'm3d_3')}
+            </div>`;
+        }
+        if (family === 'font') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Format', [
+                { value: 'woff', label: 'WOFF' },
+                { value: 'woff2', label: 'WOFF2' },
+                { value: 'original', label: 'Original' }
+              ], stripParams['font_1'] || 'woff', 'font_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Tables', [
+                { value: 'subset', label: 'Auto Subset' },
+                { value: 'preserve', label: 'Preserve All' }
+              ], stripParams['font_2'] || 'subset', 'font_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'Engine', [
+                { value: 'l9', label: 'Ultra L9' },
+                { value: 'l1', label: 'Fast L1' }
+              ], stripParams['font_3'] || 'l9', 'font_3')}
+            </div>`;
+        }
+        if (family === 'other') {
+          return `
+            <div class="scan-segmented-settings-strip">
+              ${renderCustomSegment('comp-strip-opt1', 'Engine', [
+                { value: 'l9', label: 'Ultra L9' },
+                { value: 'l6', label: 'Normal L6' },
+                { value: 'l1', label: 'Fast L1' }
+              ], stripParams['other_1'] || 'l9', 'other_1')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt2', 'Mode', [
+                { value: 'lossless', label: 'Lossless' },
+                { value: 'fast', label: 'Fast Deflate' }
+              ], stripParams['other_2'] || 'lossless', 'other_2')}
+              <div class="scan-segment-divider" aria-hidden="true"></div>
+              ${renderCustomSegment('comp-strip-opt3', 'Container', [
+                { value: 'auto', label: 'Auto Zip' },
+                { value: 'raw', label: 'Keep Raw' }
+              ], stripParams['other_3'] || 'auto', 'other_3')}
+            </div>`;
+        }
+        // Default: PDF
+        return `
+          <div class="scan-segmented-settings-strip">
+            ${renderCustomSegment('comp-strip-opt1', 'Color Mode', [
+              { value: 'color', label: 'Color' },
+              { value: 'gray', label: 'Grayscale' },
+              { value: 'mono', label: 'B&W Scan' }
+            ], stripParams['pdf_1'] || 'color', 'pdf_1')}
+            <div class="scan-segment-divider" aria-hidden="true"></div>
+            ${renderCustomSegment('comp-strip-opt2', 'Resolution', [
+              { value: 'auto', label: 'Auto 150' },
+              { value: '300', label: '300 DPI' },
+              { value: '150', label: '150 DPI' },
+              { value: '72', label: '72 DPI' }
+            ], stripParams['pdf_2'] || 'auto', 'pdf_2')}
+            <div class="scan-segment-divider" aria-hidden="true"></div>
+            ${renderCustomSegment('comp-strip-opt3', 'Metadata', [
+              { value: 'strip', label: 'Strip Junk' },
+              { value: 'preserve', label: 'Preserve' }
+            ], stripParams['pdf_3'] || 'strip', 'pdf_3')}
+          </div>`;
+      };
+
+      const famTitleMap = {
+        pdf: 'Compress PDF',
+        image: 'Compress Image',
+        video: 'Compress Video',
+        audio: 'Compress Audio',
+        office: 'Compress Document',
+        ebook: 'Compress Ebook',
+        archive: 'Compress Archive',
+        code: 'Compress Code',
+        model3d: 'Compress 3D Model',
+        font: 'Compress Font',
+        other: 'Compress File'
+      };
+      const panelTitle = isBatch ? `Compress ${files.length} Files` : (famTitleMap[fam] || 'Compress File');
+
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
@@ -9136,72 +9433,62 @@ ${linksOverlay}    </div>
               </div>
             </div>
 
-            <!-- Right Panel: Studio Panel with Options -->
-            <div class="cpdf-benchmark-panel">
+            <!-- Right Panel: Studio Panel with Options (Scan Parity) -->
+            <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="comp-benchmark-panel" aria-label="Compression Settings">
               <div class="cpdf-benchmark-panel-inner">
-                <div class="cpdf-benchmark-header">
-                  <div class="cpdf-benchmark-icon">
+                <!-- Header: Green squircle + Title -->
+                <div class="scan-exact-header">
+                  <div class="scan-exact-icon" style="background: #00C466 !important;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
                     </svg>
                   </div>
-                  <h2 class="cpdf-benchmark-title">${isBatch ? `Compress ${files.length} Files` : 'Compress'}</h2>
+                  <h2 class="scan-exact-title">${panelTitle}</h2>
                 </div>
 
-                <!-- Option Cards Stack -->
-                <div class="cpdf-cards-stack" role="radiogroup" aria-label="Compression Tier">
-                  <!-- Option 1: Medium (industry default) -->
-                  <div class="cpdf-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
+                <!-- Format Option Cards Stack (Clean 38px cards with only Recommended badge) -->
+                <div class="scan-exact-cards-stack" role="radiogroup" aria-label="Compression Tier">
+                  <!-- Option 1: Medium (Recommended) -->
+                  <div class="scan-benchmark-card ${selectedTier === 'balanced' ? 'is-active' : ''}" data-tier="balanced" tabindex="0" role="radio" aria-checked="${selectedTier === 'balanced'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
                     </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Medium</span>
-                      <span class="cpdf-benchmark-card-sub">${tierCopy.balanced.sub}</span>
-                      <span class="cpdf-benchmark-card-tag">Recommended</span>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label">Medium</span>
                     </div>
-                    <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">${tierCopy.balanced.pill}</span>
+                    <div class="scan-benchmark-card-right">
+                      <span class="scan-benchmark-pill-rec">Recommended</span>
                     </div>
                   </div>
 
                   <!-- Option 2: Light -->
-                  <div class="cpdf-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
+                  <div class="scan-benchmark-card ${selectedTier === 'light' ? 'is-active' : ''}" data-tier="light" tabindex="0" role="radio" aria-checked="${selectedTier === 'light'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
                     </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Light</span>
-                      <span class="cpdf-benchmark-card-sub">${tierCopy.light.sub}</span>
-                    </div>
-                    <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">${tierCopy.light.pill}</span>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label">Light</span>
                     </div>
                   </div>
 
                   <!-- Option 3: Heavy -->
-                  <div class="cpdf-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum">
-                    <div class="cpdf-benchmark-radio">
-                      <div class="cpdf-benchmark-radio-dot"></div>
+                  <div class="scan-benchmark-card ${selectedTier === 'maximum' ? 'is-active' : ''}" data-tier="maximum" tabindex="0" role="radio" aria-checked="${selectedTier === 'maximum'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
                     </div>
-                    <div class="cpdf-benchmark-card-text">
-                      <span class="cpdf-benchmark-card-label">Heavy</span>
-                      <span class="cpdf-benchmark-card-sub">${tierCopy.maximum.sub}</span>
-                    </div>
-                    <div class="cpdf-benchmark-card-right">
-                      <span class="cpdf-benchmark-pill-smallest">${tierCopy.maximum.pill}</span>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label">Heavy</span>
                     </div>
                   </div>
 
                   <!-- Option 4: Exact Target Size Mode -->
-                  <div class="cpdf-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom">
+                  <div class="scan-benchmark-card cpdf-benchmark-card--target ${selectedTier === 'custom' ? 'is-active' : ''}" data-tier="custom" tabindex="0" role="radio" aria-checked="${selectedTier === 'custom'}">
                     <div class="cpdf-target-row-top">
-                      <div class="cpdf-benchmark-radio">
-                        <div class="cpdf-benchmark-radio-dot"></div>
+                      <div class="scan-benchmark-radio">
+                        <div class="scan-benchmark-radio-dot"></div>
                       </div>
-                      <div class="cpdf-benchmark-card-text">
-                        <span class="cpdf-benchmark-card-label">Exact Target Size</span>
-                        <span class="cpdf-benchmark-card-sub">${tierCopy.target}</span>
+                      <div class="scan-benchmark-card-text">
+                        <span class="scan-benchmark-card-label">Exact Target Size</span>
                       </div>
                     </div>
                     ${selectedTier === 'custom' ? `
@@ -9216,35 +9503,48 @@ ${linksOverlay}    </div>
                   </div>
                 </div>
 
-                ${(fam === 'video' || fam === 'audio') && !isBatch ? `
-                <label class="cpdf-media-opt" for="comp-normalize-loudness">
-                  <input type="checkbox" id="comp-normalize-loudness" class="cpdf-media-opt-input"${normalizeLoudness ? ' checked' : ''} />
-                  <span class="cpdf-media-opt-text">
-                    <span class="cpdf-media-opt-title">Normalize loudness</span>
-                    <span class="cpdf-media-opt-sub">Even out volume to −16 LUFS (EBU R128)</span>
-                  </span>
-                </label>` : ''}
+                <!-- Unified 3-Column Segmented Settings Strip with Custom Dropdown Popovers -->
+                ${renderSegmentedStrip(fam)}
 
-                <div class="cpdf-benchmark-est-box">
-                  <div class="cpdf-benchmark-est-title">${isBatch ? 'Total estimated output' : 'Estimated new file size'}</div>
-                  <div class="cpdf-benchmark-est-metrics">
-                    <strong class="cpdf-benchmark-est-new" id="comp-est-new-size">${estNewFormatted}</strong>
-                    <del class="cpdf-benchmark-est-old" id="comp-est-old-size">${estOldFormatted}</del>
-                    <span class="cpdf-benchmark-est-pct" id="comp-est-pct">${estPctFormatted}</span>
+                <!-- Estimated Output Box (Clean Header with Privacy Pill & Metric Row) -->
+                <div class="scan-exact-est-box">
+                  <div class="scan-exact-est-header">
+                    <span class="scan-exact-est-title">${isBatch ? 'Total estimated output' : 'Estimated output'}</span>
+                    <span class="scan-exact-privacy-badge">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      100% Local
+                    </span>
                   </div>
-                  <div class="cpdf-benchmark-track">
-                    <div class="cpdf-benchmark-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
+                  <div class="scan-exact-est-row">
+                    <span class="scan-exact-est-metric">
+                      <strong id="comp-est-new-size">${estNewFormatted}</strong> · <del class="cpdf-benchmark-est-old" id="comp-est-old-size">${estOldFormatted}</del> · <span class="scan-est-size-tag" id="comp-est-pct" style="color:#166534;">${estPctFormatted}</span>
+                    </span>
+                  </div>
+                  <div class="scan-exact-track">
+                    <div class="scan-exact-bar" id="comp-est-bar" style="width: ${Math.round(currentEst.factor * 100)}%;"></div>
                   </div>
                 </div>
 
-                <button type="button" class="cpdf-benchmark-cta" id="comp-studio-run">
-                  <span>${isBatch ? `Compress ${files.length} Files` : 'Compress'}</span>
+                <!-- Primary Action CTA Button: Solid Obsidian Black with White Arrow -->
+                <button type="button" class="scan-exact-cta" id="comp-studio-run">
+                  <span>${isBatch ? `Compress All Files` : panelTitle}</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                   </svg>
                 </button>
+
+                <!-- Professional Trust Micro-Footer -->
+                <div class="cpdf-local-trust-footer">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  <span>100% Private · Processed locally on your device</span>
+                </div>
               </div>
-            </div>
+            </aside>
           </div>
         </div>
         <input id="cpdf-add-more-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>`;
@@ -9316,13 +9616,79 @@ ${linksOverlay}    </div>
         });
       }
 
-      container.querySelectorAll('.cpdf-benchmark-card').forEach(row => {
+      container.querySelectorAll('.scan-benchmark-card, .cpdf-benchmark-card').forEach(row => {
         row.onclick = (e) => {
           if (e.target.closest('.cpdf-target-input-wrap')) return;
           selectedTier = row.dataset.tier || 'balanced';
           renderConfigure();
         };
       });
+
+      // Custom Dropdown Popover Interactions for Segmented Settings Strip
+      container.querySelectorAll('.scan-custom-select-trigger').forEach(trigger => {
+        trigger.onclick = (e) => {
+          e.stopPropagation();
+          const existing = trigger.querySelector('.scan-custom-select-popover');
+          container.querySelectorAll('.scan-custom-select-popover').forEach(p => p.remove());
+          if (existing) return;
+
+          const targetId = trigger.dataset.id;
+          const paramKey = trigger.dataset.param;
+          const sel = container.querySelector(`#${targetId}`);
+          if (!sel) return;
+
+          const options = Array.from(sel.options).map(opt => ({
+            value: opt.value,
+            label: opt.text,
+            selected: opt.selected || opt.value === sel.value
+          }));
+
+          const popover = document.createElement('div');
+          popover.className = 'scan-custom-select-popover';
+          popover.setAttribute('role', 'listbox');
+          popover.innerHTML = options.map(o => `
+            <div class="scan-custom-option ${o.selected ? 'is-selected' : ''}" data-val="${_esc(o.value)}" role="option" aria-selected="${o.selected}">
+              <span>${_esc(o.label)}</span>
+              ${o.selected ? `<svg class="scan-custom-option-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00C466" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+            </div>
+          `).join('');
+
+          popover.querySelectorAll('.scan-custom-option').forEach(optEl => {
+            optEl.onclick = (ev) => {
+              ev.stopPropagation();
+              const val = optEl.dataset.val;
+              sel.value = val;
+              stripParams[paramKey] = val;
+              const valLabel = container.querySelector(`#val-${targetId}`);
+              if (valLabel) valLabel.textContent = optEl.querySelector('span')?.textContent || val;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              popover.remove();
+            };
+          });
+
+          trigger.appendChild(popover);
+        };
+      });
+
+      // Global click outside to dismiss popovers
+      const closePopovers = () => container.querySelectorAll('.scan-custom-select-popover').forEach(p => p.remove());
+      document.addEventListener('click', closePopovers);
+
+      const opt1 = container.querySelector('#comp-strip-opt1');
+      const opt2 = container.querySelector('#comp-strip-opt2');
+      const opt3 = container.querySelector('#comp-strip-opt3');
+      if (opt1) {
+        opt1.onchange = () => { stripParams[fam + '_1'] = opt1.value; };
+      }
+      if (opt2) {
+        opt2.onchange = () => { stripParams[fam + '_2'] = opt2.value; };
+      }
+      if (opt3) {
+        opt3.onchange = () => {
+          stripParams[fam + '_3'] = opt3.value;
+          if (fam === 'audio') normalizeLoudness = (opt3.value === 'lufs16');
+        };
+      }
 
       const targetInp = container.querySelector('#cpdf-target-val-inp');
       const unitSel = container.querySelector('#cpdf-target-unit-sel');
@@ -9377,9 +9743,14 @@ ${linksOverlay}    </div>
         };
       });
 
-      container.querySelector('#comp-studio-run')?.addEventListener('click', () => {
-        runCompress();
-      });
+      const runBtn = container.querySelector('#comp-studio-run');
+      if (runBtn) {
+        runBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          runCompress();
+        };
+      }
 
       const normBox = container.querySelector('#comp-normalize-loudness');
       if (normBox) normBox.onchange = () => { normalizeLoudness = !!normBox.checked; };
@@ -9388,81 +9759,178 @@ ${linksOverlay}    </div>
       runEstimate();
     }
 
-    /* ── Step 3: Processing ── */
+    /* ── Step 3: Processing (Senior UI/UX Linear-Grade Architecture) ── */
     function renderProcessing() {
       const isBatch = files.length > 1;
-      const activeFile = files[0];
+      const activeFile = files[0] || { name: 'document.pdf', size: 0 };
       const fam = familyOf(activeFile);
       const totalOriginalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
+
+      // Contextual title & engine name per file family
+      const procTitle = isBatch
+        ? `Compressing ${files.length} Files…`
+        : fam === 'video'
+        ? 'Transcoding Video…'
+        : fam === 'audio'
+        ? 'Optimizing Audio…'
+        : fam === 'image'
+        ? 'Compressing Image…'
+        : fam === 'pdf'
+        ? 'Compressing PDF…'
+        : fam === 'archive'
+        ? 'Compressing Archive…'
+        : 'Compressing File…';
+
+      const fileMetaSubtitle = isBatch
+        ? `${files.length} files queued · ${_bytes(totalOriginalBytes)}`
+        : `${_esc(activeFile.name)} · ${_bytes(activeFile.size)}`;
+
+      const engineName = fam === 'pdf' ? 'SqueezeCore™ Stream Surgery'
+        : (fam === 'image' ? 'MozJPEG / WebP Matrix'
+        : (fam === 'video' ? 'FFmpeg H.264 WebAssembly'
+        : (fam === 'audio' ? 'WebAssembly Audio Pipeline'
+        : 'DEFLATE Ultra Engine')));
 
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
+            <!-- Left Stage: Bespoke Format Visualizer -->
             <div class="cpdf-benchmark-stage">
               ${!isBatch ? `
-                <div class="cpdf-benchmark-paper cpdf-benchmark-paper--processing" id="comp-proc-thumb-box">
-                  <div style="padding: 60px 40px; color: #94A3B8;">Preparing document…</div>
+                <div class="cpdf-benchmark-paper cpdf-benchmark-paper--processing" id="comp-proc-thumb-box" style="position:relative; overflow:hidden;">
+                  <div class="cpdf-proc-scanbeam" id="comp-proc-beam"></div>
+                  <div id="comp-proc-inner-media" class="cpdf-proc-stage-wrap">
+                    <div style="padding: 60px 40px; color: #94A3B8; font-size: 13px; font-weight: 500;">
+                      Preparing document preview…
+                    </div>
+                  </div>
                 </div>
                 <div class="cpdf-benchmark-fileinfo-row">
-                  <span class="cpdf-benchmark-fileinfo-text">${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
+                  <span class="cpdf-benchmark-fileinfo-text" id="comp-proc-stage-meta">${_esc(activeFile.name)} (${_bytes(activeFile.size)})</span>
                 </div>
               ` : `
-                <div class="cpdf-multi-stage-carousel">
+                <div class="cpdf-multi-stage-carousel" id="comp-proc-carousel">
                   ${files.map((f, idx) => `
-                    <div class="cpdf-multi-paper-card cpdf-multi-paper-card--processing" data-idx="${idx}">
+                    <div class="cpdf-multi-paper-card cpdf-multi-paper-card--processing" id="comp-batch-card-${idx}" data-idx="${idx}">
+                      <span class="cpdf-multi-card-badge is-waiting" id="comp-batch-badge-${idx}">Queued</span>
                       <div class="cpdf-multi-paper-thumb" id="comp-proc-thumb-${idx}">
                         <span class="cpdf-multi-paper-ext">${(f.name.split('.').pop() || 'FILE').toUpperCase()}</span>
                       </div>
                       <div class="cpdf-multi-paper-caption">
-                        <span class="cpdf-multi-paper-name">${_esc(f.name)}</span>
+                        <span class="cpdf-multi-paper-name" title="${_esc(f.name)}">${_esc(f.name)}</span>
                         <span class="cpdf-multi-paper-size">${_bytes(f.size)}</span>
                       </div>
                     </div>
                   `).join('')}
                 </div>
                 <div class="cpdf-benchmark-fileinfo-row">
-                  <span class="cpdf-benchmark-fileinfo-text">${files.length} files · ${_bytes(totalOriginalBytes)}</span>
+                  <span class="cpdf-benchmark-fileinfo-text" id="comp-proc-stage-meta">${files.length} files · ${_bytes(totalOriginalBytes)}</span>
                 </div>
               `}
             </div>
 
-            <div class="cpdf-benchmark-panel cpdf-compress-proc-panel">
-              <div class="cpdf-benchmark-header">
-                <div class="cpdf-benchmark-icon cpdf-benchmark-icon--spin cpdf-benchmark-icon--blue">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006DFE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
-                  </svg>
+            <!-- Right Inspector Panel: Linear-grade Telemetry & 3-Phase Pipeline -->
+            <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="comp-benchmark-panel" aria-label="Processing">
+              <div class="cpdf-benchmark-panel-inner">
+                <!-- Header with Smooth Pulse Spinner Badge -->
+                <div class="scan-exact-header">
+                  <div class="scan-exact-icon cpdf-benchmark-icon--spin" style="background: #00C466 !important;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                      <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="scan-exact-title" id="comp-proc-main-title">${procTitle}</h2>
+                    <div class="cpdf-proc-subtitle" id="comp-proc-file-meta" title="${fileMetaSubtitle}">${fileMetaSubtitle}</div>
+                  </div>
                 </div>
-                <h2 class="cpdf-benchmark-title">Compressing File…</h2>
-              </div>
 
-              <div class="cpdf-benchmark-proc-box">
-                <div class="cpdf-benchmark-proc-head">
-                  <span class="cpdf-benchmark-proc-status" id="cpdf-prog-msg">Optimizing streams…</span>
-                  <span class="cpdf-benchmark-proc-pct" id="cpdf-prog-pct" style="color: #006DFE; font-weight: 700;">0%</span>
+                <!-- 3-Phase Stage Pipeline Card (Linear Standard) -->
+                <div class="cpdf-pipeline-card" role="region" aria-label="Compression Pipeline Stages">
+                  <!-- Step 1: Parse & Inspect -->
+                  <div class="cpdf-pipeline-step is-complete" id="cpdf-step-1">
+                    <div class="cpdf-step-dot">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <div class="cpdf-step-info">
+                      <span class="cpdf-step-name">1. Inspect &amp; Parse</span>
+                      <span class="cpdf-step-status" id="cpdf-step-1-status">Verified</span>
+                    </div>
+                  </div>
+
+                  <!-- Step 2: Stream Optimization -->
+                  <div class="cpdf-pipeline-step is-active" id="cpdf-step-2">
+                    <div class="cpdf-step-dot">
+                      <div class="cpdf-step-dot-pulse"></div>
+                    </div>
+                    <div class="cpdf-step-info">
+                      <span class="cpdf-step-name">2. Optimize &amp; Compress</span>
+                      <span class="cpdf-step-status" id="cpdf-step-2-status">Active</span>
+                    </div>
+                  </div>
+
+                  <!-- Step 3: Packaging -->
+                  <div class="cpdf-pipeline-step" id="cpdf-step-3">
+                    <div class="cpdf-step-dot"></div>
+                    <div class="cpdf-step-info">
+                      <span class="cpdf-step-name">3. Finalize &amp; Package</span>
+                      <span class="cpdf-step-status" id="cpdf-step-3-status">Queued</span>
+                    </div>
+                  </div>
                 </div>
-                <div class="loaderBar cpdf-compress-loaderBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                  <div class="loaderBar-fill" id="cpdf-prog-fill" style="width: 0%;"></div>
+
+                <!-- Live Telemetry & Progress Box -->
+                <div class="cpdf-proc-telemetry-box" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div class="cpdf-proc-telemetry-header">
+                    <span class="cpdf-proc-live-msg" id="cpdf-prog-msg">Optimizing streams…</span>
+                    <span class="cpdf-proc-pct-tag" id="cpdf-prog-pct">0%</span>
+                  </div>
+                  <div class="cpdf-proc-bar-track">
+                    <div class="cpdf-proc-bar-fill" id="cpdf-prog-fill" style="width: 0%;">
+                      <div class="cpdf-proc-bar-glow"></div>
+                    </div>
+                  </div>
+                  <div class="cpdf-proc-telemetry-footer">
+                    <span class="cpdf-proc-detail-sub" id="cpdf-prog-detail">${engineName}</span>
+                    <span class="cpdf-proc-speed-badge">Local RAM</span>
+                  </div>
+                </div>
+
+                <!-- Privacy Badge -->
+                <div class="scan-exact-est-box" style="margin-top: 0;">
+                  <div class="scan-exact-est-row">
+                    <span class="scan-exact-privacy-badge" style="width: 100%; justify-content: center; padding: 6px 10px;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      100% Client-Side Engine · Processed locally in memory
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Action Controls: Status Button & Cancel Option -->
+                <div class="cpdf-proc-actions">
+                  <button type="button" class="cpdf-proc-btn-status" id="cpdf-btn-active-run" disabled>
+                    <div class="cpdf-proc-spin-circle"></div>
+                    <span id="cpdf-btn-active-label">Compressing…</span>
+                  </button>
+                  <button type="button" class="cpdf-proc-btn-cancel" id="cpdf-cancel-run">
+                    Cancel Compression
+                  </button>
                 </div>
               </div>
-
-              <div class="cpdf-benchmark-privacy-box">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span>100% Client-Side Engine · Processed locally in memory</span>
-              </div>
-
-              <button type="button" class="cpdf-benchmark-cta" disabled style="opacity: 0.7; cursor: wait;">
-                <span>Compressing…</span>
-              </button>
-            </div>
+            </aside>
           </div>
         </div>
       `;
 
       if (!isBatch) {
         (async () => {
-          const tb = container.querySelector('#comp-proc-thumb-box');
-          if (!tb) return;
+          const innerMedia = container.querySelector('#comp-proc-inner-media');
+          if (!innerMedia) return;
           if (fam === 'pdf') {
             try {
               const pdfjs = await loadJs();
@@ -9478,51 +9946,224 @@ ${linksOverlay}    </div>
               c.style.maxWidth = '100%';
               c.style.maxHeight = 'calc(100vh - 220px)';
               c.style.borderRadius = '4px';
-              tb.innerHTML = '';
-              tb.append(c);
-            } catch (e) {}
+              innerMedia.innerHTML = '';
+              innerMedia.append(c);
+            } catch (e) {
+              const ext = (activeFile?.name || '').split('.').pop() || 'pdf';
+              innerMedia.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
+            }
+          } else if (fam === 'image') {
+            const u = URL.createObjectURL(activeFile);
+            innerMedia.innerHTML = `<img src="${u}" alt="Preview" style="display:block; max-width:100%; max-height:calc(100vh - 220px); border-radius:4px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);" />`;
+          } else if (fam === 'audio') {
+            const beam = container.querySelector('#comp-proc-beam');
+            if (beam) beam.style.display = 'none';
+            const curBr = typeof audioBitrate !== 'undefined' ? audioBitrate : '128k';
+            const curCh = typeof audioChannels !== 'undefined' ? audioChannels : 'stereo';
+            innerMedia.innerHTML = `
+              <div class="cpdf-audio-visualizer-card">
+                <div style="font-size:13px; font-weight:700; color:#F8FAFC; letter-spacing:0.02em; display:flex; align-items:center; gap:8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00C466" stroke-width="2.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  <span>Audio Stream Transcoder</span>
+                </div>
+                <div class="cpdf-audio-bars">
+                  ${Array.from({length: 20}, () => '<div class="cpdf-audio-bar"></div>').join('')}
+                </div>
+                <div style="font-size:11px; font-weight:600; color:#94A3B8; font-variant-numeric:tabular-nums;">
+                  ${curBr} · ${curCh === '1' || curCh === 'mono' ? 'Mono' : 'Stereo'}
+                </div>
+              </div>
+            `;
+          } else if (fam === 'video') {
+            const v = document.createElement('video');
+            v.muted = true;
+            v.playsInline = true;
+            v.preload = 'metadata';
+            v.src = URL.createObjectURL(activeFile);
+            v.onloadeddata = () => {
+              try { v.currentTime = 0.1; } catch (e) {}
+            };
+            v.onseeked = () => {
+              try {
+                const vc = document.createElement('canvas');
+                vc.width = v.videoWidth || 480;
+                vc.height = v.videoHeight || 270;
+                const vctx = vc.getContext('2d');
+                vctx.drawImage(v, 0, 0, vc.width, vc.height);
+                vc.style.maxWidth = '100%';
+                vc.style.maxHeight = 'calc(100vh - 220px)';
+                vc.style.borderRadius = '4px';
+                innerMedia.innerHTML = '';
+                const wrap = document.createElement('div');
+                wrap.className = 'cpdf-video-preview-wrap';
+                wrap.appendChild(vc);
+                wrap.innerHTML += `
+                  <div class="cpdf-video-transcode-radar">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00C466" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                  </div>
+                `;
+                innerMedia.appendChild(wrap);
+              } catch (err) {
+                const ext = (activeFile?.name || '').split('.').pop() || 'mp4';
+                innerMedia.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
+              }
+            };
+            v.onerror = () => {
+              const ext = (activeFile?.name || '').split('.').pop() || 'mp4';
+              innerMedia.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
+            };
+          } else {
+            const ext = (activeFile?.name || '').split('.').pop() || fam || '';
+            innerMedia.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
           }
         })();
+      } else {
+        files.forEach(async (f, idx) => {
+          const tb = container.querySelector(`#comp-proc-thumb-${idx}`);
+          if (!tb) return;
+          const fam = familyOf(f);
+          if (fam === 'image') {
+            const u = URL.createObjectURL(f);
+            tb.innerHTML = `<img src="${u}" alt="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:2px;" />`;
+          } else if (fam === 'pdf') {
+            try {
+              const pdfjs = await loadJs();
+              const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+              const page = await doc.getPage(1);
+              const vp = page.getViewport({ scale: 0.35 });
+              const c = document.createElement('canvas');
+              c.width = vp.width; c.height = vp.height;
+              await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+              c.style.maxWidth = '100%'; c.style.maxHeight = '100%'; c.style.objectFit = 'contain'; c.style.borderRadius = '2px';
+              tb.innerHTML = '';
+              tb.append(c);
+            } catch (e) {
+              const ext = (f?.name || '').split('.').pop() || 'pdf';
+              tb.innerHTML = buildHandcraftedIllustration(ext, f.name, _bytes(f.size), 'compact');
+            }
+          } else {
+            const ext = (f?.name || '').split('.').pop() || fam || '';
+            tb.innerHTML = buildHandcraftedIllustration(ext, f.name, _bytes(f.size), 'compact');
+          }
+        });
       }
     }
 
     async function runCompress() {
+      if (!files || !files.length) {
+        renderUpload();
+        return;
+      }
+      compressAbort = false;
       renderProcessing();
+
+      const cancelBtn = container.querySelector('#cpdf-cancel-run');
+      if (cancelBtn) {
+        cancelBtn.onclick = (e) => {
+          e.preventDefault();
+          compressAbort = true;
+          window.FF?.util?.toast?.('Compression cancelled', 'info');
+          renderConfigure();
+        };
+      }
+
       const p = PRESETS[selectedTier] || PRESETS.balanced;
       const msg = container.querySelector('#cpdf-prog-msg');
       const fill = container.querySelector('#cpdf-prog-fill');
       const pct = container.querySelector('#cpdf-prog-pct');
+      const detail = container.querySelector('#cpdf-prog-detail');
+      const step1 = container.querySelector('#cpdf-step-1');
+      const step2 = container.querySelector('#cpdf-step-2');
+      const step3 = container.querySelector('#cpdf-step-3');
+      const step2Status = container.querySelector('#cpdf-step-2-status');
+      const step3Status = container.querySelector('#cpdf-step-3-status');
+      const btnActiveLabel = container.querySelector('#cpdf-btn-active-label');
 
-      const onProgress = (frac, text) => {
-        const v = Math.round(frac * 100);
+      const onProgress = (frac, text, subDetail) => {
+        if (compressAbort) return;
+        const v = Math.min(100, Math.max(0, Math.round(frac * 100)));
         if (fill) fill.style.width = v + '%';
         if (pct) pct.textContent = v + '%';
         if (msg && text) msg.textContent = text;
+        if (detail && subDetail) detail.textContent = subDetail;
+
+        if (frac >= 0.88) {
+          if (step2) {
+            step2.className = 'cpdf-pipeline-step is-complete';
+            step2.querySelector('.cpdf-step-dot').innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+            if (step2Status) step2Status.textContent = 'Optimized';
+          }
+          if (step3) {
+            step3.className = 'cpdf-pipeline-step is-active';
+            step3.querySelector('.cpdf-step-dot').innerHTML = '<div class="cpdf-step-dot-pulse"></div>';
+            if (step3Status) step3Status.textContent = 'Packaging';
+          }
+        }
       };
 
       try {
-        // Phase 5: small concurrency pool for multi-file batches (2 at a time).
-        // Sequential within a file (progress bar stays truthful); the pool only
-        // overlaps independent files. Memory-bounded for large media.
         const pool = 2;
         const results = new Array(files.length);
         let cursor = 0;
         const worker = async () => {
           while (cursor < files.length) {
+            if (compressAbort) return;
             const i = cursor++;
             const f = files[i];
             const fam = familyOf(f);
+
+            const curBadge = container.querySelector(`#comp-batch-badge-${i}`);
+            const curCard = container.querySelector(`#comp-batch-card-${i}`);
+            if (curCard) {
+              curCard.classList.add('is-active');
+              try { curCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch (e) {}
+            }
+            if (curBadge) {
+              curBadge.className = 'cpdf-multi-card-badge is-active';
+              curBadge.textContent = 'Compressing';
+            }
+
+            const headerMeta = container.querySelector('#comp-proc-file-meta');
+            if (headerMeta && files.length > 1) {
+              headerMeta.textContent = `File ${i + 1} of ${files.length} — ${_esc(f.name)} (${_bytes(f.size)})`;
+            }
+
             onProgress(i / files.length, `Compressing ${i + 1}/${files.length} — ${f.name}`);
-            const res = await runByFamily(f, fam, p, (sub, text) =>
-              onProgress((i + sub) / files.length, text || `Compressing ${i + 1}/${files.length} — ${f.name}`));
+            const res = await runByFamily(f, fam, p, (sub, text) => {
+              if (compressAbort) return;
+              onProgress((i + sub) / files.length, text || `Compressing ${i + 1}/${files.length} — ${f.name}`);
+            });
+
+            if (compressAbort) return;
             results[i] = { file: f, family: fam, result: res };
+
+            if (curCard) curCard.classList.remove('is-active');
+            if (curBadge) {
+              curBadge.className = 'cpdf-multi-card-badge is-done';
+              curBadge.textContent = 'Done';
+            }
           }
         };
+
         await Promise.all(Array.from({ length: Math.min(pool, files.length) }, () => worker()));
-        onProgress(1, 'Complete!');
-        await new Promise(r => setTimeout(r, 400));
+        if (compressAbort) return;
+
+        onProgress(1, 'Complete!', 'Packaging finalized');
+        if (step3) {
+          step3.className = 'cpdf-pipeline-step is-complete';
+          step3.querySelector('.cpdf-step-dot').innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+          if (step3Status) step3Status.textContent = 'Complete';
+        }
+        if (btnActiveLabel) btnActiveLabel.textContent = 'Done!';
+
+        await new Promise(r => setTimeout(r, 380));
+        if (compressAbort) return;
         renderResult(results);
       } catch(err) { 
+        if (compressAbort) return;
         console.error('[Compress Engine Error]', err);
         renderError(err.message || 'Compression encountered an error.'); 
       }
@@ -9641,17 +10282,19 @@ ${linksOverlay}    </div>
               return { blob: file, filename: file.name, mime: 'application/pdf', preview: 'pdf', isProtected: true };
             }
 
-            // Remove non-essential metadata and thumbnail bloat
-            try {
-              const cat = surgeryDoc.catalog;
-              cat.delete(PDFLib.PDFName.of('PieceInfo'));
-              cat.delete(PDFLib.PDFName.of('SpiderInfo'));
-              cat.delete(PDFLib.PDFName.of('Metadata'));
-              for (const pg of surgeryDoc.getPages()) {
-                pg.node.delete(PDFLib.PDFName.of('Thumb'));
-                pg.node.delete(PDFLib.PDFName.of('PieceInfo'));
-              }
-            } catch (metaErr) {}
+            // Remove non-essential metadata and thumbnail bloat (unless preserve requested)
+            if (stripParams['pdf_3'] !== 'preserve') {
+              try {
+                const cat = surgeryDoc.catalog;
+                cat.delete(PDFLib.PDFName.of('PieceInfo'));
+                cat.delete(PDFLib.PDFName.of('SpiderInfo'));
+                cat.delete(PDFLib.PDFName.of('Metadata'));
+                for (const pg of surgeryDoc.getPages()) {
+                  pg.node.delete(PDFLib.PDFName.of('Thumb'));
+                  pg.node.delete(PDFLib.PDFName.of('PieceInfo'));
+                }
+              } catch (metaErr) {}
+            }
 
             // Re-compress non-image FlateDecode streams with Deflate Level 9
             for (const [ref, obj] of indirectObjects) {
@@ -9980,10 +10623,12 @@ ${linksOverlay}    </div>
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
+            const effScale = (stripParams['pdf_2'] === '300' ? (300 / 72) : (stripParams['pdf_2'] === '150' ? (150 / 72) : (stripParams['pdf_2'] === '72' ? 1.0 : scale)));
+
             for (let i = 1; i <= numPages; i++) {
               onProgress?.(0.60 + (i / numPages) * 0.35, `Processing page ${i}/${numPages}…`);
               const pg = await doc.getPage(i);
-              const vp = pg.getViewport({ scale });
+              const vp = pg.getViewport({ scale: effScale });
               cvs.width = Math.max(1, Math.round(vp.width));
               cvs.height = Math.max(1, Math.round(vp.height));
               ctx.fillStyle = '#FFFFFF';
@@ -9991,7 +10636,7 @@ ${linksOverlay}    </div>
               await pg.render({ canvasContext: ctx, viewport: vp }).promise;
               pg.cleanup();
 
-              const { img } = await embedPageRaster(outPdf, ctx, quality);
+              const { img } = await embedPageRaster(outPdf, ctx, quality, stripParams);
               const vp1 = pg.getViewport({ scale: 1 });
               const outPage = outPdf.addPage([vp1.width, vp1.height]);
               outPage.drawImage(img, { x: 0, y: 0, width: vp1.width, height: vp1.height });
@@ -10053,7 +10698,7 @@ ${linksOverlay}    </div>
           let hybridRasterized = 0;
           let hybridBuilt = false;
           if (canRaster && surgeryDoc && isMixed && rasterPageCount > 0) {
-            const hyScale = selectedTier === 'balanced' ? 1.95 : 1.85;
+            const hyScale = stripParams['pdf_2'] === '300' ? (300 / 72) : (stripParams['pdf_2'] === '150' ? (150 / 72) : (stripParams['pdf_2'] === '72' ? 1.0 : (selectedTier === 'balanced' ? 1.95 : 1.85)));
             const hyQuality = selectedTier === 'balanced' ? 0.74 : 0.70;
             try {
               const hOut = await PDFLib.PDFDocument.create();
@@ -10081,7 +10726,7 @@ ${linksOverlay}    </div>
                 hCtx.fillRect(0, 0, hCvs.width, hCvs.height);
                 await hPg.render({ canvasContext: hCtx, viewport: hVp }).promise;
                 hPg.cleanup();
-                const { img: hImg } = await embedPageRaster(hOut, hCtx, hyQuality);
+                const { img: hImg } = await embedPageRaster(hOut, hCtx, hyQuality, stripParams);
                 const hVp1 = hPg.getViewport({ scale: 1 });
                 const hPage = hOut.addPage([hVp1.width, hVp1.height]);
                 hPage.drawImage(hImg, { x: 0, y: 0, width: hVp1.width, height: hVp1.height });
@@ -10245,55 +10890,74 @@ ${linksOverlay}    </div>
 
           let outMime = 'image/webp';
           let outExt = 'webp';
-          if (ext === 'jpg' || ext === 'jpeg') {
+          if (stripParams['image_1'] === 'jpeg') {
             outMime = 'image/jpeg';
             outExt = 'jpg';
-          } else if (ext === 'png') {
-            // PNG Engine: Try MMC Indexed PNG first
-            try {
-              if (!window.fflate) {
-                await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT');
-              }
-              const testCvs = renderResampled(origW, origH, false);
-              const imgData = testCvs.getContext('2d').getImageData(0, 0, origW, origH);
-              const indexedPng = encodeIndexedPng(imgData.data, origW, origH);
-              testCvs.width = 0; testCvs.height = 0;
-              if (indexedPng && indexedPng.length < file.size) {
-                return {
-                  blob: new Blob([indexedPng], { type: 'image/png' }),
-                  filename: `${U.baseName(file.name)}-compressed.png`,
-                  mime: 'image/png',
-                  preview: 'image'
-                };
-              }
-            } catch (pngErr) {}
-            // PNG Engine 2: lossless WebP beats PNG on >256-color flat art
-            // (screenshots, UI, diagrams) with zero quality loss.
-            try {
-              const lwCvs = renderResampled(origW, origH, false);
-              const lwData = lwCvs.getContext('2d').getImageData(0, 0, origW, origH);
-              lwCvs.width = 0; lwCvs.height = 0;
-              const lw = await encodeLosslessWebpMain(lwData);
-              if (lw && lw.length < file.size) {
-                return {
-                  blob: new Blob([lw], { type: 'image/webp' }),
-                  filename: `${U.baseName(file.name)}-compressed.webp`,
-                  mime: 'image/webp',
-                  preview: 'image'
-                };
-              }
-            } catch (lwErr) {}
+          } else if (stripParams['image_1'] === 'png') {
+            outMime = 'image/png';
+            outExt = 'png';
+          } else if (stripParams['image_1'] === 'avif') {
+            outMime = 'image/avif';
+            outExt = 'avif';
+          } else if (stripParams['image_1'] === 'webp') {
             outMime = 'image/webp';
             outExt = 'webp';
-          } else if (ext === 'bmp' || ext === 'tiff' || ext === 'tga' || ext === 'ppm') {
-            outMime = 'image/webp';
-            outExt = 'webp';
+          } else {
+            if (ext === 'jpg' || ext === 'jpeg') {
+              outMime = 'image/jpeg';
+              outExt = 'jpg';
+            } else if (ext === 'png') {
+              // PNG Engine: Try MMC Indexed PNG first
+              try {
+                if (!window.fflate) {
+                  await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT');
+                }
+                const testCvs = renderResampled(origW, origH, false);
+                const imgData = testCvs.getContext('2d').getImageData(0, 0, origW, origH);
+                const indexedPng = encodeIndexedPng(imgData.data, origW, origH);
+                testCvs.width = 0; testCvs.height = 0;
+                if (indexedPng && indexedPng.length < file.size) {
+                  return {
+                    blob: new Blob([indexedPng], { type: 'image/png' }),
+                    filename: `${U.baseName(file.name)}-compressed.png`,
+                    mime: 'image/png',
+                    preview: 'image'
+                  };
+                }
+              } catch (pngErr) {}
+              // PNG Engine 2: lossless WebP beats PNG on >256-color flat art
+              // (screenshots, UI, diagrams) with zero quality loss.
+              try {
+                const lwCvs = renderResampled(origW, origH, false);
+                const lwData = lwCvs.getContext('2d').getImageData(0, 0, origW, origH);
+                lwCvs.width = 0; lwCvs.height = 0;
+                const lw = await encodeLosslessWebpMain(lwData);
+                if (lw && lw.length < file.size) {
+                  return {
+                    blob: new Blob([lw], { type: 'image/webp' }),
+                    filename: `${U.baseName(file.name)}-compressed.webp`,
+                    mime: 'image/webp',
+                    preview: 'image'
+                  };
+                }
+              } catch (lwErr) {}
+              outMime = 'image/webp';
+              outExt = 'webp';
+            } else if (ext === 'bmp' || ext === 'tiff' || ext === 'tga' || ext === 'ppm') {
+              outMime = 'image/webp';
+              outExt = 'webp';
+            }
           }
 
           onProgress?.(0.6, 'Compressing image pixels…');
 
           // MozJPEG & Modern WebP Calibrated Standards
           let targetMaxDim = selectedTier === 'maximum' ? 1920 : (selectedTier === 'light' ? 3840 : 2560);
+          if (stripParams['image_2'] === '3840') targetMaxDim = 3840;
+          else if (stripParams['image_2'] === '1920') targetMaxDim = 1920;
+          else if (stripParams['image_2'] === '1280') targetMaxDim = 1280;
+          else if (stripParams['image_2'] === 'original') targetMaxDim = Math.max(origW, origH);
+
           let targetQuality = outMime === 'image/webp'
             ? (selectedTier === 'maximum' ? 0.65 : (selectedTier === 'light' ? 0.88 : 0.78))
             : (selectedTier === 'maximum' ? 0.60 : (selectedTier === 'light' ? 0.86 : 0.74));
@@ -10417,7 +11081,7 @@ ${linksOverlay}    </div>
             ? probe.duration
             : ((targetBytes > 0 && family === 'video') ? await mediaDuration(file) : 0);
           const normalize = normalizeLoudness && !(probe && probe.hasAudio === false);
-          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration, probe, normalize });
+          const plans = buildMediaPlans({ family, ext, tier: selectedTier, params: p, inName: INP, targetBytes, duration, probe, normalize, strip: stripParams });
           const onProg = (lo, hi, label) => (typeof onProgress === 'function')
             ? (f) => { try { onProgress(lo + (hi - lo) * (f || 0), label); } catch (e) {} }
             : undefined;
@@ -10553,7 +11217,8 @@ ${linksOverlay}    </div>
               // CRITICAL: NEVER strip whitespace from word/document.xml with naive regex,
               // as that risks deleting spaces between <w:t> text runs and corrupting paragraphs!
               // Deflate Level 9 compresses text/XML losslessly to ~12% without touching a single character.
-              if (/\.(png|jpe?g|bmp|tiff?|webp)$/i.test(lower) && entryBuf && entryBuf.length > 512) {
+              const skipOfficeMedia = stripParams['archive_2'] === 'raw';
+              if (!skipOfficeMedia && /\.(png|jpe?g|bmp|tiff?|webp)$/i.test(lower) && entryBuf && entryBuf.length > 512) {
                 const imgMime = lower.endsWith('.png') ? 'image/png' : 'image/jpeg';
                 const optimizedBuf = await compressRasterBuffer(entryBuf, imgMime, maxDim, targetQuality);
                 if (optimizedBuf && optimizedBuf.length < entryBuf.length) {
@@ -10563,18 +11228,19 @@ ${linksOverlay}    </div>
               }
             }
 
-            onProgress?.(0.9, 'Re-packing optimized container at Deflate Level 9…');
+            const officeZipLevel = stripParams['archive_1'] === 'l1' ? 1 : (stripParams['archive_1'] === 'l6' ? 6 : 9);
+            onProgress?.(0.9, `Re-packing optimized container at Deflate Level ${officeZipLevel}…`);
 
             let rezipped;
             if (ext === 'epub' && unzipped['mimetype']) {
               const epubMap = {};
               epubMap['mimetype'] = [unzipped['mimetype'], { level: 0 }];
               for (const [k, v] of Object.entries(unzipped)) {
-                if (k !== 'mimetype') epubMap[k] = [v, { level: 9 }];
+                if (k !== 'mimetype') epubMap[k] = [v, { level: officeZipLevel }];
               }
               rezipped = fflate.zipSync(epubMap);
             } else {
-              rezipped = fflate.zipSync(unzipped, { level: 9 });
+              rezipped = fflate.zipSync(unzipped, { level: officeZipLevel });
             }
 
             if (rezipped.length < raw.length) {
@@ -10599,9 +11265,10 @@ ${linksOverlay}    </div>
           const fflate = await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
           const raw = new Uint8Array(await file.arrayBuffer());
           const ext = (file.name.split('.').pop() || '').toLowerCase();
+          const arcZipLevel = stripParams['archive_1'] === 'l1' ? 1 : (stripParams['archive_1'] === 'l6' ? 6 : 9);
 
           if (ext === 'tar') {
-            const gzipped = fflate.gzipSync(raw, { level: 9 });
+            const gzipped = fflate.gzipSync(raw, { level: arcZipLevel });
             if (gzipped.length < raw.length) {
               return { blob: new Blob([gzipped], { type: 'application/gzip' }), filename: file.name + '.gz', mime: 'application/gzip', preview: 'archive' };
             }
@@ -10610,7 +11277,7 @@ ${linksOverlay}    </div>
           if (ext === 'gz' || ext === 'tgz') {
             try {
               const decompressed = fflate.gunzipSync(raw);
-              const recompressed = fflate.gzipSync(decompressed, { level: 9 });
+              const recompressed = fflate.gzipSync(decompressed, { level: arcZipLevel });
               if (recompressed.length < raw.length) {
                 return { blob: new Blob([recompressed], { type: 'application/gzip' }), filename: file.name, mime: 'application/gzip', preview: 'archive' };
               }
@@ -10632,17 +11299,19 @@ ${linksOverlay}    </div>
             let current = 0;
             const isComic = ext === 'cbz' || ext === 'cbr';
             const cleanMap = {};
+            const preserveOs = stripParams['archive_3'] === 'preserve';
+            const skipArcMedia = stripParams['archive_2'] === 'raw';
 
             for (const path of entries) {
               current++;
-              if (path.startsWith('__MACOSX') || path.includes('/.DS_Store') || path.endsWith('.DS_Store') || path.endsWith('Thumbs.db')) {
+              if (!preserveOs && (path.startsWith('__MACOSX') || path.includes('/.DS_Store') || path.endsWith('.DS_Store') || path.endsWith('Thumbs.db'))) {
                 continue;
               }
 
               const lower = path.toLowerCase();
               const entryBuf = unzipped[path];
 
-              if (isComic && /\.(png|jpe?g|webp)$/i.test(lower) && entryBuf && entryBuf.length > 20000) {
+              if (!skipArcMedia && isComic && /\.(png|jpe?g|webp)$/i.test(lower) && entryBuf && entryBuf.length > 20000) {
                 onProgress?.(0.1 + (current / totalEntries) * 0.75, `Optimizing page: ${path.split('/').pop()}`);
                 const maxDim = selectedTier === 'maximum' ? 1200 : selectedTier === 'light' ? 2400 : 1600;
                 const quality = (p.quality || 55) / 100;
@@ -10653,8 +11322,8 @@ ${linksOverlay}    </div>
               }
             }
 
-            onProgress?.(0.9, 'Re-packing archive at Deflate Level 9…');
-            const rezipped = fflate.zipSync(cleanMap, { level: 9 });
+            onProgress?.(0.9, `Re-packing archive at Deflate Level ${arcZipLevel}…`);
+            const rezipped = fflate.zipSync(cleanMap, { level: arcZipLevel });
             if (rezipped.length < raw.length) {
               return {
                 blob: new Blob([rezipped], { type: file.type || 'application/zip' }),
@@ -10667,6 +11336,7 @@ ${linksOverlay}    </div>
         } catch (arcErr) {
           console.warn('[Archive Surgery fallback]', arcErr);
         }
+        return { blob: file, filename: file.name, mime: file.type || 'application/octet-stream', preview: family };
       }
 
       // 6. Source Code, JSON & Markup Files
@@ -11158,6 +11828,17 @@ ${linksOverlay}    </div>
           <button class="cpdf-btn-primary" id="cpdf-errback" type="button" style="max-width:200px">Try again</button>
         </div>`;
       container.querySelector('#cpdf-errback').onclick = () => renderConfigure();
+    }
+
+    const pending = window.FF && window.FF.app && window.FF.app.pendingFiles;
+    if (pending && pending.length) {
+      const arr = Array.from(pending).filter(f => f && f.size <= MAX_BYTES);
+      if (arr.length) {
+        window.FF.app.pendingFiles = null;
+        files = arr;
+        renderConfigure();
+        return;
+      }
     }
 
     renderUpload();
@@ -20424,6 +21105,627 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       });
     }
 
+    function openConversionOptionsModal(opts) {
+      const { target: t, file: curFile, family: fam, cfg: currentCfg, onSave } = opts;
+      if (!t) return;
+
+      // Remove existing modal if present
+      document.querySelector('#conv-options-modal-overlay')?.remove();
+
+      const outExt = (t.ext || t.out || 'pdf').toLowerCase();
+      const fromExt = (curFile?.name?.split('.').pop() || fam || 'file').toLowerCase();
+      const fromLabel = (FAMILIES[fam]?.label || fromExt.toUpperCase());
+      const toLabel = t.label || t.out || outExt.toUpperCase();
+
+      const tempCfg = Object.assign({}, currentCfg);
+
+      let modalTitle = `${toLabel} Options`;
+      let modalSubtitle = `Configure output preferences for ${toLabel} export`;
+      let bodySections = '';
+
+      // Clean UI Component Helpers
+      const renderSegments = (key, items, activeVal, labelText) => {
+        const activeItem = items.find(it => String(activeVal ?? items[0].value ?? items[0].id) === String(it.value ?? it.id)) || items[0];
+        const curVal = activeItem.value ?? activeItem.id;
+        const hasDesc = items.some(it => it.desc);
+        return `
+          <div class="conv-modal-field">
+            ${labelText ? `<label class="conv-modal-field-label">${_esc(labelText)}</label>` : ''}
+            <div class="conv-segmented-control" data-key="${key}" role="radiogroup">
+              ${items.map(it => {
+                const val = it.value ?? it.id;
+                const isActive = String(val) === String(curVal);
+                const name = it.label ?? it.name;
+                return `<button type="button" class="conv-segment ${isActive ? 'active' : ''}" data-key="${key}" data-val="${val}" data-desc="${_esc(it.desc || '')}" role="radio" aria-checked="${isActive}">${_esc(name)}</button>`;
+              }).join('')}
+            </div>
+            ${hasDesc ? `<div class="conv-segment-desc" id="conv-segment-desc-${key}">${_esc(activeItem.desc || '')}</div>` : ''}
+          </div>
+        `;
+      };
+
+      const renderGroup = (labelText, rows) => `
+        <div class="conv-modal-field">
+          ${labelText ? `<label class="conv-modal-field-label">${_esc(labelText)}</label>` : ''}
+          <div class="conv-modal-group">
+            ${rows.map(r => `
+              <div class="conv-modal-row">
+                <div class="conv-modal-row-info">
+                  <span class="conv-modal-row-title">${_esc(r.title)}</span>
+                  ${r.desc ? `<span class="conv-modal-row-sub">${_esc(r.desc)}</span>` : ''}
+                </div>
+                <label class="conv-toggle" for="modal-sw-${r.key}">
+                  <input type="checkbox" id="modal-sw-${r.key}" class="conv-toggle-input" data-key="${r.key}" ${r.checked ? 'checked' : ''}>
+                  <span class="conv-toggle-slider"></span>
+                </label>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      const renderSlider = (key, label, val, min, max, step, unit = '') => `
+        <div class="conv-modal-field">
+          <div class="conv-modal-slider-header">
+            <label class="conv-modal-field-label">${_esc(label)}</label>
+            <span class="conv-modal-val-badge" id="modal-slider-${key}-val">${val}${unit}</span>
+          </div>
+          <input type="range" class="conv-slider" data-key="${key}" data-unit="${unit}" min="${min}" max="${max}" step="${step}" value="${val}">
+        </div>
+      `;
+
+      // 1. PDF -> Word (DOCX)
+      if (t.tool === 'pdf-to-word' || (fam === 'pdf' && outExt === 'docx')) {
+        modalTitle = 'Word Document (DOCX) Settings';
+        modalSubtitle = 'Fine-tune paragraph flow, table detection, and image fidelity';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'editable', name: 'Editable Text', desc: 'Flowing paragraphs, real headings, bullet lists & native tables' },
+            { id: 'exact', name: 'Exact Geometry', desc: 'Positioned text frames locked at exact PDF page coordinates' },
+            { id: 'picture', name: 'Full Page Image', desc: 'High-resolution full page image embedded per section' }
+          ], tempCfg.mode || 'editable', 'Conversion Layout Engine')}
+
+          ${renderGroup('Document Elements', [
+            { key: 'includeImages', title: 'Preserve Embedded Images', desc: 'Extract and retain high-resolution photo assets', checked: tempCfg.includeImages !== false },
+            { key: 'detectTables', title: 'Smart Table Detection', desc: 'Convert document tabular regions into native Word tables', checked: tempCfg.detectTables !== false }
+          ])}
+
+          ${renderSegments('pageSize', [
+            { value: 'auto', label: 'Auto-detect' },
+            { value: 'a4', label: 'A4 (210×297mm)' },
+            { value: 'letter', label: 'US Letter' }
+          ], tempCfg.pageSize || 'auto', 'Target Page Size')}
+        `;
+      }
+      // 2. PDF -> Excel (XLSX)
+      else if (t.tool === 'pdf-to-excel' || (fam === 'pdf' && outExt === 'xlsx')) {
+        modalTitle = 'Excel Spreadsheet (XLSX) Settings';
+        modalSubtitle = 'Configure table extraction, numeric cell parsing, and sheet layout';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'tables', name: 'Table Isolation', desc: 'Auto-detect tabular regions and export clean spreadsheet grids' },
+            { id: 'grid', name: 'Coordinate Grid', desc: 'Projects all document text into aligned rows and columns' },
+            { id: 'raw', name: 'Sequential Stream', desc: 'Streams lines sequentially into individual spreadsheet rows' }
+          ], tempCfg.mode || 'tables', 'Extraction Strategy')}
+
+          ${renderGroup('Data Formatting', [
+            { key: 'parseNumbers', title: 'Parse Numbers & Currency', desc: 'Convert numeric strings into native spreadsheet numbers', checked: tempCfg.parseNumbers !== false },
+            { key: 'styleHeaders', title: 'Styled Header Rows', desc: 'Apply bold styling and subtle background fill to top row', checked: tempCfg.styleHeaders !== false }
+          ])}
+
+          ${renderSegments('sheetMode', [
+            { value: 'per-page', label: 'One Sheet per Page' },
+            { value: 'single', label: 'Single Consolidated Sheet' }
+          ], tempCfg.sheetMode || 'per-page', 'Workbook Structure')}
+        `;
+      }
+      // 3. PDF -> PowerPoint (PPTX)
+      else if (t.tool === 'pdf-to-ppt' || (fam === 'pdf' && outExt === 'pptx')) {
+        modalTitle = 'PowerPoint (PPTX) Settings';
+        modalSubtitle = 'Configure presentation aspect ratio, vector shapes, and slides';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'editable', name: 'Editable Shapes & Text', desc: 'Native text boxes, bullet points, titles, and vector shapes' },
+            { id: 'hybrid', name: 'Smart Hybrid', desc: 'High-res visual backdrop with searchable vector text overlay' },
+            { id: 'visual', name: 'Visual Canvas Slides', desc: 'Pixel-perfect rendered presentation canvas per slide' }
+          ], tempCfg.mode || 'editable', 'Slide Construction Mode')}
+
+          ${renderSegments('aspectRatio', [
+            { value: '16:9', label: '16:9 Widescreen (1080p)' },
+            { value: '4:3', label: '4:3 Standard' }
+          ], tempCfg.aspectRatio || '16:9', 'Presentation Aspect Ratio')}
+
+          ${renderGroup('Visual Options', [
+            { key: 'preserveBackgrounds', title: 'Preserve Slide Backgrounds', desc: 'Keep original slide colors, gradients, and theme backdrops', checked: tempCfg.preserveBackgrounds !== false }
+          ])}
+        `;
+      }
+      // 4. PDF Compress
+      else if (t.tool === 'pdf-compress' || (fam === 'pdf' && t.tool === 'pdf-compress')) {
+        modalTitle = 'PDF Compression Settings';
+        modalSubtitle = 'Reduce file payload while preserving text sharpness and image clarity';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'balanced', name: 'Balanced (~70%)', desc: 'Optimal size reduction with crisp typography and clear imagery' },
+            { id: 'extreme', name: 'Extreme (~85%)', desc: 'Maximum compression for strict email attachment size limits' },
+            { id: 'vector', name: 'Lossless Vector', desc: 'Recompresses streams with 100% lossless image fidelity' }
+          ], tempCfg.mode || 'balanced', 'Compression Profile')}
+
+          ${renderSlider('quality', 'JPEG Stream Quality', tempCfg.quality || 65, 30, 95, 5, '%')}
+
+          ${renderSegments('scale', [
+            { value: '1.0', label: '150 DPI (Web)' },
+            { value: '1.5', label: '200 DPI (Standard)' },
+            { value: '2.0', label: '300 DPI (High-Res)' }
+          ], tempCfg.scale || '1.5', 'Downsampling DPI Scale')}
+
+          ${renderGroup('Optimization', [
+            { key: 'stripMeta', title: 'Strip Unneeded Metadata', desc: 'Remove editing history, thumbnails, and unreferenced XML', checked: tempCfg.stripMeta !== false }
+          ])}
+        `;
+      }
+      // 5. PDF Grayscale
+      else if (t.tool === 'pdf-grayscale') {
+        modalTitle = 'PDF Grayscale Settings';
+        modalSubtitle = 'Convert pages into smooth photographic gray or pure black & white';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'grayscale', name: '256-Level Smooth Gray', desc: 'Preserves depth, smooth gradients, and photo shading' },
+            { id: 'mono', name: '1-Bit Pure B&W (Photocopy)', desc: 'Ultra-crisp high contrast pure black & white lines' }
+          ], tempCfg.mode || 'grayscale', 'Grayscale Mode')}
+
+          ${renderGroup('Legibility', [
+            { key: 'darkenText', title: 'Enhance Thin Text & Lines', desc: 'Boost fine text contrast for improved reading clarity', checked: tempCfg.darkenText !== false }
+          ])}
+        `;
+      }
+      // 6. PDF to Image / Extract Images
+      else if (['pdf-to-image', 'pdf-to-jpg', 'pdf-to-png', 'pdf-to-webp', 'pdf-extract-images'].includes(t.tool) || (fam === 'pdf' && ['png', 'jpg', 'jpeg', 'webp'].includes(outExt))) {
+        modalTitle = 'PDF Image Export Settings';
+        modalSubtitle = 'Choose page rendering DPI, image format, and extraction targets';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'page', name: 'Full Page Renders', desc: 'Rasterizes entire PDF pages into crisp high-res image files' },
+            { id: 'extract', name: 'Extract Embedded Photos', desc: 'Pulls raw embedded photo assets and graphics only' }
+          ], tempCfg.mode || (t.tool === 'pdf-extract-images' ? 'extract' : 'page'), 'Extraction Target')}
+
+          ${renderSegments('dpi', [
+            { value: '1', label: '72 DPI (Web)' },
+            { value: '2', label: '150 DPI (Standard)' },
+            { value: '3', label: '300 DPI (Print / Ultra)' }
+          ], tempCfg.dpi || '2', 'Resolution & DPI Multiplier')}
+
+          ${renderSlider('quality', 'Encoding Quality', tempCfg.quality || 85, 40, 100, 5, '%')}
+
+          ${renderGroup('Transparency', [
+            { key: 'transparent', title: 'Transparent Background (PNG)', desc: 'Render white page canvas as transparent alpha', checked: Boolean(tempCfg.transparent) }
+          ])}
+        `;
+      }
+      // 7. PDF to HTML
+      else if (t.tool === 'pdf-to-html' || (fam === 'pdf' && outExt === 'html')) {
+        modalTitle = 'HTML5 Webpage Settings';
+        modalSubtitle = 'Choose between responsive reflowable HTML5 or pixel-accurate layout';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'flow', name: 'Semantic Flow', desc: 'Reflowable semantic HTML5 with styled headings and tables' },
+            { id: 'fixed', name: 'Fixed Layout', desc: 'Absolute CSS coordinates replicating exact PDF page geometry' }
+          ], tempCfg.mode || 'flow', 'HTML Structure')}
+
+          ${renderGroup('Asset Packaging', [
+            { key: 'inlineCss', title: 'Inline CSS Stylesheet', desc: 'Embeds complete typography & layout rules inside HTML', checked: tempCfg.inlineCss !== false },
+            { key: 'embedImages', title: 'Embed Images as Base64', desc: 'Generates single standalone self-contained HTML file', checked: tempCfg.embedImages !== false }
+          ])}
+        `;
+      }
+      // 8. PDF to Text / Markdown
+      else if (['pdf-extract-text', 'pdf-to-md'].includes(t.tool) || (fam === 'pdf' && ['txt', 'md'].includes(outExt))) {
+        modalTitle = outExt === 'md' ? 'Markdown Document Settings' : 'Plain Text Extraction Settings';
+        modalSubtitle = 'Configure column preservation, reading flow, and markdown formatting';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'layout', name: 'Preserve Layout', desc: 'Maintains multi-column alignment, table spacing & indentation' },
+            { id: 'flow', name: 'Natural Reading Flow', desc: 'Reconstructs flowing paragraphs and continuous sentences' }
+          ], tempCfg.mode || 'layout', 'Reading Flow')}
+
+          ${outExt === 'md' ? renderSegments('flavor', [
+            { value: 'gfm', label: 'GitHub-Flavored (GFM)' },
+            { value: 'obsidian', label: 'Obsidian' }
+          ], tempCfg.flavor || 'gfm', 'Markdown Dialect') : ''}
+
+          ${renderGroup('Formatting', [
+            { key: 'pageNumbers', title: 'Include Page Separators', desc: 'Demarcates page boundaries with "--- Page X ---"', checked: tempCfg.pageNumbers !== false },
+            { key: 'stripHeaders', title: 'Strip Running Headers & Footers', desc: 'Cleans recurring page numbers and header text', checked: Boolean(tempCfg.stripHeaders) }
+          ])}
+        `;
+      }
+      // 9. PDF to CSV
+      else if (t.tool === 'pdf-to-csv' || (fam === 'pdf' && outExt === 'csv')) {
+        modalTitle = 'PDF to CSV Settings';
+        modalSubtitle = 'Configure table boundaries, delimiters, and quotation rules';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'tables', name: 'Structured Tables Only', desc: 'Isolates and exports detected data tables' },
+            { id: 'grid', name: 'Full Document Grid', desc: 'Projects all document text into coordinate rows and columns' }
+          ], tempCfg.mode || 'tables', 'Extraction Mode')}
+
+          ${renderSegments('delim', [
+            { value: ',', label: 'Comma (,)' },
+            { value: ';', label: 'Semicolon (;)' },
+            { value: '\t', label: 'Tab (\\t)' },
+            { value: '|', label: 'Pipe (|)' }
+          ], tempCfg.delim || ',', 'Field Delimiter')}
+
+          ${renderGroup('Quotation', [
+            { key: 'quoteAll', title: 'Enclose All Fields in Quotes ("...")', desc: 'Wraps every cell value in quotation marks', checked: Boolean(tempCfg.quoteAll) }
+          ])}
+        `;
+      }
+      // 10. PDF to EPUB
+      else if (t.tool === 'pdf-to-epub' || (fam === 'pdf' && outExt === 'epub')) {
+        modalTitle = 'EPUB 3 E-Book Settings';
+        modalSubtitle = 'Create reflowable e-reader book or fixed layout package';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'reflow', name: 'Reflowable E-Book', desc: 'Dynamic resizable text with chapters for e-readers' },
+            { id: 'fixed', name: 'Fixed Page Layout', desc: 'Preserves exact visual look of PDF pages as graphic spreads' }
+          ], tempCfg.mode || 'reflow', 'EPUB Engine')}
+
+          ${renderSegments('scale', [
+            { value: '1.0', label: '1.0x (16px)' },
+            { value: '1.25', label: '1.25x (20px)' },
+            { value: '1.5', label: '1.5x (24px)' }
+          ], tempCfg.scale || '1.25', 'Base Font Scale')}
+
+          ${renderGroup('Navigation', [
+            { key: 'toc', title: 'Interactive Table of Contents', desc: 'Builds chapter navigation hierarchy from headings', checked: tempCfg.toc !== false }
+          ])}
+        `;
+      }
+      // 11. Word (DOCX) -> PDF / Other
+      else if (fam === 'word' || (outExt === 'pdf' && ['docx', 'doc', 'odt', 'rtf', 'pages'].includes(fromExt))) {
+        modalTitle = 'Word to PDF Settings';
+        modalSubtitle = 'Configure vector typography rendering, section geometry, and margins';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'flow', name: 'Crisp Vector Flow', desc: 'Vector typography, styles, tables, and responsive margins' },
+            { id: 'exact', name: 'Exact Geometry', desc: 'Strict section geometry and native Word margins' },
+            { id: 'compact', name: 'Compact Print', desc: 'Minimal reading flow optimized for fast printing' }
+          ], tempCfg.mode || 'flow', 'Rendering Engine')}
+
+          ${renderSegments('pageSize', [
+            { value: 'auto', label: 'Auto-detect' },
+            { value: 'a4', label: 'A4' },
+            { value: 'letter', label: 'US Letter' }
+          ], tempCfg.pageSize || 'auto', 'Target Page Size')}
+
+          ${renderGroup('Structure', [
+            { key: 'bookmarks', title: 'Generate PDF Bookmarks', desc: 'Creates clickable sidebar bookmarks from H1-H4 styles', checked: tempCfg.bookmarks !== false }
+          ])}
+        `;
+      }
+      // 12. PowerPoint (PPTX) -> PDF
+      else if (fam === 'pptx' || (outExt === 'pdf' && ['pptx', 'ppt', 'key', 'odp'].includes(fromExt))) {
+        modalTitle = 'PowerPoint to PDF Settings';
+        modalSubtitle = 'Configure slide orientation, vector geometry, and pagination';
+        bodySections = `
+          ${renderSegments('mode', [
+            { id: 'vector', name: 'Crisp Vector', desc: 'Scalable vector text, shapes, and charts with high clarity' },
+            { id: 'exact', name: '16:9 Widescreen', desc: 'Full-bleed widescreen presentation geometry' },
+            { id: 'compact', name: 'Handouts', desc: 'Clean presentation layout optimized for print' }
+          ], tempCfg.mode || 'vector', 'Slide Rendering Profile')}
+
+          ${renderSegments('orientation', [
+            { value: 'landscape', label: 'Landscape (16:9)' },
+            { value: 'portrait', label: 'Portrait Slide' }
+          ], tempCfg.orientation || 'landscape', 'Slide Orientation')}
+
+          ${renderGroup('Presentation Extras', [
+            { key: 'slideNumbers', title: 'Render Slide Numbers & Footers', desc: 'Display slide pagination in output', checked: tempCfg.slideNumbers !== false },
+            { key: 'speakerNotes', title: 'Include Speaker Notes', desc: 'Append speaker notes below each slide canvas', checked: Boolean(tempCfg.speakerNotes) }
+          ])}
+        `;
+      }
+      // 13. Excel / CSV -> PDF / Other
+      else if (fam === 'excel' || fam === 'csv' || ['xlsx', 'xls', 'csv', 'tsv'].includes(fromExt)) {
+        modalTitle = outExt === 'pdf' ? 'Spreadsheet to PDF Settings' : 'Data Export Settings';
+        modalSubtitle = 'Configure page orientation, gridlines, auto-fitting, and delimiters';
+        bodySections = `
+          ${outExt === 'pdf' ? `
+            ${renderSegments('landscape', [
+              { value: 'landscape', label: 'Landscape (Wide Tables)' },
+              { value: 'portrait', label: 'Portrait' }
+            ], tempCfg.landscape || 'landscape', 'Page Orientation')}
+
+            ${renderSegments('scale', [
+              { value: 'auto', label: 'Auto-Fit 1 Page Wide' },
+              { value: '100', label: 'Actual Size (100%)' },
+              { value: 'fit-all', label: 'Fit All to 1 Page' }
+            ], tempCfg.scale || 'auto', 'Page Fit & Scaling')}
+
+            ${renderGroup('Table Appearance', [
+              { key: 'gridlines', title: 'Show Cell Gridlines', desc: 'Render subtle border lines between spreadsheet cells', checked: tempCfg.gridlines !== false },
+              { key: 'headerStyle', title: 'Accent Header Styling', desc: 'Apply bold font and dark accent fill to header row', checked: tempCfg.headerStyle !== false }
+            ])}
+          ` : `
+            ${renderSegments('delim', [
+              { value: ',', label: 'Comma (,)' },
+              { value: '\t', label: 'Tab (\\t)' },
+              { value: ';', label: 'Semicolon (;)' },
+              { value: '|', label: 'Pipe (|)' }
+            ], tempCfg.delim || ',', 'Field Delimiter')}
+
+            ${renderGroup('Data Typing', [
+              { key: 'parseNumbers', title: 'Parse Numeric & Currency Values', desc: 'Convert currency and percentage strings into numbers', checked: tempCfg.parseNumbers !== false }
+            ])}
+          `}
+        `;
+      }
+      // 14. Image Conversions
+      else if (fam === 'image' || ['png', 'jpg', 'jpeg', 'webp', 'ico', 'bmp', 'svg'].includes(fromExt)) {
+        modalTitle = `${toLabel} Quality & Encoding`;
+        modalSubtitle = 'Configure image compression, dimension constraints, and transparency';
+        bodySections = `
+          ${renderSlider('quality', 'Compression Quality', tempCfg.quality || 85, 10, 100, 5, '%')}
+
+          ${renderSegments('maxWidth', [
+            { value: '0', label: 'Original' },
+            { value: '3840', label: '4K' },
+            { value: '1920', label: '1080p' },
+            { value: '1280', label: '720p' },
+            { value: '800', label: '800px' }
+          ], String(tempCfg.maxWidth || '0'), 'Max Dimension Constraint')}
+
+          ${renderSegments('matte', [
+            { value: 'white', label: 'White Matte' },
+            { value: 'black', label: 'Black Matte' },
+            { value: 'transparent', label: 'Transparent Alpha' }
+          ], tempCfg.matte || 'white', 'Alpha Matte')}
+
+          ${renderGroup('Metadata', [
+            { key: 'preserveExif', title: 'Preserve EXIF & Camera Metadata', desc: 'Keep GPS, camera model, and timestamp properties', checked: Boolean(tempCfg.preserveExif) }
+          ])}
+        `;
+      }
+      // 15. Audio Conversions
+      else if (fam === 'audio' || ['mp3', 'wav', 'flac', 'm4a', 'ogg', 'opus', 'aiff', 'wma', 'ac3'].includes(outExt)) {
+        modalTitle = `${toLabel} Audio Settings`;
+        modalSubtitle = 'Configure audio bitrate, sample rate, channels, and volume leveling';
+        bodySections = `
+          ${renderSegments('br', [
+            { value: '320k', label: '320 kbps (Studio)' },
+            { value: '256k', label: '256 kbps' },
+            { value: '192k', label: '192 kbps (Standard)' },
+            { value: '128k', label: '128 kbps' },
+            { value: '96k', label: '96 kbps' }
+          ], tempCfg.br || '192k', 'Bitrate Preset')}
+
+          ${renderSegments('sampleRate', [
+            { value: '48000', label: '48,000 Hz (Standard)' },
+            { value: '44100', label: '44,100 Hz (CD Audio)' },
+            { value: '96000', label: '96,000 Hz (Hi-Res)' }
+          ], tempCfg.sampleRate || '48000', 'Sample Rate')}
+
+          ${renderSegments('channels', [
+            { value: '2', label: 'Stereo (2.0)' },
+            { value: '1', label: 'Mono (1.0)' }
+          ], tempCfg.channels || '2', 'Channels')}
+
+          ${renderGroup('Audio Processing', [
+            { key: 'normalize', title: 'EBU R128 Volume Normalization', desc: 'Even out peak volume to standard broadcast loudness', checked: tempCfg.normalize !== false }
+          ])}
+        `;
+      }
+      // 16. Video Conversions
+      else if (fam === 'video' || ['mp4', 'webm', 'mov', 'mkv', 'avi', 'gif', 'shorts', 'wmv', 'flv'].includes(outExt)) {
+        modalTitle = `${toLabel} Video Transcoding Settings`;
+        modalSubtitle = 'Configure video compression CRF, resolution, and web streaming';
+        bodySections = `
+          ${renderSegments('crf', [
+            { value: '18', label: 'CRF 18 (Lossless)', desc: 'Near lossless visual quality with high bitrate' },
+            { value: '23', label: 'CRF 23 (Balanced)', desc: 'Optimal balance of crystal-clear quality and file size' },
+            { value: '28', label: 'CRF 28 (Compact)', desc: 'Small file size optimized for fast web streaming & sharing' }
+          ], tempCfg.crf || '23', 'Visual Quality (CRF)')}
+
+          ${renderSegments('resolution', [
+            { value: 'original', label: 'Original' },
+            { value: '1080p', label: '1080p Full HD' },
+            { value: '720p', label: '720p HD' },
+            { value: '480p', label: '480p SD' }
+          ], tempCfg.resolution || 'original', 'Resolution & Scaling')}
+
+          ${t.tool === 'video-to-shorts' ? renderSegments('framing', [
+            { value: 'crop', label: 'Smart Center Crop & Fill' },
+            { value: 'blur', label: 'Blurred Background Fill' },
+            { value: 'fit', label: 'Pillarbox Letterbox' }
+          ], tempCfg.framing || 'crop', '9:16 Vertical Shorts Framing') : ''}
+
+          ${renderGroup('Web Optimization', [
+            { key: 'faststart', title: 'Faststart Web Streaming (-movflags +faststart)', desc: 'Optimizes container for instant web video playback', checked: tempCfg.faststart !== false }
+          ])}
+        `;
+      }
+      // 17. Fonts
+      else if (fam === 'font' || ['ttf', 'otf', 'woff', 'woff2', 'css'].includes(outExt)) {
+        modalTitle = `${toLabel} Web Font Settings`;
+        modalSubtitle = 'Configure WOFF zlib compression, CSS snippet generation, and specimen preview';
+        bodySections = `
+          ${renderGroup('Web Font Packaging', [
+            { key: 'generateCss', title: 'Generate Self-Contained @font-face CSS', desc: 'Generates ready-to-paste CSS snippet with embedded Base64 font', checked: tempCfg.generateCss !== false },
+            { key: 'compressZlib', title: 'Maximum SFNT zlib Compression (Level 9)', desc: 'Produces smallest possible web font footprint', checked: tempCfg.compressZlib !== false }
+          ])}
+
+          ${renderSlider('fontSize', 'Preview Specimen Font Size', tempCfg.fontSize || 48, 24, 72, 4, 'px')}
+        `;
+      }
+      // 18. 3D Models
+      else if (fam === 'model3d' || ['obj', 'stl', 'glb', 'gltf', 'ply'].includes(outExt)) {
+        modalTitle = `${toLabel} 3D Geometry Settings`;
+        modalSubtitle = 'Configure decimal precision, coordinate axes, and mesh deduplication';
+        bodySections = `
+          ${renderSegments('upAxis', [
+            { value: 'y', label: 'Y-Up (GLTF / Three.js)' },
+            { value: 'z', label: 'Z-Up (CAD / STL)' }
+          ], tempCfg.upAxis || 'y', 'Coordinate System Up-Axis')}
+
+          ${renderSegments('precision', [
+            { value: '4', label: '4 Decimals' },
+            { value: '6', label: '6 Decimals (Standard)' },
+            { value: 'full', label: 'Full Float Precision' }
+          ], tempCfg.precision || '6', 'Floating Point Precision')}
+
+          ${renderGroup('Mesh Optimization', [
+            { key: 'dedup', title: 'Deduplicate Shared Vertices', desc: 'Fuses coincident vertices to reduce file size', checked: tempCfg.dedup !== false },
+            { key: 'exportNormals', title: 'Compute Surface Normals', desc: 'Calculates smooth vertex normal vectors for lighting', checked: tempCfg.exportNormals !== false }
+          ])}
+        `;
+      }
+      // 19. Archives
+      else if (fam === 'archive' || ['zip', 'gz', 'tgz', 'tar', '7z'].includes(outExt)) {
+        modalTitle = `${toLabel} Archive Packaging Settings`;
+        modalSubtitle = 'Configure compression level, date timestamps, and OS junk file removal';
+        bodySections = `
+          ${renderSegments('level', [
+            { value: '0', label: 'Store (0)' },
+            { value: '1', label: 'Fast (1)' },
+            { value: '6', label: 'Normal (6)' },
+            { value: '9', label: 'Maximum (9)' }
+          ], String(tempCfg.level || '6'), 'Compression Level')}
+
+          ${renderGroup('Cleanliness & Metadata', [
+            { key: 'stripJunk', title: 'Strip OS Junk Files (.DS_Store, Thumbs.db)', desc: 'Removes hidden operating system metadata files', checked: tempCfg.stripJunk !== false },
+            { key: 'preserveDates', title: 'Preserve File Modification Dates', desc: 'Keeps original timestamp metadata for each entry', checked: tempCfg.preserveDates !== false }
+          ])}
+        `;
+      }
+      // Fallback Generic
+      else {
+        modalTitle = `${toLabel} Conversion Options`;
+        modalSubtitle = `Configure output settings for ${toLabel}`;
+        bodySections = `
+          ${renderSegments('theme', [
+            { value: 'modern', label: 'Modern Clean' },
+            { value: 'github', label: 'GitHub Document' },
+            { value: 'academic', label: 'Academic Paper' },
+            { value: 'editorial', label: 'Editorial Book' }
+          ], tempCfg.theme || 'modern', 'Typography & Layout Theme')}
+
+          ${renderGroup('Formatting', [
+            { key: 'pageNumbers', title: 'Include Page Numbers', desc: 'Prints page numbering in document footer', checked: tempCfg.pageNumbers !== false },
+            { key: 'codeLineNumbers', title: 'Code Block Line Numbers', desc: 'Displays line counter inside code snippets', checked: tempCfg.codeLineNumbers !== false }
+          ])}
+        `;
+      }
+
+      // Build Clean DOM
+      const overlay = document.createElement('div');
+      overlay.className = 'conv-modal-overlay';
+      overlay.id = 'conv-options-modal-overlay';
+      overlay.innerHTML = `
+        <div class="conv-modal-dialog" id="conv-options-modal-dialog">
+          <div class="conv-modal-header">
+            <div class="conv-modal-header-text">
+              <div class="conv-modal-route-pill">
+                <span class="conv-modal-route-from">${_esc(fromLabel)}</span>
+                <span class="conv-modal-route-arrow">→</span>
+                <span class="conv-modal-route-to">${_esc(toLabel)}</span>
+              </div>
+              <h3 class="conv-modal-title">${_esc(modalTitle)}</h3>
+              <p class="conv-modal-subtitle">${_esc(modalSubtitle)}</p>
+            </div>
+            <button type="button" class="conv-modal-close-btn" id="conv-modal-close" aria-label="Close modal">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="conv-modal-body">
+            ${bodySections}
+          </div>
+
+          <div class="conv-modal-footer">
+            <button type="button" class="conv-modal-reset-btn" id="conv-modal-reset">Reset Defaults</button>
+            <div class="conv-modal-footer-actions">
+              <button type="button" class="conv-modal-cancel-btn" id="conv-modal-cancel">Cancel</button>
+              <button type="button" class="conv-modal-apply-btn" id="conv-modal-apply">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // Event Handlers
+      const closeModal = () => {
+        overlay.classList.add('conv-modal-closing');
+        setTimeout(() => overlay.remove(), 120);
+        window.removeEventListener('keydown', handleKey);
+      };
+
+      const handleKey = (e) => {
+        if (e.key === 'Escape') closeModal();
+      };
+      window.addEventListener('keydown', handleKey);
+
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+      });
+
+      overlay.querySelector('#conv-modal-close')?.addEventListener('click', closeModal);
+      overlay.querySelector('#conv-modal-cancel')?.addEventListener('click', closeModal);
+
+      // Segmented controls listener
+      overlay.querySelectorAll('.conv-segment').forEach(seg => {
+        seg.addEventListener('click', () => {
+          const key = seg.dataset.key;
+          const val = seg.dataset.val;
+          const desc = seg.dataset.desc;
+          tempCfg[key] = val;
+          overlay.querySelectorAll(`.conv-segment[data-key="${key}"]`).forEach(s => {
+            const on = s.dataset.val === val;
+            s.classList.toggle('active', on);
+            s.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+          const descEl = overlay.querySelector(`#conv-segment-desc-${key}`);
+          if (descEl && desc) descEl.textContent = desc;
+        });
+      });
+
+      // Slider listeners
+      overlay.querySelectorAll('.conv-slider').forEach((slider) => {
+        slider.addEventListener('input', () => {
+          const key = slider.dataset.key;
+          const unit = slider.dataset.unit || '';
+          tempCfg[key] = slider.value;
+          const badge = overlay.querySelector(`#modal-slider-${key}-val`);
+          if (badge) badge.textContent = slider.value + unit;
+        });
+      });
+
+      // Toggle switch listeners
+      overlay.querySelectorAll('.conv-toggle-input').forEach((sw) => {
+        sw.addEventListener('change', () => {
+          const key = sw.dataset.key;
+          tempCfg[key] = sw.checked;
+        });
+      });
+
+      // Reset Defaults
+      overlay.querySelector('#conv-modal-reset')?.addEventListener('click', () => {
+        const defaultCfg = {};
+        if (t.inputs) Object.assign(defaultCfg, t.inputs);
+        Object.keys(tempCfg).forEach(k => {
+          if (defaultCfg[k] !== undefined) tempCfg[k] = defaultCfg[k];
+        });
+        openConversionOptionsModal({ target: t, file: curFile, family: fam, cfg: defaultCfg, onSave });
+      });
+
+      // Apply
+      overlay.querySelector('#conv-modal-apply')?.addEventListener('click', () => {
+        if (typeof onSave === 'function') onSave(tempCfg);
+        closeModal();
+      });
+    }
+
     let isSettingsOpen = false;
     let isMenuOpen = false;
     let userClosedSettings = false;
@@ -20443,12 +21745,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const list = targets();
       const groupsShown = GROUPS.filter((g) => list.some((x) => x.g === g));
       const fields = cfgFields();
-      cfg = {};
-      for (const f of fields) cfg[f.key] = (t.inputs && t.inputs[f.key] !== undefined) ? t.inputs[f.key] : (f.default !== undefined ? f.default : '');
-
-      const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
-      </svg>`;
+      cfg = cfg || {};
+      for (const f of fields) {
+        if (cfg[f.key] === undefined) {
+          cfg[f.key] = (t.inputs && t.inputs[f.key] !== undefined) ? t.inputs[f.key] : (f.default !== undefined ? f.default : '');
+        }
+      }
 
       const buttonLabel = files.length > 1 ? `Convert ${files.length} files to ${t.out}` : `Convert to ${t.out}`;
       const fileInfoMain = files.length > 1 ? `${files.length} files queued` : `File 1: ${_esc(_midTrunc(currentFile.name, 22))}`;
@@ -20473,7 +21775,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
                 <div class="conv-studio-thumb-container" id="conv-studio-thumb-box">
                   <div class="conv-studio-badge">
-                    ${badgeSvg}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
+                    </svg>
                   </div>
                 </div>
                 
@@ -20656,13 +21960,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 </div>
                 <div class="conv-mode-seg-desc" id="conv-pptx-mode-desc">${String(cfg.mode || 'editable') === 'hybrid' ? 'Pixel background + searchable text' : (String(cfg.mode || 'editable') === 'visual' ? 'High-res canvas snapshot slides' : 'Native shapes, titles, bullets &amp; tables')}</div>` : ''}
 
-                ${fields.length > 0 ? `
-                <button type="button" class="conv-studio-btn-gear ${isSettingsOpen ? 'active' : ''}" id="conv-gear-btn" title="Conversion Settings">
+                <button type="button" class="conv-studio-btn-gear" id="conv-gear-btn" title="Conversion Settings &amp; Options" aria-label="Conversion Settings">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="18" height="18">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
                   </svg>
-                </button>` : ''}
+                </button>
               </div>
 
               <!-- RIGHT: Open Format Selection Panel Directly -->
@@ -20699,21 +22002,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
 
             <div id="conv-err" hidden style="display:none;max-width:640px;margin:12px auto 0;padding:10px 14px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:13px;font-weight:600;text-align:center;"></div>
-
-            <!-- Compact Inline Options Bar -->
-            ${fields.length > 0 && isSettingsOpen ? `
-            <div class="conv-studio-compact-settings">
-              <div class="conv-compact-settings-row">
-                <div class="conv-compact-settings-title">
-                  <span style="font-size: 13px;">⚙️</span>
-                  <span style="font-weight: 700; color: #0F172A; font-size: 12px;">${t.out || 'Format'} Options:</span>
-                </div>
-                <div class="conv-compact-fields-row">
-                  ${fields.map((f) => compactFieldPanel(f)).join('')}
-                </div>
-                <button type="button" class="conv-compact-close-btn" id="conv-settings-close" title="Close Options">&times;</button>
-              </div>
-            </div>` : ''}
 
           </div>
         </div>`;
@@ -20856,17 +22144,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       });
 
-      // Settings toggle listener
+      // Settings modal trigger
       container.querySelector('#conv-gear-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        isSettingsOpen = !isSettingsOpen;
-        renderConfigure();
-      });
-
-      container.querySelector('#conv-settings-close')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        isSettingsOpen = false;
-        renderConfigure();
+        openConversionOptionsModal({
+          target: t,
+          file: currentFile,
+          family: family,
+          cfg: cfg,
+          onSave: (newCfg) => {
+            Object.assign(cfg, newCfg);
+            if (newCfg.mode) {
+              container.querySelectorAll('.conv-mode-seg-btn').forEach((c) => {
+                const on = c.dataset.mode === newCfg.mode;
+                c.classList.toggle('active', on);
+                c.setAttribute('aria-checked', on ? 'true' : 'false');
+              });
+            }
+            renderConfigure();
+          }
+        });
       });
 
       // Bind input values inside inline settings bar

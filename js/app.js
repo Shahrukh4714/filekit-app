@@ -501,6 +501,357 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
+     Bespoke Share Dialogue Modal (Apple / Linear Craft Standard)
+  ═══════════════════════════════════════════════════════════════════════════ */
+  function openShareModal(options = {}) {
+    const filename = options.filename || 'document';
+    const blob = options.blob || null;
+    const url = options.url || (blob ? URL.createObjectURL(blob) : location.href);
+    const sizeText = options.sizeText || (blob ? window.FF?.util?.bytes(blob.size) : '');
+    const ext = (options.format || filename.split('.').pop() || 'file').toLowerCase();
+    const badgeCls = 'badge-' + (ext === 'jpeg' ? 'jpg' : ext);
+    const fileExtUpper = ext.toUpperCase();
+
+    // Dismiss existing modal if any
+    const existing = document.getElementById('fk-share-modal-overlay');
+    if (existing) existing.remove();
+
+    const canNativeShare = typeof navigator.share === 'function';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'fk-share-modal-overlay';
+    overlay.className = 'fk-share-modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'fk-share-modal-title');
+
+    overlay.innerHTML = `
+      <div class="fk-share-modal" role="document">
+        <div class="fk-share-modal-head">
+          <div class="fk-share-modal-title-wrap">
+            <div class="fk-share-modal-icon-badge">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </div>
+            <div>
+              <h3 id="fk-share-modal-title" class="fk-share-modal-heading">Share Document</h3>
+              <p class="fk-share-modal-sub">Send, export or transfer to another device</p>
+            </div>
+          </div>
+          <button type="button" class="fk-modal-close-btn" id="btn-share-modal-close" title="Close" aria-label="Close modal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="fk-share-file-card">
+          <span class="org-format-badge ${badgeCls}">${fileExtUpper}</span>
+          <div class="fk-share-file-info">
+            <span class="fk-share-file-name" title="${window.FF?.util?.escapeHtml(filename)}">${window.FF?.util?.escapeHtml(filename)}</span>
+            <span class="fk-share-file-meta">${sizeText ? sizeText + ' · ' : ''}Ready to share</span>
+          </div>
+        </div>
+
+        <div class="fk-share-actions-grid">
+          ${canNativeShare ? `
+          <button type="button" class="fk-share-action-btn fk-share-action-primary" id="fk-share-opt-native">
+            <div class="fk-share-action-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </div>
+            <div class="fk-share-action-text">
+              <span class="fk-share-action-title">Open System Share</span>
+              <span class="fk-share-action-desc">Windows / Mobile device share sheet</span>
+            </div>
+          </button>
+          ` : ''}
+
+          <button type="button" class="fk-share-action-btn" id="fk-share-opt-copy">
+            <div class="fk-share-action-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </div>
+            <div class="fk-share-action-text">
+              <span class="fk-share-action-title">Copy Share Link</span>
+              <span class="fk-share-action-desc">Copy direct file link to clipboard</span>
+            </div>
+          </button>
+
+          <button type="button" class="fk-share-action-btn" id="fk-share-opt-download">
+            <div class="fk-share-action-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div class="fk-share-action-text">
+              <span class="fk-share-action-title">Save to Device</span>
+              <span class="fk-share-action-desc">Direct local file download</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="fk-share-channels-title">Quick channels</div>
+        <div class="fk-share-channels-row">
+          <button type="button" class="fk-share-channel-btn" id="fk-share-chan-email" title="Share via Email">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Email</span>
+          </button>
+          <button type="button" class="fk-share-channel-btn" id="fk-share-chan-whatsapp" title="Share via WhatsApp">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>WhatsApp</span>
+          </button>
+          <button type="button" class="fk-share-channel-btn" id="fk-share-chan-telegram" title="Share via Telegram">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span>Telegram</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => {
+      document.removeEventListener('keydown', onKeyDown);
+      overlay.remove();
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('keydown', onKeyDown);
+
+    overlay.onclick = (e) => {
+      if (e.target === overlay) close();
+    };
+    overlay.querySelector('#btn-share-modal-close').onclick = close;
+
+    overlay.querySelector('#fk-share-opt-native')?.addEventListener('click', async () => {
+      if (typeof navigator.share === 'function') {
+        try {
+          const fileObj = blob instanceof File ? blob : (blob ? new File([blob], filename, { type: blob.type || 'application/octet-stream' }) : null);
+          if (fileObj && navigator.canShare && navigator.canShare({ files: [fileObj] })) {
+            await navigator.share({ title: filename, files: [fileObj] });
+          } else {
+            await navigator.share({ title: filename, text: `File: ${filename}`, url: location.href });
+          }
+          close();
+        } catch (err) {
+          if (err.name !== 'AbortError') console.warn(err);
+        }
+      }
+    });
+
+    overlay.querySelector('#fk-share-opt-copy')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        window.FF?.util?.toast?.('Share link copied to clipboard!', 'success');
+        const titleEl = overlay.querySelector('#fk-share-opt-copy .fk-share-action-title');
+        if (titleEl) {
+          const orig = titleEl.textContent;
+          titleEl.textContent = '✓ Copied to clipboard!';
+          titleEl.style.color = '#16A34A';
+          setTimeout(() => {
+            titleEl.textContent = orig;
+            titleEl.style.color = '';
+          }, 2000);
+        }
+      } catch (err) {
+        window.FF?.util?.toast?.('Could not copy link to clipboard', 'warn');
+      }
+    });
+
+    overlay.querySelector('#fk-share-opt-download')?.addEventListener('click', () => {
+      if (blob) window.FF?.util?.downloadBlob(blob, filename);
+      else if (url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      window.FF?.util?.toast?.(`Downloaded ${filename}`, 'success');
+      close();
+    });
+
+    const encodedName = encodeURIComponent(filename);
+    const encodedUrl = encodeURIComponent(location.href);
+
+    overlay.querySelector('#fk-share-chan-email')?.addEventListener('click', () => {
+      window.open(`mailto:?subject=${encodedName}&body=Here is the document: ${encodedUrl}`, '_blank');
+    });
+
+    overlay.querySelector('#fk-share-chan-whatsapp')?.addEventListener('click', () => {
+      window.open(`https://api.whatsapp.com/send?text=${encodedName}%20${encodedUrl}`, '_blank');
+    });
+
+    overlay.querySelector('#fk-share-chan-telegram')?.addEventListener('click', () => {
+      window.open(`https://t.me/share/url?url=${encodedUrl}&text=${encodedName}`, '_blank');
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Bespoke Print Dialogue Engine (Universal Multi-Page High-DPI Print)
+  ═══════════════════════════════════════════════════════════════════════════ */
+  async function openPrintDialogue(options = {}) {
+    const filename = options.filename || 'document';
+    const blob = options.blob || null;
+    const url = options.url || (blob ? URL.createObjectURL(blob) : '');
+    const ext = (options.format || filename.split('.').pop() || '').toLowerCase();
+    const isPdf = ext === 'pdf' || ext === 'pdfa' || (blob && blob.type === 'application/pdf');
+    const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'bmp'].includes(ext) || (blob && blob.type?.startsWith('image/'));
+    const isText = ['txt', 'md', 'json', 'csv', 'tsv', 'html', 'css', 'js', 'xml', 'log'].includes(ext) || typeof options.text === 'string';
+
+    const toastHandle = window.FF?.util?.toast?.('Opening print dialog…', 'loading', { duration: 15000 });
+    const dismissToast = () => { try { toastHandle?.dismiss?.(); } catch (_) {} };
+
+    try {
+      // 1. PDF Documents: Multi-page high-DPI rendering via pdfjs into isolated print iframe
+      if (isPdf && (blob || url)) {
+        let pdfjs = window.pdfjsLib;
+        if (!pdfjs && window.FF?.util?.loadScript) {
+          try {
+            await window.FF.util.loadScript('vendor/pdfjs.min.js');
+            if (window.pdfjsLib) {
+              window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+              pdfjs = window.pdfjsLib;
+            }
+          } catch (e) {
+            console.warn('[Print] pdfjs load error:', e);
+          }
+        }
+
+        if (pdfjs && blob) {
+          const arrayBuf = await blob.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
+          const pagesHtml = [];
+
+          for (let p = 1; p <= doc.numPages; p++) {
+            const page = await doc.getPage(p);
+            const vp = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            const imgUrl = canvas.toDataURL('image/png');
+            pagesHtml.push(`<div class="print-page"><img src="${imgUrl}" alt="Page ${p}" /></div>`);
+          }
+
+          const printIframe = document.createElement('iframe');
+          printIframe.style.position = 'fixed';
+          printIframe.style.top = '-9999px';
+          printIframe.style.left = '-9999px';
+          printIframe.style.width = '1000px';
+          printIframe.style.height = '1000px';
+          printIframe.style.border = 'none';
+          printIframe.style.opacity = '0';
+          document.body.appendChild(printIframe);
+
+          const idoc = printIframe.contentWindow.document;
+          idoc.open();
+          idoc.write(`<!DOCTYPE html><html><head><title>Print ${window.FF?.util?.escapeHtml(filename)}</title><style>@page { margin: 0; size: auto; } html, body { margin: 0; padding: 0; background: #FFF; } .print-page { page-break-after: always; page-break-inside: avoid; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 100vh; box-sizing: border-box; } .print-page:last-child { page-break-after: auto; } img { max-width: 100%; max-height: 100vh; object-fit: contain; }</style></head><body>${pagesHtml.join('')}</body></html>`);
+          idoc.close();
+
+          dismissToast();
+          setTimeout(() => {
+            try {
+              printIframe.contentWindow?.focus();
+              printIframe.contentWindow?.print();
+            } catch (err) {
+              console.warn('[Print] iframe print fallback:', err);
+              window.print();
+            }
+            setTimeout(() => printIframe.remove(), 60000);
+          }, 400);
+          return;
+        }
+      }
+
+      // 2. High-res Images (PNG, JPG, WEBP, SVG)
+      if (isImage && (url || blob)) {
+        const imgUrl = url || URL.createObjectURL(blob);
+        const printIframe = document.createElement('iframe');
+        printIframe.style.position = 'fixed';
+        printIframe.style.top = '-9999px';
+        printIframe.style.left = '-9999px';
+        printIframe.style.width = '1000px';
+        printIframe.style.height = '1000px';
+        printIframe.style.border = 'none';
+        printIframe.style.opacity = '0';
+        document.body.appendChild(printIframe);
+
+        const idoc = printIframe.contentWindow.document;
+        idoc.open();
+        idoc.write(`<!DOCTYPE html><html><head><title>Print ${window.FF?.util?.escapeHtml(filename)}</title><style>@page { margin: 0; size: auto; } html, body { margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #fff; } img { max-width: 100%; max-height: 100vh; object-fit: contain; }</style></head><body><img src="${imgUrl}" onload="window.print();" /></body></html>`);
+        idoc.close();
+
+        dismissToast();
+        setTimeout(() => {
+          try {
+            printIframe.contentWindow?.focus();
+            printIframe.contentWindow?.print();
+          } catch (e) {}
+          setTimeout(() => printIframe.remove(), 60000);
+        }, 400);
+        return;
+      }
+
+      // 3. Text / Code / Transcript / CSV
+      if (isText && (options.text || blob)) {
+        const rawText = options.text || (blob ? await blob.text() : '');
+        const printIframe = document.createElement('iframe');
+        printIframe.style.position = 'fixed';
+        printIframe.style.top = '-9999px';
+        printIframe.style.left = '-9999px';
+        printIframe.style.width = '1000px';
+        printIframe.style.height = '1000px';
+        printIframe.style.border = 'none';
+        printIframe.style.opacity = '0';
+        document.body.appendChild(printIframe);
+
+        const idoc = printIframe.contentWindow.document;
+        idoc.open();
+        idoc.write(`<!DOCTYPE html><html><head><title>Print ${window.FF?.util?.escapeHtml(filename)}</title><style>@page { margin: 15mm; } html, body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.5; color: #111; white-space: pre-wrap; word-break: break-word; }</style></head><body>${window.FF?.util?.escapeHtml(rawText)}<script>window.onload = function() { window.print(); };<\/script></body></html>`);
+        idoc.close();
+
+        dismissToast();
+        setTimeout(() => {
+          try {
+            printIframe.contentWindow?.focus();
+            printIframe.contentWindow?.print();
+          } catch (e) {}
+          setTimeout(() => printIframe.remove(), 60000);
+        }, 400);
+        return;
+      }
+
+      // 4. Default: Open in new window or trigger browser print
+      dismissToast();
+      if (url) {
+        const w = window.open(url, '_blank');
+        if (w) {
+          w.addEventListener('load', () => {
+            try { w.print(); } catch (e) {}
+          });
+        } else {
+          window.print();
+        }
+      } else {
+        window.print();
+      }
+    } catch (err) {
+      dismissToast();
+      console.error('[Print Dialogue Error]', err);
+      window.print();
+    }
+  }
+
+  window.FF.openShareModal = openShareModal;
+  window.FF.openPrintDialogue = openPrintDialogue;
+  FF.openShareModal = openShareModal;
+  FF.openPrintDialogue = openPrintDialogue;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
      Universal Flagship 2-Column Result Studio (Organize Benchmark Standard)
      Unified across all tools and formats (PDF, Media, Documents, Spreadsheets, Archives).
   ═══════════════════════════════════════════════════════════════════════════ */
@@ -516,7 +867,7 @@
     };
 
     const tool = opts.tool || { id: 'tool', name: 'File Tool', category: 'PDF' };
-    const blob = opts.blob || (opts.file instanceof Blob ? opts.file : null);
+    const blob = opts.blob || (opts.file instanceof Blob ? opts.file : null) || (Array.isArray(opts.files) && opts.files.length && (opts.files[0]?.blob || (opts.files[0] instanceof Blob ? opts.files[0] : null))) || null;
     const files = Array.isArray(opts.files) ? opts.files : [];
     const isCollection = files.length > 0;
     
@@ -658,70 +1009,131 @@ try {
       }
     }
 
+    function getBrandSquircle(brand) {
+      if (brand === 'word') {
+        return `<div class="fk-brand-icon-box" style="background:#185ABD;"><span class="fk-app-letter">W</span></div>`;
+      }
+      if (brand === 'excel') {
+        return `<div class="fk-brand-icon-box" style="background:#107C41;"><span class="fk-app-letter">X</span></div>`;
+      }
+      if (brand === 'powerpoint') {
+        return `<div class="fk-brand-icon-box" style="background:#D83B01;"><span class="fk-app-letter">P</span></div>`;
+      }
+      if (brand === 'image-jpg' || brand === 'image-png' || brand === 'image-webp' || brand === 'image') {
+        const bg = brand === 'image-png' ? '#059669' : (brand === 'image-webp' ? '#0891B2' : '#F59E0B');
+        return `<div class="fk-brand-icon-box" style="background:${bg};">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="17.5" cy="6.5" r="2.2" fill="#FFFFFF" stroke="none"/>
+            <path d="m3 16 5-5a1 1 0 0 1 1.4 0l3.6 3.6m2-2 3-3a1 1 0 0 1 1.4 0L21 16"/>
+          </svg>
+        </div>`;
+      }
+      if (brand === 'pdfa') {
+        return `<div class="fk-brand-icon-box" style="background:#E5252A;"><span class="fk-app-mini-text">PDF/A</span></div>`;
+      }
+      if (brand === 'pdf') {
+        return `<div class="fk-brand-icon-box" style="background:#E5252A;"><span class="fk-app-mini-text" style="font-size:9.5px;">PDF</span></div>`;
+      }
+      if (brand === 'txt') {
+        return `<div class="fk-brand-icon-box" style="background:#475569;"><span class="fk-app-mini-text" style="font-size:9.5px;">TXT</span></div>`;
+      }
+      if (brand === 'csv') {
+        return `<div class="fk-brand-icon-box" style="background:#0D9488;"><span class="fk-app-mini-text" style="font-size:9.5px;">CSV</span></div>`;
+      }
+      if (brand === 'zip') {
+        return `<div class="fk-brand-icon-box" style="background:#EAB308;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/>
+          </svg>
+        </div>`;
+      }
+      if (brand === 'audio' || brand === 'audio-wav' || brand === 'audio-ogg') {
+        return `<div class="fk-brand-icon-box" style="background:#8B5CF6;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3" fill="#FFFFFF"/><circle cx="18" cy="16" r="3" fill="#FFFFFF"/>
+          </svg>
+        </div>`;
+      }
+      if (brand === 'video' || brand === 'video-webm') {
+        return `<div class="fk-brand-icon-box" style="background:#2563EB;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#FFFFFF" stroke="none">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </div>`;
+      }
+      return `<div class="fk-brand-icon-box" style="background:#64748B;"><span class="fk-app-mini-text">${(brand || 'FILE').slice(0, 4).toUpperCase()}</span></div>`;
+    }
+
     let exportOptions = opts.exportOptions;
     if (!exportOptions || !exportOptions.length) {
       if (isPdf) {
         exportOptions = [
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
-          { badge: 'PNG', badgeCls: 'badge-png', title: 'PNG Page Image (.png)', sub: 'High-res image of page 1', ext: 'png' },
-          { badge: 'DOCX', badgeCls: 'badge-doc', title: 'Word Document (.docx)', sub: 'Export as editable Word doc', ext: 'docx' },
-          { badge: 'TXT', badgeCls: 'badge-doc', title: 'Text Transcript (.txt)', sub: 'Extract text contents', ext: 'txt' },
-          { badge: 'ZIP', badgeCls: 'badge-zip', title: 'Images Archive (.zip)', sub: 'Render all pages as PNG archive', ext: 'zip' }
+          { brand: 'word', title: 'Word Document (.docx)', sub: 'Export as editable Word doc', ext: 'docx' },
+          { brand: 'png', title: 'PNG Page Image (.png)', sub: 'High-res image of page 1', ext: 'png' },
+          { brand: 'image-jpg', title: 'JPEG Photo (.jpg)', sub: 'Compressed page image', ext: 'jpg' },
+          { brand: 'txt', title: 'Text Transcript (.txt)', sub: 'Extract text contents', ext: 'txt' },
+          { brand: 'zip', title: 'Images Archive (.zip)', sub: 'Render all pages as PNG archive', ext: 'zip' },
+          { brand: 'pdfa', title: 'PDF/A Document (.pdf)', sub: 'Standard document format', ext: 'pdfa' },
+          { brand: 'excel', title: 'Excel Workbook (.xlsx)', sub: 'Export tables to spreadsheet', ext: 'xlsx' },
+          { brand: 'powerpoint', title: 'PowerPoint (.pptx)', sub: 'Convert to editable slides', ext: 'pptx' }
         ];
       } else if (isImage) {
         exportOptions = [
-          { badge: 'PNG', badgeCls: 'badge-png', title: 'PNG Image (.png)', sub: 'Lossless with transparency', ext: 'png' },
-          { badge: 'JPG', badgeCls: 'badge-jpg', title: 'JPEG Photo (.jpg)', sub: 'High compression photo format', ext: 'jpg' },
-          { badge: 'WEBP', badgeCls: 'badge-webp', title: 'WebP Image (.webp)', sub: 'Modern ultra-compressed image', ext: 'webp' },
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Package into single-page PDF', ext: 'pdf' }
+          { brand: 'pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
+          { brand: 'png', title: 'PNG Image (.png)', sub: 'High-res image file', ext: 'png' },
+          { brand: 'image-jpg', title: 'JPEG Photo (.jpg)', sub: 'Compressed photograph format', ext: 'jpg' },
+          { brand: 'image-webp', title: 'WebP Image (.webp)', sub: 'Modern optimized web graphic', ext: 'webp' }
         ];
       } else if (isVideo) {
         exportOptions = [
-          { badge: 'MP4', badgeCls: 'badge-mp4', title: 'MP4 Video (.mp4)', sub: 'Universal H.264 video container', ext: 'mp4' },
-          { badge: 'WEBM', badgeCls: 'badge-webm', title: 'WebM Video (.webm)', sub: 'Open web video container', ext: 'webm' },
-          { badge: 'MP3', badgeCls: 'badge-mp3', title: 'Audio Track (.mp3)', sub: 'Extract audio soundtrack', ext: 'mp3' },
-          { badge: 'WAV', badgeCls: 'badge-wav', title: 'WAV Audio (.wav)', sub: 'Uncompressed audio stream', ext: 'wav' }
+          { brand: 'video', title: 'MP4 Video (.mp4)', sub: 'Universal video format', ext: 'mp4' },
+          { brand: 'video-webm', title: 'WebM Video (.webm)', sub: 'Open web video container', ext: 'webm' },
+          { brand: 'audio', title: 'Audio Track (.mp3)', sub: 'Extract audio soundtrack', ext: 'mp3' },
+          { brand: 'audio-wav', title: 'WAV Audio (.wav)', sub: 'Uncompressed waveform', ext: 'wav' }
         ];
       } else if (isAudio) {
         exportOptions = [
-          { badge: 'MP3', badgeCls: 'badge-mp3', title: 'MP3 Audio (.mp3)', sub: 'Standard compressed audio track', ext: 'mp3' },
-          { badge: 'WAV', badgeCls: 'badge-wav', title: 'WAV Audio (.wav)', sub: 'Uncompressed raw audio wave', ext: 'wav' },
-          { badge: 'OGG', badgeCls: 'badge-ogg', title: 'OGG Vorbis (.ogg)', sub: 'Open high-fidelity audio stream', ext: 'ogg' }
+          { brand: 'audio', title: 'MP3 Audio (.mp3)', sub: 'Standard audio format', ext: 'mp3' },
+          { brand: 'audio-wav', title: 'WAV Audio (.wav)', sub: 'Lossless waveform', ext: 'wav' },
+          { brand: 'audio-ogg', title: 'OGG Vorbis (.ogg)', sub: 'Open container audio', ext: 'ogg' }
         ];
       } else if (isSpreadsheet) {
         exportOptions = [
-          { badge: 'XLSX', badgeCls: 'badge-doc', title: 'Excel Workbook (.xlsx)', sub: 'Standard Excel spreadsheet', ext: 'xlsx' },
-          { badge: 'CSV', badgeCls: 'badge-doc', title: 'CSV Table (.csv)', sub: 'Comma-separated values', ext: 'csv' },
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Printable formatted report', ext: 'pdf' }
+          { brand: 'pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
+          { brand: 'excel', title: 'Excel Workbook (.xlsx)', sub: 'Standard spreadsheet format', ext: 'xlsx' },
+          { brand: 'csv', title: 'CSV Table (.csv)', sub: 'Comma-separated values', ext: 'csv' }
         ];
       } else if (isDocx) {
         exportOptions = [
-          { badge: 'DOCX', badgeCls: 'badge-doc', title: 'Word Document (.docx)', sub: 'Editable Word document', ext: 'docx' },
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Export formatted PDF', ext: 'pdf' },
-          { badge: 'TXT', badgeCls: 'badge-doc', title: 'Plain Text (.txt)', sub: 'Extract text contents', ext: 'txt' }
+          { brand: 'pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
+          { brand: 'word', title: 'Word Document (.docx)', sub: 'Export as editable Word doc', ext: 'docx' },
+          { brand: 'txt', title: 'Text Transcript (.txt)', sub: 'Extract text contents', ext: 'txt' },
+          { brand: 'zip', title: 'Document Archive (.zip)', sub: 'Package document contents', ext: 'zip' }
         ];
       } else if (isPptx) {
         exportOptions = [
-          { badge: 'PPTX', badgeCls: 'badge-ppt', title: 'PowerPoint (.pptx)', sub: 'Slide presentation package', ext: 'pptx' },
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Export slides to PDF', ext: 'pdf' }
+          { brand: 'pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
+          { brand: 'powerpoint', title: 'PowerPoint (.pptx)', sub: 'Slide presentation deck', ext: 'pptx' },
+          { brand: 'image-jpg', title: 'Slide Images (.jpg)', sub: 'Export slides as pictures', ext: 'jpg' }
         ];
       } else if (isEpub) {
         exportOptions = [
-          { badge: 'EPUB', badgeCls: 'badge-doc', title: 'EPUB E-Book (.epub)', sub: 'Digital book package', ext: 'epub' },
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Format into readable PDF', ext: 'pdf' },
-          { badge: 'TXT', badgeCls: 'badge-doc', title: 'Text Transcript (.txt)', sub: 'Extract book text', ext: 'txt' }
+          { brand: 'pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
+          { brand: 'word', title: 'Word Document (.docx)', sub: 'Editable document format', ext: 'docx' },
+          { brand: 'txt', title: 'Text Transcript (.txt)', sub: 'Plain text contents', ext: 'txt' }
         ];
       } else {
         exportOptions = [
-          { badge: ext.toUpperCase(), badgeCls: 'badge-doc', title: `${ext.toUpperCase()} File (.${ext})`, sub: 'Current processed format', ext: ext },
-          { badge: 'PDF', badgeCls: 'badge-pdf', title: 'PDF Document (.pdf)', sub: 'Convert to PDF format', ext: 'pdf' },
-          { badge: 'TXT', badgeCls: 'badge-doc', title: 'Text File (.txt)', sub: 'Plain text contents', ext: 'txt' },
-          { badge: 'ZIP', badgeCls: 'badge-zip', title: 'ZIP Archive (.zip)', sub: 'Bundle as compressed archive', ext: 'zip' }
+          { brand: 'pdf', title: 'PDF Document (.pdf)', sub: 'Standard document format', ext: 'pdf' },
+          { brand: 'txt', title: 'Text Document (.txt)', sub: 'Plain text contents', ext: 'txt' },
+          { brand: 'zip', title: 'ZIP Archive (.zip)', sub: 'Compressed archive container', ext: 'zip' }
         ];
       }
     }
 
     const hasSavings = Number(opts.originalBytes) > Number(opts.resultBytes) && Number(opts.originalBytes) > 0;
+    const fileExt = (filename.split('.').pop() || '').toUpperCase();
+    const ctaLabel = isCollection ? 'Download All (.zip)' : (fileExt && fileExt.length <= 4 && !fileExt.includes(' ') ? `Download ${fileExt}` : 'Download File');
 
     container.classList.add('cpdf-root', 'conv-root', 'org-root');
     container.innerHTML = `
@@ -730,31 +1142,25 @@ try {
           <!-- Left Stage: Dedicated Viewport with Standard A4 Proportions -->
           <div class="cpdf-benchmark-stage scan-result-stage org-result-stage" id="org-res-stage-wrap">
             <div class="org-stage-canvas-viewport" id="org-res-stage-viewport">
-              <div class="scan-paper-page org-res-paper ${opts.preview === 'docx' ? 'docx-preview-page' : ''}" id="org-res-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 480px; max-height: calc(100vh - 220px);">
+              <div class="org-res-paper ${opts.preview === 'docx' ? 'docx-preview-page' : ''}" id="org-res-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 100%; max-height: calc(100vh - 220px); background: transparent !important; box-shadow: none !important; border: none !important;">
                 ${opts.preview === 'docx' ? `
-                  <div class="docx-preview-container" id="docx-preview-root" style="width: 100%;">
-                    <div style="padding: 60px 40px; color: #94A3B8; font-size: 13px; font-weight: 500;">Rendering Word preview…</div>
+                  <div class="docx-preview-container" id="docx-preview-root" style="width: 100%; display: flex; align-items: center; justify-content: center;">
+                    ${window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('docx', filename, outSize, 'stage') : ''}
                   </div>
                 ` : isPdf ? `
-                  <div style="padding: 60px 40px; color: #94A3B8; font-size: 13px; font-weight: 500;">Rendering document preview…</div>
+                  <div class="org-res-pdf-loading" id="org-res-pdf-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.414; width: min(300px, calc((100vh - 240px) * 0.707)); height: min(424px, calc(100vh - 240px)); background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.12); color: #94A3B8; font-size: 13px; font-weight: 500; gap: 10px;">
+                    <div class="cpdf-proc-spin-circle" style="width: 22px; height: 22px; border: 2px solid #E2E8F0; border-top-color: #00C466; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    <span>Rendering PDF preview…</span>
+                  </div>
                 ` : isImage && url ? `
-                  <img src="${url}" alt="Preview" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06);" />
+                  <img src="${url}" alt="Preview" onerror="this.outerHTML = window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('${ext}', '${_esc(filename)}', '${outSize}', 'stage') : ''" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06);" />
                 ` : isVideo && url ? `
                   <video src="${url}" controls preload="metadata" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 6px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.12);"></video>
-                ` : isAudio && url ? `
-                  <div style="width: 330px; height: 466px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.4142; padding: 32px 24px; text-align: center; box-sizing: border-box; background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: center; align-items: center; margin: auto;">
-                    <div style="width: 60px; height: 60px; border-radius: 16px; background: #FAF5FF; border: 1.5px solid #E9D5FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 14px rgba(124,58,237,0.12);">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                    </div>
-                    <audio src="${url}" controls preload="metadata" style="width: 100%; height: 38px; margin-bottom: 16px;"></audio>
-                    <div style="font-size: 14px; font-weight: 700; color: #0F172A; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 auto 4px;">${_esc(filename)}</div>
-                    <div style="font-size: 11px; color: #64748B; font-weight: 500;">${outSize} · Audio File</div>
-                  </div>
-                ` : isText && (opts.text || blob) ? `
-                  <div style="width: 330px; height: 466px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.4142; padding: 24px 20px; overflow: auto; box-sizing: border-box; background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05); margin: auto;">
+                ` : isText && opts.text ? `
+                  <div style="width: 320px; height: 452px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.414; padding: 24px 22px; overflow: auto; box-sizing: border-box; background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); margin: auto;">
                     <pre id="org-res-text-preview" style="margin: 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11.5px; color: #1E293B; white-space: pre-wrap; word-break: break-word; line-height: 1.55;">${_esc(opts.text || 'Reading preview…')}</pre>
                   </div>
-                ` : (window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration(ext, filename, outSize, 'stage') : `<div style="width: 330px; height: 466px; aspect-ratio: 1 / 1.4142; padding: 40px; text-align: center; font-weight: 600; color: #64748B; background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.1); margin: auto; display: flex; align-items: center; justify-content: center;">${_esc(filename)}</div>`)}
+                ` : (window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration(ext, filename, outSize, 'stage') : `<div style="width: 320px; height: 452px; aspect-ratio: 1 / 1.414; max-width: 100%; max-height: calc(100vh - 220px); padding: 40px; text-align: center; font-weight: 600; color: #64748B; background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0,0,0,0.1); margin: auto; display: flex; align-items: center; justify-content: center;">${_esc(filename)}</div>`)}
               </div>
             </div>
 
@@ -793,39 +1199,31 @@ try {
                 </div>
               </div>
 
-              <!-- Soft Mint Metrics Box with reduction tracking if present -->
+              <!-- Sleek High-Craft Stat Card -->
               <div class="cpdf-benchmark-est-box org-res-est-box">
-                <div class="org-res-est-top">
-                  <div class="cpdf-benchmark-est-metrics">
+                <div class="org-res-stat-row">
+                  <div class="org-res-stat-left">
                     <strong class="cpdf-benchmark-est-new">${outSize}</strong>
-                    ${hasSavings ? `<del class="cpdf-benchmark-est-old" style="font-size:12.5px; color:#94A3B8; margin:0 4px; font-weight:500;">${_bytes(opts.originalBytes)}</del>` : ''}
-                    <span class="cpdf-benchmark-est-pct org-res-badge-pct" id="org-res-badge-pct">${hasSavings && opts.reductionPct ? `-${opts.reductionPct}% Saved` : badgeText}</span>
+                    ${hasSavings ? `<span class="org-res-stat-from">from <del class="cpdf-benchmark-est-old">${_bytes(opts.originalBytes)}</del></span>` : `<span class="org-res-stat-from">Original size</span>`}
                   </div>
-                  <span class="org-res-status-pill">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                    Ready
-                  </span>
-                  ${opts.qualityBadge ? `<span class="org-res-quality-badge" title="Quality tier determined from measured engine output">✓ ${_esc(opts.qualityBadge)}</span>` : ''}
+                  <div class="org-res-stat-right">
+                    ${hasSavings && opts.reductionPct ? `<span class="cpdf-benchmark-est-pct org-res-badge-pct">-${opts.reductionPct}%</span>` : `<span class="cpdf-benchmark-est-pct org-res-badge-pct org-res-badge-pct--neutral">Optimal</span>`}
+                  </div>
                 </div>
-                <div class="cpdf-benchmark-track" style="margin: 6px 0;">
-                  <div class="cpdf-benchmark-bar" style="width: ${hasSavings ? Math.max(10, Math.round((Number(opts.resultBytes) / Number(opts.originalBytes)) * 100)) : 100}%; background: #16A34A !important;"></div>
-                </div>
-                ${opts.qualityNote ? `<div class="org-res-quality-note">${_esc(opts.qualityNote)}</div>` : ''}
-                <div class="org-res-est-bottom">
-                  <button type="button" class="org-res-backtrack-btn" id="org-backtrack-btn">
-                    Need to adjust? <span class="org-res-backtrack-link">↶ Return to editor</span>
-                  </button>
+                <div class="org-res-stat-sub">
+                  <span>${hasSavings && opts.savedBytes ? `Saved ${_bytes(opts.savedBytes)} · Local processing` : (hasSavings ? `Reduced by ${opts.reductionPct}% · Lossless` : `Already optimal · Original fidelity`)}</span>
+                  ${opts.onBacktrack ? `<button type="button" class="org-res-backtrack-link" id="org-backtrack-btn" title="Adjust settings">Edit settings</button>` : ''}
                 </div>
               </div>
 
               <!-- Split Download CTA Button -->
               <div class="org-split-dl-wrapper" id="org-split-dl-wrapper">
                 <div class="org-split-btn-group">
-                  <button type="button" class="cpdf-benchmark-cta org-split-btn-main" id="org-main-dl-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <button type="button" class="cpdf-benchmark-cta org-split-btn-main" id="org-main-dl-btn" title="Download ${_esc(filename)}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    <span>Download ${isCollection ? 'All (.zip)' : _esc(filename)}</span>
+                    <span>${ctaLabel}</span>
                   </button>
                   <button type="button" class="org-split-btn-toggle" id="org-dl-dropdown-toggle" title="More download options" aria-haspopup="true" aria-expanded="false">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -859,47 +1257,55 @@ try {
               <div class="org-export-as-wrapper" id="org-export-as-wrapper">
                 <button type="button" class="org-btn-export-as" id="org-export-as-btn" aria-haspopup="true" aria-expanded="false">
                   <div class="org-btn-export-as-left">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
+                      <polyline points="16 7 12 3 8 7"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                     <span>Export as</span>
                   </div>
-                  <svg class="org-btn-export-as-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"/>
+                  <svg class="org-btn-export-as-arrow" width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M3 6l5 5 5-5z"/>
                   </svg>
                 </button>
                 <div class="org-floating-menu" id="org-export-menu">
                   ${exportOptions.map((eo, idx) => `
                     <button type="button" class="org-floating-menu-item" data-export-ext="${eo.ext}">
-                      <span class="org-format-badge ${eo.badgeCls || 'badge-doc'}">${eo.badge}</span>
+                      <span class="org-format-badge badge-${(eo.ext || eo.brand || 'doc').toLowerCase()}">${(eo.ext || eo.brand || 'FILE').toUpperCase()}</span>
                       <div class="org-floating-menu-text">
                         <span class="org-floating-menu-title">${_esc(eo.title)}</span>
-                        <span class="org-floating-menu-sub">${_esc(eo.sub)}</span>
+                        ${eo.sub ? `<span class="org-floating-menu-sub">${_esc(eo.sub)}</span>` : ''}
                       </div>
                     </button>
                   `).join('')}
                 </div>
               </div>
 
-              <!-- Utility Actions Trio: Share, Print, Delete -->
+              <!-- Utility Actions Trio: Share, Print, New, Delete -->
               <div class="org-utility-trio">
                 <button type="button" class="org-utility-btn" id="org-act-share" title="Open native Windows/OS share dialog" aria-label="Share file">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                   </svg>
                   <span>Share</span>
                 </button>
                 <button type="button" class="org-utility-btn" id="org-act-print" title="Open native Windows/browser print dialog" aria-label="Print document">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 6 2 18 2 18 9"/>
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                     <rect x="6" y="14" width="12" height="8"/>
                   </svg>
                   <span>Print</span>
                 </button>
+                <button type="button" class="org-utility-btn" id="org-act-new" title="Process another file in this tool" aria-label="Process another file">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                  <span>New</span>
+                </button>
                 <button type="button" class="org-utility-btn org-utility-btn--delete" id="org-act-delete" title="Clear document from session" aria-label="Clear document">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                     <line x1="10" y1="11" x2="10" y2="17"/>
@@ -909,13 +1315,13 @@ try {
                 </button>
               </div>
 
-              <!-- "Or continue in" Workflow Continuation (Total 4 Cards) -->
+              <!-- "Or continue in" Workflow Continuation (Curated 4 Cards) -->
               <div class="org-continue-section">
                 <div class="org-continue-header">
                   <span class="org-continue-title">Or continue in</span>
                 </div>
                 <div class="conv-smart-tools-list org-continue-list">
-                  ${smartTools.map(st => `
+                  ${smartTools.slice(0, 4).map(st => `
                     <div class="conv-smart-tool-item org-continue-item" data-tool-id="${st.id}" tabindex="0" role="button" title="${_esc(st.name)} - ${_esc(st.sub || '')}">
                       <div class="conv-smart-tool-left">
                         <span class="conv-smart-tool-icon org-continue-badge" style="background:${st.color || '#00B0FF'};">${st.icon || ''}</span>
@@ -928,17 +1334,6 @@ try {
                   `).join('')}
                 </div>
               </div>
-            </div>
-
-            <!-- Footer Action: Elevated Secondary Button -->
-            <div class="org-res-footer">
-              <button type="button" class="org-btn-secondary-full" id="org-again-trigger">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>${opts.againLabel || 'Process another file'}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -1336,13 +1731,60 @@ try {
           }
         }
 
+        // 8. PDF/A Archival Export
+        if (targetExt === 'pdfa') {
+          if (isPdf && curBlob) {
+            dismissLoading();
+            downloadBlob(curBlob, `${baseName}-archival.pdf`);
+            window.FF?.util?.toast?.(`Exported PDF/A archival document`, 'success');
+            return;
+          }
+        }
+
+        // 9. PDF to Excel (.xlsx) direct run if available
+        if (targetExt === 'xlsx' && isPdf && curBlob && window.FF?.registry?.get?.('pdf-to-excel')) {
+          try {
+            const engine = window.FF.registry.get('pdf-to-excel');
+            if (engine && typeof engine.run === 'function') {
+              const out = await engine.run({ file: curBlob, inputs: {} });
+              if (out?.blob) {
+                dismissLoading();
+                downloadBlob(out.blob, `${baseName}.xlsx`);
+                window.FF?.util?.toast?.(`Exported to ${baseName}.xlsx`, 'success');
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('[Export] pdf-to-excel direct run failed, falling back to handoff:', e);
+          }
+        }
+
+        // 10. PDF to PowerPoint (.pptx) direct run if available
+        if (targetExt === 'pptx' && isPdf && curBlob && window.FF?.registry?.get?.('pdf-to-ppt')) {
+          try {
+            const engine = window.FF.registry.get('pdf-to-ppt');
+            if (engine && typeof engine.run === 'function') {
+              const out = await engine.run({ file: curBlob, inputs: {} });
+              if (out?.blob) {
+                dismissLoading();
+                downloadBlob(out.blob, `${baseName}.pptx`);
+                window.FF?.util?.toast?.(`Exported to ${baseName}.pptx`, 'success');
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('[Export] pdf-to-ppt direct run failed, falling back to handoff:', e);
+          }
+        }
+
         // Generic fallback: Handoff to dedicated tool if complex library required
         dismissLoading();
         const convMap = {
           'docx': isPdf ? 'pdf-to-word' : 'docx-to-pdf',
           'xlsx': isPdf ? 'pdf-to-excel' : 'excel-to-pdf',
           'csv': isPdf ? 'pdf-to-csv' : 'csv-to-pdf',
-          'pptx': 'pptx-to-pdf',
+          'pptx': isPdf ? 'pdf-to-ppt' : 'pptx-to-pdf',
+          'pdfa': 'pdf-to-pdfa',
           'epub': 'epub-to-pdf',
           'png': isPdf ? 'pdf-to-image' : 'image-convert',
           'jpg': isPdf ? 'pdf-to-jpg' : 'image-convert',
@@ -1381,115 +1823,73 @@ try {
       });
     });
 
-    // ── Native Windows/OS Share Dialogue Handler ──
-    container.querySelector('#org-act-share')?.addEventListener('click', async () => {
-      if (!blob && !files.length) return;
-      const fileToShare = blob instanceof File ? blob : (blob ? new File([blob], filename, { type: blob.type || 'application/octet-stream' }) : null);
-      if (typeof navigator.share === 'function') {
+    // ── Direct Windows Native Share Dialogue Handler ──
+    container.querySelector('#org-act-share')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      closeAllMenus();
+      const curBlob = blob || (files.length === 1 ? (files[0].blob || files[0]) : null);
+      const shareFile = curBlob instanceof File ? curBlob : (curBlob ? new File([curBlob], filename, { type: curBlob.type || 'application/octet-stream' }) : null);
+
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
         try {
-          if (fileToShare && navigator.canShare && navigator.canShare({ files: [fileToShare] })) {
-            await navigator.share({
-              title: filename,
-              files: [fileToShare]
-            });
-            return;
-          } else {
-            await navigator.share({
-              title: filename,
-              text: `File: ${filename}`,
-              url: location.href
-            });
-            return;
+          const shareData = { title: filename, text: filename };
+          if (shareFile && navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+            shareData.files = [shareFile];
+          } else if (url && !url.startsWith('blob:')) {
+            shareData.url = url;
           }
-        } catch (e) {
-          if (e.name === 'AbortError') return;
+          await navigator.share(shareData);
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // User closed the Windows share sheet
+          console.warn('[Share] navigator.share error:', err);
         }
       }
-      if (navigator.clipboard?.writeText) {
-        try {
-          await navigator.clipboard.writeText(location.href);
-          window.FF?.util?.toast?.('Share link copied to clipboard!', 'success');
-          return;
-        } catch (err) {}
+
+      // Fallback if navigator.share is unavailable
+      if (typeof window.FF?.openShareModal === 'function') {
+        window.FF.openShareModal({
+          filename,
+          blob: curBlob,
+          url,
+          sizeText: outSize,
+          format: ext
+        });
+      } else {
+        window.FF?.util?.toast?.('Share dialog unavailable in browser', 'info');
       }
-      if (url) window.open(url, '_blank');
     });
 
-    // ── Native Windows/Browser Print Dialogue Handler ──
-    container.querySelector('#org-act-print')?.addEventListener('click', () => {
-      if (!blob && !url && !opts.text) return;
-      try {
-        if (isPdf && url) {
-          const printIframe = document.createElement('iframe');
-          printIframe.style.position = 'fixed';
-          printIframe.style.right = '0';
-          printIframe.style.bottom = '0';
-          printIframe.style.width = '0';
-          printIframe.style.height = '0';
-          printIframe.style.border = '0';
-          printIframe.src = url;
-          document.body.appendChild(printIframe);
-          printIframe.onload = () => {
-            setTimeout(() => {
-              try {
-                printIframe.contentWindow?.focus();
-                printIframe.contentWindow?.print();
-              } catch (err) {
-                window.open(url, '_blank')?.print();
-              }
-              setTimeout(() => printIframe.remove(), 2000);
-            }, 300);
-          };
-          return;
-        }
-
-        if (isImage && url) {
-          const printIframe = document.createElement('iframe');
-          printIframe.style.position = 'fixed';
-          printIframe.style.right = '0';
-          printIframe.style.bottom = '0';
-          printIframe.style.width = '0';
-          printIframe.style.height = '0';
-          printIframe.style.border = '0';
-          document.body.appendChild(printIframe);
-          const doc = printIframe.contentWindow?.document;
-          if (doc) {
-            doc.open();
-            doc.write(`<!DOCTYPE html><html><head><title>Print ${filename}</title><style>@page { size: auto; margin: 0; } body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; } img { max-width: 100%; max-height: 100vh; object-fit: contain; }</style></head><body><img src="${url}" onload="window.print();" /></body></html>`);
-            doc.close();
+    // ── Direct Windows Native Print Dialogue Handler ──
+    container.querySelector('#org-act-print')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllMenus();
+      if (isPdf && (url || blob)) {
+        const printUrl = url || (blob ? URL.createObjectURL(blob) : '');
+        const pIframe = document.createElement('iframe');
+        pIframe.style.position = 'fixed';
+        pIframe.style.opacity = '0';
+        pIframe.style.pointerEvents = 'none';
+        pIframe.style.width = '1px';
+        pIframe.style.height = '1px';
+        pIframe.src = printUrl;
+        document.body.appendChild(pIframe);
+        let triggered = false;
+        const triggerPrint = () => {
+          if (triggered) return;
+          triggered = true;
+          try {
+            pIframe.contentWindow?.focus();
+            pIframe.contentWindow?.print();
+          } catch (_) {
+            window.print();
           }
-          setTimeout(() => printIframe.remove(), 3000);
-          return;
-        }
-
-        if (isText && (opts.text || blob)) {
-          const textContent = opts.text || (container.querySelector('#org-res-text-preview')?.textContent || '');
-          const printIframe = document.createElement('iframe');
-          printIframe.style.position = 'fixed';
-          printIframe.style.right = '0';
-          printIframe.style.bottom = '0';
-          printIframe.style.width = '0';
-          printIframe.style.height = '0';
-          printIframe.style.border = '0';
-          document.body.appendChild(printIframe);
-          const doc = printIframe.contentWindow?.document;
-          if (doc) {
-            doc.open();
-            doc.write(`<!DOCTYPE html><html><head><title>Print ${filename}</title><style>@page { margin: 20mm; } body { font-family: monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; color: #000; }</style></head><body>${_esc(textContent)}<script>window.onload = function() { window.print(); };<\/script></body></html>`);
-            doc.close();
-          }
-          setTimeout(() => printIframe.remove(), 3000);
-          return;
-        }
-
-        if (url) {
-          const w = window.open(url, '_blank');
-          w?.addEventListener('load', () => w?.print());
-        } else {
-          window.print();
-        }
-      } catch (e) {
-        if (url) window.open(url, '_blank');
+          setTimeout(() => pIframe.remove(), 60000);
+        };
+        pIframe.onload = triggerPrint;
+        setTimeout(triggerPrint, 250);
+      } else {
+        window.print();
       }
     });
 
@@ -1532,16 +1932,19 @@ try {
       }
     });
 
-    // Process Another
-    container.querySelector('#org-again-trigger')?.addEventListener('click', () => {
+    // Process Another Actions (Footer button, Top quick link, Utility New File)
+    const handleProcessAgain = () => {
       if (typeof opts.onAgain === 'function') {
         opts.onAgain();
       } else if (tool?.id && window.FF?.app?.openTool) {
         window.FF.app.openTool(tool.id);
       }
-    });
+    };
+    container.querySelector('#org-again-trigger')?.addEventListener('click', handleProcessAgain);
+    container.querySelector('#org-again-top-btn')?.addEventListener('click', handleProcessAgain);
+    container.querySelector('#org-act-new')?.addEventListener('click', handleProcessAgain);
 
-    // Left Stage Canvas Rendering for PDF (Crisp A4 Proportions & Paper Shadow)
+    // Left Stage Canvas Rendering for PDF (Crisp A4 Proportions & Direct Paper Shadow)
     if (isPdf && blob) {
       let pdfDoc = null;
       let curPage = 1;
@@ -1567,12 +1970,12 @@ try {
           const vp1 = page.getViewport({ scale: 1 });
           const vpW = stageViewport?.clientWidth || stageWrap?.clientWidth || 700;
           const vpH = stageViewport?.clientHeight || stageWrap?.clientHeight || 600;
-          const padX = 36, padY = 36;
+          const padX = 40, padY = 40;
           const availW = Math.max(160, vpW - padX);
           const availH = Math.max(160, vpH - padY);
           const scW = availW / vp1.width;
           const scH = availH / vp1.height;
-          const sc = Math.min(scW, scH, 1.2);
+          const sc = Math.min(scW, scH, 1.25);
           const displayW = Math.max(2, Math.round(vp1.width * sc));
           const displayH = Math.max(2, Math.round(vp1.height * sc));
           const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
@@ -1583,7 +1986,7 @@ try {
           c.style.width = `${displayW}px`;
           c.style.height = `${displayH}px`;
           c.style.borderRadius = '4px';
-          c.style.boxShadow = '0 10px 30px -4px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06)';
+          c.style.boxShadow = '0 16px 36px -6px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.05)';
           c.style.background = '#FFFFFF';
           c.className = 'scan-studio-canvas';
           const ctx = c.getContext('2d');
@@ -1601,14 +2004,29 @@ try {
 
       (async () => {
         try {
-          const pdfjs = window.pdfjsLib || (typeof window.loadJs === 'function' ? await window.loadJs() : null) || (window.load?.pdfjs ? await window.load.pdfjs() : null);
-          if (pdfjs) {
+          let pdfjs = window.pdfjsLib;
+          if (!pdfjs) {
+            if (window.FF?.util?.loadScript) {
+              await window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z');
+            } else if (typeof window.loadScript === 'function') {
+              await window.loadScript('vendor/pdfjs.min.js');
+            }
+          }
+          if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
+            pdfjs = window.pdfjsLib;
+          }
+          if (pdfjs && blob) {
             const u8 = new Uint8Array(await blob.arrayBuffer());
             pdfDoc = await pdfjs.getDocument({ data: u8 }).promise;
             pageTotal = pdfDoc.numPages;
             if (badgePct && !opts.badge) badgePct.textContent = `${pageTotal} Page${pageTotal > 1 ? 's' : ''}`;
             if (pageTotal > 1 && stepperWrap) stepperWrap.style.display = 'inline-flex';
             await renderStagePage(1);
+          } else {
+            if (thumbBox && window.FF?.buildHandcraftedIllustration) {
+              thumbBox.innerHTML = window.FF.buildHandcraftedIllustration('pdf', filename, outSize, 'stage');
+            }
           }
         } catch (e) {
           console.warn('[UnifiedResult] PDF preview error:', e);

@@ -8,7 +8,31 @@
   'use strict';
 
   const U = window.FF.util;
-  const R = window.FF.register;
+  const R = (def) => {
+    if (window.FF?.registry?.get(def?.id)) return;
+    window.FF.register(def);
+  };
+
+  const OCR_LANG_FIELD = {
+    key: 'lang',
+    label: 'OCR Language (for scanned documents)',
+    type: 'select',
+    default: 'auto',
+    options: [
+      { value: 'auto', label: 'Auto-Detect' },
+      { value: 'eng', label: 'English' },
+      { value: 'hin', label: 'Hindi (हिंदी)' },
+      { value: 'spa', label: 'Spanish (Español)' },
+      { value: 'fra', label: 'French (Français)' },
+      { value: 'deu', label: 'German (Deutsch)' },
+      { value: 'ita', label: 'Italian (Italiano)' },
+      { value: 'por', label: 'Portuguese (Português)' },
+      { value: 'chi_sim', label: 'Chinese (简体中文)' },
+      { value: 'jpn', label: 'Japanese (日本語)' },
+      { value: 'ara', label: 'Arabic (العربية)' },
+      { value: 'rus', label: 'Russian (Русский)' }
+    ]
+  };
 
   /* ─── Shared helpers ─────────────────────────────── */
   const load = {
@@ -549,6 +573,192 @@
     } finally { URL.revokeObjectURL(url); }
   }
 
+  /* ─── WebGPU Hardware Acceleration Engine (Phase 5: WGSL Compute Shaders) ─── */
+  const GpuEngine = (() => {
+    let _device = null;
+    let _adapter = null;
+    let _initPromise = null;
+    let _binarizePipeline = null;
+
+    const isSupported = () => typeof navigator !== 'undefined' && !!navigator.gpu;
+
+    const init = async () => {
+      if (!isSupported()) return null;
+      if (_device) return _device;
+      if (_initPromise) return _initPromise;
+
+      _initPromise = (async () => {
+        try {
+          _adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+          if (!_adapter) return null;
+          _device = await _adapter.requestDevice();
+
+          // WGSL Compute Shader for Document Binarization & Thresholding
+          const binarizeShaderCode = `
+            struct Params {
+              width: u32,
+              height: u32,
+              threshold: u32,
+              invert: u32,
+            };
+            @group(0) @binding(0) var<storage, read> inputPixels: array<u32>;
+            @group(0) @binding(1) var<storage, read_write> outputPixels: array<u32>;
+            @group(0) @binding(2) var<uniform> params: Params;
+
+            @compute @workgroup_size(16, 16)
+            fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+              if (id.x >= params.width || id.y >= params.height) {
+                return;
+              }
+              let idx = id.y * params.width + id.x;
+              let pixel = inputPixels[idx];
+              let r = (pixel) & 0xFFu;
+              let g = (pixel >> 8u) & 0xFFu;
+              let b = (pixel >> 16u) & 0xFFu;
+              let a = (pixel >> 24u) & 0xFFu;
+
+              let lum = (299u * r + 587u * g + 114u * b) / 1000u;
+              var outVal: u32 = 255u;
+              if (lum < params.threshold && a > 128u) {
+                outVal = 0u;
+              }
+              if (params.invert == 1u) {
+                outVal = 255u - outVal;
+              }
+              outputPixels[idx] = (a << 24u) | (outVal << 16u) | (outVal << 8u) | outVal;
+            }
+          `;
+
+          const binarizeModule = _device.createShaderModule({ code: binarizeShaderCode });
+          _binarizePipeline = _device.createComputePipeline({
+            layout: 'auto',
+            compute: { module: binarizeModule, entryPoint: 'main' }
+          });
+
+          return _device;
+        } catch (e) {
+          console.warn('[WebGPU] Hardware init failed, fallback to CPU:', e);
+          _device = null;
+          return null;
+        }
+      })();
+
+      return _initPromise;
+    };
+
+    const binarizeCanvas = async (canvas, threshold = 160, invert = false) => {
+      if (!canvas || !canvas.width || !canvas.height) return canvas;
+      const w = canvas.width;
+      const h = canvas.height;
+      const dev = await init();
+
+      if (!dev || !_binarizePipeline) {
+        // CPU Fallback
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        const thresh = threshold;
+        for (let i = 0; i < data.length; i += 4) {
+          const lum = (299 * data[i] + 587 * data[i + 1] + 114 * data[i + 2]) / 1000;
+          let val = (lum < thresh && data[i + 3] > 128) ? 0 : 255;
+          if (invert) val = 255 - val;
+          data[i] = val;
+          data[i + 1] = val;
+          data[i + 2] = val;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        return canvas;
+      }
+
+      try {
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const pixelCount = w * h;
+        const byteSize = pixelCount * 4;
+
+        const inputBuffer = dev.createBuffer({
+          size: byteSize,
+          usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+        const outputBuffer = dev.createBuffer({
+          size: byteSize,
+          usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+        });
+        const readBuffer = dev.createBuffer({
+          size: byteSize,
+          usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+        });
+
+        const paramsArray = new Uint32Array([w, h, threshold, invert ? 1 : 0]);
+        const paramsBuffer = dev.createBuffer({
+          size: 16,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        dev.queue.writeBuffer(inputBuffer, 0, imgData.data.buffer, imgData.data.byteOffset, byteSize);
+        dev.queue.writeBuffer(paramsBuffer, 0, paramsArray.buffer);
+
+        const bindGroup = dev.createBindGroup({
+          layout: _binarizePipeline.getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: { buffer: inputBuffer } },
+            { binding: 1, resource: { buffer: outputBuffer } },
+            { binding: 2, resource: { buffer: paramsBuffer } },
+          ],
+        });
+
+        const encoder = dev.createCommandEncoder();
+        const pass = encoder.beginComputePass();
+        pass.setPipeline(_binarizePipeline);
+        pass.setBindGroup(0, bindGroup);
+        pass.dispatchWorkgroups(Math.ceil(w / 16), Math.ceil(h / 16));
+        pass.end();
+
+        encoder.copyBufferToBuffer(outputBuffer, 0, readBuffer, 0, byteSize);
+        dev.queue.submit([encoder.finish()]);
+
+        await readBuffer.mapAsync(GPUMapMode.READ);
+        const mapped = new Uint8Array(readBuffer.getMappedRange());
+        imgData.data.set(mapped);
+        readBuffer.unmap();
+
+        ctx.putImageData(imgData, 0, 0);
+
+        inputBuffer.destroy();
+        outputBuffer.destroy();
+        readBuffer.destroy();
+        paramsBuffer.destroy();
+
+        return canvas;
+      } catch (e) {
+        console.warn('[WebGPU] Compute execution error, falling back to CPU:', e);
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const lum = (299 * data[i] + 587 * data[i + 1] + 114 * data[i + 2]) / 1000;
+          let val = (lum < threshold && data[i + 3] > 128) ? 0 : 255;
+          if (invert) val = 255 - val;
+          data[i] = val;
+          data[i + 1] = val;
+          data[i + 2] = val;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        return canvas;
+      }
+    };
+
+    return {
+      isSupported,
+      init,
+      binarizeCanvas,
+      getDevice: () => _device,
+      getAdapter: () => _adapter,
+    };
+  })();
+
+  window.__ffGpuEngine = GpuEngine;
+
   /* ─── OCR Engine (Tesseract v4 — persistent worker with correct init sequence) ─── */
   let _ocrWorker = null;
   let _ocrLang = null;
@@ -604,10 +814,12 @@
         try {
           // All bundled models live locally (no CDN — COEP blocks cross-origin).
           // Supports combined langs e.g. 'hin+eng' for mixed-script documents.
+          // Models are cached into IndexedDB under 'filekit-ocr/' for instant repeat starts.
           worker = await T.createWorker(lang, 1, {
             workerPath: base + 'vendor/tesseract/worker.min.js',
             corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
             langPath:   base + 'vendor/tesseract',
+            cachePath:  'filekit-ocr',
             workerBlobURL: false,
             gzip: false,
             logger: makeLogger(),
@@ -621,6 +833,7 @@
               workerPath: base + 'vendor/tesseract/worker.min.js',
               corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
               langPath:   base + 'vendor/tesseract',
+              cachePath:  'filekit-ocr',
               workerBlobURL: false,
               gzip: false,
               logger: makeLogger(),
@@ -633,6 +846,7 @@
               workerPath: base + 'vendor/tesseract/worker.min.js',
               corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
               langPath:   base + 'vendor/tesseract',
+              cachePath:  'filekit-ocr',
               workerBlobURL: false,
               gzip: false,
               logger: makeLogger(),
@@ -736,6 +950,198 @@
     eng: 'English', spa: 'Spanish', fra: 'French', deu: 'German', ita: 'Italian',
     por: 'Portuguese', chi_sim: 'Chinese', jpn: 'Japanese', hin: 'Hindi', ara: 'Arabic', rus: 'Russian',
   };
+
+  /* Fast visual script detector operating directly on canvas pixels.
+     Analyzes horizontal projection profiles, stroke connectivity, and glyph aspect ratios.
+     Executes in ~10-15ms without external model dependencies. */
+  function detectCanvasVisualScript(canvas) {
+    if (!canvas || !canvas.width || !canvas.height) return null;
+    try {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      // Sample central 70% of document (skip outer margins/headers)
+      const sx = Math.round(w * 0.15);
+      const sy = Math.round(h * 0.15);
+      const sw = Math.round(w * 0.7);
+      const sh = Math.min(600, Math.round(h * 0.7));
+      if (sw < 50 || sh < 50) return null;
+
+      const imgData = ctx.getImageData(sx, sy, sw, sh);
+      const data = imgData.data;
+
+      // 1. Compute horizontal row sums of dark pixels
+      const rowSums = new Uint32Array(sh);
+      let totalDark = 0;
+      for (let y = 0; y < sh; y++) {
+        let rowDark = 0;
+        const yOff = y * sw * 4;
+        for (let x = 0; x < sw; x++) {
+          const idx = yOff + x * 4;
+          const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+          if (lum < 160 && data[idx + 3] > 128) {
+            rowDark++;
+          }
+        }
+        rowSums[y] = rowDark;
+        totalDark += rowDark;
+      }
+
+      if (totalDark < 100) return null;
+
+      // 2. Identify text line bands using horizontal projection profile
+      const avgRowDark = totalDark / sh;
+      const threshold = avgRowDark * 0.35;
+      const lineBands = [];
+      let inLine = false, startY = 0;
+      for (let y = 0; y < sh; y++) {
+        if (rowSums[y] > threshold) {
+          if (!inLine) { inLine = true; startY = y; }
+        } else {
+          if (inLine) {
+            inLine = false;
+            const lineH = y - startY;
+            if (lineH >= 8 && lineH <= 60) {
+              lineBands.push({ startY, endY: y, h: lineH });
+            }
+          }
+        }
+      }
+
+      if (lineBands.length < 2) return null;
+
+      // 3. Analyze line band stroke profiles
+      // - Devanagari (Hindi): continuous top headline (shirorekha) causes a sharp peak in upper 20-35% of the line
+      // - Arabic: strong bottom baseline stroke with diacritic dots
+      let devanagariHits = 0;
+      let arabicHits = 0;
+      let validBands = 0;
+
+      for (const band of lineBands) {
+        const lh = band.h;
+        if (lh < 10) continue;
+        validBands++;
+
+        const lowerY = band.startY + Math.floor(lh * 0.70);
+        let upperSum = 0, midSum = 0, lowerSum = 0;
+        for (let y = band.startY; y < band.startY + Math.floor(lh * 0.35); y++) upperSum += rowSums[y];
+        for (let y = band.startY + Math.floor(lh * 0.35); y < lowerY; y++) midSum += rowSums[y];
+        for (let y = lowerY; y < band.endY; y++) lowerSum += rowSums[y];
+
+        // Continuous horizontal stroke in upper portion (shirorekha)
+        if (upperSum > midSum * 1.3 && upperSum > lowerSum * 1.2) {
+          devanagariHits++;
+        }
+        // Arabic cursive baseline: heavy lower density
+        if (lowerSum > midSum * 1.35 && lowerSum > upperSum * 1.25) {
+          arabicHits++;
+        }
+      }
+
+      if (validBands >= 2) {
+        if (devanagariHits / validBands >= 0.40) return 'hin';
+        if (arabicHits / validBands >= 0.40) return 'ara';
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /* Sniff script from PDF font dictionaries before OCR */
+  function detectScriptFromPdfFonts(tc) {
+    if (!tc || !tc.styles) return null;
+    try {
+      const styles = Object.values(tc.styles);
+      for (const s of styles) {
+        const fn = String(s?.fontFamily || s?.name || '').toLowerCase();
+        if (/mangal|nirmala|aparajita|kruti|devanagari|hindi|gautami|kalinga|chanderi/i.test(fn)) return 'hin';
+        if (/amiri|scheherazade|naskh|kufi/i.test(fn) || (fn.includes('arabic') && !fn.includes('numbers'))) return 'ara';
+        if (/simsun|simhei|yahei|fangsong|kaiti|han/i.test(fn)) return 'chi_sim';
+        if (/meiryo|gothic|mincho|kozuka|kana/i.test(fn)) return 'jpn';
+        if (/malgun|gulim|batang|dotum|hangul/i.test(fn)) return 'kor';
+        if (/cyrillic|arial cyr|times cyr/i.test(fn)) return 'rus';
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /* IndexedDB Cache Statistics */
+  function _openOcrIdb() {
+    return new Promise((resolve, reject) => {
+      try {
+        const req = indexedDB.open('keyval-store');
+        req.onupgradeneeded = () => { try { req.result.createObjectStore('keyval'); } catch (_) {} };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error('IndexedDB blocked'));
+      } catch (e) { reject(e); }
+    });
+  }
+
+  async function getOcrCacheStats() {
+    try {
+      const db = await _openOcrIdb();
+      return new Promise((resolve) => {
+        try {
+          if (!db.objectStoreNames.contains('keyval')) {
+            db.close();
+            return resolve({ count: 0, models: [], keys: [] });
+          }
+          const tx = db.transaction('keyval', 'readonly');
+          const store = tx.objectStore('keyval');
+          const keysReq = store.getAllKeys();
+          keysReq.onsuccess = () => {
+            const rawKeys = keysReq.result || [];
+            const keys = rawKeys.filter((k) => typeof k === 'string' && k.includes('.traineddata'));
+            db.close();
+            resolve({
+              count: keys.length,
+              models: keys.map((k) => k.replace(/^.*[\/\\]/, '').replace(/\.traineddata$/, '')),
+              keys,
+            });
+          };
+          keysReq.onerror = () => { db.close(); resolve({ count: 0, models: [], keys: [] }); };
+        } catch (_) {
+          try { db.close(); } catch (_) {}
+          resolve({ count: 0, models: [], keys: [] });
+        }
+      });
+    } catch (_) {
+      return { count: 0, models: [], keys: [] };
+    }
+  }
+
+  /* Clear IndexedDB OCR Cache */
+  async function clearOcrCache() {
+    try {
+      const db = await _openOcrIdb();
+      return new Promise((resolve) => {
+        try {
+          if (!db.objectStoreNames.contains('keyval')) {
+            db.close();
+            return resolve(true);
+          }
+          const tx = db.transaction('keyval', 'readwrite');
+          const store = tx.objectStore('keyval');
+          const keysReq = store.getAllKeys();
+          keysReq.onsuccess = () => {
+            const rawKeys = keysReq.result || [];
+            const keys = rawKeys.filter((k) => typeof k === 'string' && k.includes('.traineddata'));
+            keys.forEach((k) => store.delete(k));
+            tx.oncomplete = () => { db.close(); resolve(true); };
+            tx.onerror = () => { db.close(); resolve(false); };
+          };
+          keysReq.onerror = () => { db.close(); resolve(false); };
+        } catch (_) {
+          try { db.close(); } catch (_) {}
+          resolve(false);
+        }
+      });
+    } catch (_) {
+      return false;
+    }
+  }
 
 
   /* Build an editable Word (.doc) file from the recognized text with no
@@ -1159,13 +1565,21 @@
 
   window.__ffOcrEngine = {
     recognizeCanvases: ocrRecognize,
+    getWorker: getOrInitOcrWorker,
+    getCacheStats: getOcrCacheStats,
+    clearCache: clearOcrCache,
+    detectVisualScript: detectCanvasVisualScript,
+    detectScriptFromFonts: detectScriptFromPdfFonts,
     async runPdfOcr(file, onProgress, lang = 'eng') {
       const pdfjs = await load.pdfjs();
       const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
       const canvases = [];
+      const pageDims = [];
+      const cropOffsets = [];
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
         const vp1 = page.getViewport({ scale: 1 });
+        pageDims.push({ pw: vp1.width, ph: vp1.height });
         // Higher res for small print (admit cards, forms): up to 2400px, min scale 2
         const sc = Math.min(3, 2400 / Math.max(vp1.width, vp1.height));
         const vp = page.getViewport({ scale: Math.max(sc, 2) });
@@ -1175,6 +1589,7 @@
         // Crop border strips (repeated margin text). Top/bottom stay tight
         // (2%/3%) so date + URL footer lines survive; sides take 6%.
         let cropped = canvas;
+        let ox = 0, oy = 0;
         try {
           const mx = Math.round(canvas.width * 0.06);
           const myT = Math.round(canvas.height * 0.02);
@@ -1184,25 +1599,46 @@
             n.width = canvas.width - mx * 2; n.height = canvas.height - myT - myB;
             n.getContext('2d').drawImage(canvas, mx, myT, n.width, n.height, 0, 0, n.width, n.height);
             cropped = n;
+            ox = mx;
+            oy = myT;
           }
         } catch (_) {}
+        cropOffsets.push({ ox, oy, origW: canvas.width, origH: canvas.height });
         canvases.push(cropped);
         if (typeof onProgress === 'function') onProgress(0.04 + 0.12 * (i / doc.numPages));
       }
       const fitted = canvases.map((c) => fitCanvas(c, 2000));
-      // Auto-detect: fast English probe on page 1, then full run in the
-      // matched language. Non-Latin scripts get '+eng' so mixed documents
-      // (e.g. Hindi/English admit cards) keep both.
+      // Auto-detect: check document sample text or probe page 1
       let useLang = lang || 'eng';
       if (useLang === 'auto') {
         try {
           _ocrNotify('Detecting document language…');
-          const probe = await ocrRecognize(fitted.slice(0, 1), undefined, 'eng');
-          const detected = detectScriptLanguage(probe[0] && probe[0].text);
+          let sample = '';
+          let fontScript = null;
+          try {
+            const p1 = await doc.getPage(1);
+            const tc1 = await p1.getTextContent();
+            sample = (tc1.items || []).map(it => it.str).join(' ').trim();
+            fontScript = detectScriptFromPdfFonts(tc1);
+          } catch (_) {}
+          let detected = 'eng';
+          if (sample.length >= 10) {
+            detected = detectScriptLanguage(sample);
+          } else if (fontScript) {
+            detected = fontScript;
+          } else {
+            const visualScript = detectCanvasVisualScript(fitted[0] || canvases[0]);
+            if (visualScript) {
+              detected = visualScript;
+            } else {
+              const probe = await ocrRecognize(fitted.slice(0, 1), undefined, 'hin+eng');
+              detected = detectScriptLanguage(probe[0] && probe[0].text);
+            }
+          }
           const nonLatin = ['hin', 'ara', 'rus', 'chi_sim', 'jpn', 'kor', 'tha'];
           useLang = nonLatin.includes(detected) ? `${detected}+eng` : detected;
           _ocrNotify(`Detected ${OCR_LANG_LABELS[detected] || detected} — recognizing…`);
-        } catch (_) { useLang = 'eng'; }
+        } catch (_) { useLang = 'hin+eng'; }
       }
       // Uniform text blocks (forms/admit cards) read far better with PSM 6 than auto.
       try {
@@ -1214,18 +1650,33 @@
       const results = await ocrRecognize(fitted, (p) => { if (typeof onProgress === 'function') onProgress(0.16 + 0.84 * p); }, useLang);
       const text = results.map((r, i) => '── Page ' + (i + 1) + ' ──\n' + ((r.text || '').trim())).filter(Boolean).join('\n\n');
       if (!text.trim()) throw new Error('No text recognised — the scan may be too blurry or blank.');
-      // Word boxes (canvas pixels) so converters can recover tables/lists
-      // geometrically instead of flattening OCR text to paragraphs.
-      const ocrPages = results.map((r, i) => ({
-        words: ((r.words || []).map((w) => ({
-          text: String((w.text || '').trim()),
-          x0: w.bbox ? w.bbox.x0 : 0, y0: w.bbox ? w.bbox.y0 : 0,
-          x1: w.bbox ? w.bbox.x1 : 0, y1: w.bbox ? w.bbox.y1 : 0,
-          conf: w.confidence || 0,
-        }))).filter((w) => w.text),
-        cw: (fitted[i] && fitted[i].width) || 0,
-        ch: (fitted[i] && fitted[i].height) || 0,
-      }));
+      // Word boxes (canvas pixels) mapped back to true canvas space so converters
+      // can recover tables/lists geometrically instead of flattening OCR text.
+      const ocrPages = results.map((r, i) => {
+        const co = cropOffsets[i] || { ox: 0, oy: 0 };
+        const fitCv = fitted[i];
+        const fitScale = fitCv ? (canvases[i].width / fitCv.width) : 1;
+        const totalW = (co.origW || (fitCv && fitCv.width) || 1200);
+        const totalH = (co.origH || (fitCv && fitCv.height) || 1600);
+        return {
+          words: ((r.words || []).map((w) => {
+            const b = w.bbox || { x0: 0, y0: 0, x1: 0, y1: 0 };
+            const x0 = b.x0 * fitScale + co.ox;
+            const y0 = b.y0 * fitScale + co.oy;
+            const x1 = b.x1 * fitScale + co.ox;
+            const y1 = b.y1 * fitScale + co.oy;
+            return {
+              text: String((w.text || '').trim()),
+              x0, y0, x1, y1,
+              conf: w.confidence || 0,
+            };
+          })).filter((w) => w.text),
+          cw: totalW,
+          ch: totalH,
+          pw: (pageDims[i] && pageDims[i].pw) || 595.28,
+          ph: (pageDims[i] && pageDims[i].ph) || 841.89,
+        };
+      });
       return Object.assign(textOut(text, U.baseName(file.name) + '-ocr.txt'), { ocrPages });
     },
   };
@@ -1465,7 +1916,8 @@
         { value: 'reflow', label: 'Reflowable E-Reader (Chapters & Resizable Text)' },
         { value: 'fixed', label: 'Fixed Page Images (Comics & Visual Documents)' }
       ] },
-      { key: 'scale', label: 'Image Scale', type: 'select', default: '1.25', options: ['1', '1.25', '1.5'] }
+      { key: 'scale', label: 'Image Scale', type: 'select', default: '1.25', options: ['1', '1.25', '1.5'] },
+      OCR_LANG_FIELD
     ],
     async run({ file, inputs, onProgress }) {
       if (typeof window.convertPdfToEpub === 'function') {
@@ -1633,7 +2085,8 @@
         { value: 'executive', label: 'Executive Summary (Metrics & Overview)' },
         { value: 'keypoints', label: 'Key Highlights & Action Points' }
       ] },
-      { key: 'length', label: 'Summary length', type: 'select', default: 'medium', options: ['short', 'medium', 'long'] }
+      { key: 'length', label: 'Summary length', type: 'select', default: 'medium', options: ['short', 'medium', 'long'] },
+      OCR_LANG_FIELD
     ],
     async run({ file, inputs, onProgress }) {
       if (typeof window.convertPdfToSummary === 'function') {
@@ -1647,100 +2100,761 @@
      Documents category
   ════════════════════════════════════════════════════════════════ */
 
+  /* ── Mastered Spreadsheet (.xlsx / .xls / .ods / .csv / .tsv) Vector Compiler ── */
+  async function buildExcelToPdf(fileOrWb, XLSX, PDFLib, opts = {}, onProgress) {
+    let wb;
+    if (fileOrWb && fileOrWb.SheetNames) {
+      wb = fileOrWb;
+    } else {
+      const buf = fileOrWb instanceof ArrayBuffer ? fileOrWb : (fileOrWb.arrayBuffer ? await fileOrWb.arrayBuffer() : await u8(fileOrWb));
+      wb = XLSX.read(buf, { type: 'array', cellDates: true, cellStyles: true, cellNF: true });
+    }
+
+    if (!wb.SheetNames || !wb.SheetNames.length) {
+      throw new Error('This spreadsheet file does not contain any readable sheets.');
+    }
+
+    const sheetScope = opts.sheetScope || (opts.sheet ? 'single' : 'all');
+    const targetSheetNo = +(opts.sheet || 1);
+    const userOrientation = opts.orientation || 'auto'; // 'auto' | 'portrait' | 'landscape'
+    const pageSizeName = opts.pageSize || 'a4'; // 'a4' | 'letter'
+    const theme = opts.theme || 'slate'; // 'slate' | 'green' | 'blue' | 'monochrome'
+    const showZebra = opts.zebra !== false;
+
+    const THEMES = {
+      slate: {
+        hdrBg: PDFLib.rgb(0.94, 0.96, 0.98),
+        hdrText: PDFLib.rgb(0.06, 0.09, 0.16),
+        hdrBorder: PDFLib.rgb(0.8, 0.84, 0.88),
+        gridBorder: PDFLib.rgb(0.89, 0.91, 0.94),
+        evenBg: PDFLib.rgb(0.97, 0.98, 0.99),
+        oddBg: PDFLib.rgb(1, 1, 1),
+        totalBg: PDFLib.rgb(0.93, 0.95, 0.98),
+        bannerBg: PDFLib.rgb(0.15, 0.23, 0.36),
+        bannerText: PDFLib.rgb(1, 1, 1),
+        accent: PDFLib.rgb(0.15, 0.39, 0.92)
+      },
+      green: {
+        hdrBg: PDFLib.rgb(0.92, 0.98, 0.94),
+        hdrText: PDFLib.rgb(0.02, 0.31, 0.23),
+        hdrBorder: PDFLib.rgb(0.65, 0.95, 0.82),
+        gridBorder: PDFLib.rgb(0.88, 0.95, 0.91),
+        evenBg: PDFLib.rgb(0.96, 0.99, 0.97),
+        oddBg: PDFLib.rgb(1, 1, 1),
+        totalBg: PDFLib.rgb(0.9, 0.97, 0.93),
+        bannerBg: PDFLib.rgb(0.09, 0.45, 0.27),
+        bannerText: PDFLib.rgb(1, 1, 1),
+        accent: PDFLib.rgb(0.06, 0.72, 0.51)
+      },
+      blue: {
+        hdrBg: PDFLib.rgb(0.93, 0.96, 1.0),
+        hdrText: PDFLib.rgb(0.12, 0.23, 0.54),
+        hdrBorder: PDFLib.rgb(0.75, 0.86, 0.99),
+        gridBorder: PDFLib.rgb(0.88, 0.92, 0.98),
+        evenBg: PDFLib.rgb(0.97, 0.98, 1.0),
+        oddBg: PDFLib.rgb(1, 1, 1),
+        totalBg: PDFLib.rgb(0.91, 0.95, 1.0),
+        bannerBg: PDFLib.rgb(0.15, 0.39, 0.92),
+        bannerText: PDFLib.rgb(1, 1, 1),
+        accent: PDFLib.rgb(0.15, 0.39, 0.92)
+      },
+      monochrome: {
+        hdrBg: PDFLib.rgb(0.9, 0.91, 0.93),
+        hdrText: PDFLib.rgb(0.07, 0.09, 0.15),
+        hdrBorder: PDFLib.rgb(0.7, 0.73, 0.78),
+        gridBorder: PDFLib.rgb(0.85, 0.87, 0.9),
+        evenBg: PDFLib.rgb(0.98, 0.98, 0.99),
+        oddBg: PDFLib.rgb(1, 1, 1),
+        totalBg: PDFLib.rgb(0.9, 0.91, 0.93),
+        bannerBg: PDFLib.rgb(0.2, 0.22, 0.26),
+        bannerText: PDFLib.rgb(1, 1, 1),
+        accent: PDFLib.rgb(0.3, 0.35, 0.4)
+      }
+    };
+    const pal = THEMES[theme] || THEMES.slate;
+
+    const pdfDoc = await PDFLib.PDFDocument.create();
+    const fontNorm = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+    function sanitize(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/\u2014/g, '--')
+        .replace(/\u2013/g, '-')
+        .replace(/\u2026/g, '...')
+        .replace(/\u00A0/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[^\x00-\xFF]/g, (c) => c === '\u2022' ? c : c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x00-\xFF]/g, '?'));
+    }
+
+    const PAGE_SIZES = {
+      a4: { w: 595.28, h: 841.89 },
+      letter: { w: 612.0, h: 792.0 }
+    };
+    const baseDim = PAGE_SIZES[pageSizeName] || PAGE_SIZES.a4;
+
+    const sheetsToProcess = [];
+    if (sheetScope === 'single') {
+      const sIdx = Math.max(0, Math.min(targetSheetNo - 1, wb.SheetNames.length - 1));
+      sheetsToProcess.push({ name: wb.SheetNames[sIdx], sheet: wb.Sheets[wb.SheetNames[sIdx]] });
+    } else {
+      wb.SheetNames.forEach((name) => {
+        sheetsToProcess.push({ name, sheet: wb.Sheets[name] });
+      });
+    }
+
+    const totalSheets = sheetsToProcess.length;
+    const pagesToNumber = [];
+
+    for (let sIdx = 0; sIdx < totalSheets; sIdx++) {
+      onProgress?.((sIdx + 1) / totalSheets, `Rendering sheet ${sIdx + 1}/${totalSheets}: ${sheetsToProcess[sIdx].name}`);
+      const { name: sheetName, sheet } = sheetsToProcess[sIdx];
+      if (!sheet || !sheet['!ref']) continue;
+
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      const rowCount = range.e.r - range.s.r + 1;
+      const colCount = range.e.c - range.s.c + 1;
+      if (rowCount <= 0 || colCount <= 0) continue;
+
+      // Merged cell lookup
+      const merges = sheet['!merges'] || [];
+      const mergeMap = {};
+      for (const m of merges) {
+        const masterKey = `${m.s.r},${m.s.c}`;
+        mergeMap[masterKey] = { isMaster: true, colSpan: m.e.c - m.s.c + 1, rowSpan: m.e.r - m.s.r + 1, endR: m.e.r, endC: m.e.c };
+        for (let r = m.s.r; r <= m.e.r; r++) {
+          for (let c = m.s.c; c <= m.e.c; c++) {
+            if (r !== m.s.r || c !== m.s.c) {
+              mergeMap[`${r},${c}`] = { isHidden: true };
+            }
+          }
+        }
+      }
+
+      // Matrix generation
+      const matrix = [];
+      for (let r = range.s.r; r <= range.e.r; r++) {
+        const rowCells = [];
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const cellRef = XLSX.utils.encode_cell({ r, c });
+          const cellObj = sheet[cellRef];
+          let rawVal = cellObj ? (cellObj.w !== undefined ? cellObj.w : (cellObj.v !== undefined ? String(cellObj.v) : '')) : '';
+          rawVal = sanitize(rawVal).trim();
+
+          const isNum = cellObj?.t === 'n' || (/^[\$€£¥₹]?-?[\d,]+(\.\d+)?%?$/.test(rawVal) && !/^\d{4}-\d{2}-\d{2}$/.test(rawVal));
+          const isDate = cellObj?.t === 'd' || /^\d{4}-\d{2}-\d{2}$|^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(rawVal);
+          const isBool = cellObj?.t === 'b' || /^(yes|no|true|false|active|pending|paid|ok|failed)$/i.test(rawVal);
+
+          let align = 'left';
+          if (isNum) align = 'right';
+          else if (isDate || isBool) align = 'center';
+
+          rowCells.push({
+            r, c,
+            text: rawVal,
+            align,
+            isNum, isDate,
+            merge: mergeMap[`${r},${c}`] || null
+          });
+        }
+        matrix.push(rowCells);
+      }
+
+      // Identify Header Row index (first non-full-merged row)
+      let headerRowIdx = 0;
+      for (let r = 0; r < Math.min(3, matrix.length); r++) {
+        const nonMasterMergedCount = matrix[r].filter((c) => c.merge && c.merge.colSpan > 1).length;
+        if (nonMasterMergedCount === 0) {
+          headerRowIdx = r;
+          break;
+        }
+      }
+
+      // Measure Ideal Column Widths
+      const idealColW = Array(colCount).fill(40);
+      const nativeCols = sheet['!cols'] || [];
+
+      for (let c = 0; c < colCount; c++) {
+        let maxColTextW = 30;
+        if (nativeCols[c]) {
+          const wch = nativeCols[c].wch || (nativeCols[c].wpx ? nativeCols[c].wpx / 7 : 0);
+          if (wch > 0) maxColTextW = Math.max(maxColTextW, wch * 7.2);
+        }
+        for (let r = 0; r < matrix.length; r++) {
+          const cell = matrix[r][c];
+          if (cell.merge && cell.merge.colSpan > 1) continue;
+          if (cell.text) {
+            const sz = (r === headerRowIdx) ? 9.5 : 8.5;
+            const f = (r === headerRowIdx) ? fontBold : fontNorm;
+            const w = f.widthOfTextAtSize(cell.text, sz);
+            if (w > maxColTextW) maxColTextW = w;
+          }
+        }
+        idealColW[c] = Math.max(35, Math.min(220, maxColTextW + 16));
+      }
+
+      const totalIdealW = idealColW.reduce((a, b) => a + b, 0);
+
+      // Orientation auto-detection
+      let isLandscape = false;
+      if (userOrientation === 'landscape') isLandscape = true;
+      else if (userOrientation === 'portrait') isLandscape = false;
+      else {
+        const availPortW = baseDim.w - 72;
+        isLandscape = (totalIdealW > availPortW || colCount >= 7);
+      }
+
+      const pageW = isLandscape ? baseDim.h : baseDim.w;
+      const pageH = isLandscape ? baseDim.w : baseDim.h;
+      const mL = 36, mR = 36, mT = 42, mB = 38;
+      const availW = pageW - mL - mR;
+
+      const finalColW = idealColW.map((w) => (w / totalIdealW) * availW);
+
+      let curPage = pdfDoc.addPage([pageW, pageH]);
+      pagesToNumber.push({ page: curPage, sheetName, pageW, pageH, mB });
+      let curY = pageH - mT;
+
+      // Sheet Banner for multi-sheet
+      if (totalSheets > 1) {
+        const bannerH = 26;
+        curPage.drawRectangle({
+          x: mL, y: curY - bannerH, width: availW, height: bannerH,
+          color: pal.bannerBg
+        });
+        const bannerTitle = `${sheetName}  ·  ${rowCount} rows × ${colCount} cols`;
+        curPage.drawText(bannerTitle, {
+          x: mL + 12, y: curY - bannerH + 8,
+          size: 10, font: fontBold, color: pal.bannerText
+        });
+        curY -= (bannerH + 12);
+      }
+
+      const renderHeaderRow = () => {
+        const rowH = 22;
+        curPage.drawRectangle({
+          x: mL, y: curY - rowH, width: availW, height: rowH,
+          color: pal.hdrBg,
+          borderColor: pal.hdrBorder,
+          borderWidth: 1
+        });
+
+        let cellX = mL;
+        const hRow = matrix[headerRowIdx] || matrix[0];
+        for (let c = 0; c < colCount; c++) {
+          const cell = hRow[c];
+          const cW = finalColW[c];
+          if (cell && cell.text) {
+            const textW = fontBold.widthOfTextAtSize(cell.text, 9);
+            let textX = cellX + 6;
+            if (cell.align === 'right') textX = cellX + cW - textW - 8;
+            else if (cell.align === 'center') textX = cellX + (cW - textW) / 2;
+
+            curPage.drawText(cell.text, {
+              x: textX, y: curY - rowH + 6.5,
+              size: 9, font: fontBold, color: pal.hdrText
+            });
+          }
+          cellX += cW;
+        }
+        curY -= rowH;
+      };
+
+      // Title banner rows before headerRowIdx
+      for (let rIdx = 0; rIdx < headerRowIdx; rIdx++) {
+        const row = matrix[rIdx];
+        const rowH = 22;
+        let cellX = mL;
+        for (let c = 0; c < colCount; c++) {
+          const cell = row[c];
+          const cW = finalColW[c];
+          if (cell.merge && cell.merge.isHidden) { cellX += cW; continue; }
+          const colSpan = cell.merge ? cell.merge.colSpan : 1;
+          const spanW = finalColW.slice(c, c + colSpan).reduce((a, b) => a + b, 0);
+
+          curPage.drawRectangle({
+            x: cellX, y: curY - rowH, width: spanW, height: rowH,
+            color: pal.oddBg,
+            borderColor: pal.gridBorder,
+            borderWidth: 0.5
+          });
+
+          if (cell && cell.text) {
+            curPage.drawText(cell.text, {
+              x: cellX + 8, y: curY - rowH + 6.5,
+              size: 9.5, font: fontBold, color: pal.hdrText
+            });
+          }
+          cellX += spanW;
+        }
+        curY -= rowH;
+      }
+
+      // Initial column header
+      renderHeaderRow();
+
+      // Data Rows
+      for (let rIdx = headerRowIdx + 1; rIdx < matrix.length; rIdx++) {
+        const row = matrix[rIdx];
+        const isTotal = /^(total|grand total|subtotal|sum|average)\b/i.test(row[0]?.text || '');
+
+        let maxLines = 1;
+        for (let c = 0; c < colCount; c++) {
+          const cell = row[c];
+          if (cell && cell.text && (!cell.merge || !cell.merge.isHidden)) {
+            const colSpan = cell.merge ? cell.merge.colSpan : 1;
+            const spanW = finalColW.slice(c, c + colSpan).reduce((a, b) => a + b, 0) - 12;
+            const words = cell.text.split(/\s+/);
+            let line = '';
+            let lines = 1;
+            for (const w of words) {
+              const test = line ? line + ' ' + w : w;
+              if (fontNorm.widthOfTextAtSize(test, 8.5) > spanW && line) {
+                lines++;
+                line = w;
+              } else {
+                line = test;
+              }
+            }
+            if (lines > maxLines) maxLines = lines;
+          }
+        }
+
+        const rowH = Math.max(18, maxLines * 11 + 7);
+
+        // Page Overflow
+        if (curY - rowH < mB + 20) {
+          curPage = pdfDoc.addPage([pageW, pageH]);
+          pagesToNumber.push({ page: curPage, sheetName, pageW, pageH, mB });
+          curY = pageH - mT;
+          renderHeaderRow(); // Re-print header
+        }
+
+        const isEven = rIdx % 2 === 0;
+        const rowBg = isTotal ? pal.totalBg : (showZebra && isEven ? pal.evenBg : pal.oddBg);
+
+        // Row background
+        curPage.drawRectangle({
+          x: mL, y: curY - rowH, width: availW, height: rowH,
+          color: rowBg,
+          borderColor: isTotal ? pal.hdrBorder : pal.gridBorder,
+          borderWidth: isTotal ? 1 : 0.5
+        });
+
+        // Cells
+        let cellX = mL;
+        for (let c = 0; c < colCount; c++) {
+          const cell = row[c];
+          const cW = finalColW[c];
+
+          if (cell.merge && cell.merge.isHidden) {
+            cellX += cW;
+            continue;
+          }
+
+          const colSpan = cell.merge ? cell.merge.colSpan : 1;
+          const spanW = finalColW.slice(c, c + colSpan).reduce((a, b) => a + b, 0);
+
+          if (cell.merge && cell.merge.colSpan > 1) {
+            curPage.drawRectangle({
+              x: cellX, y: curY - rowH, width: spanW, height: rowH,
+              color: isTotal ? pal.totalBg : rowBg,
+              borderColor: pal.gridBorder,
+              borderWidth: 0.5
+            });
+          }
+
+          if (cell && cell.text) {
+            const font = isTotal ? fontBold : fontNorm;
+            const sz = isTotal ? 9 : 8.5;
+            const textColor = isTotal ? pal.hdrText : PDFLib.rgb(0.12, 0.16, 0.24);
+
+            const words = cell.text.split(/\s+/);
+            const lines = [];
+            let curLine = '';
+            for (const w of words) {
+              const test = curLine ? curLine + ' ' + w : w;
+              if (font.widthOfTextAtSize(test, sz) > (spanW - 12) && curLine) {
+                lines.push(curLine);
+                curLine = w;
+              } else {
+                curLine = test;
+              }
+            }
+            if (curLine) lines.push(curLine);
+
+            let lineY = curY - (rowH - lines.length * 11) / 2 - sz + 2;
+            for (const lText of lines) {
+              const lineW = font.widthOfTextAtSize(lText, sz);
+              let textX = cellX + 6;
+              if (cell.align === 'right') textX = cellX + spanW - lineW - 8;
+              else if (cell.align === 'center') textX = cellX + (spanW - lineW) / 2;
+
+              curPage.drawText(lText, {
+                x: textX, y: lineY,
+                size: sz, font, color: textColor
+              });
+              lineY -= 11;
+            }
+          }
+
+          cellX += spanW;
+        }
+
+        curY -= rowH;
+      }
+    }
+
+    const totalPages = pagesToNumber.length;
+    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+      const item = pagesToNumber[pIdx];
+      const footerStr = `${item.sheetName}   ·   Page ${pIdx + 1} of ${totalPages}`;
+      const ftW = fontNorm.widthOfTextAtSize(footerStr, 8.5);
+      item.page.drawText(footerStr, {
+        x: (item.pageW - ftW) / 2,
+        y: item.mB - 18,
+        size: 8.5,
+        font: fontNorm,
+        color: PDFLib.rgb(0.55, 0.6, 0.68)
+      });
+    }
+
+    return await pdfDoc.save();
+  }
+
   /* Excel to PDF */
   R({
     id: 'excel-to-pdf', category: 'PDF', name: 'Excel to PDF',
-    description: 'Convert an Excel / ODS / CSV sheet into a paginated PDF table. Client-side via the bundled SheetJS engine.',
-    accepts: ['xlsx', 'xls', 'ods', 'csv'], maxBytes: 100e6,
+    description: 'Convert Excel (.xlsx, .xls) and OpenDocument (.ods) sheets into a desktop-grade paginated vector PDF with auto column fitting, merged cells, alignments & zebra styling.',
+    accepts: ['xlsx', 'xls', 'ods', 'csv', 'tsv'], maxBytes: 150e6,
     fields: [
-      { key: 'sheet', label: 'Sheet number', type: 'number', default: 1, min: 1 },
-      { key: 'landscape', label: 'Orientation', type: 'select', default: 'portrait', options: ['portrait', 'landscape'] },
-      { key: 'scale', label: 'Fit width', type: 'select', default: 'auto', options: ['auto', '1', '1.5', '2'] },
+      { key: 'sheetScope', label: 'Sheet Scope', type: 'select', default: 'all', options: [
+        { value: 'all', label: 'All Sheets (Complete Workbook)' },
+        { value: 'single', label: 'Single Sheet' }
+      ]},
+      { key: 'sheet', label: 'Sheet number (if Single Sheet)', type: 'number', default: 1, min: 1 },
+      { key: 'orientation', label: 'Page Orientation', type: 'select', default: 'auto', options: [
+        { value: 'auto', label: 'Auto-Detect (Landscape for wide sheets)' },
+        { value: 'portrait', label: 'Portrait' },
+        { value: 'landscape', label: 'Landscape' }
+      ]},
+      { key: 'theme', label: 'Theme & Palette', type: 'select', default: 'slate', options: [
+        { value: 'slate', label: 'Modern Slate (Default)' },
+        { value: 'green', label: 'Excel Green' },
+        { value: 'blue', label: 'Corporate Blue' },
+        { value: 'monochrome', label: 'Clean Print (Black & White)' }
+      ]},
+      { key: 'pageSize', label: 'Page Size', type: 'select', default: 'a4', options: [
+        { value: 'a4', label: 'A4 (210 × 297 mm)' },
+        { value: 'letter', label: 'US Letter (8.5 × 11 in)' }
+      ]}
     ],
-    async run({ file, inputs }) {
+    async run({ file, inputs, onProgress }) {
       const XLSX = await load.xlsx();
       const PDFLib = await load.pdflib();
-      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-      const sheetNo = Math.min(Math.max(1, +(inputs?.sheet) || 1), wb.SheetNames.length || 1);
-      const sheet = wb.Sheets[wb.SheetNames[sheetNo - 1]];
-      const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
-      if (!aoa.length) throw new Error('That sheet is empty.');
-      const doc = await PDFLib.PDFDocument.create();
-      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-      const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-      const scale = inputs.scale === 'auto' ? null : +inputs.scale;
-      const landscape = inputs.landscape === 'landscape';
-      const pageW = landscape ? 841.89 : 595.28;
-      const pageH = landscape ? 595.28 : 841.89;
-      const mL = 36, mR = 36, mT = 44, mB = 36;
-      const headers = aoa[0];
-      const rows = aoa.slice(1).filter((r) => r.some((c) => String(c).trim() !== ''));
-      const avail = pageW - mL - mR;
-      const colW = Math.min(140, avail / Math.max(1, headers.length));
-      const size = 8.5;
-      const rowH = size + 7;
-      let page = doc.addPage([pageW, pageH]);
-      let y = pageH - mT;
-      const draw = (cells, isHdr) => {
-        if (y < mB + rowH) { page = doc.addPage([pageW, pageH]); y = pageH - mT; }
-        let x = mL;
-        cells.forEach((cell, i) => {
-          const t = String(cell ?? '').slice(0, Math.max(4, Math.floor(colW / (size * 0.55))));
-          page.drawText(t, { x, y, size, font: isHdr ? bold : font, color: PDFLib.rgb(0.15, 0.15, 0.2) });
-          x += colW;
-        });
-        y -= rowH;
-      };
-      draw(headers, true);
-      y -= 3;
-      rows.forEach((r) => draw(r, false));
-      return pdfOut(await doc.save(), U.baseName(file.name) + '.pdf');
-    },
+      const pdfBytes = await buildExcelToPdf(file, XLSX, PDFLib, inputs, onProgress);
+      return pdfOut(pdfBytes, `${U.baseName(file.name)}.pdf`);
+    }
   });
 
   /* CSV to PDF */
   R({
     id: 'csv-to-pdf', category: 'PDF', name: 'CSV to PDF',
-    description: 'Render a CSV file as a clean paginated PDF table.',
-    accepts: ['csv', 'tsv'], maxBytes: 100e6,
+    description: 'Render CSV or TSV data as a clean, paginated vector PDF table with auto column sizing and alignments.',
+    accepts: ['csv', 'tsv', 'txt'], maxBytes: 100e6,
     fields: [
-      { key: 'delim', label: 'Delimiter', type: 'select', default: ',', options: [',', ';', 'tab'] },
-      { key: 'landscape', label: 'Orientation', type: 'select', default: 'portrait', options: ['portrait', 'landscape'] },
+      { key: 'delim', label: 'Delimiter', type: 'select', default: ',', options: [
+        { value: ',', label: 'Comma (,)' },
+        { value: ';', label: 'Semicolon (;)' },
+        { value: '\t', label: 'Tab (\\t)' },
+        { value: '|', label: 'Pipe (|)' }
+      ]},
+      { key: 'orientation', label: 'Page Orientation', type: 'select', default: 'auto', options: [
+        { value: 'auto', label: 'Auto-Detect' },
+        { value: 'portrait', label: 'Portrait' },
+        { value: 'landscape', label: 'Landscape' }
+      ]},
+      { key: 'theme', label: 'Theme', type: 'select', default: 'slate', options: [
+        { value: 'slate', label: 'Modern Slate' },
+        { value: 'green', label: 'Excel Green' },
+        { value: 'blue', label: 'Corporate Blue' },
+        { value: 'monochrome', label: 'Clean Print' }
+      ]}
     ],
-    async run({ file, inputs }) {
+    async run({ file, inputs, onProgress }) {
+      const XLSX = await load.xlsx();
       const PDFLib = await load.pdflib();
       const text = await file.text();
-      const delim = inputs.delim === 'tab' ? '\t' : inputs.delim;
+      const delim = inputs.delim || ',';
       const aoa = parseCsv(text, delim);
-      if (!aoa.length) throw new Error('No rows found in the CSV.');
-      const doc = await PDFLib.PDFDocument.create();
-      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-      const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-      const landscape = inputs.landscape === 'landscape';
-      const pageW = landscape ? 841.89 : 595.28;
-      const pageH = landscape ? 595.28 : 841.89;
-      const mL = 36, mR = 36, mT = 44, mB = 36;
-      const headers = aoa[0];
-      const rows = aoa.slice(1);
-      const colW = Math.min(140, (pageW - mL - mR) / Math.max(1, headers.length));
-      const size = 8.5;
-      const rowH = size + 7;
-      let page = doc.addPage([pageW, pageH]);
-      let y = pageH - mT;
-      const draw = (cells, isHdr) => {
-        if (y < mB + rowH) { page = doc.addPage([pageW, pageH]); y = pageH - mT; }
-        let x = mL;
-        cells.forEach((cell, i) => {
-          page.drawText(String(cell ?? '').slice(0, Math.max(4, Math.floor(colW / (size * 0.55)))), { x, y, size, font: isHdr ? bold : font, color: PDFLib.rgb(0.15, 0.15, 0.2) });
-          x += colW;
-        });
-        y -= rowH;
-      };
-      draw(headers, true);
-      y -= 3;
-      rows.forEach((r) => draw(r, false));
-      return pdfOut(await doc.save(), U.baseName(file.name) + '.pdf');
-    },
+      if (!aoa.length) throw new Error('No rows found in this CSV file.');
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, U.baseName(file.name) || 'Data');
+      const pdfBytes = await buildExcelToPdf(wb, XLSX, PDFLib, inputs, onProgress);
+      return pdfOut(pdfBytes, `${U.baseName(file.name)}.pdf`);
+    }
+  });
+
+  /* Excel to Markdown */
+  R({
+    id: 'excel-to-md', category: 'Spreadsheets', name: 'Excel to Markdown',
+    description: 'Convert Excel / ODS / CSV spreadsheets into clean GitHub-Flavored Markdown tables with column alignments for documentation, Notion, and AI prompts.',
+    accepts: ['xlsx', 'xls', 'ods', 'csv', 'tsv'], maxBytes: 100e6,
+    fields: [
+      { key: 'sheetScope', label: 'Sheet Scope', type: 'select', default: 'all', options: [
+        { value: 'all', label: 'All Sheets' },
+        { value: 'single', label: 'First / Active Sheet Only' }
+      ]}
+    ],
+    async run({ file, inputs }) {
+      const XLSX = await load.xlsx();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const sheets = (inputs.sheetScope === 'single') ? [wb.SheetNames[0]] : wb.SheetNames;
+      const mdSections = [];
+
+      for (const name of sheets) {
+        const sheet = wb.Sheets[name];
+        if (!sheet) continue;
+        const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+        if (!aoa.length) continue;
+
+        const maxCols = Math.max(...aoa.map(r => r.length));
+        if (maxCols === 0) continue;
+
+        const headerRow = aoa[0] || [];
+        const dataRows = aoa.slice(1);
+
+        const aligns = [];
+        for (let c = 0; c < maxCols; c++) {
+          const sample = dataRows.map(r => r[c]).filter(Boolean);
+          const isNum = sample.some(v => /^[\$€£¥₹]?-?[\d,]+(\.\d+)?%?$/.test(v));
+          const isDate = sample.some(v => /^\d{4}-\d{2}-\d{2}$|^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v));
+          if (isNum) aligns.push('---:');
+          else if (isDate) aligns.push(':---:');
+          else aligns.push(':---');
+        }
+
+        const padRow = (r) => Array.from({ length: maxCols }, (_, i) => String(r[i] ?? '').replace(/\|/g, '\\|').trim());
+        const lines = [];
+        if (sheets.length > 1) lines.push(`### ${name}\n`);
+        lines.push(`| ${padRow(headerRow).join(' | ')} |`);
+        lines.push(`| ${aligns.join(' | ')} |`);
+        for (const row of dataRows) {
+          if (row.some(c => String(c).trim() !== '')) {
+            lines.push(`| ${padRow(row).join(' | ')} |`);
+          }
+        }
+        mdSections.push(lines.join('\n'));
+      }
+      const fullMd = mdSections.join('\n\n---\n\n');
+      return textOut(fullMd, `${U.baseName(file.name)}.md`, 'text/markdown');
+    }
+  });
+
+  /* Excel to HTML */
+  R({
+    id: 'excel-to-html', category: 'Spreadsheets', name: 'Excel to HTML',
+    description: 'Transform spreadsheet sheets into responsive, interactive HTML tables with sticky headers and search filters.',
+    accepts: ['xlsx', 'xls', 'ods', 'csv', 'tsv'], maxBytes: 100e6,
+    async run({ file }) {
+      const XLSX = await load.xlsx();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const title = U.baseName(file.name);
+
+      const sheetTabs = wb.SheetNames.map((name, i) =>
+        `<button class="tab-btn ${i === 0 ? 'active' : ''}" onclick="showSheet(${i})">${esc(name)}</button>`
+      ).join('');
+
+      const sheetTables = wb.SheetNames.map((name, idx) => {
+        const sheet = wb.Sheets[name];
+        const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+        if (!aoa.length) return `<div class="sheet-pane ${idx === 0 ? 'active' : ''}" id="sheet-${idx}"><p style="padding:20px;color:#64748b;">No rows in this sheet.</p></div>`;
+
+        const header = aoa[0] || [];
+        const rows = aoa.slice(1);
+        const ths = header.map(h => `<th>${esc(h)}</th>`).join('');
+        const trs = rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('\n');
+
+        return `
+        <div class="sheet-pane ${idx === 0 ? 'active' : ''}" id="sheet-${idx}">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${ths}</tr></thead>
+              <tbody>${trs}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }).join('\n');
+
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>${esc(title)}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8FAFC; color: #0F172A; margin: 0; padding: 24px; }
+  .container { max-width: 1200px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 24px; border: 1px solid #E2E8F0; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0; }
+  .filter-input { padding: 8px 14px; border-radius: 8px; border: 1.5px solid #E2E8F0; font-size: 13px; outline: none; width: 220px; transition: border-color 0.2s; }
+  .filter-input:focus { border-color: #2563EB; }
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px; overflow-x: auto; }
+  .tab-btn { background: #F1F5F9; border: 1px solid #E2E8F0; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #475569; transition: all 0.15s; }
+  .tab-btn.active { background: #2563EB; color: #FFFFFF; border-color: #2563EB; }
+  .sheet-pane { display: none; }
+  .sheet-pane.active { display: block; }
+  .table-wrap { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+  th { background: #F8FAFC; color: #334155; font-weight: 600; padding: 11px 14px; border-bottom: 1px solid #E2E8F0; position: sticky; top: 0; }
+  td { padding: 9px 14px; border-bottom: 1px solid #F1F5F9; color: #1E293B; }
+  tr:nth-child(even) td { background: #FAFAFA; }
+  tr:hover td { background: #F1F5F9; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>${esc(title)}</h1>
+    <input type="text" class="filter-input" placeholder="Filter rows…" oninput="filterTable(this.value)"/>
+  </div>
+  <div class="tabs">${sheetTabs}</div>
+  ${sheetTables}
+</div>
+<script>
+function showSheet(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.querySelectorAll('.sheet-pane').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+function filterTable(q) {
+  const query = q.toLowerCase();
+  document.querySelectorAll('.sheet-pane.active tbody tr').forEach(tr => {
+    const text = tr.innerText.toLowerCase();
+    tr.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>`;
+      return textOut(fullHtml, `${U.baseName(file.name)}.html`, 'text/html');
+    }
+  });
+
+  /* JSON to Excel */
+  R({
+    id: 'json-to-excel', category: 'Developer', name: 'JSON to Excel',
+    description: 'Convert JSON data (array of objects or nested dictionaries) into a styled .xlsx workbook.',
+    accepts: ['json', 'txt'], maxBytes: 100e6,
+    fields: [
+      { key: 'sheetName', label: 'Sheet Name', type: 'text', default: 'Data' }
+    ],
+    async run({ file, inputs }) {
+      const XLSX = await load.xlsx();
+      const text = await file.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Invalid JSON file. Please check syntax.');
+      }
+
+      const wb = XLSX.utils.book_new();
+      const sName = String(inputs.sheetName || 'Data').slice(0, 31);
+
+      if (Array.isArray(data)) {
+        const ws = Array.isArray(data[0]) ? XLSX.utils.aoa_to_sheet(data) : XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, sName);
+      } else if (typeof data === 'object' && data !== null) {
+        let added = 0;
+        for (const [key, val] of Object.entries(data)) {
+          if (Array.isArray(val)) {
+            const ws = Array.isArray(val[0]) ? XLSX.utils.aoa_to_sheet(val) : XLSX.utils.json_to_sheet(val);
+            XLSX.utils.book_append_sheet(wb, ws, key.slice(0, 31));
+            added++;
+          }
+        }
+        if (!added) {
+          const ws = XLSX.utils.json_to_sheet([data]);
+          XLSX.utils.book_append_sheet(wb, ws, sName);
+        }
+      }
+
+      const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      return { blob: new Blob([out], { type: mime }), filename: `${U.baseName(file.name)}.xlsx`, mime, preview: 'download' };
+    }
+  });
+
+  /* Excel to XML */
+  R({
+    id: 'excel-to-xml', category: 'Spreadsheets', name: 'Excel to XML',
+    description: 'Convert spreadsheet records into structured, valid XML 1.0 documents.',
+    accepts: ['xlsx', 'xls', 'ods', 'csv', 'tsv'], maxBytes: 100e6,
+    async run({ file }) {
+      const XLSX = await load.xlsx();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const toTag = (s) => String(s || '').toLowerCase().trim().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '') || 'field';
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<workbook>\n';
+      for (const sheetName of wb.SheetNames) {
+        xml += `  <sheet name="${esc(sheetName)}">\n`;
+        const sheet = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: '' });
+        for (const row of rows) {
+          xml += '    <record>\n';
+          for (const [col, val] of Object.entries(row)) {
+            const tag = toTag(col);
+            xml += `      <${tag}>${esc(val)}</${tag}>\n`;
+          }
+          xml += '    </record>\n';
+        }
+        xml += '  </sheet>\n';
+      }
+      xml += '</workbook>';
+      return textOut(xml, `${U.baseName(file.name)}.xml`, 'application/xml');
+    }
+  });
+
+  /* Excel to Image */
+  R({
+    id: 'excel-to-image', category: 'Spreadsheets', name: 'Excel to Image (PNG / JPG)',
+    description: 'Render an Excel or CSV sheet into a high-resolution PNG or JPG image for presentations and reports.',
+    accepts: ['xlsx', 'xls', 'ods', 'csv', 'tsv'], maxBytes: 100e6,
+    fields: [
+      { key: 'format', label: 'Image Format', type: 'select', default: 'png', options: [
+        { value: 'png', label: 'PNG (Crisp & Lossless)' },
+        { value: 'jpeg', label: 'JPEG (Compact Photo)' }
+      ]},
+      { key: 'sheet', label: 'Sheet number', type: 'number', default: 1, min: 1 },
+      { key: 'scale', label: 'Resolution Scale', type: 'select', default: '2', options: [
+        { value: '1.5', label: '1.5× Standard' },
+        { value: '2', label: '2× High-DPI (Retina)' },
+        { value: '3', label: '3× Ultra-Sharp' }
+      ]}
+    ],
+    async run({ file, inputs }) {
+      const XLSX = await load.xlsx();
+      const PDFLib = await load.pdflib();
+      const pdfjs = await load.pdfjs();
+
+      const pdfBytes = await buildExcelToPdf(file, XLSX, PDFLib, { sheetScope: 'single', sheetNo: +(inputs.sheet || 1), orientation: 'auto' });
+      const { pages } = await renderPdf(pdfjs, pdfBytes, +(inputs.scale || 2));
+      if (!pages.length) throw new Error('Could not render image.');
+
+      const firstCanvas = pages[0].canvas;
+      const fmt = inputs.format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const ext = inputs.format === 'jpeg' ? 'jpg' : 'png';
+
+      const blob = await new Promise((res, rej) =>
+        firstCanvas.toBlob((b) => b ? res(b) : rej(new Error('Image encoding failed.')), fmt, 0.95)
+      );
+
+      return { blob, filename: `${U.baseName(file.name)}.${ext}`, mime: fmt, preview: 'image' };
+    }
   });
 
   /* PDF to CSV */
@@ -2722,12 +3836,7 @@
                   <div class="org-res-est-top">
                     <div class="cpdf-benchmark-est-metrics">
                       <strong class="cpdf-benchmark-est-new">${sizeLine}</strong>
-                      <span class="cpdf-benchmark-est-pct org-res-badge-pct">${r.pageCount > 1 ? `${r.pageCount} PAGES` : '1 PAGE'} · ${esc((r.formatLabel || 'PDF').toUpperCase())}</span>
                     </div>
-                    <span class="org-res-status-pill">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                      Ready
-                    </span>
                   </div>
                   <div class="cpdf-benchmark-track" style="margin: 6px 0;">
                     <div class="cpdf-benchmark-bar" style="width: 100%; background: #16A34A !important;"></div>
@@ -11620,6 +12729,10 @@
       const aoa = parseDelimited(text, delim);
       if (!aoa.length) throw new Error('The file contains no data rows.');
       const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const isRtl = aoa.some((row) => row.some((cell) => cell && /[\u0590-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(cell))));
+      if (isRtl) {
+        ws['!views'] = [{ rightToLeft: true }];
+      }
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, String(inputs?.sheetName || 'Sheet1').slice(0, 31) || 'Sheet1');
       const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });

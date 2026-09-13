@@ -918,10 +918,50 @@
       const s = frame(container, tool, { title: 'EPUB reader', sub: 'Read the book right in your browser', action: 'Next chapter' });
       s.replaceBtn.addEventListener('click', () => reset());
       s.body.className = 'pro-body pro-reader-body';
-      s.body.innerHTML = `<div class="pro-reader-list" data-chapters></div><div class="pro-reader-pane"><div class="pro-reader-meta" id="rd-meta"></div><div class="pro-reader-text" id="rd-text"><div class="pro-live-err">Loading book…</div></div></div>`;
+      s.body.innerHTML = `
+        <div class="pro-reader-list" data-chapters></div>
+        <div class="pro-reader-pane">
+          <div class="pro-reader-meta" id="rd-meta"></div>
+          <div class="pro-reader-controls" style="display:flex;gap:8px;align-items:center;padding:8px 16px;background:rgba(0,0,0,0.03);border-bottom:1px solid var(--pro-border, #e2e8f0);">
+            <button type="button" id="rd-font-dn" style="padding:4px 8px;border:1px solid var(--pro-border, #ccc);border-radius:4px;background:#fff;cursor:pointer;">A-</button>
+            <button type="button" id="rd-font-up" style="padding:4px 8px;border:1px solid var(--pro-border, #ccc);border-radius:4px;background:#fff;cursor:pointer;">A+</button>
+            <div style="flex:1"></div>
+            <button type="button" class="rd-theme-btn" data-theme="light" style="padding:4px 8px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;">Light</button>
+            <button type="button" class="rd-theme-btn" data-theme="sepia" style="padding:4px 8px;border:1px solid #d2b48c;border-radius:4px;background:#fbf0d9;color:#5f4b32;cursor:pointer;">Sepia</button>
+            <button type="button" class="rd-theme-btn" data-theme="dark" style="padding:4px 8px;border:1px solid #444;border-radius:4px;background:#1e293b;color:#f8fafc;cursor:pointer;">Dark</button>
+          </div>
+          <div class="pro-reader-text" id="rd-text" style="padding:24px;overflow-y:auto;flex:1;font-family:Georgia,serif;line-height:1.75;font-size:16px;">
+            <div class="pro-live-err">Loading book…</div>
+          </div>
+        </div>`;
       const chapterList = s.body.querySelector('[data-chapters]');
       const textEl = s.body.querySelector('#rd-text');
       const metaEl = s.body.querySelector('#rd-meta');
+      let fontSize = 16;
+      s.body.querySelector('#rd-font-dn')?.addEventListener('click', () => {
+        fontSize = Math.max(12, fontSize - 2);
+        textEl.style.fontSize = fontSize + 'px';
+      });
+      s.body.querySelector('#rd-font-up')?.addEventListener('click', () => {
+        fontSize = Math.min(28, fontSize + 2);
+        textEl.style.fontSize = fontSize + 'px';
+      });
+      s.body.querySelectorAll('.rd-theme-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          const t = b.dataset.theme;
+          if (t === 'sepia') {
+            textEl.style.background = '#fbf0d9';
+            textEl.style.color = '#433422';
+          } else if (t === 'dark') {
+            textEl.style.background = '#0f172a';
+            textEl.style.color = '#f1f5f9';
+          } else {
+            textEl.style.background = '#ffffff';
+            textEl.style.color = '#1e293b';
+          }
+        });
+      });
+
       (async () => {
         const fflate = await load.fflate();
         const ep = parseEpub(fflate, await u8(file));
@@ -938,7 +978,8 @@
         const show = (i) => {
           current = i;
           chapterList.querySelectorAll('.pro-reader-chapter').forEach((b, j) => b.classList.toggle('is-on', j === i));
-          textEl.innerHTML = `<p class="pro-reader-body">${esc(strip(chapters[i].html))}</p>`;
+          const paras = strip(chapters[i].html).split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+          textEl.innerHTML = paras.map(p => `<p style="margin-bottom:1.25em;text-indent:1.2em;text-align:justify;">${esc(p)}</p>`).join('');
           textEl.scrollTop = 0;
         };
         chapterList.addEventListener('click', (e) => { const b = e.target.closest('.pro-reader-chapter'); if (b) show(+b.dataset.i); });
@@ -1614,7 +1655,14 @@
         ort.env.wasm.wasmPaths = new URL('vendor/', window.location.href).href;
         const buf = await fetchBgrModel();
         if (bgrOnProg) bgrOnProg(0.96, 'Warming up the model');
-        const session = await ort.InferenceSession.create(buf, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+        let session;
+        try {
+          const ep = (typeof navigator !== 'undefined' && navigator.gpu) ? ['webgpu', 'wasm'] : ['wasm'];
+          session = await ort.InferenceSession.create(buf, { executionProviders: ep, graphOptimizationLevel: 'all' });
+        } catch (gpuErr) {
+          console.warn('[ONNX] WebGPU provider failed, falling back to WASM:', gpuErr);
+          session = await ort.InferenceSession.create(buf, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+        }
         if (bgrOnProg) bgrOnProg(1, 'Ready');
         return { ort, session };
       })().catch((e) => { bgrEngineP = null; throw e; });

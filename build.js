@@ -11,6 +11,9 @@ const distCssDir = path.join(__dirname, 'dist', 'css');
 
 fs.mkdirSync(distJsDir, { recursive: true });
 fs.mkdirSync(distCssDir, { recursive: true });
+if (fs.existsSync(path.join(__dirname, 'assets'))) {
+  fs.cpSync(path.join(__dirname, 'assets'), path.join(__dirname, 'dist', 'assets'), { recursive: true });
+}
 
 const targets = [
   { in: 'js/app.js', out: 'dist/js/app.min.js' },
