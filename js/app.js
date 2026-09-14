@@ -1142,44 +1142,37 @@ try {
           <!-- Left Stage: Dedicated Viewport with Standard A4 Proportions -->
           <div class="cpdf-benchmark-stage scan-result-stage org-result-stage" id="org-res-stage-wrap">
             <div class="org-stage-canvas-viewport" id="org-res-stage-viewport">
-              <div class="org-res-paper ${opts.preview === 'docx' ? 'docx-preview-page' : ''}" id="org-res-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 100%; max-height: calc(100vh - 220px); background: transparent !important; box-shadow: none !important; border: none !important;">
+              <div class="org-res-paper ${opts.preview === 'docx' ? 'docx-preview-page' : ''}" id="org-res-thumb-box" style="margin: auto; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 100%; max-height: 100%; background: transparent !important; box-shadow: none !important; border: none !important;">
                 ${opts.preview === 'docx' ? `
-                  <div class="docx-preview-container" id="docx-preview-root" style="width: 100%; display: flex; align-items: center; justify-content: center;">
+                  <div class="docx-preview-container" id="docx-preview-root" style="width: 100%; max-height: 100%; display: flex; align-items: center; justify-content: center; overflow: auto;">
                     ${window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('docx', filename, outSize, 'stage') : ''}
                   </div>
                 ` : isPdf ? `
-                  <div class="org-res-pdf-loading" id="org-res-pdf-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.414; width: min(300px, calc((100vh - 240px) * 0.707)); height: min(424px, calc(100vh - 240px)); background: #FFFFFF; border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.12); color: #94A3B8; font-size: 13px; font-weight: 500; gap: 10px;">
+                  <div class="org-res-pdf-loading" id="org-res-pdf-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.414; width: min(320px, calc(100% - 48px)); height: min(452px, calc(100% - 48px)); background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05); color: #94A3B8; font-size: 13px; font-weight: 500; gap: 10px;">
                     <div class="cpdf-proc-spin-circle" style="width: 22px; height: 22px; border: 2px solid #E2E8F0; border-top-color: #00C466; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
                     <span>Rendering PDF preview…</span>
                   </div>
                 ` : isImage && url ? `
-                  <img src="${url}" alt="Preview" onerror="this.outerHTML = window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('${ext}', '${_esc(filename)}', '${outSize}', 'stage') : ''" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 4px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06);" />
+                  <img src="${url}" alt="Preview" onerror="this.outerHTML = window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('${ext}', '${_esc(filename)}', '${outSize}', 'stage') : ''" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06); image-rendering: auto; margin: auto;" />
                 ` : isVideo && url ? `
-                  <video src="${url}" controls preload="metadata" style="display: block; max-width: 100%; max-height: calc(100vh - 220px); border-radius: 6px; box-shadow: 0 10px 30px -4px rgba(0,0,0,0.12);"></video>
+                  <video src="${url}" controls preload="metadata" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06); margin: auto;"></video>
                 ` : isText && opts.text ? `
-                  <div style="width: 320px; height: 452px; max-width: 100%; max-height: calc(100vh - 220px); aspect-ratio: 1 / 1.414; padding: 24px 22px; overflow: auto; box-sizing: border-box; background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); margin: auto;">
-                    <pre id="org-res-text-preview" style="margin: 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11.5px; color: #1E293B; white-space: pre-wrap; word-break: break-word; line-height: 1.55;">${_esc(opts.text || 'Reading preview…')}</pre>
+                  <div style="width: min(840px, calc(100% - 32px)); height: calc(100% - 32px); max-width: 100%; max-height: 100%; padding: 28px 26px; overflow: auto; box-sizing: border-box; background: #FFFFFF; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06); margin: auto;">
+                    <pre id="org-res-text-preview" style="margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #1E293B; white-space: pre-wrap; word-break: break-word; line-height: 1.6;">${_esc(opts.text || 'Reading preview…')}</pre>
                   </div>
-                ` : (window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration(ext, filename, outSize, 'stage') : `<div style="width: 320px; height: 452px; aspect-ratio: 1 / 1.414; max-width: 100%; max-height: calc(100vh - 220px); padding: 40px; text-align: center; font-weight: 600; color: #64748B; background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0,0,0,0.1); margin: auto; display: flex; align-items: center; justify-content: center;">${_esc(filename)}</div>`)}
+                ` : (window.FF?.buildHandcraftedIllustration ? `<div style="width: 320px; height: 420px; max-width: 100%; max-height: 100%; margin: auto; display: flex; align-items: center; justify-content: center;">${window.FF.buildHandcraftedIllustration(ext, filename, outSize, 'stage')}</div>` : `<div style="width: 320px; height: 420px; aspect-ratio: 1 / 1.414; max-width: 100%; max-height: 100%; padding: 40px; text-align: center; font-weight: 600; color: #64748B; background: #FFFFFF; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.14); margin: auto; display: flex; align-items: center; justify-content: center;">${_esc(filename)}</div>`)}
               </div>
             </div>
 
-            <!-- Floating Info & Multi-Page Stepper -->
-            <div class="cpdf-benchmark-fileinfo-row">
-              <div class="scan-res-stepper-wrap" id="org-res-stepper-wrap" style="display: none; align-items: center; gap: 4px;">
-                <button type="button" class="cpdf-res-nav-btn" id="org-res-prev" title="Previous page" disabled>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <span class="cpdf-res-step-badge" id="org-res-step-status">1 / 1</span>
-                <button type="button" class="cpdf-res-nav-btn" id="org-res-next" title="Next page">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-              </div>
-              <span class="cpdf-benchmark-fileinfo-text" id="org-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                <span>${_esc(filename)}</span>
-                <span style="color:#94A3B8;font-weight:500;">(${outSize})</span>
-              </span>
+            <!-- Floating Multi-Page Stepper (Only rendered when document has > 1 page) -->
+            <div class="scan-res-stepper-wrap" id="org-res-stepper-wrap" style="display: none;">
+              <button type="button" class="cpdf-res-nav-btn" id="org-res-prev" title="Previous page" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <span class="cpdf-res-step-badge" id="org-res-step-status">1 / 1</span>
+              <button type="button" class="cpdf-res-nav-btn" id="org-res-next" title="Next page">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
             </div>
           </div>
 
@@ -1970,23 +1963,24 @@ try {
           const vp1 = page.getViewport({ scale: 1 });
           const vpW = stageViewport?.clientWidth || stageWrap?.clientWidth || 700;
           const vpH = stageViewport?.clientHeight || stageWrap?.clientHeight || 600;
-          const padX = 40, padY = 40;
+          const padX = 32;
+          const padY = pageTotal > 1 ? 56 : 32;
           const availW = Math.max(160, vpW - padX);
           const availH = Math.max(160, vpH - padY);
           const scW = availW / vp1.width;
           const scH = availH / vp1.height;
-          const sc = Math.min(scW, scH, 1.25);
+          const sc = Math.min(scW, scH);
           const displayW = Math.max(2, Math.round(vp1.width * sc));
           const displayH = Math.max(2, Math.round(vp1.height * sc));
-          const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+          const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
           const vp = page.getViewport({ scale: sc * dpr });
           const c = document.createElement('canvas');
           c.width = Math.round(displayW * dpr);
           c.height = Math.round(displayH * dpr);
           c.style.width = `${displayW}px`;
           c.style.height = `${displayH}px`;
-          c.style.borderRadius = '4px';
-          c.style.boxShadow = '0 16px 36px -6px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.05)';
+          c.style.borderRadius = '6px';
+          c.style.boxShadow = '0 16px 36px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06)';
           c.style.background = '#FFFFFF';
           c.className = 'scan-studio-canvas';
           const ctx = c.getContext('2d');
@@ -2023,6 +2017,18 @@ try {
             if (badgePct && !opts.badge) badgePct.textContent = `${pageTotal} Page${pageTotal > 1 ? 's' : ''}`;
             if (pageTotal > 1 && stepperWrap) stepperWrap.style.display = 'inline-flex';
             await renderStagePage(1);
+
+            // Responsive auto-fit on container resize
+            if (typeof ResizeObserver !== 'undefined' && stageViewport) {
+              let resizeTimer;
+              const ro = new ResizeObserver(() => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                  if (pdfDoc && thumbBox?.isConnected) renderStagePage(curPage);
+                }, 120);
+              });
+              ro.observe(stageViewport);
+            }
           } else {
             if (thumbBox && window.FF?.buildHandcraftedIllustration) {
               thumbBox.innerHTML = window.FF.buildHandcraftedIllustration('pdf', filename, outSize, 'stage');
@@ -4276,6 +4282,17 @@ try {
           el.removeAttribute('title');
         }
       });
+      // Strip ALL title/aria-label from every element inside the right zoom rail
+      document.querySelectorAll('.etxt-right-rail, .etxt-right-rail *, #etxt-floating-zoom, #etxt-floating-zoom *').forEach(el => {
+        el.removeAttribute('title');
+        if (el.getAttribute('aria-label') !== '') {
+          el.setAttribute('aria-label', '');
+        }
+      });
+      // Strip any title= from the entire Edit PDF toolbar (capsule buttons etc.)
+      document.querySelectorAll('.etxt-unified-toolbar, .etxt-unified-toolbar *').forEach(el => {
+        el.removeAttribute('title');
+      });
     }
 
     function initRailHoverIntelligence() {
@@ -4291,7 +4308,7 @@ try {
       if (!window._railTitleScrubberDelegated) {
         window._railTitleScrubberDelegated = true;
         document.addEventListener('mouseover', (e) => {
-          if (e.target.closest('.app-sidebar-rail, #app-home-brand-btn, .rail-item')) {
+          if (e.target.closest('.app-sidebar-rail, #app-home-brand-btn, .rail-item, .etxt-right-rail, #etxt-floating-zoom, .etxt-unified-toolbar')) {
             stripAllRailTitles();
           }
         }, true);
