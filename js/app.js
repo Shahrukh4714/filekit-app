@@ -4289,8 +4289,8 @@ try {
           el.setAttribute('aria-label', '');
         }
       });
-      // Strip any title= from the entire Edit PDF toolbar (capsule buttons etc.)
-      document.querySelectorAll('.etxt-unified-toolbar, .etxt-unified-toolbar *').forEach(el => {
+      // Strip any title= from the entire Edit PDF shell, toolbar, popovers, topbar
+      document.querySelectorAll('.etxt-shell, .etxt-shell *, .etxt-unified-toolbar, .etxt-unified-toolbar *, #app-topbar-center, #app-topbar-center *').forEach(el => {
         el.removeAttribute('title');
       });
     }
@@ -4301,14 +4301,14 @@ try {
       if (existing) {
         try { existing.remove(); } catch {}
       }
-      document.querySelectorAll('.rail-hover-card').forEach(el => {
+      document.querySelectorAll('.rail-hover-card, .tooltip, .app-tooltip').forEach(el => {
         try { el.remove(); } catch {}
       });
       stripAllRailTitles();
       if (!window._railTitleScrubberDelegated) {
         window._railTitleScrubberDelegated = true;
         document.addEventListener('mouseover', (e) => {
-          if (e.target.closest('.app-sidebar-rail, #app-home-brand-btn, .rail-item, .etxt-right-rail, #etxt-floating-zoom, .etxt-unified-toolbar')) {
+          if (e.target.closest('.app-sidebar-rail, #app-home-brand-btn, .rail-item, .etxt-right-rail, #etxt-floating-zoom, .etxt-unified-toolbar, .etxt-shell, .app-topbar')) {
             stripAllRailTitles();
           }
         }, true);

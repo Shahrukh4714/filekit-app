@@ -14435,7 +14435,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           <aside class="etxt-thumbs-drawer" id="etxt-thumbs-drawer" aria-label="Page Thumbnails">
             <div class="etxt-thumbs-head">
               <span class="etxt-thumbs-title">Pages (${pageCount})</span>
-              <button type="button" class="etxt-thumbs-close" id="etxt-thumbs-close" title="Close Drawer">${I.x}</button>
+              <button type="button" class="etxt-thumbs-close" id="etxt-thumbs-close" aria-label="Close Drawer">${I.x}</button>
             </div>
             <div class="etxt-thumbs-scroll">
               ${pages.map((pg, i) => `
@@ -15343,7 +15343,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const isMono = curFontFamily.includes('Courier') || curFontFamily.includes('mono');
 
         microbar.innerHTML = `
-          <select class="etxt-micro-select" id="etxt-m-font" title="Font Family">
+          <select class="etxt-micro-select" id="etxt-m-font" aria-label="Font Family">
             <option value="original"${isOriginal ? ' selected' : ''}>Original</option>
             <option value="Helvetica, Arial, sans-serif"${isSans && !isOriginal ? ' selected' : ''}>Sans</option>
             <option value="'Times New Roman', Times, serif"${isSerif ? ' selected' : ''}>Serif</option>
@@ -15352,37 +15352,37 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn" id="etxt-m-dec" title="Decrease font size">−</button>
+          <button type="button" class="etxt-micro-btn" id="etxt-m-dec" aria-label="Decrease font size">−</button>
           <span class="etxt-micro-size-val">${Math.round(curFontSize / P)}</span>
-          <button type="button" class="etxt-micro-btn" id="etxt-m-inc" title="Increase font size">+</button>
+          <button type="button" class="etxt-micro-btn" id="etxt-m-inc" aria-label="Increase font size">+</button>
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn${curFontWeight === '700' ? ' is-active' : ''}" id="etxt-m-bold" title="Toggle Bold (Ctrl+B)"><b>B</b></button>
-          <button type="button" class="etxt-micro-btn${curFontStyle === 'italic' ? ' is-active' : ''}" id="etxt-m-italic" title="Toggle Italic (Ctrl+I)"><i>I</i></button>
-          <button type="button" class="etxt-micro-btn${curUnderline ? ' is-active' : ''}" id="etxt-m-underline" title="Toggle Underline (Ctrl+U)"><u>U</u></button>
+          <button type="button" class="etxt-micro-btn${curFontWeight === '700' ? ' is-active' : ''}" id="etxt-m-bold" aria-label="Toggle Bold"><b>B</b></button>
+          <button type="button" class="etxt-micro-btn${curFontStyle === 'italic' ? ' is-active' : ''}" id="etxt-m-italic" aria-label="Toggle Italic"><i>I</i></button>
+          <button type="button" class="etxt-micro-btn${curUnderline ? ' is-active' : ''}" id="etxt-m-underline" aria-label="Toggle Underline"><u>U</u></button>
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn${curTextAlign === 'left' ? ' is-active' : ''}" data-ma="left" title="Align Left">&#x2630;</button>
-          <button type="button" class="etxt-micro-btn${curTextAlign === 'center' ? ' is-active' : ''}" data-ma="center" title="Center">&#x2261;</button>
-          <button type="button" class="etxt-micro-btn${curTextAlign === 'right' ? ' is-active' : ''}" data-ma="right" title="Align Right">&#x2630;</button>
+          <button type="button" class="etxt-micro-btn${curTextAlign === 'left' ? ' is-active' : ''}" data-ma="left" aria-label="Align Left">&#x2630;</button>
+          <button type="button" class="etxt-micro-btn${curTextAlign === 'center' ? ' is-active' : ''}" data-ma="center" aria-label="Center">&#x2261;</button>
+          <button type="button" class="etxt-micro-btn${curTextAlign === 'right' ? ' is-active' : ''}" data-ma="right" aria-label="Align Right">&#x2630;</button>
 
           <span class="etxt-micro-sep"></span>
 
           ${['#0F172A', '#2563EB', '#DC2626', '#059669', '#D97706'].map(c => `
-            <button type="button" class="etxt-micro-swatch${curTextColor.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-mc="${c}" style="background:${c}" title="Color ${c}"></button>
+            <button type="button" class="etxt-micro-swatch${curTextColor.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-mc="${c}" style="background:${c}" aria-label="Color ${c}"></button>
           `).join('')}
-          <label class="etxt-micro-color-chip" title="Custom color">
+          <label class="etxt-micro-color-chip" aria-label="Custom color">
             <span class="etxt-micro-swatch" style="background:${curTextColor}; border: 1px dashed #71717A;"></span>
             <input type="color" class="etxt-micro-color-input" id="etxt-m-color" value="${curTextColor.startsWith('#') && curTextColor.length === 7 ? curTextColor : '#0F172A'}">
           </label>
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn etxt-micro-btn--revert" id="etxt-m-revert" title="Revert to Original Text (Put it back)">↺</button>
-          <button type="button" class="etxt-micro-btn etxt-micro-btn--commit" id="etxt-m-ok" title="Save Edit (Ctrl+Enter)">✓</button>
-          <button type="button" class="etxt-micro-btn etxt-micro-btn--delete" id="etxt-m-del" title="Discard / Blank (Esc)">✕</button>
+          <button type="button" class="etxt-micro-btn etxt-micro-btn--revert" id="etxt-m-revert" aria-label="Revert">↺</button>
+          <button type="button" class="etxt-micro-btn etxt-micro-btn--commit" id="etxt-m-ok" aria-label="Save Edit">✓</button>
+          <button type="button" class="etxt-micro-btn etxt-micro-btn--delete" id="etxt-m-del" aria-label="Discard">✕</button>
         `;
 
         microbar.querySelectorAll('button').forEach(btn => {
@@ -15683,25 +15683,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 pop.className = 'etxt-annot-popover';
                 if (a.kind === 'signature') {
                   pop.innerHTML = `
-                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="edit" title="Change / Re-draw Signature">🖊️ Change</button>
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="edit" aria-label="Change Signature">🖊️ Change</button>
                     <span class="etxt-annot-pop-sep"></span>
-                    <button type="button" class="etxt-annot-swatch" data-annot-color="#0F172A" style="background:#0F172A;" title="Black"></button>
-                    <button type="button" class="etxt-annot-swatch" data-annot-color="#1E3A8A" style="background:#1E3A8A;" title="Navy Blue"></button>
-                    <button type="button" class="etxt-annot-swatch" data-annot-color="#334155" style="background:#334155;" title="Charcoal"></button>
+                    <button type="button" class="etxt-annot-swatch" data-annot-color="#0F172A" style="background:#0F172A;" aria-label="Black"></button>
+                    <button type="button" class="etxt-annot-swatch" data-annot-color="#1E3A8A" style="background:#1E3A8A;" aria-label="Navy Blue"></button>
+                    <button type="button" class="etxt-annot-swatch" data-annot-color="#334155" style="background:#334155;" aria-label="Charcoal"></button>
                     <span class="etxt-annot-pop-sep"></span>
-                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate Signature">Duplicate</button>
-                    <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete Signature">✕</button>
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" aria-label="Duplicate Signature">Duplicate</button>
+                    <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" aria-label="Delete Signature">✕</button>
                   `;
                 } else {
                   pop.innerHTML = `
-                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" title="Duplicate">Duplicate</button>
-                    <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" title="Delete">✕</button>
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" aria-label="Duplicate">Duplicate</button>
+                    <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" aria-label="Delete">✕</button>
                   `;
                 }
                 const handle = document.createElement('div');
                 handle.className = 'etxt-annot-handle etxt-annot-handle-se';
                 handle.dataset.handle = 'se';
-                handle.title = 'Drag to Resize';
+                handle.setAttribute('aria-label', 'Drag to Resize');
                 el.append(pop, handle);
               }
             }
@@ -15827,7 +15827,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (a.type === 'note') {
         el.className = 'etxt-a etxt-a-note';
         el.style.cssText = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${Math.max(120, (a.w || 140) * P).toFixed(1)}px;min-height:${Math.max(60, (a.h || 80) * P).toFixed(1)}px;background:${a.color || '#FEF3C7'};`;
-        el.innerHTML = `<div class="etxt-note-header"><span class="etxt-note-pin">${I.pin}</span><button type="button" class="etxt-note-x" title="Delete note">${I.x}</button></div><div class="etxt-note-body" contenteditable="true" spellcheck="false">${_esc(a.text || 'Add note...')}</div>`;
+        el.innerHTML = `<div class="etxt-note-header"><span class="etxt-note-pin">${I.pin}</span><button type="button" class="etxt-note-x" aria-label="Delete note">${I.x}</button></div><div class="etxt-note-body" contenteditable="true" spellcheck="false">${_esc(a.text || 'Add note...')}</div>`;
         const xBtn = el.querySelector('.etxt-note-x');
         if (xBtn) xBtn.onclick = (ev) => { ev.stopPropagation(); pushUndo(); removeAnnot(a.id); };
         const body = el.querySelector('.etxt-note-body');
@@ -16298,7 +16298,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <span class="etxt-flyout-label">Color</span>
             <div class="etxt-swatch-group">
               ${(toolMode==='highlight' ? HL_COLORS : COLOR_SWATCHES).map(c => `<button type="button" class="etxt-swatch${curC === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
-              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${curC}" title="Choose custom color">
+              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${curC}" aria-label="Choose custom color">
             </div>
           </div>
           <div class="etxt-flyout-section">
@@ -16314,17 +16314,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           </div>
           <div class="etxt-flyout-section">
             <div class="etxt-opt-track">
-              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect" title="Rectangle">${I.rect || 'Rectangle'}</button>
-              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse" title="Circle">${I.ellipse || 'Circle'}</button>
-              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line" title="Line">${I.line || 'Line'}</button>
-              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow" title="Arrow">${I.arr || 'Arrow'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'rect' ? ' is-on' : ''}" data-k="rect" aria-label="Rectangle">${I.rect || 'Rectangle'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'ellipse' ? ' is-on' : ''}" data-k="ellipse" aria-label="Circle">${I.ellipse || 'Circle'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'line' ? ' is-on' : ''}" data-k="line" aria-label="Line">${I.line || 'Line'}</button>
+              <button type="button" class="etxt-shape-kind${toolOpts.shapeKind === 'arrow' ? ' is-on' : ''}" data-k="arrow" aria-label="Arrow">${I.arr || 'Arrow'}</button>
             </div>
           </div>
           <div class="etxt-flyout-section">
             <span class="etxt-flyout-label">Color</span>
             <div class="etxt-swatch-group">
               ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.shapeColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
-              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${toolOpts.shapeColor}" title="Choose custom shape color">
+              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${toolOpts.shapeColor}" aria-label="Choose custom shape color">
             </div>
           </div>
           <div class="etxt-flyout-section">
@@ -16351,7 +16351,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <span class="etxt-flyout-title">Text Box</span>
           </div>
           <div class="etxt-flyout-section">
-            <select class="etxt-font-select" id="etxt-font-family" title="Font family">
+            <select class="etxt-font-select" id="etxt-font-family" aria-label="Font family">
               <option value="Helvetica"${toolOpts.textFont==='Helvetica'?' selected':''}>Sans-Serif (Helvetica)</option>
               <option value="Times"${toolOpts.textFont==='Times'?' selected':''}>Serif (Times Roman)</option>
               <option value="Courier"${toolOpts.textFont==='Courier'?' selected':''}>Monospace (Courier)</option>
@@ -16359,27 +16359,27 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           </div>
           <div class="etxt-flyout-section">
             <div class="etxt-opt-track">
-              <button type="button" class="etxt-fmt-btn${toolOpts.isBold?' is-on':''}" id="etxt-font-bold" title="Toggle Bold"><b>B</b></button>
-              <button type="button" class="etxt-fmt-btn${toolOpts.isItalic?' is-on':''}" id="etxt-font-italic" title="Toggle Italic"><i>I</i></button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.isBold?' is-on':''}" id="etxt-font-bold" aria-label="Toggle Bold"><b>B</b></button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.isItalic?' is-on':''}" id="etxt-font-italic" aria-label="Toggle Italic"><i>I</i></button>
               <span class="etxt-vsep" style="height:14px;margin:0 2px;"></span>
-              <button type="button" class="etxt-fmt-btn${(toolOpts.textAlign||'left')==='left'?' is-on':''}" data-align="left" title="Align Left">⯈</button>
-              <button type="button" class="etxt-fmt-btn${toolOpts.textAlign==='center'?' is-on':''}" data-align="center" title="Align Center">≡</button>
-              <button type="button" class="etxt-fmt-btn${toolOpts.textAlign==='right'?' is-on':''}" data-align="right" title="Align Right">⯇</button>
+              <button type="button" class="etxt-fmt-btn${(toolOpts.textAlign||'left')==='left'?' is-on':''}" data-align="left" aria-label="Align Left">⯈</button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.textAlign==='center'?' is-on':''}" data-align="center" aria-label="Align Center">≡</button>
+              <button type="button" class="etxt-fmt-btn${toolOpts.textAlign==='right'?' is-on':''}" data-align="right" aria-label="Align Right">⯇</button>
             </div>
           </div>
           <div class="etxt-flyout-section">
             <span class="etxt-flyout-label">Size</span>
             <div class="etxt-size-capsule">
-              <button type="button" class="etxt-size-btn" data-d="-2" title="Decrease font size">−</button>
+              <button type="button" class="etxt-size-btn" data-d="-2" aria-label="Decrease font size">−</button>
               <span class="etxt-opt-size">${toolOpts.textSize || 14}pt</span>
-              <button type="button" class="etxt-size-btn" data-d="2" title="Increase font size">+</button>
+              <button type="button" class="etxt-size-btn" data-d="2" aria-label="Increase font size">+</button>
             </div>
           </div>
           <div class="etxt-flyout-section">
             <span class="etxt-flyout-label">Color</span>
             <div class="etxt-swatch-group">
               ${COLOR_SWATCHES.map(c => `<button type="button" class="etxt-swatch${toolOpts.textColor === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
-              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${toolOpts.textColor || '#111827'}" title="Choose custom text color">
+              <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${toolOpts.textColor || '#111827'}" aria-label="Choose custom text color">
             </div>
           </div>`;
       } else if (toolMode === 'image' || toolMode === 'stamp' || toolMode === 'note') {
@@ -17092,10 +17092,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </button>
           </div>
           <div class="acrobat-sig-header-actions">
-            <div class="acrobat-sig-ink-group" title="Select signature ink color">
-              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#0F172A'?' is-active':''}" data-ink="#0F172A" style="background:#0F172A;" title="Black Ink"></button>
-              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#1E3A8A'?' is-active':''}" data-ink="#1E3A8A" style="background:#1E3A8A;" title="Navy Ink"></button>
-              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#334155'?' is-active':''}" data-ink="#334155" style="background:#334155;" title="Charcoal Ink"></button>
+            <div class="acrobat-sig-ink-group" aria-label="Select signature ink color">
+              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#0F172A'?' is-active':''}" data-ink="#0F172A" style="background:#0F172A;" aria-label="Black Ink"></button>
+              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#1E3A8A'?' is-active':''}" data-ink="#1E3A8A" style="background:#1E3A8A;" aria-label="Navy Ink"></button>
+              <button type="button" class="acrobat-sig-ink-dot${activeColor==='#334155'?' is-active':''}" data-ink="#334155" style="background:#334155;" aria-label="Charcoal Ink"></button>
             </div>
             <label class="acrobat-sig-save-wrap">
               <input type="checkbox" id="acrobat-sig-save-chk" checked>
@@ -17105,7 +17105,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         </div>
 
         <div class="acrobat-sig-body">
-          <div class="acrobat-sign-flag" title="Signature Line">
+          <div class="acrobat-sign-flag" aria-label="Signature Line">
             <svg class="acrobat-sign-flag-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             <span class="acrobat-sign-flag-text">Sign</span>
           </div>
@@ -17128,11 +17128,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <div class="acrobat-sig-draw-toolbar">
               <div class="acrobat-sig-pen-type-group">
                 <span class="acrobat-sig-config-label">Pen:</span>
-                <button type="button" class="acrobat-sig-pen-btn is-active" data-pen="fountain" title="Fountain Pen (Variable Pressure & Velocity Taper)">
+                <button type="button" class="acrobat-sig-pen-btn is-active" data-pen="fountain" aria-label="Fountain Pen">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h-6l3-7z"/><path d="M9 9v11h6v-11"/></svg>
                   <span>Fountain</span>
                 </button>
-                <button type="button" class="acrobat-sig-pen-btn" data-pen="ballpoint" title="Ballpoint Pen (Uniform Crisp Line)">
+                <button type="button" class="acrobat-sig-pen-btn" data-pen="ballpoint" aria-label="Ballpoint Pen">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   <span>Ballpoint</span>
                 </button>
@@ -17140,15 +17140,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
               <div class="acrobat-sig-draw-thickness-group">
                 <span class="acrobat-sig-config-label">Stroke:</span>
-                <button type="button" class="acrobat-sig-thick-btn" data-thick="1.6" title="Fine Stroke">
+                <button type="button" class="acrobat-sig-thick-btn" data-thick="1.6" aria-label="Fine Stroke">
                   <span class="acrobat-thick-line" style="height:1.6px;"></span>
                   <span>Fine</span>
                 </button>
-                <button type="button" class="acrobat-sig-thick-btn is-active" data-thick="2.8" title="Regular Stroke">
+                <button type="button" class="acrobat-sig-thick-btn is-active" data-thick="2.8" aria-label="Regular Stroke">
                   <span class="acrobat-thick-line" style="height:2.8px;"></span>
                   <span>Regular</span>
                 </button>
-                <button type="button" class="acrobat-sig-thick-btn" data-thick="4.5" title="Bold Stroke">
+                <button type="button" class="acrobat-sig-thick-btn" data-thick="4.5" aria-label="Bold Stroke">
                   <span class="acrobat-thick-line" style="height:4.5px;"></span>
                   <span>Bold</span>
                 </button>
