@@ -867,144 +867,307 @@ button.etxt-primary-cta[data-phase="done"],
   box-shadow: 0 1px 3px rgba(5, 150, 105, 0.3) !important;
 }
 
-/* Right Rail — Fixed Fit with Zero Scrollbars */
+/* ═══════════════════════════════════════════════════════════════════
+   Right Utility Rail (Exact Match to Organize Tool Standards)
+   ═══════════════════════════════════════════════════════════════════ */
 .etxt-right-rail {
   position: absolute !important;
   top: 0 !important;
   bottom: 0 !important;
   right: 0 !important;
   width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
   height: 100% !important;
   max-height: 100% !important;
-  overflow: hidden !important;
   background: #FFFFFF !important;
   border-left: 1px solid #E4E4E7 !important;
-  box-shadow: -2px 0 8px rgba(15, 23, 42, 0.03) !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   z-index: 50 !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
   align-items: center !important;
-  padding: 12px 4px !important;
+  justify-content: space-between !important;
+  padding: 10px 0 12px 0 !important;
   box-sizing: border-box !important;
   user-select: none !important;
+  overflow: hidden !important;
 }
 
-.etxt-rail-top,
-.etxt-rail-bot {
+.etxt-rail-top {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
   width: 100% !important;
   flex-shrink: 0 !important;
 }
 
 .etxt-rail-mid {
-  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+.etxt-rail-bot {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+.etxt-rail-sep {
+  width: 22px !important;
+  height: 1px !important;
+  background: #E4E4E7 !important;
+  margin: 5px 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Page & Selection Badges */
+.etxt-right-rail .org-rail-badge-btn,
+.etxt-right-rail .etxt-rail-pages-btn {
+  all: unset !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
-  width: 100% !important;
-  padding: 6px 0 !important;
+  cursor: pointer !important;
+  transition: background 100ms ease, border-color 100ms ease, transform 80ms ease !important;
+  box-sizing: border-box !important;
 }
 
-.etxt-rail-sep {
-  width: 24px !important;
-  height: 1px !important;
-  background: #E4E4E7 !important;
-  margin: 4px 0 !important;
-  flex-shrink: 0 !important;
-}
-
-.etxt-fzoom-page-ctrl {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 2px !important;
-}
-
-.etxt-fzoom-page-badge {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  color: #52525B !important;
-  padding: 2px 0 !important;
-  white-space: nowrap !important;
-  letter-spacing: -0.01em !important;
-}
-
-.etxt-fzoom-badge {
+.etxt-right-rail .org-rail-badge-num {
   font-size: 11px !important;
   font-weight: 700 !important;
   color: #18181B !important;
-  padding: 2px 4px !important;
-  letter-spacing: -0.01em !important;
+  line-height: 1 !important;
   font-variant-numeric: tabular-nums !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif !important;
 }
 
-.etxt-fzoom-step {
-  all: unset !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 7px !important;
-  background: #F4F4F5 !important;
-  color: #18181B !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
+.etxt-right-rail .org-rail-badge-lbl {
+  font-size: 7px !important;
+  font-weight: 700 !important;
+  color: #71717A !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
   line-height: 1 !important;
+  margin-top: 1.5px !important;
+}
+
+.etxt-right-rail .org-rail-badge-btn:hover:not(.is-active),
+.etxt-right-rail .etxt-rail-pages-btn:hover:not(.is-active) {
+  background: #F4F4F5 !important;
+  border-color: #E4E4E7 !important;
+}
+
+.etxt-right-rail .org-rail-badge-btn:active,
+.etxt-right-rail .etxt-rail-pages-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.etxt-right-rail .org-rail-badge-btn.is-active,
+.etxt-right-rail .etxt-rail-pages-btn.is-active,
+.etxt-right-rail .etxt-rail-pages-btn.is-on {
+  background: #18181B !important;
+  border-color: #18181B !important;
+}
+
+.etxt-right-rail .org-rail-badge-btn.is-active .org-rail-badge-num,
+.etxt-right-rail .etxt-rail-pages-btn.is-active .org-rail-badge-num,
+.etxt-right-rail .etxt-rail-pages-btn.is-on .org-rail-badge-num {
+  color: #FFFFFF !important;
+}
+
+.etxt-right-rail .org-rail-badge-btn.is-active .org-rail-badge-lbl,
+.etxt-right-rail .etxt-rail-pages-btn.is-active .org-rail-badge-lbl,
+.etxt-right-rail .etxt-rail-pages-btn.is-on .org-rail-badge-lbl {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Rail Icon Action Buttons */
+.etxt-right-rail .org-rail-icon-btn,
+.etxt-right-rail .etxt-fzoom-step,
+.etxt-right-rail .etxt-fzoom-action {
+  all: unset !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: #71717A !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04),
-              inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: background 100ms ease, color 100ms ease, transform 80ms ease !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
 }
 
-.etxt-fzoom-step:hover:not(:disabled) {
+.etxt-right-rail .org-rail-icon-btn svg,
+.etxt-right-rail .etxt-fzoom-step svg,
+.etxt-right-rail .etxt-fzoom-action svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+}
+
+.etxt-right-rail .org-rail-icon-btn:hover:not(:disabled),
+.etxt-right-rail .etxt-fzoom-step:hover:not(:disabled),
+.etxt-right-rail .etxt-fzoom-action:hover:not(:disabled) {
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+}
+
+.etxt-right-rail .org-rail-icon-btn:active:not(:disabled),
+.etxt-right-rail .etxt-fzoom-step:active:not(:disabled),
+.etxt-right-rail .etxt-fzoom-action:active:not(:disabled) {
   background: #E4E4E7 !important;
-  color: #09090B !important;
-  transform: scale(1.03) !important;
+  transform: scale(0.95) !important;
 }
 
-.etxt-fzoom-step:active:not(:disabled) {
-  background: #D4D4D8 !important;
-  transform: scale(0.97) !important;
-}
-
-.etxt-fzoom-step:disabled {
+.etxt-right-rail .org-rail-icon-btn:disabled,
+.etxt-right-rail .etxt-fzoom-step:disabled,
+.etxt-right-rail .etxt-fzoom-action:disabled {
   opacity: 0.3 !important;
   cursor: not-allowed !important;
   transform: none !important;
 }
 
-.etxt-fzoom-slider-wrap {
-  height: 150px !important;
-  min-height: 110px !important;
-  max-height: 200px !important;
+.etxt-right-rail .org-rail-btn--text {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: #71717A !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif !important;
+}
+
+.etxt-right-rail .org-rail-btn--text:hover {
+  color: #18181B !important;
+}
+
+.etxt-right-rail .org-rail-btn--text.is-active {
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border-radius: 4px !important;
+}
+
+/* Precision Vertical Slider */
+.etxt-right-rail .org-rail-slider-wrap,
+.etxt-right-rail .etxt-fzoom-slider-wrap {
+  height: 84px !important;
+  width: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 6px 0 !important;
   position: relative !important;
-  flex: 0 1 150px !important;
+  padding: 2px 0 !important;
 }
 
-.etxt-fzoom-slider {
+.etxt-right-rail .org-rail-slider,
+.etxt-right-rail .etxt-fzoom-slider {
+  -webkit-appearance: none !important;
+  appearance: none !important;
   writing-mode: vertical-lr !important;
   direction: rtl !important;
-  -webkit-appearance: slider-vertical !important;
-  width: 8px !important;
-  height: 100% !important;
-  min-height: 110px !important;
-  max-height: 190px !important;
-  accent-color: #18181B !important;
+  width: 4px !important;
+  height: 74px !important;
+  background: #E4E4E7 !important;
+  border-radius: 9999px !important;
+  outline: none !important;
   cursor: pointer !important;
+  transition: background 120ms ease !important;
+}
+
+.etxt-right-rail .org-rail-slider:hover,
+.etxt-right-rail .etxt-fzoom-slider:hover {
+  background: #D4D4D8 !important;
+}
+
+.etxt-right-rail .org-rail-slider::-webkit-slider-thumb,
+.etxt-right-rail .etxt-fzoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  background: #18181B !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  cursor: grab !important;
+  transition: transform 100ms ease, box-shadow 100ms ease !important;
+}
+
+.etxt-right-rail .org-rail-slider::-webkit-slider-thumb:hover,
+.etxt-right-rail .etxt-fzoom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+.etxt-right-rail .org-rail-slider::-webkit-slider-thumb:active,
+.etxt-right-rail .etxt-fzoom-slider::-webkit-slider-thumb:active {
+  cursor: grabbing !important;
+  transform: scale(1.05) !important;
+}
+
+.etxt-right-rail .org-rail-slider::-moz-range-thumb,
+.etxt-right-rail .etxt-fzoom-slider::-moz-range-thumb {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  background: #18181B !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  cursor: grab !important;
+}
+
+/* Zoom Percentage Badge Button */
+.etxt-right-rail .org-rail-pct-badge,
+.etxt-right-rail .etxt-fzoom-badge {
+  all: unset !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  color: #52525B !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  padding: 1.5px 4px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  font-variant-numeric: tabular-nums !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif !important;
+  transition: all 100ms ease !important;
+  line-height: 1.2 !important;
+}
+
+.etxt-right-rail .org-rail-pct-badge:hover,
+.etxt-right-rail .etxt-fzoom-badge:hover {
+  background: #F4F4F5 !important;
+  color: #18181B !important;
+  border-color: #E4E4E7 !important;
+}
+
+.etxt-right-rail .org-rail-pct-badge:active,
+.etxt-right-rail .etxt-fzoom-badge:active {
+  transform: scale(0.95) !important;
 }
 
 /* Suppress ALL browser-native tooltips on the entire right rail */
@@ -1015,49 +1178,6 @@ button.etxt-primary-cta[data-phase="done"],
 .etxt-right-rail *::before,
 .etxt-right-rail *::after {
   content: none !important;
-}
-/* Range input: suppress value tooltip shown on thumb hover in Chrome */
-.etxt-fzoom-slider-wrap::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: -4px !important;
-  z-index: 10 !important;
-  pointer-events: none !important;
-}
-
-.etxt-fzoom-action {
-  all: unset !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 7px !important;
-  background: transparent !important;
-  color: #52525B !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
-}
-
-.etxt-fzoom-action:hover {
-  background: #F4F4F5 !important;
-  color: #18181B !important;
-}
-
-.etxt-fzoom-action:active {
-  background: #E4E4E7 !important;
-  transform: scale(0.97) !important;
-}
-
-.etxt-fzoom-action svg {
-  width: 15px !important;
-  height: 15px !important;
-  stroke: currentColor !important;
-  stroke-width: 1.85 !important;
 }
 
 

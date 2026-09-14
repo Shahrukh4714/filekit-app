@@ -14448,39 +14448,57 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
           </aside>
 
-          <!-- Fixed Full-Height Right Side-Rail (Page, Thumbnails & Zoom Controller) -->
-          <aside class="etxt-right-rail" id="etxt-floating-zoom">
-            <div class="etxt-rail-top">
-              <button type="button" class="etxt-fzoom-action etxt-rail-pages-btn" id="etxt-rail-thumbs-toggle">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          <!-- Fixed Full-Height Right Side-Rail (Page, Thumbnails & Zoom Controller matching Organize Tool) -->
+          <aside class="org-right-rail etxt-right-rail" id="etxt-floating-zoom" aria-label="Zoom and Navigation Controls">
+            <!-- Top Group: Document Counter & Navigation -->
+            <div class="org-rail-top etxt-rail-top" style="position:relative;">
+              <button type="button" class="org-rail-badge-btn etxt-fzoom-action etxt-rail-pages-btn" id="etxt-rail-thumbs-toggle" aria-label="Page Thumbnails (${pageCount} pages)">
+                <span class="org-rail-badge-num">${pageCount}</span>
+                <span class="org-rail-badge-lbl">PGS</span>
               </button>
-              <span class="etxt-rail-sep"></span>
               ${pageCount > 1 ? `
-              <div class="etxt-fzoom-page-ctrl">
-                <button type="button" class="etxt-fzoom-step" id="etxt-fnav-prev" ${page<=1?'disabled':''}>${I.chevL}</button>
-                <div class="etxt-fzoom-page-badge">${page} / ${pageCount}</div>
-                <button type="button" class="etxt-fzoom-step" id="etxt-fnav-next" ${page>=pageCount?'disabled':''}>${I.chevR}</button>
-              </div>
-              <span class="etxt-rail-sep"></span>
+              <div class="org-rail-sep etxt-rail-sep"></div>
+              <button type="button" class="org-rail-icon-btn etxt-fzoom-step" id="etxt-fnav-prev" aria-label="Previous Page" ${page <= 1 ? 'disabled' : ''}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              </button>
+              <div class="org-rail-badge-num etxt-fzoom-page-badge" style="font-size:10px;color:#71717A;padding:2px 0;">${page}/${pageCount}</div>
+              <button type="button" class="org-rail-icon-btn etxt-fzoom-step" id="etxt-fnav-next" aria-label="Next Page" ${page >= pageCount ? 'disabled' : ''}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
               ` : ''}
             </div>
 
-            <div class="etxt-rail-mid">
-              <div class="etxt-fzoom-badge" id="etxt-fzoom-badge">${zoom}%</div>
-              <button type="button" class="etxt-fzoom-step" id="etxt-fzoom-in" aria-label=""><span aria-hidden="true">+</span></button>
-              <div class="etxt-fzoom-slider-wrap">
-                <input type="range" min="30" max="250" step="5" value="${zoom}" class="etxt-fzoom-slider" id="etxt-fzoom-slider" orient="vertical" aria-label="" tabindex="-1">
-              </div>
-              <button type="button" class="etxt-fzoom-step" id="etxt-fzoom-out" aria-label=""><span aria-hidden="true">−</span></button>
-              <button type="button" class="etxt-fzoom-action" id="etxt-rail-fit" aria-label="">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            <div class="org-rail-sep etxt-rail-sep"></div>
+
+            <!-- Middle Group: Zoom Engine -->
+            <div class="org-rail-mid etxt-rail-mid">
+              <button type="button" class="org-rail-icon-btn etxt-fzoom-step" id="etxt-fzoom-in" aria-label="Zoom In (+)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
               </button>
-              <button type="button" class="etxt-fzoom-action" id="etxt-fzoom-reset" aria-label=""><span aria-hidden="true">1:1</span></button>
+              <div class="org-rail-slider-wrap etxt-fzoom-slider-wrap">
+                <input type="range" class="org-rail-slider etxt-fzoom-slider" id="etxt-fzoom-slider" min="30" max="250" value="${zoom}" step="5" aria-label="Zoom: ${zoom}%">
+              </div>
+              <button type="button" class="org-rail-icon-btn etxt-fzoom-step" id="etxt-fzoom-out" aria-label="Zoom Out (−)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              </button>
+              <button type="button" class="org-rail-pct-badge etxt-fzoom-badge" id="etxt-fzoom-badge" aria-label="Reset zoom">
+                ${zoom}%
+              </button>
             </div>
 
-            <div class="etxt-rail-bot">
-              <span class="etxt-rail-sep"></span>
-              <button type="button" class="etxt-fzoom-action" id="etxt-theme-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+            <div class="org-rail-sep etxt-rail-sep"></div>
+
+            <!-- Bottom Group: Fit, Reset & Theme Toggle -->
+            <div class="org-rail-bot etxt-rail-bot">
+              <button type="button" class="org-rail-icon-btn etxt-fzoom-action" id="etxt-rail-fit" aria-label="Fit to Viewport">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </button>
+              <button type="button" class="org-rail-icon-btn org-rail-btn--text etxt-fzoom-action" id="etxt-fzoom-reset" aria-label="Actual Size (100%)">
+                1:1
+              </button>
+              <button type="button" class="org-rail-icon-btn etxt-fzoom-action" id="etxt-theme-toggle" aria-label="Toggle Theme">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </button>
             </div>
           </aside>
 
@@ -14638,7 +14656,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const fzoomSlider = container.querySelector('#etxt-fzoom-slider');
       if (fzoomSlider) fzoomSlider.oninput = () => smoothZoom(Number(fzoomSlider.value));
       const fzoomReset = container.querySelector('#etxt-fzoom-reset');
-      if (fzoomReset) fzoomReset.onclick = () => smoothZoom(170);
+      if (fzoomReset) fzoomReset.onclick = () => smoothZoom(100);
+      const fzoomBadge = container.querySelector('#etxt-fzoom-badge');
+      if (fzoomBadge) fzoomBadge.onclick = () => smoothZoom(100);
 
       // Ctrl + Mouse Wheel smooth zoom
       if (canvasWrap) {
