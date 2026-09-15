@@ -2932,37 +2932,16 @@ try {
     return { task: 'pdf', color: '#E5252A', hover: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5', glow: 'rgba(229,37,42,0.25)', cardBorder: '#FECACA' };
   };
 
-        window.FF.getToolDropzoneGraphic = function getToolDropzoneGraphic(toolId, category) {
-    return `<svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="38" y="98" width="144" height="36" rx="6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
-      <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.4"/>
-      <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.4"/>
-      <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.4"/>
-      <g transform="rotate(-9 66 74)">
-        <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff"/>
-        <path d="M72 48h14v14z" fill="#F2F0F1"/>
-        <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-        <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-        <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-      </g>
-      <g transform="rotate(9 154 74)">
-        <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff"/>
-        <path d="M160 48h14v14z" fill="#F2F0F1"/>
-        <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-        <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </g>
-      <g>
-        <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff"/>
-        <path d="M116 54h14v14z" fill="#F2F0F1"/>
-        <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-        <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-        <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-      </g>
-      <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="36" cy="44" r="3.5" fill="#fff" opacity="0.5"/>
-      <circle cx="186" cy="52" r="3" fill="#fff" opacity="0.45"/>
-      <circle cx="190" cy="90" r="2.5" fill="#fff" opacity="0.4"/>
-      <circle cx="30" cy="90" r="2.5" fill="#fff" opacity="0.4"/>
+  window.FF.getToolDropzoneGraphic = function getToolDropzoneGraphic(toolId, category) {
+    return `<svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+      <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+      <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+      <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   };
 
@@ -4778,48 +4757,48 @@ try {
 
         const TASK_DATA = {
           compress: {
-            sub: 'Drop a <strong>PDF</strong> to compress — images, video, audio &amp; ZIP also supported',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'VIDEO', cls: 'fmt-ppt' }, { name: 'AUDIO', cls: 'fmt-xls' }, { name: 'ZIP', cls: 'fmt-doc' }]
+            title: 'Drag and drop files to compress',
+            sub: 'Supports PDF, JPG, PNG, WEBP, MP4, MP3, ZIP'
           },
           convert: {
-            sub: 'Add any <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, <strong>Audio</strong>, <strong>Word</strong>, <strong>Excel</strong>, or <strong>eBook</strong> to convert',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'DOC', cls: 'fmt-doc' }, { name: 'XLS', cls: 'fmt-xls' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'MEDIA', cls: 'fmt-ppt' }]
+            title: 'Drag and drop files to convert',
+            sub: 'Supports PDF, Word, Excel, PPTX, Images, Audio, Video'
           },
           organize: {
-            sub: 'Add <strong>PDFs</strong>, <strong>Images</strong>, or <strong>Archives</strong> to merge, split, or rearrange',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'ZIP', cls: 'fmt-doc' }]
+            title: 'Drag and drop files to organize',
+            sub: 'Supports PDF, Images, Word, Excel, PPTX'
           },
           edit: {
-            sub: 'Add <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, or <strong>Audio</strong> files to edit, trim, crop, or annotate',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'VIDEO', cls: 'fmt-ppt' }, { name: 'AUDIO', cls: 'fmt-xls' }]
+            title: 'Drag and drop files to edit',
+            sub: 'Supports PDF, Images, Video, Audio'
           },
           protect: {
-            sub: 'Add <strong>PDF</strong> documents to password protect, digital sign, unlock, or redact PII',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'DOC', cls: 'fmt-doc' }]
+            title: 'Drag and drop PDF to protect or unlock',
+            sub: 'Supports PDF'
           },
           scan: {
-            sub: 'Add <strong>PDF</strong>, <strong>JPG</strong>, or <strong>PNG</strong> documents to scan & extract text',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'JPG', cls: 'fmt-jpg' }, { name: 'PNG', cls: 'fmt-png' }]
+            title: 'Drag and drop files to scan or OCR',
+            sub: 'Supports PDF, JPG, PNG, WEBP'
           },
           qr: {
-            sub: 'Add <strong>PNG</strong>, <strong>JPG</strong>, <strong>WEBP</strong>, or <strong>SVG</strong> files with QR codes or barcodes',
-            formats: [{ name: 'PNG', cls: 'fmt-png' }, { name: 'JPG', cls: 'fmt-jpg' }, { name: 'WEBP', cls: 'fmt-doc' }, { name: 'SVG', cls: 'fmt-xls' }]
+            title: 'Drag and drop QR or barcode images',
+            sub: 'Supports PNG, JPG, WEBP, SVG'
           },
           workflow: {
-            sub: 'Add <strong>PDF</strong>, <strong>Image</strong>, or <strong>Document</strong> files to run automated workflows',
-            formats: [{ name: 'PDF', cls: 'fmt-pdf' }, { name: 'IMG', cls: 'fmt-png' }, { name: 'DOC', cls: 'fmt-doc' }]
+            title: 'Drag and drop files to run workflow',
+            sub: 'Supports PDF, Images, Word, Excel'
           }
         };
 
         const activeTaskInfo = (appTask && appTask !== 'more' && TASK_DATA[appTask]) ? TASK_DATA[appTask] : null;
-        const subTextEl = document.getElementById('drop-sub-text');
-        if (subTextEl) subTextEl.innerHTML = activeTaskInfo ? activeTaskInfo.sub : (config.sub || '');
+        const dropTitleEl = document.querySelector('#app-file-dropzone .drop-title');
+        if (dropTitleEl) {
+          dropTitleEl.textContent = activeTaskInfo ? activeTaskInfo.title : (config.title ? `Drag and drop files to ${config.title.toLowerCase()}` : 'Drag and drop files to get started');
+        }
 
-        const fmtRow = document.getElementById('supported-formats-row');
-        const activeFormats = activeTaskInfo ? activeTaskInfo.formats : (config.formats || []);
-        if (fmtRow && activeFormats.length) {
-          fmtRow.innerHTML = '<span class="fmt-label">Supported formats:</span>' +
-            activeFormats.map(f => `<span class="fmt-badge ${f.cls}">${f.name}</span>`).join('');
+        const subTextEl = document.getElementById('drop-sub-text');
+        if (subTextEl) {
+          subTextEl.textContent = activeTaskInfo ? activeTaskInfo.sub : (config.sub || 'Supports PDF, Images, Documents, and Media');
         }
 
         const appCategoryHub = document.getElementById('app-category-hub');

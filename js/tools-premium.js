@@ -219,62 +219,38 @@
     container.classList.remove('etxt-shell', 'pro-shell');
     const stage = container.closest('.app-stage-container');
     if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
-    const acceptsBadges = (accepts || []).map(a => `<span class="fmt-badge fmt-${a.toLowerCase()}">${a.toUpperCase()}</span>`).join(' ');
     container.innerHTML = `
-      <div class="cpdf-dropzone drop-hero-box" data-pro-drop tabindex="0" role="button" aria-label="Upload ${esc(accepts.join(', ').toUpperCase())}">
+      <div class="cpdf-dropzone drop-hero-box" data-pro-drop tabindex="0" role="button" aria-label="Upload ${esc((accepts || []).join(', ').toUpperCase())}">
         <div class="dropzone-idle">
           <div class="drop-illustration">
-            <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-              <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-              <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-              <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-              <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-              <g transform="rotate(-9 66 74)">
-                <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-              </g>
-              <g transform="rotate(9 154 74)">
-                <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </g>
-              <g>
-                <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-              </g>
-              <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-              <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-              <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-              <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+            <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+              <!-- Left: Image / Photo Card -->
+              <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+              <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+              <!-- Center: Prominent Document Sheet -->
+              <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+              
+              <!-- Center: Downward Arrow -->
+              <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+              <!-- Right: Folder -->
+              <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
 
+          <h3 class="drop-title">${headline ? esc(headline) : (multiple ? 'Drag and drop files to get started' : 'Drag and drop a file to get started')}</h3>
+
           <div class="drop-action-group">
-            <label for="pro-inp-${tool.id}" class="select-files-main-btn">
-              <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              <span>${multiple ? 'Select files' : 'Select file'}</span>
-            </label>
-            <label for="pro-inp-${tool.id}" class="select-files-chevron-btn" aria-label="More file options">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </label>
+            <label for="pro-inp-${tool.id}" class="select-files-main-btn">${multiple ? 'Select files from your device' : 'Select file from your device'}</label>
           </div>
 
-          <p class="drop-sub-text">${esc(headline)}</p>
-
-          <div class="supported-formats-row">
-            <span class="fmt-label">Supported formats:</span>
-            ${acceptsBadges}
-          </div>
+          <p class="drop-formats">Supports ${(accepts || []).map(a => a.toUpperCase()).join(', ')}</p>
         </div>
-        <input id="pro-inp-${tool.id}" type="file" accept="${accepts.map(a => '.' + a).join(',')}" ${multiple ? 'multiple' : ''} hidden>
+        <input id="pro-inp-${tool.id}" type="file" accept="${(accepts || []).map(a => '.' + a).join(',')}" ${multiple ? 'multiple' : ''} hidden>
       </div>`;
     const dz = container.querySelector('[data-pro-drop]');
     const inp = container.querySelector('input[type=file]');

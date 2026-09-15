@@ -9239,60 +9239,32 @@ ${linksOverlay}    </div>
         <div class="cpdf-dropzone drop-hero-box" id="cpdf-dz" tabindex="0" role="button" aria-label="Upload files to compress">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop files to compress</h3>
+
             <div class="drop-action-group">
-              <label for="cpdf-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select files</span>
-              </label>
-              <label for="cpdf-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="cpdf-inp" class="select-files-main-btn">Select files from your device</label>
             </div>
 
-            <p class="drop-sub-text">Drop a <strong>PDF</strong> to compress — images, video, audio &amp; ZIP also supported</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-ppt">MP4</span>
-              <span class="fmt-badge fmt-doc">DOCX</span>
-              <span class="fmt-badge fmt-xls">ZIP</span>
-            </div>
+            <p class="drop-formats">Supports PDF, Images, Video, Audio, and ZIP Archives</p>
           </div>
           <input id="cpdf-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>
         </div>`;
@@ -12103,58 +12075,35 @@ ${linksOverlay}    </div>
 
     function renderUpload() {
       container.innerHTML = toolHeader() + `
-        <div class="cpdf-dropzone drop-hero-box" id="mpdf-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> files to merge">
+        <div class="cpdf-dropzone drop-hero-box" id="mpdf-dz" tabindex="0" role="button" aria-label="Add PDF files to merge">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop PDF files to merge</h3>
+
             <div class="drop-action-group">
-              <label for="mpdf-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select files</span>
-              </label>
-              <label for="mpdf-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="mpdf-inp" class="select-files-main-btn">Select PDF files</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> files to merge</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-            </div>
+            <p class="drop-formats">Supports PDF documents (.pdf)</p>
           </div>
           <input id="mpdf-inp" type="file" accept="application/pdf,.pdf" multiple hidden>
         </div>`;
@@ -12691,58 +12640,35 @@ ${linksOverlay}    </div>
       container.classList.add('cpdf-root', 'spdf-root');
       container.classList.remove('spdf-shell');
       container.innerHTML = `
-        <div class="cpdf-dropzone drop-hero-box" id="spdf-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to split">
+        <div class="cpdf-dropzone drop-hero-box" id="spdf-dz" tabindex="0" role="button" aria-label="Add PDF file to split">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a PDF to split</h3>
+
             <div class="drop-action-group">
-              <label for="spdf-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="spdf-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="spdf-inp" class="select-files-main-btn">Select PDF file</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to split</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-            </div>
+            <p class="drop-formats">Supports PDF documents (.pdf)</p>
           </div>
           <input id="spdf-inp" type="file" accept="application/pdf,.pdf"  hidden>
         </div>
@@ -13509,7 +13435,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       pages = [];
       edits = [];
       activeEdit = null;
-      renderLoading();
+      const dzEl = container.querySelector('#etxt-dz');
+      if (dzEl) dzEl.classList.add('is-opening');
+      const actLink = container.querySelector('.etxt-drop-action-link');
+      if (actLink) actLink.textContent = 'Opening document…';
       try {
         const pdfjs = await loadJs();
         const pdfBlob = await toEditablePdf(f);
@@ -13557,62 +13486,33 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const stage = container.closest('.app-stage-container');
       if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
       container.innerHTML = `
-        <div class="cpdf-dropzone drop-hero-box" id="etxt-dz" tabindex="0" role="button" aria-label="Upload a PDF to edit">
-          <div class="dropzone-idle">
-            <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+        <div class="cpdf-dropzone drop-hero-box etxt-dropzone" id="etxt-dz" tabindex="0" role="button" aria-label="Upload a file to edit">
+          <div class="dropzone-idle etxt-drop-idle">
+            <div class="drop-illustration etxt-drop-illustration">
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="etxt-dz-svg">
+                <!-- Left: Image / Photo Card (Width 66px, X: 18 to 84, Gap to center: 10px) -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet (Width 72px, X: 94 to 166, Exact Center: 130) -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow (Exact Center X: 130, extending downwards) -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="etxt-dz-arrow"/>
+
+                <!-- Right: Folder (Width 66px, X: 176 to 242, Gap to center: 10px) -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
-            <div class="drop-action-group">
-              <label for="etxt-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="etxt-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
-            </div>
+            <h3 class="etxt-drop-title">Drag and drop your files</h3>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong>, <strong>DOCX</strong>, or <strong>Images</strong> to edit text, annotate, or draw</p>
+            <label for="etxt-inp" class="etxt-drop-action-link">Add a file from your device</label>
 
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-doc">DOCX</span>
-              <span class="fmt-badge fmt-xls">EPUB</span>
-            </div>
+            <p class="etxt-drop-formats">Supports PDF, DOCX, PNG, JPG, WEBP, EPUB, TXT, and RTF</p>
           </div>
           <input id="etxt-inp" type="file" accept="application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.docx,.odt,.rtf,.txt,.epub,.md" hidden>
         </div>`;
@@ -14873,21 +14773,49 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return pageEl && curPageW ? pageEl.clientWidth / curPageW : 0;
     }
 
+    function isRTL(text) {
+      return /[\u0591-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/.test(String(text || ''));
+    }
+
+    function prepareRTLText(text) {
+      if (!isRTL(text)) return text;
+      return String(text || '').split('').reverse().join('');
+    }
+
     function clusterTextItems(rawItems, scaledVp, pageScale, styles) {
       if (!rawItems || !rawItems.length) return [];
       const P = pageScale > 0 ? pageScale : 1;
       const parsed = [];
       for (const item of rawItems) {
         if (!item || typeof item.str !== 'string') continue;
-        if (!item.str.trim() && (item.width || 0) <= 0) continue;
+        if (!item.str.trim()) continue; // Ignore empty whitespace positioning chunks
 
         const rawSize = Math.hypot(item.transform[2], item.transform[3]) || Math.hypot(item.transform[0], item.transform[1]) || (item.height > 0 ? item.height : 12);
-        const [vx1, vy1] = scaledVp.convertToViewportPoint(item.transform[4], item.transform[5]);
-        const [vx2, vy2] = scaledVp.convertToViewportPoint(item.transform[4] + (item.width || 0), item.transform[5] + rawSize);
-        const left = Math.min(vx1, vx2);
-        const top = Math.min(vy1, vy2);
-        const width = Math.max(1, Math.abs(vx2 - vx1));
-        const height = Math.max(12, Math.abs(vy2 - vy1));
+        if (rawSize <= 0 || rawSize > 250) continue; // Blueprint sanity check: ignore absurdly large/zero text
+
+        const e = item.transform[4];
+        const f = item.transform[5];
+        const w = item.width || 0;
+        const c = item.transform[2] || 0;
+        const d = item.transform[3] || (item.height > 0 ? item.height : rawSize);
+
+        const p1 = scaledVp.convertToViewportPoint(e, f);
+        const p2 = scaledVp.convertToViewportPoint(e + w, f);
+        const p3 = scaledVp.convertToViewportPoint(e + c, f + d);
+        const p4 = scaledVp.convertToViewportPoint(e + w + c, f + d);
+
+        const minVx = Math.min(p1[0], p2[0], p3[0], p4[0]);
+        const maxVx = Math.max(p1[0], p2[0], p3[0], p4[0]);
+        const minVy = Math.min(p1[1], p2[1], p3[1], p4[1]);
+        const maxVy = Math.max(p1[1], p2[1], p3[1], p4[1]);
+
+        const fontSizeVp = Math.max(8, rawSize * P);
+        const baselineVy = p1[1];
+        const left = minVx;
+        const top = baselineVy - (fontSizeVp * 0.80);
+        const width = Math.max(1, maxVx - minVx);
+        const height = Math.max(8, fontSizeVp * 1.05);
+        const rotation = Math.atan2(item.transform[1] || 0, item.transform[0] || 1) * (180 / Math.PI);
 
         parsed.push({
           raw: item,
@@ -14897,8 +14825,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           pdfW: item.width || 0,
           pdfH: item.height || rawSize,
           fontSizePdf: rawSize,
-          fontSizeVp: Math.max(8, rawSize * P),
+          fontSizeVp,
+          baselineVy,
           fontName: item.fontName,
+          rotation,
+          dir: item.dir || (isRTL(item.str) ? 'rtl' : 'ltr'),
           left,
           top,
           width,
@@ -14929,16 +14860,27 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             minPdfX: p.pdfX,
             maxPdfX: p.pdfX + p.pdfW,
             fontName: p.fontName,
+            rotation: p.rotation,
           };
           continue;
         }
 
-        const sameY = Math.abs(p.pdfY - curCluster.baselinePdfY) <= Math.max(4.5, curCluster.fontSizePdf * 0.6);
-        const sameSize = Math.abs(p.fontSizePdf - curCluster.fontSizePdf) <= Math.max(4.0, curCluster.fontSizePdf * 0.5);
+        const fontSz = curCluster.fontSizePdf;
+        // Strict baseline match: must be on the exact same line
+        const sameY = Math.abs(p.pdfY - curCluster.baselinePdfY) <= Math.max(1.8, fontSz * 0.25);
+        // Strict font size match: must have same size
+        const sameSize = Math.abs(p.fontSizePdf - fontSz) <= Math.max(1.2, fontSz * 0.15);
+        const sameFont = !p.fontName || !curCluster.fontName || p.fontName === curCluster.fontName;
+        const sameRot = Math.abs((p.rotation || 0) - (curCluster.rotation || 0)) < 2;
+
         const lastItem = curCluster.items[curCluster.items.length - 1];
         const lastEnd = lastItem.pdfX + lastItem.pdfW;
         const gap = p.pdfX - lastEnd;
-        const isConsecutive = sameY && sameSize && (gap <= Math.max(60, curCluster.fontSizePdf * 3.5)) && (gap >= -curCluster.fontSizePdf * 1.5);
+
+        // In PDF typesetting, normal space between words in a line is ~0.25 - 0.45 * fontSz.
+        // A tight threshold of Math.min(8.0, Math.max(2.5, fontSz * 0.75)) prevents merging across table columns, tab stops, or separate cells!
+        const maxInlineGap = Math.min(8.0, Math.max(2.5, fontSz * 0.75));
+        const isConsecutive = sameY && sameSize && sameFont && sameRot && (gap <= maxInlineGap) && (gap >= -fontSz * 0.35);
 
         if (isConsecutive) {
           curCluster.items.push(p);
@@ -14953,6 +14895,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             minPdfX: p.pdfX,
             maxPdfX: p.pdfX + p.pdfW,
             fontName: p.fontName,
+            rotation: p.rotation,
           };
         }
       }
@@ -14997,22 +14940,29 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const minTop = Math.min(...c.items.map(it => it.top));
         const maxRight = Math.max(...c.items.map(it => it.left + it.width));
         const maxBottom = Math.max(...c.items.map(it => it.top + it.height));
-        const width = Math.max(18, maxRight - minLeft + 3);
-        const height = Math.max(14, maxBottom - minTop + 2);
+        const width = Math.max(10, maxRight - minLeft);
+        const height = Math.max(10, maxBottom - minTop);
         const fontSize = Math.max(8, c.fontSizePdf * P);
 
+        const baselineVy = c.items[0].baselineVy;
         const geom = {
           left: minLeft,
           top: minTop,
           width,
           height,
+          baselineVy,
           fontSize,
+          fontSizePdf: c.fontSizePdf,
           fontFamily,
+          origFontFamily: fontFamily,
+          customFont: null,
           fontWeight,
           fontStyle,
           isBold,
           isItalic,
           fontName: domFont,
+          rotation: c.rotation || 0,
+          dir: c.items[0]?.dir || 'ltr',
           pdfX: c.minPdfX,
           pdfY: c.baselinePdfY,
           pdfW: c.maxPdfX - c.minPdfX,
@@ -15026,6 +14976,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           width: c.maxPdfX - c.minPdfX,
           height: c.fontSizePdf,
           fontName: domFont,
+          rotation: c.rotation || 0,
+          dir: c.items[0]?.dir || 'ltr',
         };
 
         hits.push({ raw: clusterItem, item: clusterItem, geom });
@@ -15053,8 +15005,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const scaledVp = pageProxy.getViewport({ scale: actualScale });
         const txt = await pageProxy.getTextContent();
         if (myDoc !== docToken || !container.contains(layer)) return;
-        layer.innerHTML = '';
-        const meaningfulItems = txt.items.filter(item => item && typeof item.str === 'string' && (item.str.trim() || item.width > 0));
+        layer.querySelectorAll('.etxt-zone, .etxt-committed').forEach(el => el.remove());
+
+        // Point 18: Form Field Detection & Avoidance
+        let formFieldRects = [];
+        try {
+          const annots = await pageProxy.getAnnotations();
+          formFieldRects = (annots || [])
+            .filter(a => a && (a.subtype === 'Widget' || a.subtype === 'FreeText') && Array.isArray(a.rect))
+            .map(a => a.rect);
+        } catch { /* noop */ }
+
+        const meaningfulItems = txt.items.filter(item => item && typeof item.str === 'string' && item.str.trim().length > 0);
         if (pageNum === page) {
           const scanBanner = container.querySelector('#etxt-scanned-banner');
           if (scanBanner && !scannedBannerDismissed) {
@@ -15072,18 +15034,56 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         for (const h of pageHits) {
           const item = h.item;
           const geom = h.geom;
+
+          // Skip if this text item overlaps an interactive PDF form field widget
+          if (formFieldRects.length > 0) {
+            const overlaps = formFieldRects.some(rect => {
+              const minX = Math.min(rect[0], rect[2]), maxX = Math.max(rect[0], rect[2]);
+              const minY = Math.min(rect[1], rect[3]), maxY = Math.max(rect[1], rect[3]);
+              return geom.pdfX < maxX && (geom.pdfX + geom.pdfW) > minX &&
+                     geom.pdfY < maxY && (geom.pdfY + geom.pdfH) > minY;
+            });
+            if (overlaps) continue;
+          }
+
           const edited = edits.some(e => e.pageIdx === pageNum - 1 && (e.target === item.str || (e.geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
+          const isActiveNow = activeEdit && activeEdit.pageNum === pageNum && (activeEdit.item === item || (activeEdit.geom && Math.abs(activeEdit.geom.left - geom.left) < 5 && Math.abs(activeEdit.geom.top - geom.top) < 5));
           const btn = document.createElement('div');
           btn.className = 'etxt-zone etxt-zone--text' + (edited ? ' etxt-hit--edited' : '');
           btn.dataset.type = 'text';
           btn.dataset.page = String(pageNum);
-          btn.style.cssText = `left:${geom.left.toFixed(1)}px;top:${geom.top.toFixed(1)}px;width:${geom.width.toFixed(1)}px;height:${geom.height.toFixed(1)}px;`;
+          btn.style.cssText = `left:${geom.left.toFixed(1)}px;top:${geom.top.toFixed(1)}px;width:${geom.width.toFixed(1)}px;height:${geom.height.toFixed(1)}px;${isActiveNow ? 'visibility:hidden;' : ''}`;
           btn.title = item.str;
+          btn.onpointerdown = (ev) => {
+            ev.stopPropagation();
+          };
+          btn.onmousedown = (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+          };
           btn.onclick = (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
             btn.style.visibility = 'hidden';
             openEditor(item, geom, ev, pageNum);
+          };
+          // Point 17: Double-click UX to immediately select entire text block
+          btn.ondblclick = (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            btn.style.visibility = 'hidden';
+            openEditor(item, geom, ev, pageNum);
+            setTimeout(() => {
+              const activeBox = layer.querySelector('.etxt-text-box');
+              const activeInner = activeBox?.querySelector('.etxt-text-inner');
+              if (activeInner) {
+                const sel = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(activeInner);
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }
+            }, 20);
           };
           layer.append(btn);
         }
@@ -15114,17 +15114,28 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const sy1 = Math.max(0, (top - 3) * dpr);
         const sx2 = Math.min(cv.width - 1, (left + width + 3) * dpr);
         const sy2 = Math.min(cv.height - 1, (top + height + 3) * dpr);
-        const points = [[sx1, sy1], [sx2, sy1], [sx1, sy2], [sx2, sy2]];
-        let r = 0, g = 0, b = 0, count = 0;
+        const mx = (sx1 + sx2) / 2, my = (sy1 + sy2) / 2;
+        const points = [
+          [sx1, sy1], [mx, sy1], [sx2, sy1],
+          [sx1, my],  [mx, my],  [sx2, my],
+          [sx1, sy2], [mx, sy2], [sx2, sy2]
+        ];
+        // Use mode (most-common 8-bit bucket) instead of average — avoids wrong color on gradients/watermarks
+        const buckets = {};
+        let bestKey = null, bestCount = 0;
         for (const [px, py] of points) {
-          const p = ctx.getImageData(Math.round(px), Math.round(py), 1, 1).data;
+          const p = ctx.getImageData(Math.round(Math.max(0, Math.min(cv.width - 1, px))), Math.round(Math.max(0, Math.min(cv.height - 1, py))), 1, 1).data;
           if (p[3] > 20) {
-            r += p[0]; g += p[1]; b += p[2];
-            count++;
+            // Quantize to 16-step buckets to group near-identical colors
+            const key = `${p[0] >> 4},${p[1] >> 4},${p[2] >> 4}`;
+            buckets[key] = (buckets[key] || { r: 0, g: 0, b: 0, n: 0 });
+            buckets[key].r += p[0]; buckets[key].g += p[1]; buckets[key].b += p[2]; buckets[key].n++;
+            if (buckets[key].n > bestCount) { bestCount = buckets[key].n; bestKey = key; }
           }
         }
-        if (count === 0) return '#FFFFFF';
-        return `rgb(${Math.round(r / count)}, ${Math.round(g / count)}, ${Math.round(b / count)})`;
+        if (!bestKey) return '#FFFFFF';
+        const best = buckets[bestKey];
+        return `rgb(${Math.round(best.r / best.n)}, ${Math.round(best.g / best.n)}, ${Math.round(best.b / best.n)})`;
       } catch {
         return '#FFFFFF';
       }
@@ -15181,12 +15192,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const ctx = cv.getContext('2d', { willReadFrequently: true });
       if (!ctx) return null;
       const dpr = cv.width / (cv.clientWidth || cv.width);
-      const padX = Math.ceil(1.0 * dpr);
-      const padY = Math.ceil(1.0 * dpr);
-      const sx = Math.max(0, Math.floor(left * dpr) - padX);
-      const sy = Math.max(0, Math.floor(top * dpr) - padY);
-      const sw = Math.min(cv.width - sx, Math.ceil(width * dpr) + padX * 2);
-      const sh = Math.min(cv.height - sy, Math.ceil(height * dpr) + padY * 2);
+      const padX = 0;
+      const padY = 0;
+      const sx = Math.max(0, Math.floor(left * dpr));
+      const sy = Math.max(0, Math.floor(top * dpr));
+      const sw = Math.min(cv.width - sx, Math.ceil(width * dpr));
+      const sh = Math.min(cv.height - sy, Math.ceil(height * dpr));
       if (sw <= 0 || sh <= 0) return null;
 
       let patch = null;
@@ -15223,7 +15234,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (!pageEl) return;
       const pageNum = Number(pageEl.dataset.page) || page;
       const rect = pageEl.getBoundingClientRect();
-      const P = pageScale > 0 ? pageScale : 1;
+      const P = (pageEl && curPageW > 0) ? pageEl.clientWidth / curPageW : (pageScale > 0 ? pageScale : 1);
       const scaleFactor = (rect.width / (pageEl.clientWidth || 1)) || (zoom / 100) || 1;
       const clickX = Math.max(0, (e.clientX - rect.left) / scaleFactor);
       const clickY = Math.max(0, (e.clientY - rect.top) / scaleFactor);
@@ -15273,7 +15284,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function openEditor(item, geom, clickEv, editPageNum) {
-      commitEditor();
+      commitEditor(true);
       const activePageNum = (typeof editPageNum === 'number') ? editPageNum : page;
       page = activePageNum;
       const pageEl = container.querySelector(`.etxt-page[data-page="${activePageNum}"]`);
@@ -15282,7 +15293,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const existing = edits.find(e => e.pageIdx === activePageNum - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
       layer.querySelector('.etxt-text-box')?.remove();
 
-      const P = pageScale > 0 ? pageScale : 1;
+      const P = (pageEl && pageEl.clientWidth > 0 && curPageW > 0) ? (pageEl.clientWidth / curPageW) : (pageScale > 0 ? pageScale : 1);
       const box = document.createElement('div');
       box.className = 'etxt-text-box';
       box.dataset.page = String(activePageNum);
@@ -15296,39 +15307,48 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       inner.innerText = existing ? existing.replacement : item.str;
       box.append(inner);
 
-      const left = geom ? geom.left : Math.max(0, item.transform[4] * P);
-      const top = geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P);
+      let curFontSizePdf = geom?.fontSizePdf || (geom ? (geom.fontSize / P) : (item.height || 12));
+      let curFontSize = curFontSizePdf * P;
       const width = geom ? geom.width : 40;
-      const height = geom ? geom.height : Math.max(12, (item.height || 12) * P);
+      const height = geom ? geom.height : Math.max(12, curFontSize * 1.05);
+
+      const curBoxLeft_init = geom ? geom.left : Math.max(0, item.transform[4] * P);
+      const curBoxTop_init = (typeof geom?.baselineVy === 'number')
+        ? (geom.baselineVy - (curFontSize * 0.78))
+        : (geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P));
+      let curBoxLeft = curBoxLeft_init;
+      let curBoxTop = curBoxTop_init;
 
       const cv = pageEl?.querySelector('.etxt-full-canvas') || container.querySelector(`.etxt-page[data-page="${activePageNum}"] .etxt-full-canvas`) || container.querySelector('.etxt-full-canvas');
-      const bgColor = sampleCanvasBgColor(left, top, width, height, cv);
-      const docTextColor = sampleCanvasTextColor(left, top, width, height, bgColor, cv);
+      const bgColor = sampleCanvasBgColor(curBoxLeft, curBoxTop, width, height, cv);
+      const docTextColor = sampleCanvasTextColor(curBoxLeft, curBoxTop, width, height, bgColor, cv);
 
       let savedCanvasPatch = null;
-      let canvasErased = false;
-      const eraseCanvasOnce = () => {
-        if (canvasErased || geom?.isNew) return;
-        canvasErased = true;
-        savedCanvasPatch = eraseCanvasTextPatch(cv, left, top, width, height, bgColor);
-      };
-      if (!geom?.isNew) {
-        eraseCanvasOnce();
+      if (!geom?.isNew && cv) {
+        const eraseTop = (typeof geom?.baselineVy === 'number') ? (geom.baselineVy - (curFontSize * 0.82)) : curBoxTop_init;
+        const eraseHeight = Math.max(12, curFontSize * 1.08);
+        savedCanvasPatch = eraseCanvasTextPatch(cv, curBoxLeft_init - 1, eraseTop, width + 4, eraseHeight, bgColor);
       }
-
-      let curFontSize = geom ? geom.fontSize : Math.max(8, (item.height || 12) * P);
       let curFontFamily = geom?.fontFamily || toolOpts.textFont || 'Helvetica, Arial, sans-serif';
       let curFontWeight = geom?.fontWeight || (geom?.isBold ?? toolOpts.isBold ? '700' : '400');
       let curFontStyle = geom?.fontStyle || (geom?.isItalic ?? toolOpts.isItalic ? 'italic' : 'normal');
       let curUnderline = geom?.underline ?? toolOpts.editUnderline ?? false;
       let curTextColor = geom?.textColor || toolOpts.textColor || docTextColor || '#0F172A';
-      let curTextAlign = geom?.textAlign || toolOpts.editTextAlign || 'left';
+      let curTextAlign = geom?.textAlign || toolOpts.editTextAlign || (isRTL(item.str || (existing ? existing.replacement : '')) ? 'right' : 'left');
+
+      const isTextRtl = isRTL(item.str || (existing ? existing.replacement : ''));
+      const textRot = geom?.rotation || 0;
+      const rotCss = textRot !== 0 ? `transform: rotate(${-textRot}deg); transform-origin: bottom left;` : '';
+      const rtlCss = isTextRtl ? 'direction: rtl !important; unicode-bidi: bidi-override !important;' : '';
 
       const applyBoxStyles = () => {
-        box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${Math.max(40, width).toFixed(1)}px;min-height:${height.toFixed(1)}px;width:fit-content;background:transparent !important;background-color:transparent !important;border:none !important;outline:1px dashed #2563EB !important;outline-offset:2px !important;border-radius:2px !important;box-shadow:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;`;
-        inner.style.cssText = `display:block !important;vertical-align:top !important;min-width:100%;width:fit-content;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};text-decoration:${curUnderline ? 'underline' : 'none'};font-variant-numeric:tabular-nums;line-height:1 !important;white-space:nowrap;word-break:normal;padding:0 !important;margin:0 !important;border:none !important;outline:none !important;background:transparent !important;background-color:transparent !important;box-shadow:none !important;caret-color:${curTextColor} !important;-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;`;
+        box.style.cssText = `left:${curBoxLeft.toFixed(1)}px;top:${curBoxTop.toFixed(1)}px;min-width:${Math.max(10, width).toFixed(1)}px;height:${height.toFixed(1)}px !important;min-height:${height.toFixed(1)}px !important;max-height:${height.toFixed(1)}px !important;width:fit-content;background:${bgColor} !important;background-color:${bgColor} !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;overflow:visible !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;${rotCss}`;
+        inner.style.cssText = `display:block !important;vertical-align:top !important;min-width:100%;width:fit-content;height:100% !important;max-height:${height.toFixed(1)}px !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};text-decoration:${curUnderline ? 'underline' : 'none'};font-variant-numeric:tabular-nums;line-height:1 !important;white-space:nowrap;word-break:normal;padding:0 !important;margin:0 !important;border:none !important;outline:none !important;overflow:visible !important;background:${bgColor} !important;background-color:${bgColor} !important;box-shadow:none !important;caret-color:${curTextColor} !important;-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;${rtlCss}`;
         if (geom) {
+          geom.left = curBoxLeft;
+          geom.top = curBoxTop;
           geom.fontSize = curFontSize;
+          geom.fontSizePdf = curFontSizePdf;
           geom.fontWeight = curFontWeight;
           geom.fontStyle = curFontStyle;
           geom.isBold = curFontWeight === '700';
@@ -15337,105 +15357,270 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           geom.textAlign = curTextAlign;
           geom.textColor = curTextColor;
           geom.fontFamily = curFontFamily;
+          geom.bgColor = bgColor;
+          geom.rotation = textRot;
         }
       };
       applyBoxStyles();
 
-      // ── Contextual Floating Micro-Bar (Anchored directly to text box) ──
+      // ── Contextual Floating Dark Island Capsule Toolbar ──
       const microbar = document.createElement('div');
-      microbar.className = 'etxt-inline-microbar ' + (top < 42 ? 'etxt-inline-microbar--below' : 'etxt-inline-microbar--above');
+      microbar.className = 'etxt-inline-microbar ' + (curBoxTop < 12 ? 'etxt-inline-microbar--below' : 'etxt-inline-microbar--above');
       const curPageWidth = pageEl?.clientWidth || (curPageW * P);
-      const microbarEstWidth = 475;
-      if (left + microbarEstWidth > curPageWidth) {
-        const overflow = (left + microbarEstWidth) - curPageWidth;
-        const shiftX = Math.min(left - 8, overflow + 12);
-        if (shiftX > 0) {
-          microbar.style.setProperty('left', `-${shiftX.toFixed(1)}px`, 'important');
-        } else {
-          microbar.classList.add('etxt-inline-microbar--right');
-        }
+      const curPageHeight = pageEl?.clientHeight || (curPageH * P);
+
+      // Position toolbar contextually directly above where the user clicked / placed cursor
+      let cursorXInBox = width / 2;
+      if (clickEv) {
+        const pageRect = pageEl ? pageEl.getBoundingClientRect() : { left: 0, width: curPageWidth };
+        const scaleFactor = (pageRect.width / (pageEl?.clientWidth || 1)) || (zoom / 100) || 1;
+        const clickPageX = Math.max(0, (clickEv.clientX - pageRect.left) / scaleFactor);
+        cursorXInBox = Math.max(0, Math.min(width, clickPageX - curBoxLeft));
       }
 
+      const updateMicrobarPosition = () => {
+        const targetPageCenter = curBoxLeft + cursorXInBox;
+        const estHalfW = 125;
+        const clampedPageX = Math.max(estHalfW + 6, Math.min(curPageWidth - estHalfW - 6, targetPageCenter));
+        const relativeLeft = clampedPageX - curBoxLeft;
+        microbar.style.left = `${relativeLeft.toFixed(1)}px`;
+        const zRatio = (zoom > 0) ? (100 / zoom) : 1;
+        const scaleVal = Math.min(1.0, Math.max(0.4, zRatio));
+        microbar.style.transform = `translateX(-50%) scale(${scaleVal.toFixed(3)})`;
+        microbar.style.transformOrigin = curBoxTop < 12 ? 'top center' : 'bottom center';
+      };
+      updateMicrobarPosition();
+
       const updateMicrobarState = () => {
-        const isOriginal = !curFontFamily || curFontFamily === 'original' || curFontFamily === (item.fontName || '');
-        const isSans = curFontFamily.includes('Helvetica') || curFontFamily.includes('Arial') || curFontFamily.includes('sans');
-        const isSerif = curFontFamily.includes('Times') || curFontFamily.includes('serif');
-        const isMono = curFontFamily.includes('Courier') || curFontFamily.includes('mono');
+        const isOriginal = !geom?.customFont;
+        const isSans = geom?.customFont === 'sans' || (!isOriginal && (curFontFamily.includes('Helvetica') || curFontFamily.includes('Arial') || curFontFamily.includes('sans-serif')));
+        const isSerif = geom?.customFont === 'serif' || (!isOriginal && (curFontFamily.includes('Times') || curFontFamily.includes('Georgia') || (curFontFamily.includes('serif') && !curFontFamily.includes('sans-serif'))));
+        const isMono = geom?.customFont === 'mono' || (!isOriginal && (curFontFamily.includes('Courier') || curFontFamily.includes('monospace') || curFontFamily.includes('mono')));
+
+        let fontDisplayLabel = 'Original';
+        if (isSans) fontDisplayLabel = 'Sans';
+        else if (isSerif) fontDisplayLabel = 'Serif';
+        else if (isMono) fontDisplayLabel = 'Mono';
+
+        const displayPt = (Math.round(curFontSizePdf * 10) / 10).toFixed(1);
+
+        const hexColor = (curTextColor.startsWith('#') && curTextColor.length === 7) ? curTextColor : '#0F172A';
 
         microbar.innerHTML = `
-          <select class="etxt-micro-select" id="etxt-m-font" aria-label="Font Family">
-            <option value="original"${isOriginal ? ' selected' : ''}>Original</option>
-            <option value="Helvetica, Arial, sans-serif"${isSans && !isOriginal ? ' selected' : ''}>Sans</option>
-            <option value="'Times New Roman', Times, serif"${isSerif ? ' selected' : ''}>Serif</option>
-            <option value="'Courier New', Courier, monospace"${isMono ? ' selected' : ''}>Mono</option>
-          </select>
+          <!-- 1. 6-Dot Drag Handle -->
+          <div class="etxt-micro-grip" title="Drag text sentence" aria-label="Drag text sentence">
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="none">
+              <circle cx="2" cy="2" r="1.1" fill="currentColor"/>
+              <circle cx="6" cy="2" r="1.1" fill="currentColor"/>
+              <circle cx="2" cy="6" r="1.1" fill="currentColor"/>
+              <circle cx="6" cy="6" r="1.1" fill="currentColor"/>
+              <circle cx="2" cy="10" r="1.1" fill="currentColor"/>
+              <circle cx="6" cy="10" r="1.1" fill="currentColor"/>
+            </svg>
+          </div>
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn" id="etxt-m-dec" aria-label="Decrease font size">−</button>
-          <span class="etxt-micro-size-val">${Math.round(curFontSize / P)}</span>
-          <button type="button" class="etxt-micro-btn" id="etxt-m-inc" aria-label="Increase font size">+</button>
+          <!-- 2. Font Dropdown Trigger -->
+          <div class="etxt-micro-dropdown-wrap">
+            <button type="button" class="etxt-micro-dropdown-trigger" id="etxt-m-font-btn" aria-label="Font Family">
+              <span class="etxt-micro-font-label">${fontDisplayLabel}</span>
+              <svg class="etxt-micro-caret" width="7" height="5" viewBox="0 0 8 6" fill="currentColor"><path d="M1 1.5L4 4.5L7 1.5"/></svg>
+            </button>
+            <div class="etxt-micro-dropdown-menu" id="etxt-m-font-menu">
+              <button type="button" class="etxt-micro-menu-item${isOriginal ? ' is-selected' : ''}" data-val="original">Original</button>
+              <button type="button" class="etxt-micro-menu-item${isSans ? ' is-selected' : ''}" data-val="Helvetica, Arial, sans-serif">Sans</button>
+              <button type="button" class="etxt-micro-menu-item${isSerif ? ' is-selected' : ''}" data-val="'Times New Roman', Times, serif">Serif</button>
+              <button type="button" class="etxt-micro-menu-item${isMono ? ' is-selected' : ''}" data-val="'Courier New', Courier, monospace">Mono</button>
+            </div>
+          </div>
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn${curFontWeight === '700' ? ' is-active' : ''}" id="etxt-m-bold" aria-label="Toggle Bold"><b>B</b></button>
-          <button type="button" class="etxt-micro-btn${curFontStyle === 'italic' ? ' is-active' : ''}" id="etxt-m-italic" aria-label="Toggle Italic"><i>I</i></button>
-          <button type="button" class="etxt-micro-btn${curUnderline ? ' is-active' : ''}" id="etxt-m-underline" aria-label="Toggle Underline"><u>U</u></button>
+          <!-- 3. Font Size Stepper -->
+          <div class="etxt-micro-stepper">
+            <button type="button" class="etxt-micro-btn etxt-micro-stepper-btn" id="etxt-m-dec" aria-label="Decrease font size">
+              <svg width="8" height="2" viewBox="0 0 10 2" fill="currentColor"><rect width="10" height="2" rx="1"/></svg>
+            </button>
+            <span class="etxt-micro-size-val">${displayPt}</span>
+            <button type="button" class="etxt-micro-btn etxt-micro-stepper-btn" id="etxt-m-inc" aria-label="Increase font size">
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M4 0h2v10H4z"/><path d="M0 4h10v2H0z"/></svg>
+            </button>
+          </div>
 
           <span class="etxt-micro-sep"></span>
 
-          <button type="button" class="etxt-micro-btn${curTextAlign === 'left' ? ' is-active' : ''}" data-ma="left" aria-label="Align Left">&#x2630;</button>
-          <button type="button" class="etxt-micro-btn${curTextAlign === 'center' ? ' is-active' : ''}" data-ma="center" aria-label="Center">&#x2261;</button>
-          <button type="button" class="etxt-micro-btn${curTextAlign === 'right' ? ' is-active' : ''}" data-ma="right" aria-label="Align Right">&#x2630;</button>
+          <!-- 4. Formatting Toggles (Bold, Italic) -->
+          <button type="button" class="etxt-micro-btn${curFontWeight === '700' ? ' is-active' : ''}" id="etxt-m-bold" aria-label="Bold">
+            <span style="font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11.5px;">B</span>
+          </button>
+          <button type="button" class="etxt-micro-btn${curFontStyle === 'italic' ? ' is-active' : ''}" id="etxt-m-italic" aria-label="Italic">
+            <span style="font-style: italic; font-family: 'Times New Roman', Times, serif; font-size: 12.5px; font-weight: 600;">I</span>
+          </button>
+
+          <!-- 5. Text Color 'A' with active color bar -->
+          <div class="etxt-micro-color-wrap">
+            <button type="button" class="etxt-micro-btn etxt-micro-color-btn" id="etxt-m-color-btn" aria-label="Text color">
+              <span class="etxt-micro-a-glyph">A</span>
+              <span class="etxt-micro-color-bar" style="background-color: ${curTextColor};"></span>
+            </button>
+            <input type="color" class="etxt-micro-native-color" id="etxt-m-color" value="${hexColor}">
+          </div>
+
+          <!-- 6. Alignment Dropdown [ ☰ ▾ ] -->
+          <div class="etxt-micro-dropdown-wrap">
+            <button type="button" class="etxt-micro-btn etxt-micro-align-btn" id="etxt-m-align-btn" aria-label="Text alignment">
+              <svg class="etxt-micro-align-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                ${curTextAlign === 'center' ? '<line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>' :
+                  curTextAlign === 'right' ? '<line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="9" y2="18"/>' :
+                  '<line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="15" y1="18" x2="3" y2="18"/>'}
+              </svg>
+              <svg class="etxt-micro-caret" width="6" height="4" viewBox="0 0 8 6" fill="currentColor"><path d="M1 1.5L4 4.5L7 1.5"/></svg>
+            </button>
+            <div class="etxt-micro-dropdown-menu" id="etxt-m-align-menu">
+              <button type="button" class="etxt-micro-menu-item${curTextAlign === 'left' ? ' is-selected' : ''}" data-align="left">Left</button>
+              <button type="button" class="etxt-micro-menu-item${curTextAlign === 'center' ? ' is-selected' : ''}" data-align="center">Center</button>
+              <button type="button" class="etxt-micro-menu-item${curTextAlign === 'right' ? ' is-selected' : ''}" data-align="right">Right</button>
+            </div>
+          </div>
 
           <span class="etxt-micro-sep"></span>
 
-          ${['#0F172A', '#2563EB', '#DC2626', '#059669', '#D97706'].map(c => `
-            <button type="button" class="etxt-micro-swatch${curTextColor.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-mc="${c}" style="background:${c}" aria-label="Color ${c}"></button>
-          `).join('')}
-          <label class="etxt-micro-color-chip" aria-label="Custom color">
-            <span class="etxt-micro-swatch" style="background:${curTextColor}; border: 1px dashed #71717A;"></span>
-            <input type="color" class="etxt-micro-color-input" id="etxt-m-color" value="${curTextColor.startsWith('#') && curTextColor.length === 7 ? curTextColor : '#0F172A'}">
-          </label>
-
-          <span class="etxt-micro-sep"></span>
-
-          <button type="button" class="etxt-micro-btn etxt-micro-btn--revert" id="etxt-m-revert" aria-label="Revert">↺</button>
-          <button type="button" class="etxt-micro-btn etxt-micro-btn--commit" id="etxt-m-ok" aria-label="Save Edit">✓</button>
-          <button type="button" class="etxt-micro-btn etxt-micro-btn--delete" id="etxt-m-del" aria-label="Discard">✕</button>
+          <!-- 7. Instant Revert ⟲ -->
+          <button type="button" class="etxt-micro-btn etxt-micro-revert-btn" id="etxt-m-revert" aria-label="Revert text to original" title="Revert text">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+          </button>
         `;
 
-        microbar.querySelectorAll('button').forEach(btn => {
+        microbar.querySelectorAll('button, .etxt-micro-menu-item').forEach(btn => {
           btn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
         });
 
-        const fontSel = microbar.querySelector('#etxt-m-font');
-        if (fontSel) {
-          fontSel.onchange = (e) => {
-            if (e.target.value === 'original') {
-              curFontFamily = item.fontName || 'Helvetica, Arial, sans-serif';
-            } else {
-              curFontFamily = e.target.value;
-            }
-            toolOpts.textFont = curFontFamily;
-            applyBoxStyles();
+        // ── Drag & Drop Grip Mechanics (Drags both pill & selected text sentence inside PDF) ──
+        const grip = microbar.querySelector('.etxt-micro-grip');
+        if (grip) {
+          let isDragging = false;
+          let startPointerX = 0, startPointerY = 0;
+          let startBoxLeft = 0, startBoxTop = 0;
+          grip.onpointerdown = (pe) => {
+            pe.preventDefault();
+            pe.stopPropagation();
+            isDragging = true;
+            startPointerX = pe.clientX;
+            startPointerY = pe.clientY;
+            startBoxLeft = curBoxLeft;
+            startBoxTop = curBoxTop;
+            grip.setPointerCapture(pe.pointerId);
+            grip.classList.add('is-dragging');
+            document.body.style.userSelect = 'none';
           };
+          grip.onpointermove = (pe) => {
+            if (!isDragging) return;
+            pe.preventDefault();
+            pe.stopPropagation();
+            const pageRect = pageEl ? pageEl.getBoundingClientRect() : { width: curPageWidth };
+            const scaleFactor = (pageRect.width / (pageEl?.clientWidth || 1)) || (zoom / 100) || 1;
+            const deltaX = (pe.clientX - startPointerX) / scaleFactor;
+            const deltaY = (pe.clientY - startPointerY) / scaleFactor;
+
+            const newBoxLeft = Math.max(0, Math.min(curPageWidth - 20, startBoxLeft + deltaX));
+            const newBoxTop = Math.max(0, Math.min(curPageHeight - 12, startBoxTop + deltaY));
+
+            curBoxLeft = newBoxLeft;
+            curBoxTop = newBoxTop;
+
+            box.style.left = `${newBoxLeft.toFixed(1)}px`;
+            box.style.top = `${newBoxTop.toFixed(1)}px`;
+
+            if (newBoxTop < 36) {
+              microbar.classList.add('etxt-inline-microbar--below');
+              microbar.classList.remove('etxt-inline-microbar--above');
+            } else {
+              microbar.classList.add('etxt-inline-microbar--above');
+              microbar.classList.remove('etxt-inline-microbar--below');
+            }
+            updateMicrobarPosition();
+
+            if (geom) {
+              geom.left = newBoxLeft;
+              geom.top = newBoxTop;
+              geom.pdfX = newBoxLeft / P;
+              geom.pdfY = curPageH - (newBoxTop / P) - (geom.pdfH || curFontSizePdf);
+            }
+            if (item && item.transform) {
+              item.transform[4] = newBoxLeft / P;
+              item.transform[5] = curPageH - (newBoxTop / P) - (item.height || curFontSizePdf);
+            }
+          };
+          const endDrag = (pe) => {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.style.userSelect = '';
+            try { grip.releasePointerCapture(pe.pointerId); } catch {}
+            grip.classList.remove('is-dragging');
+          };
+          grip.onpointerup = endDrag;
+          grip.onpointercancel = endDrag;
         }
 
+        // ── Font Dropdown Toggle ──
+        const fontBtn = microbar.querySelector('#etxt-m-font-btn');
+        const fontMenu = microbar.querySelector('#etxt-m-font-menu');
+        if (fontBtn && fontMenu) {
+          fontBtn.onclick = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const isOpen = fontMenu.classList.contains('is-open');
+            microbar.querySelectorAll('.etxt-micro-dropdown-menu').forEach(m => m.classList.remove('is-open'));
+            if (!isOpen) fontMenu.classList.add('is-open');
+          };
+          fontMenu.querySelectorAll('.etxt-micro-menu-item').forEach(itemBtn => {
+            itemBtn.onclick = (e) => {
+              e.preventDefault(); e.stopPropagation();
+              const val = itemBtn.dataset.val;
+              if (val === 'original') {
+                curFontFamily = geom?.origFontFamily || 'Helvetica, Arial, sans-serif';
+                if (geom) geom.customFont = null;
+              } else {
+                curFontFamily = val;
+                if (geom) geom.customFont = val.includes('Times') ? 'serif' : val.includes('Courier') ? 'mono' : 'sans';
+              }
+              toolOpts.textFont = curFontFamily;
+              applyBoxStyles();
+              updateMicrobarState();
+            };
+          });
+        }
+
+        // ── Stepper [ - ] 9.0 [ + ] (0.5 pt increments) ──
         microbar.querySelector('#etxt-m-dec').onclick = (e) => {
           e.preventDefault(); e.stopPropagation();
-          curFontSize = Math.max(6 * P, curFontSize - 1 * P);
-          toolOpts.textSize = Math.round(curFontSize / P);
+          curFontSizePdf = Math.max(4, Math.round(curFontSizePdf * 2 - 1) / 2);
+          curFontSize = curFontSizePdf * P;
+          if (geom) {
+            geom.fontSizePdf = curFontSizePdf;
+            geom.fontSize = curFontSize;
+          }
+          toolOpts.textSize = curFontSizePdf;
           applyBoxStyles();
           updateMicrobarState();
         };
         microbar.querySelector('#etxt-m-inc').onclick = (e) => {
           e.preventDefault(); e.stopPropagation();
-          curFontSize = Math.min(72 * P, curFontSize + 1 * P);
-          toolOpts.textSize = Math.round(curFontSize / P);
+          curFontSizePdf = Math.min(120, Math.round(curFontSizePdf * 2 + 1) / 2);
+          curFontSize = curFontSizePdf * P;
+          if (geom) {
+            geom.fontSizePdf = curFontSizePdf;
+            geom.fontSize = curFontSize;
+          }
+          toolOpts.textSize = curFontSizePdf;
           applyBoxStyles();
           updateMicrobarState();
         };
+
+        // ── Bold & Italic ──
         microbar.querySelector('#etxt-m-bold').onclick = (e) => {
           e.preventDefault(); e.stopPropagation();
           curFontWeight = curFontWeight === '700' ? '400' : '700';
@@ -15450,43 +15635,52 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           applyBoxStyles();
           updateMicrobarState();
         };
-        const uBtn = microbar.querySelector('#etxt-m-underline');
-        if (uBtn) {
-          uBtn.onclick = (e) => {
+
+        // ── Color Button 'A' ──
+        const colBtn = microbar.querySelector('#etxt-m-color-btn');
+        const colInp = microbar.querySelector('#etxt-m-color');
+        if (colBtn && colInp) {
+          colBtn.onclick = (e) => {
             e.preventDefault(); e.stopPropagation();
-            curUnderline = !curUnderline;
-            toolOpts.editUnderline = curUnderline;
-            applyBoxStyles();
-            updateMicrobarState();
+            colInp.click();
           };
-        }
-        microbar.querySelectorAll('[data-ma]').forEach(btn => {
-          btn.onclick = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            curTextAlign = btn.dataset.ma;
-            toolOpts.editTextAlign = curTextAlign;
-            applyBoxStyles();
-            updateMicrobarState();
-          };
-        });
-        microbar.querySelectorAll('[data-mc]').forEach(btn => {
-          btn.onclick = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            curTextColor = btn.dataset.mc;
+          colInp.oninput = (e) => {
+            curTextColor = e.target.value;
             toolOpts.textColor = curTextColor;
             applyBoxStyles();
-            updateMicrobarState();
+            const bar = microbar.querySelector('.etxt-micro-color-bar');
+            if (bar) bar.style.backgroundColor = curTextColor;
           };
-        });
-        const colInp = microbar.querySelector('#etxt-m-color');
-        if (colInp) {
-          colInp.oninput = (e) => {
+          colInp.onchange = (e) => {
             curTextColor = e.target.value;
             toolOpts.textColor = curTextColor;
             applyBoxStyles();
             updateMicrobarState();
           };
         }
+
+        // ── Alignment Dropdown ──
+        const alignBtn = microbar.querySelector('#etxt-m-align-btn');
+        const alignMenu = microbar.querySelector('#etxt-m-align-menu');
+        if (alignBtn && alignMenu) {
+          alignBtn.onclick = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const isOpen = alignMenu.classList.contains('is-open');
+            microbar.querySelectorAll('.etxt-micro-dropdown-menu').forEach(m => m.classList.remove('is-open'));
+            if (!isOpen) alignMenu.classList.add('is-open');
+          };
+          alignMenu.querySelectorAll('.etxt-micro-menu-item').forEach(itemBtn => {
+            itemBtn.onclick = (e) => {
+              e.preventDefault(); e.stopPropagation();
+              curTextAlign = itemBtn.dataset.align || 'left';
+              toolOpts.editTextAlign = curTextAlign;
+              applyBoxStyles();
+              updateMicrobarState();
+            };
+          });
+        }
+
+        // ── Revert Button ⟲ ──
         const revBtn = microbar.querySelector('#etxt-m-revert');
         if (revBtn) {
           revBtn.onclick = (e) => {
@@ -15503,23 +15697,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             toast('Reverted to original text');
           };
         }
-        microbar.querySelector('#etxt-m-ok').onclick = (e) => {
-          e.preventDefault(); e.stopPropagation();
-          commitEditor();
-        };
-        microbar.querySelector('#etxt-m-del').onclick = (e) => {
-          e.preventDefault(); e.stopPropagation();
-          if (savedCanvasPatch) restoreCanvasTextPatch(cv, savedCanvasPatch);
-          if (existing) {
-            pushUndo();
-            edits = edits.filter(x => x !== existing);
-          }
-          activeEdit = null;
-          box.remove();
-          attachTextHits(activePageNum);
-          updateExportBadge();
-        };
       };
+
+      // Close dropdown menus on click outside
+      const onDocClick = (e) => {
+        if (!microbar.contains(e.target)) {
+          microbar.querySelectorAll('.etxt-micro-dropdown-menu').forEach(m => m.classList.remove('is-open'));
+        }
+      };
+      document.addEventListener('pointerdown', onDocClick);
+
       updateMicrobarState();
       box.append(microbar);
 
@@ -15527,16 +15714,89 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       activeEdit = { item, box, geom, pageNum: activePageNum, savedCanvasPatch, cv };
       renderSubcontrols();
 
-      // ── Focus without wiping caret ──
-      setTimeout(() => {
+      // ── Subpixel-Exact Caret Placement at Click Coordinates ──
+      const placeCaret = () => {
         inner.focus();
+        if (clickEv && typeof clickEv.clientX === 'number') {
+          const clickX = clickEv.clientX;
+          const rect = inner.getBoundingClientRect();
+          const clickY = rect.top + rect.height / 2; // Sample at exact vertical midline
+
+          if (typeof document.caretRangeFromPoint === 'function') {
+            try {
+              const range = document.caretRangeFromPoint(clickX, clickY);
+              if (range && (range.startContainer === inner || inner.contains(range.startContainer))) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+                return;
+              }
+            } catch { /* noop */ }
+          }
+          if (typeof document.caretPositionFromPoint === 'function') {
+            try {
+              const pos = document.caretPositionFromPoint(clickX, clickY);
+              if (pos && (pos.offsetNode === inner || inner.contains(pos.offsetNode))) {
+                const sel = window.getSelection();
+                const range = document.createRange();
+                const node = pos.offsetNode.nodeType === Node.TEXT_NODE ? pos.offsetNode : (inner.firstChild || inner);
+                range.setStart(node, Math.min(pos.offset, node.textContent?.length || 0));
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                return;
+              }
+            } catch { /* noop */ }
+          }
+
+          // Strategy 2: Subpixel Range Boundary Measurement across all glyphs
+          const textNode = inner.firstChild;
+          if (textNode && textNode.nodeType === Node.TEXT_NODE && textNode.textContent.length > 0) {
+            const len = textNode.textContent.length;
+            let bestOffset = 0;
+            let bestDist = Infinity;
+            const testRange = document.createRange();
+            for (let i = 0; i <= len; i++) {
+              testRange.setStart(textNode, i);
+              testRange.collapse(true);
+              const r = testRange.getBoundingClientRect();
+              const dist = Math.abs(r.left - clickX);
+              if (dist < bestDist) {
+                bestDist = dist;
+                bestOffset = i;
+              }
+            }
+            const sel = window.getSelection();
+            const finalRange = document.createRange();
+            finalRange.setStart(textNode, bestOffset);
+            finalRange.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(finalRange);
+            return;
+          }
+        }
         const range = document.createRange();
         range.selectNodeContents(inner);
         range.collapse(false);
         const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
-      }, 0);
+      };
+
+      placeCaret();
+      setTimeout(placeCaret, 0);
+
+      // ── Input & Editing listeners: Expand canvas erase if text grows wider ──
+      inner.addEventListener('input', () => {
+        try {
+          const curW = inner.scrollWidth || inner.offsetWidth || width;
+          if (curW > (width + 4) && cv && !geom?.isNew) {
+            const eraseTop = (typeof geom?.baselineVy === 'number') ? (geom.baselineVy - (curFontSize * 0.82)) : curBoxTop_init;
+            const eraseHeight = Math.max(12, curFontSize * 1.08);
+            eraseCanvasTextPatch(cv, curBoxLeft_init - 1, eraseTop, curW + 8, eraseHeight, bgColor);
+          }
+        } catch { /* noop */ }
+      });
 
       // ── Keyboard shortcuts ──
       inner.addEventListener('keydown', (ev) => {
@@ -15572,23 +15832,51 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       });
 
-      // ── Blur = commit (guarded: don't commit if clicking inside microbar or toolbar) ─
+      // ── Caret Tracking: Keep microbar positioned contextually above cursor ──
+      const repositionMicrobarToCaret = () => {
+        try {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
+            const r = sel.getRangeAt(0);
+            const rRect = r.getBoundingClientRect();
+            const pageRect = pageEl ? pageEl.getBoundingClientRect() : { left: 0, width: curPageWidth };
+            const scaleFactor = (pageRect.width / (pageEl?.clientWidth || 1)) || (zoom / 100) || 1;
+            if (rRect && rRect.left > 0) {
+              const caretPageX = (rRect.left - pageRect.left) / scaleFactor;
+              cursorXInBox = Math.max(0, Math.min(width, caretPageX - curBoxLeft));
+              updateMicrobarPosition();
+            }
+          }
+        } catch { /* noop */ }
+      };
+      inner.addEventListener('pointerup', () => setTimeout(repositionMicrobarToCaret, 10));
+      inner.addEventListener('keyup', (ev) => {
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(ev.key)) {
+          repositionMicrobarToCaret();
+        }
+      });
+
+      // ── Blur = auto-commit (guarded: don't commit if clicking inside microbar or toolbar) ─
       const openTime = Date.now();
+      let blurTimeout = null;
       inner.addEventListener('blur', (ev) => {
         if (window.__debugKeepEditorOpen) return;
         if (Date.now() - openTime < 200) return;
         if (ev.relatedTarget && (microbar.contains(ev.relatedTarget) || ev.relatedTarget.closest('#etxt-optbar, .etxt-inline-microbar, .etxt-unified-toolbar, #etxt-subcontrols-slot'))) return;
-        setTimeout(() => {
-          if (document.body.contains(box) && activeEdit) commitEditor();
+        clearTimeout(blurTimeout);
+        blurTimeout = setTimeout(() => {
+          if (activeEdit && activeEdit.box === box && document.body.contains(box)) {
+            commitEditor();
+          }
         }, 150);
       });
 
       renderOptbar();
     }
 
-    function commitEditor() {
+    function commitEditor(skipRehit = false) {
       if (!activeEdit) return;
-      const { item, box, geom, pageNum, savedCanvasPatch, cv } = activeEdit;
+      let { item, box, geom, pageNum, savedCanvasPatch, cv } = activeEdit;
       const editPageNum = pageNum || page;
       activeEdit = null;
       lastCommitTime = Date.now();
@@ -15596,22 +15884,33 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const raw = (inner ? (inner.innerText !== undefined ? inner.innerText : inner.textContent) : '') || '';
       const replacement = raw.split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).join('\n').trim();
       const idx = edits.findIndex(e => e.pageIdx === editPageNum - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
+      let committedEdit = null;
       if (replacement && (geom?.isNew || replacement !== item.str)) {
+        if (!savedCanvasPatch && !geom?.isNew && cv) {
+          const P = pageScale > 0 ? pageScale : 1;
+          const origLeft = geom ? geom.left : Math.max(0, item.transform[4] * P);
+          const origTop = geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P);
+          const origW = geom ? geom.width : 40;
+          const origH = geom ? geom.height : Math.max(12, (item.height || 12) * P);
+          savedCanvasPatch = eraseCanvasTextPatch(cv, origLeft, origTop, origW, origH, geom?.bgColor || '#FFFFFF');
+        }
         pushUndo();
-        const edit = {
+        committedEdit = {
           pageIdx: editPageNum - 1,
           item,
           target: item.str,
           replacement,
           geom,
           textColor: geom?.textColor || '#0F172A',
+          bgColor: geom?.bgColor || '#FFFFFF',
+          rotation: geom?.rotation || 0,
           textAlign: geom?.textAlign || 'left',
           underline: geom?.underline || false,
           lineHeight: geom?.lineHeight || '1',
           charSpacing: geom?.charSpacing || 0,
           isNew: !!geom?.isNew
         };
-        if (idx >= 0) edits[idx] = edit; else edits.push(edit);
+        if (idx >= 0) edits[idx] = committedEdit; else edits.push(committedEdit);
       } else {
         if (savedCanvasPatch) restoreCanvasTextPatch(cv, savedCanvasPatch);
         if (idx >= 0) {
@@ -15620,7 +15919,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       }
       box.remove();
-      attachTextHits(editPageNum);
+      if (!skipRehit) {
+        attachTextHits(editPageNum);
+      } else if (committedEdit) {
+        renderCommittedBox(committedEdit, editPageNum);
+      }
       updateExportBadge();
       renderSubcontrols();
     }
@@ -15630,27 +15933,30 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const pageEl = container.querySelector(`.etxt-page[data-page="${pNum}"]`);
       const layer = pageEl ? pageEl.querySelector('.etxt-text-layer') : (container.querySelector(`.etxt-text-layer[data-page="${pNum}"]`) || container.querySelector('.etxt-text-layer'));
       if (!layer) return;
-      const P = pageScale > 0 ? pageScale : 1;
+      const P = (pageEl && curPageW > 0) ? pageEl.clientWidth / curPageW : (pageScale > 0 ? pageScale : 1);
       const box = document.createElement('div');
       box.className = 'etxt-committed etxt-pulse';
       box.dataset.page = String(pNum);
       box.innerText = e.replacement;
       const left = e.geom?.left ?? (e.item.transform[4] * P);
-      const top = e.geom?.top ?? ((curPageH - e.item.transform[5] - 12) * P);
-      const minW = e.geom?.width ?? Math.max(20, e.item.width * P);
-      const minH = e.geom?.height ?? Math.max(12, (e.item.height || 12) * P);
       const fontSize = Math.max(8, e.geom?.fontSize ?? ((e.item.height || 12) * P));
+      const top = (typeof e.geom?.baselineVy === 'number')
+        ? (e.geom.baselineVy - (fontSize * 0.78))
+        : (e.geom?.top ?? ((curPageH - e.item.transform[5] - 12) * P));
+      const minW = e.geom?.width ?? Math.max(10, e.item.width * P);
+      const minH = e.geom?.height ?? Math.max(12, fontSize * 1.05);
       const fontFamily = e.geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", Roboto, sans-serif';
       const fontWeight = e.geom?.fontWeight || '400';
       const fontStyle = e.geom?.fontStyle || 'normal';
       const textColor = e.textColor || e.geom?.textColor || '#0F172A';
+      const bgColor = e.bgColor || e.geom?.bgColor || '#FFFFFF';
 
-      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;min-height:${minH.toFixed(1)}px;background:transparent !important;background-color:transparent !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};color:${textColor};text-align:${e.textAlign || 'left'};text-decoration:${e.underline ? 'underline' : 'none'};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;`;
+      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;width:fit-content;min-height:${minH.toFixed(1)}px;height:${minH.toFixed(1)}px !important;max-height:${minH.toFixed(1)}px !important;overflow:visible !important;background:${bgColor} !important;background-color:${bgColor} !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};color:${textColor};text-align:${e.textAlign || 'left'};text-decoration:${e.underline ? 'underline' : 'none'};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;`;
       
       const cv = pageEl?.querySelector('.etxt-full-canvas') || container.querySelector(`.etxt-page[data-page="${pNum}"] .etxt-full-canvas`) || container.querySelector('.etxt-full-canvas');
       if (!e.isNew) {
-        const bgColor = sampleCanvasBgColor(left, top, minW, minH, cv);
-        eraseCanvasTextPatch(cv, left, top, minW, minH, bgColor);
+        const eraseTop = (typeof e.geom?.baselineVy === 'number') ? (e.geom.baselineVy - (fontSize * 0.82)) : top;
+        eraseCanvasTextPatch(cv, left - 1, eraseTop, minW + 8, minH * 1.08, bgColor);
       }
 
       const xBtn = document.createElement('button');
@@ -16825,7 +17131,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           return;
         }
 
-        if (e.target.closest('.etxt-hit, .etxt-text-box, .etxt-committed, .etxt-type-box, .etxt-a-note, .etxt-edit-btn, .etxt-commit-x, select, button, input, .etxt-stamp-palette, .etxt-optbar')) {
+        if (e.target.closest('.etxt-zone, .etxt-hit, .etxt-text-box, .etxt-committed, .etxt-type-box, .etxt-a-note, .etxt-edit-btn, .etxt-commit-x, select, button, input, .etxt-stamp-palette, .etxt-optbar, .etxt-inline-microbar')) {
           return;
         }
         if (spaceDown || toolMode === 'pan' || e.button === 1) {
@@ -18330,9 +18636,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           acc += (acc.endsWith(' ') || runs[j].text.startsWith(' ') ? '' : ' ') + runs[j].text;
           const normAcc = String(acc).replace(/\s+/g, ' ').trim();
           if (acc === target || normAcc === normTarget) {
-            let consec = true;
-            for (let k = i + 1; k <= j; k++) if (runs[k].opIdx !== runs[k - 1].opIdx + 1) { consec = false; break; }
-            return consec ? { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, j] } : null;
+            return { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, j] };
           }
           if (normAcc.length > normTarget.length + 10) break;
         }
@@ -18349,7 +18653,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       else if (op.op === 'TJ') op.a[0] = { t: 'array', v: csStrToArrayStr(replacement) };
       if (b > a) ops.splice(a + 1, b - a);   // drop the rest of a merged span
       const newTz = Math.max(10, Math.min(400, match.tz * tzScale));
-      if (Math.abs(newTz - match.tz) > 0.5) {
+      if (Math.abs(newTz - match.tz) > 5.0) {
         ops.splice(a, 0, { op: 'Tz', a: [{ t: 'num', v: Math.round(newTz * 100) / 100 }] });
       }
     }
@@ -18414,6 +18718,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       page.node.set(L.PDFName.of('Contents'), page.doc.context.register(stream));
     }
 
+    function normalizeFontName(rawName) {
+      return String(rawName || '')
+        .replace(/^[A-Z]{6}\+/, '') // strip subset prefix e.g. "ABCDEF+"
+        .replace(/[-_,]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
     async function resolveStdFont(pageNode, fontName, geom) {
       const L = window.PDFLib;
       try {
@@ -18433,7 +18745,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         if (!name && geom?.fontName) name = String(geom.fontName);
         if (!name && fontName) name = String(fontName);
 
-        const fnLower = (name + ' ' + (geom?.fontFamily || '')).toLowerCase();
+        const cleanBase = normalizeFontName(name);
+        const fnLower = (cleanBase + ' ' + (geom?.fontFamily || '')).toLowerCase();
         if (/bold|heavy|black|demi|700|800|900/.test(fnLower)) isBold = true;
         if (/italic|oblique|slant|kursiv/.test(fnLower)) isItalic = true;
 
@@ -18758,6 +19071,27 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       let annotCount = 0;
       let applied = 0, overlaid = 0;
 
+      // Point 8 & 23: Font Cache across pages to avoid font bloat
+      const fontCache = new Map();
+      const getCachedFont = async (fontChoice) => {
+        const key = String(fontChoice || 'Helvetica');
+        if (fontCache.has(key)) return fontCache.get(key);
+        const f = await doc.embedFont(fontChoice);
+        fontCache.set(key, f);
+        return f;
+      };
+
+      // Point 22: Stacking Edit Prevention Map
+      const erasedRegions = new Map();
+
+      // Point 24: PDF/A Compliance Check
+      try {
+        const meta = doc.catalog.get(L.PDFName.of('Metadata'));
+        if (meta) {
+          console.info('[Edit] PDF/A metadata detected in document');
+        }
+      } catch { /* noop */ }
+
       // Group edits by page
       const byPage = new Map();
       for (const e of (editsList || [])) {
@@ -18801,15 +19135,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             const hasNewlines = String(e.replacement || '').includes('\n');
             
             let stdFontChoice = await resolveStdFont(page.node, match?.font || e.item?.fontName, e.geom);
-            let stdFontObj = stdFontChoice ? await doc.embedFont(stdFontChoice) : null;
+            let stdFontObj = stdFontChoice ? await getCachedFont(stdFontChoice) : null;
             let canStreamRewrite = false;
 
-            if (match && !hasNewlines && stdFontObj) {
+            if (match && !hasNewlines && stdFontObj && !isRTL(e.replacement)) {
               const oldW = stdFontObj.widthOfTextAtSize(e.target, match.size);
               const newW = stdFontObj.widthOfTextAtSize(e.replacement, match.size);
               const ratio = oldW > 0.5 ? oldW / newW : 1;
               
-              if (ratio >= 0.82 && ratio <= 1.22) {
+              if (ratio >= 0.70 && ratio <= 1.40) {
                 const tzScale = Math.max(0.75, Math.min(1.25, ratio));
                 rewriteRunOps(ops, runs, match, e.replacement, tzScale);
                 content = csOpsToString(ops);
@@ -18825,9 +19159,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           setPageContentString(page, content);
 
           for (const e of fallbacks) {
-            const targetFont = e.stdFontObj || (await doc.embedFont(e.stdFontChoice || (await resolveStdFont(page.node, e.item?.fontName, e.geom)) || L.StandardFonts.Helvetica));
+            const fontChoice = e.stdFontChoice || (await resolveStdFont(page.node, e.item?.fontName, e.geom)) || L.StandardFonts.Helvetica;
+            const targetFont = await getCachedFont(fontChoice);
             const rawH = e.geom?.pdfH || e.item?.height || 12;
-            const fontSize = Math.max(6, (e.geom?.fontSize ? e.geom.fontSize / (pageScale || 1) : rawH * 0.95));
+            const fontSize = Math.max(6, e.geom?.fontSizePdf || rawH * 0.95);
             const lineHeight = fontSize * 1.25;
             const minW = Math.max(30, e.geom?.pdfW || e.item?.width || 50);
             
@@ -18841,24 +19176,33 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             const totalBoxW = Math.max(minW, maxLineW + 4);
             const totalBoxH = Math.max(rawH * 1.05, lines.length * lineHeight + 2);
 
-            const bgRgb = hexToRgbObj(e.bgColor || '#FFFFFF');
-            page.drawRectangle({
-              x: originX - 1,
-              y: originY - (lines.length - 1) * lineHeight - (rawH * 0.22),
-              width: totalBoxW,
-              height: totalBoxH,
-              color: L.rgb(bgRgb.r, bgRgb.g, bgRgb.b),
-              borderWidth: 0,
-            });
+            // Point 22: Stacking Edit Prevention
+            const eraseKey = `${i}:${Math.round(originX)},${Math.round(originY)}`;
+            if (!erasedRegions.has(eraseKey)) {
+              const bgRgb = hexToRgbObj(e.bgColor || '#FFFFFF');
+              page.drawRectangle({
+                x: originX - 1,
+                y: originY - (lines.length - 1) * lineHeight - (rawH * 0.22),
+                width: totalBoxW,
+                height: totalBoxH,
+                color: L.rgb(bgRgb.r, bgRgb.g, bgRgb.b),
+                borderWidth: 0,
+              });
+              erasedRegions.set(eraseKey, true);
+            }
 
             const textColor = hexToRgbObj(e.textColor || '#111827');
+            const textAngle = e.rotation || e.geom?.rotation || (e.item?.transform ? Math.atan2(e.item.transform[1] || 0, e.item.transform[0] || 1) * (180 / Math.PI) : 0) || 0;
+
             lines.forEach((ln, idx) => {
-              page.drawText(ln, {
+              const finalLine = isRTL(ln) ? prepareRTLText(ln) : ln;
+              page.drawText(finalLine, {
                 x: originX,
                 y: originY - (idx * lineHeight),
                 size: fontSize,
                 font: targetFont,
                 color: L.rgb(textColor.r, textColor.g, textColor.b),
+                rotate: textAngle !== 0 ? L.degrees(textAngle) : undefined,
               });
             });
             overlaid++;
@@ -19438,58 +19782,35 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <p class="cpdf-hdr-sub">Create your mark and place it on any page</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="sign-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to sign">
+        <div class="cpdf-dropzone drop-hero-box" id="sign-dz" tabindex="0" role="button" aria-label="Add PDF file to sign">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a PDF to sign</h3>
+
             <div class="drop-action-group">
-              <label for="sign-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="sign-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="sign-inp" class="select-files-main-btn">Select PDF file</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to sign</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-            </div>
+            <p class="drop-formats">Supports PDF documents (.pdf)</p>
           </div>
           <input id="sign-inp" type="file" accept="application/pdf,.pdf"  hidden>
         </div>
@@ -21670,60 +21991,32 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         <div class="cpdf-dropzone drop-hero-box" id="conv-dz" tabindex="0" role="button" aria-label="Drop any files to convert">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop files to convert</h3>
+
             <div class="drop-action-group">
-              <label for="conv-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select files</span>
-              </label>
-              <label for="conv-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="conv-inp" class="select-files-main-btn">Select files from your device</label>
             </div>
 
-            <p class="drop-sub-text">Add any <strong>PDF</strong>, <strong>Image</strong>, <strong>Video</strong>, <strong>Audio</strong>, <strong>Word</strong>, <strong>Excel</strong>, or <strong>eBook</strong> to convert</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-doc">DOCX</span>
-              <span class="fmt-badge fmt-xls">XLSX</span>
-              <span class="fmt-badge fmt-ppt">PPTX</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-            </div>
+            <p class="drop-formats">Supports PDF, Office, Images, Audio, Video, eBooks, Archives, Data, Fonts, and 3D Models</p>
           </div>
           <input id="conv-inp" type="file" accept="${ACCEPT}" multiple hidden>
         </div>`;
@@ -23603,55 +23896,32 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         <div class="cpdf-dropzone drop-hero-box" id="flat-dz" tabindex="0" role="button" aria-label="Add PDF file to flatten">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a PDF to flatten</h3>
+
             <div class="drop-action-group">
-              <label for="flat-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select PDF</span>
-              </label>
-              <label for="flat-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="flat-inp" class="select-files-main-btn">Select PDF file</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to flatten into static ink</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported format:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-            </div>
+            <p class="drop-formats">Supports PDF documents (.pdf)</p>
           </div>
           <input id="flat-inp" type="file" accept="application/pdf,.pdf" hidden>
         </div>`;
@@ -24425,58 +24695,32 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         <div class="cpdf-dropzone drop-hero-box" id="prot-dz" tabindex="0" role="button" aria-label="Add PDF or Image file to protect or unlock">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a file to secure</h3>
+
             <div class="drop-action-group">
-              <label for="prot-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="prot-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="prot-inp" class="select-files-main-btn">Select file from your device</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong>, <strong>Image</strong>, or document to secure</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-img">PNG</span>
-              <span class="fmt-badge fmt-img">JPG</span>
-              <span class="fmt-badge fmt-doc">ALL FILES</span>
-            </div>
+            <p class="drop-formats">Supports PDF, Documents, Images, and File Archives</p>
           </div>
           <input id="prot-inp" type="file" accept="*/*" hidden>
         </div>`;
@@ -25700,62 +25944,35 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="img-dz" tabindex="0" role="button" aria-label="Add <strong>image</strong> file (PNG, JPG, WebP, SVG, GIF)">
+        <div class="cpdf-dropzone drop-hero-box" id="img-dz" tabindex="0" role="button" aria-label="Add image file">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop an image</h3>
+
             <div class="drop-action-group">
-              <label for="img-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="img-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="img-inp" class="select-files-main-btn">Select image from your device</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>image</strong> file (PNG, JPG, WebP, SVG, GIF)</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-webp">WEBP</span>
-              <span class="fmt-badge fmt-svg">SVG</span>
-              <span class="fmt-badge fmt-gif">GIF</span>
-            </div>
+            <p class="drop-formats">Supports PNG, JPG, WebP, HEIC, AVIF, TIFF, SVG, GIF, and BMP</p>
           </div>
           <input id="img-inp" type="file" accept="image/*"  hidden>
         </div>
@@ -26835,58 +27052,35 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="pmore-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> file to process">
+        <div class="cpdf-dropzone drop-hero-box" id="pmore-dz" tabindex="0" role="button" aria-label="Add PDF file to process">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a PDF file</h3>
+
             <div class="drop-action-group">
-              <label for="pmore-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="pmore-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="pmore-inp" class="select-files-main-btn">Select PDF file</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> file to process</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-            </div>
+            <p class="drop-formats">Supports PDF documents (.pdf)</p>
           </div>
           <input id="pmore-inp" type="file" accept="application/pdf,.pdf"  hidden>
         </div>
@@ -27756,62 +27950,35 @@ trailer<</Root 1 0 R>>`;
       setShell(false);
       container.className = `cpdf-root doc-root doc-upload-state ${toneClass(meta.tone)}`;
       container.innerHTML = `
-        <div class="cpdf-dropzone drop-hero-box" id="doc-dz" tabindex="0" role="button" aria-label="Add <strong>document</strong> file (DOCX, TXT, MD, CSV)">
+        <div class="cpdf-dropzone drop-hero-box" id="doc-dz" tabindex="0" role="button" aria-label="Add document file">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a document</h3>
+
             <div class="drop-action-group">
-              <label for="doc-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="doc-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="doc-inp" class="select-files-main-btn">Select document from your device</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>document</strong> file (DOCX, TXT, MD, CSV)</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-docx">DOCX</span>
-              <span class="fmt-badge fmt-txt">TXT</span>
-              <span class="fmt-badge fmt-md">MD</span>
-              <span class="fmt-badge fmt-csv">CSV</span>
-              <span class="fmt-badge fmt-json">JSON</span>
-            </div>
+            <p class="drop-formats">Supports DOCX, TXT, Markdown, CSV, JSON, XML, YAML, and RTF</p>
           </div>
           <input id="doc-inp" type="file" accept="${acceptForTool()}"  hidden>
         </div>
@@ -28390,62 +28557,35 @@ trailer<</Root 1 0 R>>`;
             <p class="cpdf-hdr-sub">${_esc(sub || '')}</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="aud-dz" tabindex="0" role="button" aria-label="Add <strong>audio</strong> file (MP3, WAV, OGG, M4A)">
+        <div class="cpdf-dropzone drop-hero-box" id="aud-dz" tabindex="0" role="button" aria-label="Add audio file">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop audio files</h3>
+
             <div class="drop-action-group">
-              <label for="aud-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select files</span>
-              </label>
-              <label for="aud-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="aud-inp" class="select-files-main-btn">Select audio files</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>audio</strong> file (MP3, WAV, OGG, M4A)</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-mp3">MP3</span>
-              <span class="fmt-badge fmt-wav">WAV</span>
-              <span class="fmt-badge fmt-ogg">OGG</span>
-              <span class="fmt-badge fmt-m4a">M4A</span>
-              <span class="fmt-badge fmt-flac">FLAC</span>
-            </div>
+            <p class="drop-formats">Supports MP3, WAV, OGG, M4A, AAC, FLAC, and OPUS</p>
           </div>
           <input id="aud-inp" type="file" accept="${meta.video ? 'video/*' : 'audio/*'}" ${meta.flow === 'merge' ? 'multiple' : ''} hidden>
         </div>
@@ -28984,61 +29124,35 @@ trailer<</Root 1 0 R>>`;
             <p class="cpdf-hdr-sub">${esc(sub)}</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="vid-dz" tabindex="0" role="button" aria-label="Add <strong>video</strong> file (MP4, WebM, MOV)">
+        <div class="cpdf-dropzone drop-hero-box" id="vid-dz" tabindex="0" role="button" aria-label="Add video file">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop video files</h3>
+
             <div class="drop-action-group">
-              <label for="vid-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select files</span>
-              </label>
-              <label for="vid-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="vid-inp" class="select-files-main-btn">Select video files</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>video</strong> file (MP4, WebM, MOV)</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-mp4">MP4</span>
-              <span class="fmt-badge fmt-webm">WEBM</span>
-              <span class="fmt-badge fmt-mov">MOV</span>
-              <span class="fmt-badge fmt-mkv">MKV</span>
-            </div>
+            <p class="drop-formats">Supports MP4, WebM, MOV, MKV, AVI, and FLV</p>
           </div>
           <input id="vid-inp" type="file" accept="video/*" ${multi ? 'multiple' : ''} hidden>
         </div>
@@ -29277,61 +29391,35 @@ trailer<</Root 1 0 R>>`;
             <p class="cpdf-hdr-sub">Drop any media file — the sidebar switches to the right tools for it</p>
           </div>
         </header>
-        <div class="cpdf-dropzone drop-hero-box" id="media-dz" tabindex="0" role="button" aria-label="Add <strong>media</strong> file to process">
+        <div class="cpdf-dropzone drop-hero-box" id="media-dz" tabindex="0" role="button" aria-label="Add media file">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop media files</h3>
+
             <div class="drop-action-group">
-              <label for="media-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="media-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="media-inp" class="select-files-main-btn">Select media files</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>media</strong> file to process</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-mp4">MP4</span>
-              <span class="fmt-badge fmt-mp3">MP3</span>
-              <span class="fmt-badge fmt-wav">WAV</span>
-              <span class="fmt-badge fmt-webm">WEBM</span>
-            </div>
+            <p class="drop-formats">Supports Video (MP4, WebM, MOV), Audio (MP3, WAV), and Images</p>
           </div>
           <input id="media-inp" type="file" accept="${ACCEPT}"  hidden>
         </div>
@@ -29445,60 +29533,32 @@ trailer<</Root 1 0 R>>`;
         <div class="cpdf-dropzone drop-hero-box" id="img-hub-dz" tabindex="0" role="button" aria-label="Upload an image">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop an image</h3>
+
             <div class="drop-action-group">
-              <label for="img-hub-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select image</span>
-              </label>
-              <label for="img-hub-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="img-hub-inp" class="select-files-main-btn">Select image from your device</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PNG</strong>, <strong>JPG</strong>, <strong>WebP</strong>, or <strong>SVG</strong> image files</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-doc">WEBP</span>
-              <span class="fmt-badge fmt-xls">SVG</span>
-              <span class="fmt-badge fmt-ppt">GIF</span>
-              <span class="fmt-badge fmt-pdf">AVIF</span>
-            </div>
+            <p class="drop-formats">Supports PNG, JPG, WebP, GIF, BMP, AVIF, TIFF, and SVG</p>
           </div>
           <input id="img-hub-inp" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.tiff,.svg,.ico,.heic,.heif" hidden>
         </div>`;
@@ -29703,58 +29763,32 @@ trailer<</Root 1 0 R>>`;
         <div class="cpdf-dropzone drop-hero-box" id="qr-read-drop" tabindex="0" role="button" aria-label="Upload a QR code image">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop a QR code image</h3>
+
             <div class="drop-action-group">
-              <label for="qr-read-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select QR code</span>
-              </label>
-              <label for="qr-read-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="qr-read-inp" class="select-files-main-btn">Select QR code image</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PNG</strong>, <strong>JPG</strong>, or <strong>WebP</strong> QR or barcode image</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-doc">WEBP</span>
-              <span class="fmt-badge fmt-ppt">GIF</span>
-            </div>
+            <p class="drop-formats">Supports PNG, JPG, WebP, BMP, and GIF</p>
           </div>
           <input id="qr-read-inp" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.gif" hidden>
         </div>`;
@@ -30947,49 +30981,32 @@ trailer<</Root 1 0 R>>`;
           <div class="cpdf-dropzone drop-hero-box" id="org-dz" tabindex="0" role="button" aria-label="Upload files to organize">
             <div class="dropzone-idle">
               <div class="drop-illustration">
-                <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                  <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                  <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                  <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                  <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                  <g transform="rotate(-9 66 74)">
-                    <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                    <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                    <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                    <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                    <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  </g>
-                  <g transform="rotate(9 154 74)">
-                    <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                    <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                    <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                    <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </g>
-                  <g>
-                    <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                    <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                    <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                    <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                    <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  </g>
-                  <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                  <!-- Left: Image / Photo Card -->
+                  <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                  <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                  <!-- Center: Prominent Document Sheet -->
+                  <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                  <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                  
+                  <!-- Center: Downward Arrow -->
+                  <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                  <!-- Right: Folder -->
+                  <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
+
+              <h3 class="drop-title">Drag and drop files to organize</h3>
+
               <div class="drop-action-group">
-                <label for="org-inp" class="select-files-main-btn">
-                  <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  <span>Select PDF or files</span>
-                </label>
+                <label for="org-inp" class="select-files-main-btn">Select PDF or files from your device</label>
               </div>
-              <p class="drop-sub-text">Reorder, rotate, delete, split, duplicate, or merge documents with visual page thumbnails</p>
-              <div class="supported-formats-row">
-                <span class="fmt-label">Supported formats:</span>
-                <span class="fmt-badge fmt-pdf">PDF</span>
-                <span class="fmt-badge fmt-png">PNG / JPG</span>
-                <span class="fmt-badge fmt-doc">DOCX</span>
-                <span class="fmt-badge fmt-xls">XLSX / PPTX</span>
-                <span class="fmt-badge fmt-img">HEIC / WebP</span>
-              </div>
+
+              <p class="drop-formats">Supports PDF, DOCX, XLSX, PPTX, and Images</p>
             </div>
             <input id="org-inp" type="file" accept="${ACCEPT}" multiple hidden>
           </div>`;

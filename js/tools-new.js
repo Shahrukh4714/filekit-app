@@ -4379,38 +4379,29 @@ function filterTable(q) {
         <div class="cpdf-dropzone drop-hero-box scan-entry-dropzone" id="scan-dz" tabindex="0" role="button" aria-label="Upload or scan documents">
           <div class="dropzone-idle scan-entry-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#0F172A" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#0F172A" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#0F172A" opacity="0.06"/>
-                <g transform="rotate(-8 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#CBD5E1"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#CBD5E1"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#CBD5E1"/>
-                </g>
-                <g transform="rotate(8 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#10B981"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <path d="M96 72h28M96 80h28M96 88h17" stroke="#7C3AED" stroke-width="3.5" stroke-linecap="round"/>
-                  <path d="M84 72h52" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
-                  <path d="M87 52v-4h4M133 48h4v4M87 96v4h4M133 100h4v-4" stroke="#10B981" stroke-width="1.8" stroke-linecap="round"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">${isOcrIntent ? 'Drag and drop documents to OCR' : (isReceiptIntent ? 'Drag and drop receipt or invoice' : (isRedactIntent ? 'Drag and drop PDF to redact' : 'Drag and drop files to scan'))}</h3>
+
             <div class="drop-action-group scan-entry-actions">
               <button type="button" class="select-files-main-btn" id="scan-import-docs-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
                 <span>${isOcrIntent ? 'Select PDF or Image to OCR' : (isReceiptIntent ? 'Select Receipt / Invoice' : (isRedactIntent ? 'Select PDF to Redact' : 'Select PDF or images'))}</span>
               </button>
               <span class="scan-entry-or">or</span>
@@ -4420,8 +4411,6 @@ function filterTable(q) {
                 <kbd>Space</kbd>
               </button>
             </div>
-
-            <p class="drop-sub-text">${isOcrIntent ? 'Extract text and make scanned documents searchable • <strong>100% on-device neural OCR</strong>' : (isReceiptIntent ? 'Extract line items, dates, and amounts into <strong>Excel / CSV</strong> automatically' : (isRedactIntent ? 'Permanently blackout sensitive PII, names, and numbers with <strong>local privacy</strong>' : 'Scan, clean, and extract text from <strong>PDF</strong>, <strong>JPG</strong>, <strong>PNG</strong>, or <strong>WebP</strong> documents'))}</p>
 
             ${importError ? `
               <div class="scan-inline-error-card" role="alert">
@@ -4438,13 +4427,7 @@ function filterTable(q) {
               </div>
             ` : ''}
 
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-              <span class="fmt-badge fmt-jpg">JPG</span>
-              <span class="fmt-badge fmt-png">PNG</span>
-              <span class="fmt-badge fmt-doc">WEBP</span>
-            </div>
+            <p class="drop-formats">Supports PDF, JPG, PNG, WEBP, HEIC</p>
           </div>
           <input id="scan-file-input" type="file" accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.heic,.heif,.bmp,.tiff,.tif,.gif,.svg,.avif" multiple hidden>
           <input id="scan-native-cam-input" type="file" accept="image/*" capture="environment" hidden>
@@ -10419,58 +10402,35 @@ function filterTable(q) {
           <textarea class="doc-editor doc-editor--out" readonly style="width:100%;min-height:220px;border-radius:8px;padding:12px;font-size:13px;background:#111B2E;color:#e2e8f0;border:1px solid rgba(255,255,255,.12)">${esc(text)}</textarea>
           <p class="cpdf-dz-meta">Note: browser text-to-speech plays aloud but can't export an audio file — download the extracted text instead.</p>
         </div>` : `
-        <div class="cpdf-dropzone drop-hero-box" id="pta-dz" tabindex="0" role="button" aria-label="Add <strong>PDF</strong> to synthesize into audio">
+        <div class="cpdf-dropzone drop-hero-box" id="pta-dz" tabindex="0" role="button" aria-label="Add PDF to synthesize into audio">
           <div class="dropzone-idle">
             <div class="drop-illustration">
-              <svg viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg">
-                <rect x="38" y="98" width="144" height="36" rx="6" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6 6" stroke-linecap="round"/>
-                <ellipse cx="70" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="110" cy="128" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <ellipse cx="150" cy="122" rx="24" ry="6" fill="#1A1714" opacity="0.06"/>
-                <g transform="rotate(-9 66 74)">
-                  <rect x="46" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M72 48h14v14z" fill="#F1F5F9"/>
-                  <rect x="52" y="66" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="74" width="28" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                  <rect x="52" y="82" width="17" height="3.5" rx="1.75" fill="#E5252A" opacity="0.9"/>
-                </g>
-                <g transform="rotate(9 154 74)">
-                  <rect x="134" y="48" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M160 48h14v14z" fill="#F1F5F9"/>
-                  <circle cx="150" cy="63" r="3.5" fill="#EA580C" opacity="0.95"/>
-                  <path d="M142 88l8-10 6 7 5-4 7 7" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </g>
-                <g>
-                  <rect x="90" y="54" width="40" height="52" rx="4" fill="#fff" stroke="#E2E8F0" stroke-width="1"/>
-                  <path d="M116 54h14v14z" fill="#F1F5F9"/>
-                  <rect x="96" y="72" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="80" width="28" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                  <rect x="96" y="88" width="17" height="3.5" rx="1.75" fill="#2563EB" opacity="0.9"/>
-                </g>
-                <path d="M110 12v28m0 0l-9-9m9 9l9-9" stroke="#1A1714" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="36" cy="44" r="3.5" fill="#94A3B8"/>
-                <circle cx="186" cy="52" r="3" fill="#94A3B8"/>
-                <circle cx="190" cy="90" r="2.5" fill="#94A3B8"/>
-                <circle cx="30" cy="90" r="2.5" fill="#94A3B8"/>
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <!-- Left: Image / Photo Card -->
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+                <!-- Center: Prominent Document Sheet -->
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                
+                <!-- Center: Downward Arrow -->
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+
+                <!-- Right: Folder -->
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
+            <h3 class="drop-title">Drag and drop PDF to listen</h3>
+
             <div class="drop-action-group">
-              <label for="pta-inp" class="select-files-main-btn">
-                <svg class="plus-circle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span>Select file</span>
-              </label>
-              <label for="pta-inp" class="select-files-chevron-btn" aria-label="More file options">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 5.25L7 8.75l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
+              <label for="pta-inp" class="select-files-main-btn">Select PDF file from your device</label>
             </div>
 
-            <p class="drop-sub-text">Add <strong>PDF</strong> to synthesize into audio</p>
-
-            <div class="supported-formats-row">
-              <span class="fmt-label">Supported formats:</span>
-              <span class="fmt-badge fmt-pdf">PDF</span>
-            </div>
+            <p class="drop-formats">Supports PDF</p>
           </div>
           <input id="pta-inp" type="file" accept="application/pdf,.pdf"  hidden>
         </div>

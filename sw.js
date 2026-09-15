@@ -1,5 +1,5 @@
 /* FileKit Service Worker — Enables 100% offline document workflows */
-const CACHE_NAME = 'filekit-cache-v109';
+const CACHE_NAME = 'filekit-cache-v117';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
