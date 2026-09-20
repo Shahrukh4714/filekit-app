@@ -104,7 +104,8 @@
 
   function toast(message, type = 'info', options = {}) {
     const opts = typeof options === 'number' ? { duration: options } : (options || {});
-    const duration = opts.duration ?? (type === 'error' ? 4500 : 3200);
+    // Snappy default durations: 2000ms for regular, 3000ms for error
+    const duration = opts.duration ?? (type === 'error' ? 3000 : 2000);
 
     if (!_toastContainer || !_toastContainer.isConnected) {
       _toastContainer = document.createElement('div');
@@ -116,31 +117,40 @@
       document.body.appendChild(_toastContainer);
     }
 
-    // Limit active toasts on screen to maximum 3
-    if (_activeToasts.size >= 3) {
+    // Dismiss duplicate active toasts with same message to prevent lingering stacks
+    for (const existing of _activeToasts) {
+      if (existing._message === message && typeof existing._dismiss === 'function') {
+        existing._dismiss();
+      }
+    }
+
+    // Limit active toasts on screen to maximum 2
+    while (_activeToasts.size >= 2) {
       const oldest = _activeToasts.values().next().value;
       if (oldest && typeof oldest._dismiss === 'function') {
         oldest._dismiss();
+      } else {
+        break;
       }
     }
 
     const t = document.createElement('div');
     t.className = `fk-toast fk-toast--${type}`;
     t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    t._message = message;
 
-    // Bespoke vector SVG micro-icons (no raw/cartoony emojis!)
+    // Bespoke vector SVG micro-icons (OpenSourceUI style)
     let iconSvg = '';
-    if (type === 'success') {
-      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+    if (type === 'success' || type === 'info') {
+      iconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     } else if (type === 'warn') {
-      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+      iconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
     } else if (type === 'error') {
-      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+      iconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     } else if (type === 'loading') {
-      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fk-toast-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+      iconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="fk-toast-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
     } else {
-      // Default info sparkle / circle
-      iconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+      iconSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     }
 
     let actionHtml = '';
@@ -150,17 +160,16 @@
 
     t.innerHTML = `
       <span class="fk-toast-icon fk-toast-icon--${type}">${iconSvg}</span>
-      <span class="fk-toast-text">${escapeHtml(message)}</span>
+      <p class="fk-toast-text">${escapeHtml(message)}</p>
       ${actionHtml}
-      <button type="button" class="fk-toast-close" aria-label="Dismiss notification">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button type="button" class="fk-toast-close" aria-label="Dismiss">✕</button>
     `;
 
     _toastContainer.appendChild(t);
     _activeToasts.add(t);
 
     let dismissTimer = null;
+    let hoverSafetyTimer = null;
     let isDismissing = false;
 
     const startTimer = (ms) => {
@@ -174,6 +183,7 @@
       if (isDismissing) return;
       isDismissing = true;
       clearTimeout(dismissTimer);
+      clearTimeout(hoverSafetyTimer);
       _activeToasts.delete(t);
       t.classList.remove('is-visible');
       t.classList.add('is-leaving');
@@ -198,8 +208,26 @@
 
     startTimer(duration);
 
-    t.addEventListener('mouseenter', () => clearTimeout(dismissTimer));
-    t.addEventListener('mouseleave', () => { if (!isDismissing) startTimer(1800); });
+    // Hover management: pause briefly on hover, but never freeze permanently (safety ceiling 4000ms)
+    t.addEventListener('mouseenter', () => {
+      clearTimeout(dismissTimer);
+      clearTimeout(hoverSafetyTimer);
+      if (duration !== Infinity) {
+        hoverSafetyTimer = setTimeout(dismiss, 4000);
+      }
+    });
+    t.addEventListener('mouseleave', () => {
+      clearTimeout(hoverSafetyTimer);
+      if (!isDismissing && duration !== Infinity) {
+        startTimer(1000);
+      }
+    });
+
+    // Dismiss on click on the toast bubble itself (excluding actions)
+    t.addEventListener('click', (e) => {
+      if (e.target.closest('.fk-toast-action-btn')) return;
+      dismiss();
+    });
 
     const closeBtn = t.querySelector('.fk-toast-close');
     if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); dismiss(); };
@@ -3240,7 +3268,7 @@ try {
     const iconFor = (tool, extra = '') => {
       const span = document.createElement('span');
       span.className = `card-icon custom-icon semantic-action-icon ${extra}`;
-      span.title = `${tool.name} icon`;
+      // span.title removed
       span.setAttribute('aria-hidden', 'true');
       span.innerHTML = semanticSvg(tool);
       return span;
@@ -4212,7 +4240,7 @@ try {
           const isPinned = list.includes(id);
           pinBtn.classList.toggle('pinned', isPinned);
           pinBtn.setAttribute('aria-pressed', String(isPinned));
-          pinBtn.title = isPinned ? 'Remove from rail' : 'Pin to rail';
+          // pinBtn.title removed
           const cat = FLYOUT_CATS.find(c => c.id === id);
           pinBtn.innerHTML = isPinned
             ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>'
@@ -4454,7 +4482,7 @@ try {
       card.className = 'sp-card';
       card.setAttribute('aria-label', title || id);
       card.setAttribute('data-tool-id', id);
-      card.title = (tool && tool.description) ? `${title} — ${tool.description}` : (title || id);
+      // card.title removed
       
       const iconDiv = document.createElement('div');
       iconDiv.className = `sp-card-icon ${meta.themeClass}`;
@@ -5198,8 +5226,8 @@ try {
         'pdf-ocr': window.__ffMountScan,
         'ocr-pdf': window.__ffMountScan,
         'ocr': window.__ffMountScan,
-        'workflow-builder': window.__ffMountWorkflow,
-        'workflow': window.__ffMountWorkflow,
+        'workflow-builder': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
+        'workflow': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
         'pdf-to-ppt': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
         'to-ppt': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
         'pdf-to-powerpoint': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
@@ -5624,8 +5652,8 @@ try {
           'pdf-ocr': window.__ffMountScan,
           'ocr-pdf': window.__ffMountScan,
           'ocr': window.__ffMountScan,
-          'workflow-builder': window.__ffMountWorkflow,
-          'workflow': window.__ffMountWorkflow,
+          'workflow-builder': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
+          'workflow': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
           'pdf-to-audio': window.__ffMountPdfAudio,
           'pdf-to-speech': window.__ffMountPdfAudio,
           'protect': window.__ffMountProtect,
@@ -7189,8 +7217,8 @@ try {
       'pdf-ocr': window.__ffMountScan,
       'ocr-pdf': window.__ffMountScan,
       'ocr': window.__ffMountScan,
-      'workflow-builder': window.__ffMountWorkflow,
-      'workflow': window.__ffMountWorkflow,
+      'workflow-builder': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
+      'workflow': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
       'pdf-to-audio': window.__ffMountPdfAudio,
       'pdf-to-speech': window.__ffMountPdfAudio,
     })[tool && tool.id];
@@ -7298,7 +7326,7 @@ try {
         if (isMultiple) {
           const floatAdd = document.createElement('label');
           floatAdd.className = 'ilovepdf-float-add';
-          floatAdd.title = 'Add more files';
+          // floatAdd.title removed
           floatAdd.innerHTML = `
             +
             <span class="ilovepdf-float-badge">${filesState.length}</span>
@@ -7323,7 +7351,7 @@ try {
           const delBtn = document.createElement('button');
           delBtn.type = 'button';
           delBtn.className = 'ilovepdf-card-del';
-          delBtn.title = 'Remove file';
+          // delBtn.title removed
           delBtn.textContent = '✕';
           delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -16409,5 +16437,36 @@ try {
     document.addEventListener('DOMContentLoaded', wire);
   } else {
     wire();
+  }
+})();
+
+// Global title scrubber to prevent unwanted browser tooltips on icon backgrounds and cards
+(function() {
+  window.__ffGlobalTitleScrubber = true;
+  function scrubTitles(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('[title]').forEach(el => el.removeAttribute('title'));
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+      scrubTitles(document.body);
+      const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.type === 'childList') {
+            m.addedNodes.forEach(node => {
+              if (node.nodeType === 1) {
+                if (node.hasAttribute && node.hasAttribute('title')) node.removeAttribute('title');
+                scrubTitles(node);
+              }
+            });
+          } else if (m.type === 'attributes' && m.attributeName === 'title') {
+            if (m.target && m.target.removeAttribute) {
+              m.target.removeAttribute('title');
+            }
+          }
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['title'] });
+    });
   }
 })();

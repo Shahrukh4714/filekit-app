@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <meta content="#ffffff" name="theme-color"/>
-<title>FileKit — Every File Tool You Need</title>
+<title>FileKit â€” Every File Tool You Need</title>
 <meta name="description" content="FileKit is the modern, 100% private in-browser file suite. Convert, compress, edit, and organize documents, media, and archives locally."/>
-<meta property="og:title" content="FileKit — Every File Tool You Need"/>
+<meta property="og:title" content="FileKit â€” Every File Tool You Need"/>
 <meta property="og:description" content="Fast, 100% private in-browser file suite. Convert, compress, edit, and organize PDF, media, and documents locally without uploading."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://filekit.cc/"/>
 <meta property="og:image" content="https://filekit.cc/assets/filekit-logo.svg"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="FileKit — Every File Tool You Need"/>
+<meta name="twitter:title" content="FileKit â€” Every File Tool You Need"/>
 <meta name="twitter:description" content="100% private in-browser file suite. Convert, compress, and edit documents, PDFs, and images locally."/>
 <link rel="canonical" href="https://filekit.cc/"/>
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg"/>
@@ -21,10 +21,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@600&family=Dancing+Script:wght@600&family=Great+Vibes&family=Marck+Script&family=Playfair+Display:ital,wght@1,600&family=Sacramento&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="dist/css/local-fonts.min.css?v=20260915_v122"/>
-<link rel="stylesheet" href="dist/css/styles.min.css?v=20260915_v122"/>
-<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20260915_v122"/>
-<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20260915_v122"/>
+<link rel="stylesheet" href="dist/css/local-fonts.min.css?v=20260919_v227"/>
+<link rel="stylesheet" href="dist/css/styles.min.css?v=20260919_v227"/>
+<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20260919_v227"/>
+<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20260919_v227"/>
 </head>
 <body>
 <div class="app">
@@ -53,7 +53,7 @@
 <strong>FileKit</strong>
 </button>
 <button aria-controls="tool-drawer" aria-expanded="false" class="nav-tools" id="tools-button" type="button"><svg aria-hidden="true" class="grid-mark" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg><span>All Tools</span><svg aria-hidden="true" class="nav-chev" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6"/></svg></button>
-<button aria-controls="palette-overlay" aria-expanded="false" aria-label="Search tools" class="header-search-trigger" id="header-search-trigger" type="button"><svg aria-hidden="true" class="nav-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><span id="header-search-label">Search 187 tools...</span><kbd aria-label="Keyboard shortcut Command K">⌘K</kbd></button>
+<button aria-controls="palette-overlay" aria-expanded="false" aria-label="Search tools" class="header-search-trigger" id="header-search-trigger" type="button"><svg aria-hidden="true" class="nav-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><span id="header-search-label">Search 187 tools...</span><kbd aria-label="Keyboard shortcut Command K">âŒ˜K</kbd></button>
 <nav aria-label="Main navigation" class="nav-links">
 <button data-category="PDF" type="button">PDF</button>
 <button data-category="Images" type="button">Images</button>
@@ -61,7 +61,7 @@
 <button data-category="Video" type="button">Video</button>
 </nav>
 <div class="nav-spacer"></div>
-<button class="header-cta app-launch-btn" id="header-enter-app" type="button">Open Workspace →</button>
+<button class="header-cta app-launch-btn" id="header-enter-app" type="button">Open App â†’</button>
 <button aria-controls="tool-drawer" aria-expanded="false" aria-label="Open navigation menu" class="mobile-menu" id="mobile-menu" type="button">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3.5" y1="6" x2="20.5" y2="6"></line>
@@ -71,14 +71,14 @@
 </button>
 </header>
 <div aria-labelledby="drawer-title" aria-modal="true" class="tool-drawer" hidden="" id="tool-drawer" role="dialog">
-<div class="drawer-head"><h2 id="drawer-title">All FileKit tools</h2><button aria-label="Close tools dialog" id="drawer-close" type="button">×</button></div>
+<div class="drawer-head"><h2 id="drawer-title">All FileKit tools</h2><button aria-label="Close tools dialog" id="drawer-close" type="button">Ã—</button></div>
 <div class="drawer-body">
 <aside class="drawer-side" aria-label="Categories">
 <div class="drawer-side-title">Categories</div>
 <div class="drawer-categories" id="drawer-categories"></div>
 </aside>
 <div class="drawer-main">
-<div class="drawer-search"><svg aria-hidden="true" class="drawer-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><label class="sr-only" for="drawer-search">Search all tools</label><input autocomplete="off" id="drawer-search" placeholder="Search all tools…" type="search"/></div>
+<div class="drawer-search"><svg aria-hidden="true" class="drawer-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><label class="sr-only" for="drawer-search">Search all tools</label><input autocomplete="off" id="drawer-search" placeholder="Search all toolsâ€¦" type="search"/></div>
 <div aria-atomic="true" aria-live="polite" class="sr-only" id="drawer-search-status" role="status"></div>
 <div class="drawer-results" id="drawer-results"></div>
 </div>
@@ -87,9 +87,9 @@
 
 <div aria-label="Search tools" aria-modal="true" class="palette-overlay" id="palette-overlay" role="dialog" hidden="">
 <div class="palette-box">
-<div class="palette-search"><svg aria-hidden="true" class="palette-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><label class="sr-only" for="palette-input">Search tools</label><input autocomplete="off" id="palette-input" placeholder="Search tools or describe what you need…" type="search"/><button class="palette-esc" id="palette-esc" type="button" title="Close (Esc)">ESC</button></div>
+<div class="palette-search"><svg aria-hidden="true" class="palette-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><label class="sr-only" for="palette-input">Search tools</label><input autocomplete="off" id="palette-input" placeholder="Search tools or describe what you needâ€¦" type="search"/><button class="palette-esc" id="palette-esc" type="button" title="Close (Esc)">ESC</button></div>
 <div class="palette-results" id="palette-results"></div>
-<div class="palette-foot"><span><kbd>↑↓</kbd> Navigate</span><span><kbd>↵</kbd> Select</span><span><kbd>ESC</kbd> Close</span></div>
+<div class="palette-foot"><span><kbd>â†‘â†“</kbd> Navigate</span><span><kbd>â†µ</kbd> Select</span><span><kbd>ESC</kbd> Close</span></div>
 </div>
 </div><main id="home-view">
 <section class="hero page-width" id="hero-section">
@@ -97,10 +97,10 @@
     <h1 class="hero-title"><span class="hero-title-bold">Every file task.</span><br/><span class="hero-title-light">One <span class="hero-human-highlight"><span class="highlight-word">private</span><svg class="highlighter-marker-svg" viewBox="0 0 220 54" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M 6 34 C 45 24, 125 22, 212 26 C 217 30, 216 46, 209 50 C 158 53, 68 54, 8 50 C 2 46, 2 37, 6 34 Z" fill="rgba(169, 145, 247, 0.42)"/><path d="M 12 28 C 55 22, 140 20, 205 24 C 210 27, 208 42, 202 45 C 150 48, 62 49, 14 45 C 8 42, 8 32, 12 28 Z" fill="rgba(169, 145, 247, 0.48)"/><path d="M 4 36 C 30 30, 90 28, 160 30" stroke="#A991F7" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.3" fill="none"/></svg></span></span><br/><span class="hero-title-bold">toolkit.</span></h1>
     <p class="hero-subtext"><strong>Drag and drop</strong> to convert videos, images, audio, and documents locally. <span class="hero-hand-underline">Files never leave your device.<svg class="hand-drawn-green-line" viewBox="0 0 240 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M2.5 8.5 C 50 4.5, 110 9.5, 170 5.5 C 195 4, 220 7, 237.5 5" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></p>
     <div class="hero-actions">
-      <button class="primary-button hero-app-launch" id="hero-enter-app" type="button">Open Free Workspace →</button>
+      <button class="primary-button hero-app-launch" id="hero-enter-app" type="button">Open App â†’</button>
       <button class="outline-button hero-outline" id="hero-explore" type="button">Browse tools</button>
     </div>
-    <div class="hero-trust"><span>✓ No uploads</span><span>✓ No account</span><span>✓ Works offline</span></div>
+    <div class="hero-trust"><span>âœ“ No uploads</span><span>âœ“ No account</span><span>âœ“ Works offline</span></div>
   </div>
 
   <div class="hero-visual-stage" id="hero-visual-stage" aria-hidden="true">
@@ -180,12 +180,12 @@
 <p>Fast tools to convert, compress, edit, and organize your files for free.</p>
 </div>
 <div class="popular-grid" id="popular-grid"></div>
-<div class="center-action"><button class="primary-button" id="see-all-button" type="button">Explore All 187+ Tools →</button></div>
+<div class="center-action"><button class="primary-button" id="see-all-button" type="button">Explore All 187+ Tools â†’</button></div>
 </section>
 
 <!-- =========================================================================
-     FILEKIT STUDIO WORKBENCH — ORIGINAL INTERACTIVE MEDIA LAB
-     Interactive Control Deck (Top) · Dual-Pane Live Interactive Studio (Bottom)
+     FILEKIT STUDIO WORKBENCH â€” ORIGINAL INTERACTIVE MEDIA LAB
+     Interactive Control Deck (Top) Â· Dual-Pane Live Interactive Studio (Bottom)
      Palette: Pure White, Signature Sunlit Amber/Yellow, Obsidian Deep Black, Lavender Lilac
      ========================================================================= -->
 <!-- Interactive Feature Capability Showcase Gallery (HowToConvert style) -->
@@ -453,7 +453,7 @@
                   <div class="htc-action-file-info">File 1: 120 RU...GRAMMAR.docx</div>
                   <div class="htc-action-trust-badge">
                     <span>14.4 KB</span>
-                    <span class="htc-trust-dot">•</span>
+                    <span class="htc-trust-dot">â€¢</span>
                     <span class="htc-trust-highlight">100% In-Browser</span>
                   </div>
                 </div>
@@ -470,7 +470,7 @@
                     <div class="htc-deck-cat-label">OFFICE</div>
                     <div class="htc-deck-item active">
                       <span>PDF</span>
-                      <span class="htc-deck-check">✓</span>
+                      <span class="htc-deck-check">âœ“</span>
                     </div>
                   </div>
 
@@ -737,7 +737,7 @@
                 <div class="htc-email-card">
                   <div class="htc-email-head">
                     <div class="htc-email-row"><strong>From:</strong> <span>billing@cloudservices.com</span></div>
-                    <div class="htc-email-row"><strong>Subject:</strong> <span style="font-weight:700;color:#1A1714;">Invoice Statement #48192 — Paid</span></div>
+                    <div class="htc-email-row"><strong>Subject:</strong> <span style="font-weight:700;color:#1A1714;">Invoice Statement #48192 â€” Paid</span></div>
                     <div class="htc-email-row"><strong>Format:</strong> <span class="htc-tag-pill">EML Archive</span></div>
                   </div>
                   <div class="htc-email-body-preview">
@@ -886,13 +886,13 @@
 
           <div class="fk-pro-toolstrip">
             <div class="fk-pro-tools-group">
-              <span class="fk-ptool active">✏️ Edit</span>
-              <span class="fk-ptool">🔤 Text</span>
-              <span class="fk-ptool">🖍️ Highlight</span>
-              <span class="fk-ptool">✒️ Sign</span>
-              <span class="fk-ptool">📐 Shapes</span>
+              <span class="fk-ptool active">âœï¸ Edit</span>
+              <span class="fk-ptool">ðŸ”¤ Text</span>
+              <span class="fk-ptool">ðŸ–ï¸ Highlight</span>
+              <span class="fk-ptool">âœ’ï¸ Sign</span>
+              <span class="fk-ptool">ðŸ“ Shapes</span>
             </div>
-            <span class="fk-pro-zoom">100% ▾</span>
+            <span class="fk-pro-zoom">100% â–¾</span>
           </div>
 
           <div class="fk-pro-canvas fk-pro-canvas-pdf">
@@ -934,7 +934,7 @@
         <h3 class="fk-feat-card-title">PDF Creator &amp; Suite</h3>
         <p class="fk-feat-card-desc">Create, annotate, merge, split, and electronically sign PDF documents seamlessly.</p>
         <div class="fk-feat-link-row">
-          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">→</span></span>
+          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">â†’</span></span>
         </div>
       </div>
     </article>
@@ -947,15 +947,15 @@
               <span class="fk-pdot"></span><span class="fk-pdot"></span><span class="fk-pdot"></span>
             </div>
             <span class="fk-pro-filename">Portrait_Cutout_Studio.png</span>
-            <span class="fk-pro-dims-tag">3840 × 2160</span>
+            <span class="fk-pro-dims-tag">3840 Ã— 2160</span>
           </div>
 
           <div class="fk-pro-toolstrip">
             <div class="fk-pro-tools-group">
-              <span class="fk-ptool active">✂️ Cutout</span>
-              <span class="fk-ptool">🎨 Fill</span>
-              <span class="fk-ptool">🔍 Edge</span>
-              <span class="fk-ptool">📐 Resize</span>
+              <span class="fk-ptool active">âœ‚ï¸ Cutout</span>
+              <span class="fk-ptool">ðŸŽ¨ Fill</span>
+              <span class="fk-ptool">ðŸ” Edge</span>
+              <span class="fk-ptool">ðŸ“ Resize</span>
             </div>
             <div class="fk-pro-fmts">
               <span class="fk-pfmt active">PNG</span>
@@ -981,7 +981,7 @@
         <h3 class="fk-feat-card-title">Background Remover</h3>
         <p class="fk-feat-card-desc">Isolate subjects, remove backgrounds, and export transparent PNGs with crisp edges.</p>
         <div class="fk-feat-link-row">
-          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">→</span></span>
+          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">â†’</span></span>
         </div>
       </div>
     </article>
@@ -1015,7 +1015,7 @@
               </div>
 
               <div class="fk-pro-comp-bridge">
-                <div class="fk-pro-comp-arrow">➔</div>
+                <div class="fk-pro-comp-arrow">âž”</div>
               </div>
 
               <div class="fk-pro-comp-card after">
@@ -1032,7 +1032,7 @@
         <h3 class="fk-feat-card-title">Smart File Compressor</h3>
         <p class="fk-feat-card-desc">Shrink heavy PDFs, videos, and images by up to 90% while preserving crisp quality.</p>
         <div class="fk-feat-link-row">
-          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">→</span></span>
+          <span class="fk-feat-link">Learn more <span class="fk-feat-arrow">â†’</span></span>
         </div>
       </div>
     </article>
@@ -1086,7 +1086,7 @@
           <path d="M94 126 C97 132 103 132 106 126" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 
           <rect x="71" y="152" width="58" height="18" rx="9" fill="#FFF1F2" stroke="#FECDD3" stroke-width="1.2"/>
-          <text x="100" y="164.5" text-anchor="middle" fill="#E11D48" font-family="'Poppins', sans-serif" font-size="8.5" font-weight="700" letter-spacing="0.04em">HEIC → JPG</text>
+          <text x="100" y="164.5" text-anchor="middle" fill="#E11D48" font-family="'Poppins', sans-serif" font-size="8.5" font-weight="700" letter-spacing="0.04em">HEIC â†’ JPG</text>
 
           <g filter="url(#fk-bubble-shadow)">
             <path d="M142 36 C142 27.1634 149.163 20 158 20 H178 C186.837 20 194 27.1634 194 36 V48 C194 56.8366 186.837 64 178 64 H162 L152 74 V62 C146.5 60 142 54.5 142 48 V36 Z" fill="#EF4444"/>
@@ -1319,7 +1319,7 @@
           <section class="sp-section" id="sec-popular">
             <div class="sp-section-header">
               <div class="sp-section-title-wrap">
-                <span class="sp-section-icon">⭐</span>
+                <span class="sp-section-icon">â­</span>
                 <h2 class="sp-section-heading">Popular & Essential Tools</h2>
                 <span class="sp-section-badge">16 tools</span>
               </div>
@@ -1372,12 +1372,12 @@
 
             <div class="drop-detected-panel" id="dropzone-detected" hidden="">
               <div class="drop-detected-file">
-                <span class="drop-file-icon" id="detected-file-icon">📄</span>
+                <span class="drop-file-icon" id="detected-file-icon">ðŸ“„</span>
                 <div class="drop-file-info">
                   <strong id="detected-file-name">document.pdf</strong>
-                  <span id="detected-file-meta">2.4 MB · PDF</span>
+                  <span id="detected-file-meta">2.4 MB Â· PDF</span>
                 </div>
-                <button type="button" class="drop-clear-btn" id="clear-dropped-file">Change ×</button>
+                <button type="button" class="drop-clear-btn" id="clear-dropped-file">Change Ã—</button>
               </div>
             </div>
 
@@ -1397,7 +1397,7 @@
     </div>
   </div>
 
-  <!-- Mobile-only bottom tab bar — hidden on desktop via CSS -->
+  <!-- Mobile-only bottom tab bar â€” hidden on desktop via CSS -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar" aria-label="Main navigation">
     <button class="mtab active" data-task-rail="compress" type="button">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg>
@@ -1429,8 +1429,8 @@
     <nav aria-label="Breadcrumb" class="breadcrumbs">
       <ol>
         <li><button id="seo-crumb-home" type="button">Home</button></li>
-        <li><span class="crumb-sep">›</span><span id="crumb-category">PDF</span></li>
-        <li><span class="crumb-sep">›</span><strong aria-current="page" id="crumb-tool">Compress PDF</strong></li>
+        <li><span class="crumb-sep">â€º</span><span id="crumb-category">PDF</span></li>
+        <li><span class="crumb-sep">â€º</span><strong aria-current="page" id="crumb-tool">Compress PDF</strong></li>
       </ol>
     </nav>
 
@@ -1478,7 +1478,7 @@
         <strong>FileKit</strong>
       </div>
       <p class="footer-desc">The modern, all-in-one browser file suite. Convert, compress, edit, and organize documents, media, and archives with speed and precision.</p>
-      <div class="footer-meta-pill">Fast · Intuitive · Universal</div>
+      <div class="footer-meta-pill">Fast Â· Intuitive Â· Universal</div>
     </div>
 
     <div class="footer-col">
@@ -1523,24 +1523,24 @@
   </div>
 
   <div class="footer-bottom page-width">
-    <span class="footer-copy">© 2026 FileKit Inc. All rights reserved.</span>
+    <span class="footer-copy">Â© 2026 FileKit Inc. All rights reserved.</span>
     <div class="footer-bottom-links">
       <button data-footer-link="privacy" type="button">Privacy</button>
-      <span class="footer-dot-sep">·</span>
+      <span class="footer-dot-sep">Â·</span>
       <button data-footer-link="terms" type="button">Terms</button>
-      <span class="footer-dot-sep">·</span>
+      <span class="footer-dot-sep">Â·</span>
       <button data-footer-link="help" type="button">Support</button>
-      <span class="footer-dot-sep">·</span>
+      <span class="footer-dot-sep">Â·</span>
       <button data-footer-link="shortcuts" type="button">Shortcuts</button>
     </div>
   </div>
 </footer>
 </div>
-<script defer src="dist/js/app.min.js?v=20260915_v122"></script>
-<script defer src="dist/js/tools.min.js?v=20260915_v122"></script>
-<script defer src="dist/js/tools-new.min.js?v=20260915_v122"></script>
-<script defer src="dist/js/tools-premium.min.js?v=20260915_v122"></script>
-<script defer src="dist/js/tools-premium2.min.js?v=20260915_v122"></script>
+<script defer src="dist/js/app.min.js?v=20260919_v227"></script>
+<script defer src="dist/js/tools.min.js?v=20260919_v227"></script>
+<script defer src="dist/js/tools-new.min.js?v=20260919_v227"></script>
+<script defer src="dist/js/tools-premium.min.js?v=20260919_v227"></script>
+<script defer src="dist/js/tools-premium2.min.js?v=20260919_v227"></script>
 <script>
   if ('caches' in window) {
     caches.keys().then((keys) => {
@@ -1557,6 +1557,7 @@
 </script>
 </body>
 </html>
+
 
 
 

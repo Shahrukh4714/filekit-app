@@ -845,8 +845,8 @@
   });
 
   R({ id: 'pdf-edit-text', category: 'PDF', name: 'Edit PDF',
-    description: 'Edit and annotate PDF text in a private canvas.',
-    accepts: ['pdf'], maxBytes: 200e6, engine: loadLib,
+    description: 'Edit PDF, Word, Excel, PowerPoint, images and more in a private canvas.',
+    accepts: ['pdf', 'docx', 'odt', 'rtf', 'pages', 'md', 'markdown', 'html', 'htm', 'txt', 'log', 'xlsx', 'xls', 'ods', 'csv', 'tsv', 'pptx', 'odp', 'epub', 'json', 'yaml', 'yml', 'xml', 'toml', 'png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'svg', 'avif', 'heic', 'heif'], maxBytes: 200e6, engine: loadLib,
     async run({ file }) {
       // UI shell handles export; keep a harmless fallback
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -13137,6 +13137,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     pen: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3.5l5 5L8 21H3v-5L15.5 3.5z"/><path d="M13.5 5.5l5 5"/></svg>`,
     /* highlight: tilted marker over a stroke */
     highlight: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4l9 3.5-3.5 8.5-9-3.5z"/><path d="M6 19.5h12"/><path d="M12 12.5l2.8 1.1"/></svg>`,
+    /* eraser: angled block with wipe lines */
+    eraser: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>`,
     /* shape: square + circle combo */
     shape: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="11" height="11" rx="1.2"/><circle cx="16.5" cy="16.5" r="4.5"/></svg>`,
     /* image: frame, sun, mountain */
@@ -13269,16 +13271,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let annots = {};           // annots[pageIdx] = [annot, ...] in page user-space coords
     let selAnnot = null;       // selected annot id on the current page
     let draft = null;          // in-progress drag { kind, start, cur, points, el }
-    let cropBox = null;        // { x, y, w, h } user-space crop (applies to all pages)
+    let cropPct = null;        // committed crop margins { top, right, bottom, left } in page % — applied to every page proportionally
+    let cropDraft = null;      // active crop studio draft { top, right, bottom, left } in page %
+    let cropDragCleanup = null; // window listeners for the active crop-handle drag
+    let cropDimsResetTimer = null; // restores the HUD size readout after a warning
     let annotSeq = 1;          // id counter
     let undoStack = [];        // snapshots for undo/redo
     let redoStack = [];
     let toolOpts = {           // active tool styling
-      color: '#111827', stroke: 2,
-      hlColor: '#FDE047', hlKind: 'hl',
+      color: '#111827', stroke: 2.5,
+      drawMode: 'pen',         // 'pen' | 'highlighter' | 'eraser'
+      penStroke: 2.5,
+      hlColor: '#FDE047', hlKind: 'hl', hlStroke: 14,
+      eraserSize: 20,
       shapeKind: 'rect', shapeColor: '#111827', shapeStroke: 2,
       textColor: '#111827', textSize: 18,
+      pressure: getPressurePref(),
     };
+    applyFlattenInkPref();     // ink/highlights flatten-on-save preference
     let dragType = null;       // 'type' pending position for the Type tool
     let stampSig = null;       // drawn signature: { points: [[x,y]...] } normalized 0..1
     let activeDialog = null;   // open dialog element
@@ -13291,11 +13301,33 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let sheetMode = null;      // spreadsheet editor state { wb, aoa, name, index }
     let isWordDoc = false;     // docx/odt/rtf sources can find-and-replace
     let scannedBannerDismissed = false; // user dismissed scanned notice
-    let formFilled = false;    // a form was written into the current PDF
+    let formModel = null;      // { acro, xfa, fields: [...] } for the loaded document
+    let formEdits = {};        // field name -> pending value (string | bool | string[])
+    let formProps = {};        // field name -> property overrides { required, readOnly, maxLength, multiline }
+    let formNewFields = [];    // builder-created fields awaiting export
+    let formRemoved = new Set(); // field names deleted by the builder
+    let formFlatten = false;   // flatten fields when exporting
+    let formDetect = [];       // [{ page, kind, x, y, w, h, name, accepted }] auto-detected candidates
+    let formPlaceKind = null;  // armed builder tool: text | checkbox | radio | dropdown | listbox | signature
+    let formActive = null;     // focused field name
+    let formSelectedName = null; // selected form field in neutral Select mode
+    let formPanelOpen = false; // forms drawer visible
+    let formTabOrder = [];     // custom tab order (field names)
+    let formBannerDismissed = false;
+    let formWarned = false;    // required-empty warning already shown this session
+    let formOrderMode = false; // tab-order picker active
+    let formModelToken = 0;    // async guard for model rebuilds
+    let formMenuEl = null;     // open dropdown menu inside the form layer
     let pointerCleanup = null; // pointer event listeners cleanup callback
     let lastCommitTime = 0;    // timestamp of last text edit commit
     let currentHits = [];      // active text hit boxes on current page
     let editingAnnot = null;   // active annotation being edited
+    let editorDocClick = null; // document pointerdown listener for the open editor (cleaned up on close)
+    let embeddedFonts = [];    // [{ base, key, alias, bytes }] real PDF fonts exposed to the browser
+    const fontAliasByBase = new Map(); // normalized BaseFont -> FontFace alias
+    let ocrHits = {};          // pageNum -> [{ item, geom }] words recognised by OCR
+    let ocrWorker = null;      // persistent Tesseract worker
+    let textHitsStale = false; // text hit zones were cleared while another tool was active
 
     const loadLib = () => {
       if (window.PDFLib) return Promise.resolve(window.PDFLib);
@@ -13311,9 +13343,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return f && (f.type === 'application/pdf' || n.endsWith('.pdf'));
     };
 
-    const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp'];
-    const DOC_TO_TOOL = { docx: 'docx-to-pdf', odt: 'docx-to-pdf', rtf: 'docx-to-pdf', md: 'md-to-pdf', markdown: 'md-to-pdf', html: 'html-to-pdf', htm: 'html-to-pdf', txt: 'txt-to-pdf', log: 'txt-to-pdf', xlsx: 'excel-to-pdf', xls: 'excel-to-pdf', ods: 'excel-to-pdf', csv: 'csv-to-pdf', tsv: 'csv-to-pdf', pptx: 'pptx-to-pdf', odp: 'pptx-to-pdf', epub: 'epub-to-pdf', json: 'data-to-pdf', yaml: 'data-to-pdf', yml: 'data-to-pdf', xml: 'data-to-pdf', toml: 'data-to-pdf' };
+    const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'svg', 'avif', 'heic', 'heif'];
+    const DOC_TO_TOOL = { docx: 'docx-to-pdf', odt: 'docx-to-pdf', rtf: 'docx-to-pdf', pages: 'docx-to-pdf', md: 'md-to-pdf', markdown: 'md-to-pdf', html: 'html-to-pdf', htm: 'html-to-pdf', txt: 'txt-to-pdf', log: 'txt-to-pdf', xlsx: 'excel-to-pdf', xls: 'excel-to-pdf', ods: 'excel-to-pdf', csv: 'csv-to-pdf', tsv: 'csv-to-pdf', pptx: 'pptx-to-pdf', odp: 'pptx-to-pdf', epub: 'epub-to-pdf', json: 'data-to-pdf', yaml: 'data-to-pdf', yml: 'data-to-pdf', xml: 'data-to-pdf', toml: 'data-to-pdf' };
     const extOf = f => String(f?.name || '').split('.').pop().toLowerCase();
+    const EDIT_ACCEPT = ['.pdf', ...[...new Set([...Object.keys(DOC_TO_TOOL), ...IMG_EXT])].map(e => '.' + e), 'image/*'].join(',');
     const canEdit = f => isPdf(f) || IMG_EXT.includes(extOf(f)) || /^image\//.test(f?.type || '') || extOf(f) in DOC_TO_TOOL;
 
     /* Bring any editable file into the canvas */
@@ -13400,6 +13433,31 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return c;
     }
 
+    // Re-render a single page's raster from the source PDF, discarding any
+    // destructive canvas edits (erased original text). Used by undo/redo/revert.
+    async function refreshPageCanvas(pageIdx) {
+      if (!pdfDoc || !pages[pageIdx]) return;
+      const dpr = Math.min(2.5, window.devicePixelRatio || 2);
+      const newCv = await renderPageAt(pageIdx, (pageScale > 0 ? pageScale : 1) * dpr);
+      if (!pages[pageIdx]) return;
+      pages[pageIdx].full = newCv;
+      newCv.className = 'etxt-full-canvas';
+      newCv.dataset.page = String(pageIdx + 1);
+      newCv.style.width = '100%';
+      newCv.style.height = '100%';
+      const pageEl = container.querySelector(`.etxt-page[data-page="${pageIdx + 1}"]`);
+      const oldCv = pageEl ? pageEl.querySelector('.etxt-full-canvas') : null;
+      if (oldCv) oldCv.replaceWith(newCv);
+      else if (pageEl) pageEl.prepend(newCv);
+    }
+
+    async function refreshPages(pageIdxSet) {
+      const idxs = [...(pageIdxSet || [])].filter(i => typeof i === 'number' && i >= 0);
+      for (const i of idxs) {
+        try { await refreshPageCanvas(i); } catch (err) { console.warn('[Edit] refresh page', i, err); }
+      }
+    }
+
     function shortName(n, max = 28) {
       const s = String(n || 'document.pdf');
       if (s.length <= max) return s;
@@ -13409,9 +13467,227 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
     const SHEET_EXT = ['xlsx', 'xls', 'ods', 'csv', 'tsv'];
     const WORD_EXT = ['docx', 'odt', 'rtf'];
+    // ── Embedded-font matching ─────────────────────────────────────────────
+    // PDFs render with their own embedded fonts; the browser does not have them,
+    // so fallback text looks nothing like the document. We extract the embedded
+    // font programs and register them via the FontFace API so the inline editor,
+    // committed overlay and measurements use the real typeface.
+    const normFont = (s) => String(s || '').replace(/^[A-Z]{6}\+/, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+
+    async function extractFontPrograms(pdfBytes) {
+      const L = await loadLib();
+      const F = await loadFfE();
+      const inflate = (b) => { try { if (b && b[0] === 0x78) return F.unzlibSync(b); } catch { /* noop */ } return b; };
+      const doc = await L.PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      const N = L.PDFName;
+      const found = [];
+      const seen = new Set();
+      const snip = (v) => { try { return v ? (v.decodeText ? v.decodeText() : '') : ''; } catch { return ''; } };
+      const handle = (f0) => {
+        try {
+          let f = f0;
+          if (!f || typeof f.get !== 'function') return;
+          if (snip(f.get(N.of('Subtype'))) === 'Type0') {
+            const df = f.lookup(N.of('DescendantFonts'));
+            if (df && typeof df.lookup === 'function') { const first = df.lookup(0); if (first) f = first; }
+          }
+          const base = snip(f.lookup(N.of('BaseFont')));
+          const desc = f.lookup(N.of('FontDescriptor'));
+          if (!desc || !base) return;
+          for (const key of ['FontFile2', 'FontFile3', 'FontFile']) {
+            try {
+              const sf = desc.lookup(N.of(key));
+              if (!sf || typeof sf.getContents !== 'function') continue;
+              const b = inflate(sf.getContents());
+              if (!b || b.length < 200 || b.length > 8e6) continue;
+              const k = base + ':' + key;
+              if (seen.has(k)) continue;
+              seen.add(k);
+              found.push({ base, key, bytes: b });
+            } catch { /* noop */ }
+          }
+        } catch { /* noop */ }
+      };
+      for (const pg of (doc.getPages() || [])) {
+        try {
+          const res = pg.node && pg.node.Resources && pg.node.Resources();
+          const fdict = res && res.get ? res.lookup(N.of('Font')) : null;
+          if (!fdict || typeof fdict.keys !== 'function') continue;
+          for (const kk of fdict.keys()) { try { handle(fdict.lookup(kk)); } catch { /* noop */ } }
+        } catch { /* noop */ }
+      }
+      return found;
+    }
+
+    async function buildEmbeddedFonts(pdfBytes) {
+      embeddedFonts = [];
+      fontAliasByBase.clear();
+      let progs = [];
+      try { progs = await extractFontPrograms(pdfBytes); } catch (e) { console.warn('[Edit] font extract', e && e.message); }
+      for (let i = 0; i < progs.length; i++) {
+        const p = progs[i];
+        // Type1 (FontFile) is not supported by the FontFace API.
+        if (p.key === 'FontFile') continue;
+        const base = String(p.base || '');
+        const alias = 'ffxEdit' + i;
+        try {
+          const bytes = new Uint8Array(p.bytes);
+          const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+          const face = new FontFace(alias, ab);
+          await face.load();
+          document.fonts.add(face);
+          const key = normFont(base);
+          embeddedFonts.push({ base, key, alias, bytes });
+          if (key && !fontAliasByBase.has(key)) fontAliasByBase.set(key, alias);
+        } catch (e) {
+          console.warn('[Edit] FontFace load failed:', base, e && e.message);
+        }
+      }
+    }
+
+    // ── Metric-compatible bundled fonts (OFL) ─────────────────────────────────
+    // Arimo/Tinos/Cousine are metric-compatible with Arial/Times New Roman/Courier
+    // New. They give exact widths on screen and full-Latin coverage on export.
+    const METRIC_FONTS = {
+      sans: { r: 'vendor/fonts/Arimo-Regular.ttf', b: 'vendor/fonts/Arimo-Bold.ttf', family: 'ffxMetricSans' },
+      serif: { r: 'vendor/fonts/Tinos-Regular.ttf', b: 'vendor/fonts/Tinos-Bold.ttf', family: 'ffxMetricSerif' },
+      mono: { r: 'vendor/fonts/Cousine-Regular.ttf', b: 'vendor/fonts/Cousine-Bold.ttf', family: 'ffxMetricMono' },
+    };
+    let metricFacesReady = null;
+    function ensureMetricFaces() {
+      if (metricFacesReady) return metricFacesReady;
+      metricFacesReady = (async () => {
+        for (const k of Object.keys(METRIC_FONTS)) {
+          const m = METRIC_FONTS[k];
+          for (const [w, p] of [['400', m.r], ['700', m.b]]) {
+            try {
+              const buf = await (await fetch(p)).arrayBuffer();
+              const face = new FontFace(m.family, buf, { weight: w, style: 'normal' });
+              await face.load();
+              document.fonts.add(face);
+            } catch (e) { console.warn('[Edit] metric font failed:', p, e && e.message); }
+          }
+        }
+      })();
+      return metricFacesReady;
+    }
+    function metricStack(kind) {
+      const f = kind === 'serif' ? '"ffxMetricSerif", "Times New Roman", Times, serif'
+        : kind === 'mono' ? '"ffxMetricMono", "Courier New", Courier, monospace'
+        : '"ffxMetricSans", Arial, Helvetica, sans-serif';
+      return f;
+    }
+
+    // ── OCR: make scanned / image-only pages editable (Tesseract WASM) ────────
+    async function getOcrWorker() {
+      if (ocrWorker) return ocrWorker;
+      let T = window.Tesseract;
+      if (!T) { await window.FF.util.loadScript('vendor/tesseract/tesseract.min.js'); T = window.Tesseract; }
+      if (!T || typeof T.createWorker !== 'function') throw new Error('Tesseract failed to load');
+      const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+      ocrWorker = await T.createWorker('eng', 1, {
+        workerPath: base + 'vendor/tesseract/worker.min.js',
+        corePath: base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+        langPath: base + 'vendor/tesseract',
+        cachePath: 'filekit-ocr',
+        workerBlobURL: false,
+        gzip: false,
+      });
+      return ocrWorker;
+    }
+
+    async function runOcrForPage(pageNum) {
+      const pageEl = container.querySelector(`.etxt-page[data-page="${pageNum}"]`);
+      const cv = pageEl && pageEl.querySelector('.etxt-full-canvas');
+      if (!pageEl || !cv) return;
+      const btn = container.querySelector('#etxt-run-ocr');
+      if (btn) { btn.disabled = true; btn.textContent = 'Reading text…'; }
+      try {
+        const worker = await getOcrWorker();
+        const { data } = await worker.recognize(cv);
+        const words = (data && data.words ? data.words : []).filter((w) => w.text && w.bbox && w.text.trim() && (w.confidence == null || w.confidence > 40));
+        const sx = pageEl.clientWidth / cv.width;
+        const sy = pageEl.clientHeight / cv.height;
+        const baseW = (pages[pageNum - 1] && pages[pageNum - 1].baseW) || curPageW;
+        const baseH = (pages[pageNum - 1] && pages[pageNum - 1].baseH) || curPageH;
+        const px = baseW / cv.width, py = baseH / cv.height;
+        const hits = [];
+        for (const w of words) {
+          const bw = w.bbox.x1 - w.bbox.x0, bh = w.bbox.y1 - w.bbox.y0;
+          const geom = {
+            left: w.bbox.x0 * sx,
+            top: w.bbox.y0 * sy,
+            width: Math.max(6, bw * sx),
+            height: Math.max(6, bh * sy),
+            fontSize: Math.max(4, bh * sy * 0.9),
+            fontSizePdf: Math.max(4, bh * py),
+            fontFamily: 'Arial, Helvetica, "Segoe UI", Roboto, sans-serif',
+            origFontFamily: 'Arial, Helvetica, sans-serif',
+            fontWeight: '400', fontStyle: 'normal', isBold: false, isItalic: false,
+            textColor: '#111827', rotation: 0, dir: 'ltr',
+            pdfX: w.bbox.x0 * px,
+            pdfY: baseH - w.bbox.y1 * py,
+            pdfW: bw * px,
+            pdfH: bh * py,
+            ocr: true,
+            key: `ocr:${pageNum}:${Math.round(w.bbox.x0)}:${Math.round(w.bbox.y0)}`,
+          };
+          const item = {
+            str: String(w.text).trim(),
+            height: geom.pdfH,
+            width: geom.pdfW,
+            transform: [geom.fontSizePdf, 0, 0, geom.fontSizePdf, geom.pdfX, geom.pdfY],
+            fontName: 'OCR',
+          };
+          hits.push({ item, geom });
+        }
+        ocrHits[pageNum] = hits;
+        attachPageTextHits(pageNum);
+        if (btn) { btn.disabled = false; btn.textContent = 'Make editable (OCR)'; }
+        toast(hits.length ? `OCR found ${hits.length} word${hits.length === 1 ? '' : 's'} — click one to edit` : 'No text recognised on this page');
+      } catch (err) {
+        console.error('[Edit] OCR failed:', (err && (err.message || err)) || 'unknown error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Make editable (OCR)'; }
+        toast('OCR failed: ' + ((err && err.message) || 'unknown error'), 'error');
+      }
+    }
+
     async function pickFile(f) {
-      if (!canEdit(f)) return;
+      if (!canEdit(f)) {
+        toast('This file type can’t be edited. Use PDF, Word, Excel, PowerPoint, an image or another document format.');
+        return;
+      }
+      closeActiveEditor(true);
       file = f;
+      // Reset every document-scoped state so a new file never inherits stale edits,
+      // annotations, crop or undo history from the previously opened document.
+      annots = {};
+      annotSeq = 1;
+      selAnnot = null;
+      selectedPages.clear();
+      cropPct = null;
+      cropDraft = null;
+      undoStack = [];
+      redoStack = [];
+      formModel = null;
+      formEdits = {};
+      formProps = {};
+      formNewFields = [];
+      formRemoved = new Set();
+      formFlatten = false;
+      formDetect = [];
+      formPlaceKind = null;
+      formActive = null;
+      formSelectedName = null;
+      formPanelOpen = false;
+      formTabOrder = [];
+      formBannerDismissed = false;
+      formWarned = false;
+      formMenuEl = null;
+      scannedBannerDismissed = false;
+      sheetMode = null;
+      editingAnnot = null;
+      ocrHits = {};
       imgOrig = null; imgSrc = null; imgDraft = null; aiStatus = '';
       isWordDoc = WORD_EXT.includes(extOf(f));
       if (SHEET_EXT.includes(extOf(f))) { renderSpreadsheet(); return; }
@@ -13444,6 +13720,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const pdfBlob = await toEditablePdf(f);
         currentPdf = pdfBlob;
         const data = new Uint8Array(await pdfBlob.arrayBuffer());
+        // Register the document's real fonts before rendering so hits/editor use them.
+        await buildEmbeddedFonts(data);
         if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
         pdfDoc = await pdfjs.getDocument({
           data,
@@ -13455,6 +13733,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
         docToken++;
         renderEditor();
+        refreshFormModel();
       } catch (err) {
         console.error('[Edit] load PDF error:', err);
         if (window.FF && window.FF.util && window.FF.util.toast) {
@@ -13473,10 +13752,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         <div class="cpdf-body cpdf-body--center">
           <div class="cpdf-spinner" aria-hidden="true">
             <div class="cpdf-spin-outer"></div>
-            <div class="cpdf-spin-inner">${I.edit}</div>
-          </div>
-          <p class="cpdf-proc-title">Opening your PDF…</p>
-          <p class="cpdf-proc-sub">Reading pages locally — nothing leaves your device</p>
+          <div class="cpdf-spin-inner">${I.edit}</div>
+        </div>
+        <p class="cpdf-proc-title">Opening your document…</p>
+        <p class="cpdf-proc-sub">Reading pages locally — nothing leaves your device</p>
         </div>`;
     }
 
@@ -13512,9 +13791,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
             <label for="etxt-inp" class="etxt-drop-action-link">Add a file from your device</label>
 
-            <p class="etxt-drop-formats">Supports PDF, DOCX, PNG, JPG, WEBP, EPUB, TXT, and RTF</p>
+            <p class="etxt-drop-formats">Supports PDF, Word, Excel, PowerPoint, Images, EPUB, HTML, Markdown, CSV, TXT and more</p>
           </div>
-          <input id="etxt-inp" type="file" accept="application/pdf,.pdf,.png,.jpg,.jpeg,.webp,.docx,.odt,.rtf,.txt,.epub,.md" hidden>
+          <input id="etxt-inp" type="file" accept="${EDIT_ACCEPT}" hidden>
         </div>`;
       // Carry a file over from pendingFiles or Sign workspace
       if (window.FF && window.FF.app && Array.isArray(window.FF.app.pendingFiles) && window.FF.app.pendingFiles.length) {
@@ -13546,25 +13825,50 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return `<button type="button" class="etxt-tool${active ? ' is-on' : ''}" data-tool="${id}" title="${label}">${icon}${label ? `<span>${label}</span>` : ''}</button>`;
     }
 
+    function snapshotState() {
+      return JSON.stringify({
+        edits: edits.map(e => ({
+          pageIdx: e.pageIdx,
+          target: e.target,
+          replacement: e.replacement,
+          key: e.key,
+          isNew: !!e.isNew,
+          item: e.item ? {
+            str: e.item.str,
+            transform: e.item.transform,
+            width: e.item.width,
+            height: e.item.height,
+            fontName: e.item.fontName,
+            rotation: e.item.rotation,
+            dir: e.item.dir
+          } : null,
+          geom: e.geom,
+          bgColor: e.bgColor,
+          textColor: e.textColor,
+          textAlign: e.textAlign,
+          underline: e.underline,
+          lineHeight: e.lineHeight,
+          charSpacing: e.charSpacing
+        })),
+        annots: annots,
+        crop: cropPct ? { ...cropPct } : null,
+        watermarks: watermarks.map((w) => ({ ...w })),
+        pageNums: pageNums.map((p) => ({ ...p })),
+        forms: {
+          edits: JSON.parse(JSON.stringify(formEdits)),
+          props: JSON.parse(JSON.stringify(formProps)),
+          newFields: formNewFields.map((f) => ({ ...f, options: (f.options || []).slice() })),
+          removed: [...formRemoved],
+          flatten: formFlatten,
+          detect: formDetect.map((c) => ({ ...c })),
+          order: formTabOrder.slice()
+        }
+      });
+    }
+
     function pushUndo() {
       try {
-        const snap = JSON.stringify({
-          edits: edits.map(e => ({
-            pageIdx: e.pageIdx,
-            target: e.target,
-            replacement: e.replacement,
-            geom: e.geom,
-            bgColor: e.bgColor,
-            textColor: e.textColor,
-            textAlign: e.textAlign,
-            underline: e.underline,
-            lineHeight: e.lineHeight,
-            charSpacing: e.charSpacing
-          })),
-          annots: annots,
-          cropBox: cropBox ? { ...cropBox } : null
-        });
-        undoStack.push(snap);
+        undoStack.push(snapshotState());
         if (undoStack.length > 50) undoStack.shift();
         redoStack = [];
         updateUndoRedoUI();
@@ -13573,33 +13877,61 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
+    // For gestures (move/resize/erase) that mutate live: capture the pre-state
+    // at pointerdown, then commit it once on release — one undo step per gesture.
+    function commitUndoSnapshot(snap) {
+      if (!snap) return;
+      try {
+        undoStack.push(snap);
+        if (undoStack.length > 50) undoStack.shift();
+        redoStack = [];
+        updateUndoRedoUI();
+      } catch (err) {
+        console.warn('[Edit] commitUndoSnapshot fail:', err);
+      }
+    }
+
+    function restoreSnapshot(snap, affected) {
+      const nextEdits = snap.edits || [];
+      nextEdits.forEach(x => affected.add(x.pageIdx));
+      edits = nextEdits;
+      annots = snap.annots || {};
+      cropPct = snap.crop || null;
+      cropDraft = null;
+      watermarks = Array.isArray(snap.watermarks) ? snap.watermarks.map((w) => ({ ...w })) : [];
+      pageNums = Array.isArray(snap.pageNums) ? snap.pageNums.map((p) => ({ ...p })) : [];
+      if (snap.forms) {
+        formEdits = snap.forms.edits || {};
+        formProps = snap.forms.props || {};
+        formNewFields = Array.isArray(snap.forms.newFields) ? snap.forms.newFields.map((f) => ({ ...f, options: (f.options || []).slice() })) : [];
+        formRemoved = new Set(Array.isArray(snap.forms.removed) ? snap.forms.removed : []);
+        formFlatten = !!snap.forms.flatten;
+        formDetect = Array.isArray(snap.forms.detect) ? snap.forms.detect.map((c) => ({ ...c })) : [];
+        formTabOrder = Array.isArray(snap.forms.order) ? snap.forms.order.slice() : [];
+        formWarned = false;
+      }
+      if (toolMode === 'watermark' && !watermarks.some((w) => w.id === wmEditingId)) wmEditingId = null;
+      if (toolMode === 'pagenum' && !pageNums.some((p) => p.id === pnEditingId)) pnEditingId = null;
+      hlTextLinesCache = {};
+      renderAnnots();
+      renderFormOverlay();
+      updateFormBanner();
+      updateFormsPanel();
+      refreshPages(affected).then(() => {
+        affected.forEach(i => { if (typeof i === 'number' && i >= 0) attachPageTextHits(i + 1); });
+        updateExportBadge();
+      });
+      updateUndoRedoUI();
+    }
+
     function undo() {
       if (!undoStack.length) return;
       try {
-        const currentSnap = JSON.stringify({
-          edits: edits.map(e => ({
-            pageIdx: e.pageIdx,
-            target: e.target,
-            replacement: e.replacement,
-            geom: e.geom,
-            bgColor: e.bgColor,
-            textColor: e.textColor,
-            textAlign: e.textAlign,
-            underline: e.underline,
-            lineHeight: e.lineHeight,
-            charSpacing: e.charSpacing
-          })),
-          annots: annots,
-          cropBox: cropBox ? { ...cropBox } : null
-        });
-        redoStack.push(currentSnap);
+        const affected = new Set();
+        edits.forEach(x => affected.add(x.pageIdx));
+        redoStack.push(snapshotState());
         const prev = JSON.parse(undoStack.pop());
-        edits = prev.edits || [];
-        annots = prev.annots || {};
-        cropBox = prev.cropBox || null;
-        renderAnnots();
-        attachTextHits();
-        updateUndoRedoUI();
+        restoreSnapshot(prev, affected);
       } catch (err) {
         console.warn('[Edit] undo fail:', err);
       }
@@ -13608,37 +13940,29 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function redo() {
       if (!redoStack.length) return;
       try {
-        const currentSnap = JSON.stringify({
-          edits: edits.map(e => ({
-            pageIdx: e.pageIdx,
-            target: e.target,
-            replacement: e.replacement,
-            geom: e.geom,
-            bgColor: e.bgColor,
-            textColor: e.textColor,
-            textAlign: e.textAlign,
-            underline: e.underline,
-            lineHeight: e.lineHeight,
-            charSpacing: e.charSpacing
-          })),
-          annots: annots,
-          cropBox: cropBox ? { ...cropBox } : null
-        });
-        undoStack.push(currentSnap);
+        const affected = new Set();
+        edits.forEach(x => affected.add(x.pageIdx));
+        undoStack.push(snapshotState());
         const next = JSON.parse(redoStack.pop());
-        edits = next.edits || [];
-        annots = next.annots || {};
-        cropBox = next.cropBox || null;
-        renderAnnots();
-        attachTextHits();
-        updateUndoRedoUI();
+        restoreSnapshot(next, affected);
       } catch (err) {
         console.warn('[Edit] redo fail:', err);
       }
     }
 
+    function findAnnotById(id) {
+      if (!id) return null;
+      for (const k in annots) {
+        if (Array.isArray(annots[k])) {
+          const item = annots[k].find(x => x.id === id);
+          if (item) return item;
+        }
+      }
+      return null;
+    }
+
     function addAnnot(annot) {
-      const idx = page - 1;
+      const idx = (typeof annot.pageIdx === 'number') ? annot.pageIdx : (page - 1);
       if (!annots[idx]) annots[idx] = [];
       annot.id = 'a' + (annotSeq++);
       annot.pageIdx = idx;
@@ -13648,11 +13972,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function removeAnnot(id) {
-      const idx = page - 1;
-      if (!annots[idx]) return;
-      annots[idx] = annots[idx].filter(a => a.id !== id);
+      let found = false;
+      for (const k in annots) {
+        if (Array.isArray(annots[k])) {
+          const before = annots[k].length;
+          annots[k] = annots[k].filter(a => a.id !== id);
+          if (annots[k].length !== before) found = true;
+        }
+      }
       if (selAnnot === id) selAnnot = null;
-      renderAnnots();
+      if (found) renderAnnots();
     }
 
     function normRect(p, c) {
@@ -13665,13 +13994,31 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function hexToRgbObj(hex) {
-      const h = String(hex || '#111827').replace('#', '');
-      const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+      const s = String(hex || '#111827').trim();
+      // Accept rgb()/rgba() (what the canvas samplers return) as well as hex.
+      const m = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+      if (m) {
+        return {
+          r: Math.min(1, Math.max(0, Number(m[1]) / 255)),
+          g: Math.min(1, Math.max(0, Number(m[2]) / 255)),
+          b: Math.min(1, Math.max(0, Number(m[3]) / 255)),
+        };
+      }
+      let h = s.replace('#', '');
+      if (h.length === 3) h = h.split('').map(c => c + c).join('');
+      const n = parseInt(h, 16);
+      if (!Number.isFinite(n)) return { r: 0, g: 0, b: 0 };
       return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
     }
 
     function smoothPath(pts) {
       if (!pts || !pts.length) return '';
+      if (pts.length === 1) {
+        return `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)} L ${(pts[0][0] + 0.05).toFixed(2)} ${pts[0][1].toFixed(2)}`;
+      }
+      if (pts.length === 2) {
+        return `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)} L ${pts[1][0].toFixed(2)} ${pts[1][1].toFixed(2)}`;
+      }
       let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
       for (let i = 1; i < pts.length - 1; i++) {
         const mx = (pts[i][0] + pts[i + 1][0]) / 2;
@@ -13683,8 +14030,41 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return d;
     }
 
-    function squigglePath(x, y, w) {
-      const amp = 2.2, step = 5;
+    function pointNearPolyline(px, py, points, maxDist) {
+      if (!points || !points.length) return false;
+      const maxDistSq = maxDist * maxDist;
+      if (points.length === 1) {
+        const dx = px - points[0][0];
+        const dy = py - points[0][1];
+        return (dx * dx + dy * dy) <= maxDistSq;
+      }
+      for (let i = 0; i < points.length - 1; i++) {
+        const x1 = points[i][0], y1 = points[i][1];
+        const x2 = points[i + 1][0], y2 = points[i + 1][1];
+        const dx = x2 - x1, dy = y2 - y1;
+        const lenSq = dx * dx + dy * dy;
+        let t = lenSq === 0 ? 0 : ((px - x1) * dx + (py - y1) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        const projX = x1 + t * dx;
+        const projY = y1 + t * dy;
+        const distSq = (px - projX) * (px - projX) + (py - projY) * (py - projY);
+        if (distSq <= maxDistSq) return true;
+      }
+      return false;
+    }
+
+    // Shared arrow-head geometry so the on-screen SVG and the exported PDF match.
+    function arrowHeadPoints(px, py, qx, qy, size) {
+      const ang = Math.atan2(qy - py, qx - px);
+      const hl = Math.max(4, size);
+      const hx = Math.cos(ang) * hl;
+      const hy = Math.sin(ang) * hl;
+      const nx = -Math.sin(ang) * hl * 0.45;
+      const ny = Math.cos(ang) * hl * 0.45;
+      return { bx1: qx - hx - nx, by1: qy - hy - ny, bx2: qx - hx + nx, by2: qy - hy + ny };
+    }
+
+    function squigglePath(x, y, w) {      const amp = 2.2, step = 5;
       let d = '';
       let up = true;
       for (let px = 0; px <= w; px += step) {
@@ -13693,6 +14073,300 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         up = !up;
       }
       return d;
+    }
+
+    /* ── Transform overlay: bounding box + 8 resize handles ── */
+
+    // Pure geometry bbox (user space). No padding so repeated resizes never drift.
+    function annotBBox(a) {
+      if (!a) return null;
+      if (a.type === 'ink' && Array.isArray(a.points) && a.points.length) {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const p of a.points) {
+          if (p[0] < x0) x0 = p[0];
+          if (p[1] < y0) y0 = p[1];
+          if (p[0] > x1) x1 = p[0];
+          if (p[1] > y1) y1 = p[1];
+        }
+        return { x: x0, y: y0, w: Math.max(2, x1 - x0), h: Math.max(2, y1 - y0) };
+      }
+      if (a.type === 'shape' && (a.kind === 'line' || a.kind === 'arrow') && typeof a.x1 === 'number') {
+        return {
+          x: Math.min(a.x1, a.x2),
+          y: Math.min(a.y1, a.y2),
+          w: Math.max(2, Math.abs(a.x2 - a.x1)),
+          h: Math.max(2, Math.abs(a.y2 - a.y1))
+        };
+      }
+      if (typeof a.x === 'number' && typeof a.y === 'number') {
+        return { x: a.x, y: a.y, w: Math.max(2, a.w || 2), h: Math.max(2, a.h || 2) };
+      }
+      return null;
+    }
+
+    // Remap an annotation's geometry from one user-space box to another.
+    function applyAnnotBox(a, from, to) {
+      if (!a || !from || !to) return;
+      const sx = from.w > 0.01 ? to.w / from.w : 1;
+      const sy = from.h > 0.01 ? to.h / from.h : 1;
+      if (a.type === 'ink' && Array.isArray(a.points)) {
+        a.points = a.points.map(p => {
+          const q = p.slice();
+          q[0] = to.x + (p[0] - from.x) * sx;
+          q[1] = to.y + (p[1] - from.y) * sy;
+          return q;
+        });
+        if (a.hitPoints) a.hitPoints = null;
+        return;
+      }
+      if (a.type === 'shape' && (a.kind === 'line' || a.kind === 'arrow') && typeof a.x1 === 'number') {
+        a.x1 = to.x + (a.x1 - from.x) * sx;
+        a.y1 = to.y + (a.y1 - from.y) * sy;
+        a.x2 = to.x + (a.x2 - from.x) * sx;
+        a.y2 = to.y + (a.y2 - from.y) * sy;
+        a.x = Math.min(a.x1, a.x2);
+        a.y = Math.min(a.y1, a.y2);
+        a.w = Math.abs(a.x2 - a.x1);
+        a.h = Math.abs(a.y2 - a.y1);
+        return;
+      }
+      a.x = to.x; a.y = to.y; a.w = to.w; a.h = to.h;
+    }
+
+    const XFORM_DIRS = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+    const XFORM_TYPES = new Set(['shape', 'ink', 'hl']);
+
+    function makeXformOverlay(a, bb) {
+      const P = pageScale > 0 ? pageScale : 1;
+      const ov = document.createElement('div');
+      ov.className = 'etxt-xform';
+      ov.dataset.forId = a.id;
+      ov.setAttribute('aria-hidden', 'true');
+      ov.style.cssText = `left:${(bb.x * P).toFixed(1)}px;top:${(bb.y * P).toFixed(1)}px;width:${Math.max(6, bb.w * P).toFixed(1)}px;height:${Math.max(6, bb.h * P).toFixed(1)}px;`;
+      for (const dir of XFORM_DIRS) {
+        const h = document.createElement('span');
+        h.className = `etxt-xform-h etxt-xform-h--${dir}`;
+        h.dataset.h = dir;
+        ov.append(h);
+      }
+      if (annotRotatable(a)) {
+        const rot = document.createElement('span');
+        rot.className = 'etxt-xform-rot';
+        rot.dataset.h = 'rot';
+        rot.setAttribute('title', 'Rotate (Shift = 15°)');
+        rot.setAttribute('aria-label', 'Rotate');
+        rot.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>`;
+        ov.append(rot);
+      }
+      const acts = document.createElement('div');
+      acts.className = 'etxt-xform-acts';
+      acts.innerHTML = `
+        <button type="button" class="etxt-xform-act" data-xact="dup" title="Duplicate" aria-label="Duplicate">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button type="button" class="etxt-xform-act etxt-xform-act--del" data-xact="del" title="Delete" aria-label="Delete">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        </button>`;
+      ov.append(acts);
+      return ov;
+    }
+
+    /* ── Pressure / tilt ink strokes ── */
+
+    // Pen-only pointer metadata: pressure 0..1 + tilt width multiplier.
+    function inkPointerMeta(e, isHl) {
+      if (isHl || !e || e.pointerType !== 'pen') return null;
+      if (toolOpts.pressure === false) return null;
+      const raw = (typeof e.pressure === 'number' && e.pressure > 0) ? e.pressure : 0.5;
+      const pr = Math.max(0.05, Math.min(1, raw));
+      const tiltMag = Math.min(1, Math.hypot(e.tiltX || 0, e.tiltY || 0) / 90);
+      return { p: pr, t: 1 + tiltMag * 0.55 };
+    }
+
+    // Width-bucketed sub-segments so variable width costs a handful of paths,
+    // not one node per point. Returns null for uniform strokes.
+    function inkWidthBuckets(points, baseWidth) {
+      if (!points || points.length < 2) return null;
+      let hasVar = false;
+      for (const p of points) {
+        if (typeof p[2] === 'number' || typeof p[3] === 'number') { hasVar = true; break; }
+      }
+      if (!hasVar) return null;
+      const rel = (p) => {
+        const pr = Math.max(0.05, Math.min(1, typeof p[2] === 'number' ? p[2] : 0.5));
+        const tilt = typeof p[3] === 'number' ? p[3] : 1;
+        return Math.max(0.3, Math.min(1.45, (0.35 + pr * 1.05) * tilt));
+      };
+      const LEVELS = 5;
+      const map = new Map();
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i], b = points[i + 1];
+        const r = (rel(a) + rel(b)) / 2;
+        const qi = Math.max(0, Math.min(LEVELS - 1, Math.round((r - 0.3) / 1.15 * (LEVELS - 1))));
+        if (!map.has(qi)) map.set(qi, []);
+        map.get(qi).push([a, b]);
+      }
+      const out = [];
+      for (const [qi, segs] of map) out.push({ w: baseWidth * (0.3 + (qi / (LEVELS - 1)) * 1.15), segs });
+      return out.sort((a, b) => a.w - b.w);
+    }
+
+    function appendInkPaths(svg, points, baseWidth, P, color, isHighlighter) {
+      const buckets = inkWidthBuckets(points, baseWidth);
+      if (!buckets) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', smoothPath(points.map(p => [p[0] * P, p[1] * P])));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', String(baseWidth * P));
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        svg.append(path);
+        return;
+      }
+      for (const b of buckets) {
+        let d = '';
+        for (const [a, c] of b.segs) {
+          d += `M ${(a[0] * P).toFixed(1)} ${(a[1] * P).toFixed(1)} L ${(c[0] * P).toFixed(1)} ${(c[1] * P).toFixed(1)} `;
+        }
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d.trim());
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', String(b.w * P));
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        svg.append(path);
+      }
+    }
+
+    function fillInkSvg(svg, points, baseWidth, P, color, isHighlighter) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      appendInkPaths(svg, points, baseWidth, P, color, isHighlighter);
+    }
+
+    /* ── Flatten-on-save preference (ink/highlights baked into page content) ── */
+    const FLATTEN_INK_KEY = 'filekit.editFlattenInk';
+
+    function getFlattenInkPref() {
+      try {
+        const v = localStorage.getItem(FLATTEN_INK_KEY);
+        if (v !== null) return v === '1';
+      } catch { /* noop */ }
+      return !!(window.FF && window.FF.editFlattenInk);
+    }
+
+    function setFlattenInkPref(v) {
+      try { localStorage.setItem(FLATTEN_INK_KEY, v ? '1' : '0'); } catch { /* noop */ }
+      try { if (window.FF) window.FF.editFlattenInk = !!v; } catch { /* noop */ }
+    }
+
+    function applyFlattenInkPref() {
+      try { if (window.FF) window.FF.editFlattenInk = getFlattenInkPref(); } catch { /* noop */ }
+    }
+
+    /* ── Pressure/tilt on-off preference ── */
+    const PRESSURE_KEY = 'filekit.editPressure';
+
+    function getPressurePref() {
+      try {
+        const v = localStorage.getItem(PRESSURE_KEY);
+        if (v !== null) return v === '1';
+      } catch { /* noop */ }
+      return true;
+    }
+
+    function setPressurePref(v) {
+      try { localStorage.setItem(PRESSURE_KEY, v ? '1' : '0'); } catch { /* noop */ }
+    }
+
+    /* ── Rotation about a pivot (used by the transform overlay rotate handle) ── */
+    function applyRotate(a, g, cx, cy, ang) {
+      const cos = Math.cos(ang), sin = Math.sin(ang);
+      const rot = (x, y) => [cx + (x - cx) * cos - (y - cy) * sin, cy + (x - cx) * sin + (y - cy) * cos];
+      if (!a || !g) return;
+      if (a.type === 'ink' && g.points) {
+        a.points = g.points.map(p => {
+          const q = p.slice();
+          const r = rot(p[0], p[1]);
+          q[0] = r[0]; q[1] = r[1];
+          return q;
+        });
+        if (a.hitPoints) a.hitPoints = null;
+        return;
+      }
+      if (a.type === 'shape' && typeof g.x1 === 'number') {
+        const r1 = rot(g.x1, g.y1), r2 = rot(g.x2, g.y2);
+        a.x1 = r1[0]; a.y1 = r1[1]; a.x2 = r2[0]; a.y2 = r2[1];
+        a.x = Math.min(a.x1, a.x2); a.y = Math.min(a.y1, a.y2);
+        a.w = Math.abs(a.x2 - a.x1); a.h = Math.abs(a.y2 - a.y1);
+      }
+    }
+
+    function annotRotatable(a) {
+      if (!a) return false;
+      if (a.type === 'ink') return Array.isArray(a.points) && a.points.length > 1;
+      return a.type === 'shape' && (a.kind === 'line' || a.kind === 'arrow') && typeof a.x1 === 'number';
+    }
+
+    /* ── Text-line geometry for smart (snapped) highlights ── */
+    let hlTextLinesCache = {};
+
+    async function textLinesForPage(pageNum) {
+      if (hlTextLinesCache[pageNum]) return hlTextLinesCache[pageNum];
+      if (!pdfDoc) return [];
+      try {
+        const pageProxy = await pdfDoc.getPage(pageNum);
+        const baseVp = pageProxy.getViewport({ scale: 1 });
+        const pageEl = container.querySelector(`.etxt-page[data-page="${pageNum}"]`);
+        const scale = (pageEl && pageEl.clientWidth > 0) ? (pageEl.clientWidth / (baseVp.width || 1)) : (pageScale > 0 ? pageScale : 1);
+        const vp = pageProxy.getViewport({ scale });
+        const txt = await pageProxy.getTextContent();
+        const hits = clusterTextItems((txt.items || []).filter(it => it && typeof it.str === 'string' && it.str.trim()), vp, scale, txt.styles || {});
+        const rawLines = hits.map(h => ({
+          x: h.geom.left / scale,
+          y: h.geom.top / scale,
+          w: h.geom.width / scale,
+          h: h.geom.height / scale
+        })).filter(l => l.w > 1 && l.h > 1);
+        // Merge same-baseline word clusters so a highlight covers whole lines.
+        rawLines.sort((a, b) => a.y - b.y || a.x - b.x);
+        const lines = [];
+        for (const l of rawLines) {
+          const last = lines[lines.length - 1];
+          if (last && Math.abs((l.y + l.h / 2) - (last.y + last.h / 2)) < Math.min(l.h, last.h) * 0.6) {
+            const x1 = Math.max(last.x + last.w, l.x + l.w);
+            last.x = Math.min(last.x, l.x);
+            last.w = x1 - last.x;
+            last.y = Math.min(last.y, l.y);
+            last.h = Math.max(last.h, l.h);
+          } else {
+            lines.push({ ...l });
+          }
+        }
+        hlTextLinesCache[pageNum] = lines;
+        return lines;
+      } catch {
+        hlTextLinesCache[pageNum] = [];
+        return [];
+      }
+    }
+
+    // Split a dragged highlight rect into per-line, text-clipped highlights.
+    async function snapHighlightToText(pageNum, rect) {
+      const lines = await textLinesForPage(pageNum);
+      if (!lines.length) return null;
+      const y0 = rect.y, y1 = rect.y + rect.h;
+      const out = [];
+      for (const ln of lines) {
+        const overlap = Math.min(y1, ln.y + ln.h) - Math.max(y0, ln.y);
+        if (overlap < Math.min(ln.h, rect.h) * 0.32) continue;
+        const x0 = Math.max(rect.x, ln.x);
+        const x1 = Math.min(rect.x + rect.w, ln.x + ln.w);
+        if (x1 - x0 < 4) continue;
+        out.push({ x: x0, y: ln.y, w: x1 - x0, h: ln.h });
+      }
+      return out.length ? out : null;
     }
 
     function updateUndoRedoUI() {
@@ -13750,12 +14424,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
     let activePopover = null;
     let currentPopoverAnchor = null;
+    let popoverDocHandler = null;
 
     function closeAllPopovers() {
       const flyout = document.getElementById('etxt-popover-flyout');
       if (flyout) {
         flyout.hidden = true;
         flyout.remove();
+      }
+      if (popoverDocHandler) {
+        document.removeEventListener('pointerdown', popoverDocHandler);
+        popoverDocHandler = null;
       }
       activePopover = null;
       currentPopoverAnchor = null;
@@ -13785,23 +14464,48 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       let contentHtml = '';
 
       if (toolId === 'draw' || toolId === 'highlight') {
-        const isHl = toolMode === 'highlight';
+        const dMode = toolOpts.drawMode || (toolId === 'highlight' ? 'highlighter' : 'pen');
+        const isHl = dMode === 'highlighter';
+        const isEraser = dMode === 'eraser';
         const curC = isHl ? (toolOpts.hlColor || '#FDE047') : (toolOpts.color || '#18181B');
-        const curStroke = isHl ? (toolOpts.hlStroke || 16) : (toolOpts.stroke || 2);
+        const curStroke = isHl ? (toolOpts.hlStroke || 16) : (toolOpts.penStroke || toolOpts.stroke || 2);
+        const curEraserSize = toolOpts.eraserSize || 20;
         const palette = isHl ? HL_PALETTE : PEN_PALETTE;
+        const flattenOn = getFlattenInkPref();
 
         contentHtml = `
           <div class="etxt-popover-head">
-            <div class="etxt-segmented-modes" role="tablist">
-              <button type="button" class="etxt-mode-tab${!isHl ? ' is-active' : ''}" id="etxt-pop-tab-pen" title="Pen Tool">
-                ${I.pen} <span>Pen</span>
+            <div class="etxt-draw-mode-seg" role="radiogroup" aria-label="Drawing tool">
+              <button type="button" class="etxt-draw-mode${dMode === 'pen' ? ' is-on' : ''}" id="etxt-pop-tab-pen" title="Pen" aria-label="Pen">
+                ${I.pen}<span>Pen</span>
               </button>
-              <button type="button" class="etxt-mode-tab${isHl ? ' is-active' : ''}" id="etxt-pop-tab-hl" title="Highlighter Tool">
-                ${I.highlight} <span>Highlighter</span>
+              <button type="button" class="etxt-draw-mode${isHl ? ' is-on' : ''}" id="etxt-pop-tab-hl" title="Highlighter" aria-label="Highlighter">
+                ${I.highlight}<span>Highlight</span>
+              </button>
+              <button type="button" class="etxt-draw-mode etxt-draw-mode--icon${isEraser ? ' is-on' : ''}" id="etxt-pop-tab-eraser" title="Stroke eraser" aria-label="Stroke eraser">
+                ${I.eraser}
               </button>
             </div>
           </div>
 
+          ${isEraser ? `
+          <div class="etxt-popover-section">
+            <div class="etxt-popover-label-row">
+              <span class="etxt-popover-label">Eraser size</span>
+              <span class="etxt-popover-val" id="etxt-pop-er-size-val">${curEraserSize}px</span>
+            </div>
+            <div class="etxt-eraser-size-row">
+              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 12 ? ' is-on' : ''}" data-er-size="12" title="Small eraser" aria-label="Small eraser"><span class="etxt-eraser-dot" style="width:8px;height:8px;"></span></button>
+              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 20 ? ' is-on' : ''}" data-er-size="20" title="Medium eraser" aria-label="Medium eraser"><span class="etxt-eraser-dot" style="width:14px;height:14px;"></span></button>
+              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 32 ? ' is-on' : ''}" data-er-size="32" title="Large eraser" aria-label="Large eraser"><span class="etxt-eraser-dot" style="width:20px;height:20px;"></span></button>
+            </div>
+          </div>
+          <div class="etxt-popover-section">
+            <button type="button" class="etxt-popover-act-btn" id="etxt-pop-erase-ink">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              <span>Erase all page ink</span>
+            </button>
+          </div>` : `
           <div class="etxt-popover-section">
             <div class="etxt-popover-label-row">
               <span class="etxt-popover-label">Colours</span>
@@ -13833,11 +14537,30 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
           </div>
 
+          ${!isHl ? `
+          <div class="etxt-popover-section">
+            <label class="etxt-fold-row" title="Vary pen width with stylus pressure and tilt">
+              <span class="etxt-fold-lbl">Pressure &amp; tilt</span>
+              <input type="checkbox" class="etxt-fold-input native-checkbox" id="etxt-fold-pressure"${toolOpts.pressure !== false ? ' checked' : ''}>
+              <span class="etxt-fold-switch" aria-hidden="true"></span>
+            </label>
+            <p class="etxt-popover-hint">Stylus only — pen width follows pressure and tilt.</p>
+          </div>` : ''}
+
           <div class="etxt-popover-section">
             <button type="button" class="etxt-popover-act-btn" id="etxt-pop-erase-ink">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
               <span>Erase page drawings</span>
             </button>
+          </div>`}
+
+          <div class="etxt-popover-section etxt-popover-section--foot">
+            <label class="etxt-fold-row" title="Bake ink and highlights into the page content when saving">
+              <span class="etxt-fold-lbl">Flatten on save</span>
+              <input type="checkbox" class="etxt-fold-input native-checkbox" id="etxt-fold-ink"${flattenOn ? ' checked' : ''}>
+              <span class="etxt-fold-switch" aria-hidden="true"></span>
+            </label>
+            <p class="etxt-popover-hint">${flattenOn ? 'Ink &amp; highlights become permanent page content.' : 'Ink &amp; highlights stay editable PDF annotations.'}</p>
           </div>
         `;
       } else if (toolId === 'shape') {
@@ -13941,16 +14664,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </button>
           </div>
         `;
-      } else if (toolId === 'crop') {
-        contentHtml = `
-          <div class="etxt-popover-section">
-            <p style="font-size:11.5px;color:#71717A;margin:0 0 10px 0;line-height:1.4;">Drag the border handles on the page to adjust crop margins.</p>
-            <div style="display:flex;gap:6px;">
-              <button type="button" class="etxt-mini-btn etxt-mini-btn--primary" id="etxt-pop-crop-apply" style="flex:1;height:32px;"><span>Apply Crop</span></button>
-              <button type="button" class="etxt-mini-btn" id="etxt-pop-crop-reset" style="height:32px;"><span>Reset</span></button>
-            </div>
-          </div>
-        `;
       }
 
       flyout.innerHTML = contentHtml;
@@ -13967,34 +14680,72 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       wirePopoverEvents(flyout, toolId);
 
       const onDocPointer = (ev) => {
+        // Crop keeps its popover while the user drags the rectangle on the page,
+        // otherwise the Apply/Reset actions vanish mid-flow.
+        if (toolMode === 'crop' && ev.target.closest && ev.target.closest('.etxt-canvas-wrap')) return;
         if (!flyout.contains(ev.target) && !anchorEl.contains(ev.target) && !ev.target.closest('.etxt-unified-toolbar')) {
           closeAllPopovers();
-          document.removeEventListener('pointerdown', onDocPointer);
         }
       };
       setTimeout(() => {
-        document.addEventListener('pointerdown', onDocPointer);
+        if (document.getElementById('etxt-popover-flyout') === flyout) {
+          popoverDocHandler = onDocPointer;
+          document.addEventListener('pointerdown', popoverDocHandler);
+        }
       }, 10);
     }
 
     function wirePopoverEvents(flyout, toolId) {
       if (!flyout) return;
 
-      // Draw mode switching inside popover (Pen <-> Highlighter)
+      // Draw mode switching inside popover (Pen <-> Highlighter <-> Eraser)
+      const switchDrawMode = (mode, e) => {
+        if (e) e.stopPropagation();
+        const anchor = currentPopoverAnchor;
+        toolOpts.drawMode = mode;
+        if (mode === 'highlighter') {
+          activateTool('highlight');
+        } else {
+          activateTool('draw');
+        }
+        openToolPopover('draw', anchor);
+      };
       const tabPen = flyout.querySelector('#etxt-pop-tab-pen');
-      if (tabPen) {
-        tabPen.onclick = (e) => {
+      if (tabPen) tabPen.onclick = (e) => switchDrawMode('pen', e);
+      const tabHl = flyout.querySelector('#etxt-pop-tab-hl');
+      if (tabHl) tabHl.onclick = (e) => switchDrawMode('highlighter', e);
+      const tabEraser = flyout.querySelector('#etxt-pop-tab-eraser');
+      if (tabEraser) tabEraser.onclick = (e) => switchDrawMode('eraser', e);
+
+      // Eraser size (matches the live size cursor)
+      flyout.querySelectorAll('[data-er-size]').forEach(btn => {
+        btn.onclick = (e) => {
           e.stopPropagation();
-          toolMode = 'draw';
-          openToolPopover('draw', currentPopoverAnchor);
+          toolOpts.eraserSize = Number(btn.dataset.erSize);
+          flyout.querySelectorAll('[data-er-size]').forEach(b => b.classList.toggle('is-on', b === btn));
+          const val = flyout.querySelector('#etxt-pop-er-size-val');
+          if (val) val.textContent = `${toolOpts.eraserSize}px`;
+        };
+      });
+
+      // Flatten-on-save toggle
+      const foldInk = flyout.querySelector('#etxt-fold-ink');
+      if (foldInk) {
+        foldInk.onchange = (e) => {
+          e.stopPropagation();
+          setFlattenInkPref(!!foldInk.checked);
+          const hint = flyout.querySelector('.etxt-popover-hint');
+          if (hint) hint.textContent = foldInk.checked ? 'Ink & highlights become permanent page content.' : 'Ink & highlights stay editable PDF annotations.';
         };
       }
-      const tabHl = flyout.querySelector('#etxt-pop-tab-hl');
-      if (tabHl) {
-        tabHl.onclick = (e) => {
+
+      // Pressure & tilt toggle (pen)
+      const foldPressure = flyout.querySelector('#etxt-fold-pressure');
+      if (foldPressure) {
+        foldPressure.onchange = (e) => {
           e.stopPropagation();
-          toolMode = 'highlight';
-          openToolPopover('highlight', currentPopoverAnchor);
+          toolOpts.pressure = !!foldPressure.checked;
+          setPressurePref(toolOpts.pressure);
         };
       }
 
@@ -14003,7 +14754,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         btn.onclick = (e) => {
           e.stopPropagation();
           const c = btn.dataset.popCol;
-          if (toolMode === 'highlight') toolOpts.hlColor = c;
+          if (toolOpts.drawMode === 'highlighter') toolOpts.hlColor = c;
           else toolOpts.color = c;
 
           flyout.querySelectorAll('[data-pop-col]').forEach(b => b.classList.toggle('is-active', b === btn));
@@ -14016,7 +14767,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (customCol) {
         customCol.oninput = (e) => {
           const c = e.target.value;
-          if (toolMode === 'highlight') toolOpts.hlColor = c;
+          if (toolOpts.drawMode === 'highlighter') toolOpts.hlColor = c;
           else toolOpts.color = c;
           flyout.querySelectorAll('[data-pop-col]').forEach(b => b.classList.remove('is-active'));
           const wavy = flyout.querySelector('#etxt-pop-wavy-path');
@@ -14031,8 +14782,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (sizeSlider) {
         sizeSlider.oninput = (e) => {
           const sz = Number(e.target.value);
-          if (toolMode === 'highlight') toolOpts.hlStroke = sz;
-          else toolOpts.stroke = sz;
+          if (toolOpts.drawMode === 'highlighter') toolOpts.hlStroke = sz;
+          else { toolOpts.penStroke = sz; toolOpts.stroke = sz; }
           if (sizeVal) sizeVal.textContent = `${sz}px`;
           if (wavyPath) wavyPath.setAttribute('stroke-width', String(sz));
         };
@@ -14044,10 +14795,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         eraseInkBtn.onclick = (e) => {
           e.stopPropagation();
           const pIdx = page - 1;
-          if (annots[pIdx]) {
+          const list = annots[pIdx] || [];
+          const removed = list.filter(a => a.type === 'ink' || a.type === 'hl').length;
+          if (removed) {
             pushUndo();
-            annots[pIdx] = annots[pIdx].filter(a => a.type !== 'ink' && a.type !== 'hl');
+            annots[pIdx] = list.filter(a => a.type !== 'ink' && a.type !== 'hl');
+            selAnnot = null;
             renderAnnots();
+            toast(`Cleared ${removed} drawing${removed > 1 ? 's' : ''} from page ${page}.`);
+          } else {
+            toast('No drawings on this page to clear.');
           }
           closeAllPopovers();
         };
@@ -14059,6 +14816,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           e.stopPropagation();
           toolOpts.shapeKind = b.dataset.popShape;
           flyout.querySelectorAll('[data-pop-shape]').forEach(btn => btn.classList.toggle('is-active', btn === b));
+          try { renderOptbar(); } catch { /* noop */ }
         };
       });
 
@@ -14090,14 +14848,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       }
 
-      // Shape opacity slider
+      // Shape opacity slider (live on the selected shape, undoable)
       const shapeOpSlider = flyout.querySelector('#etxt-pop-s-op-slider');
       const shapeOpVal = flyout.querySelector('#etxt-pop-s-op-val');
+      let opSnap = null;
       if (shapeOpSlider) {
         shapeOpSlider.oninput = (e) => {
           const val = Number(e.target.value);
           toolOpts.shapeOpacity = val / 100;
           if (shapeOpVal) shapeOpVal.textContent = `${val}%`;
+          const sa = selAnnot ? findAnnotById(selAnnot) : null;
+          if (sa && sa.type === 'shape') {
+            if (!opSnap) opSnap = snapshotState();
+            sa.opacity = val / 100;
+            renderAnnots();
+          }
+        };
+        shapeOpSlider.onchange = () => {
+          if (opSnap) { commitUndoSnapshot(opSnap); opSnap = null; }
         };
       }
 
@@ -14160,28 +14928,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           renderAnnots();
         };
       }
-
-      // Crop actions
-      const cropApply = flyout.querySelector('#etxt-pop-crop-apply');
-      if (cropApply) {
-        cropApply.onclick = (e) => {
-          e.stopPropagation();
-          closeAllPopovers();
-          pushUndo();
-          toolMode = 'edit-text';
-          activateTool('edit-text');
-        };
-      }
-      const cropReset = flyout.querySelector('#etxt-pop-crop-reset');
-      if (cropReset) {
-        cropReset.onclick = (e) => {
-          e.stopPropagation();
-          closeAllPopovers();
-          pushUndo();
-          cropBox = null;
-          activateTool('edit-text');
-        };
-      }
     }
 
     function renderSubcontrols() {
@@ -14191,6 +14937,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function renderEditor() {
       container.classList.remove('cpdf-root');
       container.classList.add('etxt-shell');
+      hlTextLinesCache = {};   // text geometry may have changed
       const stage = container.closest('.app-stage-container') || document.getElementById('app-tool-stage');
       if (stage) { stage.classList.add('spdf-stage-active'); stage.style.padding = '0'; }
 
@@ -14229,7 +14976,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-tb-pagenum" data-tool="pagenum" aria-label="Add Page Numbers">
               ${I.pagenum}
             </button>
-            <button type="button" class="etxt-tool-icon-btn" id="etxt-tb-formfill" data-tool="form-fill" aria-label="Fill Interactive Forms">
+            <button type="button" class="etxt-tool-icon-btn" id="etxt-tb-formfill" data-tool="form" aria-label="Fill Interactive Forms">
               ${I.form}
               <span class="etxt-tool-label">Forms</span>
             </button>
@@ -14313,18 +15060,31 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           <main class="etxt-canvas-wrap" id="etxt-canvas-wrap">
             <div id="etxt-scanned-banner" class="etxt-scanned-toast is-hidden" hidden>
               <span class="etxt-scanned-icon">${I.info}</span>
-              <span class="etxt-scanned-msg">Scanned / image-only PDF detected. Use <strong>Type Tool [T]</strong> to add or overlay text.</span>
+              <span class="etxt-scanned-msg">Scanned / image-only PDF detected. Make it editable with OCR, or use the <strong>Type Tool [T]</strong>.</span>
+              <button type="button" id="etxt-run-ocr" class="etxt-scanned-btn">Make editable (OCR)</button>
               <button type="button" id="etxt-switch-type" class="etxt-scanned-btn">Switch to Type Tool</button>
               <button type="button" id="etxt-scanned-dismiss" class="etxt-scanned-close" aria-label="Dismiss">${I.x}</button>
             </div>
-            
+
+            <div id="etxt-form-banner" class="etxt-form-banner" hidden>
+              <span class="etxt-form-banner-ico" aria-hidden="true">${I.form}</span>
+              <span class="etxt-form-banner-msg">Form fields detected</span>
+              <button type="button" id="etxt-form-banner-fill" class="etxt-form-banner-btn">Fill fields</button>
+              <button type="button" id="etxt-form-banner-dismiss" class="etxt-form-banner-x" aria-label="Dismiss">${I.x}</button>
+            </div>
+
+            <div class="etxt-form-bar" id="etxt-form-bar" hidden></div>
+
             <div class="etxt-canvas" id="etxt-canvas" style="transform: scale(${zoom/100})">
               ${pages.map((pg, i) => `
                 <div class="etxt-page" data-page="${i + 1}" style="position:relative; margin-bottom:24px;">
                   <canvas class="etxt-full-canvas" data-page="${i + 1}"></canvas>
                   <div class="etxt-text-layer" data-page="${i + 1}" aria-hidden="true"></div>
                   <div class="etxt-annot-layer" data-page="${i + 1}" aria-hidden="false"></div>
+                  <div class="etxt-form-layer" data-page="${i + 1}" aria-hidden="true" hidden></div>
                   <div class="etxt-crop-layer" data-page="${i + 1}" hidden></div>
+                  <div class="etxt-wm-layer" data-page="${i + 1}" aria-hidden="true"></div>
+                  <div class="etxt-pn-layer" data-page="${i + 1}" aria-hidden="true"></div>
                 </div>
               `).join('')}
             </div>
@@ -14348,6 +15108,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
           </aside>
 
+          <aside class="etxt-forms-drawer" id="etxt-forms-drawer" aria-label="Form Fields" aria-hidden="true">
+            <div class="etxt-forms-head">
+              <span class="etxt-forms-title">Form fields</span>
+              <button type="button" class="etxt-forms-close" id="etxt-forms-close" aria-label="Close panel">${I.x}</button>
+            </div>
+            <div class="etxt-forms-progress" id="etxt-forms-progress"></div>
+            <div class="etxt-forms-scroll" id="etxt-forms-list"></div>
+          </aside>
+
           <!-- Fixed Full-Height Right Side-Rail (Page, Thumbnails & Zoom Controller matching Organize Tool) -->
           <aside class="org-right-rail etxt-right-rail" id="etxt-floating-zoom" aria-label="Zoom and Navigation Controls">
             <!-- Top Group: Document Counter & Navigation -->
@@ -14355,6 +15124,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               <button type="button" class="org-rail-badge-btn etxt-fzoom-action etxt-rail-pages-btn" id="etxt-rail-thumbs-toggle" aria-label="Page Thumbnails (${pageCount} pages)">
                 <span class="org-rail-badge-num">${pageCount}</span>
                 <span class="org-rail-badge-lbl">PGS</span>
+              </button>
+              <button type="button" class="org-rail-badge-btn etxt-rail-forms-btn" id="etxt-rail-forms-btn" aria-label="Form fields" hidden>
+                <span class="org-rail-badge-num" id="etxt-rail-forms-num">0</span>
+                <span class="org-rail-badge-lbl">FORM</span>
               </button>
               ${pageCount > 1 ? `
               <div class="org-rail-sep etxt-rail-sep"></div>
@@ -14417,7 +15190,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           if (menu) menu.hidden = true;
           activateTool(targetTool, true);
 
-          if (['draw', 'shape', 'redact', 'image', 'crop'].includes(targetTool)) {
+          if (['draw', 'shape', 'redact', 'image'].includes(targetTool)) {
             toggleToolPopover(targetTool, btn);
           } else {
             closeAllPopovers();
@@ -14538,6 +15311,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
                 tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
               });
+              if (cropPct || toolMode === 'crop') renderCropOverlay();
             }
           }, 60);
         }, { passive: true });
@@ -14596,20 +15370,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       container.querySelector('#etxt-change-file')?.addEventListener('click', () => {
         const changePdfInp = document.createElement('input');
         changePdfInp.type = 'file';
-        changePdfInp.accept = '.pdf,application/pdf';
-        changePdfInp.onchange = async (e) => {
+        changePdfInp.accept = 'application/pdf,' + EDIT_ACCEPT;
+        changePdfInp.onchange = (e) => {
           const newFile = e.target.files && e.target.files[0];
           if (!newFile) return;
-          // Reset state and reload with new file
-          file = newFile;
-          edits = [];
-          undoStack = [];
-          redoStack = [];
-          pages = [];
-          page = 1;
-          docToken = Symbol();
-          renderToken = 0;
-          renderEditPdfStudio(container, newFile);
+          // pickFile() performs the full state reset + reload for the new document.
+          pickFile(newFile);
         };
         changePdfInp.click();
       });
@@ -14631,6 +15397,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const staleDocInfo = document.querySelector('#topbar-doc-info');
         if (staleDocInfo) staleDocInfo.remove();
         if (typeof pointerCleanup === 'function') { pointerCleanup(); pointerCleanup = null; }
+        if (typeof cropDragCleanup === 'function') { cropDragCleanup(); cropDragCleanup = null; }
+        exitWmStudio();
+        exitPnStudio();
+        if (ocrWorker) { try { ocrWorker.terminate(); } catch { /* noop */ } ocrWorker = null; }
+        ocrHits = {};
         file = null; currentPdf = null; pages = []; edits = []; pdfDoc = null;
         renderUpload();
       });
@@ -14668,10 +15439,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       wireCachedCanvases();
       attachTextHits();
       renderAnnots();
+      renderFormOverlay();
+      setupFormPlacement();
+      updateFormBanner();
+      wireFormUI();
       closeDockFlyout();
       setupPointer();
       renderFullPage();
       renderThumbsAsync();
+      // Studios live outside the rebuilt markup — restore the active one.
+      if (toolMode === 'watermark' && wmDraft) { renderWmPanel(); renderWatermarks(); }
+      if (toolMode === 'pagenum' && pnDraft) { renderPnPanel(); renderPageNumbers(); }
     }
 
     function wireCachedCanvases() {
@@ -14729,6 +15507,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
         attachTextHits();
         renderAnnots();
+        renderFormOverlay();
       } catch (err) { console.warn('[Edit] render all pages error:', err); }
     }
 
@@ -14777,11 +15556,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return /[\u0591-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/.test(String(text || ''));
     }
 
-    function prepareRTLText(text) {
-      if (!isRTL(text)) return text;
-      return String(text || '').split('').reverse().join('');
-    }
-
     function clusterTextItems(rawItems, scaledVp, pageScale, styles) {
       if (!rawItems || !rawItems.length) return [];
       const P = pageScale > 0 ? pageScale : 1;
@@ -14809,7 +15583,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const minVy = Math.min(p1[1], p2[1], p3[1], p4[1]);
         const maxVy = Math.max(p1[1], p2[1], p3[1], p4[1]);
 
-        const fontSizeVp = Math.max(8, rawSize * P);
+        // True rendered size (no min clamp — the editor and committed overlay must
+        // match the real glyph size; only the clickable box height gets a floor).
+        const fontSizeVp = Math.max(1, rawSize * P);
         const baselineVy = p1[1];
         const left = minVx;
         const top = baselineVy - (fontSizeVp * 0.80);
@@ -14870,7 +15646,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const sameY = Math.abs(p.pdfY - curCluster.baselinePdfY) <= Math.max(1.8, fontSz * 0.25);
         // Strict font size match: must have same size
         const sameSize = Math.abs(p.fontSizePdf - fontSz) <= Math.max(1.2, fontSz * 0.15);
-        const sameFont = !p.fontName || !curCluster.fontName || p.fontName === curCluster.fontName;
+        const sameFont = !p.fontName && !curCluster.fontName ? true : (!!p.fontName && !!curCluster.fontName && p.fontName === curCluster.fontName);
         const sameRot = Math.abs((p.rotation || 0) - (curCluster.rotation || 0)) < 2;
 
         const lastItem = curCluster.items[curCluster.items.length - 1];
@@ -14922,13 +15698,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const fn = (domFont || '').toLowerCase();
         const fontFamDesc = (fontObj.fontFamily || '').toLowerCase();
 
-        let fontFamily = 'Arial, Helvetica, "Segoe UI", sans-serif';
-        if (/times|roman|serif|georgia|garamond|cambria|minion|baskerville/i.test(fn) || fontFamDesc === 'serif') {
-          fontFamily = '"Times New Roman", Times, "Liberation Serif", Georgia, serif';
-        } else if (/courier|mono|typewriter|consolas|menlo|monospace/i.test(fn) || fontFamDesc === 'monospace') {
-          fontFamily = '"Courier New", Courier, "Liberation Mono", Consolas, monospace';
-        } else {
-          fontFamily = 'Arial, Helvetica, "Segoe UI", Roboto, sans-serif';
+        let fontFamily = metricStack('sans');
+        if (/times|tinos|roman|serif|georgia|garamond|cambria|minion|baskerville/i.test(fn) || fontFamDesc === 'serif') {
+          fontFamily = metricStack('serif');
+        } else if (/courier|cousine|mono|typewriter|consolas|menlo|monospace/i.test(fn) || fontFamDesc === 'monospace') {
+          fontFamily = metricStack('mono');
         }
 
         const isBold = /bold|black|heavy|demi|700|800|900/i.test(fn);
@@ -14942,7 +15716,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const maxBottom = Math.max(...c.items.map(it => it.top + it.height));
         const width = Math.max(10, maxRight - minLeft);
         const height = Math.max(10, maxBottom - minTop);
-        const fontSize = Math.max(8, c.fontSizePdf * P);
+        const fontSize = Math.max(1, c.fontSizePdf * P);
 
         const baselineVy = c.items[0].baselineVy;
         const geom = {
@@ -14955,6 +15729,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           fontSizePdf: c.fontSizePdf,
           fontFamily,
           origFontFamily: fontFamily,
+          baseFontFamily: fontFamily,
           customFont: null,
           fontWeight,
           fontStyle,
@@ -14985,6 +15760,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return hits;
     }
 
+    /* Stable identity key for a text hit so edits attach to the right occurrence
+       even when many spans share the exact same string on a page. */
+    function geomKey(pageNum, geom) {
+      const rx = Math.round((geom?.pdfX || 0) * 10) / 10;
+      const ry = Math.round((geom?.pdfY || 0) * 10) / 10;
+      const rw = Math.round((geom?.pdfW || 0) * 10) / 10;
+      return `${pageNum}:${rx}:${ry}:${rw}`;
+    }
+
+    function editMatches(e, pageNum, geom) {
+      if (!e || e.pageIdx !== pageNum - 1) return false;
+      if (e.key && geom && geom.key) return e.key === geom.key;
+      if (e.geom && geom) {
+        return Math.abs((e.geom.pdfX || 0) - (geom.pdfX || 0)) < 1.5 &&
+               Math.abs((e.geom.pdfY || 0) - (geom.pdfY || 0)) < 1.5;
+      }
+      return false;
+    }
+
     async function attachPageTextHits(pageNum) {
       const pageEl = container.querySelector(`.etxt-page[data-page="${pageNum}"]`);
       const layer = pageEl ? pageEl.querySelector('.etxt-text-layer') : (container.querySelector(`.etxt-text-layer[data-page="${pageNum}"]`) || container.querySelector('.etxt-text-layer'));
@@ -14992,6 +15786,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (toolMode !== 'edit-text') {
         layer.classList.add('etxt-text-layer--off');
         layer.innerHTML = '';
+        textHitsStale = true;
         for (const e of edits) if (e.pageIdx === pageNum - 1) renderCommittedBox(e, pageNum);
         return;
       }
@@ -15001,6 +15796,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const pageProxy = await pdfDoc.getPage(pageNum);
         const baseVp = pageProxy.getViewport({ scale: 1 });
         if (pageNum === page) { curPageW = baseVp.width; curPageH = baseVp.height; }
+        if (pages[pageNum - 1]) { pages[pageNum - 1].baseW = baseVp.width; pages[pageNum - 1].baseH = baseVp.height; }
         const actualScale = (pageEl && pageEl.clientWidth > 0) ? (pageEl.clientWidth / (baseVp.width || 1)) : (pageScale > 0 ? pageScale : 1);
         const scaledVp = pageProxy.getViewport({ scale: actualScale });
         const txt = await pageProxy.getTextContent();
@@ -15024,16 +15820,54 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             scanBanner.hidden = meaningfulItems.length > 0;
             const switchBtn = scanBanner.querySelector('#etxt-switch-type');
             if (switchBtn) switchBtn.onclick = () => activateTool('type');
+            const ocrBtn = scanBanner.querySelector('#etxt-run-ocr');
+            if (ocrBtn) ocrBtn.onclick = () => runOcrForPage(pageNum);
+            const dismissBtn = scanBanner.querySelector('#etxt-scanned-dismiss');
+            if (dismissBtn) dismissBtn.onclick = () => { scannedBannerDismissed = true; scanBanner.hidden = true; };
           }
         }
 
         const styles = txt.styles || {};
         const pageHits = clusterTextItems(meaningfulItems, scaledVp, actualScale, styles);
-        if (pageNum === page) currentHits = pageHits;
+        // Include OCR-recognised words (scanned pages) alongside native text hits.
+        const allHits = pageHits.concat((ocrHits[pageNum] || []).filter(Boolean));
+        if (pageNum === page) currentHits = allHits;
 
-        for (const h of pageHits) {
+        for (const h of allHits) {
           const item = h.item;
           const geom = h.geom;
+          if (!geom.key) geom.key = geomKey(pageNum, geom);
+
+          // Resolve the real PDF font for this text so the editor can render the
+          // actual typeface (family/weight/style) instead of a generic fallback.
+          try {
+            const fo = await pageProxy.commonObjs.get(item.fontName);
+            if (fo) {
+              const base = fo.name || fo.fallbackName || '';
+              const alias = base ? fontAliasByBase.get(normFont(base)) : null;
+              if (alias) {
+                geom.fontFamily = `"${alias}", ${geom.baseFontFamily || 'Arial, Helvetica, sans-serif'}`;
+                geom.origFontFamily = geom.fontFamily;
+                geom.embeddedFont = alias;
+                // The font program already carries the correct weight/style.
+                geom.fontWeight = '400';
+                geom.fontStyle = 'normal';
+                geom.isBold = !!(fo.bold || fo.black);
+                geom.isItalic = !!fo.italic;
+              } else {
+                if (typeof fo.bold === 'boolean' || typeof fo.black === 'boolean') {
+                  const b = !!(fo.bold || fo.black);
+                  geom.isBold = b;
+                  geom.fontWeight = b ? '700' : '400';
+                }
+                if (typeof fo.italic === 'boolean') {
+                  geom.isItalic = fo.italic;
+                  geom.fontStyle = fo.italic ? 'italic' : 'normal';
+                }
+              }
+              geom.pdfFontBase = base;
+            }
+          } catch { /* font not resolved yet — keep heuristics */ }
 
           // Skip if this text item overlaps an interactive PDF form field widget
           if (formFieldRects.length > 0) {
@@ -15046,8 +15880,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             if (overlaps) continue;
           }
 
-          const edited = edits.some(e => e.pageIdx === pageNum - 1 && (e.target === item.str || (e.geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
-          const isActiveNow = activeEdit && activeEdit.pageNum === pageNum && (activeEdit.item === item || (activeEdit.geom && Math.abs(activeEdit.geom.left - geom.left) < 5 && Math.abs(activeEdit.geom.top - geom.top) < 5));
+          const edited = edits.some(e => editMatches(e, pageNum, geom));
+          const isActiveNow = activeEdit && activeEdit.pageNum === pageNum &&
+            (activeEdit.key ? activeEdit.key === geom.key : (activeEdit.geom && Math.abs(activeEdit.geom.pdfX - geom.pdfX) < 1.5 && Math.abs(activeEdit.geom.pdfY - geom.pdfY) < 1.5));
           const btn = document.createElement('div');
           btn.className = 'etxt-zone etxt-zone--text' + (edited ? ' etxt-hit--edited' : '');
           btn.dataset.type = 'text';
@@ -15067,7 +15902,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             btn.style.visibility = 'hidden';
             openEditor(item, geom, ev, pageNum);
           };
-          // Point 17: Double-click UX to immediately select entire text block
+          // Point 17: Double-click selects the WORD under the cursor for quick edits.
           btn.ondblclick = (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
@@ -15076,13 +15911,31 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             setTimeout(() => {
               const activeBox = layer.querySelector('.etxt-text-box');
               const activeInner = activeBox?.querySelector('.etxt-text-inner');
-              if (activeInner) {
-                const sel = window.getSelection();
-                const range = document.createRange();
-                range.selectNodeContents(activeInner);
-                sel.removeAllRanges();
-                sel.addRange(range);
-              }
+              if (!activeInner) return;
+              const sel = window.getSelection();
+              const node = activeInner.firstChild;
+              const text = activeInner.textContent || '';
+              let start = 0, end = text.length;
+              try {
+                const isWord = (c) => /[A-Za-z0-9'\-]/.test(c);
+                let off = -1;
+                if (document.caretRangeFromPoint) {
+                  const cr = document.caretRangeFromPoint(ev.clientX, ev.clientY);
+                  if (cr && cr.startContainer === node) off = cr.startOffset;
+                } else if (document.caretPositionFromPoint) {
+                  const cp = document.caretPositionFromPoint(ev.clientX, ev.clientY);
+                  if (cp && cp.offsetNode === node) off = cp.offset;
+                }
+                if (off >= 0) {
+                  start = off; while (start > 0 && isWord(text[start - 1])) start--;
+                  end = off; while (end < text.length && isWord(text[end])) end++;
+                }
+              } catch { /* noop */ }
+              const range = document.createRange();
+              if (node && node.nodeType === Node.TEXT_NODE) { range.setStart(node, start); range.setEnd(node, end); }
+              else range.selectNodeContents(activeInner);
+              sel.removeAllRanges();
+              sel.addRange(range);
             }, 20);
           };
           layer.append(btn);
@@ -15096,10 +15949,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (typeof targetPage === 'number') {
         await attachPageTextHits(targetPage);
       } else {
+        // Chunked so a huge PDF doesn't fire hundreds of concurrent
+        // getTextContent() calls (and DOM node creation) at once.
         const total = pageCount || 1;
-        const promises = [];
-        for (let p = 1; p <= total; p++) promises.push(attachPageTextHits(p));
-        await Promise.all(promises);
+        const limit = 4;
+        const myDoc = docToken;
+        for (let start = 1; start <= total; start += limit) {
+          if (myDoc !== docToken) return;
+          const batch = [];
+          for (let p = start; p < start + limit && p <= total; p++) batch.push(attachPageTextHits(p));
+          await Promise.all(batch);
+        }
       }
     }
 
@@ -15110,15 +15970,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const ctx = cv.getContext('2d', { willReadFrequently: true });
         if (!ctx) return '#FFFFFF';
         const dpr = cv.width / (cv.clientWidth || cv.width);
-        const sx1 = Math.max(0, (left - 3) * dpr);
-        const sy1 = Math.max(0, (top - 3) * dpr);
-        const sx2 = Math.min(cv.width - 1, (left + width + 3) * dpr);
-        const sy2 = Math.min(cv.height - 1, (top + height + 3) * dpr);
-        const mx = (sx1 + sx2) / 2, my = (sy1 + sy2) / 2;
+        // Sample the background on the SAME line but beside the text (left/right at
+        // mid-height). Sampling above/below hits adjacent lines and returns their ink.
+        const pad = Math.max(4, Math.min(12, Math.round((height || 10) * 0.6)));
+        const myPx = Math.max(0, Math.min(cv.height - 1, (top + height / 2) * dpr));
+        const l1 = Math.max(0, (left - pad) * dpr);
+        const l2 = Math.max(0, (left - pad * 2) * dpr);
+        const r1 = Math.min(cv.width - 1, (left + width + pad) * dpr);
+        const r2 = Math.min(cv.width - 1, (left + width + pad * 2) * dpr);
         const points = [
-          [sx1, sy1], [mx, sy1], [sx2, sy1],
-          [sx1, my],  [mx, my],  [sx2, my],
-          [sx1, sy2], [mx, sy2], [sx2, sy2]
+          [l1, myPx], [l2, myPx], [r1, myPx], [r2, myPx],
+          [l1, Math.max(0, (top + height * 0.25) * dpr)], [r1, Math.max(0, (top + height * 0.25) * dpr)],
+          [l1, Math.min(cv.height - 1, (top + height * 0.75) * dpr)], [r1, Math.min(cv.height - 1, (top + height * 0.75) * dpr)]
         ];
         // Use mode (most-common 8-bit bucket) instead of average — avoids wrong color on gradients/watermarks
         const buckets = {};
@@ -15256,6 +16119,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         textColor: toolOpts.textColor || '#0F172A',
         isNew: true
       };
+      geom.key = `new:${pageNum}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       openEditor(item, geom, e, pageNum);
     }
 
@@ -15280,6 +16144,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         textColor: a.color || '#0F172A',
         isNew: true
       };
+      geom.key = `new:${pageNum}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
       openEditor(item, geom, null, pageNum);
     }
 
@@ -15290,10 +16155,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const pageEl = container.querySelector(`.etxt-page[data-page="${activePageNum}"]`);
       const layer = pageEl ? pageEl.querySelector('.etxt-text-layer') : (container.querySelector(`.etxt-text-layer[data-page="${activePageNum}"]`) || container.querySelector('.etxt-text-layer'));
       if (!layer) return;
-      const existing = edits.find(e => e.pageIdx === activePageNum - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
+      const existing = edits.find(e => editMatches(e, activePageNum, geom));
+      // Re-opening a committed edit: keep its stored geometry (which may have been
+      // dragged/scaled) instead of snapping back to the original hit box.
+      if (existing && existing.geom) geom = existing.geom;
+      if (existing && existing.item) item = existing.item;
       layer.querySelector('.etxt-text-box')?.remove();
 
-      const P = (pageEl && pageEl.clientWidth > 0 && curPageW > 0) ? (pageEl.clientWidth / curPageW) : (pageScale > 0 ? pageScale : 1);
+      const baseW = (pages[activePageNum - 1] && pages[activePageNum - 1].baseW) || curPageW;
+      const P = (pageEl && pageEl.clientWidth > 0 && baseW > 0) ? (pageEl.clientWidth / baseW) : (pageScale > 0 ? pageScale : 1);
       const box = document.createElement('div');
       box.className = 'etxt-text-box';
       box.dataset.page = String(activePageNum);
@@ -15311,11 +16181,13 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       let curFontSize = curFontSizePdf * P;
       const width = geom ? geom.width : 40;
       const height = geom ? geom.height : Math.max(12, curFontSize * 1.05);
+      // Start at the exact geometry of the hovered text zone so the blue outline
+      // does not jump when the editor opens; it only grows while typing.
+      let boxWidth = Math.max(10, width);
 
       const curBoxLeft_init = geom ? geom.left : Math.max(0, item.transform[4] * P);
-      const curBoxTop_init = (typeof geom?.baselineVy === 'number')
-        ? (geom.baselineVy - (curFontSize * 0.78))
-        : (geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P));
+      const curBoxTop_init = geom ? geom.top
+        : (typeof geom?.baselineVy === 'number' ? (geom.baselineVy - (curFontSize * 0.78)) : Math.max(0, (curPageH - item.transform[5] - 12) * P));
       let curBoxLeft = curBoxLeft_init;
       let curBoxTop = curBoxTop_init;
 
@@ -15325,15 +16197,19 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       let savedCanvasPatch = null;
       if (!geom?.isNew && cv) {
-        const eraseTop = (typeof geom?.baselineVy === 'number') ? (geom.baselineVy - (curFontSize * 0.82)) : curBoxTop_init;
-        const eraseHeight = Math.max(12, curFontSize * 1.08);
+        // Erase exactly the original glyph extent (no 12px floor, which produced
+        // an oversized white band over neighbouring lines).
+        const eraseTop = (typeof geom?.baselineVy === 'number') ? (geom.baselineVy - (curFontSize * 0.92)) : curBoxTop_init;
+        const eraseHeight = Math.max(1, curFontSize * 1.25);
         savedCanvasPatch = eraseCanvasTextPatch(cv, curBoxLeft_init - 1, eraseTop, width + 4, eraseHeight, bgColor);
       }
       let curFontFamily = geom?.fontFamily || toolOpts.textFont || 'Helvetica, Arial, sans-serif';
       let curFontWeight = geom?.fontWeight || (geom?.isBold ?? toolOpts.isBold ? '700' : '400');
       let curFontStyle = geom?.fontStyle || (geom?.isItalic ?? toolOpts.isItalic ? 'italic' : 'normal');
       let curUnderline = geom?.underline ?? toolOpts.editUnderline ?? false;
-      let curTextColor = geom?.textColor || toolOpts.textColor || docTextColor || '#0F172A';
+      // For existing document text, prefer the colour sampled from the page so
+      // the edit matches the original; the palette default only applies to new text.
+      let curTextColor = geom?.textColor || (geom?.isNew ? toolOpts.textColor : docTextColor) || toolOpts.textColor || docTextColor || '#0F172A';
       let curTextAlign = geom?.textAlign || toolOpts.editTextAlign || (isRTL(item.str || (existing ? existing.replacement : '')) ? 'right' : 'left');
 
       const isTextRtl = isRTL(item.str || (existing ? existing.replacement : ''));
@@ -15342,8 +16218,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const rtlCss = isTextRtl ? 'direction: rtl !important; unicode-bidi: bidi-override !important;' : '';
 
       const applyBoxStyles = () => {
-        box.style.cssText = `left:${curBoxLeft.toFixed(1)}px;top:${curBoxTop.toFixed(1)}px;min-width:${Math.max(10, width).toFixed(1)}px;height:${height.toFixed(1)}px !important;min-height:${height.toFixed(1)}px !important;max-height:${height.toFixed(1)}px !important;width:fit-content;background:${bgColor} !important;background-color:${bgColor} !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;overflow:visible !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;${rotCss}`;
-        inner.style.cssText = `display:block !important;vertical-align:top !important;min-width:100%;width:fit-content;height:100% !important;max-height:${height.toFixed(1)}px !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};text-decoration:${curUnderline ? 'underline' : 'none'};font-variant-numeric:tabular-nums;line-height:1 !important;white-space:nowrap;word-break:normal;padding:0 !important;margin:0 !important;border:none !important;outline:none !important;overflow:visible !important;background:${bgColor} !important;background-color:${bgColor} !important;box-shadow:none !important;caret-color:${curTextColor} !important;-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;${rtlCss}`;
+        box.style.cssText = `left:${curBoxLeft.toFixed(1)}px;top:${curBoxTop.toFixed(1)}px;width:${boxWidth.toFixed(1)}px;min-width:${Math.max(10, width).toFixed(1)}px;height:${height.toFixed(1)}px !important;min-height:${height.toFixed(1)}px !important;max-height:${height.toFixed(1)}px !important;background:transparent !important;background-color:transparent !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;overflow:visible !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;${rotCss}`;
+        inner.style.cssText = `display:block !important;vertical-align:top !important;min-width:100%;width:fit-content;height:100% !important;max-height:${height.toFixed(1)}px !important;font-size:${curFontSize.toFixed(2)}px;font-family:${curFontFamily};font-weight:${curFontWeight};font-style:${curFontStyle};color:${curTextColor};text-align:${curTextAlign};text-decoration:${curUnderline ? 'underline' : 'none'};font-variant-numeric:tabular-nums;line-height:1 !important;white-space:nowrap;word-break:normal;padding:0 !important;margin:0 !important;border:none !important;outline:none !important;overflow:visible !important;background:transparent !important;background-color:transparent !important;box-shadow:none !important;caret-color:${curTextColor} !important;-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;${rtlCss}`;
         if (geom) {
           geom.left = curBoxLeft;
           geom.top = curBoxTop;
@@ -15686,13 +16562,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           revBtn.onclick = (e) => {
             e.preventDefault(); e.stopPropagation();
             if (savedCanvasPatch) restoreCanvasTextPatch(cv, savedCanvasPatch);
+            if (editorDocClick) { document.removeEventListener('pointerdown', editorDocClick); editorDocClick = null; }
             if (existing) {
               pushUndo();
               edits = edits.filter(x => x !== existing);
             }
             activeEdit = null;
             box.remove();
-            attachTextHits(activePageNum);
+            refreshPageCanvas(activePageNum - 1).then(() => attachTextHits(activePageNum));
             updateExportBadge();
             toast('Reverted to original text');
           };
@@ -15705,13 +16582,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           microbar.querySelectorAll('.etxt-micro-dropdown-menu').forEach(m => m.classList.remove('is-open'));
         }
       };
+      if (editorDocClick) document.removeEventListener('pointerdown', editorDocClick);
       document.addEventListener('pointerdown', onDocClick);
+      editorDocClick = onDocClick;
 
       updateMicrobarState();
       box.append(microbar);
 
       layer.append(box);
-      activeEdit = { item, box, geom, pageNum: activePageNum, savedCanvasPatch, cv };
+      activeEdit = { item, box, geom, key: geom?.key, pageNum: activePageNum, savedCanvasPatch, cv };
       renderSubcontrols();
 
       // ── Subpixel-Exact Caret Placement at Click Coordinates ──
@@ -15749,23 +16628,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             } catch { /* noop */ }
           }
 
-          // Strategy 2: Subpixel Range Boundary Measurement across all glyphs
+          // Strategy 2: Subpixel Range Boundary Measurement (binary search — avoids
+          // one forced layout per character, which thrashes on long lines).
           const textNode = inner.firstChild;
           if (textNode && textNode.nodeType === Node.TEXT_NODE && textNode.textContent.length > 0) {
             const len = textNode.textContent.length;
-            let bestOffset = 0;
-            let bestDist = Infinity;
             const testRange = document.createRange();
-            for (let i = 0; i <= len; i++) {
+            const leftAt = (i) => {
               testRange.setStart(textNode, i);
               testRange.collapse(true);
-              const r = testRange.getBoundingClientRect();
-              const dist = Math.abs(r.left - clickX);
-              if (dist < bestDist) {
-                bestDist = dist;
-                bestOffset = i;
-              }
+              return testRange.getBoundingClientRect().left;
+            };
+            const a0 = leftAt(0), an = leftAt(len);
+            const ascending = an >= a0;
+            let lo = 0, hi = len;
+            while (hi - lo > 1) {
+              const mid = (lo + hi) >> 1;
+              const x = leftAt(mid);
+              if (ascending ? x <= clickX : x >= clickX) lo = mid; else hi = mid;
             }
+            const bestOffset = Math.abs(leftAt(lo) - clickX) <= Math.abs(leftAt(hi) - clickX) ? lo : hi;
             const sel = window.getSelection();
             const finalRange = document.createRange();
             finalRange.setStart(textNode, bestOffset);
@@ -15786,13 +16668,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       placeCaret();
       setTimeout(placeCaret, 0);
 
-      // ── Input & Editing listeners: Expand canvas erase if text grows wider ──
+      // ── Input & Editing listeners: grow box + canvas erase as text gets wider ──
       inner.addEventListener('input', () => {
         try {
           const curW = inner.scrollWidth || inner.offsetWidth || width;
+          // Update only the box width (do NOT rewrite inner styles here, or the
+          // caret/selection would be reset on every keystroke).
+          if (curW > boxWidth) { boxWidth = curW; box.style.width = `${boxWidth.toFixed(1)}px`; }
           if (curW > (width + 4) && cv && !geom?.isNew) {
-            const eraseTop = (typeof geom?.baselineVy === 'number') ? (geom.baselineVy - (curFontSize * 0.82)) : curBoxTop_init;
-            const eraseHeight = Math.max(12, curFontSize * 1.08);
+            const eraseTop = (typeof geom?.baselineVy === 'number') ? (geom.baselineVy - (curFontSize * 0.92)) : curBoxTop_init;
+            const eraseHeight = Math.max(1, curFontSize * 1.25);
             eraseCanvasTextPatch(cv, curBoxLeft_init - 1, eraseTop, curW + 8, eraseHeight, bgColor);
           }
         } catch { /* noop */ }
@@ -15808,6 +16693,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           ev.preventDefault();
           lastCommitTime = Date.now();
           if (savedCanvasPatch) restoreCanvasTextPatch(cv, savedCanvasPatch);
+          if (editorDocClick) { document.removeEventListener('pointerdown', editorDocClick); editorDocClick = null; }
           activeEdit = null;
           box.remove();
           attachTextHits(activePageNum);
@@ -15874,19 +16760,38 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       renderOptbar();
     }
 
+    function closeActiveEditor(discard = false) {
+      if (editorDocClick) { document.removeEventListener('pointerdown', editorDocClick); editorDocClick = null; }
+      if (!activeEdit) return;
+      if (!discard) { commitEditor(); return; }
+      const { box } = activeEdit;
+      activeEdit = null;
+      try { box?.remove(); } catch { /* noop */ }
+    }
+
     function commitEditor(skipRehit = false) {
       if (!activeEdit) return;
       let { item, box, geom, pageNum, savedCanvasPatch, cv } = activeEdit;
       const editPageNum = pageNum || page;
       activeEdit = null;
+      if (editorDocClick) { document.removeEventListener('pointerdown', editorDocClick); editorDocClick = null; }
       lastCommitTime = Date.now();
       const inner = box.querySelector('.etxt-text-inner');
       const raw = (inner ? (inner.innerText !== undefined ? inner.innerText : inner.textContent) : '') || '';
-      const replacement = raw.split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).join('\n').trim();
-      const idx = edits.findIndex(e => e.pageIdx === editPageNum - 1 && (e.target === item.str || (e.geom && geom && Math.abs(e.geom.left - geom.left) < 5 && Math.abs(e.geom.top - geom.top) < 5)));
+      // Collapse inner runs of whitespace + trailing space, but keep leading
+      // indentation so intentional layout is preserved.
+      const replacement = raw.replace(/\r\n?/g, '\n')
+        .split('\n')
+        .map(l => l.replace(/[ \t]+/g, ' ').replace(/[ \t]+$/, ''))
+        .join('\n')
+        .replace(/^\n+|\n+$/g, '');
+      const idx = edits.findIndex(e => editMatches(e, editPageNum, geom));
+      const isNew = !!geom?.isNew;
+      // A non-new span whose replacement is empty is a DELETION, not a no-op.
+      const changed = isNew ? !!replacement : (replacement !== item.str);
       let committedEdit = null;
-      if (replacement && (geom?.isNew || replacement !== item.str)) {
-        if (!savedCanvasPatch && !geom?.isNew && cv) {
+      if (changed) {
+        if (!savedCanvasPatch && !isNew && cv) {
           const P = pageScale > 0 ? pageScale : 1;
           const origLeft = geom ? geom.left : Math.max(0, item.transform[4] * P);
           const origTop = geom ? geom.top : Math.max(0, (curPageH - item.transform[5] - 12) * P);
@@ -15900,6 +16805,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           item,
           target: item.str,
           replacement,
+          key: geom?.key,
           geom,
           textColor: geom?.textColor || '#0F172A',
           bgColor: geom?.bgColor || '#FFFFFF',
@@ -15908,7 +16814,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           underline: geom?.underline || false,
           lineHeight: geom?.lineHeight || '1',
           charSpacing: geom?.charSpacing || 0,
-          isNew: !!geom?.isNew
+          isNew
         };
         if (idx >= 0) edits[idx] = committedEdit; else edits.push(committedEdit);
       } else {
@@ -15933,30 +16839,39 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const pageEl = container.querySelector(`.etxt-page[data-page="${pNum}"]`);
       const layer = pageEl ? pageEl.querySelector('.etxt-text-layer') : (container.querySelector(`.etxt-text-layer[data-page="${pNum}"]`) || container.querySelector('.etxt-text-layer'));
       if (!layer) return;
-      const P = (pageEl && curPageW > 0) ? pageEl.clientWidth / curPageW : (pageScale > 0 ? pageScale : 1);
+      const baseW = (pages[pNum - 1] && pages[pNum - 1].baseW) || curPageW;
+      const baseH = (pages[pNum - 1] && pages[pNum - 1].baseH) || curPageH;
+      const P = (pageEl && baseW > 0) ? pageEl.clientWidth / baseW : (pageScale > 0 ? pageScale : 1);
       const box = document.createElement('div');
       box.className = 'etxt-committed etxt-pulse';
       box.dataset.page = String(pNum);
       box.innerText = e.replacement;
       const left = e.geom?.left ?? (e.item.transform[4] * P);
-      const fontSize = Math.max(8, e.geom?.fontSize ?? ((e.item.height || 12) * P));
+      // Must match the editor's exact size — never clamp small text up, otherwise
+      // the committed overlay renders larger than the original glyphs.
+      const fontSize = Math.max(1, e.geom?.fontSize ?? ((e.item.height || 12) * P));
       const top = (typeof e.geom?.baselineVy === 'number')
         ? (e.geom.baselineVy - (fontSize * 0.78))
-        : (e.geom?.top ?? ((curPageH - e.item.transform[5] - 12) * P));
+        : (e.geom?.top ?? ((baseH - e.item.transform[5] - 12) * P));
       const minW = e.geom?.width ?? Math.max(10, e.item.width * P);
-      const minH = e.geom?.height ?? Math.max(12, fontSize * 1.05);
+      const minH = Math.max(8, e.geom?.height ?? (fontSize * 1.05));
       const fontFamily = e.geom?.fontFamily || 'Arial, Helvetica, "Segoe UI", Roboto, sans-serif';
       const fontWeight = e.geom?.fontWeight || '400';
       const fontStyle = e.geom?.fontStyle || 'normal';
       const textColor = e.textColor || e.geom?.textColor || '#0F172A';
       const bgColor = e.bgColor || e.geom?.bgColor || '#FFFFFF';
+      // Single-line edits stay on one line (matching the inline editor); only
+      // explicit multi-line replacements wrap.
+      const whiteSpace = String(e.replacement || '').includes('\n') ? 'pre-wrap' : 'nowrap';
 
-      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;width:fit-content;min-height:${minH.toFixed(1)}px;height:${minH.toFixed(1)}px !important;max-height:${minH.toFixed(1)}px !important;overflow:visible !important;background:${bgColor} !important;background-color:${bgColor} !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};color:${textColor};text-align:${e.textAlign || 'left'};text-decoration:${e.underline ? 'underline' : 'none'};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;`;
+      box.style.cssText = `left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;min-width:${minW.toFixed(1)}px;width:fit-content;min-height:${minH.toFixed(1)}px;height:${minH.toFixed(1)}px !important;max-height:${minH.toFixed(1)}px !important;overflow:visible !important;white-space:${whiteSpace};background:transparent !important;background-color:transparent !important;border:none !important;padding:0 !important;margin:0 !important;display:block !important;line-height:1 !important;font-size:${fontSize.toFixed(2)}px;font-family:${fontFamily};font-weight:${fontWeight};font-style:${fontStyle};color:${textColor};text-align:${e.textAlign || 'left'};text-decoration:${e.underline ? 'underline' : 'none'};-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;text-rendering:optimizeLegibility !important;`;
       
       const cv = pageEl?.querySelector('.etxt-full-canvas') || container.querySelector(`.etxt-page[data-page="${pNum}"] .etxt-full-canvas`) || container.querySelector('.etxt-full-canvas');
       if (!e.isNew) {
-        const eraseTop = (typeof e.geom?.baselineVy === 'number') ? (e.geom.baselineVy - (fontSize * 0.82)) : top;
-        eraseCanvasTextPatch(cv, left - 1, eraseTop, minW + 8, minH * 1.08, bgColor);
+        // Match the glyph extent so the erase does not bleed onto neighbouring lines.
+        const eraseTop = (typeof e.geom?.baselineVy === 'number') ? (e.geom.baselineVy - (fontSize * 0.92)) : top;
+        const eraseHeight = Math.max(1, fontSize * 1.25);
+        eraseCanvasTextPatch(cv, left - 1, eraseTop, minW + 8, eraseHeight, bgColor);
       }
 
       const xBtn = document.createElement('button');
@@ -15969,13 +16884,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         ev.stopPropagation();
         lastCommitTime = Date.now();
         pushUndo();
-        edits = edits.filter(x => !(x.pageIdx === e.pageIdx && (x.target === e.target || (x.geom && e.geom && Math.abs(x.geom.left - e.geom.left) < 5))));
-        renderPageAt(e.pageIdx, (pageScale > 0 ? pageScale : 1) * Math.min(2.5, window.devicePixelRatio || 2)).then(newCv => {
-          if (pages[e.pageIdx]) pages[e.pageIdx].full = newCv;
-          newCv.className = 'etxt-full-canvas';
-          newCv.dataset.page = String(pNum);
-          const oldCv = pageEl?.querySelector('.etxt-full-canvas');
-          if (oldCv) oldCv.replaceWith(newCv);
+        edits = edits.filter(x => !editMatches(x, pNum, e.geom));
+        refreshPageCanvas(e.pageIdx).then(() => {
           attachTextHits(pNum);
           updateExportBadge();
         });
@@ -15999,12 +16909,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         layer.classList.toggle('etxt-annot-layer--select', toolMode === 'select');
         layer.innerHTML = '';
         const list = annots[pNum - 1] || [];
-        for (const a of list) {
+        // Stacking / hit priority: highlights sit lowest, ink above them, shapes on top.
+        const ordered = [...list].sort((a, b) => (ANNOT_Z[a.type] ?? 3) - (ANNOT_Z[b.type] ?? 3));
+        for (const a of ordered) {
           const el = annotToEl(a);
           if (el) {
+            if (toolMode === 'select') {
+              el.addEventListener('pointerdown', () => {
+                selAnnot = a.id;
+                formSelectedName = null;
+              });
+              el.addEventListener('click', (ev) => {
+                if (ev.target.closest && ev.target.closest('.etxt-annot-popover, .etxt-annot-handle, .etxt-note-body, .etxt-note-x')) return;
+                selAnnot = a.id;
+                formSelectedName = null;
+                renderAnnots();
+              });
+            }
             if (a.id === selAnnot) {
-              el.classList.add('etxt-sel');
-              if (a.kind === 'signature' || a.type === 'stamp' || a.type === 'img' || a.type === 'shape') {
+              if (a.type !== 'ink') el.classList.add('etxt-sel');
+              if (a.kind === 'signature' || a.type === 'stamp' || a.type === 'img') {
                 const pop = document.createElement('div');
                 pop.className = 'etxt-annot-popover';
                 if (a.kind === 'signature') {
@@ -16034,9 +16958,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             layer.append(el);
           }
         }
+        const selA = list.find(a => a.id === selAnnot);
+        if (selA && XFORM_TYPES.has(selA.type)) {
+          const bb = annotBBox(selA);
+          if (bb) layer.append(makeXformOverlay(selA, bb));
+        }
       });
       renderCropOverlay();
+      renderWatermarks();
+      renderPageNumbers();
     }
+
+    const ANNOT_Z = { hl: 0, ink: 1, shape: 2 };
 
 
     function annotToEl(a) {
@@ -16069,54 +17002,109 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
       if (a.type === 'ink') {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'etxt-a-ink');
-        svg.setAttribute('viewBox', `0 0 ${(curPageW * P).toFixed(0)} ${(curPageH * P).toFixed(0)}`);
-        svg.style.cssText = `left:0;top:0;width:100%;height:100%`;
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', smoothPath(a.points.map(p => [p[0] * P, p[1] * P])));
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', a.color || '#111827');
-        path.setAttribute('stroke-width', String(a.width || 2));
-        path.setAttribute('stroke-linecap', 'round');
-        path.setAttribute('stroke-linejoin', 'round');
-        svg.append(path);
+        svg.setAttribute('class', `etxt-a etxt-a-ink${a.isHighlighter ? ' etxt-a-hl-ink' : ''}${selAnnot === a.id ? ' is-selected' : ''}`);
+        svg.dataset.id = a.id;
+        svg.setAttribute('tabindex', '0');
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', a.isHighlighter ? 'Highlighter stroke' : 'Ink stroke');
+        svg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:${toolMode === 'select' ? 'auto' : 'none'};${a.isHighlighter ? 'mix-blend-mode:multiply;opacity:0.4;' : ''}`;
+
+        // Hit-area path with generous padding so thin lines can be clicked/selected easily
+        const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hitPath.setAttribute('d', smoothPath(a.points.map(p => [p[0] * P, p[1] * P])));
+        hitPath.setAttribute('fill', 'none');
+        hitPath.setAttribute('stroke', 'transparent');
+        hitPath.setAttribute('stroke-width', String(Math.max(18, (a.width || 2) * P + 12)));
+        hitPath.setAttribute('stroke-linecap', 'round');
+        hitPath.setAttribute('stroke-linejoin', 'round');
+        hitPath.style.cursor = toolMode === 'select' ? 'grab' : 'default';
+        svg.append(hitPath);
+
+        // Selection halo
+        if (selAnnot === a.id) {
+          const selPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          selPath.setAttribute('d', smoothPath(a.points.map(p => [p[0] * P, p[1] * P])));
+          selPath.setAttribute('fill', 'none');
+          selPath.setAttribute('stroke', '#2563EB');
+          selPath.setAttribute('stroke-width', String(Math.max(4, (a.width || 2) * P + 6)));
+          selPath.setAttribute('stroke-opacity', '0.6');
+          selPath.setAttribute('stroke-linecap', 'round');
+          selPath.setAttribute('stroke-linejoin', 'round');
+          selPath.setAttribute('stroke-dasharray', '5 4');
+          svg.append(selPath);
+        }
+
+        appendInkPaths(svg, a.points, a.width || (a.isHighlighter ? 14 : 2), P, a.color || (a.isHighlighter ? '#FDE047' : '#111827'), a.isHighlighter);
+        // Keyboard: Delete removes the stroke, arrows nudge it (accessibility).
+        svg.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Delete' || ev.key === 'Backspace') {
+            ev.preventDefault();
+            ev.stopPropagation();
+            pushUndo();
+            removeAnnot(a.id);
+            return;
+          }
+          const nudge = ev.shiftKey ? 10 : 1;
+          let dx = 0, dy = 0;
+          if (ev.key === 'ArrowLeft') dx = -nudge;
+          else if (ev.key === 'ArrowRight') dx = nudge;
+          else if (ev.key === 'ArrowUp') dy = -nudge;
+          else if (ev.key === 'ArrowDown') dy = nudge;
+          if (!dx && !dy) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          pushUndo();
+          a.points = a.points.map(p => { const q = p.slice(); q[0] += dx; q[1] += dy; return q; });
+          if (a.type === 'ink' && a.hitPoints) a.hitPoints = null;
+          renderAnnots();
+        });
         return svg;
       }
       if (a.type === 'shape') {
-        const css = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;`;
+        const sw = a.width || 2;
+        const swPx = (sw * P).toFixed(2);
+        const col = a.color || '#111827';
+        const op = (a.opacity != null ? Math.max(0.05, Math.min(1, a.opacity)) : 1);
+        const css = `left:${(a.x * P).toFixed(1)}px;top:${(a.y * P).toFixed(1)}px;width:${(a.w * P).toFixed(1)}px;height:${(a.h * P).toFixed(1)}px;box-sizing:border-box;opacity:${op};`;
+        el.setAttribute('role', 'img');
+        el.setAttribute('aria-label', `${a.kind} shape`);
+        el.tabIndex = 0;
         if (a.kind === 'rect') {
-          el.style.cssText = css + `border:${a.width || 2}px solid ${a.color || '#111827'};`;
+          el.style.cssText = css + `border:${swPx}px solid ${col};`;
           return el;
         }
         if (a.kind === 'ellipse') {
-          el.style.cssText = css + `border:${a.width || 2}px solid ${a.color || '#111827'};border-radius:50%;`;
+          el.style.cssText = css + `border:${swPx}px solid ${col};border-radius:50%;`;
           return el;
         }
+        const W = a.w * P, H = a.h * P;
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'etxt-a-shape-svg');
-        svg.setAttribute('viewBox', `0 0 ${(a.w * P).toFixed(0)} ${(a.h * P).toFixed(0)}`);
+        svg.setAttribute('class', 'etxt-a etxt-a-shape etxt-a-shape-svg');
+        svg.dataset.id = a.id;
+        svg.setAttribute('viewBox', `0 0 ${W.toFixed(0)} ${H.toFixed(0)}`);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', `${a.kind} shape`);
+        svg.setAttribute('tabindex', '0');
         svg.style.cssText = css;
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const sw = a.width || 2;
+        // Direction-aware endpoints (fall back to the box diagonal for old annots).
+        const x1 = (typeof a.x1 === 'number' ? a.x1 : a.x);
+        const y1 = (typeof a.y1 === 'number' ? a.y1 : a.y + a.h);
+        const x2 = (typeof a.x2 === 'number' ? a.x2 : a.x + a.w);
+        const y2 = (typeof a.y2 === 'number' ? a.y2 : a.y);
+        const sx = x1 * P - a.x * P, sy = y1 * P - a.y * P;
+        const ex = x2 * P - a.x * P, ey = y2 * P - a.y * P;
         if (a.kind === 'line') {
-          path.setAttribute('d', `M 0 ${(a.h * P).toFixed(1)} L ${(a.w * P).toFixed(1)} 0`);
-          path.setAttribute('fill', 'none');
-          path.setAttribute('stroke', a.color || '#111827');
-          path.setAttribute('stroke-width', String(sw));
-        } else if (a.kind === 'arrow') {
-          const W = a.w * P, H = a.h * P;
-          const ang = Math.atan2(-H, W);
-          const hl = Math.min(14, Math.hypot(W, H) * 0.25);
-          const hx = Math.cos(ang) * hl, hy = Math.sin(ang) * hl;
-          const nx = -hy / Math.max(0.01, Math.hypot(1, hy)) * hl * 0.4, ny = hx / Math.max(0.01, Math.hypot(1, hx)) * hl * 0.4;
-          const tipX = W, tipY = 0;
-          path.setAttribute('d', `M 0 ${H.toFixed(1)} L ${tipX.toFixed(1)} ${tipY.toFixed(1)} M ${(tipX - hx - nx).toFixed(1)} ${(tipY - hy - ny).toFixed(1)} L ${tipX.toFixed(1)} ${tipY.toFixed(1)} L ${(tipX - hx + nx).toFixed(1)} ${(tipY - hy + ny).toFixed(1)}`);
-          path.setAttribute('fill', 'none');
-          path.setAttribute('stroke', a.color || '#111827');
-          path.setAttribute('stroke-width', String(sw));
-          path.setAttribute('stroke-linecap', 'round');
-          path.setAttribute('stroke-linejoin', 'round');
+          path.setAttribute('d', `M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+        } else {
+          const hp = arrowHeadPoints(sx, sy, ex, ey, Math.min(14, Math.hypot(ex - sx, ey - sy) * 0.25));
+          path.setAttribute('d', `M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)} M ${hp.bx1.toFixed(1)} ${hp.by1.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)} L ${hp.bx2.toFixed(1)} ${hp.by2.toFixed(1)}`);
         }
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', col);
+        path.setAttribute('stroke-width', swPx);
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
         svg.append(path);
         return svg;
       }
@@ -16219,22 +17207,1542 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return el;
     }
 
-    /* ── Crop overlay ── */
+    /* ── Crop studio — interact with the same language as the Organize tool ── */
+    const CROP_MIN_PCT = 15;
+    const CROP_HANDLE_DIRS = ['nw', 'ne', 'se', 'sw', 'n', 's', 'w', 'e'];
+
+    function cropBaseSize() {
+      const baseW = (pages[page - 1] && pages[page - 1].baseW) || curPageW || 612;
+      const baseH = (pages[page - 1] && pages[page - 1].baseH) || curPageH || 792;
+      return { baseW, baseH };
+    }
+
+    // Crop is stored purely as percentage margins so every page — whatever its
+    // size or orientation — gets the same proportional trim at export time.
+    function cropDraftSize() {
+      const { baseW, baseH } = cropBaseSize();
+      const d = cropDraft || cropPct || { top: 0, right: 0, bottom: 0, left: 0 };
+      const w = Math.max(0, Math.round(((100 - (d.left || 0) - (d.right || 0)) / 100) * baseW));
+      const h = Math.max(0, Math.round(((100 - (d.top || 0) - (d.bottom || 0)) / 100) * baseH));
+      return { w, h };
+    }
+
+    // Same content-margin detector the Organize crop uses: trims uniform
+    // whitespace around the page's rendered pixels (1.5% breathing pad).
+    function autoDetectCropMargins(canvas) {
+      if (!canvas || !canvas.width || !canvas.height) return null;
+      try {
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const w = canvas.width;
+        const h = canvas.height;
+        const step = Math.max(2, Math.floor(Math.min(w, h) / 350));
+        const imgData = ctx.getImageData(0, 0, w, h).data;
+        const isContent = (x, y) => {
+          const idx = (y * w + x) * 4;
+          const a = imgData[idx + 3];
+          if (a < 30) return false;
+          return imgData[idx] < 244 || imgData[idx + 1] < 244 || imgData[idx + 2] < 244;
+        };
+        let minX = w, maxX = 0, minY = h, maxY = 0, found = false;
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            if (isContent(x, y)) {
+              found = true;
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (!found) return null;
+        const padX = Math.round(w * 0.015);
+        const padY = Math.round(h * 0.015);
+        minX = Math.max(0, minX - padX);
+        maxX = Math.min(w, maxX + padX);
+        minY = Math.max(0, minY - padY);
+        maxY = Math.min(h, maxY + padY);
+        return {
+          top: Math.round(((minY / h) * 100) * 10) / 10,
+          right: Math.round((((w - maxX) / w) * 100) * 10) / 10,
+          bottom: Math.round((((h - maxY) / h) * 100) * 10) / 10,
+          left: Math.round(((minX / w) * 100) * 10) / 10,
+        };
+      } catch (err) {
+        console.warn('[Edit] auto-crop detect failed:', err && err.message);
+        return null;
+      }
+    }
+
+    function updateCropBoxStyles(draft, box) {
+      if (!box) return;
+      const t = Math.max(0, Math.min(80, draft.top || 0));
+      const r = Math.max(0, Math.min(80, draft.right || 0));
+      const b = Math.max(0, Math.min(80, draft.bottom || 0));
+      const l = Math.max(0, Math.min(80, draft.left || 0));
+      box.style.setProperty('--crop-top', `${t}%`);
+      box.style.setProperty('--crop-right', `${r}%`);
+      box.style.setProperty('--crop-bottom', `${b}%`);
+      box.style.setProperty('--crop-left', `${l}%`);
+      box.style.top = `${t}%`;
+      box.style.right = `${r}%`;
+      box.style.bottom = `${b}%`;
+      box.style.left = `${l}%`;
+      const dims = container.querySelector('#etxt-crop-dims span');
+      if (dims) {
+        clearTimeout(cropDimsResetTimer);
+        const { w, h } = cropDraftSize();
+        dims.textContent = `${w} × ${h} pt`;
+      }
+    }
+
+    function bindCropDrag(box, layer) {
+      if (cropDragCleanup) { cropDragCleanup(); cropDragCleanup = null; }
+      let info = null;
+      const onDown = (e) => {
+        const handleEl = e.target.closest('.org-crop-handle');
+        const isMove = !handleEl && (e.target === box || box.contains(e.target));
+        if (!handleEl && !isMove) return;
+        if (e.target.closest('button')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = layer.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        info = {
+          handle: handleEl ? handleEl.dataset.handle : 'move',
+          startX: e.clientX,
+          startY: e.clientY,
+          thumbW: rect.width,
+          thumbH: rect.height,
+          init: { ...(cropDraft || { top: 0, right: 0, bottom: 0, left: 0 }) },
+          pointerId: e.pointerId,
+        };
+        try { e.target.setPointerCapture(e.pointerId); } catch { /* noop */ }
+      };
+      const onMove = (e) => {
+        if (!info || e.pointerId !== info.pointerId) return;
+        e.preventDefault();
+        let dxPct = ((e.clientX - info.startX) / info.thumbW) * 100;
+        let dyPct = ((e.clientY - info.startY) / info.thumbH) * 100;
+        let t = info.init.top, r = info.init.right, b = info.init.bottom, l = info.init.left;
+        const h = info.handle;
+        // Shift = keep the page aspect when dragging a corner handle.
+        if (e.shiftKey && (h === 'nw' || h === 'ne' || h === 'se' || h === 'sw')) {
+          const initW_px = (100 - info.init.left - info.init.right) * (info.thumbW / 100);
+          const initH_px = (100 - info.init.top - info.init.bottom) * (info.thumbH / 100);
+          const baseAspect = initW_px > 0 ? (initH_px / initW_px) : 1;
+          const dxPx = e.clientX - info.startX;
+          const dyPx = e.clientY - info.startY;
+          if (h === 'se') {
+            const d = Math.max(dxPx, dyPx / baseAspect);
+            dxPct = (d / info.thumbW) * 100;
+            dyPct = ((d * baseAspect) / info.thumbH) * 100;
+          } else if (h === 'sw') {
+            const d = Math.max(-dxPx, dyPx / baseAspect);
+            dxPct = (-d / info.thumbW) * 100;
+            dyPct = ((d * baseAspect) / info.thumbH) * 100;
+          } else if (h === 'ne') {
+            const d = Math.max(dxPx, -dyPx / baseAspect);
+            dxPct = (d / info.thumbW) * 100;
+            dyPct = ((-d * baseAspect) / info.thumbH) * 100;
+          } else if (h === 'nw') {
+            const d = Math.max(-dxPx, -dyPx / baseAspect);
+            dxPct = (-d / info.thumbW) * 100;
+            dyPct = ((-d * baseAspect) / info.thumbH) * 100;
+          }
+        }
+        if (h === 'move') {
+          const curW = 100 - l - r;
+          const curH = 100 - t - b;
+          let newL = info.init.left + dxPct;
+          let newT = info.init.top + dyPct;
+          newL = Math.max(0, Math.min(100 - curW, newL));
+          newT = Math.max(0, Math.min(100 - curH, newT));
+          l = newL; t = newT;
+          r = 100 - l - curW;
+          b = 100 - t - curH;
+        } else {
+          if (h.includes('n')) t = Math.max(0, Math.min(100 - b - CROP_MIN_PCT, info.init.top + dyPct));
+          if (h.includes('s')) b = Math.max(0, Math.min(100 - t - CROP_MIN_PCT, info.init.bottom - dyPct));
+          if (h.includes('w')) l = Math.max(0, Math.min(100 - r - CROP_MIN_PCT, info.init.left + dxPct));
+          if (h.includes('e')) r = Math.max(0, Math.min(100 - l - CROP_MIN_PCT, info.init.right - dxPct));
+        }
+        cropDraft = {
+          top: Math.round(t * 10) / 10,
+          right: Math.round(r * 10) / 10,
+          bottom: Math.round(b * 10) / 10,
+          left: Math.round(l * 10) / 10,
+        };
+        updateCropBoxStyles(cropDraft, box);
+      };
+      const onUp = (e) => {
+        if (!info || e.pointerId !== info.pointerId) return;
+        try { e.target.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+        info = null;
+      };
+      box.addEventListener('pointerdown', onDown);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+      cropDragCleanup = () => {
+        try { box.removeEventListener('pointerdown', onDown); } catch { /* noop */ }
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+      };
+    }
+
+    function applyAutoCrop() {
+      const pageEl = container.querySelector(`.etxt-page[data-page="${page}"]`);
+      const canvas = pageEl?.querySelector('.etxt-full-canvas');
+      const detected = autoDetectCropMargins(canvas);
+      if (!detected) {
+        // In-place feedback: a toast here would sit on top of the crop HUD.
+        const dims = container.querySelector('#etxt-crop-dims span');
+        if (dims) {
+          dims.textContent = 'No content';
+          clearTimeout(cropDimsResetTimer);
+          cropDimsResetTimer = setTimeout(() => {
+            const box = container.querySelector('.etxt-crop-layer:not([hidden]) .org-crop-box');
+            if (box) updateCropBoxStyles(cropDraft || cropPct, box);
+          }, 2000);
+        }
+        return;
+      }
+      cropDraft = detected;
+      const box = container.querySelector('.etxt-crop-layer:not([hidden]) .org-crop-box');
+      if (box) updateCropBoxStyles(cropDraft, box);
+    }
+
+    function resetCrop() {
+      cropDraft = { top: 0, right: 0, bottom: 0, left: 0 };
+      const box = container.querySelector('.etxt-crop-layer:not([hidden]) .org-crop-box');
+      if (box) updateCropBoxStyles(cropDraft, box);
+    }
+
+    function commitCrop() {
+      if (toolMode !== 'crop') return;
+      const d = cropDraft || { top: 0, right: 0, bottom: 0, left: 0 };
+      const hasCrop = (d.top > 0.5 || d.right > 0.5 || d.bottom > 0.5 || d.left > 0.5);
+      pushUndo();
+      cropPct = hasCrop ? {
+        top: Math.round((d.top || 0) * 10) / 10,
+        right: Math.round((d.right || 0) * 10) / 10,
+        bottom: Math.round((d.bottom || 0) * 10) / 10,
+        left: Math.round((d.left || 0) * 10) / 10,
+      } : null;
+      cropDraft = null;
+      toast(hasCrop ? 'Crop applied — baked into the PDF on save.' : 'Crop reset.', 'success');
+      activateTool('select');
+      renderAnnots();
+    }
+
+    function cancelCrop() {
+      if (toolMode !== 'crop') return;
+      cropDraft = null;
+      toast('Crop cancelled.', 'info');
+      activateTool('select');
+      renderAnnots();
+    }
+
+    function renderCropHud() {
+      const body = container.querySelector('#etxt-body');
+      const existing = container.querySelector('#etxt-crop-hud');
+      if (!body || toolMode !== 'crop') { existing?.remove(); return; }
+      if (existing) return;
+      const hud = document.createElement('div');
+      hud.id = 'etxt-crop-hud';
+      hud.className = 'etxt-crop-hud';
+      hud.innerHTML = `
+        <div class="org-crop-floating-bar" role="toolbar" aria-label="Crop tools">
+          <button type="button" class="org-crop-pill-btn" id="etxt-crop-auto" title="Auto-detect content margins and snap crop">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+            <span>Auto-Detect</span>
+          </button>
+          <button type="button" class="org-crop-pill-btn" id="etxt-crop-reset" title="Reset crop to full page">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>Reset</span>
+          </button>
+          <span class="org-crop-pill-btn is-active" role="note" style="cursor:default;" title="Crop is applied to every page on save"><span>All pages</span></span>
+          <span class="org-crop-pill-btn is-active" id="etxt-crop-dims" role="note" style="cursor:default;" title="Cropped page size"><span>—</span></span>
+          <span class="org-crop-hud-sep"></span>
+          <button type="button" class="org-crop-pill-btn org-crop-pill-btn--cancel" id="etxt-crop-cancel" title="Cancel (Esc)">Cancel</button>
+          <button type="button" class="org-crop-pill-btn org-crop-pill-btn--primary" id="etxt-crop-done" title="Apply crop (Enter)">Done</button>
+        </div>`;
+      body.appendChild(hud);
+      hud.addEventListener('pointerdown', (e) => e.stopPropagation());
+      hud.querySelector('#etxt-crop-auto').onclick = (e) => { e.stopPropagation(); applyAutoCrop(); };
+      hud.querySelector('#etxt-crop-reset').onclick = (e) => { e.stopPropagation(); resetCrop(); };
+      hud.querySelector('#etxt-crop-cancel').onclick = (e) => { e.stopPropagation(); cancelCrop(); };
+      hud.querySelector('#etxt-crop-done').onclick = (e) => { e.stopPropagation(); commitCrop(); };
+    }
+
     function renderCropOverlay() {
-      const layer = container.querySelector('#etxt-crop-layer');
+      const layers = container.querySelectorAll('.etxt-crop-layer');
+      layers.forEach((l) => { l.hidden = true; l.innerHTML = ''; });
+      renderCropHud();
+      if (!cropPct && toolMode !== 'crop' && !cropDraft) {
+        if (cropDragCleanup) { cropDragCleanup(); cropDragCleanup = null; }
+        return;
+      }
+      const pageEl = container.querySelector(`.etxt-page[data-page="${page}"]`);
+      const layer = pageEl ? pageEl.querySelector('.etxt-crop-layer') : null;
       if (!layer) return;
-      layer.innerHTML = '';
-      if (toolMode !== 'crop' || !cropBox) { layer.hidden = true; return; }
       layer.hidden = false;
-      const P = pageScale > 0 ? pageScale : 1;
       const box = document.createElement('div');
-      box.className = 'etxt-crop-box';
-      box.style.cssText = `left:${(cropBox.x * P).toFixed(1)}px;top:${(cropBox.y * P).toFixed(1)}px;width:${(cropBox.w * P).toFixed(1)}px;height:${(cropBox.h * P).toFixed(1)}px;`;
-      const lbl = document.createElement('div');
-      lbl.className = 'etxt-crop-lbl';
-      lbl.textContent = `${Math.round(cropBox.w)} × ${Math.round(cropBox.h)} pt`;
-      box.append(lbl);
+      const interactive = toolMode === 'crop';
+      box.className = 'org-crop-box' + (interactive ? '' : ' is-static');
+      if (interactive) {
+        if (!cropDraft) cropDraft = cropPct ? { ...cropPct } : { top: 0, right: 0, bottom: 0, left: 0 };
+        box.innerHTML = CROP_HANDLE_DIRS.map((h) => `<div class="org-crop-handle org-crop-handle--${h}" data-handle="${h}" title="Drag to crop"></div>`).join('');
+        updateCropBoxStyles(cropDraft, box);
+        layer.append(box);
+        bindCropDrag(box, layer);
+        return;
+      }
+      if (cropDragCleanup) { cropDragCleanup(); cropDragCleanup = null; }
+      box.innerHTML = '';
+      updateCropBoxStyles(cropPct, box);
       layer.append(box);
+    }
+
+    /* ── Watermark studio ───────────────────────────────────────────────────
+       Live on-canvas preview, text/image sources, 9-grid & free positioning,
+       opacity/rotation, single or tiled placement, above/behind layering,
+       page scope (all/odd/even/range), saved templates and multi-watermark
+       management. Committed watermarks bake into the PDF on save. */
+    let watermarks = [];       // committed watermark objects (document scoped)
+    let wmDraft = null;        // live studio draft
+    let wmEditingId = null;    // id of the watermark being edited (null = new)
+    let wmDragCleanup = null;  // window listeners for the active preview gesture
+    let wmTplResetTimer = null;
+    const WM_TPL_KEY = 'filekit.wm-templates';
+
+    function newWmDraft() {
+      return {
+        id: 'wm' + Math.random().toString(36).slice(2, 9),
+        wmKind: 'text', text: 'CONFIDENTIAL',
+        font: 'sans', bold: true, italic: false,
+        size: 48, color: '#94A3B8', opacity: 0.22, rotation: -35,
+        dataUrl: null, imgW: 0, imgH: 0, imageScale: 30,
+        xPct: 50, yPct: 50, tile: false, layer: 'over',
+        scope: 'all', range: '',
+      };
+    }
+
+    function wmPageScale(pageEl, pageNum) {
+      const baseW = (pages[pageNum - 1] && pages[pageNum - 1].baseW) || curPageW || 612;
+      return (pageEl && pageEl.clientWidth > 0) ? (pageEl.clientWidth / baseW) : (pageScale > 0 ? pageScale : 1);
+    }
+
+    function styleWmItem(el, wm, P, xPct, yPct) {
+      const rot = wmRotation(wm);
+      const op = wmOpacity(wm);
+      const base = `left:${xPct}%;top:${yPct}%;transform:translate(-50%,-50%) rotate(${rot}deg);opacity:${op};`;
+      if (wm.wmKind === 'image' && wm.dataUrl) {
+        el.style.cssText = base + `width:${Math.max(1, Math.min(100, wm.imageScale || 30))}%;`;
+        const img = el.querySelector('img');
+        if (img) img.style.cssText = 'width:100%;height:auto;display:block;pointer-events:none;user-select:none;';
+      } else {
+        const fs = Math.max(6, (wm.size || 48) * P);
+        el.style.cssText = base +
+          `font-family:${wmCssFont(wm)};font-weight:${wm.bold ? '700' : '400'};font-style:${wm.italic ? 'italic' : 'normal'};` +
+          `font-size:${fs.toFixed(1)}px;line-height:1;color:${wm.color || '#94A3B8'};white-space:pre;`;
+      }
+      el.dataset.wmX = String(xPct);
+      el.dataset.wmY = String(yPct);
+    }
+
+    function wmPreviewEls(wm, pageNum, pageEl, mode) {
+      // mode: false (static) | 'ghost' | true (interactive draft)
+      const P = wmPageScale(pageEl, pageNum);
+      const positions = [];
+      if (wm.tile) {
+        for (let r = 0; r < WM_TILE_ROWS; r++) {
+          for (let c = 0; c < WM_TILE_COLS; c++) {
+            positions.push({ x: ((c + 0.5) / WM_TILE_COLS) * 100, y: ((r + 0.5) / WM_TILE_ROWS) * 100 });
+          }
+        }
+      } else {
+        positions.push({ x: wm.xPct ?? 50, y: wm.yPct ?? 50 });
+      }
+      const els = positions.map((p) => {
+        const el = document.createElement('div');
+        el.className = 'etxt-wm-item' +
+          (wm.wmKind === 'image' ? ' etxt-wm-item--img' : ' etxt-wm-item--text') +
+          (mode === true ? ' is-draft' : mode === 'ghost' ? ' is-ghost' : '');
+        el.dataset.wmId = wm.id;
+        if (wm.wmKind === 'image' && wm.dataUrl) {
+          el.innerHTML = `<img src="${wm.dataUrl}" alt="" draggable="false">`;
+        } else {
+          el.textContent = String(wm.text || 'WATERMARK');
+        }
+        styleWmItem(el, wm, P, p.x, p.y);
+        if (mode === 'ghost') el.style.opacity = String(Math.max(0.04, wmOpacity(wm) * 0.45));
+        return el;
+      });
+      if (mode === true && els[0]) {
+        els[0].classList.add('is-interactive');
+        els[0].insertAdjacentHTML('beforeend',
+          `<span class="etxt-wm-frame" aria-hidden="true"></span>` +
+          `<span class="etxt-wm-handle etxt-wm-handle--rot" data-wm-handle="rot" title="Drag to rotate"></span>` +
+          `<span class="etxt-wm-handle etxt-wm-handle--size" data-wm-handle="size" title="Drag to resize"></span>`);
+        bindWmGesture(els, pageEl);
+      }
+      return els;
+    }
+
+    // In-place style refresh used during gestures: never rebuild the DOM while a
+    // pointer is captured, or the active drag loses its element and state.
+    function updateWmDraftEls() {
+      if (!wmDraft) return;
+      const total = pageCount || 1;
+      container.querySelectorAll('.etxt-wm-layer').forEach((layer) => {
+        const pageEl = layer.closest('.etxt-page');
+        if (!pageEl) return;
+        const pNum = Number(layer.dataset.page) || 1;
+        if (!wmApplies(wmDraft, pNum, total)) return;
+        const P = wmPageScale(pageEl, pNum);
+        layer.querySelectorAll('.etxt-wm-item.is-draft, .etxt-wm-item.is-ghost').forEach((el) => {
+          const x = wmDraft.tile ? Number(el.dataset.wmX) : (wmDraft.xPct ?? 50);
+          const y = wmDraft.tile ? Number(el.dataset.wmY) : (wmDraft.yPct ?? 50);
+          styleWmItem(el, wmDraft, P, x, y);
+          if (el.classList.contains('is-ghost')) el.style.opacity = String(Math.max(0.04, wmOpacity(wmDraft) * 0.45));
+        });
+      });
+    }
+
+    function bindWmGesture(items, pageEl) {
+      if (wmDragCleanup) { wmDragCleanup(); wmDragCleanup = null; }
+      let info = null;
+      const onDown = (ev) => {
+        const item = ev.target.closest('.etxt-wm-item.is-interactive');
+        if (!item) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        const r = pageEl.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) return;
+        const cx = r.left + ((wmDraft.xPct ?? 50) / 100) * r.width;
+        const cy = r.top + ((wmDraft.yPct ?? 50) / 100) * r.height;
+        const handle = ev.target.closest('[data-wm-handle]');
+        info = {
+          mode: handle ? handle.dataset.wmHandle : 'move',
+          startX: ev.clientX, startY: ev.clientY,
+          startXPct: wmDraft.xPct ?? 50, startYPct: wmDraft.yPct ?? 50,
+          startSize: wmDraft.size || 48, startScale: wmDraft.imageScale || 30,
+          startDist: Math.max(1, Math.hypot(ev.clientX - cx, ev.clientY - cy)),
+          cx, cy, rect: r, pointerId: ev.pointerId,
+        };
+        try { ev.target.setPointerCapture(ev.pointerId); } catch { /* noop */ }
+      };
+      const onMove = (ev) => {
+        if (!info || ev.pointerId !== info.pointerId) return;
+        ev.preventDefault();
+        const r = info.rect;
+        if (info.mode === 'move') {
+          if (wmDraft.tile) return;
+          const dx = ((ev.clientX - info.startX) / r.width) * 100;
+          const dy = ((ev.clientY - info.startY) / r.height) * 100;
+          wmDraft.xPct = Math.max(0, Math.min(100, Math.round((info.startXPct + dx) * 10) / 10));
+          wmDraft.yPct = Math.max(0, Math.min(100, Math.round((info.startYPct + dy) * 10) / 10));
+        } else if (info.mode === 'rot') {
+          let rot = Math.atan2(ev.clientY - info.cy, ev.clientX - info.cx) * 180 / Math.PI + 90;
+          if (ev.shiftKey) rot = Math.round(rot / 15) * 15;
+          wmDraft.rotation = Math.max(-180, Math.min(180, Math.round(rot)));
+        } else {
+          const dist = Math.hypot(ev.clientX - info.cx, ev.clientY - info.cy);
+          const f = dist / info.startDist;
+          if (wmDraft.wmKind === 'image') wmDraft.imageScale = Math.max(5, Math.min(100, Math.round(info.startScale * f)));
+          else wmDraft.size = Math.max(8, Math.min(220, Math.round(info.startSize * f)));
+        }
+        updateWmDraftEls();
+        syncWmPanel();
+      };
+      const onUp = (ev) => {
+        if (!info || ev.pointerId !== info.pointerId) return;
+        try { ev.target.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
+        info = null;
+      };
+      items.forEach((el) => el.addEventListener('pointerdown', onDown));
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+      wmDragCleanup = () => {
+        items.forEach((el) => { try { el.removeEventListener('pointerdown', onDown); } catch { /* noop */ } });
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+      };
+    }
+
+    function renderWatermarks() {
+      const layers = container.querySelectorAll('.etxt-wm-layer');
+      if (!layers.length) return;
+      const total = pageCount || 1;
+      const inStudio = toolMode === 'watermark' && !!wmDraft;
+      const livePages = new Set([page]);
+      if (inStudio) {
+        livePages.add(Math.max(1, page - 1));
+        livePages.add(Math.min(total, page + 1));
+      }
+      layers.forEach((layer) => {
+        const pageEl = layer.closest('.etxt-page');
+        const pNum = Number(layer.dataset.page) || 1;
+        layer.innerHTML = '';
+        if (!pageEl || !livePages.has(pNum)) return;
+        for (const wm of watermarks) {
+          if (wmEditingId && wm.id === wmEditingId) continue;
+          if (!wmApplies(wm, pNum, total)) continue;
+          layer.append(...wmPreviewEls(wm, pNum, pageEl, false));
+        }
+        if (inStudio && wmApplies(wmDraft, pNum, total)) {
+          layer.append(...wmPreviewEls(wmDraft, pNum, pageEl, pNum === page ? true : 'ghost'));
+        }
+      });
+    }
+
+    /* ── Watermark templates (localStorage) ── */
+    function wmTemplates() {
+      try { return JSON.parse(localStorage.getItem(WM_TPL_KEY) || '[]'); } catch { return []; }
+    }
+    function wmSaveTemplates(list) {
+      try { localStorage.setItem(WM_TPL_KEY, JSON.stringify(list)); } catch { /* noop */ }
+    }
+    function wmLabel(wm) {
+      if (wm.wmKind === 'image') return 'Image logo';
+      const t = String(wm.text || 'Watermark').trim() || 'Watermark';
+      return t.length > 24 ? t.slice(0, 24) + '…' : t;
+    }
+    function wmScopeLabel(wm, total) {
+      if (wm.scope === 'odd') return 'odd pages';
+      if (wm.scope === 'even') return 'even pages';
+      if (wm.scope === 'range') return `pages ${wm.range || '—'}`;
+      return total ? `all ${total} pages` : 'all pages';
+    }
+
+    /* ── Studio lifecycle ── */
+    function enterWmStudio() {
+      toolMode = 'watermark';
+      wmEditingId = null;
+      wmDraft = newWmDraft();
+      renderWmPanel();
+      renderWatermarks();
+      syncWmPanel();
+    }
+
+    function editWm(wm) {
+      toolMode = 'watermark';
+      wmEditingId = wm.id;
+      wmDraft = JSON.parse(JSON.stringify(wm));
+      renderWmPanel();
+      renderWatermarks();
+      syncWmPanel();
+    }
+
+    function exitWmStudio() {
+      if (wmDragCleanup) { wmDragCleanup(); wmDragCleanup = null; }
+      container.querySelector('#etxt-wm-panel')?.remove();
+      wmDraft = null;
+      wmEditingId = null;
+    }
+
+    function applyWmStudio() {
+      if (!wmDraft) return;
+      if (wmDraft.wmKind === 'image' && !wmDraft.dataUrl) {
+        toast('Upload an image for the watermark first.', 'info');
+        return;
+      }
+      if (wmDraft.wmKind === 'text' && !String(wmDraft.text || '').trim()) {
+        toast('Type the watermark text first.', 'info');
+        return;
+      }
+      pushUndo();
+      const next = { ...wmDraft };
+      if (wmEditingId) {
+        const idx = watermarks.findIndex((w) => w.id === wmEditingId);
+        if (idx >= 0) watermarks[idx] = next; else watermarks.push(next);
+      } else {
+        watermarks.push(next);
+      }
+      toast(wmEditingId ? 'Watermark updated — baked into the PDF on save.' : 'Watermark added — baked into the PDF on save.', 'success');
+      exitWmStudio();
+      activateTool('select');
+      renderAnnots();
+    }
+
+    function cancelWmStudio() {
+      if (!wmDraft) return;
+      exitWmStudio();
+      activateTool('select');
+      renderAnnots();
+    }
+
+    function removeWm(id) {
+      const idx = watermarks.findIndex((w) => w.id === id);
+      if (idx < 0) return;
+      pushUndo();
+      watermarks.splice(idx, 1);
+      if (wmEditingId === id) exitWmStudio();
+      renderWatermarks();
+      syncWmPanel();
+      renderAnnots();
+      toast('Watermark removed.', 'info');
+    }
+
+    function renderWmPanel() {
+      container.querySelector('#etxt-wm-panel')?.remove();
+      const body = container.querySelector('#etxt-body');
+      if (!body || !wmDraft) return;
+      const d = wmDraft;
+      const panel = document.createElement('aside');
+      panel.className = 'etxt-wm-panel';
+      panel.id = 'etxt-wm-panel';
+      panel.setAttribute('aria-label', 'Watermark controls');
+      panel.innerHTML = `
+        <div class="etxt-wm-head">
+          <strong>Watermark</strong>
+          <button type="button" class="etxt-wm-x" id="etxt-wm-close" aria-label="Close watermark studio">${I.x}</button>
+        </div>
+        <div class="etxt-wm-scroll">
+          <div class="etxt-wm-tabs" role="tablist" aria-label="Watermark source">
+            <button type="button" class="etxt-wm-tab${d.wmKind !== 'image' ? ' is-on' : ''}" data-wmtab="text" role="tab" aria-selected="${d.wmKind !== 'image'}">Text</button>
+            <button type="button" class="etxt-wm-tab${d.wmKind === 'image' ? ' is-on' : ''}" data-wmtab="image" role="tab" aria-selected="${d.wmKind === 'image'}">Image</button>
+          </div>
+
+          <section class="etxt-wm-pane" data-wmpane="text"${d.wmKind === 'image' ? ' hidden' : ''}>
+            <label class="etxt-wm-field">Text
+              <input type="text" id="etxt-wm-text" maxlength="80" spellcheck="false" value="${_esc(d.text || '')}">
+            </label>
+            <div class="etxt-wm-row">
+              <label class="etxt-wm-field etxt-wm-field--grow">Font
+                <select id="etxt-wm-font">
+                  ${Object.entries(WM_FONTS).map(([k, v]) => `<option value="${k}"${d.font === k ? ' selected' : ''}>${v.label}</option>`).join('')}
+                </select>
+              </label>
+              <button type="button" class="etxt-wm-toggle${d.bold ? ' is-on' : ''}" id="etxt-wm-bold" title="Bold" aria-pressed="${!!d.bold}"><b>B</b></button>
+              <button type="button" class="etxt-wm-toggle${d.italic ? ' is-on' : ''}" id="etxt-wm-italic" title="Italic" aria-pressed="${!!d.italic}"><i>I</i></button>
+            </div>
+            <label class="etxt-wm-field">Size <span class="etxt-wm-val" id="etxt-wm-sizeval">${Math.round(d.size || 48)}</span> pt
+              <input type="range" id="etxt-wm-size" min="8" max="220" step="1" value="${Math.round(d.size || 48)}">
+            </label>
+            <div class="etxt-wm-swatches" id="etxt-wm-colors" role="group" aria-label="Watermark color">
+              ${WM_COLORS.map((c) => `<button type="button" class="etxt-wm-swatch${d.color === c ? ' is-on' : ''}" data-wmcolor="${c}" style="background:${c}" aria-label="Color ${c}"></button>`).join('')}
+              <input type="color" id="etxt-wm-color" value="${/^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#94A3B8'}" aria-label="Custom watermark color">
+            </div>
+          </section>
+
+          <section class="etxt-wm-pane" data-wmpane="image"${d.wmKind === 'image' ? '' : ' hidden'}>
+            <input type="file" id="etxt-wm-img-inp" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" hidden>
+            <button type="button" class="etxt-wm-upload" id="etxt-wm-pick">Upload image</button>
+            <div class="etxt-wm-imgrow">
+              <img id="etxt-wm-thumb" alt="" ${d.dataUrl ? `src="${d.dataUrl}"` : 'hidden'}>
+              <span class="etxt-wm-hint" id="etxt-wm-imgnote">${d.dataUrl && d.imgW ? `${d.imgW} × ${d.imgH} px` : 'PNG, JPG, WebP or SVG — transparent PNG works best.'}</span>
+            </div>
+            <label class="etxt-wm-field">Scale <span class="etxt-wm-val" id="etxt-wm-scaleval">${Math.round(d.imageScale || 30)}</span>% of page width
+              <input type="range" id="etxt-wm-scale" min="5" max="100" step="1" value="${Math.round(d.imageScale || 30)}">
+            </label>
+          </section>
+
+          <label class="etxt-wm-field">Opacity <span class="etxt-wm-val" id="etxt-wm-opval">${Math.round((d.opacity ?? 0.22) * 100)}</span>%
+            <input type="range" id="etxt-wm-op" min="3" max="100" step="1" value="${Math.round((d.opacity ?? 0.22) * 100)}">
+          </label>
+          <label class="etxt-wm-field">Rotation <span class="etxt-wm-val" id="etxt-wm-rotval">${Math.round(wmRotation(d))}</span>°
+            <input type="range" id="etxt-wm-rot" min="-180" max="180" step="1" value="${Math.round(wmRotation(d))}">
+          </label>
+
+          <div class="etxt-wm-field etxt-wm-field--top">Position
+            <div class="etxt-wm-grid" id="etxt-wm-posgrid" role="group" aria-label="Watermark position">
+              ${[0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => `<button type="button" class="etxt-wm-cell" data-wmpos="${c},${r}" aria-label="Position column ${c + 1}, row ${r + 1}"></button>`)).join('')}
+            </div>
+          </div>
+
+          <details class="etxt-wm-adv" open>
+            <summary>Placement</summary>
+            <div class="etxt-wm-row">
+              <label class="etxt-wm-field etxt-wm-field--grow">Mode
+                <select id="etxt-wm-mode">
+                  <option value="single"${!d.tile ? ' selected' : ''}>Single</option>
+                  <option value="tile"${d.tile ? ' selected' : ''}>Tile</option>
+                </select>
+              </label>
+              <label class="etxt-wm-field etxt-wm-field--grow">Layer
+                <select id="etxt-wm-layer">
+                  <option value="over"${d.layer !== 'under' ? ' selected' : ''}>Above</option>
+                  <option value="under"${d.layer === 'under' ? ' selected' : ''}>Behind</option>
+                </select>
+              </label>
+            </div>
+            <label class="etxt-wm-field">Apply to
+              <select id="etxt-wm-scope">
+                <option value="all"${d.scope === 'all' ? ' selected' : ''}>All pages</option>
+                <option value="odd"${d.scope === 'odd' ? ' selected' : ''}>Odd pages</option>
+                <option value="even"${d.scope === 'even' ? ' selected' : ''}>Even pages</option>
+                <option value="range"${d.scope === 'range' ? ' selected' : ''}>Page range</option>
+              </select>
+            </label>
+            <label class="etxt-wm-field" id="etxt-wm-range-row"${d.scope === 'range' ? '' : ' hidden'}>Range
+              <input type="text" id="etxt-wm-range" placeholder="e.g. 1-3, 5" value="${_esc(d.range || '')}">
+            </label>
+          </details>
+
+          <details class="etxt-wm-adv" open>
+            <summary>Templates</summary>
+            <div class="etxt-wm-row">
+              <select id="etxt-wm-tpl" class="etxt-wm-field etxt-wm-field--grow" aria-label="Saved watermark templates"></select>
+            </div>
+            <div class="etxt-wm-row">
+              <button type="button" class="etxt-wm-mini" id="etxt-wm-tpl-apply">Apply</button>
+              <button type="button" class="etxt-wm-mini" id="etxt-wm-tpl-save">Save as…</button>
+              <button type="button" class="etxt-wm-mini etxt-wm-mini--danger" id="etxt-wm-tpl-del">Delete</button>
+            </div>
+            <input type="text" id="etxt-wm-tpl-name" class="etxt-wm-tplname" placeholder="Template name" maxlength="40" hidden>
+          </details>
+
+          <div class="etxt-wm-list" id="etxt-wm-list"></div>
+        </div>
+        <div class="etxt-wm-foot">
+          <button type="button" class="etxt-wm-btn etxt-wm-btn--ghost" id="etxt-wm-cancel">Cancel</button>
+          <button type="button" class="etxt-wm-btn etxt-wm-btn--primary" id="etxt-wm-apply">${wmEditingId ? 'Save changes' : 'Add watermark'}</button>
+        </div>`;
+      body.appendChild(panel);
+
+      panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+      panel.querySelector('#etxt-wm-close').onclick = () => cancelWmStudio();
+      panel.querySelector('#etxt-wm-cancel').onclick = () => cancelWmStudio();
+      panel.querySelector('#etxt-wm-apply').onclick = () => applyWmStudio();
+
+      // Text | Image tabs
+      panel.querySelectorAll('[data-wmtab]').forEach((b) => {
+        b.onclick = () => {
+          wmDraft.wmKind = b.dataset.wmtab;
+          panel.querySelectorAll('[data-wmtab]').forEach((x) => {
+            const on = x === b;
+            x.classList.toggle('is-on', on);
+            x.setAttribute('aria-selected', String(on));
+          });
+          panel.querySelectorAll('[data-wmpane]').forEach((p) => { p.hidden = p.dataset.wmpane !== wmDraft.wmKind; });
+          renderWatermarks();
+        };
+      });
+
+      // Text controls
+      const textInp = panel.querySelector('#etxt-wm-text');
+      textInp.oninput = () => { wmDraft.text = textInp.value; wmDraft.wmKind = 'text'; renderWatermarks(); };
+      panel.querySelector('#etxt-wm-font').onchange = (e) => { wmDraft.font = e.target.value; renderWatermarks(); };
+      const boldBtn = panel.querySelector('#etxt-wm-bold');
+      boldBtn.onclick = () => {
+        wmDraft.bold = !wmDraft.bold;
+        boldBtn.classList.toggle('is-on', !!wmDraft.bold);
+        boldBtn.setAttribute('aria-pressed', String(!!wmDraft.bold));
+        renderWatermarks();
+      };
+      const italicBtn = panel.querySelector('#etxt-wm-italic');
+      italicBtn.onclick = () => {
+        wmDraft.italic = !wmDraft.italic;
+        italicBtn.classList.toggle('is-on', !!wmDraft.italic);
+        italicBtn.setAttribute('aria-pressed', String(!!wmDraft.italic));
+        renderWatermarks();
+      };
+      const sizeSlider = panel.querySelector('#etxt-wm-size');
+      sizeSlider.oninput = () => {
+        wmDraft.size = Number(sizeSlider.value) || 48;
+        panel.querySelector('#etxt-wm-sizeval').textContent = String(Math.round(wmDraft.size));
+        renderWatermarks();
+      };
+      panel.querySelector('#etxt-wm-colors').addEventListener('click', (e) => {
+        const sw = e.target.closest('[data-wmcolor]');
+        if (!sw) return;
+        wmDraft.color = sw.dataset.wmcolor;
+        panel.querySelectorAll('.etxt-wm-swatch').forEach((x) => x.classList.toggle('is-on', x === sw));
+        const picker = panel.querySelector('#etxt-wm-color');
+        if (picker) picker.value = /^#[0-9a-f]{6}$/i.test(wmDraft.color) ? wmDraft.color : '#94A3B8';
+        renderWatermarks();
+      });
+      const colorPicker = panel.querySelector('#etxt-wm-color');
+      colorPicker.oninput = () => {
+        wmDraft.color = colorPicker.value;
+        panel.querySelectorAll('.etxt-wm-swatch').forEach((x) => x.classList.remove('is-on'));
+        renderWatermarks();
+      };
+
+      // Image controls
+      const imgInp = panel.querySelector('#etxt-wm-img-inp');
+      panel.querySelector('#etxt-wm-pick').onclick = () => imgInp.click();
+      imgInp.onchange = () => {
+        const f = imgInp.files && imgInp.files[0];
+        imgInp.value = '';
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = String(reader.result || '');
+          const im = new Image();
+          im.onload = () => {
+            wmDraft.wmKind = 'image';
+            wmDraft.dataUrl = dataUrl;
+            wmDraft.imgW = im.naturalWidth;
+            wmDraft.imgH = im.naturalHeight;
+            renderWatermarks();
+            syncWmPanel();
+          };
+          im.onerror = () => toast('Could not read that image file.', 'error');
+          im.src = dataUrl;
+        };
+        reader.readAsDataURL(f);
+      };
+      const scaleSlider = panel.querySelector('#etxt-wm-scale');
+      scaleSlider.oninput = () => {
+        wmDraft.imageScale = Number(scaleSlider.value) || 30;
+        panel.querySelector('#etxt-wm-scaleval').textContent = String(Math.round(wmDraft.imageScale));
+        renderWatermarks();
+      };
+
+      // Shared appearance
+      const opSlider = panel.querySelector('#etxt-wm-op');
+      opSlider.oninput = () => {
+        wmDraft.opacity = (Number(opSlider.value) || 22) / 100;
+        panel.querySelector('#etxt-wm-opval').textContent = opSlider.value;
+        renderWatermarks();
+      };
+      const rotSlider = panel.querySelector('#etxt-wm-rot');
+      rotSlider.oninput = () => {
+        wmDraft.rotation = Number(rotSlider.value) || 0;
+        panel.querySelector('#etxt-wm-rotval').textContent = rotSlider.value;
+        renderWatermarks();
+      };
+
+      // Position grid
+      panel.querySelector('#etxt-wm-posgrid').addEventListener('click', (e) => {
+        const cell = e.target.closest('[data-wmpos]');
+        if (!cell) return;
+        const [c, r] = cell.dataset.wmpos.split(',').map(Number);
+        wmDraft.tile = false;
+        const modeSel = panel.querySelector('#etxt-wm-mode');
+        if (modeSel) modeSel.value = 'single';
+        wmDraft.xPct = Math.round(((c + 0.5) / 3) * 1000) / 10;
+        wmDraft.yPct = Math.round(((r + 0.5) / 3) * 1000) / 10;
+        renderWatermarks();
+        syncWmPanel();
+      });
+
+      // Placement
+      panel.querySelector('#etxt-wm-mode').onchange = (e) => {
+        wmDraft.tile = e.target.value === 'tile';
+        renderWatermarks();
+        syncWmPanel();
+      };
+      panel.querySelector('#etxt-wm-layer').onchange = (e) => {
+        wmDraft.layer = e.target.value === 'under' ? 'under' : 'over';
+        renderWatermarks();
+      };
+      const scopeSel = panel.querySelector('#etxt-wm-scope');
+      scopeSel.onchange = () => {
+        wmDraft.scope = scopeSel.value;
+        panel.querySelector('#etxt-wm-range-row').hidden = wmDraft.scope !== 'range';
+        renderWatermarks();
+      };
+      const rangeInp = panel.querySelector('#etxt-wm-range');
+      rangeInp.oninput = () => { wmDraft.range = rangeInp.value; renderWatermarks(); };
+
+      // Templates
+      panel.querySelector('#etxt-wm-tpl-apply').onclick = () => {
+        const list = wmTemplates();
+        const t = list[Number(panel.querySelector('#etxt-wm-tpl').value) || 0];
+        if (!t) return;
+        const merged = { ...newWmDraft(), ...t.wm, id: wmDraft.id };
+        wmDraft = merged;
+        if (!wmDraft.dataUrl) wmDraft.wmKind = wmDraft.wmKind === 'image' ? 'text' : wmDraft.wmKind;
+        renderWmPanel();
+        renderWatermarks();
+        syncWmPanel();
+      };
+      panel.querySelector('#etxt-wm-tpl-save').onclick = () => {
+        const nameInp = panel.querySelector('#etxt-wm-tpl-name');
+        if (nameInp.hidden) {
+          nameInp.hidden = false;
+          nameInp.focus();
+          return;
+        }
+        const name = nameInp.value.trim() || wmLabel(wmDraft);
+        const list = wmTemplates();
+        const wm = { ...wmDraft };
+        if (wm.dataUrl && wm.dataUrl.length > 200000) wm.dataUrl = null; // keep templates light
+        list.push({ name, wm });
+        wmSaveTemplates(list);
+        nameInp.value = '';
+        nameInp.hidden = true;
+        toast(`Template "${name}" saved.`, 'success');
+        syncWmPanel();
+      };
+      panel.querySelector('#etxt-wm-tpl-del').onclick = () => {
+        const sel = panel.querySelector('#etxt-wm-tpl');
+        const idx = Number(sel.value) || 0;
+        const list = wmTemplates();
+        if (!list[idx]) return;
+        const [removed] = list.splice(idx, 1);
+        wmSaveTemplates(list);
+        toast(`Template "${removed.name}" deleted.`, 'info');
+        syncWmPanel();
+      };
+
+      syncWmPanel();
+    }
+
+    function syncWmPanel() {
+      const panel = container.querySelector('#etxt-wm-panel');
+      if (!panel || !wmDraft) return;
+      const d = wmDraft;
+      const set = (sel, val) => { const el = panel.querySelector(sel); if (el && document.activeElement !== el) el.value = val; };
+      const label = (sel, val) => { const el = panel.querySelector(sel); if (el) el.textContent = String(val); };
+
+      panel.querySelectorAll('[data-wmtab]').forEach((x) => {
+        const on = x.dataset.wmtab === d.wmKind;
+        x.classList.toggle('is-on', on);
+        x.setAttribute('aria-selected', String(on));
+      });
+      panel.querySelectorAll('[data-wmpane]').forEach((p) => { p.hidden = p.dataset.wmpane !== d.wmKind; });
+
+      set('#etxt-wm-text', d.text || '');
+      set('#etxt-wm-font', d.font || 'sans');
+      const boldBtn = panel.querySelector('#etxt-wm-bold');
+      boldBtn.classList.toggle('is-on', !!d.bold);
+      boldBtn.setAttribute('aria-pressed', String(!!d.bold));
+      const italicBtn = panel.querySelector('#etxt-wm-italic');
+      italicBtn.classList.toggle('is-on', !!d.italic);
+      italicBtn.setAttribute('aria-pressed', String(!!d.italic));
+      set('#etxt-wm-size', Math.round(d.size || 48));
+      label('#etxt-wm-sizeval', Math.round(d.size || 48));
+      panel.querySelectorAll('.etxt-wm-swatch').forEach((x) => x.classList.toggle('is-on', x.dataset.wmcolor === d.color));
+      set('#etxt-wm-color', /^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#94A3B8');
+      set('#etxt-wm-scale', Math.round(d.imageScale || 30));
+      label('#etxt-wm-scaleval', Math.round(d.imageScale || 30));
+      const thumb = panel.querySelector('#etxt-wm-thumb');
+      if (thumb && d.dataUrl && thumb.getAttribute('src') !== d.dataUrl) thumb.src = d.dataUrl;
+      if (thumb) thumb.hidden = !d.dataUrl;
+      const note = panel.querySelector('#etxt-wm-imgnote');
+      if (note) note.textContent = d.dataUrl && d.imgW ? `${d.imgW} × ${d.imgH} px` : 'PNG, JPG, WebP or SVG — transparent PNG works best.';
+      set('#etxt-wm-op', Math.round((d.opacity ?? 0.22) * 100));
+      label('#etxt-wm-opval', Math.round((d.opacity ?? 0.22) * 100));
+      set('#etxt-wm-rot', Math.round(wmRotation(d)));
+      label('#etxt-wm-rotval', Math.round(wmRotation(d)));
+      set('#etxt-wm-mode', d.tile ? 'tile' : 'single');
+      set('#etxt-wm-layer', d.layer === 'under' ? 'under' : 'over');
+      set('#etxt-wm-scope', d.scope || 'all');
+      const rangeRow = panel.querySelector('#etxt-wm-range-row');
+      if (rangeRow) rangeRow.hidden = d.scope !== 'range';
+      set('#etxt-wm-range', d.range || '');
+
+      // Position grid highlight (nearest cell)
+      const gx = Math.min(2, Math.max(0, Math.floor(((d.xPct ?? 50) / 100) * 3)));
+      const gy = Math.min(2, Math.max(0, Math.floor(((d.yPct ?? 50) / 100) * 3)));
+      panel.querySelectorAll('.etxt-wm-cell').forEach((cell) => {
+        const [c, r] = cell.dataset.wmpos.split(',').map(Number);
+        cell.classList.toggle('is-on', !d.tile && c === gx && r === gy);
+      });
+
+      // Templates select
+      const tplSel = panel.querySelector('#etxt-wm-tpl');
+      const list = wmTemplates();
+      if (tplSel && document.activeElement !== tplSel) {
+        const prev = Number(tplSel.value) || 0;
+        tplSel.innerHTML = list.length
+          ? list.map((t, i) => `<option value="${i}">${_esc(t.name)}</option>`).join('')
+          : '<option value="">No saved templates</option>';
+        if (list.length) tplSel.value = String(Math.min(prev, list.length - 1));
+      }
+
+      // Applied watermarks list
+      const listEl = panel.querySelector('#etxt-wm-list');
+      if (listEl) {
+        const rows = watermarks.map((w) => `
+          <div class="etxt-wm-listrow${w.id === wmEditingId ? ' is-editing' : ''}" data-wmid="${w.id}">
+            <div class="etxt-wm-listcopy">
+              <strong>${_esc(wmLabel(w))}</strong>
+              <span>${_esc(w.tile ? 'Tiled' : '')}${w.tile ? ' · ' : ''}${_esc(w.layer === 'under' ? 'Behind' : 'Above')} · ${_esc(wmScopeLabel(w, pageCount))}</span>
+            </div>
+            <button type="button" class="etxt-wm-mini" data-wmact="edit">Edit</button>
+            <button type="button" class="etxt-wm-mini etxt-wm-mini--danger" data-wmact="del" aria-label="Delete watermark">✕</button>
+          </div>`).join('');
+        listEl.innerHTML = rows || '<p class="etxt-wm-hint">No watermarks yet — configure one and press Add.</p>';
+        listEl.querySelectorAll('.etxt-wm-listrow').forEach((row) => {
+          row.querySelectorAll('[data-wmact]').forEach((btn) => {
+            btn.onclick = () => {
+              const wm = watermarks.find((w) => w.id === row.dataset.wmid);
+              if (!wm) return;
+              if (btn.dataset.wmact === 'edit') editWm(wm);
+              else removeWm(wm.id);
+            };
+          });
+        });
+      }
+    }
+
+    /* ── Page-number studio ───────────────────────────────────────────────────
+       Live preview, header/footer zones with margins, token formats, numeral
+       styles, start offset + cover skip, facing-page mirroring, page scope,
+       saved templates and multiple numbering schemes. Shares the studio skin
+       (etxt-wm-* classes) with the watermark panel. */
+    let pageNums = [];        // committed numbering schemes (document scoped)
+    let pnDraft = null;       // live studio draft
+    let pnEditingId = null;   // scheme being edited (null = creating)
+    let pnDragCleanup = null; // window listeners for the active drag gesture
+    let pnMeasureCtx = null;
+    const PN_TPL_KEY = 'filekit.pn-templates';
+
+    function newPnDraft() {
+      return {
+        id: 'pn' + Math.random().toString(36).slice(2, 9),
+        format: 'Page {n} of {p}',
+        numeral: 'arabic',
+        startNumber: 1,
+        skipFirst: 0,
+        scope: 'all', range: '',
+        vAlign: 'bottom', hAlign: 'center',
+        marginX: 36, marginY: 28,
+        facing: false,
+        font: 'sans', bold: false, italic: false,
+        size: 10, color: '#4B4B4B', opacity: 1,
+      };
+    }
+
+    function pnPageScale(pageEl, pageNum) {
+      const baseW = (pages[pageNum - 1] && pages[pageNum - 1].baseW) || curPageW || 612;
+      return (pageEl && pageEl.clientWidth > 0) ? (pageEl.clientWidth / baseW) : (pageScale > 0 ? pageScale : 1);
+    }
+
+    // Pointer deltas are visual pixels; divide by the on-screen (transform-aware)
+    // scale so dragging feels 1:1 at any zoom level.
+    function pnDragScale(pageEl, pageNum) {
+      const baseW = (pages[pageNum - 1] && pages[pageNum - 1].baseW) || curPageW || 612;
+      const rw = pageEl ? pageEl.getBoundingClientRect().width : 0;
+      return rw > 0 ? rw / baseW : pnPageScale(pageEl, pageNum);
+    }
+
+    function pnMeasurePreviewWidth(text, scheme, sizePx) {
+      try {
+        if (!pnMeasureCtx) pnMeasureCtx = document.createElement('canvas').getContext('2d');
+        pnMeasureCtx.font = `${scheme.italic ? 'italic ' : ''}${scheme.bold ? '700' : '400'} ${sizePx.toFixed(1)}px ${wmCssFont(scheme)}`;
+        return pnMeasureCtx.measureText(text).width;
+      } catch { return text.length * sizePx * 0.55; }
+    }
+
+    function pnPreviewRect(scheme, pageNum, pageEl, total) {
+      const P = pnPageScale(pageEl, pageNum);
+      const pw = pageEl.clientWidth || 0;
+      const ph = pageEl.clientHeight || 0;
+      if (!pw || !ph) return null;
+      const text = pnTextFor(scheme, pageNum - 1, total, pnCompute(scheme, total));
+      if (text == null) return null;
+      const sizePx = Math.max(6, scheme.size || 10) * P;
+      const mx = Math.max(0, scheme.marginX ?? 36) * P;
+      const my = Math.max(0, scheme.marginY ?? 28) * P;
+      const w = pnMeasurePreviewWidth(text, scheme, sizePx);
+      const h = pnHAlignFor(scheme, pageNum);
+      const x = h === 'left' ? mx : h === 'right' ? pw - w - mx : (pw - w) / 2;
+      const y = scheme.vAlign === 'top' ? my : ph - my - sizePx;
+      return { x, y, sizePx, text };
+    }
+
+    function stylePnItem(el, scheme, rect) {
+      el.style.cssText = `left:${rect.x.toFixed(1)}px;top:${rect.y.toFixed(1)}px;` +
+        `font-family:${wmCssFont(scheme)};font-weight:${scheme.bold ? '700' : '400'};font-style:${scheme.italic ? 'italic' : 'normal'};` +
+        `font-size:${rect.sizePx.toFixed(1)}px;line-height:1;color:${scheme.color || '#4B4B4B'};` +
+        `opacity:${Math.max(0.05, Math.min(1, scheme.opacity ?? 1))};`;
+      if (el.classList.contains('is-ghost')) el.style.opacity = String(Math.max(0.05, (scheme.opacity ?? 1) * 0.45));
+    }
+
+    function pnPreviewEl(scheme, pageNum, pageEl, total, mode) {
+      const rect = pnPreviewRect(scheme, pageNum, pageEl, total);
+      if (!rect) return null;
+      const el = document.createElement('div');
+      el.className = 'etxt-wm-item etxt-pn-item' +
+        (mode === true ? ' is-draft is-interactive' : mode === 'ghost' ? ' is-ghost' : '');
+      el.dataset.pnId = scheme.id;
+      el.dataset.pnPage = String(pageNum);
+      el.textContent = rect.text;
+      stylePnItem(el, scheme, rect);
+      if (mode === true) {
+        el.insertAdjacentHTML('beforeend', `<span class="etxt-wm-frame" aria-hidden="true"></span>`);
+        bindPnGesture(el, pageEl);
+      }
+      return el;
+    }
+
+    function bindPnGesture(el, pageEl) {
+      if (pnDragCleanup) { pnDragCleanup(); pnDragCleanup = null; }
+      let info = null;
+      const onDown = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const rect = pageEl.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        info = {
+          startX: ev.clientX, startY: ev.clientY,
+          startMX: pnDraft.marginX ?? 36, startMY: pnDraft.marginY ?? 28,
+          pointerId: ev.pointerId,
+        };
+        try { ev.target.setPointerCapture(ev.pointerId); } catch { /* noop */ }
+      };
+      const onMove = (ev) => {
+        if (!info || ev.pointerId !== info.pointerId) return;
+        ev.preventDefault();
+        const pageNum = Number(el.dataset.pnPage) || page;
+        const P = Math.max(0.05, pnDragScale(pageEl, pageNum));
+        const dX = (ev.clientX - info.startX) / P;
+        const dY = (ev.clientY - info.startY) / P;
+        const h = pnHAlignFor(pnDraft, pageNum);
+        if (h === 'left') pnDraft.marginX = Math.max(0, Math.min(240, Math.round(info.startMX + dX)));
+        else if (h === 'right') pnDraft.marginX = Math.max(0, Math.min(240, Math.round(info.startMX - dX)));
+        if (pnDraft.vAlign === 'top') pnDraft.marginY = Math.max(0, Math.min(240, Math.round(info.startMY + dY)));
+        else pnDraft.marginY = Math.max(0, Math.min(240, Math.round(info.startMY - dY)));
+        updatePnDraftEls();
+        syncPnPanel();
+      };
+      const onUp = (ev) => {
+        if (!info || ev.pointerId !== info.pointerId) return;
+        try { ev.target.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
+        info = null;
+      };
+      el.addEventListener('pointerdown', onDown);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+      pnDragCleanup = () => {
+        try { el.removeEventListener('pointerdown', onDown); } catch { /* noop */ }
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+      };
+    }
+
+    function updatePnDraftEls() {
+      if (!pnDraft) return;
+      const total = pageCount || 1;
+      container.querySelectorAll('.etxt-pn-layer').forEach((layer) => {
+        const pageEl = layer.closest('.etxt-page');
+        if (!pageEl) return;
+        const pageNum = Number(layer.dataset.page) || 1;
+        if (!wmApplies(pnDraft, pageNum, total)) return;
+        layer.querySelectorAll('.etxt-pn-item.is-draft, .etxt-pn-item.is-ghost').forEach((el) => {
+          const rect = pnPreviewRect(pnDraft, pageNum, pageEl, total);
+          if (rect) stylePnItem(el, pnDraft, rect);
+        });
+      });
+    }
+
+    function renderPageNumbers() {
+      const layers = container.querySelectorAll('.etxt-pn-layer');
+      if (!layers.length) return;
+      const total = pageCount || 1;
+      const inStudio = toolMode === 'pagenum' && !!pnDraft;
+      const livePages = new Set([page]);
+      if (inStudio) {
+        livePages.add(Math.max(1, page - 1));
+        livePages.add(Math.min(total, page + 1));
+      }
+      layers.forEach((layer) => {
+        const pageEl = layer.closest('.etxt-page');
+        const pNum = Number(layer.dataset.page) || 1;
+        layer.innerHTML = '';
+        if (!pageEl || !livePages.has(pNum)) return;
+        for (const pn of pageNums) {
+          if (pnEditingId && pn.id === pnEditingId) continue;
+          if (!wmApplies(pn, pNum, total)) continue;
+          const el = pnPreviewEl(pn, pNum, pageEl, total, false);
+          if (el) layer.append(el);
+        }
+        if (inStudio && wmApplies(pnDraft, pNum, total)) {
+          const el = pnPreviewEl(pnDraft, pNum, pageEl, total, pNum === page ? true : 'ghost');
+          if (el) layer.append(el);
+        }
+      });
+    }
+
+    /* ── PN templates (localStorage) ── */
+    function pnTemplates() {
+      try { return JSON.parse(localStorage.getItem(PN_TPL_KEY) || '[]'); } catch { return []; }
+    }
+    function pnSaveTemplates(list) {
+      try { localStorage.setItem(PN_TPL_KEY, JSON.stringify(list)); } catch { /* noop */ }
+    }
+    function pnLabel(scheme) {
+      const f = String(scheme.format || '{n}').replace(/\{n\}/g, '1').replace(/\{p\}|\{t\}|\{total\}/g, 'N').replace(/\{r\}/g, 'R').replace(/\{rf\}/g, 'RF');
+      return f.length > 26 ? f.slice(0, 26) + '…' : f;
+    }
+    function pnScopeLabel(scheme, total) {
+      if (scheme.scope === 'odd') return 'odd pages';
+      if (scheme.scope === 'even') return 'even pages';
+      if (scheme.scope === 'range') return `pages ${scheme.range || '—'}`;
+      return total ? `all ${total} pages` : 'all pages';
+    }
+
+    /* ── Studio lifecycle ── */
+    function enterPnStudio() {
+      toolMode = 'pagenum';
+      pnEditingId = null;
+      pnDraft = newPnDraft();
+      renderPnPanel();
+      renderPageNumbers();
+      syncPnPanel();
+    }
+    function editPn(scheme) {
+      toolMode = 'pagenum';
+      pnEditingId = scheme.id;
+      pnDraft = JSON.parse(JSON.stringify(scheme));
+      renderPnPanel();
+      renderPageNumbers();
+      syncPnPanel();
+    }
+    function exitPnStudio() {
+      if (pnDragCleanup) { pnDragCleanup(); pnDragCleanup = null; }
+      container.querySelector('#etxt-pn-panel')?.remove();
+      pnDraft = null;
+      pnEditingId = null;
+    }
+    function applyPnStudio() {
+      if (!pnDraft) return;
+      pushUndo();
+      const next = { ...pnDraft };
+      if (pnEditingId) {
+        const idx = pageNums.findIndex((p) => p.id === pnEditingId);
+        if (idx >= 0) pageNums[idx] = next; else pageNums.push(next);
+      } else {
+        pageNums.push(next);
+      }
+      toast(pnEditingId ? 'Numbering updated — baked into the PDF on save.' : 'Page numbers added — baked into the PDF on save.', 'success');
+      exitPnStudio();
+      activateTool('select');
+      renderAnnots();
+    }
+    function cancelPnStudio() {
+      if (!pnDraft) return;
+      exitPnStudio();
+      activateTool('select');
+      renderAnnots();
+    }
+    function removePn(id) {
+      const idx = pageNums.findIndex((p) => p.id === id);
+      if (idx < 0) return;
+      pushUndo();
+      pageNums.splice(idx, 1);
+      if (pnEditingId === id) exitPnStudio();
+      renderPageNumbers();
+      syncPnPanel();
+      renderAnnots();
+      toast('Numbering removed.', 'info');
+    }
+
+    function renderPnPanel() {
+      container.querySelector('#etxt-pn-panel')?.remove();
+      const body = container.querySelector('#etxt-body');
+      if (!body || !pnDraft) return;
+      const d = pnDraft;
+      const knownFormat = PN_FORMATS.some((f) => f.value === d.format);
+      const panel = document.createElement('aside');
+      panel.className = 'etxt-wm-panel';
+      panel.id = 'etxt-pn-panel';
+      panel.setAttribute('aria-label', 'Page number controls');
+      panel.innerHTML = `
+        <div class="etxt-wm-head">
+          <strong>Page numbers</strong>
+          <button type="button" class="etxt-wm-x" id="etxt-pn-close" aria-label="Close page-number studio">${I.x}</button>
+        </div>
+        <div class="etxt-wm-scroll">
+          <div class="etxt-pn-sample" id="etxt-pn-sample">Page 1 of 2</div>
+
+          <label class="etxt-wm-field">Format
+            <select id="etxt-pn-format">
+              ${PN_FORMATS.map((f) => `<option value="${_esc(f.value)}"${d.format === f.value ? ' selected' : ''}>${_esc(f.label)}</option>`).join('')}
+              <option value="__custom"${knownFormat ? '' : ' selected'}>Custom…</option>
+            </select>
+          </label>
+          <label class="etxt-wm-field" id="etxt-pn-custom-row"${knownFormat ? ' hidden' : ''}>Custom text
+            <input type="text" id="etxt-pn-custom" maxlength="80" spellcheck="false" value="${_esc(knownFormat ? '' : (d.format || ''))}" placeholder="e.g. Page {n} of {p}">
+          </label>
+          <p class="etxt-wm-hint">Tokens: {n} number · {p} total pages · {r} pages in scope · {rf} last number</p>
+
+          <div class="etxt-wm-row">
+            <label class="etxt-wm-field etxt-wm-field--grow">Style
+              <select id="etxt-pn-numeral">
+                ${PN_NUMERALS.map((n) => `<option value="${n.value}"${d.numeral === n.value ? ' selected' : ''}>${_esc(n.label)}</option>`).join('')}
+              </select>
+            </label>
+            <button type="button" class="etxt-wm-toggle${d.bold ? ' is-on' : ''}" id="etxt-pn-bold" title="Bold" aria-pressed="${!!d.bold}"><b>B</b></button>
+            <button type="button" class="etxt-wm-toggle${d.italic ? ' is-on' : ''}" id="etxt-pn-italic" title="Italic" aria-pressed="${!!d.italic}"><i>I</i></button>
+          </div>
+
+          <label class="etxt-wm-field">Size <span class="etxt-wm-val" id="etxt-pn-sizeval">${Math.round(d.size || 10)}</span> pt
+            <input type="range" id="etxt-pn-size" min="6" max="36" step="1" value="${Math.round(d.size || 10)}">
+          </label>
+
+          <div class="etxt-wm-swatches" id="etxt-pn-colors" role="group" aria-label="Number color">
+            ${WM_COLORS.map((c) => `<button type="button" class="etxt-wm-swatch${d.color === c ? ' is-on' : ''}" data-pncolor="${c}" style="background:${c}" aria-label="Color ${c}"></button>`).join('')}
+            <input type="color" id="etxt-pn-colorpick" value="${/^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#4B4B4B'}" aria-label="Custom number color">
+          </div>
+
+          <div class="etxt-wm-field etxt-wm-field--top">Position
+            <div class="etxt-wm-grid" id="etxt-pn-grid" role="group" aria-label="Page number position">
+              ${['top', 'bottom'].flatMap((v) => ['left', 'center', 'right'].map((h) => `<button type="button" class="etxt-wm-cell" data-pnzone="${v},${h}" aria-label="${v} ${h}"></button>`)).join('')}
+            </div>
+          </div>
+          <div class="etxt-wm-row">
+            <label class="etxt-wm-field etxt-wm-field--grow">Margin <span class="etxt-wm-val" id="etxt-pn-mxval">${Math.round(d.marginX ?? 36)}</span> pt
+              <input type="range" id="etxt-pn-mx" min="0" max="200" step="1" value="${Math.round(d.marginX ?? 36)}">
+            </label>
+            <label class="etxt-wm-field etxt-wm-field--grow">Edge <span class="etxt-wm-val" id="etxt-pn-myval">${Math.round(d.marginY ?? 28)}</span> pt
+              <input type="range" id="etxt-pn-my" min="0" max="200" step="1" value="${Math.round(d.marginY ?? 28)}">
+            </label>
+          </div>
+          <label class="etxt-wm-check"><input type="checkbox" id="etxt-pn-facing"${d.facing ? ' checked' : ''}> Mirror on facing pages</label>
+
+          <div class="etxt-wm-row">
+            <label class="etxt-wm-field etxt-wm-field--grow">Start at
+              <input type="number" id="etxt-pn-start" min="1" max="9999" value="${Math.max(1, Math.round(d.startNumber || 1))}">
+            </label>
+            <label class="etxt-wm-field etxt-wm-field--grow">Skip first
+              <input type="number" id="etxt-pn-skip" min="0" max="500" value="${Math.max(0, Math.round(d.skipFirst || 0))}">
+            </label>
+          </div>
+
+          <label class="etxt-wm-field">Apply to
+            <select id="etxt-pn-scope">
+              <option value="all"${d.scope === 'all' ? ' selected' : ''}>All pages</option>
+              <option value="odd"${d.scope === 'odd' ? ' selected' : ''}>Odd pages</option>
+              <option value="even"${d.scope === 'even' ? ' selected' : ''}>Even pages</option>
+              <option value="range"${d.scope === 'range' ? ' selected' : ''}>Page range</option>
+            </select>
+          </label>
+          <label class="etxt-wm-field" id="etxt-pn-range-row"${d.scope === 'range' ? '' : ' hidden'}>Range
+            <input type="text" id="etxt-pn-range" placeholder="e.g. 1-3, 5" value="${_esc(d.range || '')}">
+          </label>
+
+          <details class="etxt-wm-adv" open>
+            <summary>Templates</summary>
+            <div class="etxt-wm-row">
+              <select id="etxt-pn-tpl" class="etxt-wm-field etxt-wm-field--grow" aria-label="Saved numbering templates"></select>
+            </div>
+            <div class="etxt-wm-row">
+              <button type="button" class="etxt-wm-mini" id="etxt-pn-tpl-apply">Apply</button>
+              <button type="button" class="etxt-wm-mini" id="etxt-pn-tpl-save">Save as…</button>
+              <button type="button" class="etxt-wm-mini etxt-wm-mini--danger" id="etxt-pn-tpl-del">Delete</button>
+            </div>
+            <input type="text" id="etxt-pn-tpl-name" class="etxt-wm-tplname" placeholder="Template name" maxlength="40" hidden>
+          </details>
+
+          <div class="etxt-wm-list" id="etxt-pn-list"></div>
+        </div>
+        <div class="etxt-wm-foot">
+          <button type="button" class="etxt-wm-btn etxt-wm-btn--ghost" id="etxt-pn-cancel">Cancel</button>
+          <button type="button" class="etxt-wm-btn etxt-wm-btn--primary" id="etxt-pn-apply">${pnEditingId ? 'Save changes' : 'Add page numbers'}</button>
+        </div>`;
+      body.appendChild(panel);
+
+      panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+      panel.querySelector('#etxt-pn-close').onclick = () => cancelPnStudio();
+      panel.querySelector('#etxt-pn-cancel').onclick = () => cancelPnStudio();
+      panel.querySelector('#etxt-pn-apply').onclick = () => applyPnStudio();
+
+      const formatSel = panel.querySelector('#etxt-pn-format');
+      const customRow = panel.querySelector('#etxt-pn-custom-row');
+      const customInp = panel.querySelector('#etxt-pn-custom');
+      formatSel.onchange = () => {
+        if (formatSel.value === '__custom') {
+          customRow.hidden = false;
+          pnDraft.format = customInp.value || 'Page {n}';
+          customInp.focus();
+        } else {
+          customRow.hidden = true;
+          pnDraft.format = formatSel.value;
+        }
+        renderPageNumbers();
+        syncPnPanel();
+      };
+      customInp.oninput = () => { pnDraft.format = customInp.value || 'Page {n}'; renderPageNumbers(); syncPnPanel(); };
+      panel.querySelector('#etxt-pn-numeral').onchange = (e) => { pnDraft.numeral = e.target.value; renderPageNumbers(); syncPnPanel(); };
+      const boldBtn = panel.querySelector('#etxt-pn-bold');
+      boldBtn.onclick = () => {
+        pnDraft.bold = !pnDraft.bold;
+        boldBtn.classList.toggle('is-on', !!pnDraft.bold);
+        boldBtn.setAttribute('aria-pressed', String(!!pnDraft.bold));
+        renderPageNumbers();
+      };
+      const italicBtn = panel.querySelector('#etxt-pn-italic');
+      italicBtn.onclick = () => {
+        pnDraft.italic = !pnDraft.italic;
+        italicBtn.classList.toggle('is-on', !!pnDraft.italic);
+        italicBtn.setAttribute('aria-pressed', String(!!pnDraft.italic));
+        renderPageNumbers();
+      };
+      panel.querySelector('#etxt-pn-size').oninput = (e) => {
+        pnDraft.size = Number(e.target.value) || 10;
+        panel.querySelector('#etxt-pn-sizeval').textContent = String(Math.round(pnDraft.size));
+        renderPageNumbers();
+      };
+      panel.querySelector('#etxt-pn-colors').addEventListener('click', (e) => {
+        const sw = e.target.closest('[data-pncolor]');
+        if (!sw) return;
+        pnDraft.color = sw.dataset.pncolor;
+        panel.querySelectorAll('.etxt-wm-swatch').forEach((x) => x.classList.toggle('is-on', x === sw));
+        const picker = panel.querySelector('#etxt-pn-colorpick');
+        if (picker) picker.value = /^#[0-9a-f]{6}$/i.test(pnDraft.color) ? pnDraft.color : '#4B4B4B';
+        renderPageNumbers();
+      });
+      panel.querySelector('#etxt-pn-colorpick').oninput = (e) => {
+        pnDraft.color = e.target.value;
+        panel.querySelectorAll('.etxt-wm-swatch').forEach((x) => x.classList.remove('is-on'));
+        renderPageNumbers();
+      };
+      panel.querySelector('#etxt-pn-grid').addEventListener('click', (e) => {
+        const cell = e.target.closest('[data-pnzone]');
+        if (!cell) return;
+        const [v, h] = cell.dataset.pnzone.split(',');
+        pnDraft.vAlign = v;
+        pnDraft.hAlign = h;
+        renderPageNumbers();
+        syncPnPanel();
+      });
+      panel.querySelector('#etxt-pn-mx').oninput = (e) => {
+        pnDraft.marginX = Number(e.target.value) || 0;
+        panel.querySelector('#etxt-pn-mxval').textContent = e.target.value;
+        renderPageNumbers();
+      };
+      panel.querySelector('#etxt-pn-my').oninput = (e) => {
+        pnDraft.marginY = Number(e.target.value) || 0;
+        panel.querySelector('#etxt-pn-myval').textContent = e.target.value;
+        renderPageNumbers();
+      };
+      panel.querySelector('#etxt-pn-facing').onchange = (e) => { pnDraft.facing = e.target.checked; renderPageNumbers(); syncPnPanel(); };
+      panel.querySelector('#etxt-pn-start').oninput = (e) => { pnDraft.startNumber = Math.max(1, Number(e.target.value) || 1); renderPageNumbers(); syncPnPanel(); };
+      panel.querySelector('#etxt-pn-skip').oninput = (e) => { pnDraft.skipFirst = Math.max(0, Number(e.target.value) || 0); renderPageNumbers(); syncPnPanel(); };
+      panel.querySelector('#etxt-pn-scope').onchange = (e) => {
+        pnDraft.scope = e.target.value;
+        panel.querySelector('#etxt-pn-range-row').hidden = pnDraft.scope !== 'range';
+        renderPageNumbers();
+        syncPnPanel();
+      };
+      panel.querySelector('#etxt-pn-range').oninput = (e) => { pnDraft.range = e.target.value; renderPageNumbers(); };
+
+      // Templates
+      panel.querySelector('#etxt-pn-tpl-apply').onclick = () => {
+        const list = pnTemplates();
+        const t = list[Number(panel.querySelector('#etxt-pn-tpl').value) || 0];
+        if (!t) return;
+        pnDraft = { ...newPnDraft(), ...t.scheme, id: pnDraft.id };
+        renderPnPanel();
+        renderPageNumbers();
+        syncPnPanel();
+      };
+      panel.querySelector('#etxt-pn-tpl-save').onclick = () => {
+        const nameInp = panel.querySelector('#etxt-pn-tpl-name');
+        if (nameInp.hidden) { nameInp.hidden = false; nameInp.focus(); return; }
+        const name = nameInp.value.trim() || pnLabel(pnDraft);
+        const list = pnTemplates();
+        list.push({ name, scheme: { ...pnDraft } });
+        pnSaveTemplates(list);
+        nameInp.value = '';
+        nameInp.hidden = true;
+        toast(`Template "${name}" saved.`, 'success');
+        syncPnPanel();
+      };
+      panel.querySelector('#etxt-pn-tpl-del').onclick = () => {
+        const sel = panel.querySelector('#etxt-pn-tpl');
+        const idx = Number(sel.value) || 0;
+        const list = pnTemplates();
+        if (!list[idx]) return;
+        const [removed] = list.splice(idx, 1);
+        pnSaveTemplates(list);
+        toast(`Template "${removed.name}" deleted.`, 'info');
+        syncPnPanel();
+      };
+
+      syncPnPanel();
+    }
+
+    function syncPnPanel() {
+      const panel = container.querySelector('#etxt-pn-panel');
+      if (!panel || !pnDraft) return;
+      const d = pnDraft;
+      const set = (sel, val) => { const el = panel.querySelector(sel); if (el && document.activeElement !== el) el.value = val; };
+      const label = (sel, val) => { const el = panel.querySelector(sel); if (el) el.textContent = String(val); };
+      const total = pageCount || 1;
+      const knownFormat = PN_FORMATS.some((f) => f.value === d.format);
+      set('#etxt-pn-format', knownFormat ? d.format : '__custom');
+      const customRow = panel.querySelector('#etxt-pn-custom-row');
+      if (customRow) customRow.hidden = knownFormat;
+      set('#etxt-pn-custom', knownFormat ? '' : (d.format || ''));
+      set('#etxt-pn-numeral', d.numeral || 'arabic');
+      const boldBtn = panel.querySelector('#etxt-pn-bold');
+      boldBtn.classList.toggle('is-on', !!d.bold);
+      boldBtn.setAttribute('aria-pressed', String(!!d.bold));
+      const italicBtn = panel.querySelector('#etxt-pn-italic');
+      italicBtn.classList.toggle('is-on', !!d.italic);
+      italicBtn.setAttribute('aria-pressed', String(!!d.italic));
+      set('#etxt-pn-size', Math.round(d.size || 10));
+      label('#etxt-pn-sizeval', Math.round(d.size || 10));
+      panel.querySelectorAll('.etxt-wm-swatch').forEach((x) => x.classList.toggle('is-on', x.dataset.pncolor === d.color));
+      set('#etxt-pn-colorpick', /^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#4B4B4B');
+      set('#etxt-pn-mx', Math.round(d.marginX ?? 36));
+      label('#etxt-pn-mxval', Math.round(d.marginX ?? 36));
+      set('#etxt-pn-my', Math.round(d.marginY ?? 28));
+      label('#etxt-pn-myval', Math.round(d.marginY ?? 28));
+      const facing = panel.querySelector('#etxt-pn-facing');
+      if (facing) facing.checked = !!d.facing;
+      set('#etxt-pn-start', Math.max(1, Math.round(d.startNumber || 1)));
+      set('#etxt-pn-skip', Math.max(0, Math.round(d.skipFirst || 0)));
+      set('#etxt-pn-scope', d.scope || 'all');
+      const rangeRow = panel.querySelector('#etxt-pn-range-row');
+      if (rangeRow) rangeRow.hidden = d.scope !== 'range';
+      set('#etxt-pn-range', d.range || '');
+
+      // Zone grid highlight
+      panel.querySelectorAll('.etxt-wm-cell').forEach((cell) => {
+        const [v, h] = cell.dataset.pnzone.split(',');
+        cell.classList.toggle('is-on', v === d.vAlign && h === d.hAlign);
+      });
+
+      // Live sample for the current page (falls back to first numbered page)
+      const sampleEl = panel.querySelector('#etxt-pn-sample');
+      if (sampleEl) {
+        const computed = pnCompute(d, total);
+        const pageIdx = computed.numbered.has(page - 1) ? page - 1 : (computed.numbered.keys().next().value ?? page - 1);
+        const txt = pnTextFor(d, pageIdx, total, computed);
+        sampleEl.textContent = txt || 'No pages numbered';
+      }
+
+      // Templates select
+      const tplSel = panel.querySelector('#etxt-pn-tpl');
+      const list = pnTemplates();
+      if (tplSel && document.activeElement !== tplSel) {
+        const prev = Number(tplSel.value) || 0;
+        tplSel.innerHTML = list.length
+          ? list.map((t, i) => `<option value="${i}">${_esc(t.name)}</option>`).join('')
+          : '<option value="">No saved templates</option>';
+        if (list.length) tplSel.value = String(Math.min(prev, list.length - 1));
+      }
+
+      // Applied schemes list
+      const listEl = panel.querySelector('#etxt-pn-list');
+      if (listEl) {
+        const rows = pageNums.map((p) => `
+          <div class="etxt-wm-listrow${p.id === pnEditingId ? ' is-editing' : ''}" data-pnid="${p.id}">
+            <div class="etxt-wm-listcopy">
+              <strong>${_esc(pnLabel(p))}</strong>
+              <span>${_esc(p.vAlign)} · ${_esc(pnScopeLabel(p, total))}${p.skipFirst ? ` · skip ${p.skipFirst}` : ''}</span>
+            </div>
+            <button type="button" class="etxt-wm-mini" data-pnact="edit">Edit</button>
+            <button type="button" class="etxt-wm-mini etxt-wm-mini--danger" data-pnact="del" aria-label="Delete numbering">✕</button>
+          </div>`).join('');
+        listEl.innerHTML = rows || '<p class="etxt-wm-hint">No page numbers yet — configure and press Add.</p>';
+        listEl.querySelectorAll('.etxt-wm-listrow').forEach((row) => {
+          row.querySelectorAll('[data-pnact]').forEach((btn) => {
+            btn.onclick = () => {
+              const scheme = pageNums.find((p) => p.id === row.dataset.pnid);
+              if (!scheme) return;
+              if (btn.dataset.pnact === 'edit') editPn(scheme);
+              else removePn(scheme.id);
+            };
+          });
+        });
+      }
     }
 
     /* ── Options bar for drawing tools ── */
@@ -16583,14 +19091,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
-    function closeDockFlyout() {
-      const flyout = container.querySelector('#etxt-dock-flyout');
-      if (flyout) {
-        flyout.hidden = true;
-        flyout.classList.add('is-hidden');
-      }
-    }
-
     function renderOptbar() {
       const bar = container.querySelector('#etxt-dock-flyout') || container.querySelector('#etxt-optbar');
       if (!bar) return;
@@ -16609,29 +19109,68 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           </div>
           <div class="etxt-flyout-hint">Click on any text in the PDF to select, edit, replace or format it directly.</div>`;
       } else if (toolMode === 'draw' || toolMode === 'highlight') {
-        const curC = toolMode === 'highlight' ? toolOpts.hlColor : toolOpts.color;
+        const curMode = toolOpts.drawMode || (toolMode === 'highlight' ? 'highlighter' : 'pen');
+        const isPen = curMode === 'pen';
+        const isHl = curMode === 'highlighter';
+        const isEraser = curMode === 'eraser';
+        const curC = isHl ? (toolOpts.hlColor || '#FDE047') : (toolOpts.color || '#111827');
+        const curStroke = isHl ? (toolOpts.hlStroke || 14) : (toolOpts.penStroke || toolOpts.stroke || 2.5);
+        const curEraserSize = toolOpts.eraserSize || 20;
+
         html = `
           <div class="etxt-flyout-head">
-            <span class="etxt-flyout-title">${toolMode === 'highlight' ? 'Highlighter' : 'Pen & Draw'}</span>
+            <span class="etxt-flyout-title">Draw &amp; Annotate</span>
           </div>
           <div class="etxt-flyout-section">
-            <div class="etxt-flyout-row">
-              <button type="button" class="etxt-photo-chip${toolMode==='draw'?' is-on':''}" id="etxt-sub-draw">${I.pen} <span>Pen</span></button>
-              <button type="button" class="etxt-photo-chip${toolMode==='highlight'?' is-on':''}" id="etxt-sub-hl">${I.highlight} <span>Highlighter</span></button>
+            <div class="etxt-draw-mode-seg" role="radiogroup" aria-label="Drawing tool">
+              <button type="button" class="etxt-draw-mode${isPen ? ' is-on' : ''}" data-draw-mode="pen" title="Freehand Pen" aria-label="Freehand Pen">${I.pen}<span>Pen</span></button>
+              <button type="button" class="etxt-draw-mode${isHl ? ' is-on' : ''}" data-draw-mode="highlighter" title="Highlighter" aria-label="Highlighter">${I.highlight}<span>Highlight</span></button>
+              <button type="button" class="etxt-draw-mode etxt-draw-mode--icon${isEraser ? ' is-on' : ''}" data-draw-mode="eraser" title="Stroke Eraser" aria-label="Stroke Eraser">${I.eraser}</button>
             </div>
-          </div>
+          </div>`;
+
+        if (!isEraser) {
+          const swatches = isHl ? HL_COLORS : COLOR_SWATCHES;
+          const strokeList = isHl ? [10, 14, 18, 24] : [1.5, 2.5, 4, 6];
+          const strokeLabels = isHl ? ['10px', '14px', '18px', '24px'] : ['1.5px', '2.5px', '4px', '6px'];
+
+          html += `
           <div class="etxt-flyout-section">
             <span class="etxt-flyout-label">Color</span>
             <div class="etxt-swatch-group">
-              ${(toolMode==='highlight' ? HL_COLORS : COLOR_SWATCHES).map(c => `<button type="button" class="etxt-swatch${curC === c ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+              ${swatches.map(c => `<button type="button" class="etxt-swatch${curC.toLowerCase() === c.toLowerCase() ? ' is-on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}
               <input type="color" class="etxt-color-picker" id="etxt-color-picker" value="${curC}" aria-label="Choose custom color">
             </div>
           </div>
           <div class="etxt-flyout-section">
-            <span class="etxt-flyout-label">Stroke Width</span>
+            <span class="etxt-flyout-label">Stroke Thickness</span>
             <div class="etxt-opt-track">
-              ${STROKES.map(w => `<button type="button" class="etxt-stroke${toolOpts.stroke === w ? ' is-on' : ''}" data-w="${w}">${w}px</button>`).join('')}
+              ${strokeList.map((w, idx) => `<button type="button" class="etxt-stroke${curStroke === w ? ' is-on' : ''}" data-w="${w}">${strokeLabels[idx]}</button>`).join('')}
             </div>
+          </div>`;
+        } else {
+          html += `
+          <div class="etxt-flyout-section">
+            <span class="etxt-flyout-label">Eraser Size</span>
+            <div class="etxt-eraser-size-row">
+              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 12 ? ' is-on' : ''}" data-er-size="12" title="Small eraser" aria-label="Small eraser"><span class="etxt-eraser-dot" style="width:8px;height:8px;"></span></button>
+              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 20 ? ' is-on' : ''}" data-er-size="20" title="Medium eraser" aria-label="Medium eraser"><span class="etxt-eraser-dot" style="width:14px;height:14px;"></span></button>
+              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 32 ? ' is-on' : ''}" data-er-size="32" title="Large eraser" aria-label="Large eraser"><span class="etxt-eraser-dot" style="width:20px;height:20px;"></span></button>
+            </div>
+          </div>
+          <div class="etxt-flyout-hint">Click or drag over any drawn stroke to erase it. Ctrl+Z restores.</div>
+          <div class="etxt-flyout-section" style="margin-top:6px;">
+            <button type="button" class="etxt-photo-chip etxt-danger-chip" id="etxt-clear-drawings" style="width:100%;justify-content:center;">Clear Page Drawings</button>
+          </div>`;
+        }
+        html += `
+          <div class="etxt-flyout-section">
+            <label class="etxt-fold-row" title="Bake ink and highlights into the page content when saving">
+              <span class="etxt-fold-lbl">Flatten on save</span>
+              <input type="checkbox" class="etxt-fold-input native-checkbox" id="etxt-fold-ink"${getFlattenInkPref() ? ' checked' : ''}>
+              <span class="etxt-fold-switch" aria-hidden="true"></span>
+            </label>
+            <div class="etxt-flyout-hint">Ink &amp; highlights become permanent page content.</div>
           </div>`;
       } else if (toolMode === 'shape') {
         html = `
@@ -16739,18 +19278,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             ${saved ? `<button type="button" class="etxt-photo-chip" id="etxt-place-saved-sig" style="margin-top:4px;width:100%;justify-content:center;">Place Saved Signature</button>` : ''}
           </div>
           <div class="etxt-flyout-hint">Click anywhere on the document to place your signature.</div>`;
-      } else if (toolMode === 'crop') {
-        html = `
-          <div class="etxt-flyout-head">
-            <span class="etxt-flyout-title">Crop Margins</span>
-          </div>
-          <div class="etxt-flyout-section">
-            <div class="etxt-flyout-row">
-              <button type="button" class="etxt-photo-chip is-on" id="etxt-crop-apply">${I.crop || ''} <span>Apply Crop</span></button>
-              <button type="button" class="etxt-photo-chip" id="etxt-crop-clear">${I.undo || ''} <span>Reset</span></button>
-            </div>
-          </div>
-          <div class="etxt-flyout-hint">Drag handles on the document stage to crop margin boundaries.</div>`;
       } else if (toolMode === 'watermark') {
         html = `
           <div class="etxt-flyout-head">
@@ -16771,10 +19298,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               <button type="button" class="etxt-photo-chip is-on" id="etxt-flyout-pgn-btn"># <span>Page Numbers Setup</span></button>
             </div>
           </div>`;
-      } else if (toolMode === 'form-fill') {
+      } else if (toolMode === 'form') {
         html = `
           <div class="etxt-flyout-head">
-            <span class="etxt-flyout-title">Form Fill & Fields</span>
+            <span class="etxt-flyout-title">Form Fill &amp; Fields</span>
           </div>
           <div class="etxt-flyout-section">
             <div class="etxt-flyout-row">
@@ -16794,10 +19321,43 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
 
       // Flyout event wiring
-      const subDraw = bar.querySelector('#etxt-sub-draw');
-      if (subDraw) subDraw.onclick = () => activateTool('draw');
-      const subHl = bar.querySelector('#etxt-sub-hl');
-      if (subHl) subHl.onclick = () => activateTool('highlight');
+      bar.querySelectorAll('[data-draw-mode]').forEach(b => {
+        b.onclick = () => {
+          toolOpts.drawMode = b.dataset.drawMode;
+          if (toolMode !== 'draw') toolMode = 'draw';
+          const wrap = container.querySelector('.etxt-canvas-wrap');
+          if (wrap) {
+            wrap.classList.toggle('etxt-cursor-eraser', toolOpts.drawMode === 'eraser');
+          }
+          renderOptbar();
+        };
+      });
+      bar.querySelectorAll('.etxt-eraser-size-btn').forEach(b => {
+        b.onclick = () => {
+          toolOpts.eraserSize = Number(b.dataset.erSize);
+          renderOptbar();
+        };
+      });
+      const clearDrawings = bar.querySelector('#etxt-clear-drawings');
+      if (clearDrawings) {
+        clearDrawings.onclick = () => {
+          const list = annots[page - 1] || [];
+          const hasInk = list.some(a => a.type === 'ink');
+          if (!hasInk) {
+            toast('No drawings on this page to clear.');
+            return;
+          }
+          pushUndo();
+          annots[page - 1] = list.filter(a => a.type !== 'ink');
+          if (selAnnot) selAnnot = null;
+          renderAnnots();
+          toast(`Cleared drawings from page ${page}.`);
+        };
+      }
+      const foldInkBar = bar.querySelector('#etxt-fold-ink');
+      if (foldInkBar) {
+        foldInkBar.onchange = () => setFlattenInkPref(!!foldInkBar.checked);
+      }
       const findBtn = bar.querySelector('#etxt-flyout-find-btn');
       if (findBtn) findBtn.onclick = () => { closeDockFlyout(); openFindReplaceDlg(); };
       const flySign = bar.querySelector('#etxt-flyout-sign-btn');
@@ -16807,7 +19367,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const flyPgn = bar.querySelector('#etxt-flyout-pgn-btn');
       if (flyPgn) flyPgn.onclick = () => { closeDockFlyout(); openPagenumDlg(); };
       const flyFf = bar.querySelector('#etxt-flyout-ff-btn');
-      if (flyFf) flyFf.onclick = () => { closeDockFlyout(); openFormDlg(); };
+      if (flyFf) flyFf.onclick = () => { closeDockFlyout(); activateTool('form'); };
 
       const pickImg = bar.querySelector('#etxt-pick-img-btn');
       if (pickImg) pickImg.onclick = () => {
@@ -16844,29 +19404,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           addAnnot(newAnnot);
           selAnnot = newAnnot.id;
           renderAnnots();
+          activateTool('select');
           closeDockFlyout();
-          toolMode = 'select';
-          renderEditor();
-          toast('Signature placed! Drag to reposition or resize.');
+          toast('Signature placed! Drag to reposition.');
+        } else {
+          openAcrobatSignatureModal();
         }
-      };
-
-      const fontSelect = bar.querySelector('#etxt-font-family');
-      if (fontSelect) fontSelect.onchange = () => {
-        toolOpts.textFont = fontSelect.value;
-        if (selAnnot) updateSelectedText({ font: fontSelect.value });
-      };
-      const fontBold = bar.querySelector('#etxt-font-bold');
-      if (fontBold) fontBold.onclick = () => {
-        toolOpts.isBold = !toolOpts.isBold;
-        if (selAnnot) updateSelectedText({ isBold: toolOpts.isBold });
-        renderOptbar();
-      };
-      const fontItalic = bar.querySelector('#etxt-font-italic');
-      if (fontItalic) fontItalic.onclick = () => {
-        toolOpts.isItalic = !toolOpts.isItalic;
-        if (selAnnot) updateSelectedText({ isItalic: toolOpts.isItalic });
-        renderOptbar();
       };
       bar.querySelectorAll('[data-align]').forEach(b => {
         b.onclick = () => {
@@ -16879,10 +19422,22 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const colPicker = bar.querySelector('#etxt-color-picker');
       if (colPicker) {
         colPicker.oninput = () => {
-          if (toolMode === 'draw') toolOpts.color = colPicker.value;
-          else if (toolMode === 'highlight') toolOpts.hlColor = colPicker.value;
-          else if (toolMode === 'shape') toolOpts.shapeColor = colPicker.value;
-          else if (toolMode === 'type') {
+          if (toolMode === 'draw') {
+            if (toolMode === 'highlight' || toolOpts.drawMode === 'highlighter') toolOpts.hlColor = colPicker.value;
+            else toolOpts.color = colPicker.value;
+            if (selAnnot) {
+              const a = findAnnotById(selAnnot);
+              if (a && a.type === 'ink') {
+                pushUndo();
+                a.color = colPicker.value;
+                renderAnnots();
+              }
+            }
+          } else if (toolMode === 'highlight') {
+            toolOpts.hlColor = colPicker.value;
+          } else if (toolMode === 'shape') {
+            toolOpts.shapeColor = colPicker.value;
+          } else if (toolMode === 'type') {
             toolOpts.textColor = colPicker.value;
             if (selAnnot) updateSelectedText({ color: colPicker.value });
           }
@@ -16912,10 +19467,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       });
       bar.querySelectorAll('.etxt-swatch').forEach(b => {
         b.onclick = () => {
-          if (toolMode === 'draw') toolOpts.color = b.dataset.c;
-          else if (toolMode === 'highlight') toolOpts.hlColor = b.dataset.c;
-          else if (toolMode === 'shape') toolOpts.shapeColor = b.dataset.c;
-          else if (toolMode === 'type') {
+          if (toolMode === 'draw') {
+            if (toolMode === 'highlight' || toolOpts.drawMode === 'highlighter') toolOpts.hlColor = b.dataset.c;
+            else toolOpts.color = b.dataset.c;
+            if (selAnnot) {
+              const a = findAnnotById(selAnnot);
+              if (a && a.type === 'ink') {
+                pushUndo();
+                a.color = b.dataset.c;
+                renderAnnots();
+              }
+            }
+          } else if (toolMode === 'highlight') {
+            toolOpts.hlColor = b.dataset.c;
+          } else if (toolMode === 'shape') {
+            toolOpts.shapeColor = b.dataset.c;
+            const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+            if (sa && sa.type === 'shape') { pushUndo(); sa.color = b.dataset.c; renderAnnots(); }
+          } else if (toolMode === 'type') {
             toolOpts.textColor = b.dataset.c;
             if (selAnnot) updateSelectedText({ color: b.dataset.c });
           }
@@ -16924,13 +19493,33 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       });
       bar.querySelectorAll('.etxt-stroke').forEach(b => {
         b.onclick = () => {
-          if (toolMode === 'draw') toolOpts.stroke = Number(b.dataset.w);
-          else if (toolMode === 'shape') toolOpts.shapeStroke = Number(b.dataset.w);
+          if (toolMode === 'draw') {
+            const w = Number(b.dataset.w);
+            if (toolMode === 'highlight' || toolOpts.drawMode === 'highlighter') toolOpts.hlStroke = w;
+            else { toolOpts.penStroke = w; toolOpts.stroke = w; }
+            if (selAnnot) {
+              const a = findAnnotById(selAnnot);
+              if (a && a.type === 'ink') {
+                pushUndo();
+                a.width = w;
+                renderAnnots();
+              }
+            }
+          } else if (toolMode === 'shape') {
+            toolOpts.shapeStroke = Number(b.dataset.w);
+            const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+            if (sa && sa.type === 'shape') { pushUndo(); sa.width = Number(b.dataset.w); renderAnnots(); }
+          }
           renderOptbar();
         };
       });
       bar.querySelectorAll('.etxt-shape-kind').forEach(b => {
-        b.onclick = () => { toolOpts.shapeKind = b.dataset.k; renderOptbar(); };
+        b.onclick = () => {
+          toolOpts.shapeKind = b.dataset.k;
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && sa.type === 'shape') { pushUndo(); sa.kind = b.dataset.k; renderAnnots(); }
+          renderOptbar();
+        };
       });
       bar.querySelectorAll('.etxt-size-btn').forEach(b => {
         b.onclick = () => {
@@ -16939,62 +19528,198 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           renderOptbar();
         };
       });
-      const applyBtn = bar.querySelector('#etxt-crop-apply');
-      if (applyBtn) applyBtn.onclick = () => { pushUndo(); toolMode = 'select'; closeDockFlyout(); renderEditor(); };
-      const clearBtn = bar.querySelector('#etxt-crop-clear');
-      if (clearBtn) clearBtn.onclick = () => { pushUndo(); cropBox = null; closeDockFlyout(); renderEditor(); };
     }
 
 
     /* ── Pointer interaction ── */
-    function toUser(clientX, clientY) {
-      const pageEl = container.querySelector(`.etxt-page[data-page="${page}"]`) || container.querySelector('.etxt-page');
-      if (!pageEl) return { x: 0, y: 0 };
+    function toUser(clientX, clientY, targetPageEl) {
+      const pageEl = targetPageEl || container.querySelector(`.etxt-page[data-page="${page}"]`) || container.querySelector('.etxt-page');
+      if (!pageEl) return { x: 0, y: 0, pageEl: null, pageNum: page, scale: pageScale };
       const r = pageEl.getBoundingClientRect();
-      const P = pageScale > 0 ? pageScale : 1;
+      const pNum = Number(pageEl.dataset.page) || page;
+      const baseW = (pages[pNum - 1] && pages[pNum - 1].baseW) || curPageW;
+      const baseH = (pages[pNum - 1] && pages[pNum - 1].baseH) || curPageH;
+      const P = (pageEl && baseW > 0) ? (pageEl.clientWidth / baseW) : (pageScale > 0 ? pageScale : 1);
+      // Client coords are in screen space (the canvas is transform-scaled by zoom),
+      // so map through the RENDERED rect scale, not the layout scale.
+      const sx = (r.width > 0 && baseW > 0) ? (r.width / baseW) : P;
+      const sy = (r.height > 0 && baseH > 0) ? (r.height / baseH) : P;
       return {
-        x: Math.max(0, (clientX - r.left) / P),
-        y: Math.max(0, (clientY - r.top) / P)
+        x: Math.max(0, (clientX - r.left) / sx),
+        y: Math.max(0, (clientY - r.top) / sy),
+        pageEl,
+        pageNum: pNum,
+        scale: P
       };
+    }
+
+    function eraseAt(px, py, targetPageNum) {
+      const pIdx = (typeof targetPageNum === 'number' ? targetPageNum : page) - 1;
+      const list = annots[pIdx] || [];
+      const eraserRadius = (toolOpts.eraserSize || 20) / 2;
+      let changed = false;
+      let removed = 0;
+      const next = [];
+      for (const a of list) {
+        if (a.type !== 'ink' || !Array.isArray(a.points) || a.points.length < 2) { next.push(a); continue; }
+        const r = eraserRadius + (a.width || 2) / 2;
+        const r2 = r * r;
+        const pts = a.points;
+        const erased = new Array(pts.length).fill(false);
+        for (let i = 0; i < pts.length; i++) {
+          const dx = pts[i][0] - px, dy = pts[i][1] - py;
+          if (dx * dx + dy * dy <= r2) erased[i] = true;
+        }
+        // Also catch segments that cross the eraser between two sampled points.
+        for (let i = 0; i < pts.length - 1; i++) {
+          if (erased[i] && erased[i + 1]) continue;
+          if (pointNearPolyline(px, py, [pts[i], pts[i + 1]], r)) { erased[i] = true; erased[i + 1] = true; }
+        }
+        if (!erased.some(Boolean)) { next.push(a); continue; }
+        changed = true;
+        // Keep the untouched runs as separate strokes (partial erase).
+        const runs = [];
+        let cur = [];
+        for (let i = 0; i < pts.length; i++) {
+          if (erased[i]) {
+            if (cur.length >= 2) runs.push(cur);
+            cur = [];
+          } else {
+            cur.push(pts[i]);
+          }
+        }
+        if (cur.length >= 2) runs.push(cur);
+        removed += Math.max(1, runs.length - 1);
+        if (selAnnot === a.id) selAnnot = null;
+        for (const run of runs) {
+          next.push({ ...a, id: 'a' + (annotSeq++), points: run.map(p => p.slice()), hitPoints: null });
+        }
+      }
+      if (changed) {
+        annots[pIdx] = next;
+        if (draft && draft.kind === 'eraser') draft.erasedCount = (draft.erasedCount || 0) + removed;
+        renderAnnots();
+      }
     }
 
     function startDrag(e) {
       if (toolMode === 'pan') return;
-      const u = toUser(e.clientX, e.clientY);
+      const pageEl = e.target.closest('.etxt-page') || container.querySelector(`.etxt-page[data-page="${page}"]`) || container.querySelector('.etxt-page');
+      const u = toUser(e.clientX, e.clientY, pageEl);
+      page = u.pageNum;
       if (toolMode === 'draw') {
-        draft = { kind: 'ink', points: [[u.x, u.y]], color: toolOpts.color, width: toolOpts.stroke };
+        const dMode = toolOpts.drawMode || 'pen';
+        if (dMode === 'eraser') {
+          draft = { kind: 'eraser', pageNum: u.pageNum, pageEl: u.pageEl, erasedCount: 0, snap: snapshotState() };
+          eraseAt(u.x, u.y, u.pageNum);
+          return;
+        }
+        const isHl = dMode === 'highlighter';
+        const meta = inkPointerMeta(e, isHl);
+        const firstPt = meta ? [u.x, u.y, meta.p, meta.t] : [u.x, u.y];
+        draft = {
+          kind: 'ink',
+          pageNum: u.pageNum,
+          pageEl: u.pageEl,
+          scale: u.scale,
+          points: [firstPt],
+          color: isHl ? (toolOpts.hlColor || '#FDE047') : (toolOpts.color || '#111827'),
+          width: isHl ? (toolOpts.hlStroke || 14) : (toolOpts.penStroke || toolOpts.stroke || 2.5),
+          isHighlighter: isHl,
+          pressure: !!meta
+        };
         draftEl(draft);
       } else if (toolMode === 'highlight' || toolMode === 'underline' || toolMode === 'strike' || toolMode === 'squiggle') {
-        draft = { kind: 'hl', start: u, cur: u, color: toolOpts.hlColor, hlKind: toolMode };
+        draft = { kind: 'hl', pageNum: u.pageNum, pageEl: u.pageEl, scale: u.scale, start: u, cur: u, color: toolOpts.hlColor, hlKind: toolMode === 'highlight' ? 'hl' : toolMode };
         draftEl(draft);
       } else if (toolMode === 'shape') {
-        draft = { kind: 'shape', start: u, cur: u, shapeKind: toolOpts.shapeKind, color: toolOpts.shapeColor, width: toolOpts.shapeStroke };
+        draft = { kind: 'shape', pageNum: u.pageNum, pageEl: u.pageEl, scale: u.scale, start: u, cur: u, shapeKind: toolOpts.shapeKind, color: toolOpts.shapeColor, width: toolOpts.shapeStroke, opacity: (toolOpts.shapeOpacity !== undefined ? toolOpts.shapeOpacity : 1) };
         draftEl(draft);
       } else if (toolMode === 'link') {
-        draft = { kind: 'link', start: u, cur: u };
+        draft = { kind: 'link', pageNum: u.pageNum, pageEl: u.pageEl, scale: u.scale, start: u, cur: u };
         draftEl(draft);
-      } else if (toolMode === 'crop') {
-        draft = { kind: 'crop', start: u, cur: u };
+      } else if (toolMode === 'redact') {
+        draft = { kind: 'redact', pageNum: u.pageNum, pageEl: u.pageEl, scale: u.scale, start: u, cur: u, color: toolOpts.redactColor || '#000000' };
         draftEl(draft);
       }
     }
 
     function moveDrag(e) {
       if (!draft) return;
-      const u = toUser(e.clientX, e.clientY);
+      const u = toUser(e.clientX, e.clientY, draft.pageEl);
+      if (draft.kind === 'eraser') {
+        eraseAt(u.x, u.y, draft.pageNum);
+        return;
+      }
       if (draft.kind === 'ink') {
-        draft.points.push([u.x, u.y]);
-        const svg = container.querySelector('.etxt-draft');
-        if (svg) {
-          const path = svg.querySelector('path');
-          if (path) path.setAttribute('d', smoothPath(draft.points.map(p => [p[0] * pageScale, p[1] * pageScale])));
+        const last = draft.points[draft.points.length - 1];
+        const dx = u.x - last[0], dy = u.y - last[1];
+        if (dx * dx + dy * dy >= 1.5) {
+          const meta = draft.pressure ? inkPointerMeta(e, draft.isHighlighter) : null;
+          draft.points.push(meta ? [u.x, u.y, meta.p, meta.t] : [u.x, u.y]);
+          const P = draft.scale || pageScale;
+          const svg = draft.pageEl?.querySelector('.etxt-draft') || container.querySelector('.etxt-draft');
+          if (svg) {
+            // Coalesce path rebuilds to one per frame (smooth on long strokes).
+            draft._pendingSvg = svg;
+            draft._pendingP = P;
+            if (!draft._raf) {
+              draft._raf = requestAnimationFrame(() => {
+                if (!draft) return;
+                draft._raf = 0;
+                const s = draft._pendingSvg;
+                const sc = draft._pendingP || pageScale;
+                if (!s) return;
+                fillInkSvg(s, draft.points, draft.width, sc, draft.color, draft.isHighlighter);
+              });
+            }
+          }
         }
       } else {
         draft.cur = u;
-        const el = container.querySelector('.etxt-draft');
+        const el = draft.pageEl?.querySelector('.etxt-draft') || container.querySelector('.etxt-draft');
         if (el) {
+          const P = draft.scale || pageScale;
           const rect = normRect(draft.start, draft.cur);
-          el.style.cssText = `left:${(rect.x * pageScale).toFixed(1)}px;top:${(rect.y * pageScale).toFixed(1)}px;width:${(rect.w * pageScale).toFixed(1)}px;height:${(rect.h * pageScale).toFixed(1)}px;`;
+          const isShape = draft.kind === 'shape';
+          const isShapeLine = isShape && (draft.shapeKind === 'line' || draft.shapeKind === 'arrow');
+          const swPx = (draft.width || 2) * P;
+          const col = draft.color || '#111827';
+          let extra = '';
+          if (isShape) extra = 'box-sizing:border-box;';
+          if (isShape && draft.shapeKind === 'ellipse') extra += 'border-radius:50%;';
+          if (isShape && !isShapeLine) extra += `border:${swPx.toFixed(2)}px solid ${col};`;
+          if (isShapeLine) extra += 'border:none;';
+          if (draft.kind === 'redact') extra += `background:${col};`;
+          el.style.cssText = `left:${(rect.x * P).toFixed(1)}px;top:${(rect.y * P).toFixed(1)}px;width:${(rect.w * P).toFixed(1)}px;height:${(rect.h * P).toFixed(1)}px;${extra}`;
+          if (isShape) el.style.opacity = String(draft.opacity != null ? draft.opacity : 1);
+          if (isShapeLine) {
+            let svg = el.querySelector('svg.etxt-draft-shape');
+            if (!svg) {
+              svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              svg.setAttribute('class', 'etxt-draft-shape');
+              svg.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;';
+              const p0 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              p0.setAttribute('fill', 'none');
+              p0.setAttribute('stroke-linecap', 'round');
+              p0.setAttribute('stroke-linejoin', 'round');
+              svg.append(p0);
+              el.append(svg);
+            }
+            const path = svg.querySelector('path');
+            if (path) {
+              path.setAttribute('stroke', col);
+              path.setAttribute('stroke-width', swPx.toFixed(2));
+              const sx = (draft.start.x - rect.x) * P, sy = (draft.start.y - rect.y) * P;
+              const ex = (draft.cur.x - rect.x) * P, ey = (draft.cur.y - rect.y) * P;
+              if (draft.shapeKind === 'arrow') {
+                const hp = arrowHeadPoints(sx, sy, ex, ey, Math.min(14, Math.hypot(ex - sx, ey - sy) * 0.25));
+                path.setAttribute('d', `M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)} M ${hp.bx1.toFixed(1)} ${hp.by1.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)} L ${hp.bx2.toFixed(1)} ${hp.by2.toFixed(1)}`);
+              } else {
+                path.setAttribute('d', `M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+              }
+            }
+          }
         }
       }
     }
@@ -17003,63 +19728,111 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (!draft) return;
       const d = draft;
       draft = null;
-      container.querySelector('.etxt-draft')?.remove();
+      container.querySelectorAll('.etxt-draft').forEach(el => el.remove());
+      if (d.kind === 'eraser') {
+        if (d.erasedCount > 0) {
+          commitUndoSnapshot(d.snap);
+          toast(`Erased ${d.erasedCount} stroke${d.erasedCount > 1 ? 's' : ''} — Ctrl+Z to undo.`);
+        }
+        return;
+      }
       if (d.kind === 'ink') {
-        if (d.points.length < 2) return;
+        if (!d.points || d.points.length === 0) return;
+        // A tap / micro-flick: commit a dot instead of silently dropping it.
+        if (d.points.length < 2) {
+          const p0 = d.points[0];
+          const p1 = p0.slice();
+          p1[0] += 0.01; p1[1] += 0.01;
+          d.points = [p0, p1];
+        }
         pushUndo();
-        addAnnot({ type: 'ink', points: d.points, color: d.color, width: d.width });
+        addAnnot({
+          type: 'ink',
+          pageIdx: (d.pageNum || page) - 1,
+          points: d.points,
+          color: d.color,
+          width: d.width,
+          isHighlighter: !!d.isHighlighter,
+          pressure: !!d.pressure
+        });
         renderAnnots();
       } else if (d.kind === 'hl') {
         const rect = normRect(d.start, d.cur);
         if (rect.w < 3 && rect.h < 3) return;
+        const kind = d.hlKind || 'hl';
+        const pageIdx = (d.pageNum || page) - 1;
+        // Smart highlight: clip the drag to the text lines underneath it.
+        // Alt-drag (or Ctrl/Meta) keeps a free rectangle.
+        const noSnap = !!(e && (e.altKey || e.ctrlKey || e.metaKey));
+        if (kind === 'hl' && !noSnap) {
+          snapHighlightToText(d.pageNum || page, rect).then(lines => {
+            pushUndo();
+            if (lines && lines.length) {
+              for (const ln of lines) addAnnot({ type: 'hl', pageIdx, ...ln, color: d.color, kind: 'hl' });
+              toast(`Snapped to ${lines.length} text line${lines.length > 1 ? 's' : ''} — Alt-drag for a free highlight.`);
+            } else {
+              addAnnot({ type: 'hl', pageIdx, ...rect, color: d.color, kind: 'hl' });
+            }
+            renderAnnots();
+          }).catch(() => {
+            pushUndo();
+            addAnnot({ type: 'hl', pageIdx, ...rect, color: d.color, kind: 'hl' });
+            renderAnnots();
+          });
+          return;
+        }
         pushUndo();
-        addAnnot({ type: 'hl', ...rect, color: d.color, kind: d.hlKind });
+        addAnnot({ type: 'hl', pageIdx, ...rect, color: d.color, kind });
         renderAnnots();
       } else if (d.kind === 'shape') {
         const rect = normRect(d.start, d.cur);
-        if (rect.w < 3 && rect.h < 3) return;
+        const kind = d.shapeKind || 'rect';
+        const isLine = (kind === 'line' || kind === 'arrow');
+        const len = Math.hypot(d.cur.x - d.start.x, d.cur.y - d.start.y);
+        if (isLine ? len < 4 : (rect.w < 3 || rect.h < 3)) return;
         pushUndo();
-        addAnnot({ type: 'shape', ...rect, kind: d.shapeKind || 'rect', color: d.color, width: d.width });
+        addAnnot({
+          type: 'shape', ...rect, kind,
+          x1: d.start.x, y1: d.start.y, x2: d.cur.x, y2: d.cur.y,
+          color: d.color, width: d.width,
+          opacity: (d.opacity != null ? d.opacity : 1),
+        });
         renderAnnots();
       } else if (d.kind === 'link') {
         const rect = normRect(d.start, d.cur);
         if (rect.w < 8 || rect.h < 4) return;
         openLinkDlg(rect);
-      } else if (d.kind === 'crop') {
+      } else if (d.kind === 'redact') {
         const rect = normRect(d.start, d.cur);
-        if (rect.w < 10 || rect.h < 10) return;
+        if (rect.w < 3 || rect.h < 3) return;
         pushUndo();
-        cropBox = rect;
+        addAnnot({ type: 'redact', ...rect, color: d.color || '#000000' });
         renderAnnots();
-        renderOptbar();
       }
     }
 
     function draftEl(d) {
-      const layer = container.querySelector('.etxt-annot-layer');
+      const targetPage = d.pageEl || container.querySelector(`.etxt-page[data-page="${d.pageNum || page}"]`) || container.querySelector('.etxt-page');
+      const layer = targetPage?.querySelector('.etxt-annot-layer') || container.querySelector('.etxt-annot-layer');
       if (!layer) return;
-      const P = pageScale;
+      const P = d.scale || pageScale;
       if (d.kind === 'ink') {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'etxt-draft');
-        svg.setAttribute('viewBox', `0 0 ${(curPageW * P).toFixed(0)} ${(curPageH * P).toFixed(0)}`);
-        svg.style.cssText = 'left:0;top:0;width:100%;height:100%';
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', '');
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', d.color);
-        path.setAttribute('stroke-width', String(d.width));
-        path.setAttribute('stroke-linecap', 'round');
-        path.setAttribute('stroke-linejoin', 'round');
-        svg.append(path);
+        svg.setAttribute('class', `etxt-draft etxt-draft-ink${d.isHighlighter ? ' etxt-draft-hl-ink' : ''}`);
+        svg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;${d.isHighlighter ? 'mix-blend-mode:multiply;opacity:0.4;' : ''}`;
+        fillInkSvg(svg, d.points, d.width, P, d.color, d.isHighlighter);
         layer.append(svg);
       } else {
         const el = document.createElement('div');
         el.className = 'etxt-draft' + (d.kind === 'hl' ? ' etxt-draft-hl' : '');
         el.style.cssText = `left:${(d.start.x * P).toFixed(1)}px;top:${(d.start.y * P).toFixed(1)}px;width:0;height:0;`;
         if (d.kind === 'hl') el.style.background = d.color;
-        if (d.kind === 'shape') el.style.border = `${d.width}px solid ${d.color}`;
-        if (d.kind === 'link' || d.kind === 'crop') el.style.border = '1.5px dashed #7C3AED';
+        if (d.kind === 'redact') el.style.background = d.color || '#000000';
+        if (d.kind === 'shape') {
+          el.style.border = `${d.width}px solid ${d.color}`;
+          el.style.opacity = String(d.opacity != null ? d.opacity : 1);
+        }
+        if (d.kind === 'link') el.style.border = '1.5px dashed #7C3AED';
         layer.append(el);
       }
     }
@@ -17070,19 +19843,65 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         pointerCleanup = null;
       }
       const wrap = container.querySelector('.etxt-canvas-wrap');
-      const page = container.querySelector('.etxt-page');
-      if (!wrap || !page) return;
+      const firstPageEl = container.querySelector('.etxt-page');
+      if (!wrap || !firstPageEl) return;
       let panStart = null;
       let selDrag = null;
       let resizeDrag = null;
+      let rotateDrag = null;
       let moved = false;
       let spaceDown = false;
 
+      // Live eraser size cursor — makes the erase radius tangible.
+      const eraserCursorEl = document.createElement('div');
+      eraserCursorEl.className = 'etxt-eraser-cursor';
+      eraserCursorEl.hidden = true;
+      document.body.appendChild(eraserCursorEl);
+
+      function eraserActive() {
+        return toolMode === 'draw' && toolOpts.drawMode === 'eraser';
+      }
+      function hideEraserCursor() {
+        eraserCursorEl.hidden = true;
+        wrap.classList.remove('etxt-eraser-live');
+        wrap.querySelectorAll('.etxt-a-ink.etxt-erase-target').forEach(el => el.classList.remove('etxt-erase-target'));
+      }
+      function syncEraserCursor(e) {
+        if (!eraserActive() || !e) { hideEraserCursor(); return; }
+        const r = wrap.getBoundingClientRect();
+        const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        if (!inside || (e.pointerType === 'touch' && !e.buttons)) { hideEraserCursor(); return; }
+        const u = toUser(e.clientX, e.clientY);
+        const d = Math.max(8, (toolOpts.eraserSize || 20) * (u.scale || pageScale || 1));
+        eraserCursorEl.style.width = `${d}px`;
+        eraserCursorEl.style.height = `${d}px`;
+        eraserCursorEl.style.left = `${e.clientX}px`;
+        eraserCursorEl.style.top = `${e.clientY}px`;
+        eraserCursorEl.hidden = false;
+        wrap.classList.add('etxt-eraser-live');
+        // Foreshadow which strokes the ring would erase.
+        const pIdx = (u.pageNum || page) - 1;
+        const radius = (toolOpts.eraserSize || 20) / 2;
+        const hits = new Set();
+        for (const a of (annots[pIdx] || [])) {
+          if (a.type === 'ink' && a.points && pointNearPolyline(u.x, u.y, a.points, radius + (a.width || 2) / 2)) hits.add(a.id);
+        }
+        const layerEl = u.pageEl ? u.pageEl.querySelector('.etxt-annot-layer') : null;
+        if (layerEl) {
+          layerEl.querySelectorAll('.etxt-a-ink').forEach(svg => {
+            svg.classList.toggle('etxt-erase-target', hits.has(svg.dataset.id));
+          });
+        }
+      }
+
       const down = (e) => {
+        syncEraserCursor(e);
         if (activeDialog || document.querySelector('.etxt-dialog:not([hidden])')) return;
 
-        // Dismiss any open tool popover on canvas interaction
-        if (!e.target.closest('#etxt-popover-flyout') && !e.target.closest('.etxt-unified-toolbar') && !e.target.closest('.etxt-mode-tab') && !e.target.closest('#etxt-tb-crop')) {
+        // Dismiss any open tool popover on canvas interaction. Crop keeps its
+        // popover open so the Apply/Reset actions stay reachable after drawing
+        // the crop rectangle.
+        if (toolMode !== 'crop' && !e.target.closest('#etxt-popover-flyout') && !e.target.closest('.etxt-unified-toolbar') && !e.target.closest('.etxt-mode-tab') && !e.target.closest('#etxt-tb-crop')) {
           closeAllPopovers();
         }
 
@@ -17117,21 +19936,68 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           return;
         }
 
-        // 2. Corner resize handle interaction
-        const handleEl = e.target.closest('.etxt-annot-handle');
+        // 2. Corner resize / rotate handle interaction (legacy SE handle or 8-way transform overlay)
+        const handleEl = e.target.closest('.etxt-xform-h, .etxt-xform-rot, .etxt-annot-handle');
         if (handleEl) {
           e.preventDefault();
           e.stopPropagation();
-          const list = annots[page - 1] || [];
-          const a = list.find(x => x.id === selAnnot);
+          const a = findAnnotById(selAnnot);
           if (a) {
             const startU = toUser(e.clientX, e.clientY);
-            resizeDrag = { id: a.id, startX: startU.x, startY: startU.y, initW: a.w, initH: a.h, ratio: a.w / Math.max(1, a.h), moved: false };
+            const dir = handleEl.dataset.h || null;
+            if (dir === 'rot' && annotRotatable(a)) {
+              const bb = annotBBox(a);
+              if (bb) {
+                const cx = bb.x + bb.w / 2, cy = bb.y + bb.h / 2;
+                const geom = {
+                  points: a.points ? a.points.map(p => p.slice()) : null,
+                  x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2
+                };
+                rotateDrag = { id: a.id, cx, cy, startAngle: Math.atan2(startU.y - cy, startU.x - cx), geom, snap: snapshotState(), moved: false };
+              }
+            } else if (dir && annotBBox(a)) {
+              const bb = annotBBox(a);
+              const geom = {
+                points: a.points ? a.points.map(p => p.slice()) : null,
+                x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2,
+                x: a.x, y: a.y, w: a.w, h: a.h
+              };
+              resizeDrag = { id: a.id, dir, startX: startU.x, startY: startU.y, orig: bb, geom, snap: snapshotState(), moved: false };
+            } else {
+              resizeDrag = { id: a.id, startX: startU.x, startY: startU.y, initW: a.w, initH: a.h, ratio: a.w / Math.max(1, a.h), snap: snapshotState(), moved: false };
+            }
           }
           return;
         }
 
-        if (e.target.closest('.etxt-zone, .etxt-hit, .etxt-text-box, .etxt-committed, .etxt-type-box, .etxt-a-note, .etxt-edit-btn, .etxt-commit-x, select, button, input, .etxt-stamp-palette, .etxt-optbar, .etxt-inline-microbar')) {
+        // 3. Selection quick actions (duplicate / delete)
+        const xact = e.target.closest('[data-xact]');
+        if (xact) {
+          e.preventDefault();
+          e.stopPropagation();
+          const a = findAnnotById(selAnnot);
+          if (!a) return;
+          if (xact.dataset.xact === 'del') {
+            pushUndo();
+            removeAnnot(a.id);
+            renderAnnots();
+            toast('Deleted.');
+          } else if (xact.dataset.xact === 'dup') {
+            pushUndo();
+            const dup = JSON.parse(JSON.stringify(a));
+            const dx = 14, dy = 14;
+            if (Array.isArray(dup.points)) dup.points = dup.points.map(p => { const q = p.slice(); q[0] += dx; q[1] += dy; return q; });
+            if (typeof dup.x1 === 'number') { dup.x1 += dx; dup.y1 += dy; dup.x2 += dx; dup.y2 += dy; }
+            if (typeof dup.x === 'number') { dup.x += dx; dup.y += dy; }
+            addAnnot(dup);
+            selAnnot = dup.id;
+            renderAnnots();
+            toast('Duplicated.');
+          }
+          return;
+        }
+
+        if (e.target.closest('.etxt-form-select-target, .etxt-note-body, .etxt-zone, .etxt-hit, .etxt-text-box, .etxt-committed, .etxt-type-box, .etxt-edit-btn, .etxt-commit-x, select, button, input, .etxt-stamp-palette, .etxt-optbar, .etxt-inline-microbar')) {
           return;
         }
         if (spaceDown || toolMode === 'pan' || e.button === 1) {
@@ -17145,13 +20011,21 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           if (aEl) {
             e.preventDefault();
             const id = aEl.dataset.id;
+            const targetPageEl = aEl.closest('.etxt-page') || e.target.closest('.etxt-page');
+            if (targetPageEl) {
+              const pNum = Number(targetPageEl.dataset.page);
+              if (pNum) page = pNum;
+            }
             if (selAnnot !== id) { selAnnot = id; renderAnnots(); }
-            const startU = toUser(e.clientX, e.clientY);
-            selDrag = { id, startX: startU.x, startY: startU.y, moved: false };
+            formSelectedName = null;
+            const startU = toUser(e.clientX, e.clientY, targetPageEl);
+            selDrag = { id, startX: startU.x, startY: startU.y, pageEl: targetPageEl, snap: snapshotState(), moved: false };
             return;
           }
           selAnnot = null;
+          formSelectedName = null;
           renderAnnots();
+          renderFormOverlay();
           return;
         }
         if (toolMode === 'type') {
@@ -17209,7 +20083,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           }
           return;
         }
-        if (['draw', 'highlight', 'underline', 'strike', 'squiggle', 'shape', 'link', 'crop', 'redact'].includes(toolMode)) {
+        if (['draw', 'highlight', 'underline', 'strike', 'squiggle', 'shape', 'link', 'redact'].includes(toolMode)) {
           e.preventDefault();
           startDrag(e);
           moved = false;
@@ -17217,29 +20091,66 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       };
 
       const move = (e) => {
+        syncEraserCursor(e);
+        if (rotateDrag) {
+          const u = toUser(e.clientX, e.clientY);
+          const a = findAnnotById(rotateDrag.id);
+          if (!a) { rotateDrag = null; return; }
+          let ang = Math.atan2(u.y - rotateDrag.cy, u.x - rotateDrag.cx) - rotateDrag.startAngle;
+          if (e.shiftKey) ang = Math.round(ang / (Math.PI / 12)) * (Math.PI / 12);
+          if (Math.abs(ang) > 0.004) rotateDrag.moved = true;
+          if (!rotateDrag.moved) return;
+          applyRotate(a, rotateDrag.geom, rotateDrag.cx, rotateDrag.cy, ang);
+          renderAnnots();
+          return;
+        }
         if (resizeDrag) {
           const u = toUser(e.clientX, e.clientY);
+          const a = findAnnotById(resizeDrag.id);
+          if (!a) { resizeDrag = null; return; }
+          if (resizeDrag.dir) {
+            const dx = u.x - resizeDrag.startX, dy = u.y - resizeDrag.startY;
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) resizeDrag.moved = true;
+            if (!resizeDrag.moved) return;
+            const o = resizeDrag.orig, dir = resizeDrag.dir, MIN = 6;
+            let x = o.x, y = o.y, w = o.w, h = o.h;
+            if (dir.includes('e')) w = Math.max(MIN, o.w + dx);
+            if (dir.includes('s')) h = Math.max(MIN, o.h + dy);
+            if (dir.includes('w')) { w = Math.max(MIN, o.w - dx); x = o.x + o.w - w; }
+            if (dir.includes('n')) { h = Math.max(MIN, o.h - dy); y = o.y + o.h - h; }
+            // Re-apply from the drag-start geometry so repeated events never compound.
+            const g = resizeDrag.geom;
+            if (g) {
+              if (g.points) a.points = g.points.map(p => p.slice());
+              if (typeof g.x1 === 'number') { a.x1 = g.x1; a.y1 = g.y1; a.x2 = g.x2; a.y2 = g.y2; }
+              a.x = g.x; a.y = g.y; a.w = g.w; a.h = g.h;
+            }
+            applyAnnotBox(a, o, { x, y, w, h });
+            renderAnnots();
+            return;
+          }
           const dw = u.x - resizeDrag.startX;
           if (Math.abs(dw) > 1) resizeDrag.moved = true;
-          const list = annots[page - 1] || [];
-          const a = list.find(x => x.id === resizeDrag.id);
-          if (a) {
-            a.w = Math.max(30, resizeDrag.initW + dw);
-            a.h = Math.max(15, a.w / resizeDrag.ratio);
-            renderAnnots();
-          }
+          a.w = Math.max(30, resizeDrag.initW + dw);
+          a.h = Math.max(15, a.w / resizeDrag.ratio);
+          renderAnnots();
           return;
         }
         if (selDrag) {
-          const u = toUser(e.clientX, e.clientY);
+          const u = toUser(e.clientX, e.clientY, selDrag.pageEl);
           const dx = u.x - selDrag.startX, dy = u.y - selDrag.startY;
           if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) selDrag.moved = true;
           if (selDrag.moved) {
-            const list = annots[page - 1] || [];
-            const a = list.find(x => x.id === selDrag.id);
+            const a = findAnnotById(selDrag.id);
             if (a && a.type !== 'wm' && a.type !== 'pagenum') {
-              a.x += dx; a.y += dy;
-              selDrag.startX = u.x; selDrag.startY = u.y;
+              if (a.type === 'ink' && Array.isArray(a.points)) {
+                a.points = a.points.map(pt => { const q = pt.slice(); q[0] += dx; q[1] += dy; return q; });
+              } else if (typeof a.x === 'number') {
+                a.x += dx;
+                a.y += dy;
+              }
+              selDrag.startX = u.x;
+              selDrag.startY = u.y;
               renderAnnots();
             }
           }
@@ -17254,13 +20165,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       };
 
       const up = (e) => {
+        if (rotateDrag) {
+          if (rotateDrag.moved) commitUndoSnapshot(rotateDrag.snap);
+          rotateDrag = null;
+          return;
+        }
         if (resizeDrag) {
-          if (resizeDrag.moved) pushUndo();
+          if (resizeDrag.moved) commitUndoSnapshot(resizeDrag.snap);
           resizeDrag = null;
           return;
         }
         if (selDrag) {
-          if (selDrag.moved) pushUndo();
+          if (selDrag.moved) commitUndoSnapshot(selDrag.snap);
           selDrag = null;
           return;
         }
@@ -17270,12 +20186,65 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           return;
         }
         if (draft) endDrag(e);
+        if (e && e.pointerType === 'touch') hideEraserCursor();
       };
 
       const key = (e) => {
-        if (activeDialog || document.querySelector('.etxt-dialog:not([hidden])')) return;
+        const openDlg = activeDialog || document.querySelector('.etxt-dialog:not([hidden])');
+        if (openDlg) {
+          // Esc dismisses any open editor dialog, matching native modal behavior.
+          if (e.key === 'Escape') {
+            const cancel = openDlg.querySelector('#acrobat-sig-cancel, #etxt-pn-cancel, #etxt-ff-cancel, #etxt-fm-cancel, #etxt-fr-cancel, #etxt-link-cancel, .etxt-dlg-cancel');
+            if (cancel) { e.preventDefault(); cancel.click(); }
+          }
+          return;
+        }
+
+        if (formPlaceKind && e.key === 'Escape') {
+          e.preventDefault();
+          formPlaceKind = null;
+          container.classList.remove('etxt-form-placing');
+          renderFormOverlay();
+          return;
+        }
+
+        // Crop studio: Enter applies, Esc cancels (matching the Organize tool).
+        if (toolMode === 'crop') {
+          if (e.key === 'Enter') { e.preventDefault(); commitCrop(); return; }
+          if (e.key === 'Escape') { e.preventDefault(); cancelCrop(); return; }
+        }
+
+        // Watermark studio: Enter adds/saves, Esc cancels (never while typing).
+        if (toolMode === 'watermark' && wmDraft) {
+          const typing = !!(e.target.closest && e.target.closest('input,textarea,select'));
+          if (e.key === 'Escape') { e.preventDefault(); cancelWmStudio(); return; }
+          if (e.key === 'Enter' && !typing) { e.preventDefault(); applyWmStudio(); return; }
+        }
+
+        // Page-number studio: same contract.
+        if (toolMode === 'pagenum' && pnDraft) {
+          const typing = !!(e.target.closest && e.target.closest('input,textarea,select'));
+          if (e.key === 'Escape') { e.preventDefault(); cancelPnStudio(); return; }
+          if (e.key === 'Enter' && !typing) { e.preventDefault(); applyPnStudio(); return; }
+        }
+
         const isEditing = !!(e.target.closest && e.target.closest('input,textarea,[contenteditable]'));
         if (isEditing) return;
+
+        if (toolMode === 'select' && formSelectedName) {
+          if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            removeExistingField(formSelectedName);
+            formSelectedName = null;
+            return;
+          }
+          if (e.key === 'Escape') {
+            formSelectedName = null;
+            renderFormOverlay();
+            updateFormsPanel();
+            return;
+          }
+        }
 
         if (e.code === 'Space') {
           if (!spaceDown) {
@@ -17286,20 +20255,72 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
         if (!e.ctrlKey && !e.metaKey && !e.altKey) {
           const k = e.key.toLowerCase();
-          if (k === 'e') activateTool('edit-text');
-          else if (k === 't') activateTool('type');
-          else if (k === 'p') activateTool('draw');
-          else if (k === 'h') activateTool('highlight');
-          else if (k === 's') activateTool('shape');
-          else if (k === 'r') activateTool('redact');
-          else if (k === 'i') activateTool('image');
-          else if (k === 'v') activateTool('select');
+          // While cropping or watermarking, letter keys must not hijack the
+          // draft into another tool — Enter/Escape/Ctrl+Z stay active.
+          if (toolMode !== 'crop' && toolMode !== 'watermark' && toolMode !== 'pagenum') {
+            if (k === 'e') activateTool('edit-text');
+            else if (k === 't') activateTool('type');
+            else if (k === 'p') activateTool('draw');
+            else if (k === 'h') activateTool('highlight');
+            else if (k === 's') activateTool('shape');
+            else if (k === 'r') activateTool('redact');
+            else if (k === 'i') activateTool('image');
+            else if (k === 'v') activateTool('select');
+          }
+          // Quick stroke size nudge while drawing
+          if ((e.key === '[' || e.key === ']') && (toolMode === 'draw' || toolMode === 'highlight')) {
+            e.preventDefault();
+            const step = e.key === '[' ? -1 : 1;
+            if (toolOpts.drawMode === 'highlighter' || toolMode === 'highlight') {
+              toolOpts.hlStroke = Math.max(6, Math.min(40, (toolOpts.hlStroke || 14) + step * 2));
+            } else if (toolOpts.drawMode === 'eraser') {
+              const sizes = [12, 20, 32];
+              const idx = Math.max(0, sizes.indexOf(toolOpts.eraserSize || 20));
+              toolOpts.eraserSize = sizes[Math.max(0, Math.min(sizes.length - 1, idx + step))];
+            } else {
+              toolOpts.penStroke = toolOpts.stroke = Math.max(1, Math.min(24, (toolOpts.penStroke || toolOpts.stroke || 2.5) + step));
+            }
+            if (activePopover && currentPopoverAnchor) openToolPopover(activePopover, currentPopoverAnchor);
+          }
+          // Arrow-nudge the selected annotation object.
+          if (selAnnot && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            const a = findAnnotById(selAnnot);
+            if (a) {
+              e.preventDefault();
+              const nudge = e.shiftKey ? 10 : 1;
+              const dx = e.key === 'ArrowLeft' ? -nudge : e.key === 'ArrowRight' ? nudge : 0;
+              const dy = e.key === 'ArrowUp' ? -nudge : e.key === 'ArrowDown' ? nudge : 0;
+              pushUndo();
+              if (Array.isArray(a.points)) a.points = a.points.map((p) => [p[0] + dx, p[1] + dy]);
+              if (typeof a.x1 === 'number') { a.x1 += dx; a.y1 += dy; a.x2 += dx; a.y2 += dy; }
+              if (typeof a.x === 'number') a.x += dx;
+              if (typeof a.y === 'number') a.y += dy;
+              renderAnnots();
+            }
+          }
         }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
           e.preventDefault();
           openFindReplaceDlg();
         }
         if (e.ctrlKey || e.metaKey) {
+          if (e.key.toLowerCase() === 'd' && selAnnot) {
+            e.preventDefault();
+            const a = findAnnotById(selAnnot);
+            if (a) {
+              pushUndo();
+              const dup = JSON.parse(JSON.stringify(a));
+              dup.id = Math.random().toString(36).slice(2, 9);
+              if (Array.isArray(dup.points)) dup.points = dup.points.map((p) => [p[0] + 14, p[1] + 14]);
+              if (typeof dup.x1 === 'number') { dup.x1 += 14; dup.y1 += 14; dup.x2 += 14; dup.y2 += 14; }
+              if (typeof dup.x === 'number') dup.x += 14;
+              if (typeof dup.y === 'number') dup.y += 14;
+              addAnnot(dup);
+              selAnnot = dup.id;
+              renderAnnots();
+            }
+            return;
+          }
           if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
             e.preventDefault();
             commitEditor();
@@ -17322,6 +20343,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             renderAnnots();
           }
         } else if (e.key === 'Escape') {
+          if (activePopover) { closeAllPopovers(); return; }
           if (selAnnot) { selAnnot = null; renderAnnots(); }
         }
       };
@@ -17333,16 +20355,20 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       };
       wrap.addEventListener('pointerdown', down);
+      wrap.addEventListener('pointerleave', hideEraserCursor);
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
       window.addEventListener('keydown', key);
       window.addEventListener('keyup', keyUp);
       pointerCleanup = () => {
         wrap.removeEventListener('pointerdown', down);
+        wrap.removeEventListener('pointerleave', hideEraserCursor);
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         window.removeEventListener('keydown', key);
         window.removeEventListener('keyup', keyUp);
+        try { eraserCursorEl.remove(); } catch { /* noop */ }
+        wrap.classList.remove('etxt-eraser-live');
       };
     }
 
@@ -18039,52 +21065,20 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       });
     }
 
-    /* ── Watermark dialog ── */
-    function openWatermarkDlg() {
-      const { dlg, backdrop } = getModalElements();
-      dlg.innerHTML = `
-        <h3 class="etxt-dlg-title">Add a watermark</h3>
-        <p class="etxt-dlg-sub">Applied faintly to every page of the document.</p>
-        <label class="etxt-dlg-field">Text<input type="text" id="etxt-wm-text" value="CONFIDENTIAL"></label>
-        <div class="etxt-dlg-row">
-          <label class="etxt-dlg-field">Size<input type="number" id="etxt-wm-size" value="42" min="12" max="140"></label>
-          <label class="etxt-dlg-field">Opacity<input type="number" id="etxt-wm-op" value="12" min="3" max="60"></label>
-          <label class="etxt-dlg-field">Rotation°<input type="number" id="etxt-wm-rot" value="-30" min="-90" max="90"></label>
-        </div>
-        <div class="etxt-dlg-actions">
-          <button type="button" class="etxt-btn-ghost" id="etxt-wm-cancel">Cancel</button>
-          <button type="button" class="etxt-btn-finish" id="etxt-wm-ok">Add watermark</button>
-        </div>`;
-      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
-      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
-      dlg.querySelector('#etxt-wm-cancel').onclick = close;
-      dlg.querySelector('#etxt-wm-ok').onclick = () => {
-        const text = dlg.querySelector('#etxt-wm-text').value.trim();
-        if (!text) return;
-        pushUndo();
-        addAnnot({
-          type: 'wm', text,
-          size: Number(dlg.querySelector('#etxt-wm-size').value) || 42,
-          opacity: (Number(dlg.querySelector('#etxt-wm-op').value) || 12) / 100,
-          rotation: Number(dlg.querySelector('#etxt-wm-rot').value) || -30,
-          color: '#94A3B8',
-        });
-        close();
-        toolMode = 'select';
-        renderEditor();
-      };
-    }
-
-    /* ── Word find & replace (docx/odt/rtf) ── */
+    /* ── Word find & replace (docx/odt/rtf) + PDF content-stream replace ── */
     const TENC_E = new TextEncoder();
     const TDEC_E = new TextDecoder();
     async function docReplaceBlob(find, repl) {
       const ext = extOf(file);
+      if (ext === 'pdf') return pdfReplaceAll(find, repl);
       const F = await loadFfE();
       if (ext === 'rtf') {
         const text = await file.text();
         const count = text.split(find).length - 1;
         return { blob: new Blob([text.split(find).join(repl)], { type: 'application/rtf' }), count };
+      }
+      if (ext !== 'docx' && ext !== 'odt') {
+        throw new Error('Find & replace works on PDF, DOCX, ODT and RTF documents.');
       }
       const bytes = new Uint8Array(await file.arrayBuffer());
       const zip = F.unzipSync(bytes);
@@ -18103,6 +21097,50 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const out = F.zipSync(zip);
       const mime = ext === 'odt' ? 'application/vnd.oasis.opendocument.text' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       return { blob: new Blob([out], { type: mime }), count };
+    }
+
+    // PDF find & replace: cluster each page's text exactly like the on-canvas
+    // editor does, then run the same content-stream/overlay pipeline used by
+    // manual text edits so formatting and fonts are preserved.
+    async function pdfReplaceAll(find, repl) {
+      if (!pdfDoc) throw new Error('Open a document first.');
+      const editList = [];
+      let count = 0;
+      for (let p = 1; p <= pageCount; p++) {
+        const pageProxy = await pdfDoc.getPage(p);
+        const baseVp = pageProxy.getViewport({ scale: 1 });
+        const pageEl = container.querySelector(`.etxt-page[data-page="${p}"]`);
+        const actualScale = (pageEl && pageEl.clientWidth > 0) ? (pageEl.clientWidth / (baseVp.width || 1)) : (pageScale > 0 ? pageScale : 1);
+        const scaledVp = pageProxy.getViewport({ scale: actualScale });
+        const txt = await pageProxy.getTextContent();
+        const items = (txt.items || []).filter(it => it && typeof it.str === 'string' && it.str.trim().length);
+        const hits = clusterTextItems(items, scaledVp, actualScale, txt.styles || {});
+        for (const h of hits) {
+          const target = h.item?.str || '';
+          if (!target || !target.includes(find)) continue;
+          const n = target.split(find).length - 1;
+          if (!n) continue;
+          count += n;
+          editList.push({
+            pageIdx: p - 1,
+            item: h.item,
+            target,
+            replacement: target.split(find).join(repl),
+            geom: h.geom,
+            textColor: h.geom?.textColor || '#0F172A',
+            bgColor: h.geom?.bgColor || '#FFFFFF',
+            rotation: h.geom?.rotation || 0,
+            textAlign: h.geom?.textAlign || 'left',
+            underline: h.geom?.underline || false,
+            lineHeight: h.geom?.lineHeight || '1',
+            charSpacing: h.geom?.charSpacing || 0,
+            isNew: false
+          });
+        }
+      }
+      if (!count) return { blob: new Blob([await file.arrayBuffer()], { type: 'application/pdf' }), count: 0 };
+      const res = await applyEditJob(file, editList, {}, null, [], []);
+      return { blob: new Blob([res.bytes], { type: 'application/pdf' }), count };
     }
     async function openFindReplaceDlg() {
       const { dlg, backdrop } = getModalElements();
@@ -18168,79 +21206,1375 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       };
     }
 
-    /* ── PDF form filler dialog ── */
-    async function openFormDlg() {
+    /* ── Forms engine: model, on-canvas controls, panel, builder, data ── */
+    const FORM_KIND = (f) => {
+      if (!f) return 'unknown';
+      if (typeof f.getText === 'function') return 'text';
+      if (typeof f.check === 'function' && typeof f.isChecked === 'function') return 'checkbox';
+      if (typeof f.getOptions === 'function') {
+        if (typeof f.addOptions === 'function') {
+          return typeof f.isEditable === 'function' ? 'dropdown' : 'listbox';
+        }
+        return 'radio';
+      }
+      return 'unknown';
+    };
+    const formEditable = (f) => !!f && f.kind !== 'signature' && f.kind !== 'button' && f.kind !== 'unknown';
+    const formValueOf = (f) => (Object.prototype.hasOwnProperty.call(formEdits, f.name) ? formEdits[f.name] : f.value);
+    const formIsFilled = (f) => {
+      const v = formValueOf(f);
+      if (f.kind === 'checkbox') return v === true || v === 'true' || v === 'Yes';
+      if (Array.isArray(v)) return v.length > 0;
+      return v !== undefined && v !== null && String(v).trim() !== '';
+    };
+    const formPending = () => Object.keys(formEdits).length > 0 || formNewFields.length > 0 || formRemoved.size > 0;
+    const formFieldCounts = () => {
+      const fields = (formModel && formModel.fields) || [];
+      const editable = fields.filter(formEditable);
+      const filled = editable.filter(formIsFilled).length;
+      const requiredEmpty = editable.filter((f) => f.required && !formIsFilled(f));
+      return { total: editable.length, filled, requiredEmpty };
+    };
+
+    async function refreshFormModel() {
+      const myToken = ++formModelToken;
+      const myDoc = docToken;
+      const empty = { acro: false, xfa: false, fields: [] };
+      if (!pdfDoc) { formModel = empty; renderFormOverlay(); updateFormBanner(); return; }
+      try {
+        const src = currentPdf || file;
+        if (!src) { formModel = empty; renderFormOverlay(); updateFormBanner(); return; }
+        const L = await loadLib();
+        const bytes = new Uint8Array(await src.arrayBuffer());
+        const doc = await L.PDFDocument.load(bytes, { ignoreEncryption: true });
+        const model = { acro: false, xfa: false, fields: [] };
+        try {
+          const afRef = doc.catalog.get(L.PDFName.of('AcroForm'));
+          if (afRef) {
+            const af = doc.context.lookup(afRef);
+            if (af && af.get && af.get(L.PDFName.of('XFA'))) model.xfa = true;
+          }
+        } catch { /* noop */ }
+        const form = doc.getForm();
+        const fields = form.getFields();
+        if (fields.length) {
+          model.acro = true;
+          const views = new Map();
+          for (let p = 1; p <= pdfDoc.numPages; p++) {
+            try {
+              const pgObj = await pdfDoc.getPage(p);
+              const vp = pgObj.getViewport({ scale: 1 });
+              const annots = await pgObj.getAnnotations();
+              for (const a of annots || []) {
+                if (!a || a.subtype !== 'Widget' || !Array.isArray(a.rect)) continue;
+                let c = null;
+                try { c = vp.convertToViewportRectangle(a.rect); } catch { c = null; }
+                if (!c) continue;
+                const x1 = Math.min(c[0], c[2]), x2 = Math.max(c[0], c[2]);
+                const y1 = Math.min(c[1], c[3]), y2 = Math.max(c[1], c[3]);
+                const key = String(a.fieldName || '') + '|' + a.rect.map((n) => (Math.round(n * 10) / 10)).join(',');
+                views.set(key, {
+                  page: p - 1,
+                  x: x1 / vp.width,
+                  y: y1 / vp.height,
+                  w: Math.max(0.001, (x2 - x1) / vp.width),
+                  h: Math.max(0.001, (y2 - y1) / vp.height),
+                  exportValue: a.exportValue || ''
+                });
+              }
+            } catch { /* noop */ }
+          }
+          const docPages = doc.getPages();
+          for (const f of fields) {
+            const name = String(f.getName ? f.getName() : '');
+            if (!name) continue;
+            const kind = FORM_KIND(f);
+            if (kind === 'unknown') continue;
+            const rec = {
+              name, kind,
+              required: !!(f.isRequired && f.isRequired()),
+              readOnly: !!(f.isReadOnly && f.isReadOnly()),
+              multiline: !!(f.isMultiline && f.isMultiline()),
+              maxLength: (f.getMaxLength && f.getMaxLength()) || 0,
+              comb: !!(f.isCombed && f.isCombed()),
+              tooltip: String((f.acroField && typeof f.acroField.getAlternateText === 'function' && f.acroField.getAlternateText()) || ''),
+              options: [], value: '', widgets: []
+            };
+            if (kind === 'text') rec.value = String((f.getText && f.getText()) || '');
+            else if (kind === 'checkbox') rec.value = !!(f.isChecked && f.isChecked());
+            else if (kind === 'radio') { rec.options = (f.getOptions && f.getOptions()) || []; rec.value = ((f.getSelected && f.getSelected()) || [])[0] || ''; }
+            else if (kind === 'dropdown' || kind === 'listbox') {
+              rec.options = (f.getOptions && f.getOptions()) || [];
+              const sel = (f.getSelected && f.getSelected()) || [];
+              rec.value = kind === 'dropdown' ? (sel[0] || '') : sel.slice();
+            }
+            const ws = (f.acroField && f.acroField.getWidgets) ? f.acroField.getWidgets() : [];
+            ws.forEach((w, wi) => {
+              let rect = null;
+              try { rect = w.getRectangle(); } catch { rect = null; }
+              if (!rect) return;
+              const key = name + '|' + [rect.x, rect.y, rect.x + rect.width, rect.y + rect.height].map((n) => (Math.round(n * 10) / 10)).join(',');
+              const view = views.get(key);
+              if (view) {
+                rec.widgets.push({ page: view.page, wi, x: view.x, y: view.y, w: view.w, h: view.h, exportValue: view.exportValue || (kind === 'radio' ? (rec.options[wi] || '') : '') });
+              } else if (docPages.length) {
+                let pageIdx = 0;
+                try { const pRef = w.P && w.P(); if (pRef) { const i = docPages.findIndex((pp) => String(pp.ref) === String(pRef)); if (i >= 0) pageIdx = i; } } catch { /* noop */ }
+                const size = docPages[pageIdx].getSize();
+                rec.widgets.push({
+                  page: pageIdx, wi,
+                  x: rect.x / size.width,
+                  y: (size.height - rect.y - rect.height) / size.height,
+                  w: rect.width / size.width,
+                  h: rect.height / size.height,
+                  exportValue: kind === 'radio' ? (rec.options[wi] || '') : ''
+                });
+              }
+            });
+            if ((kind === 'dropdown' || kind === 'listbox') && rec.widgets.some((w) => w.h > 0.12) && !(typeof f.isMultiselect === 'function' && f.isMultiselect())) {
+              rec.kind = 'listbox';
+            }
+            model.fields.push(rec);
+          }
+        }
+        if (myToken !== formModelToken || myDoc !== docToken) return;
+        formModel = model;
+        const names = new Set(model.fields.map((f) => f.name));
+        for (const n of Object.keys(formEdits)) if (!names.has(n) && !formNewFields.some((nf) => nf.name === n)) delete formEdits[n];
+        for (const n of [...formRemoved]) if (!names.has(n)) formRemoved.delete(n);
+        renderFormOverlay();
+        updateFormBanner();
+        updateFormsPanel();
+      } catch (err) {
+        console.warn('[Edit] form model', err && err.message);
+        formModel = empty;
+        renderFormOverlay();
+        updateFormBanner();
+      }
+    }
+
+    function formSortedFields() {
+      const idx = new Map(formTabOrder.map((n, i) => [n, i]));
+      return [...((formModel && formModel.fields) || [])]
+        .filter((f) => !formRemoved.has(f.name) && formEditable(f))
+        .sort((a, b) => {
+          const ia = idx.has(a.name) ? idx.get(a.name) : 1e6;
+          const ib = idx.has(b.name) ? idx.get(b.name) : 1e6;
+          if (ia !== ib) return ia - ib;
+          const wa = a.widgets[0] || { page: 0, y: 0, x: 0 };
+          const wb = b.widgets[0] || { page: 0, y: 0, x: 0 };
+          if (wa.page !== wb.page) return wa.page - wb.page;
+          if (Math.abs(wa.y - wb.y) > 0.012) return wa.y - wb.y;
+          return wa.x - wb.x;
+        });
+    }
+
+    function closeFormMenu() {
+      if (formMenuEl) { try { formMenuEl.remove(); } catch { /* noop */ } formMenuEl = null; }
+      container.querySelectorAll('.etxt-form-field.is-open').forEach((el) => el.classList.remove('is-open'));
+    }
+
+    function formCommitValue(f, value) {
+      const cur = Object.prototype.hasOwnProperty.call(formEdits, f.name) ? formEdits[f.name] : f.value;
+      const same = Array.isArray(cur) && Array.isArray(value)
+        ? cur.length === value.length && cur.every((v, i) => v === value[i])
+        : cur === value;
+      if (same) return false;
+      pushUndo();
+      formEdits[f.name] = value;
+      formWarned = false;
+      return true;
+    }
+
+    function formControlFontPx(w, pageEl) {
+      const hPx = (pageEl ? pageEl.clientHeight : 792) * w.h;
+      return Math.max(8.5, Math.min(15, hPx * 0.56));
+    }
+
+    function makeFormControl(f, wi) {
+      const w = f.widgets[wi];
+      const pageEl = container.querySelector(`.etxt-page[data-page="${w.page + 1}"]`);
+      const wrap = document.createElement('div');
+      wrap.className = 'etxt-form-field etxt-form-field--' + f.kind;
+      wrap.style.cssText = `left:${(w.x * 100).toFixed(3)}%;top:${(w.y * 100).toFixed(3)}%;width:${(w.w * 100).toFixed(3)}%;height:${(w.h * 100).toFixed(3)}%;`;
+      wrap.dataset.formName = f.name;
+      wrap.dataset.formWidget = String(wi);
+      wrap.dataset.formPage = String(w.page);
+      if (f.required) wrap.classList.add('is-required');
+      if (f.readOnly) wrap.classList.add('is-readonly');
+      if (formIsFilled(f)) wrap.classList.add('is-filled');
+      if (formActive === f.name) wrap.classList.add('is-focus');
+      const label = (f.tooltip || f.name) + (f.required && !formIsFilled(f) ? ' — required' : '') + (f.readOnly ? ' — read-only' : '');
+      wrap.setAttribute('aria-label', label);
+      wrap.title = label;
+      if (formOrderMode) {
+        const pos = formTabOrder.indexOf(f.name);
+        wrap.classList.add(pos >= 0 ? 'is-ordered' : 'is-ordering');
+        if (pos >= 0) wrap.dataset.formOrder = String(pos + 1);
+        wrap.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (!formTabOrder.includes(f.name)) {
+            formTabOrder.push(f.name);
+            renderFormOverlay();
+            updateFormBar();
+          }
+        }, true);
+      }
+      const val = formValueOf(f);
+      const fs = formControlFontPx(w, pageEl);
+
+      if (f.kind === 'text') {
+        if (f.readOnly) {
+          const staticEl = document.createElement('div');
+          staticEl.className = 'etxt-form-static';
+          staticEl.style.fontSize = fs.toFixed(1) + 'px';
+          staticEl.textContent = String(val == null ? '' : val);
+          wrap.append(staticEl);
+        } else {
+          const multi = f.multiline;
+          const input = document.createElement(multi ? 'textarea' : 'input');
+          input.className = 'etxt-form-input' + (multi ? ' etxt-form-input--multi' : '');
+          if (!multi) input.type = 'text';
+          input.value = String(val == null ? '' : val);
+          input.style.fontSize = fs.toFixed(1) + 'px';
+          input.setAttribute('aria-label', f.tooltip || f.name);
+          input.spellcheck = false;
+          if (f.maxLength > 0) input.maxLength = f.maxLength;
+          if (f.comb && f.maxLength > 1) {
+            const pxW = (pageEl ? pageEl.clientWidth : 612) * w.w;
+            const slot = pxW / f.maxLength;
+            input.style.letterSpacing = Math.max(0, slot - fs * 0.56).toFixed(2) + 'px';
+            input.style.paddingLeft = Math.max(1.5, slot * 0.28).toFixed(2) + 'px';
+          }
+          const commit = () => {
+            if (formCommitValue(f, input.value)) {
+              wrap.classList.toggle('is-filled', String(input.value).trim() !== '');
+              wrap.classList.toggle('is-required', f.required);
+              updateFormBar();
+              updateFormsPanel();
+            }
+          };
+          input.addEventListener('focus', () => {
+            formActive = f.name;
+            container.querySelectorAll('.etxt-form-field.is-focus').forEach((el) => el.classList.remove('is-focus'));
+            wrap.classList.add('is-focus');
+            updateFormsPanel();
+          });
+          input.addEventListener('blur', () => {
+            commit();
+            wrap.classList.remove('is-focus');
+            if (formActive === f.name) formActive = null;
+          });
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' && !multi) { ev.preventDefault(); commit(); formFocusNext(f.name); }
+            else if (ev.key === 'Escape') { ev.preventDefault(); input.value = String(formValueOf(f) == null ? '' : formValueOf(f)); input.blur(); }
+            else if (ev.key === 'Tab') { commit(); }
+          });
+          input.addEventListener('input', () => { wrap.classList.toggle('is-filled', String(input.value).trim() !== ''); });
+          wrap.append(input);
+        }
+      } else if (f.kind === 'checkbox') {
+        const on = val === true || val === 'true' || val === 'Yes';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-form-check' + (on ? ' is-on' : '');
+        btn.disabled = f.readOnly;
+        btn.setAttribute('role', 'checkbox');
+        btn.setAttribute('aria-checked', String(on));
+        btn.setAttribute('aria-label', f.tooltip || f.name);
+        btn.addEventListener('focus', () => { formActive = f.name; wrap.classList.add('is-focus'); });
+        btn.addEventListener('blur', () => { wrap.classList.remove('is-focus'); if (formActive === f.name) formActive = null; });
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (f.readOnly) return;
+          const next = !(formValueOf(f) === true || formValueOf(f) === 'true' || formValueOf(f) === 'Yes');
+          formCommitValue(f, next);
+          btn.classList.toggle('is-on', next);
+          btn.setAttribute('aria-checked', String(next));
+          wrap.classList.toggle('is-filled', next);
+          updateFormBar();
+          updateFormsPanel();
+        });
+        wrap.append(btn);
+      } else if (f.kind === 'radio') {
+        const on = String(val || '') === String(w.exportValue || '') && String(val || '') !== '';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-form-radio' + (on ? ' is-on' : '');
+        btn.disabled = f.readOnly;
+        btn.setAttribute('role', 'radio');
+        btn.setAttribute('aria-checked', String(on));
+        btn.setAttribute('aria-label', (f.tooltip || f.name) + (w.exportValue ? ' — ' + w.exportValue : ''));
+        btn.addEventListener('focus', () => { formActive = f.name; wrap.classList.add('is-focus'); });
+        btn.addEventListener('blur', () => { wrap.classList.remove('is-focus'); if (formActive === f.name) formActive = null; });
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (f.readOnly) return;
+          if (formCommitValue(f, w.exportValue || '')) { renderFormOverlay(); updateFormsPanel(); }
+        });
+        wrap.append(btn);
+      } else if (f.kind === 'dropdown') {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-form-select';
+        btn.disabled = f.readOnly;
+        btn.setAttribute('aria-haspopup', 'listbox');
+        btn.setAttribute('aria-label', f.tooltip || f.name);
+        btn.style.fontSize = fs.toFixed(1) + 'px';
+        btn.innerHTML = `<span class="etxt-form-select-val">${_esc(String(val || '') || 'Select…')}</span><svg class="etxt-form-select-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>`;
+        const open = () => {
+          if (f.readOnly) return;
+          closeFormMenu();
+          const menu = document.createElement('div');
+          menu.className = 'etxt-form-menu';
+          menu.setAttribute('role', 'listbox');
+          const rows = [''].concat(f.options);
+          rows.forEach((o) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'etxt-form-menu-item' + ((String(val || '') === o) ? ' is-on' : '') + (o === '' ? ' is-empty' : '');
+            item.textContent = o === '' ? '— Clear —' : o;
+            item.addEventListener('click', (ev2) => {
+              ev2.stopPropagation();
+              closeFormMenu();
+              if (formCommitValue(f, o)) { renderFormOverlay(); updateFormsPanel(); }
+            });
+            menu.append(item);
+          });
+          wrap.append(menu);
+          formMenuEl = menu;
+          wrap.classList.add('is-open');
+          const focusRow = menu.querySelector('.is-on') || menu.firstElementChild;
+          if (focusRow) focusRow.focus();
+        };
+        btn.addEventListener('click', (ev) => { ev.stopPropagation(); if (wrap.classList.contains('is-open')) closeFormMenu(); else open(); });
+        btn.addEventListener('keydown', (ev) => {
+          if (ev.key === 'ArrowDown' || ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(); }
+          else if (ev.key === 'Escape') { closeFormMenu(); }
+        });
+        menuKeyNav(wrap);
+        wrap.append(btn);
+      } else if (f.kind === 'listbox') {
+        const box = document.createElement('div');
+        box.className = 'etxt-form-listbox';
+        box.setAttribute('role', 'listbox');
+        if (f.readOnly) box.classList.add('is-readonly');
+        const selected = Array.isArray(val) ? val : (val ? [val] : []);
+        (f.options || []).forEach((o) => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'etxt-form-list-opt' + (selected.includes(o) ? ' is-on' : '');
+          row.setAttribute('role', 'option');
+          row.setAttribute('aria-selected', String(selected.includes(o)));
+          row.textContent = o;
+          row.style.fontSize = Math.max(8, fs - 1).toFixed(1) + 'px';
+          row.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            if (f.readOnly) return;
+            const cur = Array.isArray(formValueOf(f)) ? formValueOf(f).slice() : [];
+            const at = cur.indexOf(o);
+            if (at >= 0) cur.splice(at, 1); else cur.push(o);
+            formCommitValue(f, cur);
+            row.classList.toggle('is-on', at < 0);
+            row.setAttribute('aria-selected', String(at < 0));
+            wrap.classList.toggle('is-filled', cur.length > 0);
+            updateFormBar();
+            updateFormsPanel();
+          });
+          box.append(row);
+        });
+        wrap.append(box);
+      } else if (f.kind === 'signature') {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-form-sign';
+        btn.innerHTML = `${I.sign}<span>Sign here</span>`;
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          toast('Switching to the Sign tool — place your signature over this field.');
+          activateTool('sign');
+        });
+        wrap.append(btn);
+      }
+      return wrap;
+    }
+
+    function menuKeyNav(wrap) {
+      wrap.addEventListener('keydown', (ev) => {
+        const menu = wrap.querySelector('.etxt-form-menu');
+        if (!menu) return;
+        const items = [...menu.querySelectorAll('.etxt-form-menu-item')];
+        const at = items.indexOf(document.activeElement);
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); items[Math.min(items.length - 1, at + 1)]?.focus(); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); items[Math.max(0, at - 1)]?.focus(); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); closeFormMenu(); }
+        else if (ev.key === 'Tab') { closeFormMenu(); }
+      });
+    }
+
+    function makeNewFieldControl(nf) {
+      const pageEl = container.querySelector(`.etxt-page[data-page="${nf.page + 1}"]`);
+      const wrap = document.createElement('div');
+      wrap.className = 'etxt-form-field etxt-form-field--' + nf.kind + ' is-new';
+      wrap.style.cssText = `left:${(nf.x * 100).toFixed(3)}%;top:${(nf.y * 100).toFixed(3)}%;width:${(nf.w * 100).toFixed(3)}%;height:${(nf.h * 100).toFixed(3)}%;`;
+      wrap.dataset.formNew = nf.id;
+      if (nf.required) wrap.classList.add('is-required');
+      const label = nf.name + ' — new ' + nf.kind + ' field';
+      wrap.title = label;
+      wrap.setAttribute('aria-label', label);
+      const val = formEdits[nf.name];
+      const fs = formControlFontPx({ h: nf.h }, pageEl);
+      if (nf.kind === 'text') {
+        const input = document.createElement(nf.multiline ? 'textarea' : 'input');
+        input.className = 'etxt-form-input' + (nf.multiline ? ' etxt-form-input--multi' : '');
+        if (!nf.multiline) input.type = 'text';
+        input.value = String(val == null ? '' : val);
+        input.style.fontSize = fs.toFixed(1) + 'px';
+        input.setAttribute('aria-label', nf.name);
+        input.addEventListener('change', () => { pushUndo(); formEdits[nf.name] = input.value; wrap.classList.toggle('is-filled', !!input.value.trim()); updateFormsPanel(); });
+        input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !nf.multiline) { ev.preventDefault(); input.blur(); } });
+        wrap.append(input);
+      } else if (nf.kind === 'checkbox') {
+        const on = val === true;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-form-check' + (on ? ' is-on' : '');
+        btn.setAttribute('role', 'checkbox');
+        btn.setAttribute('aria-checked', String(on));
+        btn.addEventListener('click', (ev) => { ev.stopPropagation(); pushUndo(); formEdits[nf.name] = !on; renderFormOverlay(); updateFormsPanel(); });
+        wrap.append(btn);
+      } else if (nf.kind === 'dropdown' || nf.kind === 'listbox') {
+        const opts = nf.options || [];
+        if (nf.kind === 'dropdown') {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'etxt-form-select';
+          btn.innerHTML = `<span class="etxt-form-select-val">${_esc(String(val || '') || 'Select…')}</span><svg class="etxt-form-select-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>`;
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            closeFormMenu();
+            const menu = document.createElement('div');
+            menu.className = 'etxt-form-menu';
+            [''].concat(opts).forEach((o) => {
+              const item = document.createElement('button');
+              item.type = 'button';
+              item.className = 'etxt-form-menu-item' + (String(val || '') === o ? ' is-on' : '');
+              item.textContent = o === '' ? '— Clear —' : o;
+              item.addEventListener('click', (ev2) => { ev2.stopPropagation(); closeFormMenu(); pushUndo(); formEdits[nf.name] = o; renderFormOverlay(); updateFormsPanel(); });
+              menu.append(item);
+            });
+            wrap.append(menu);
+            formMenuEl = menu;
+          });
+          wrap.append(btn);
+        } else {
+          const box = document.createElement('div');
+          box.className = 'etxt-form-listbox';
+          const sel = Array.isArray(val) ? val : [];
+          opts.forEach((o) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'etxt-form-list-opt' + (sel.includes(o) ? ' is-on' : '');
+            row.textContent = o;
+            row.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              const cur = Array.isArray(formEdits[nf.name]) ? formEdits[nf.name].slice() : [];
+              const at = cur.indexOf(o);
+              if (at >= 0) cur.splice(at, 1); else cur.push(o);
+              pushUndo();
+              formEdits[nf.name] = cur;
+              renderFormOverlay();
+              updateFormsPanel();
+            });
+            box.append(row);
+          });
+          wrap.append(box);
+        }
+      } else {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'etxt-form-sign';
+        btn.textContent = nf.kind === 'signature' ? 'Sign here' : nf.kind;
+        wrap.append(btn);
+      }
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'etxt-form-new-del';
+      del.setAttribute('aria-label', 'Remove new field');
+      del.innerHTML = I.x;
+      del.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        pushUndo();
+        formNewFields = formNewFields.filter((x) => x.id !== nf.id);
+        delete formEdits[nf.name];
+        renderFormOverlay();
+        updateFormsPanel();
+      });
+      wrap.append(del);
+      return wrap;
+    }
+
+    function makeFormSelectTarget(f, wi) {
+      const w = f.widgets[wi];
+      const target = document.createElement('button');
+      target.type = 'button';
+      target.className = 'etxt-form-select-target' + (formSelectedName === f.name ? ' is-selected' : '');
+      target.style.cssText = `left:${(w.x * 100).toFixed(3)}%;top:${(w.y * 100).toFixed(3)}%;width:${(w.w * 100).toFixed(3)}%;height:${(w.h * 100).toFixed(3)}%;`;
+      target.dataset.formName = f.name;
+      target.dataset.formWidget = String(wi);
+      target.title = `${f.tooltip || f.name} · Select to move or edit properties`;
+      target.setAttribute('aria-label', target.title);
+      target.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        formSelectedName = f.name;
+        formActive = f.name;
+        renderFormOverlay();
+        updateFormsPanel();
+      });
+      target.addEventListener('dblclick', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        activateTool('form');
+        focusFormField(f.name, wi);
+      });
+      return target;
+    }
+
+    function renderFormOverlay() {
+      const pagesEls = container.querySelectorAll('.etxt-page');
+      const selecting = toolMode === 'select';
+      const active = toolMode === 'form' || selecting || !!formPlaceKind;
+      pagesEls.forEach((pageEl) => {
+        const layer = pageEl.querySelector('.etxt-form-layer');
+        if (!layer) return;
+        layer.innerHTML = '';
+        layer.hidden = !active;
+        if (!active) return;
+        const pNum = Number(pageEl.dataset.page) - 1;
+        for (const f of formSortedFields()) {
+          f.widgets.forEach((w, wi) => {
+            if (w.page !== pNum) return;
+            const el = selecting ? makeFormSelectTarget(f, wi) : makeFormControl(f, wi);
+            if (el) layer.append(el);
+          });
+        }
+        for (const nf of formNewFields) {
+          if (nf.page !== pNum) continue;
+          layer.append(makeNewFieldControl(nf));
+        }
+        for (const c of formDetect) {
+          if (c.page !== pNum || c.accepted) continue;
+          const el = document.createElement('button');
+          el.type = 'button';
+          el.className = 'etxt-form-candidate etxt-form-candidate--' + c.kind;
+          el.style.cssText = `left:${(c.x * 100).toFixed(3)}%;top:${(c.y * 100).toFixed(3)}%;width:${(c.w * 100).toFixed(3)}%;height:${(c.h * 100).toFixed(3)}%;`;
+          el.title = 'Suggested ' + (c.kind === 'checkbox' ? 'checkbox' : 'text field') + ' — click to accept';
+          el.setAttribute('aria-label', el.title);
+          el.innerHTML = '<span class="etxt-form-candidate-plus">+</span>';
+          el.addEventListener('click', (ev) => { ev.stopPropagation(); acceptFormCandidate(c); });
+          layer.append(el);
+        }
+      });
+      updateFormBar();
+    }
+
+    function wireFormUI() {
+      const railBtn = container.querySelector('#etxt-rail-forms-btn');
+      if (railBtn) railBtn.onclick = () => { if (toolMode === 'form') toggleFormsDrawer(); else activateTool('form'); };
+      const drawerClose = container.querySelector('#etxt-forms-close');
+      if (drawerClose) drawerClose.onclick = () => closeFormsDrawer();
+      const bannerFill = container.querySelector('#etxt-form-banner-fill');
+      if (bannerFill) bannerFill.onclick = () => activateTool('form');
+      const bannerX = container.querySelector('#etxt-form-banner-dismiss');
+      if (bannerX) bannerX.onclick = () => { formBannerDismissed = true; updateFormBanner(); };
+      if (!container.dataset.formDocWired) {
+        container.dataset.formDocWired = '1';
+        container.addEventListener('click', (ev) => {
+          if (ev.target.closest && ev.target.closest('.etxt-form-field')) return;
+          closeFormMenu();
+          const addMenu = container.querySelector('#etxt-form-add-menu');
+          if (addMenu && !(ev.target.closest && ev.target.closest('.etxt-form-add-wrap'))) addMenu.hidden = true;
+          const dataMenu = container.querySelector('.etxt-form-data-menu');
+          if (dataMenu) dataMenu.remove();
+        }, true);
+      }
+    }
+
+    function focusFormField(name, widgetIdx) {
+      if (toolMode !== 'form') activateTool('form');
+      formActive = name;
+      requestAnimationFrame(() => {
+        const sel = `.etxt-form-field[data-form-name="${CSS.escape(name)}"]` + (widgetIdx != null ? `[data-form-widget="${widgetIdx}"]` : '');
+        const el = container.querySelector(sel);
+        if (!el) return;
+        try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { el.scrollIntoView(); }
+        const focusable = el.querySelector('input, textarea, button, [tabindex]');
+        if (focusable && typeof focusable.focus === 'function') {
+          try { focusable.focus({ preventScroll: true }); } catch { focusable.focus(); }
+          if (focusable.tagName === 'INPUT' || focusable.tagName === 'TEXTAREA') { try { focusable.select(); } catch { /* noop */ } }
+        }
+        container.querySelectorAll('.etxt-form-field.is-focus').forEach((x) => x.classList.remove('is-focus'));
+        el.classList.add('is-focus');
+        updateFormsPanel();
+      });
+    }
+
+    function formFocusNext(name) {
+      const list = [];
+      formSortedFields().forEach((f) => f.widgets.forEach((w, wi) => list.push([f.name, wi])));
+      const at = list.findIndex(([n]) => n === name);
+      if (at < 0 || at >= list.length - 1) return;
+      const [nextName, nextWi] = list[at + 1];
+      focusFormField(nextName, nextWi);
+    }
+
+    function updateFormBanner() {
+      const banner = container.querySelector('#etxt-form-banner');
+      if (!banner) return;
+      const has = !!(formModel && formModel.fields.length);
+      const show = has && toolMode !== 'form' && !formBannerDismissed;
+      banner.hidden = !show;
+      banner.classList.toggle('is-hidden', !show);
+      if (!show) return;
+      const msg = banner.querySelector('.etxt-form-banner-msg');
+      const counts = formFieldCounts();
+      const suffix = counts.filled ? ` · ${counts.filled}/${counts.total} filled` : '';
+      msg.textContent = formModel.xfa
+        ? 'This document uses a dynamic XFA form — support is limited, but you can still fill detected fields.'
+        : `${counts.total} interactive form field${counts.total === 1 ? '' : 's'} detected${suffix}`;
+      const btn = banner.querySelector('#etxt-form-banner-fill');
+      if (btn) btn.textContent = formModel.xfa ? 'Open forms' : 'Fill fields';
+    }
+
+    function updateFormBar() {
+      const bar = container.querySelector('#etxt-form-bar');
+      if (!bar) return;
+      if (toolMode !== 'form') { bar.hidden = true; return; }
+      if (formOrderMode) {
+        bar.hidden = false;
+        bar.innerHTML = `
+          <span class="etxt-form-bar-ico" aria-hidden="true">${I.form}</span>
+          <span class="etxt-form-bar-count">Tab order — click fields in sequence</span>
+          <span class="etxt-form-bar-count">${formTabOrder.length} set</span>
+          <button type="button" class="etxt-form-bar-btn is-primary" data-form-act="order-done">Done</button>
+          <button type="button" class="etxt-form-bar-btn" data-form-act="order-cancel">Cancel</button>`;
+        bar.querySelector('[data-form-act="order-done"]').addEventListener('click', () => {
+          formOrderMode = false;
+          renderFormOverlay();
+          updateFormBar();
+          toast(formTabOrder.length ? `Tab order set for ${formTabOrder.length} field${formTabOrder.length === 1 ? '' : 's'}.` : 'Tab order cleared — using reading order.');
+        });
+        bar.querySelector('[data-form-act="order-cancel"]').addEventListener('click', () => { formOrderMode = false; renderFormOverlay(); updateFormBar(); });
+        return;
+      }
+      const counts = formFieldCounts();
+      const pct = counts.total ? Math.round((counts.filled / counts.total) * 100) : 0;
+      bar.hidden = false;
+      bar.innerHTML = `
+        <span class="etxt-form-bar-ico" aria-hidden="true">${I.form}</span>
+        <span class="etxt-form-bar-count">${counts.total ? `${counts.filled} / ${counts.total} filled` : 'No fields yet'}</span>
+        <span class="etxt-form-bar-progress" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        <span class="etxt-vsep"></span>
+        <label class="etxt-form-bar-toggle" title="Flatten fields into the page on save">
+          <input type="checkbox" id="etxt-form-flatten" ${formFlatten ? 'checked' : ''}>
+          <span>Flatten</span>
+        </label>
+        <button type="button" class="etxt-form-bar-btn" data-form-act="detect">${I.find}<span>Detect</span></button>
+        <span class="etxt-form-add-wrap">
+          <button type="button" class="etxt-form-bar-btn" data-form-act="add">${I.plus}<span>Add field</span></button>
+          <span class="etxt-form-add-menu" id="etxt-form-add-menu" hidden>
+            <button type="button" data-form-add="text">Text field</button>
+            <button type="button" data-form-add="checkbox">Checkbox</button>
+            <button type="button" data-form-add="radio">Radio group</button>
+            <button type="button" data-form-add="dropdown">Dropdown</button>
+            <button type="button" data-form-add="listbox">List box</button>
+          </span>
+        </span>
+        <button type="button" class="etxt-form-bar-btn" data-form-act="data">${I.dl}<span>Form data</span></button>
+        <button type="button" class="etxt-form-bar-btn" data-form-act="reset">Reset</button>
+        <button type="button" class="etxt-form-bar-btn is-primary" data-form-act="done">Done</button>
+      `;
+      const menu = bar.querySelector('#etxt-form-add-menu');
+      const addBtn = bar.querySelector('[data-form-act="add"]');
+      if (addBtn && menu) {
+        addBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          menu.hidden = !menu.hidden;
+          if (!menu.hidden) {
+            const dataBtn = bar.querySelector('[data-form-act="data"]');
+            if (dataBtn) dataBtn.classList.remove('is-open');
+            const dm = bar.querySelector('.etxt-form-data-menu');
+            if (dm) dm.remove();
+          }
+        });
+        menu.querySelectorAll('[data-form-add]').forEach((b) => {
+          b.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            menu.hidden = true;
+            armFormPlace(b.dataset.formAdd);
+          });
+        });
+      }
+      bar.querySelectorAll('[data-form-act]').forEach((btn) => {
+        if (btn.dataset.formAct === 'add') return;
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const act = btn.dataset.formAct;
+          if (act === 'detect') runFormDetect();
+          else if (act === 'data') {
+            const existing = bar.querySelector('.etxt-form-data-menu');
+            if (existing) { existing.remove(); return; }
+            const dm = document.createElement('div');
+            dm.className = 'etxt-form-data-menu';
+            dm.innerHTML = `
+              <button type="button" data-form-data="json">Export JSON</button>
+              <button type="button" data-form-data="xfdf">Export XFDF</button>
+              <button type="button" data-form-data="import">Import JSON…</button>
+              <button type="button" data-form-data="order">Set tab order</button>`;
+            dm.querySelectorAll('[data-form-data]').forEach((b) => b.addEventListener('click', (ev2) => {
+              ev2.stopPropagation();
+              dm.remove();
+              if (b.dataset.formData === 'json') exportFormData();
+              else if (b.dataset.formData === 'xfdf') exportFormXfdf();
+              else if (b.dataset.formData === 'order') startTabOrder();
+              else importFormData();
+            }));
+            bar.append(dm);
+          } else if (act === 'reset') resetFormValues();
+          else if (act === 'done') activateTool('select');
+        });
+      });
+      const flatten = bar.querySelector('#etxt-form-flatten');
+      if (flatten) flatten.addEventListener('change', () => { formFlatten = !!flatten.checked; });
+    }
+
+    function updateFormsPanel() {
+      const list = container.querySelector('#etxt-forms-list');
+      const progress = container.querySelector('#etxt-forms-progress');
+      if (!list || !progress) return;
+      const fields = formSortedFields();
+      const counts = formFieldCounts();
+      const pct = counts.total ? Math.round((counts.filled / counts.total) * 100) : 0;
+      progress.innerHTML = `
+        <div class="etxt-forms-progress-row">
+          <span class="etxt-forms-progress-label">${counts.filled} of ${counts.total} filled</span>
+          <span class="etxt-forms-progress-pct">${pct}%</span>
+        </div>
+        <span class="etxt-forms-progress-track"><i style="width:${pct}%"></i></span>
+        ${counts.requiredEmpty.length ? `<p class="etxt-forms-req">${counts.requiredEmpty.length} required field${counts.requiredEmpty.length === 1 ? '' : 's'} still empty</p>` : ''}`;
+      if (!fields.length && !formNewFields.length && !formDetect.some((c) => !c.accepted)) {
+        list.innerHTML = '<p class="etxt-forms-empty">No interactive fields in this document.<br>Use <strong>Detect</strong> to find boxes, or <strong>Add field</strong> to create your own.</p>';
+      } else {
+        let html = '';
+        let lastPage = -1;
+        for (const f of fields) {
+          const page = (f.widgets[0] || { page: 0 }).page;
+          if (page !== lastPage) { html += `<div class="etxt-forms-page">Page ${page + 1}</div>`; lastPage = page; }
+          const filled = formIsFilled(f);
+          const val = formValueOf(f);
+          const preview = f.kind === 'checkbox' ? (filled ? 'Checked' : 'Unchecked')
+            : Array.isArray(val) ? (val.join(', ') || '—')
+            : String(val == null || val === '' ? '—' : val);
+          html += `
+            <div class="etxt-forms-row${(formActive === f.name || formSelectedName === f.name) ? ' is-active' : ''}${filled ? ' is-filled' : ''}" data-form-row="${_esc(f.name)}" data-form-page="${page}" role="button" tabindex="0">
+              <span class="etxt-forms-row-ico">${formKindIcon(f.kind)}</span>
+              <span class="etxt-forms-row-copy">
+                <strong>${_esc(f.tooltip || f.name)}</strong>
+                <small>${_esc(preview)}</small>
+              </span>
+              <span class="etxt-forms-row-badges">
+                ${f.required ? '<i class="etxt-forms-badge is-req">Required</i>' : ''}
+                ${f.readOnly ? '<i class="etxt-forms-badge is-ro">Read-only</i>' : ''}
+                ${filled ? '<i class="etxt-forms-badge is-ok">Filled</i>' : ''}
+              </span>
+              <span class="etxt-forms-row-actions">
+                <button type="button" class="etxt-forms-act" data-field-act="props" data-field-name="${_esc(f.name)}" title="Field properties" aria-label="Field properties for ${_esc(f.name)}">⋯</button>
+                <button type="button" class="etxt-forms-act is-del" data-field-act="del" data-field-name="${_esc(f.name)}" title="Delete field" aria-label="Delete ${_esc(f.name)}">${I.x}</button>
+              </span>
+            </div>`;
+        }
+        for (const nf of formNewFields) {
+          if (nf.page !== lastPage) { html += `<div class="etxt-forms-page">Page ${nf.page + 1}</div>`; lastPage = nf.page; }
+          html += `
+            <div class="etxt-forms-row is-new" data-form-row-new="${nf.id}" data-form-page="${nf.page}" role="button" tabindex="0">
+              <span class="etxt-forms-row-ico">${formKindIcon(nf.kind)}</span>
+              <span class="etxt-forms-row-copy"><strong>${_esc(nf.name)}</strong><small>New ${nf.kind} field</small></span>
+              <span class="etxt-forms-row-badges"><i class="etxt-forms-badge is-new">New</i></span>
+              <span class="etxt-forms-row-actions">
+                <button type="button" class="etxt-forms-act is-del" data-field-act="delnew" data-field-id="${nf.id}" title="Remove new field" aria-label="Remove ${_esc(nf.name)}">${I.x}</button>
+              </span>
+            </div>`;
+        }
+        const pendingSearch = formDetect.filter((c) => !c.accepted);
+        if (pendingSearch.length) {
+          html += `
+            <div class="etxt-forms-suggest">
+              <div class="etxt-forms-suggest-head">
+                <strong>${pendingSearch.length} suggested field${pendingSearch.length === 1 ? '' : 's'}</strong>
+                <span>
+                  <button type="button" class="etxt-forms-suggest-all">Accept all</button>
+                  <button type="button" class="etxt-forms-suggest-none">Dismiss</button>
+                </span>
+              </div>
+              <p>Dashed boxes on the page were detected from underlines and checkbox glyphs.</p>
+            </div>`;
+        }
+        list.innerHTML = html;
+      }
+      list.querySelectorAll('[data-form-row]').forEach((row) => {
+        row.addEventListener('click', () => focusFormField(row.dataset.formRow));
+        row.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); focusFormField(row.dataset.formRow); }
+        });
+      });
+      list.querySelectorAll('[data-field-act]').forEach((b) => {
+        b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const act = b.dataset.fieldAct;
+          if (act === 'del') removeExistingField(b.dataset.fieldName);
+          else if (act === 'delnew') {
+            pushUndo();
+            formNewFields = formNewFields.filter((x) => x.id !== b.dataset.fieldId);
+            renderFormOverlay();
+            updateFormsPanel();
+          } else if (act === 'props') openFieldProps(b.dataset.fieldName);
+        });
+      });
+      list.querySelectorAll('[data-form-row-new]').forEach((row) => {
+        row.addEventListener('click', () => {
+          const nf = formNewFields.find((x) => x.id === row.dataset.formRowNew);
+          if (nf) focusFormField(nf.name);
+        });
+      });
+      const allBtn = list.querySelector('.etxt-forms-suggest-all');
+      if (allBtn) allBtn.addEventListener('click', acceptAllCandidates);
+      const noneBtn = list.querySelector('.etxt-forms-suggest-none');
+      if (noneBtn) noneBtn.addEventListener('click', () => { formDetect = []; renderFormOverlay(); updateFormsPanel(); });
+      const num = container.querySelector('#etxt-rail-forms-num');
+      if (num) num.textContent = String(counts.total);
+      const railBtn = container.querySelector('#etxt-rail-forms-btn');
+      if (railBtn) railBtn.hidden = !(counts.total || formNewFields.length);
+    }
+
+    const formKindIcon = (kind) => {
+      if (kind === 'checkbox') return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="m8 12.5 2.7 2.7L16.5 9"/></svg>';
+      if (kind === 'radio') return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg>';
+      if (kind === 'dropdown') return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2.4"/><path d="m9.5 11 2.5 2.5L14.5 11"/></svg>';
+      if (kind === 'listbox') return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2.4"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>';
+      if (kind === 'signature') return I.sign;
+      return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6M12 4v16"/></svg>';
+    };
+
+    function openFormsDrawer() {
+      formPanelOpen = true;
+      const drawer = container.querySelector('#etxt-forms-drawer');
+      if (drawer) { drawer.classList.add('is-open'); drawer.setAttribute('aria-hidden', 'false'); }
+      updateFormsPanel();
+    }
+    function closeFormsDrawer() {
+      formPanelOpen = false;
+      const drawer = container.querySelector('#etxt-forms-drawer');
+      if (drawer) { drawer.classList.remove('is-open'); drawer.setAttribute('aria-hidden', 'true'); }
+    }
+    function toggleFormsDrawer() { if (formPanelOpen) closeFormsDrawer(); else openFormsDrawer(); }
+
+    function resetFormValues() {
+      const hasAny = formPending() || Object.keys(formEdits).length > 0;
+      if (!hasAny && !formFlatten) return;
+      pushUndo();
+      formEdits = {};
+      formNewFields = [];
+      formRemoved = new Set();
+      formProps = {};
+      formFlatten = false;
+      formWarned = false;
+      formDetect = [];
+      formTabOrder = [];
+      formOrderMode = false;
+      renderFormOverlay();
+      updateFormsPanel();
+      updateFormBanner();
+      toast('Form reset to the document values.');
+    }
+
+    function startTabOrder() {
+      pushUndo();
+      formTabOrder = [];
+      formOrderMode = true;
+      closeFormMenu();
+      renderFormOverlay();
+      updateFormBar();
+      openFormsDrawer();
+      toast('Click the fields in the tab sequence you want, then press Done.');
+    }
+
+    function collectFormPayload() {
+      const removed = [...formRemoved];
+      const newFields = formNewFields.map((f) => ({ ...f, options: (f.options || []).slice() }));
+      const edits = {};
+      for (const [k, v] of Object.entries(formEdits)) edits[k] = Array.isArray(v) ? v.slice() : v;
+      const any = Object.keys(edits).length > 0 || newFields.length > 0 || removed.length > 0 ||
+        (formFlatten && !!formModel && formModel.fields.length > 0) || Object.keys(formProps).length > 0;
+      return { edits, newFields, removed, props: { ...formProps }, flatten: formFlatten, any };
+    }
+
+    function applyFormPayload(doc, payload) {
+      if (!payload || !payload.any) return 0;
+      const form = doc.getForm();
+      let changed = 0;
+      const setField = (name, val) => {
+        let f = null;
+        try { f = form.getField(name); } catch { f = null; }
+        if (!f) return false;
+        const kind = FORM_KIND(f);
+        try {
+          if (kind === 'text') f.setText(String(val == null ? '' : val));
+          else if (kind === 'checkbox') {
+            const on = val === true || val === 'true' || val === 'Yes' || val === 'on' || val === 1;
+            on ? f.check() : f.uncheck();
+          } else if (kind === 'radio') {
+            if (val) f.select(String(val)); else f.clear();
+          } else if (kind === 'dropdown') {
+            const v = String(val == null ? '' : val);
+            if (v) f.select(v); else f.clear();
+          } else if (kind === 'listbox') {
+            const arr = Array.isArray(val) ? val.map(String) : [];
+            if (arr.length) f.select(arr); else f.clear();
+          } else return false;
+          return true;
+        } catch (err) { console.warn('[Edit] form set', name, err && err.message); return false; }
+      };
+      const applyProps = (f, p) => {
+        if (!f || !p) return;
+        try { if (typeof p.required === 'boolean') p.required ? f.enableRequired() : f.disableRequired(); } catch { /* noop */ }
+        try { if (typeof p.readOnly === 'boolean') p.readOnly ? f.enableReadOnly() : f.disableReadOnly(); } catch { /* noop */ }
+        try { if (p.maxLength != null && typeof f.setMaxLength === 'function') f.setMaxLength(p.maxLength > 0 ? p.maxLength : undefined); } catch { /* noop */ }
+        try { if (typeof p.multiline === 'boolean' && typeof f.enableMultiline === 'function') p.multiline ? f.enableMultiline() : f.disableMultiline(); } catch { /* noop */ }
+      };
+      for (const [name, val] of Object.entries(payload.edits || {})) {
+        if (formRemovedHas(payload, name)) continue;
+        if (setField(name, val)) changed++;
+      }
+      for (const [name, p] of Object.entries(payload.props || {})) {
+        try { applyProps(form.getField(name), p); changed++; } catch { /* noop */ }
+      }
+      for (const nf of payload.newFields || []) {
+        try {
+          const page = doc.getPage(Math.max(0, Math.min(doc.getPageCount() - 1, nf.page)));
+          const size = page.getSize();
+          const rect = { x: nf.x * size.width, y: size.height - (nf.y + nf.h) * size.height, width: Math.max(6, nf.w * size.width), height: Math.max(6, nf.h * size.height) };
+          let f = null;
+          if (nf.kind === 'text') f = form.createTextField(nf.name);
+          else if (nf.kind === 'checkbox') f = form.createCheckBox(nf.name);
+          else if (nf.kind === 'dropdown') f = form.createDropdown(nf.name);
+          else if (nf.kind === 'listbox') f = form.createOptionList(nf.name);
+          else if (nf.kind === 'radio') f = form.createRadioGroup(nf.name);
+          if (!f) continue;
+          if (nf.kind === 'dropdown' || nf.kind === 'listbox') {
+            if (nf.options && nf.options.length) f.setOptions(nf.options.filter(Boolean));
+            f.addToPage(page, rect);
+          } else if (nf.kind === 'radio') {
+            const opts = (nf.options && nf.options.length ? nf.options : ['Option 1', 'Option 2']).filter(Boolean);
+            const step = rect.width / opts.length;
+            const sizeW = Math.max(8, Math.min(rect.height, step * 0.72));
+            opts.forEach((o, i) => f.addOptionToPage(o, page, { x: rect.x + i * step, y: rect.y, width: sizeW, height: rect.height }));
+          } else {
+            f.addToPage(page, rect);
+          }
+          if (nf.multiline && typeof f.enableMultiline === 'function') f.enableMultiline();
+          if (nf.maxLength > 0 && typeof f.setMaxLength === 'function') f.setMaxLength(nf.maxLength);
+          if (nf.required && typeof f.enableRequired === 'function') f.enableRequired();
+          if (nf.readOnly && typeof f.enableReadOnly === 'function') f.enableReadOnly();
+          if (nf.kind === 'text' && typeof f.setText === 'function') f.setText(String(payload.edits[nf.name] == null ? '' : payload.edits[nf.name]));
+          else if (nf.kind === 'checkbox' && typeof f.check === 'function') { payload.edits[nf.name] ? f.check() : f.uncheck(); }
+          else if ((nf.kind === 'dropdown' || nf.kind === 'listbox') && payload.edits[nf.name] != null) setField(nf.name, payload.edits[nf.name]);
+          changed++;
+        } catch (err) { console.warn('[Edit] create form field', nf.name, err && err.message); }
+      }
+      for (const name of payload.removed || []) {
+        try { const f = form.getField(name); if (f) { form.removeField(f); changed++; } } catch (err) { console.warn('[Edit] remove field', name, err && err.message); }
+      }
+      if (!changed && !payload.flatten) return 0;
+      try { form.updateFieldAppearances(); } catch (err) { console.warn('[Edit] form appearances', err && err.message); }
+      if (payload.flatten || Object.keys(payload.props || {}).length) {
+        if (payload.flatten) { try { form.flatten(); } catch (err) { console.warn('[Edit] form flatten', err && err.message); } }
+      }
+      return changed;
+    }
+    const formRemovedHas = (payload, name) => (payload.removed || []).includes(name);
+
+    function exportFormData() {
+      const fields = formSortedFields();
+      const out = {};
+      for (const f of fields) {
+        const v = formValueOf(f);
+        out[f.name] = Array.isArray(v) ? v : (v == null ? '' : v);
+      }
+      const blob = new Blob([JSON.stringify({ form: 'filekit', version: 1, fields: out }, null, 2)], { type: 'application/json' });
+      const base = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = base + '-form-data.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Form data exported as JSON.');
+    }
+
+    function exportFormXfdf() {
+      const xf = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+      let body = '';
+      for (const f of formSortedFields()) {
+        const v = formValueOf(f);
+        if (f.kind === 'checkbox') {
+          if (v === true || v === 'true' || v === 'Yes') body += `<field name="${xf(f.name)}"><value>Yes</value></field>`;
+        } else if (Array.isArray(v)) {
+          if (v.length) body += `<field name="${xf(f.name)}"><value>${xf(v.join(','))}</value></field>`;
+        } else if (v != null && String(v) !== '') {
+          body += `<field name="${xf(f.name)}"><value>${xf(v)}</value></field>`;
+        }
+      }
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">\n<fields>\n${body}\n</fields>\n</xfdf>\n`;
+      const blob = new Blob([xml], { type: 'application/vnd.adobe.xfdf' });
+      const base = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = base + '-form-data.xfdf';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('Form data exported as XFDF.');
+    }
+
+    function importFormData() {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = '.json,application/json';
+      inp.onchange = async () => {
+        const f = inp.files && inp.files[0];
+        if (!f) return;
+        try {
+          const data = JSON.parse(await f.text());
+          const fields = data && (data.fields || data);
+          if (!fields || typeof fields !== 'object') throw new Error('Unrecognised form data file.');
+          const known = new Set(formSortedFields().map((x) => x.name));
+          const applied = [];
+          for (const [k, v] of Object.entries(fields)) {
+            if (!known.has(k)) continue;
+            formEdits[k] = v;
+            applied.push(k);
+          }
+          pushUndo();
+          renderFormOverlay();
+          updateFormsPanel();
+          updateFormBanner();
+          toast(applied.length ? `Imported ${applied.length} field value${applied.length === 1 ? '' : 's'}.` : 'No matching field names in this document.');
+        } catch (err) {
+          toast('Could not import form data: ' + (err.message || err), 'error');
+        }
+      };
+      inp.click();
+    }
+
+    function openFormFieldDlg(nf, onDone) {
       const { dlg, backdrop } = getModalElements();
+      const isText = nf.kind === 'text';
+      const isChoice = nf.kind === 'dropdown' || nf.kind === 'listbox' || nf.kind === 'radio';
       dlg.innerHTML = `
-        <h3 class="etxt-dlg-title">Fill PDF form</h3>
-        <p class="etxt-dlg-sub">Type into the fields below — values are written into the PDF.</p>
-        <div class="etxt-form-body" id="etxt-form-fields"><p class="etxt-dlg-note">Reading form fields…</p></div>
+        <h3 class="etxt-dlg-title">${nf.existing ? 'Field properties' : nf.id ? 'Edit field' : 'New ' + nf.kind + ' field'}</h3>
+        <p class="etxt-dlg-sub">${nf.existing ? 'Changes are applied when you save the PDF.' : nf.id ? 'Update this field before saving.' : 'Name the field and set its options.'}</p>
+        <div class="etxt-form-body" id="etxt-ff-body">
+          <div class="etxt-form-row"><span class="etxt-form-name">Name</span><input type="text" class="etxt-dlg-input" id="etxt-ff-name" value="${_esc(nf.name || '')}" placeholder="field_name" ${nf.existing ? 'disabled' : ''}></div>
+          ${isChoice ? `<div class="etxt-form-row"><span class="etxt-form-name">Options</span><input type="text" class="etxt-dlg-input" id="etxt-ff-options" value="${_esc((nf.options || []).join(', '))}" placeholder="Option A, Option B" ${nf.existing ? 'disabled' : ''}></div>` : ''}
+          ${isText ? `<div class="etxt-form-row"><span class="etxt-form-name">Max length</span><input type="number" min="0" class="etxt-dlg-input" id="etxt-ff-max" value="${nf.maxLength || 0}"></div>` : ''}
+          <div class="etxt-form-row etxt-form-row--checks">
+            ${isText ? `<label class="etxt-dlg-check"><input type="checkbox" id="etxt-ff-multi" ${nf.multiline ? 'checked' : ''}> Multiline</label>` : ''}
+            <label class="etxt-dlg-check"><input type="checkbox" id="etxt-ff-req" ${nf.required ? 'checked' : ''}> Required</label>
+            <label class="etxt-dlg-check"><input type="checkbox" id="etxt-ff-ro" ${nf.readOnly ? 'checked' : ''}> Read-only</label>
+          </div>
+        </div>
         <div class="etxt-dlg-actions">
-          <button type="button" class="etxt-btn-ghost" id="etxt-fm-cancel">Cancel</button>
-          <button type="button" class="etxt-btn-finish" id="etxt-fm-ok">Fill & save</button>
+          <button type="button" class="etxt-btn-ghost" id="etxt-ff-cancel">Cancel</button>
+          <button type="button" class="etxt-btn-finish" id="etxt-ff-ok">${nf.existing ? 'Apply properties' : nf.id ? 'Update field' : 'Add field'}</button>
         </div>`;
       activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
       const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
-      dlg.querySelector('#etxt-fm-cancel').onclick = close;
-      dlg.querySelector('#etxt-fm-ok').disabled = true;
-      try {
-        const L = await loadLib();
-        const doc = await L.PDFDocument.load(new Uint8Array(await (currentPdf || file).arrayBuffer()), { ignoreEncryption: true });
-        const form = doc.getForm();
-        const fields = form.getFields();
-        const box = dlg.querySelector('#etxt-form-fields');
-        if (!fields.length) {
-          box.innerHTML = '<p class="etxt-dlg-note">No fillable form fields found in this PDF.</p>';
-          return;
-        }
-        const fieldKind = (f) => (typeof f.getText === 'function' ? 'text' : typeof f.check === 'function' ? 'checkbox' : typeof f.getOptions === 'function' ? (typeof f.addOptions === 'function' ? 'dropdown' : 'radio') : 'skip');
-        box.innerHTML = fields.map((f) => {
-          const name = String(f.getName ? f.getName() : '');
-          if (!name) return '';
-          const kind = fieldKind(f);
-          if (kind === 'skip') return '';
-          const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-          let control = '';
-          if (kind === 'text') control = `<input type="text" class="etxt-dlg-input" data-fid="${esc(name)}" value="${esc(f.getText ? f.getText() : '')}">`;
-          else if (kind === 'checkbox') control = `<label class="etxt-dlg-check"><input type="checkbox" data-fid="${esc(name)}" ${f.isChecked ? (f.isChecked() ? 'checked' : '') : ''}> Checked</label>`;
-          else if (kind === 'dropdown') control = `<select class="etxt-dlg-input" data-fid="${esc(name)}">${(f.getOptions ? f.getOptions() : []).map((o) => `<option ${o === f.getSelected() ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
-          else if (kind === 'radio') control = (f.getOptions ? f.getOptions() : []).map((o) => `<label class="etxt-dlg-check"><input type="radio" name="${esc(name)}" data-fid="${esc(name)}" value="${esc(o)}" ${o === f.getSelected() ? 'checked' : ''}> ${esc(o)}</label>`).join('');
-          return `<div class="etxt-form-row"><span class="etxt-form-name">${esc(name)}</span>${control}</div>`;
-        }).join('');
-        dlg.querySelector('#etxt-fm-ok').disabled = false;
-        dlg.querySelector('#etxt-fm-ok').onclick = async () => {
-          const okBtn = dlg.querySelector('#etxt-fm-ok');
-          okBtn.disabled = true; okBtn.textContent = 'Saving…';
-          try {
-            const fieldKind = (f) => (typeof f.getText === 'function' ? 'text' : typeof f.check === 'function' ? 'checkbox' : typeof f.getOptions === 'function' ? (typeof f.addOptions === 'function' ? 'dropdown' : 'radio') : 'skip');
-            for (const f of fields) {
-              const name = String(f.getName ? f.getName() : '');
-              if (!name) continue;
-              const kind = fieldKind(f);
-              const el = box.querySelector(`[data-fid="${CSS.escape(name)}"]`);
-              if (!el) continue;
-              if (kind === 'text') f.setText(el.value || '');
-              else if (kind === 'checkbox') el.checked ? f.check() : f.uncheck();
-              else if (kind === 'dropdown') f.select(el.value);
-              else if (kind === 'radio') { const sel = box.querySelector(`input[name="${CSS.escape(name)}"]:checked`); if (sel) f.select(sel.value); }
-            }
-            const bytes = await doc.save();
-            currentPdf = new Blob([bytes], { type: 'application/pdf' });
-            formFilled = true;
-            if (pdfDoc) { try { pdfDoc.destroy(); } catch { /* noop */ } }
-            const pdfjs = await loadJs();
-            pdfDoc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
-            pageCount = pdfDoc.numPages;
-            pages = Array.from({ length: pageCount }, () => ({ thumb: null, full: null }));
-            close();
-            toolMode = 'select';
-            renderEditor();
-          } catch (err) { console.error('[Edit] form fill', err); okBtn.disabled = false; okBtn.textContent = 'Fill & save'; }
+      dlg.querySelector('#etxt-ff-cancel').onclick = close;
+      const nameInp = dlg.querySelector('#etxt-ff-name');
+      if (nameInp) nameInp.focus();
+      dlg.querySelector('#etxt-ff-ok').onclick = () => {
+        const name = String(nameInp.value || '').trim().replace(/\s+/g, '_').replace(/[^\w.-]/g, '');
+        if (!name) { nameInp.focus(); return; }
+        const optionsEl = dlg.querySelector('#etxt-ff-options');
+        const opts = optionsEl ? optionsEl.value.split(',').map((s) => s.trim()).filter(Boolean) : (nf.options || []);
+        const maxEl = dlg.querySelector('#etxt-ff-max');
+        const multiEl = dlg.querySelector('#etxt-ff-multi');
+        const reqEl = dlg.querySelector('#etxt-ff-req');
+        const roEl = dlg.querySelector('#etxt-ff-ro');
+        const next = {
+          ...nf,
+          name,
+          options: opts,
+          maxLength: maxEl ? Math.max(0, Number(maxEl.value) || 0) : (nf.maxLength || 0),
+          multiline: multiEl ? !!multiEl.checked : !!nf.multiline,
+          required: reqEl ? !!reqEl.checked : !!nf.required,
+          readOnly: roEl ? !!roEl.checked : !!nf.readOnly
         };
-      } catch (err) {
-        console.error('[Edit] form fill', err);
-        dlg.querySelector('#etxt-form-fields').innerHTML = `<p class="etxt-dlg-note">Could not read form fields: ${String(err.message || err)}</p>`;
+        close();
+        onDone(next);
+      };
+    }
+
+    function armFormPlace(kind) {
+      formPlaceKind = kind;
+      closeFormMenu();
+      container.classList.add('etxt-form-placing');
+      const label = kind === 'listbox' ? 'list box' : kind;
+      toast(`Drag on the page to place a ${label} field. Press Esc to cancel.`);
+      renderFormOverlay();
+    }
+
+    function setupFormPlacement() {
+      const wrap = container.querySelector('#etxt-canvas-wrap');
+      if (!wrap || wrap.dataset.formPlaceWired) return;
+      wrap.dataset.formPlaceWired = '1';
+      let draft = null;
+      wrap.addEventListener('pointerdown', (ev) => {
+        if (!formPlaceKind) return;
+        const pageEl = ev.target.closest && ev.target.closest('.etxt-page');
+        if (!pageEl) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeFormMenu();
+        const rect = pageEl.getBoundingClientRect();
+        const x0 = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+        const y0 = Math.max(0, Math.min(1, (ev.clientY - rect.top) / rect.height));
+        const layer = pageEl.querySelector('.etxt-form-layer');
+        const ghost = document.createElement('div');
+        ghost.className = 'etxt-form-ghost';
+        if (layer) layer.append(ghost);
+        draft = { pageEl, layer, ghost, x0, y0 };
+        const move = (e2) => {
+          const rx = Math.max(0, Math.min(1, (e2.clientX - rect.left) / rect.width));
+          const ry = Math.max(0, Math.min(1, (e2.clientY - rect.top) / rect.height));
+          const left = Math.min(x0, rx), top = Math.min(y0, ry);
+          draft.rect = { x: left, y: top, w: Math.abs(rx - x0), h: Math.abs(ry - y0) };
+          ghost.style.cssText = `left:${(left * 100).toFixed(3)}%;top:${(top * 100).toFixed(3)}%;width:${(Math.abs(rx - x0) * 100).toFixed(3)}%;height:${(Math.abs(ry - y0) * 100).toFixed(3)}%;`;
+        };
+        move(ev);
+        const up = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          if (draft && draft.ghost) draft.ghost.remove();
+          const r = (draft && draft.rect) || { x: x0, y: y0, w: 0, h: 0 };
+          const kind = formPlaceKind;
+          formPlaceKind = null;
+          container.classList.remove('etxt-form-placing');
+          if (r.w < 0.015 || r.h < 0.008) {
+            const defaults = {
+              text: { w: 0.3, h: 0.028 }, checkbox: { w: 0.03, h: 0.024 }, radio: { w: 0.26, h: 0.024 },
+              dropdown: { w: 0.26, h: 0.028 }, listbox: { w: 0.26, h: 0.1 }, signature: { w: 0.3, h: 0.05 }
+            };
+            const d = defaults[kind] || { w: 0.28, h: 0.03 };
+            r.w = d.w; r.h = d.h;
+            r.x = Math.min(r.x, 1 - r.w);
+            r.y = Math.min(r.y, 1 - r.h);
+          }
+          const page = Number(draft.pageEl.dataset.page) - 1;
+          const base = kind.charAt(0).toUpperCase() + kind.slice(1);
+          let n = 1;
+          while (formNewFields.some((f) => f.name === base + '_' + n) || (formModel && formModel.fields.some((f) => f.name === base + '_' + n))) n++;
+          const nf = {
+            id: 'nf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            name: base + '_' + n, kind, page, x: r.x, y: r.y, w: r.w, h: r.h,
+            options: kind === 'dropdown' || kind === 'listbox' || kind === 'radio' ? ['Option 1', 'Option 2'] : [],
+            required: false, readOnly: false, multiline: false, maxLength: 0
+          };
+          openFormFieldDlg(nf, (done) => {
+            pushUndo();
+            formNewFields.push(done);
+            renderFormOverlay();
+            updateFormsPanel();
+            updateFormBanner();
+            focusFormField(done.name);
+            toast('Field added — it will be written into the PDF on save.');
+          });
+          renderFormOverlay();
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      }, true);
+    }
+
+    function openFieldProps(name) {
+      const f = ((formModel && formModel.fields) || []).find((x) => x.name === name);
+      if (!f) return;
+      const cur = formProps[name] || {};
+      openFormFieldDlg({
+        existing: true,
+        name: f.name,
+        kind: f.kind,
+        options: f.options,
+        maxLength: cur.maxLength != null ? cur.maxLength : f.maxLength,
+        multiline: cur.multiline != null ? cur.multiline : f.multiline,
+        required: cur.required != null ? cur.required : f.required,
+        readOnly: cur.readOnly != null ? cur.readOnly : f.readOnly
+      }, (next) => {
+        pushUndo();
+        formProps[name] = { required: next.required, readOnly: next.readOnly, maxLength: next.maxLength, multiline: next.multiline };
+        f.required = !!next.required;
+        f.readOnly = !!next.readOnly;
+        if (next.maxLength != null) f.maxLength = next.maxLength;
+        if (typeof next.multiline === 'boolean') f.multiline = !!next.multiline;
+        renderFormOverlay();
+        updateFormsPanel();
+        toast(`"${name}" properties will be applied on save.`);
+      });
+    }
+
+    function removeExistingField(name) {
+      pushUndo();
+      formRemoved.add(name);
+      delete formEdits[name];
+      formDetect = formDetect.filter((c) => c.name !== name);
+      renderFormOverlay();
+      updateFormsPanel();
+      updateFormBanner();
+      toast(`"${name}" will be removed on save.`);
+    }
+
+    async function runFormDetect() {
+      if (!pdfDoc) return;
+      toast('Scanning the document for field boxes…');
+      const cands = [];
+      const maxW = 120;
+      for (let p = 1; p <= pdfDoc.numPages && cands.length < maxW; p++) {
+        try {
+          const pgObj = await pdfDoc.getPage(p);
+          const vp = pgObj.getViewport({ scale: 1 });
+          const W = vp.width, H = vp.height;
+          const txt = await pgObj.getTextContent();
+          const items = (txt.items || []).filter((it) => it && it.str);
+          for (const it of items) {
+            const t = it.transform || [1, 0, 0, 1, 0, 0];
+            const itemW = it.width || (t[0] * it.str.length) || 0;
+            const itemH = it.height || Math.abs(t[3]) || 10;
+            const x = t[4], yBottom = t[5];
+            const top = (H - yBottom - itemH) / H;
+            if (/_{3,}/.test(it.str)) {
+              const m = it.str.match(/_{3,}/);
+              const ratio = m[0].length / Math.max(1, it.str.length);
+              const runW = itemW * (m.index === 0 && m[0].length === it.str.length ? 1 : ratio);
+              const left = (x + (m.index || 0) * (itemW / Math.max(1, it.str.length))) / W;
+              if (runW > 18 && runW < W * 0.6) cands.push({ page: p - 1, kind: 'text', x: left, y: top + itemH * 0.15 / H, w: runW / W, h: Math.min(0.045, Math.max(0.02, itemH) / H), name: '' });
+            }
+            if (/[☐□❑]/.test(it.str)) {
+              const idx = it.str.search(/[☐□❑]/);
+              const chW = itemW / Math.max(1, it.str.length);
+              cands.push({ page: p - 1, kind: 'checkbox', x: (x + idx * chW) / W, y: top, w: Math.min(0.03, chW / W), h: Math.min(0.03, itemH / H), name: '' });
+            }
+          }
+          try {
+            const ops = await pgObj.getOperatorList();
+            const OPS = window.pdfjsLib.OPS;
+            let ctm = [1, 0, 0, 1, 0, 0];
+            const mul = (m1, m2) => [
+              m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1],
+              m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3],
+              m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
+            ];
+            const push = (rx, ry, rw, rh) => {
+              const c1 = [ctm[0] * rx + ctm[2] * ry + ctm[4], ctm[1] * rx + ctm[3] * ry + ctm[5]];
+              const c2 = [ctm[0] * (rx + rw) + ctm[2] * (ry + rh) + ctm[4], ctm[1] * (rx + rw) + ctm[3] * (ry + rh) + ctm[5]];
+              const x1 = Math.min(c1[0], c2[0]), x2 = Math.max(c1[0], c2[0]);
+              const y1 = Math.min(c1[1], c2[1]), y2 = Math.max(c1[1], c2[1]);
+              const wpx = x2 - x1, hpx = y2 - y1;
+              if (hpx <= 2.4 && wpx >= 30 && wpx <= W * 0.7 && y1 > 40 && y2 < H - 30) {
+                cands.push({ page: p - 1, kind: 'text', x: x1 / W, y: (H - y2 - 10) / H, w: wpx / W, h: 22 / H, name: '' });
+              } else if (wpx >= 7 && wpx <= 17 && hpx >= 7 && hpx <= 17) {
+                cands.push({ page: p - 1, kind: 'checkbox', x: x1 / W, y: (H - y2) / H, w: hpx / W, h: hpx / H, name: '' });
+              }
+            };
+            for (let i = 0; i < ops.fnArray.length && cands.length < maxW; i++) {
+              const fn = ops.fnArray[i];
+              const args = ops.argsArray[i];
+              if (fn === OPS.transform) ctm = mul(ctm, args);
+              else if (fn === OPS.rectangle) push(args[0], args[1], args[2], args[3]);
+              else if (fn === OPS.constructPath && args && args[0]) {
+                const sub = args[0]; const coords = args[1] || [];
+                let ci = 0;
+                for (let k = 0; k < sub.length; k++) {
+                  if (sub[k] === OPS.rectangle) { push(coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3]); ci += 4; }
+                  else if (sub[k] === OPS.moveTo) ci += 2;
+                  else if (sub[k] === OPS.lineTo) ci += 2;
+                  else if (sub[k] === OPS.curveTo) ci += 6;
+                  else if (sub[k] === OPS.curveTo2 || sub[k] === OPS.curveTo3) ci += 4;
+                }
+              }
+            }
+          } catch { /* noop */ }
+        } catch { /* noop */ }
       }
+      if (formModel && formModel.fields.length) {
+        const taken = formModel.fields.filter((f) => !formRemoved.has(f.name)).flatMap((f) => f.widgets.map((w) => ({ page: w.page, x: w.x, y: w.y, w: w.w, h: w.h })));
+        const overlap = (a, b) => a.page === b.page && a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        for (let i = cands.length - 1; i >= 0; i--) if (taken.some((t) => overlap(cands[i], t))) cands.splice(i, 1);
+      }
+      const seen = new Set();
+      formDetect = cands.filter((c) => {
+        const key = c.page + '|' + c.x.toFixed(2) + '|' + c.y.toFixed(2) + '|' + c.kind;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, maxW);
+      renderFormOverlay();
+      updateFormsPanel();
+      openFormsDrawer();
+      toast(formDetect.length ? `Found ${formDetect.length} field suggestion${formDetect.length === 1 ? '' : 's'}. Click a dashed box to accept.` : 'No obvious field boxes found — use Add field to place your own.');
+    }
+
+    function suggestFieldName(c) {
+      const n = formNewFields.length + (formModel ? formModel.fields.length : 0) + 1;
+      return (c.kind === 'checkbox' ? 'Checkbox_' : 'TextField_') + n;
+    }
+
+    function acceptFormCandidate(c) {
+      if (c.accepted) return;
+      pushUndo();
+      const nf = {
+        id: 'nf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: suggestFieldName(c), kind: c.kind, page: c.page, x: c.x, y: c.y, w: c.w, h: c.h,
+        options: [], required: false, readOnly: false, multiline: false, maxLength: 0
+      };
+      formNewFields.push(nf);
+      c.accepted = true;
+      renderFormOverlay();
+      updateFormsPanel();
+      updateFormBanner();
+      toast(`Added ${nf.name} — it will be written into the PDF on save.`);
+    }
+
+    function acceptAllCandidates() {
+      const pending = formDetect.filter((c) => !c.accepted);
+      if (!pending.length) return;
+      pushUndo();
+      pending.forEach((c, i) => {
+        c.accepted = true;
+        const nf = {
+          id: 'nf' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i,
+          name: suggestFieldName(c), kind: c.kind, page: c.page, x: c.x, y: c.y, w: c.w, h: c.h,
+          options: [], required: false, readOnly: false, multiline: false, maxLength: 0
+        };
+        formNewFields.push(nf);
+      });
+      renderFormOverlay();
+      updateFormsPanel();
+      updateFormBanner();
+      toast(`${pending.length} field${pending.length === 1 ? '' : 's'} added.`);
+    }
+
+    function formRequiredMissing() {
+      return formFieldCounts().requiredEmpty;
     }
 
     /* ── Spreadsheet grid editor (xlsx/xls/ods/csv/tsv sources) ── */
@@ -18361,43 +22695,20 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       container.querySelector('#etxt-sheet-done').onclick = () => { sheetMode = null; renderUpload(); };
     }
 
-    /* ── Page numbers dialog ── */
-    function openPagenumDlg() {
-      const { dlg, backdrop } = getModalElements();
-      dlg.innerHTML = `
-        <h3 class="etxt-dlg-title">Add page numbers</h3>
-        <p class="etxt-dlg-sub">Number every page of the document.</p>
-        <div class="etxt-dlg-row">
-          <label class="etxt-dlg-field">Position<select id="etxt-pn-pos"><option value="bottom-center">Bottom center</option><option value="bottom-left">Bottom left</option><option value="bottom-right">Bottom right</option><option value="top-center">Top center</option><option value="top-right">Top right</option></select></label>
-          <label class="etxt-dlg-field">Format<select id="etxt-pn-fmt"><option value="{n}">1, 2, 3…</option><option value="{n} / {t}">1 / 12</option><option value="Page {n}">Page 1</option></select></label>
-        </div>
-        <div class="etxt-dlg-actions">
-          <button type="button" class="etxt-btn-ghost" id="etxt-pn-cancel">Cancel</button>
-          <button type="button" class="etxt-btn-finish" id="etxt-pn-ok">Add page numbers</button>
-        </div>`;
-      activeDialog = dlg; dlg.hidden = false; backdrop.hidden = false;
-      const close = () => { dlg.hidden = true; backdrop.hidden = true; activeDialog = null; };
-      dlg.querySelector('#etxt-pn-cancel').onclick = close;
-      dlg.querySelector('#etxt-pn-ok').onclick = () => {
-        const pos = dlg.querySelector('#etxt-pn-pos').value;
-        const fmt = dlg.querySelector('#etxt-pn-fmt').value;
-        const [vAlign, hAlign] = pos.split('-');
-        const align = hAlign === 'left' ? 'left' : hAlign === 'right' ? 'right' : 'center';
-        const y = vAlign === 'top' ? 28 : curPageH - 28;
-        pushUndo();
-        addAnnot({ type: 'pagenum', y, align, format: fmt, size: 10, color: '#4B4B4B', vAlign });
-        close();
-        toolMode = 'select';
-        renderEditor();
-      };
-    }
-
     /* ── Tool activation with dialogs & in-place state update ── */
     function activateTool(id, fromDock = false) {
       commitEditor();
-      if (id === 'watermark') { openWatermarkDlg(); return; }
-      if (id === 'pagenum') { openPagenumDlg(); return; }
-      if (id === 'form-fill') { openFormDlg(); return; }
+      if (id === 'watermark') {
+        if (toolMode === 'watermark' && wmDraft) return; // already in the studio
+        enterWmStudio();
+        return;
+      }
+      if (id === 'pagenum') {
+        if (toolMode === 'pagenum' && pnDraft) return; // already in the studio
+        enterPnStudio();
+        return;
+      }
+      if (id === 'form-fill') id = 'form';
       if (id === 'sign') { openAcrobatSignatureModal(); return; }
 
       if (toolMode === id && fromDock) {
@@ -18410,6 +22721,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       toolMode = id;
       selAnnot = null;
+      // A crop draft never survives leaving the crop studio — otherwise a draft
+      // abandoned via a tool shortcut would resurface on the next crop entry.
+      if (id !== 'crop') cropDraft = null;
+      // Same for the watermark studio: leaving any other way drops the draft.
+      if (id !== 'watermark') exitWmStudio();
+      if (id !== 'pagenum') exitPnStudio();
       if (id === 'img-blur' && imgSrc && !imgDraft) imgDraft = cloneCanvas(imgSrc);
 
       isEditModeSwitching = true;
@@ -18444,13 +22761,50 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         b.classList.toggle('is-active', on);
       });
 
-      const cropLayer = container.querySelector('#etxt-crop-layer');
-      if (cropLayer) cropLayer.hidden = (toolMode !== 'crop');
+      if (id === 'highlight') {
+        toolOpts.drawMode = 'highlighter';
+      } else if (id === 'draw' && !toolOpts.drawMode) {
+        toolOpts.drawMode = 'pen';
+      }
+      const wrap = container.querySelector('.etxt-canvas-wrap');
+      if (wrap) {
+        wrap.classList.toggle('etxt-cursor-eraser', (id === 'draw' || id === 'highlight') && toolOpts.drawMode === 'eraser');
+      }
+      // Touch: claim gestures for drawing so stylus/touch strokes never pan the sheet.
+      const touchTools = ['draw', 'highlight', 'shape', 'redact', 'underline', 'strike', 'squiggle', 'link'];
+      container.classList.toggle('etxt-draw-touch', touchTools.includes(id));
+      // Park any live eraser size cursor when switching tools (re-shown on next hover).
+      document.querySelectorAll('.etxt-eraser-cursor').forEach(el => { el.hidden = true; });
+      container.querySelectorAll('.etxt-canvas-wrap').forEach(w => w.classList.remove('etxt-eraser-live'));
 
       updateEditSegmentedIndicator();
       renderSubcontrols();
       renderOptbar();
+      renderAnnots();
       renderImgPreview();
+      if (id === 'form') {
+        formBannerDismissed = false;
+        closeFormMenu();
+        renderFormOverlay();
+        updateFormBanner();
+        openFormsDrawer();
+      } else {
+        closeFormMenu();
+        renderFormOverlay();
+        closeFormsDrawer();
+        updateFormBanner();
+      }
+
+      // Text hit zones are only interactive in Edit mode. Every drawing tool
+      // needs the page surface underneath, otherwise zones swallow the gesture.
+      const editTextMode = id === 'edit-text';
+      container.classList.toggle('etxt-zones-inert', !editTextMode);
+      if (editTextMode) {
+        if (textHitsStale) { textHitsStale = false; attachTextHits(); }
+      } else {
+        textHitsStale = true;
+        container.querySelectorAll('.etxt-text-layer').forEach(l => l.classList.add('etxt-text-layer--off'));
+      }
     }
 
     /* ── Content-stream text engine (PDF operator parser) ── */
@@ -18544,7 +22898,113 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return ops;
     }
 
-    function csExtractRuns(ops) {
+    /* ── Font encoding codecs (simple fonts + Type0/Identity-H via ToUnicode) ──
+       PDF text is stored as byte codes, not Unicode. To match/rewrite text in a
+       Type0 (CID) font we must decode through the font's ToUnicode CMap and only
+       re-encode characters that already exist in that font. */
+    function strToCodes(s) {
+      const out = [];
+      for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i) & 0xFF);
+      return out;
+    }
+
+    function parseCMap(text) {
+      const map = new Map();
+      const hexToStr = (h) => { let s = ''; for (let i = 0; i + 3 < h.length; i += 4) s += String.fromCharCode(parseInt(h.substr(i, 4), 16)); return s; };
+      let m;
+      const bfchar = /beginbfchar([\s\S]*?)endbfchar/g;
+      while ((m = bfchar.exec(text))) {
+        const pair = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g; let p;
+        while ((p = pair.exec(m[1]))) map.set(parseInt(p[1], 16), hexToStr(p[2]));
+      }
+      const bfrange = /beginbfrange([\s\S]*?)endbfrange/g;
+      while ((m = bfrange.exec(text))) {
+        const item = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(?:<([0-9A-Fa-f]+)>|\[([^\]]*)\])/g; let p;
+        while ((p = item.exec(m[1]))) {
+          const lo = parseInt(p[1], 16), hi = parseInt(p[2], 16);
+          if (p[3] !== undefined) {
+            const base = parseInt(p[3], 16);
+            const dstLen = p[3].length;
+            for (let c = lo; c <= hi; c++) {
+              map.set(c, hexToStr((base + (c - lo)).toString(16).padStart(dstLen, '0')));
+            }
+          } else if (p[4] !== undefined) {
+            const arr = p[4].match(/<([0-9A-Fa-f]+)>/g) || [];
+            arr.forEach((hh, i) => { if (lo + i <= hi) map.set(lo + i, hexToStr(hh.replace(/[<>]/g, ''))); });
+          }
+        }
+      }
+      return map;
+    }
+
+    function makeCodec(cid, map) {
+      const toCode = new Map();
+      for (const [code, uni] of map) {
+        if (!toCode.has(uni)) toCode.set(uni, code);
+        if (uni.length > 1) for (const ch of uni) if (!toCode.has(ch)) toCode.set(ch, code);
+      }
+      return {
+        cid,
+        decode(codes) {
+          let out = '';
+          if (cid) { for (let i = 0; i + 1 < codes.length; i += 2) out += (map.get((codes[i] << 8) | codes[i + 1]) || ''); }
+          else { for (const c of codes) out += (map.get(c) || ''); }
+          return out;
+        },
+        // Returns a byte-char string, or null if any character is unmapped.
+        encode(str) {
+          const bytes = [];
+          for (const ch of String(str)) {
+            const code = toCode.get(ch);
+            if (code == null) return null;
+            if (cid) bytes.push((code >> 8) & 255, code & 255);
+            else bytes.push(code & 255);
+          }
+          return bytes.map(b => String.fromCharCode(b)).join('');
+        },
+      };
+    }
+
+    async function buildFontCodecs(resources, doc) {
+      const L = window.PDFLib;
+      const out = new Map();
+      let fonts = null;
+      try { fonts = resources && resources.lookup(L.PDFName.of('Font')); } catch { /* noop */ }
+      if (!fonts || typeof fonts.keys !== 'function') return out;
+      for (const key of fonts.keys()) {
+        const name = String(key.toString()).replace(/^\//, '');
+        try {
+          const fd = fonts.lookup(key);
+          if (!fd || !fd.dict) { out.set(name, null); continue; }
+          let cid = false;
+          try { cid = fd.dict.get(L.PDFName.of('Subtype')).decodeText() === 'Type0'; } catch { /* noop */ }
+          let map = new Map();
+          try {
+            const tuRef = fd.dict.get(L.PDFName.of('ToUnicode'));
+            if (tuRef) {
+              const tuStream = doc.context.lookup(tuRef);
+              const txt = await decodeStreamBytes(tuStream);
+              if (txt) map = parseCMap(txt);
+            }
+          } catch { /* noop */ }
+          if (!map.size) {
+            // No ToUnicode: simple fonts keep identity handling; CID fonts are
+            // opaque and must not be rewritten blindly (but deletion is still safe).
+            out.set(name, cid ? { cid: true, decode: () => '', encode: (s) => (s ? null : '') } : null);
+            continue;
+          }
+          out.set(name, makeCodec(cid, map));
+        } catch { out.set(name, null); }
+      }
+      return out;
+    }
+
+    function decodeCodesStr(rawStr, codec) {
+      if (!codec || !rawStr) return rawStr;
+      try { return codec.decode(strToCodes(rawStr)); } catch { return rawStr; }
+    }
+
+    function csExtractRuns(ops, getCodec) {
       const runs = [];
       let font = null, size = 12, tl = 0, tc = 0, tw = 0, tz = 100;
       let tm = null, tlm = null;
@@ -18576,20 +23036,32 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         else if (op === 'Tj' || op === "'" || op === '"') {
           if (op === "'") { const m = tlm || [1, 0, 0, 1, 0, 0]; tm = [m[0], m[1], m[2], m[3], m[4], m[5] - tl]; tlm = tm.slice(); }
           if (op === '"') { tw = a[0] ? a[0].v : 0; tc = a[1] ? a[1].v : 0; const m = tlm || [1, 0, 0, 1, 0, 0]; tm = [m[0], m[1], m[2], m[3], m[4], m[5] - tl]; tlm = tm.slice(); }
-          runs.push({ opIdx: i, text: a[0] ? a[0].v : '', x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
+          const rawText = a[0] ? a[0].v : '';
+          const cdc = getCodec ? getCodec(font) : null;
+          runs.push({ opIdx: i, text: decodeCodesStr(rawText, cdc), rawText, x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
         }
         else if (op === 'TJ') {
           const arr = a[0] ? a[0].v : '';
+          const cdc = getCodec ? getCodec(font) : null;
           let text = '';
-          const toks = csTokenize(arr);
+          let rawText = '';
+          const segs = [];
+          // a[0].v is the raw "[...]" array source — strip the outer brackets so
+          // the inner string/number tokens are parsed (not swallowed as one array).
+          const inner = String(arr).replace(/^\s*\[/, '').replace(/\]\s*$/, '');
+          const toks = csTokenize(inner);
           for (let ti = 0; ti < toks.length; ti++) {
             const p = toks[ti];
-            if (p.t === 'str') text += p.v;
-            else if (p.t === 'num' && p.v < -120 && text.length > 0 && !text.endsWith(' ')) {
+            if (p.t === 'str') {
+              const dt = decodeCodesStr(p.v, cdc);
+              segs.push({ ti, start: text.length, end: text.length + dt.length });
+              rawText += p.v; text += dt;
+            }
+            else if (p.t === 'num' && p.v <= -100 && text.length > 0 && !text.endsWith(' ')) {
               text += ' ';
             }
           }
-          runs.push({ opIdx: i, text, x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
+          runs.push({ opIdx: i, text, rawText, segs, x: tm ? tm[4] : 0, y: tm ? tm[5] : 0, size, font, tz });
         }
       }
       return runs;
@@ -18612,6 +23084,39 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function fmtNum(x) { return Number.isInteger(x) ? String(x) : String(Math.round(x * 1000) / 1000); }
     function csStrToArrayStr(s) { return '[' + csEscapeStr(s) + ']'; }
 
+    // Rewrite only the string token of a TJ array that contains the edited range,
+    // keeping every other token — so the surrounding kerning numbers survive.
+    function rebuildTjArray(tokens) {
+      const parts = [];
+      for (const t of tokens) {
+        if (t.t === 'str') parts.push(csEscapeStr(t.v));
+        else if (t.t === 'num') parts.push(fmtNum(t.v));
+        else parts.push(String(t.v));
+      }
+      return '[' + parts.join(' ') + ']';
+    }
+
+    function tryRewriteTjSegment(op, run, start, end, replacement, codec) {
+      if (!op || op.op !== 'TJ' || !op.a[0] || op.a[0].t !== 'array') return false;
+      const segs = run && run.segs;
+      if (!segs || !segs.length) return false;
+      let seg = null;
+      for (const s of segs) { if (start >= s.start && end <= s.end) { seg = s; break; } }
+      if (!seg) return false;
+      const encRepl = codec ? codec.encode(replacement) : replacement;
+      if (encRepl == null) return false;
+      const inner = String(op.a[0].v).replace(/^\s*\[/, '').replace(/\]\s*$/, '');
+      const tokens = csTokenize(inner);
+      const tk = tokens[seg.ti];
+      if (!tk || tk.t !== 'str') return false;
+      const width = (codec && codec.cid) ? 2 : 1;
+      const rs = (start - seg.start) * width;
+      const re = (end - seg.start) * width;
+      tk.v = tk.v.slice(0, rs) + encRepl + tk.v.slice(re);
+      op.a[0] = { t: 'array', v: rebuildTjArray(tokens) };
+      return true;
+    }
+
     function csOpsToString(ops) {
       return ops.map(o => {
         const operands = o.a.map(t =>
@@ -18623,25 +23128,90 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }).join('\n');
     }
 
-    function findRun(runs, target) {
+    function findRun(runs, target, atX, atY) {
       const normTarget = String(target || '').replace(/\s+/g, ' ').trim();
+      const cands = [];
       for (let i = 0; i < runs.length; i++) {
         if (runs[i].text === target || String(runs[i].text).replace(/\s+/g, ' ').trim() === normTarget) {
-          return { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, i] };
+          cands.push({ i, j: i });
         }
       }
-      for (let i = 0; i < runs.length; i++) {
-        let acc = runs[i].text;
-        for (let j = i + 1; j < runs.length; j++) {
-          acc += (acc.endsWith(' ') || runs[j].text.startsWith(' ') ? '' : ' ') + runs[j].text;
-          const normAcc = String(acc).replace(/\s+/g, ' ').trim();
-          if (acc === target || normAcc === normTarget) {
-            return { opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz, span: [i, j] };
+      if (!cands.length) {
+        for (let i = 0; i < runs.length; i++) {
+          let acc = runs[i].text;
+          for (let j = i + 1; j < runs.length; j++) {
+            acc += (acc.endsWith(' ') || runs[j].text.startsWith(' ') ? '' : ' ') + runs[j].text;
+            const normAcc = String(acc).replace(/\s+/g, ' ').trim();
+            if (acc === target || normAcc === normTarget) { cands.push({ i, j }); break; }
+            if (normAcc.length > normTarget.length + 10) break;
           }
-          if (normAcc.length > normTarget.length + 10) break;
         }
       }
-      return null;
+      if (!cands.length) return null;
+      // When the same string occurs more than once, prefer the run closest to
+      // the coordinates the edit actually came from.
+      let best = cands[0];
+      if (typeof atX === 'number' && typeof atY === 'number') {
+        let bestD = Infinity;
+        for (const c of cands) {
+          const r = runs[c.i];
+          const d = Math.abs((r.x || 0) - atX) + Math.abs((r.y || 0) - atY) * 1.5;
+          if (d < bestD) { bestD = d; best = c; }
+        }
+      }
+      const r0 = runs[best.i];
+      return { opIdx: r0.opIdx, font: r0.font, size: r0.size, tz: r0.tz, span: [best.i, best.j] };
+    }
+
+    // Map a whitespace-normalized string back to raw string offsets.
+    function normWithMap(s) {
+      const src = String(s || '');
+      let out = '';
+      const map = [];
+      let prevSpace = false;
+      for (let k = 0; k < src.length; k++) {
+        const ch = src[k];
+        if (/\s/.test(ch)) {
+          if (!prevSpace && out.length > 0) { out += ' '; map.push(k); }
+          prevSpace = true;
+          continue;
+        }
+        out += ch; map.push(k); prevSpace = false;
+      }
+      map.push(src.length); // sentinel: normalized end -> raw end
+      return { norm: out, map };
+    }
+
+    // The editor's selection often covers only part of a content-stream run
+    // (pdf.js splits lines differently). Find the run that CONTAINS the target
+    // and return the raw [start, end) range within it.
+    function findRunSubstring(runs, target, atX, atY) {
+      const normTarget = String(target || '').replace(/\s+/g, ' ').trim();
+      if (!normTarget) return null;
+      const cands = [];
+      for (let i = 0; i < runs.length; i++) {
+        const raw = String(runs[i].text || '');
+        if (!raw || raw === target || raw.length < normTarget.length) continue;
+        const { norm, map } = normWithMap(raw);
+        const p = norm.indexOf(normTarget);
+        if (p < 0) continue;
+        const start = map[p];
+        const endIdx = p + normTarget.length;
+        const end = endIdx < map.length ? map[endIdx] : raw.length;
+        if (start == null || end == null || end <= start) continue;
+        cands.push({ i, start, end, opIdx: runs[i].opIdx, font: runs[i].font, size: runs[i].size, tz: runs[i].tz });
+      }
+      if (!cands.length) return null;
+      let best = cands[0];
+      if (typeof atX === 'number' && typeof atY === 'number') {
+        let bestD = Infinity;
+        for (const c of cands) {
+          const r = runs[c.i];
+          const d = Math.abs((r.x || 0) - atX) + Math.abs((r.y || 0) - atY) * 1.5;
+          if (d < bestD) { bestD = d; best = c; }
+        }
+      }
+      return best;
     }
 
     function rewriteRunOps(ops, runs, match, replacement, tzScale) {
@@ -18658,6 +23228,29 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
+    // When a show-op's advance width changes, a DIRECTLY following show-op inherits
+    // the drift (any Td/TD/Tm/T*/ET resets it). Fold the delta into a trailing TJ
+    // kern so the following text stays exactly where it was.
+    const DRIFT_NON_RESET = new Set(['Tz', 'Tc', 'Tw', 'Ts', 'Tr', 'Tf', 'TL', 'rg', 'g', 'gs', 'k', 'K', 'G', 'RG']);
+    function compensateShowDrift(ops, opIdx, deltaWidth, fontSize) {
+      if (!deltaWidth || Math.abs(deltaWidth) < 0.01 || !(fontSize > 0)) return;
+      let k = opIdx + 1;
+      while (k < ops.length && DRIFT_NON_RESET.has(ops[k].op)) k++;
+      if (k >= ops.length) return;
+      const nextOp = ops[k].op;
+      if (!(nextOp === 'Tj' || nextOp === 'TJ')) return; // ' and " also move the line — leave them
+      const kern = deltaWidth * 1000 / fontSize;          // >0 moves the cursor left
+      const op = ops[opIdx];
+      if (op.op === 'TJ') {
+        const arr = op.a[0] && op.a[0].t === 'array' ? String(op.a[0].v) : '';
+        if (arr.endsWith(']')) op.a[0] = { t: 'array', v: arr.slice(0, -1) + ' ' + fmtNum(kern) + ']' };
+      } else if (op.op === 'Tj') {
+        const txt = op.a[0] && op.a[0].t === 'str' ? op.a[0].v : '';
+        op.op = 'TJ';
+        op.a = [{ t: 'array', v: '[' + csEscapeStr(txt) + ' ' + fmtNum(kern) + ']' }];
+      }
+    }
+
     /* ── Page content read/write via pdf-lib ───────────── */
     function bytesToStr(bytes) {
       let s = '';
@@ -18670,13 +23263,34 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const L = window.PDFLib;
       const bytes = typeof obj.getContents === 'function' ? obj.getContents() : null;
       if (!bytes || !bytes.length) return '';
-      let filter = null;
+
+      // Resolve the /Filter chain (may be a single name or an array).
+      let filterNames = [];
       try {
         const f = obj.dict && obj.dict.get(L.PDFName.of('Filter'));
-        filter = f ? f.toString() : null;
+        if (f) {
+          if (typeof f.asArray === 'function') {
+            filterNames = f.asArray().map(x => String(x && x.decodeText ? x.decodeText() : x).replace(/^\//, ''));
+          } else {
+            const s = f.decodeText ? f.decodeText() : f.toString();
+            filterNames = String(s).split(/[\s\[\]/]+/).filter(Boolean).map(n => n.replace(/^\//, ''));
+          }
+        }
       } catch { /* noop */ }
-      const isFlate = /FlateDecode/i.test(filter || '') || (bytes[0] === 0x78 && bytes.length > 2);
-      if (isFlate && typeof DecompressionStream !== 'undefined') {
+      const allFlate = filterNames.length > 0 && filterNames.every(n => /^FlateDecode$/i.test(n));
+      const hasUnsupported = filterNames.some(n => !/^FlateDecode$/i.test(n));
+      const magicFlate = bytes[0] === 0x78 && bytes.length > 2;
+      const isFlate = allFlate || (filterNames.length === 0 && magicFlate);
+
+      // Filters we can't decode (ASCII85/LZW/etc.) must NOT be re-emitted as raw
+      // operators — returning '' forces the safe overlay fallback instead.
+      if (hasUnsupported) {
+        console.warn('[Edit] unsupported content stream filter chain:', filterNames.join(' '));
+        return '';
+      }
+
+      if (isFlate) {
+        if (typeof DecompressionStream === 'undefined') return '';
         try {
           const ds = new DecompressionStream('deflate');
           const stream = new Blob([bytes]).stream().pipeThrough(ds);
@@ -18694,6 +23308,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           return bytesToStr(out);
         } catch (err) {
           console.warn('[Edit] inflate content stream', err);
+          return '';
         }
       }
       return bytesToStr(bytes);
@@ -18718,6 +23333,92 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       page.node.set(L.PDFName.of('Contents'), page.doc.context.register(stream));
     }
 
+    // Resolve a page/xobject's /Resources into a PDFDict (or null).
+    function resourcesOf(node, doc) {
+      try {
+        const r = node && typeof node.Resources === 'function' ? node.Resources() : null;
+        if (!r) return null;
+        if (typeof r.lookup === 'function') return r;
+        return doc.context.lookup(r) || null;
+      } catch { return null; }
+    }
+
+    function cloneStreamDictWithoutFilters(dict, doc) {
+      const L = window.PDFLib;
+      const out = L.PDFDict.withContext(doc.context);
+      try {
+        for (const [k, v] of dict.entries()) {
+          const ks = String(k.toString()).replace(/^\//, '');
+          if (ks === 'Filter' || ks === 'DecodeParms' || ks === 'Length') continue;
+          out.set(L.PDFName.of(ks), v);
+        }
+      } catch { /* noop */ }
+      return out;
+    }
+
+    // Every content stream that draws onto this page: the page's own /Contents
+    // plus every nested Form XObject, recursively. Text inside Form XObjects is
+    // otherwise invisible to our parser (and falls back to the overlay path).
+    async function collectContentOwners(doc, page) {
+      const L = window.PDFLib;
+      const owners = [];
+      const seen = new Set();
+      const pageResources = resourcesOf(page.node, doc);
+
+      owners.push({
+        label: 'page',
+        resources: pageResources,
+        getString: () => getPageContentString(page),
+        setString: (s) => setPageContentString(page, s),
+      });
+
+      const walk = async (resources, keyPrefix, depth) => {
+        if (!resources || depth > 6) return;
+        let xobjs = null;
+        try { xobjs = resources.lookup(L.PDFName.of('XObject')); } catch { return; }
+        if (!xobjs || typeof xobjs.keys !== 'function') return;
+        for (const key of xobjs.keys()) {
+          let ref = null, obj = null;
+          try { ref = xobjs.get(key); } catch { continue; }
+          try { obj = doc.context.lookup(ref); } catch { continue; }
+          if (!obj || !obj.dict) continue;
+          let sub = '';
+          try { sub = obj.dict.get(L.PDFName.of('Subtype')).decodeText(); } catch { /* noop */ }
+          if (sub !== 'Form') continue;
+
+          const refTag = (ref && typeof ref.toString === 'function') ? ref.toString() : ('inline:' + keyPrefix + key);
+          if (seen.has(refTag)) continue;
+          seen.add(refTag);
+
+          let formResources = null;
+          try { formResources = obj.dict.lookup(L.PDFName.of('Resources')) || resources; } catch { formResources = resources; }
+          const formStream = obj;
+
+          owners.push({
+            label: 'xobj:' + keyPrefix + key,
+            resources: formResources || pageResources,
+            ref,
+            dict: formStream.dict,
+            getString: () => decodeStreamBytes(formStream),
+            setString: (s) => {
+              try {
+                const isRef = !!(ref && (ref.tag === 'Ref' || typeof ref.objectNumber !== 'undefined'));
+                if (!isRef || typeof doc.context.assign !== 'function') return false;
+                const dict = cloneStreamDictWithoutFilters(formStream.dict, doc);
+                const ns = L.PDFRawStream.of(dict, Uint8Array.from(s, c => c.charCodeAt(0) & 0xFF));
+                doc.context.assign(ref, ns);
+                return true;
+              } catch (err) { console.warn('[Edit] xobject write failed', err); return false; }
+            },
+          });
+
+          await walk(formResources, keyPrefix + key + '/', depth + 1);
+        }
+      };
+      await walk(pageResources, '', 0);
+      return owners;
+    }
+
     function normalizeFontName(rawName) {
       return String(rawName || '')
         .replace(/^[A-Z]{6}\+/, '') // strip subset prefix e.g. "ABCDEF+"
@@ -18726,17 +23427,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         .trim();
     }
 
-    async function resolveStdFont(pageNode, fontName, geom) {
+    async function resolveStdFont(resources, fontName, geom) {
       const L = window.PDFLib;
       try {
         let name = '';
         let isBold = !!(geom?.isBold || geom?.fontWeight === '700' || geom?.fontWeight === '800' || geom?.fontWeight === '900');
         let isItalic = !!(geom?.isItalic || geom?.fontStyle === 'italic' || geom?.fontStyle === 'oblique');
 
-        if (fontName && pageNode) {
+        if (fontName && resources) {
           try {
-            const res = pageNode.Resources();
-            const fonts = res && typeof res.lookup === 'function' ? res.lookup(L.PDFName.of('Font')) : null;
+            const fonts = typeof resources.lookup === 'function' ? resources.lookup(L.PDFName.of('Font')) : null;
             const fd = fonts && typeof fonts.lookup === 'function' ? fonts.lookup(L.PDFName.of(String(fontName).replace(/^\//, ''))) : null;
             const bf = fd && typeof fd.get === 'function' ? fd.get(L.PDFName.of('BaseFont')) : null;
             name = bf && typeof bf.decodeText === 'function' ? bf.decodeText() : String(bf || '');
@@ -18749,10 +23449,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const fnLower = (cleanBase + ' ' + (geom?.fontFamily || '')).toLowerCase();
         if (/bold|heavy|black|demi|700|800|900/.test(fnLower)) isBold = true;
         if (/italic|oblique|slant|kursiv/.test(fnLower)) isItalic = true;
-
-        const isSerif = /times|roman|serif|georgia|garamond|cambria|palatino|minion|baskerville|playfair/.test(fnLower);
-        const isMono = /courier|mono|typewriter|consolas|menlo|monaco|source\s*code|ubuntu\s*mono/.test(fnLower);
-
+        const isSerif = !/sans-?serif/.test(fnLower) &&
+          /times|tinos|roman|serif|georgia|garamond|cambria|palatino|minion|baskerville|playfair/.test(fnLower);
+        const isMono =
+          /courier|cousine|mono|typewriter|consolas|menlo|monaco|source\s*code|ubuntu\s*mono/.test(fnLower);
         if (isMono) {
           if (isBold && isItalic) return L.StandardFonts.CourierBoldOblique;
           if (isBold) return L.StandardFonts.CourierBold;
@@ -18777,9 +23477,71 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
-    function wrapTextToLines(text, font, fontSize, maxWidth) {
+    // Text width measurer that works for both WinAnsi standard fonts and
+    // arbitrary Unicode (falls back to a canvas when the embedded font can't
+    // encode the characters).
+    function makeTextMeasurer(font, fontSize) {
+      let ctx = null;
+      try { ctx = document.createElement('canvas').getContext('2d'); } catch { /* noop */ }
+      return (s) => {
+        if (font) {
+          try { return font.widthOfTextAtSize(s, fontSize); } catch { /* fall through */ }
+        }
+        if (ctx) {
+          ctx.font = `${fontSize}px sans-serif`;
+          return ctx.measureText(String(s)).width;
+        }
+        return String(s).length * fontSize * 0.55;
+      };
+    }
+
+    // Standard-14 fonts are WinAnsi-encoded, so characters above U+00FF (and a
+    // few control slots) cannot be written with drawText.
+    function isWinAnsiSafe(text) {
+      const s = String(text || '');
+      for (let i = 0; i < s.length; i++) {
+        const c = s.charCodeAt(i);
+        if (c > 255 || c === 127 || (c < 32 && c !== 9 && c !== 10 && c !== 13)) return false;
+      }
+      return true;
+    }
+
+    // Rasterize one line of text through the browser (correct bidi + shaping for
+    // Arabic/Hebrew/CJK and any font the OS has) and return a PNG the PDF can embed.
+    function rasterizeTextLine(line, opts) {
+      const scale = 4;
+      const fontPx = Math.max(4, opts.size) * scale;
+      const cssFont = `${opts.fontStyle || 'normal'} ${opts.fontWeight || '400'} ${fontPx}px ${opts.fontFamily || 'sans-serif'}`;
+      const c = document.createElement('canvas');
+      const ctx = c.getContext('2d');
+      ctx.font = cssFont;
+      ctx.direction = opts.rtl ? 'rtl' : 'ltr';
+      const metrics = ctx.measureText(String(line));
+      const ascent = (metrics.actualBoundingBoxAscent || fontPx * 0.8);
+      const descent = (metrics.actualBoundingBoxDescent || fontPx * 0.25);
+      const pad = Math.ceil(fontPx * 0.15);
+      const w = Math.max(1, Math.ceil(metrics.width) + pad * 2);
+      const h = Math.max(1, Math.ceil(ascent + descent) + pad * 2);
+      c.width = w; c.height = h;
+      const ctx2 = c.getContext('2d');
+      ctx2.font = cssFont;
+      ctx2.direction = opts.rtl ? 'rtl' : 'ltr';
+      ctx2.textBaseline = 'alphabetic';
+      ctx2.fillStyle = opts.color || '#000000';
+      ctx2.fillText(String(line), pad, pad + ascent);
+      return {
+        dataUrl: c.toDataURL('image/png'),
+        width: w / scale,
+        height: h / scale,
+        baselineFromBottom: (h - (pad + ascent)) / scale,
+        leftPad: pad / scale,
+      };
+    }
+
+    function wrapTextToLines(text, fontSize, maxWidth, measure) {
       const rawParagraphs = String(text || '').split('\n');
       const lines = [];
+      const widthOf = typeof measure === 'function' ? measure : (s) => String(s).length * fontSize * 0.55;
 
       for (const p of rawParagraphs) {
         const trimmed = p.trim();
@@ -18793,7 +23555,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
         for (const w of words) {
           const testLine = curLine ? curLine + ' ' + w : w;
-          const testW = font ? font.widthOfTextAtSize(testLine, fontSize) : testLine.length * (fontSize * 0.55);
+          const testW = widthOf(testLine);
 
           if (testW <= maxWidth || !curLine) {
             curLine = testLine;
@@ -18861,6 +23623,270 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
+    /* ── Watermark model & renderers (text/image, single/tiled, over/under) ──
+       Shared by the watermark studio (live preview) and the export pipeline. */
+    const WM_FONTS = {
+      sans: { label: 'Sans', css: 'Helvetica, Arial, sans-serif', fonts: ['Helvetica', 'HelveticaBold', 'HelveticaOblique', 'HelveticaBoldOblique'] },
+      serif: { label: 'Serif', css: '"Times New Roman", Times, serif', fonts: ['TimesRoman', 'TimesRomanBold', 'TimesRomanItalic', 'TimesRomanBoldItalic'] },
+      mono: { label: 'Mono', css: '"Courier New", Courier, monospace', fonts: ['Courier', 'CourierBold', 'CourierOblique', 'CourierBoldOblique'] },
+    };
+    const WM_COLORS = ['#94A3B8', '#111827', '#DC2626', '#2563EB', '#059669', '#F59E0B', '#7C3AED'];
+    const WM_TILE_COLS = 3;
+    const WM_TILE_ROWS = 4;
+
+    function wmStdFont(wm) {
+      const fam = WM_FONTS[wm.font] || WM_FONTS.sans;
+      const idx = (wm.bold ? 1 : 0) + (wm.italic ? 2 : 0);
+      return fam.fonts[idx];
+    }
+    function wmCssFont(wm) { return (WM_FONTS[wm.font] || WM_FONTS.sans).css; }
+    function wmOpacity(wm) { return Math.max(0.02, Math.min(1, wm.opacity ?? 0.2)); }
+    function wmRotation(wm) { return Math.max(-180, Math.min(180, Number(wm.rotation) || 0)); }
+
+    // Page scope: all | odd | even | range ("1-3,5"). Returns null for "all".
+    function wmScopePages(wm, total) {
+      const totalN = Math.max(1, total || 1);
+      if (wm.scope === 'odd') { const s = new Set(); for (let i = 1; i <= totalN; i += 2) s.add(i); return s; }
+      if (wm.scope === 'even') { const s = new Set(); for (let i = 2; i <= totalN; i += 2) s.add(i); return s; }
+      if (wm.scope === 'range') {
+        const s = new Set();
+        for (const part of String(wm.range || '').split(',')) {
+          const t = part.trim();
+          const m = t.match(/^(\d+)\s*-\s*(\d+)$/);
+          if (m) { for (let i = Math.max(1, +m[1]); i <= Math.min(totalN, +m[2]); i++) s.add(i); }
+          else if (/^\d+$/.test(t)) { const n = +t; if (n >= 1 && n <= totalN) s.add(n); }
+        }
+        return s;
+      }
+      return null;
+    }
+    function wmApplies(wm, pageNum1, total) {
+      const s = wmScopePages(wm, total);
+      return !s || s.has(pageNum1);
+    }
+    // Centers (PDF points) for a single watermark or the tile grid.
+    function wmPositionCenters(wm, pw, ph) {
+      if (!wm.tile) return [{ x: ((wm.xPct ?? 50) / 100) * pw, y: ((wm.yPct ?? 50) / 100) * ph }];
+      const out = [];
+      for (let r = 0; r < WM_TILE_ROWS; r++) {
+        for (let c = 0; c < WM_TILE_COLS; c++) {
+          out.push({ x: ((c + 0.5) / WM_TILE_COLS) * pw, y: ((r + 0.5) / WM_TILE_ROWS) * ph });
+        }
+      }
+      return out;
+    }
+
+    async function drawWatermarkOver(doc, page, wm, pw, ph, getCachedFont) {
+      const L = window.PDFLib;
+      const opacity = wmOpacity(wm);
+      const rot = wmRotation(wm);
+      const rad = rot * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const centers = wmPositionCenters(wm, pw, ph);
+      if (wm.wmKind === 'image' && wm.dataUrl) {
+        let img;
+        try { img = await embedImageData(doc, wm.dataUrl); } catch (err) { console.warn('[Edit] watermark image embed failed:', err && err.message); return; }
+        const w = Math.max(8, (Math.min(100, Math.max(1, wm.imageScale || 30)) / 100) * pw);
+        const h = w * ((img.height || 1) / (img.width || 1));
+        for (const c of centers) {
+          page.drawImage(img, {
+            x: c.x - (w / 2) * cos + (h / 2) * sin,
+            y: c.y - (w / 2) * sin - (h / 2) * cos,
+            width: w, height: h,
+            rotate: L.degrees(rot),
+            opacity,
+          });
+        }
+        return;
+      }
+      const fontName = wmStdFont(wm);
+      const font = await getCachedFont(L.StandardFonts[fontName] || L.StandardFonts.Helvetica);
+      const size = Math.max(6, Math.min(400, wm.size || 48));
+      const text = String(wm.text || '');
+      if (!text) return;
+      const tw = font.widthOfTextAtSize(text, size);
+      const th = size;
+      const color = rgbOf(wm.color || '#94A3B8');
+      for (const c of centers) {
+        page.drawText(text, {
+          x: c.x - (tw / 2) * cos + (th / 2) * sin,
+          y: c.y - (tw / 2) * sin - (th / 2) * cos,
+          size, font, color,
+          rotate: L.degrees(rot),
+          opacity,
+        });
+      }
+    }
+
+    // Under-layer watermarks are prepended to the page content stream so the
+    // original document paints on top of them (mirrors Acrobat's "behind page").
+    async function drawWatermarkUnder(doc, page, wm, pw, ph, getCachedFont, slot) {
+      const L = window.PDFLib;
+      const N = L.PDFName;
+      const opacity = wmOpacity(wm);
+      const rot = wmRotation(wm);
+      const rad = rot * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const centers = wmPositionCenters(wm, pw, ph);
+      let res = page.node.Resources();
+      if (!res) { res = doc.context.obj({}); page.node.set(N.of('Resources'), res); }
+      const gsName = 'WmGS' + slot;
+      let gss = res.lookup(N.of('ExtGState')) || null;
+      if (!gss) { gss = doc.context.obj({}); res.set(N.of('ExtGState'), gss); }
+      gss.set(N.of(gsName), doc.context.register(doc.context.obj({ Type: 'ExtGState', ca: opacity, CA: opacity })));
+      const ops = ['q', `/${gsName} gs`];
+      if (wm.wmKind === 'image' && wm.dataUrl) {
+        let img;
+        try { img = await embedImageData(doc, wm.dataUrl); } catch (err) { console.warn('[Edit] watermark image embed failed:', err && err.message); return; }
+        const xoName = 'WmI' + slot;
+        let xos = res.lookup(N.of('XObject')) || null;
+        if (!xos) { xos = doc.context.obj({}); res.set(N.of('XObject'), xos); }
+        xos.set(N.of(xoName), img.ref);
+        const w = Math.max(8, (Math.min(100, Math.max(1, wm.imageScale || 30)) / 100) * pw);
+        const h = w * ((img.height || 1) / (img.width || 1));
+        for (const c of centers) {
+          const x = c.x - (w / 2) * cos + (h / 2) * sin;
+          const y = c.y - (w / 2) * sin - (h / 2) * cos;
+          ops.push('q', `1 0 0 1 ${fmtNum(x)} ${fmtNum(y)} cm`,
+            `${fmtNum(cos)} ${fmtNum(sin)} ${fmtNum(-sin)} ${fmtNum(cos)} 0 0 cm`,
+            `${fmtNum(w)} 0 0 ${fmtNum(h)} 0 0 cm`,
+            `/${xoName} Do`, 'Q');
+        }
+      } else {
+        const fontName = wmStdFont(wm);
+        const font = await getCachedFont(L.StandardFonts[fontName] || L.StandardFonts.Helvetica);
+        const fName = 'WmF' + slot;
+        let fonts = res.lookup(N.of('Font')) || null;
+        if (!fonts) { fonts = doc.context.obj({}); res.set(N.of('Font'), fonts); }
+        fonts.set(N.of(fName), font.ref);
+        const size = Math.max(6, Math.min(400, wm.size || 48));
+        const text = String(wm.text || '');
+        if (!text) return;
+        const tw = font.widthOfTextAtSize(text, size);
+        const th = size;
+        const color = rgbOf(wm.color || '#94A3B8');
+        const rgbOp = `${fmtNum(color.red)} ${fmtNum(color.green)} ${fmtNum(color.blue)} rg`;
+        for (const c of centers) {
+          const x = c.x - (tw / 2) * cos + (th / 2) * sin;
+          const y = c.y - (tw / 2) * sin - (th / 2) * cos;
+          ops.push('BT', rgbOp, `/${fName} ${fmtNum(size)} Tf`,
+            `${fmtNum(cos)} ${fmtNum(sin)} ${fmtNum(-sin)} ${fmtNum(cos)} ${fmtNum(x)} ${fmtNum(y)} Tm`,
+            `${csEscapeStr(text)} Tj`, 'ET');
+        }
+      }
+      ops.push('Q');
+      const stream = doc.context.stream(ops.join('\n'));
+      const sref = doc.context.register(stream);
+      const contents = page.node.Contents();
+      if (contents && typeof contents.asArray === 'function') contents.insert(0, sref);
+      else if (contents && contents.ref) page.node.set(N.of('Contents'), doc.context.obj([sref, contents]));
+      else page.node.set(N.of('Contents'), doc.context.obj([sref]));
+    }
+
+    /* ── Page-number model & renderer ─────────────────────────────────────────
+       Multiple numbering schemes, Arabic/Roman/letter numerals, per-page
+       sequence with start offset and cover skip, token formats, header/footer
+       zones with margins and mirrored facing pages. */
+    const PN_FORMATS = [
+      { value: '{n}', label: '1, 2, 3…' },
+      { value: '{n} / {p}', label: '1 / 12' },
+      { value: '{n} of {p}', label: '1 of 12' },
+      { value: 'Page {n}', label: 'Page 1' },
+      { value: 'Page {n} of {p}', label: 'Page 1 of 12' },
+    ];
+    const PN_NUMERALS = [
+      { value: 'arabic', label: '1, 2, 3' },
+      { value: 'roman-lower', label: 'i, ii, iii' },
+      { value: 'roman-upper', label: 'I, II, III' },
+      { value: 'letter-lower', label: 'a, b, c' },
+      { value: 'letter-upper', label: 'A, B, C' },
+    ];
+
+    function pnRoman(n) {
+      if (!(n > 0) || n > 3999) return String(n);
+      const map = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+      let out = '';
+      for (const [v, s] of map) { while (n >= v) { out += s; n -= v; } }
+      return out;
+    }
+    function pnLetters(n, upper) {
+      if (!(n > 0)) return String(n);
+      let out = '';
+      while (n > 0) { const r = (n - 1) % 26; out = String.fromCharCode(97 + r) + out; n = Math.floor((n - 1) / 26); }
+      return upper ? out.toUpperCase() : out;
+    }
+    function pnNumeral(value, style) {
+      if (style === 'roman-lower') return pnRoman(value).toLowerCase();
+      if (style === 'roman-upper') return pnRoman(value);
+      if (style === 'letter-lower') return pnLetters(value, false);
+      if (style === 'letter-upper') return pnLetters(value, true);
+      return String(value);
+    }
+    function pnFormatTokens(template, ctx) {
+      return String(template || '{n}')
+        .replace(/\{n\}/g, ctx.n)
+        .replace(/\{p\}|\{t\}|\{total\}/g, String(ctx.p))
+        .replace(/\{r\}/g, String(ctx.r))
+        .replace(/\{rf\}/g, String(ctx.rf));
+    }
+    // Which pages get a number and the value each page receives.
+    function pnCompute(scheme, total) {
+      const numbered = new Map();
+      let counter = 0;
+      for (let p = 1; p <= total; p++) {
+        if (!wmApplies(scheme, p, total)) continue;
+        if (p <= (scheme.skipFirst || 0)) continue;
+        counter++;
+        numbered.set(p - 1, (scheme.startNumber || 1) + counter - 1);
+      }
+      return { numbered, totalNumbered: counter };
+    }
+    function pnTextFor(scheme, pageIdx0, total, computed) {
+      const value = computed.numbered.get(pageIdx0);
+      if (value == null) return null;
+      return pnFormatTokens(scheme.format, {
+        n: pnNumeral(value, scheme.numeral),
+        p: total,
+        r: computed.totalNumbered,
+        rf: (scheme.startNumber || 1) + computed.totalNumbered - 1,
+      });
+    }
+    function pnHAlignFor(scheme, pageNum1) {
+      let h = scheme.hAlign || 'center';
+      if (scheme.facing && h !== 'center' && pageNum1 % 2 === 0) h = h === 'left' ? 'right' : 'left';
+      return h;
+    }
+
+    async function drawPageNumbers(doc, numPages, schemes, getCachedFont) {
+      const L = window.PDFLib;
+      for (const pn of schemes) {
+        const computed = pnCompute(pn, numPages);
+        if (!computed.totalNumbered) continue;
+        const font = await getCachedFont(L.StandardFonts[wmStdFont(pn)] || L.StandardFonts.Helvetica);
+        const size = Math.max(6, Math.min(72, pn.size || 10));
+        const color = rgbOf(pn.color || '#4B4B4B');
+        const opacity = Math.max(0.05, Math.min(1, pn.opacity ?? 1));
+        const mx = Math.max(0, Math.min(300, pn.marginX ?? 36));
+        const my = Math.max(0, Math.min(300, pn.marginY ?? 28));
+        for (const [i, value] of computed.numbered) {
+          const text = pnFormatTokens(pn.format, {
+            n: pnNumeral(value, pn.numeral),
+            p: numPages,
+            r: computed.totalNumbered,
+            rf: (pn.startNumber || 1) + computed.totalNumbered - 1,
+          });
+          if (!text) continue;
+          const page = doc.getPage(i);
+          const { width: pw, height: ph } = page.getSize();
+          const tw = font.widthOfTextAtSize(text, size);
+          const h = pnHAlignFor(pn, i + 1);
+          const x = h === 'left' ? mx : h === 'right' ? pw - tw - mx : (pw - tw) / 2;
+          const y = pn.vAlign === 'top' ? ph - my - size : my;
+          page.drawText(text, { x, y, size, font, color, opacity });
+        }
+      }
+    }
+
     async function drawAnnot(doc, page, a, pw, ph) {
       const L = window.PDFLib;
       const yFlip = (y) => ph - y;
@@ -18909,13 +23935,39 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           });
         });
       } else if (a.type === 'ink') {
-        const d = smoothPath(a.points.map(p => [p[0], yFlip(p[1])]));
-        page.drawSvgPath(d, {
-          x: 0, y: 0,
-          color: L.rgb(1, 1, 1), opacity: 0.001,
-          borderColor: rgbOf(a.color || '#111827'), borderWidth: a.width || 2,
-          borderOpacity: 1, borderLineCap: 1, borderLineJoin: 1,
+        const col = rgbOf(a.color || (a.isHighlighter ? '#FDE047' : '#111827'));
+        const baseW = a.width || (a.isHighlighter ? 14 : 2);
+        const alpha = a.isHighlighter ? 0.38 : 1;
+        const flipped = (a.points || []).map(p => {
+          const q = [p[0], yFlip(p[1])];
+          if (p.length > 2) { q[2] = p[2]; if (p.length > 3) q[3] = p[3]; }
+          return q;
         });
+        const buckets = a.pressure ? inkWidthBuckets(flipped, baseW) : null;
+        if (buckets) {
+          // Preserve the pressure/tilt width profile when baking ink into content.
+          for (const b of buckets) {
+            let d = '';
+            for (const [s1, s2] of b.segs) d += `M ${s1[0].toFixed(2)} ${s1[1].toFixed(2)} L ${s2[0].toFixed(2)} ${s2[1].toFixed(2)} `;
+            page.drawSvgPath(d.trim(), {
+              x: 0, y: 0,
+              borderColor: col, borderWidth: b.w, borderOpacity: alpha,
+              borderLineCap: 1, borderLineJoin: 1,
+            });
+          }
+        } else {
+          const d = smoothPath(flipped.map(p => [p[0], p[1]]));
+          if (d) {
+            page.drawSvgPath(d, {
+              x: 0, y: 0,
+              borderColor: col,
+              borderWidth: baseW,
+              borderOpacity: alpha,
+              borderLineCap: 1,
+              borderLineJoin: 1,
+            });
+          }
+        }
       } else if (a.type === 'hl') {
         const kind = a.kind || 'hl';
         const c = rgbOf(a.color || '#FDE047');
@@ -18937,37 +23989,36 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       } else if (a.type === 'shape') {
         const c = rgbOf(a.color || '#111827');
         const sw = a.width || 2;
+        const op = (a.opacity != null ? Math.max(0.05, Math.min(1, a.opacity)) : 1);
+        // Direction-aware endpoints (fall back to the box diagonal for old annots).
+        const x1 = (typeof a.x1 === 'number' ? a.x1 : a.x);
+        const y1 = (typeof a.y1 === 'number' ? a.y1 : a.y + a.h);
+        const x2 = (typeof a.x2 === 'number' ? a.x2 : a.x + a.w);
+        const y2 = (typeof a.y2 === 'number' ? a.y2 : a.y);
         if (a.kind === 'rect') {
           page.drawRectangle({
             x: a.x, y: yFlip(a.y + a.h), width: a.w, height: a.h,
-            color: L.rgb(1, 1, 1), opacity: 0.001,
-            borderColor: c, borderWidth: sw,
+            borderColor: c, borderWidth: sw, borderOpacity: op,
           });
         } else if (a.kind === 'ellipse') {
           page.drawEllipse({
             x: a.x + a.w / 2, y: yFlip(a.y + a.h / 2),
             xScale: a.w / 2, yScale: a.h / 2,
-            color: L.rgb(1, 1, 1), opacity: 0.001,
-            borderColor: c, borderWidth: sw,
+            borderColor: c, borderWidth: sw, borderOpacity: op,
           });
         } else if (a.kind === 'line') {
           page.drawLine({
-            start: { x: a.x, y: yFlip(a.y + a.h) },
-            end: { x: a.x + a.w, y: yFlip(a.y) },
-            thickness: sw, color: c,
+            start: { x: x1, y: yFlip(y1) },
+            end: { x: x2, y: yFlip(y2) },
+            thickness: sw, color: c, opacity: op,
           });
         } else if (a.kind === 'arrow') {
-          const x1 = a.x, y1 = yFlip(a.y + a.h), x2 = a.x + a.w, y2 = yFlip(a.y);
-          const ang = Math.atan2(y2 - y1, x2 - x1);
-          const hl = Math.min(12, Math.hypot(x2 - x1, y2 - y1) * 0.22);
-          const hx = Math.cos(ang) * hl, hy = Math.sin(ang) * hl;
-          const px = -hy, py = hx;
-          const d = `M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} M ${(x2 - hx - px * 0.6).toFixed(2)} ${(y2 - hy - py * 0.6).toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${(x2 - hx + px * 0.6).toFixed(2)} ${(y2 - hy + py * 0.6).toFixed(2)}`;
+          const px1 = x1, py1 = yFlip(y1), px2 = x2, py2 = yFlip(y2);
+          const hp = arrowHeadPoints(px1, py1, px2, py2, Math.min(12, Math.hypot(px2 - px1, py2 - py1) * 0.22));
+          const d = `M ${px1.toFixed(2)} ${py1.toFixed(2)} L ${px2.toFixed(2)} ${py2.toFixed(2)} M ${hp.bx1.toFixed(2)} ${hp.by1.toFixed(2)} L ${px2.toFixed(2)} ${py2.toFixed(2)} L ${hp.bx2.toFixed(2)} ${hp.by2.toFixed(2)}`;
           page.drawSvgPath(d, {
             x: 0, y: 0,
-            color: L.rgb(1, 1, 1), opacity: 0.001,
-            borderColor: c, borderWidth: sw, borderOpacity: 1,
-            borderLineCap: 1, borderLineJoin: 1,
+            borderColor: c, borderWidth: sw, borderOpacity: op, borderLineCap: 1, borderLineJoin: 1,
           });
         }
       } else if (a.type === 'redact' || a.type === 'whiteout' || a.type === 'erase') {
@@ -19063,13 +24114,384 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
-    async function applyEditJob(file, editsList, annotsAll, crop, wms, pns) {
+    /* ── Incremental PDF writer ────────────────────────────────────────────────
+       Append only the changed stream objects to the ORIGINAL file bytes, with a
+       fresh xref section and a trailer chained via /Prev. Everything else —
+       metadata, unreferenced objects, the original object bytes — stays intact.
+       Returns null (caller falls back to a full rewrite) for anything exotic. */
+    function pdfSerString(s) {
+      const str = String(s);
+      let out = '(';
+      for (let i = 0; i < str.length; i++) {
+        const c = str.charCodeAt(i) & 0xFF;
+        if (c === 40 || c === 41 || c === 92) out += '\\' + String.fromCharCode(c);
+        else if (c < 32 || c > 126) out += '\\' + c.toString(8).padStart(3, '0');
+        else out += String.fromCharCode(c);
+      }
+      return out + ')';
+    }
+
+    function pdfSerialize(obj, L) {
+      if (obj == null) return 'null';
+      // PDFRef
+      if (typeof obj.objectNumber === 'number' && typeof obj.generationNumber === 'number') {
+        return `${obj.objectNumber} ${obj.generationNumber} R`;
+      }
+      // PDFBool / PDFNull
+      if (typeof obj.asBoolean === 'function') { try { return obj.asBoolean() ? 'true' : 'false'; } catch { return 'false'; } }
+      if (obj.value === null && typeof obj.asBoolean !== 'function') return 'null';
+      // PDFDict
+      if (typeof obj.entries === 'function' && typeof obj.get === 'function') {
+        const p = [];
+        try { for (const [k, v] of obj.entries()) p.push(pdfSerialize(k, L) + ' ' + pdfSerialize(v, L)); } catch { /* noop */ }
+        return '<<' + (p.length ? ' ' + p.join(' ') + ' ' : '') + '>>';
+      }
+      // PDFArray
+      if (typeof obj.size === 'function' && typeof obj.get === 'function' && typeof obj.asArray === 'function') {
+        const p = [];
+        for (let i = 0; i < obj.size(); i++) p.push(pdfSerialize(obj.get(i), L));
+        return '[' + p.join(' ') + ']';
+      }
+      // PDFName
+      if (typeof obj.asString === 'function' && typeof obj.encodedName !== 'undefined') {
+        try { const s = String(obj.asString()); return s.startsWith('/') ? s : ('/' + s); } catch { return '/' + String(obj); }
+      }
+      // PDFNumber
+      if (typeof obj.asNumber === 'function') {
+        const v = obj.asNumber();
+        return Number.isInteger(v) ? String(v) : String(Math.round(v * 1e6) / 1e6);
+      }
+      // PDFString / PDFHexString
+      if (typeof obj.asBytes === 'function') {
+        if (typeof obj.asString === 'function') {
+          try { const h = obj.asString(); if (/^[0-9A-Fa-f]*$/.test(h)) return '<' + h + '>'; } catch { /* noop */ }
+        }
+        try { return pdfSerString(new TextDecoder('latin1').decode(obj.asBytes())); } catch { /* noop */ }
+      }
+      if (typeof obj.value === 'string') return pdfSerString(obj.value);
+      return 'null';
+    }
+
+    async function maybeDeflate(bytes) {
+      try {
+        if (typeof CompressionStream === 'undefined') return null;
+        const cs = new CompressionStream('deflate');
+        const stream = new Blob([bytes]).stream().pipeThrough(cs);
+        const reader = stream.getReader();
+        const chunks = [];
+        for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); }
+        const total = chunks.reduce((a, c) => a + c.length, 0);
+        const out = new Uint8Array(total);
+        let off = 0;
+        for (const c of chunks) { out.set(c, off); off += c.length; }
+        return out;
+      } catch { return null; }
+    }
+
+    async function buildIncrementalPdf(L, doc, originalBytes, writes) {
+      try {
+        const origStr = bytesToStr(originalBytes);
+        const sxIdx = origStr.lastIndexOf('startxref');
+        if (sxIdx < 0) return null;
+        const sxm = origStr.slice(sxIdx).match(/startxref\s+(\d+)/);
+        if (!sxm) return null;
+        const prev = parseInt(sxm[1], 10);
+        const atPrev = origStr.slice(prev, prev + 16).replace(/^\s+/, '');
+        const classic = atPrev.startsWith('xref');
+
+        let trailerInner = null;
+        if (classic) {
+          const trailers = [...origStr.matchAll(/trailer\s*<<([\s\S]*?)>>/g)];
+          if (!trailers.length) return null;
+          trailerInner = trailers[trailers.length - 1][1].replace(/\s+/g, ' ').trim();
+          if (/\/Encrypt\b/.test(trailerInner)) return null;
+          trailerInner = trailerInner.replace(/\/Prev\s+\d+/g, '').replace(/\/XRefStm\s+\d+/g, '').trim();
+        } else if ((doc.context.trailerInfo && doc.context.trailerInfo.Encrypt)) {
+          return null; // encrypted → cannot safely append plaintext streams
+        }
+
+        const byNum = new Map();
+        for (const w of writes) {
+          if (!w || !w.ref || typeof w.ref.objectNumber !== 'number') continue;
+          byNum.set(w.ref.objectNumber, w);
+        }
+        if (!byNum.size) return null;
+
+        const chunks = [];
+        let offset = originalBytes.length;
+        const pushStr = (s) => { const b = Uint8Array.from(s, c => c.charCodeAt(0) & 0xFF); chunks.push(b); offset += b.length; };
+        const offsets = new Map();
+
+        for (const [num, w] of byNum) {
+          const gen = w.ref.generationNumber || 0;
+          offsets.set(num, offset + 1); // object token follows the leading newline
+          const payload = (await maybeDeflate(w.bytes)) || w.bytes;
+          const isFlate = payload !== w.bytes;
+          const entries = [];
+          try {
+            for (const [k, v] of w.dict.entries()) {
+              const ks = String(k.asString ? k.asString() : k).replace(/^\//, '');
+              if (ks === 'Filter' || ks === 'DecodeParms' || ks === 'Length') continue;
+              entries.push(pdfSerialize(k, L) + ' ' + pdfSerialize(v, L));
+            }
+          } catch { /* noop */ }
+          if (isFlate) entries.push('/Filter /FlateDecode');
+          entries.push('/Length ' + payload.length);
+          pushStr(`\n${num} ${gen} obj\n<< ${entries.join(' ')} >>\nstream\n`);
+          chunks.push(payload); offset += payload.length;
+          pushStr('\nendstream\nendobj\n');
+        }
+
+        const nums = [...offsets.keys()].sort((a, b) => a - b);
+
+        if (classic) {
+          const groups = [];
+          let g0 = nums[0], last = nums[0];
+          for (let i = 1; i < nums.length; i++) {
+            if (nums[i] === last + 1) { last = nums[i]; continue; }
+            groups.push([g0, last]); g0 = nums[i]; last = nums[i];
+          }
+          groups.push([g0, last]);
+          const xrefOffset = offset + 1;
+          let xr = 'xref\n';
+          for (const [a, b] of groups) {
+            xr += `${a} ${b - a + 1}\n`;
+            for (let n = a; n <= b; n++) xr += String(offsets.get(n)).padStart(10, '0') + ' 00000 n \n';
+          }
+          pushStr('\n' + xr);
+          pushStr(`trailer\n<< ${trailerInner} /Prev ${prev} >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
+        } else {
+          // Original uses an xref stream → write an xref stream section too.
+          let maxNum = 0;
+          try { doc.context.enumerateIndirectObjects().forEach(([ref]) => { if (ref && ref.objectNumber > maxNum) maxNum = ref.objectNumber; }); } catch { /* noop */ }
+          // Our new object number and /Size must not be smaller than the original
+          // section's (the original xref-stream object itself carries one).
+          let origSize = 0;
+          try { const sm = origStr.slice(prev, prev + 800).match(/\/Size\s+(\d+)/); if (sm) origSize = parseInt(sm[1], 10); } catch { /* noop */ }
+          const xrefNum = Math.max(maxNum + 1, origSize);
+          const sizeVal = Math.max(xrefNum + 1, origSize);
+          const all = [...new Set([...nums, xrefNum])].sort((a, b) => a - b);
+          const groups = [];
+          let g0 = all[0], last = all[0];
+          for (let i = 1; i < all.length; i++) {
+            if (all[i] === last + 1) { last = all[i]; continue; }
+            groups.push([g0, last]); g0 = all[i]; last = all[i];
+          }
+          groups.push([g0, last]);
+
+          const body = new Uint8Array(all.length * 7);
+          const objStart = offset + 1; // object token follows the leading newline
+          let bo = 0;
+          for (const n of all) {
+            const off = n === xrefNum ? objStart : offsets.get(n);
+            body[bo] = 1;
+            body[bo + 1] = (off >>> 24) & 255; body[bo + 2] = (off >>> 16) & 255; body[bo + 3] = (off >>> 8) & 255; body[bo + 4] = off & 255;
+            body[bo + 5] = 0; body[bo + 6] = 0;
+            bo += 7;
+          }
+          const payload = (await maybeDeflate(body)) || body;
+          const isFlate = payload !== body;
+          const ti = (doc.context.trailerInfo || {});
+          const parts = ['/Type /XRef', `/Size ${sizeVal}`, '/W [1 4 2]', `/Index [${groups.map(([a, b]) => `${a} ${b - a + 1}`).join(' ')}]`];
+          if (ti.Root) parts.push('/Root ' + pdfSerialize(ti.Root, L));
+          if (ti.Info) parts.push('/Info ' + pdfSerialize(ti.Info, L));
+          if (ti.ID) parts.push('/ID ' + pdfSerialize(ti.ID, L));
+          parts.push(`/Prev ${prev}`);
+          if (isFlate) parts.push('/Filter /FlateDecode');
+          parts.push(`/Length ${payload.length}`);
+          pushStr(`\n${xrefNum} 0 obj\n<< ${parts.join(' ')} >>\nstream\n`);
+          chunks.push(payload); offset += payload.length;
+          pushStr('\nendstream\nendobj\n');
+          pushStr(`startxref\n${objStart}\n%%EOF\n`);
+        }
+
+        const total = chunks.reduce((a, c) => a + c.length, 0);
+        const out = new Uint8Array(originalBytes.length + total);
+        out.set(originalBytes, 0);
+        let o = originalBytes.length;
+        for (const c of chunks) { out.set(c, o); o += c.length; }
+        return out;
+      } catch (err) { console.warn('[Edit] incremental build failed:', (err && (err.stack || err.message)) || String(err)); return null; }
+    }
+
+    // Write an ink stroke as a REAL PDF /Ink annotation (editable in Acrobat,
+    // Foxit, PDF Expert, Xodo…) with an appearance stream so it always renders.
+    async function addInkAnnotation(doc, page, a, ph) {
+      const L = window.PDFLib;
+      const pts = (a.points || []).map(p => {
+        const q = [p[0], ph - p[1]];
+        if (p.length > 2) { q[2] = p[2]; if (p.length > 3) q[3] = p[3]; }
+        return q;
+      });
+      if (pts.length < 2) return false;
+      const sw = a.width || 2;
+      const pad = sw * 1.5 + 2;
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad;
+      const x1 = Math.max(...xs) + pad, y1 = Math.max(...ys) + pad;
+      const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+      const col = hexToRgbObj(a.color || '#111827');
+      const f = (n) => String(Math.round(n * 100) / 100);
+      const alpha = a.isHighlighter ? 0.38 : 1;
+      const apRes = L.PDFDict.withContext(doc.context);
+      let gsPrefix = '';
+      if (alpha < 1) {
+        const gs = L.PDFDict.withContext(doc.context);
+        const g0 = L.PDFDict.withContext(doc.context);
+        g0.set(L.PDFName.of('ca'), L.PDFNumber.of(alpha));
+        g0.set(L.PDFName.of('CA'), L.PDFNumber.of(alpha));
+        gs.set(L.PDFName.of('G0'), g0);
+        apRes.set(L.PDFName.of('ExtGState'), gs);
+        gsPrefix = '/G0 gs ';
+      }
+      // Pressure/tilt strokes keep their width profile by stroking each width
+      // bucket separately (flattened exports match the on-screen ink).
+      const buckets = a.pressure ? inkWidthBuckets(pts, sw) : null;
+      let avgW = sw;
+      if (buckets && buckets.length) {
+        let total = 0, n = 0;
+        for (const b of buckets) { total += b.w * b.segs.length; n += b.segs.length; }
+        if (n) avgW = total / n;
+      }
+      let ops = `q ${gsPrefix}${f(col.r)} ${f(col.g)} ${f(col.b)} RG 1 J 1 j\n`;
+      if (buckets) {
+        for (const b of buckets) {
+          ops += `${f(b.w)} w\n`;
+          for (const [s1, s2] of b.segs) ops += `${f(s1[0] - x0)} ${f(s1[1] - y0)} m ${f(s2[0] - x0)} ${f(s2[1] - y0)} l\n`;
+          ops += 'S\n';
+        }
+        ops += 'Q';
+      } else {
+        ops += `${f(sw)} w\n`;
+        ops += `${f(pts[0][0] - x0)} ${f(pts[0][1] - y0)} m\n`;
+        for (let i = 1; i < pts.length; i++) ops += `${f(pts[i][0] - x0)} ${f(pts[i][1] - y0)} l\n`;
+        ops += 'S Q';
+      }
+      const apDict = L.PDFDict.withContext(doc.context);
+      apDict.set(L.PDFName.of('Type'), L.PDFName.of('XObject'));
+      apDict.set(L.PDFName.of('Subtype'), L.PDFName.of('Form'));
+      apDict.set(L.PDFName.of('FormType'), L.PDFNumber.of(1));
+      const bbox = L.PDFArray.withContext(doc.context);
+      [0, 0, w, h].forEach(v => bbox.push(L.PDFNumber.of(v)));
+      apDict.set(L.PDFName.of('BBox'), bbox);
+      apDict.set(L.PDFName.of('Resources'), apRes);
+      const apRef = doc.context.register(L.PDFRawStream.of(apDict, new TextEncoder().encode(ops)));
+
+      const annot = L.PDFDict.withContext(doc.context);
+      annot.set(L.PDFName.of('Type'), L.PDFName.of('Annot'));
+      annot.set(L.PDFName.of('Subtype'), L.PDFName.of('Ink'));
+      const rect = L.PDFArray.withContext(doc.context);
+      [x0, y0, x1, y1].forEach(v => rect.push(L.PDFNumber.of(v)));
+      annot.set(L.PDFName.of('Rect'), rect);
+      const inkList = L.PDFArray.withContext(doc.context);
+      const pathArr = L.PDFArray.withContext(doc.context);
+      pts.forEach(p => { pathArr.push(L.PDFNumber.of(p[0])); pathArr.push(L.PDFNumber.of(p[1])); });
+      inkList.push(pathArr);
+      annot.set(L.PDFName.of('InkList'), inkList);
+      const cArr = L.PDFArray.withContext(doc.context);
+      [col.r, col.g, col.b].forEach(v => cArr.push(L.PDFNumber.of(v)));
+      annot.set(L.PDFName.of('C'), cArr);
+      const bs = L.PDFDict.withContext(doc.context);
+      bs.set(L.PDFName.of('W'), L.PDFNumber.of(avgW));
+      bs.set(L.PDFName.of('S'), L.PDFName.of('S'));
+      annot.set(L.PDFName.of('BS'), bs);
+      annot.set(L.PDFName.of('F'), L.PDFNumber.of(4)); // print
+      if (alpha < 1) annot.set(L.PDFName.of('CA'), L.PDFNumber.of(alpha));
+      const ap = L.PDFDict.withContext(doc.context);
+      ap.set(L.PDFName.of('N'), apRef);
+      annot.set(L.PDFName.of('AP'), ap);
+      const ref = doc.context.register(annot);
+
+      try {
+        if (typeof page.node.addAnnot === 'function') { page.node.addAnnot(ref); return true; }
+      } catch { /* fall through */ }
+      let arr = null;
+      try { arr = page.node.Annots(); } catch { arr = null; }
+      if (!arr) { arr = L.PDFArray.withContext(doc.context); page.node.set(L.PDFName.of('Annots'), arr); }
+      arr.push(ref);
+      return true;
+    }
+
+    // Real markup annotations: /Highlight, /Underline, /StrikeOut, /Squiggly
+    // with QuadPoints + an appearance stream (editable in other PDF apps).
+    async function addMarkupAnnotation(doc, page, a, ph) {
+      const L = window.PDFLib;
+      const col = hexToRgbObj(a.color || (a.kind === 'hl' ? '#FDE047' : '#E11D48'));
+      const f = (n) => String(Math.round(n * 100) / 100);
+      const x0 = a.x, x1 = a.x + a.w;
+      const yTop = ph - a.y, yBot = ph - (a.y + a.h);
+      const w = Math.max(1, a.w), h = Math.max(1, a.h);
+      const kind = a.kind || 'hl';
+      const subtype = kind === 'underline' ? 'Underline' : kind === 'strike' ? 'StrikeOut' : kind === 'squiggle' ? 'Squiggly' : 'Highlight';
+      const lw = Math.max(0.8, Math.min(2.5, h * 0.09));
+
+      let ops, resDict;
+      if (kind === 'hl') {
+        resDict = L.PDFDict.withContext(doc.context);
+        const gsDict = L.PDFDict.withContext(doc.context);
+        const g0 = L.PDFDict.withContext(doc.context);
+        g0.set(L.PDFName.of('ca'), L.PDFNumber.of(0.38));
+        g0.set(L.PDFName.of('CA'), L.PDFNumber.of(0.38));
+        gsDict.set(L.PDFName.of('G0'), g0);
+        resDict.set(L.PDFName.of('ExtGState'), gsDict);
+        ops = `q /G0 gs ${f(col.r)} ${f(col.g)} ${f(col.b)} rg 0 0 ${f(w)} ${f(h)} re f Q`;
+      } else if (kind === 'squiggle') {
+        ops = `q ${f(col.r)} ${f(col.g)} ${f(col.b)} RG ${f(lw)} w 1 J 1 j\n`;
+        const step = 4, amp = Math.min(2.2, h * 0.25), yMid = h / 2;
+        ops += `0 ${f(yMid)} m\n`;
+        let up = true;
+        for (let px = step; px <= w; px += step) { ops += `${f(px)} ${f(yMid + (up ? -amp : amp))} l\n`; up = !up; }
+        ops += 'S Q';
+      } else {
+        const yLine = kind === 'underline' ? h * 0.08 : h * 0.5;
+        ops = `q ${f(col.r)} ${f(col.g)} ${f(col.b)} RG ${f(lw)} w 0 ${f(yLine)} m ${f(w)} ${f(yLine)} l S Q`;
+      }
+
+      const apDict = L.PDFDict.withContext(doc.context);
+      apDict.set(L.PDFName.of('Type'), L.PDFName.of('XObject'));
+      apDict.set(L.PDFName.of('Subtype'), L.PDFName.of('Form'));
+      apDict.set(L.PDFName.of('FormType'), L.PDFNumber.of(1));
+      const bbox = L.PDFArray.withContext(doc.context);
+      [0, 0, w, h].forEach(v => bbox.push(L.PDFNumber.of(v)));
+      apDict.set(L.PDFName.of('BBox'), bbox);
+      apDict.set(L.PDFName.of('Resources'), resDict || L.PDFDict.withContext(doc.context));
+      const apRef = doc.context.register(L.PDFRawStream.of(apDict, new TextEncoder().encode(ops)));
+
+      const annot = L.PDFDict.withContext(doc.context);
+      annot.set(L.PDFName.of('Type'), L.PDFName.of('Annot'));
+      annot.set(L.PDFName.of('Subtype'), L.PDFName.of(subtype));
+      const rect = L.PDFArray.withContext(doc.context);
+      [x0, yBot, x1, yTop].forEach(v => rect.push(L.PDFNumber.of(v)));
+      annot.set(L.PDFName.of('Rect'), rect);
+      const quad = L.PDFArray.withContext(doc.context);
+      [x0, yTop, x1, yTop, x0, yBot, x1, yBot].forEach(v => quad.push(L.PDFNumber.of(v)));
+      annot.set(L.PDFName.of('QuadPoints'), quad);
+      const cArr = L.PDFArray.withContext(doc.context);
+      [col.r, col.g, col.b].forEach(v => cArr.push(L.PDFNumber.of(v)));
+      annot.set(L.PDFName.of('C'), cArr);
+      if (kind === 'hl') annot.set(L.PDFName.of('CA'), L.PDFNumber.of(0.38));
+      annot.set(L.PDFName.of('F'), L.PDFNumber.of(4));
+      const ap = L.PDFDict.withContext(doc.context);
+      ap.set(L.PDFName.of('N'), apRef);
+      annot.set(L.PDFName.of('AP'), ap);
+      const ref = doc.context.register(annot);
+      try { if (typeof page.node.addAnnot === 'function') { page.node.addAnnot(ref); return true; } } catch { /* fall through */ }
+      let arr = null;
+      try { arr = page.node.Annots(); } catch { arr = null; }
+      if (!arr) { arr = L.PDFArray.withContext(doc.context); page.node.set(L.PDFName.of('Annots'), arr); }
+      arr.push(ref);
+      return true;
+    }
+
+    async function applyEditJob(file, editsList, annotsAll, crop, wms, pns, formPayload) {
       const L = await loadLib();
       const src = new Uint8Array(await file.arrayBuffer());
       const doc = await L.PDFDocument.load(src, { ignoreEncryption: true });
       const numPages = doc.getPageCount();
       let annotCount = 0;
       let applied = 0, overlaid = 0;
+      const pendingStreamWrites = [];   // [{ ref, dict, bytes }] for incremental save
+      let incrementalIneligible = false;
 
       // Point 8 & 23: Font Cache across pages to avoid font bloat
       const fontCache = new Map();
@@ -19079,6 +24501,79 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const f = await doc.embedFont(fontChoice);
         fontCache.set(key, f);
         return f;
+      };
+
+      // Keep the document's own font for edited spans so the exported text matches
+      // the original typeface instead of a generic standard-14 substitute.
+      const embeddedFontCache = new Map();
+      let fontkitRegistered = false;
+      const ensureFontkit = async () => {
+        if (fontkitRegistered) return true;
+        try {
+          if (!window.fontkit) await window.FF.util.loadScript('vendor/fontkit.umd.min.js');
+          if (window.fontkit) { doc.registerFontkit(window.fontkit); fontkitRegistered = true; return true; }
+        } catch (err) { console.warn('[Edit] fontkit load', err && err.message); }
+        return false;
+      };
+      const getEmbeddedFont = async (base) => {
+        if (!base) return null;
+        const key = normFont(base);
+        if (embeddedFontCache.has(key)) return embeddedFontCache.get(key);
+        let out = null;
+        try {
+          const rec = embeddedFonts.find(f => f.key === key);
+          if (rec && await ensureFontkit()) {
+            out = await doc.embedFont(rec.bytes, { subset: true });
+          }
+        } catch (err) { console.warn('[Edit] embed original font failed:', base, err && err.message); out = null; }
+        embeddedFontCache.set(key, out);
+        return out;
+      };
+
+      // Subsetted PDF fonts only contain the glyphs that appeared in the original
+      // text. Drawing new characters with them yields .notdef boxes, so verify
+      // coverage with fontkit before using the embedded font.
+      const fontkitFontCache = new Map();
+      const fontkitCovers = (base, bytes, text) => {        try {
+          const fk = window.fontkit;
+          if (!fk) return false;
+          const key = normFont(base);
+          let f = fontkitFontCache.get(key);
+          if (!f) {
+            const b = new Uint8Array(bytes);
+            f = fk.create(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
+            fontkitFontCache.set(key, f);
+          }
+          const run = f.layout(String(text || ''));
+          return run.glyphs.every(g => g.id !== 0);
+        } catch (err) { console.warn('[Edit] glyph coverage check failed:', err && err.message); return false; }
+      };
+
+      // Bundled metric-compatible fonts (Arimo/Tinos/Cousine) — used as vector
+      // substitutes with full Latin coverage when the original font isn't usable.
+      const metricByteCache = new Map();
+      const metricEmbedCache = new Map();
+      const fetchMetricBytes = async (kind) => {
+        const m = METRIC_FONTS[kind]; if (!m) return null;
+        if (metricByteCache.has(kind)) return metricByteCache.get(kind);
+        let out = null;
+        try {
+          const [r, b] = await Promise.all([fetch(m.r).then(x => x.arrayBuffer()), fetch(m.b).then(x => x.arrayBuffer())]);
+          out = { r, b };
+        } catch (err) { console.warn('[Edit] metric font fetch failed:', kind, err && err.message); }
+        metricByteCache.set(kind, out);
+        return out;
+      };
+      const getMetricFont = async (kind, bold) => {
+        const key = kind + (bold ? 'b' : 'r');
+        if (metricEmbedCache.has(key)) return metricEmbedCache.get(key);
+        let out = null;
+        try {
+          const bytes = await fetchMetricBytes(kind);
+          if (bytes && await ensureFontkit()) out = await doc.embedFont(bold ? bytes.b : bytes.r);
+        } catch (err) { console.warn('[Edit] metric font embed failed:', kind, err && err.message); out = null; }
+        metricEmbedCache.set(key, out);
+        return out;
       };
 
       // Point 22: Stacking Edit Prevention Map
@@ -19125,86 +24620,414 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         // 1. In-place content stream replacements / fallbacks
         const list = byPage.get(i) || [];
         if (list.length > 0) {
-          let content = await getPageContentString(page);
+          const pageResources = resourcesOf(page.node, doc);
+          const owners = await collectContentOwners(doc, page);
+          const ownerState = [];
+          const codecCache = new WeakMap();
+          for (const o of owners) {
+            let content = '';
+            try { content = await o.getString(); } catch { content = ''; }
+            let codecs = null;
+            try {
+              if (o.resources) {
+                codecs = codecCache.get(o.resources) || null;
+                if (!codecs) { codecs = await buildFontCodecs(o.resources, doc); codecCache.set(o.resources, codecs); }
+              }
+            } catch { /* noop */ }
+            ownerState.push({ o, content, dirty: false, codecs: codecs || new Map() });
+          }
+          const codecFor = (cand) => (name) => cand.codecs.get(String(name || '').replace(/^\//, ''));
           const fallbacks = [];
-          
-          for (const e of list) {
-            const ops = csToOps(content);
-            const runs = csExtractRuns(ops);
-            const match = findRun(runs, e.target);
-            const hasNewlines = String(e.replacement || '').includes('\n');
-            
-            let stdFontChoice = await resolveStdFont(page.node, match?.font || e.item?.fontName, e.geom);
-            let stdFontObj = stdFontChoice ? await getCachedFont(stdFontChoice) : null;
-            let canStreamRewrite = false;
 
-            if (match && !hasNewlines && stdFontObj && !isRTL(e.replacement)) {
-              const oldW = stdFontObj.widthOfTextAtSize(e.target, match.size);
-              const newW = stdFontObj.widthOfTextAtSize(e.replacement, match.size);
-              const ratio = oldW > 0.5 ? oldW / newW : 1;
-              
-              if (ratio >= 0.70 && ratio <= 1.40) {
-                const tzScale = Math.max(0.75, Math.min(1.25, ratio));
-                rewriteRunOps(ops, runs, match, e.replacement, tzScale);
-                content = csOpsToString(ops);
-                applied++;
-                canStreamRewrite = true;
+          for (const e of list) {
+            const atX = e.geom?.pdfX ?? (e.item?.transform ? e.item.transform[4] : undefined);
+            const atY = e.geom?.pdfY ?? (e.item?.transform ? e.item.transform[5] : undefined);
+            const hasNewlines = String(e.replacement || '').includes('\n');
+            const replacement = String(e.replacement || '');
+            const isDeletion = replacement === '';
+
+            // Locate the content stream (page itself or a nested Form XObject)
+            // that actually draws this run. Prefer a whole-run match; fall back to
+            // a substring match because pdf.js may split a line differently.
+            let st = null, match = null, subMatch = null, ops = null, runs = null;
+            for (const cand of ownerState) {
+              if (!cand.content) continue;
+              const o2 = csToOps(cand.content);
+              const r2 = csExtractRuns(o2, codecFor(cand));
+              const m = findRun(r2, e.target, atX, atY);
+              if (m) { st = cand; match = m; ops = o2; runs = r2; break; }
+            }
+            if (!st) {
+              for (const cand of ownerState) {
+                if (!cand.content) continue;
+                const o2 = csToOps(cand.content);
+                const r2 = csExtractRuns(o2, codecFor(cand));
+                const s2 = findRunSubstring(r2, e.target, atX, atY);
+                if (s2) { st = cand; subMatch = s2; ops = o2; runs = r2; break; }
               }
             }
 
+            const runFont = (match && match.font) || (subMatch && subMatch.font) || e.item?.fontName;
+            const matchCodec = st ? st.codecs.get(String(runFont || '').replace(/^\//, '')) : null;
+            const stdFontChoice = await resolveStdFont(st ? st.o.resources : pageResources, runFont, e.geom);
+            const stdFontObj = stdFontChoice ? await getCachedFont(stdFontChoice) : null;
+            let canStreamRewrite = false;
+            let removedOriginal = false;
+
+            // Only rewrite the content stream when both old and new text use
+            // WinAnsi-encodable characters (standard-14 fonts can't do more).
+            const encodable = isWinAnsiSafe(replacement) && isWinAnsiSafe(e.target) &&
+                              !isRTL(replacement) && !isRTL(e.target);
+            // Re-encode through the real font (null => glyph missing, use fallback).
+            const encodeText = (s) => (matchCodec ? matchCodec.encode(s) : s);
+
+            if (st && (match || subMatch) && !hasNewlines && stdFontObj && encodable) {
+              if (subMatch) {
+                // Replace only the selected substring, leaving the rest of the run.
+                const runUni = String(runs[subMatch.i].text || '');
+                const oldSub = runUni.slice(subMatch.start, subMatch.end);
+                const newTextUni = runUni.slice(0, subMatch.start) + replacement + runUni.slice(subMatch.end);
+                const encoded = encodeText(newTextUni);
+                if (encoded != null) {
+                  const op = ops[subMatch.opIdx];
+                  if (op.op === 'Tj' || op.op === "'") op.a[0] = { t: 'str', v: encoded };
+                  else if (op.op === '"') op.a[2] = { t: 'str', v: encoded };
+                  else if (op.op === 'TJ') {
+                    // Preserve the array's kerning by editing only the affected token.
+                    if (!tryRewriteTjSegment(op, runs[subMatch.i], subMatch.start, subMatch.end, replacement, matchCodec)) {
+                      op.a[0] = { t: 'array', v: csStrToArrayStr(encoded) };
+                    }
+                  }
+                  // Compensate any following show-op for the width change.
+                  try {
+                    const fs = subMatch.size || 12;
+                    const delta = stdFontObj.widthOfTextAtSize(replacement, fs) - stdFontObj.widthOfTextAtSize(oldSub, fs);
+                    compensateShowDrift(ops, subMatch.opIdx, delta, fs);
+                  } catch { /* noop */ }
+                  st.content = csOpsToString(ops);
+                  st.dirty = true; applied++; canStreamRewrite = true;
+                }
+              } else if (isDeletion) {
+                const encoded = encodeText('');
+                if (encoded != null) {
+                  rewriteRunOps(ops, runs, match, encoded, 1);
+                  try {
+                    const a0 = runs[match.span[0]].opIdx;
+                    const fs = match.size || 12;
+                    const delta = -stdFontObj.widthOfTextAtSize(e.target, fs);
+                    compensateShowDrift(ops, a0, delta, fs);
+                  } catch { /* noop */ }
+                  st.content = csOpsToString(ops);
+                  st.dirty = true; applied++; canStreamRewrite = true;
+                }
+              } else {
+                const run0 = runs[match.span[0]];
+                const op0 = run0 ? ops[run0.opIdx] : null;
+                // Prefer a token-preserving TJ edit so surrounding kerning survives.
+                let tokDone = false;
+                if (op0 && op0.op === 'TJ' && match.span[0] === match.span[1]) {
+                  try {
+                    const T = String(e.target), R = replacement;
+                    let p = 0; while (p < T.length && p < R.length && T[p] === R[p]) p++;
+                    let s = 0; while (s < T.length - p && s < R.length - p && T[T.length - 1 - s] === R[R.length - 1 - s]) s++;
+                    const start = p, end = T.length - s, repl = R.slice(p, R.length - s);
+                    if (tryRewriteTjSegment(op0, run0, start, end, repl, matchCodec)) {
+                      try {
+                        const fs = match.size || 12;
+                        const delta = stdFontObj.widthOfTextAtSize(replacement, fs) - stdFontObj.widthOfTextAtSize(e.target, fs);
+                        compensateShowDrift(ops, run0.opIdx, delta, fs);
+                      } catch { /* noop */ }
+                      st.content = csOpsToString(ops);
+                      st.dirty = true; applied++; canStreamRewrite = true; tokDone = true;
+                    }
+                  } catch { /* noop */ }
+                }
+                if (!tokDone) {
+                  let oldW = 0, newW = 0;
+                  try {
+                    oldW = stdFontObj.widthOfTextAtSize(e.target, match.size);
+                    newW = stdFontObj.widthOfTextAtSize(replacement, match.size);
+                  } catch { oldW = 0; }
+                  const ratio = oldW > 0.5 && newW > 0 ? oldW / newW : 1;
+                  if (ratio >= 0.70 && ratio <= 1.40) {
+                    const encoded = encodeText(replacement);
+                    if (encoded != null) {
+                      const tzScale = Math.max(0.75, Math.min(1.25, ratio));
+                      rewriteRunOps(ops, runs, match, encoded, tzScale);
+                      st.content = csOpsToString(ops);
+                      st.dirty = true; applied++; canStreamRewrite = true;
+                    }
+                  }
+                }
+              }
+            }
+
+            // Multi-line: emit one native show-op per line (keeps the original font
+            // and keeps the text vector/searchable) before falling back to overlay.
+            if (!canStreamRewrite && st && match && hasNewlines && stdFontObj && match.span[0] === match.span[1] && encodable) {
+              try {
+                const mlines = String(replacement).split('\n');
+                const encLines = mlines.map(ln => encodeText(ln));
+                if (encLines.length > 1 && encLines.every(e => e != null)) {
+                  const run0 = runs[match.span[0]];
+                  const a = run0.opIdx;
+                  const fs = match.size || 12;
+                  const lh = fs * 1.2;
+                  const seq = [];
+                  encLines.forEach((enc, idx) => {
+                    seq.push({ op: 'Tj', a: [{ t: 'str', v: enc }] });
+                    if (idx < encLines.length - 1) seq.push({ op: 'Td', a: [{ t: 'num', v: 0 }, { t: 'num', v: -lh }] });
+                  });
+                  ops.splice(a, 1, ...seq);
+                  st.content = csOpsToString(ops);
+                  st.dirty = true; applied++; canStreamRewrite = true;
+                  // Remember to push following text down (paragraph reflow).
+                  if (e.geom && typeof e.geom.pdfX === 'number' && typeof e.geom.pdfY === 'number') {
+                    (st.reflow = st.reflow || []).push({ x: e.geom.pdfX, y: e.geom.pdfY, w: e.geom.pdfW || 200, dy: (encLines.length - 1) * lh });
+                  }
+                }
+              } catch (err) { console.warn('[Edit] multiline native failed:', err); }
+            }
+
+            // Delete-then-overlay: if we can identify the original run but cannot
+            // re-encode the replacement, still REMOVE the original text from the
+            // content stream (removing glyphs never needs new glyphs), then draw the
+            // replacement on top. This avoids leaving the old text behind and lets
+            // the fallback skip its white box entirely.
+            if (!canStreamRewrite && st && stdFontObj && (match || subMatch)) {
+              try {
+                if (subMatch) {
+                  const runUni = String(runs[subMatch.i].text || '');
+                  const oldSub = runUni.slice(subMatch.start, subMatch.end);
+                  const leftover = runUni.slice(0, subMatch.start) + runUni.slice(subMatch.end);
+                  const enc = encodeText(leftover);
+                  if (enc != null) {
+                    const op = ops[subMatch.opIdx];
+                    if (op.op === 'Tj' || op.op === "'") op.a[0] = { t: 'str', v: enc };
+                    else if (op.op === '"') op.a[2] = { t: 'str', v: enc };
+                    else if (op.op === 'TJ') op.a[0] = { t: 'array', v: csStrToArrayStr(enc) };
+                    const fs = subMatch.size || 12;
+                    const delta = -stdFontObj.widthOfTextAtSize(oldSub, fs);
+                    compensateShowDrift(ops, subMatch.opIdx, delta, fs);
+                    st.content = csOpsToString(ops);
+                    st.dirty = true; removedOriginal = true;
+                  }
+                } else if (match) {
+                  const enc = encodeText('');
+                  if (enc != null) {
+                    // Delete every run in the matched span (a line may be split
+                    // across several show-ops) without dropping sibling operators.
+                    const s0 = match.span[0], s1 = match.span[1];
+                    let any = false;
+                    for (let ri = s0; ri <= s1; ri++) {
+                      const r = runs[ri]; if (!r) continue;
+                      const op = ops[r.opIdx]; if (!op) continue;
+                      if (op.op === 'Tj' || op.op === "'") op.a[0] = { t: 'str', v: '' };
+                      else if (op.op === '"') op.a[2] = { t: 'str', v: '' };
+                      else if (op.op === 'TJ') op.a[0] = { t: 'array', v: '[]' };
+                      any = true;
+                    }
+                    if (any) {
+                      const fs = match.size || 12;
+                      const delta = -stdFontObj.widthOfTextAtSize(e.target, fs);
+                      compensateShowDrift(ops, runs[s0].opIdx, delta, fs);
+                      st.content = csOpsToString(ops);
+                      st.dirty = true; removedOriginal = true;
+                    }
+                  }
+                }
+              } catch (err) { console.warn('[Edit] delete-original failed:', err); }
+            }
+
             if (!canStreamRewrite) {
-              fallbacks.push({ ...e, stdFontChoice, stdFontObj });
+              fallbacks.push({ ...e, stdFontChoice, stdFontObj, removedOriginal });
             }
           }
-          setPageContentString(page, content);
+          // Paragraph reflow: push runs below the edited block (those positioned by
+          // an absolute Tm in the same column) down by the added height.
+          for (const cand of ownerState) {
+            if (!cand.dirty || !cand.reflow || !cand.reflow.length) continue;
+            try {
+              for (const rq of cand.reflow) {
+                const ops2 = csToOps(cand.content);
+                const runs2 = csExtractRuns(ops2, codecFor(cand));
+                let changed = false;
+                for (const r of runs2) {
+                  if (r.y >= rq.y - 1) continue;
+                  if (r.x < rq.x - 6 || r.x > rq.x + rq.w + 6) continue;
+                  let gov = null;
+                  for (let k = r.opIdx - 1; k >= 0; k--) {
+                    const op = ops2[k].op;
+                    if (op === 'Tm') { gov = ops2[k]; break; }
+                    if (op === 'Td' || op === 'TD' || op === 'T*' || op === "'" || op === '"' || op === 'BT') break;
+                  }
+                  if (!gov || gov.a.length < 6 || !gov.a[5] || gov.a[5].t !== 'num') continue;
+                  gov.a[5] = { t: 'num', v: gov.a[5].v - rq.dy };
+                  changed = true;
+                }
+                if (changed) cand.content = csOpsToString(ops2);
+              }
+            } catch (err) { console.warn('[Edit] reflow failed:', err); }
+          }
+
+          // Write back only the streams we actually changed (page or XObject).
+          for (const cand of ownerState) {
+            if (!cand.dirty) continue;
+            const bytes = Uint8Array.from(cand.content, c => c.charCodeAt(0) & 0xFF);
+            if (cand.o.ref && cand.o.dict) {
+              // XObject: same object number, new content.
+              pendingStreamWrites.push({ ref: cand.o.ref, dict: cand.o.dict, bytes });
+            } else if (cand.o.label === 'page') {
+              // Page: reuse the original /Contents stream ref when it is a single stream.
+              try {
+                const contents = page.node.Contents();
+                const asRef = (v) => !!(v && (v.tag === 'Ref' || typeof v.objectNumber !== 'undefined'));
+                let targetRef = null, targetStream = null;
+                if (asRef(contents)) {
+                  targetRef = contents; targetStream = doc.context.lookup(contents);
+                } else if (contents && typeof contents.asArray === 'function' && contents.size() === 1) {
+                  const el = contents.get(0);
+                  if (asRef(el)) { targetRef = el; targetStream = doc.context.lookup(el); }
+                }
+                if (targetRef && targetStream && targetStream.dict) {
+                  pendingStreamWrites.push({ ref: targetRef, dict: targetStream.dict, bytes });
+                } else {
+                  incrementalIneligible = true;
+                }
+              } catch { incrementalIneligible = true; }
+            } else {
+              incrementalIneligible = true;
+            }
+            try { cand.o.setString(cand.content); }
+            catch (err) { console.warn('[Edit] content write failed:', err); }
+          }
 
           for (const e of fallbacks) {
-            const fontChoice = e.stdFontChoice || (await resolveStdFont(page.node, e.item?.fontName, e.geom)) || L.StandardFonts.Helvetica;
-            const targetFont = await getCachedFont(fontChoice);
+            const fontChoice = e.stdFontChoice || (await resolveStdFont(resourcesOf(page.node, doc), e.item?.fontName, e.geom)) || L.StandardFonts.Helvetica;
+            let targetFont = await getCachedFont(fontChoice);
+            const replacementStr = String(e.replacement || '');
+            const pdfBase = e.geom?.pdfFontBase;
+            let usedEmbedded = false;
+            // Prefer the PDF's own embedded font, but only when it actually has every
+            // glyph in the replacement (subsetted fonts often don't).
+            if (pdfBase) {
+              const rec = embeddedFonts.find(f => f.key === normFont(pdfBase));
+              if (rec && await ensureFontkit() && fontkitCovers(pdfBase, rec.bytes, replacementStr)) {
+                const emb = await getEmbeddedFont(pdfBase);
+                if (emb) { targetFont = emb; usedEmbedded = true; }
+              }
+            }
+            // A standard-14 family substitutes exactly, so vector text is fine.
+            const baseLower = String(pdfBase || e.item?.fontName || '').toLowerCase();
+            const isStdFamily = /(^|[^a-z])(helvetica|arial|times|courier|symbol|zapf|liberation)/.test(baseLower);
+            const metricKind = /serif|times|tinos|roman|georgia|garamond|cambria|palatino|minion|baskerville/.test(baseLower) ? 'serif'
+              : /courier|cousine|mono|typewriter|consolas|menlo|monaco/.test(baseLower) ? 'mono' : 'sans';
+            const wantBold = !!(e.geom?.isBold || e.geom?.fontWeight === '700' || e.geom?.fontWeight === '800' || e.geom?.fontWeight === '900');
+            let metricFont = null;
+            if (!usedEmbedded) { try { metricFont = await getMetricFont(metricKind, wantBold); } catch { /* noop */ } }
+            if (metricFont) targetFont = metricFont;
             const rawH = e.geom?.pdfH || e.item?.height || 12;
-            const fontSize = Math.max(6, e.geom?.fontSizePdf || rawH * 0.95);
+            const fontSize = Math.max(1, e.geom?.fontSizePdf || rawH * 0.95);
             const lineHeight = fontSize * 1.25;
             const minW = Math.max(30, e.geom?.pdfW || e.item?.width || 50);
-            
+
             const originX = e.geom?.pdfX ?? (e.item?.transform ? e.item.transform[4] : 50);
             const originY = e.geom?.pdfY ?? (e.item?.transform ? e.item.transform[5] : 700);
-            const availWidth = Math.max(minW, (curPageW || 612) - originX - 40);
+            const availWidth = Math.max(minW, pw - originX - 40);
             const wrapWidth = (minW > 140) ? minW * 1.08 : availWidth;
 
-            const lines = wrapTextToLines(e.replacement, targetFont, fontSize, wrapWidth);
-            const maxLineW = Math.max(...lines.map(ln => targetFont.widthOfTextAtSize(ln, fontSize)), minW);
+            const measure = makeTextMeasurer(targetFont, fontSize);
+            const singleLine = !String(e.target || '').includes('\n') &&
+                               !replacementStr.includes('\n') && !!replacementStr;
+            const lines = singleLine
+              ? [replacementStr]
+              : wrapTextToLines(e.replacement, fontSize, wrapWidth, measure);
+            const maxLineW = Math.max(minW, ...lines.map(ln => measure(ln)));
             const totalBoxW = Math.max(minW, maxLineW + 4);
             const totalBoxH = Math.max(rawH * 1.05, lines.length * lineHeight + 2);
 
-            // Point 22: Stacking Edit Prevention
+            // Point 22: Stacking Edit Prevention. New text boxes must not white
+            // out existing page content, so only erase for replaced/deleted spans.
             const eraseKey = `${i}:${Math.round(originX)},${Math.round(originY)}`;
-            if (!erasedRegions.has(eraseKey)) {
+            // No white box when the original glyphs were already removed from the stream.
+            if (!e.isNew && !e.removedOriginal && !erasedRegions.has(eraseKey)) {
               const bgRgb = hexToRgbObj(e.bgColor || '#FFFFFF');
-              page.drawRectangle({
+              const pw = Math.max(2, Math.round(totalBoxW));
+              const ph = Math.max(2, Math.round(totalBoxH));
+              // Build a soft-edged patch image so the cover never shows a hard
+              // rectangle on scans / non-uniform backgrounds.
+              const sc = 2;
+              const cvs = document.createElement('canvas');
+              cvs.width = Math.max(2, pw * sc); cvs.height = Math.max(2, ph * sc);
+              const cctx = cvs.getContext('2d');
+              cctx.fillStyle = `rgb(${Math.round(bgRgb.r * 255)}, ${Math.round(bgRgb.g * 255)}, ${Math.round(bgRgb.b * 255)})`;
+              cctx.fillRect(0, 0, cvs.width, cvs.height);
+              const f = Math.max(2, Math.round(2 * sc));
+              cctx.globalCompositeOperation = 'destination-out';
+              const grad = (x0, y0, x1, y1) => { const g = cctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); return g; };
+              cctx.fillStyle = grad(0, 0, f, 0); cctx.fillRect(0, 0, f, cvs.height);
+              cctx.fillStyle = grad(cvs.width, 0, cvs.width - f, 0); cctx.fillRect(cvs.width - f, 0, f, cvs.height);
+              cctx.fillStyle = grad(0, 0, 0, f); cctx.fillRect(0, 0, cvs.width, f);
+              cctx.fillStyle = grad(0, cvs.height, 0, cvs.height - f); cctx.fillRect(0, cvs.height - f, cvs.width, f);
+              const png = await doc.embedPng(cvs.toDataURL('image/png'));
+              page.drawImage(png, {
                 x: originX - 1,
                 y: originY - (lines.length - 1) * lineHeight - (rawH * 0.22),
-                width: totalBoxW,
-                height: totalBoxH,
-                color: L.rgb(bgRgb.r, bgRgb.g, bgRgb.b),
-                borderWidth: 0,
+                width: pw,
+                height: ph,
               });
               erasedRegions.set(eraseKey, true);
             }
 
             const textColor = hexToRgbObj(e.textColor || '#111827');
             const textAngle = e.rotation || e.geom?.rotation || (e.item?.transform ? Math.atan2(e.item.transform[1] || 0, e.item.transform[0] || 1) * (180 / Math.PI) : 0) || 0;
+            const colorCss = `rgb(${Math.round(textColor.r * 255)}, ${Math.round(textColor.g * 255)}, ${Math.round(textColor.b * 255)})`;
+            // Invisible but searchable copy (rendering-only hidden, extraction keeps it).
+            const searchFont = await getCachedFont(L.StandardFonts.Helvetica);
 
-            lines.forEach((ln, idx) => {
-              const finalLine = isRTL(ln) ? prepareRTLText(ln) : ln;
-              page.drawText(finalLine, {
-                x: originX,
-                y: originY - (idx * lineHeight),
+            for (let idx = 0; idx < lines.length; idx++) {
+              const ln = lines[idx];
+              if (!ln) continue;
+              const y = originY - (idx * lineHeight);
+              const rotate = textAngle !== 0 ? L.degrees(textAngle) : undefined;
+              const vectorOk = !isRTL(ln) && (usedEmbedded || !!metricFont || (isStdFamily && isWinAnsiSafe(ln)));
+              if (vectorOk) {
+                try {
+                  page.drawText(ln, {
+                    x: originX, y, size: fontSize, font: targetFont,
+                    color: L.rgb(textColor.r, textColor.g, textColor.b), rotate,
+                  });
+                  continue;
+                } catch { /* fall through to raster */ }
+              }
+              // Rasterize through the browser with the document's real font (FontFace
+              // alias) — pixel-perfect appearance and per-glyph fallback.
+              const raster = rasterizeTextLine(ln, {
                 size: fontSize,
-                font: targetFont,
-                color: L.rgb(textColor.r, textColor.g, textColor.b),
-                rotate: textAngle !== 0 ? L.degrees(textAngle) : undefined,
+                fontFamily: e.geom?.fontFamily,
+                fontWeight: e.geom?.fontWeight,
+                fontStyle: e.geom?.fontStyle,
+                color: colorCss,
+                rtl: isRTL(ln),
               });
-            });
+              const png = await doc.embedPng(raster.dataUrl);
+              page.drawImage(png, {
+                x: originX - raster.leftPad,
+                y: y - raster.baselineFromBottom,
+                width: raster.width,
+                height: raster.height,
+                rotate,
+              });
+              // Keep the rasterized line selectable/searchable via an invisible text layer.
+              if (isWinAnsiSafe(ln) && !isRTL(ln)) {
+                try {
+                  page.drawText(ln, {
+                    x: originX, y, size: fontSize, font: searchFont,
+                    color: L.rgb(0, 0, 0), opacity: 0, rotate,
+                  });
+                } catch { /* noop */ }
+              }
+            }
             overlaid++;
           }
         }
@@ -19213,58 +25036,91 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const pageAnnots = annotsByPage.get(i) || [];
         for (const a of pageAnnots) {
           if (a.type !== 'wm' && a.type !== 'pagenum') {
-            await drawAnnot(doc, page, a, pw, ph);
+            let handled = false;
+            // Ink → real /Ink annotation (stays editable in other PDF apps).
+            // Set window.FF.editFlattenInk = true to force flattening instead.
+            const flattenInk = !!(window.FF && window.FF.editFlattenInk);
+            if (!flattenInk && a.type === 'ink') {
+              try { handled = await addInkAnnotation(doc, page, a, ph); } catch (err) { console.warn('[Edit] ink annot failed, flattening:', err && err.message); handled = false; }
+            } else if (!flattenInk && a.type === 'hl') {
+              try { handled = await addMarkupAnnotation(doc, page, a, ph); } catch (err) { console.warn('[Edit] markup annot failed, flattening:', err && err.message); handled = false; }
+            }
+            if (!handled) await drawAnnot(doc, page, a, pw, ph);
             annotCount++;
           }
         }
 
-        // 3. Watermarks on this page
+        // 3. Watermarks on this page (page-scoped, tiled, above/behind)
         if (wms && wms.length) {
-          const helv = await doc.embedFont(L.StandardFonts.Helvetica);
+          const unders = [];
           for (const wm of wms) {
-            const size = wm.size || 42;
-            const w = helv.widthOfTextAtSize(wm.text, size);
-            const rad = (wm.rotation || 0) * Math.PI / 180;
-            const dx = (w / 2) * Math.cos(rad) - (size / 2) * Math.sin(rad);
-            const dy = (w / 2) * Math.sin(rad) + (size / 2) * Math.cos(rad);
-            page.drawText(wm.text, {
-              x: pw / 2 - dx, y: ph / 2 - dy, size,
-              font: helv, color: rgbOf(wm.color || '#94A3B8'),
-              opacity: wm.opacity ?? 0.12,
-              rotate: L.degrees(wm.rotation || 0),
-            });
+            if (!wmApplies(wm, i + 1, numPages)) continue;
+            if (wm.layer === 'under') { unders.push(wm); continue; }
+            try { await drawWatermarkOver(doc, page, wm, pw, ph, getCachedFont); }
+            catch (err) { console.warn('[Edit] watermark (above) failed:', err && err.message); }
+          }
+          // Prepending in reverse keeps the panel order (bottom-most first).
+          for (let u = unders.length - 1, slot = 0; u >= 0; u--, slot++) {
+            try { await drawWatermarkUnder(doc, page, unders[u], pw, ph, getCachedFont, slot); }
+            catch (err) { console.warn('[Edit] watermark (behind) failed:', err && err.message); }
           }
         }
 
-        // 4. Page numbers on this page
-        if (pns && pns.length) {
-          const helv = await doc.embedFont(L.StandardFonts.Helvetica);
-          for (const pn of pns) {
-            const pnText = (pn.format || '{n}')
-              .replace('{n}', String(i + 1))
-              .replace('{t}', String(numPages))
-              .replace('{total}', String(numPages));
-            const size = pn.size || 10;
-            const w = helv.widthOfTextAtSize(pnText, size);
-            let px = 36, py = pn.y ? yFlip(pn.y) : (pn.vAlign === 'top' ? ph - 28 : 28);
-            if (pn.align === 'center') px = (pw - w) / 2;
-            else if (pn.align === 'right') px = pw - w - 36;
-
-            page.drawText(pnText, {
-              x: px, y: py, size,
-              font: helv, color: rgbOf(pn.color || '#4B4B4B'),
-            });
-          }
+        // 4. Page numbers on this page (schemes render their own page sequence)
+        if (pns && pns.length && i === 0) {
+          try { await drawPageNumbers(doc, numPages, pns, getCachedFont); }
+          catch (err) { console.warn('[Edit] page numbers failed:', err && err.message); }
         }
       }
 
-      // Crop — CropBox on every page
-      if (crop && crop.w > 0 && crop.h > 0) {
+      // Crop — one proportional margin set applied to every page, so mixed page
+      // sizes and orientations get the same visual trim (mirrors Organize).
+      const cropActive = !!(crop && (crop.top > 0 || crop.right > 0 || crop.bottom > 0 || crop.left > 0));
+      if (cropActive) {
         for (let i = 0; i < doc.getPageCount(); i++) {
           const page = doc.getPage(i);
-          const ph = page.getHeight();
-          page.setCropBox(crop.x, ph - crop.y - crop.h, crop.w, crop.h);
+          const { width, height } = page.getSize();
+          const leftPts = (Math.max(0, Math.min(80, crop.left || 0)) / 100) * width;
+          const rightPts = (Math.max(0, Math.min(80, crop.right || 0)) / 100) * width;
+          const topPts = (Math.max(0, Math.min(80, crop.top || 0)) / 100) * height;
+          const bottomPts = (Math.max(0, Math.min(80, crop.bottom || 0)) / 100) * height;
+          page.setCropBox(
+            leftPts,
+            bottomPts,
+            Math.max(10, width - leftPts - rightPts),
+            Math.max(10, height - topPts - bottomPts)
+          );
         }
+      }
+      if (formPayload && formPayload.any) {
+        try { applyFormPayload(doc, formPayload); } catch (err) { console.warn('[Edit] form payload', err && err.message); }
+      }
+      // A delta is only usable if the strictest reader we ship (pdf.js) accepts it.
+      const validateIncremental = async (bytes) => {
+        try {
+          const pdfjs = window.pdfjsLib || await window.FF.util.loadScript('vendor/pdfjs.min.js');
+          if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+          const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+          const d = await pdfjs.getDocument({ data: ab }).promise;
+          const n = d.numPages;
+          try { await d.destroy(); } catch { /* noop */ }
+          return n > 0;
+        } catch (err) { console.warn('[Edit] incremental validation failed:', err && err.message); return false; }
+      };
+
+      // Incremental save: only stream contents changed → append a delta to the
+      // original file so everything else stays byte-for-byte intact.
+      const incrementalEligible = !incrementalIneligible && pendingStreamWrites.length > 0 &&
+        overlaid === 0 && annotCount === 0 && !cropActive &&
+        !(wms && wms.length) && !(pns && pns.length) && !(formPayload && formPayload.any);
+      if (incrementalEligible) {
+        try {
+          const inc = await buildIncrementalPdf(L, doc, src, pendingStreamWrites);
+          if (inc && await validateIncremental(inc)) {
+            await L.PDFDocument.load(inc, { ignoreEncryption: true, updateMetadata: false });
+            return { bytes: inc, applied, overlaid, annotCount, incremental: true };
+          }
+        } catch (err) { console.warn('[Edit] incremental save rejected, full rewrite:', err); }
       }
       return { bytes: await doc.save(), applied, overlaid, annotCount };
     }
@@ -19437,34 +25293,80 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     async function finishExport() {
       commitEditor();
       if (!file) return;
-      const real = edits.filter(e => e.replacement && e.replacement !== e.target);
-      const hasFormFill = formFilled;
-      const wms = [];
-      const pns = [];
+      const real = edits.filter(e => e.isNew ? !!e.replacement : e.replacement !== e.target);
+      const formPayload = collectFormPayload();
+      const formCount = Object.keys(formPayload.edits).length + formPayload.newFields.length + formPayload.removed.length;
+      const hasFormFill = formPayload.any;
       let annotTotal = 0;
-      for (const k in annots) {
-        for (const a of annots[k]) {
-          if (a.type === 'wm') wms.push(a);
-          else if (a.type === 'pagenum') pns.push(a);
-          else annotTotal++;
+      for (const k in annots) annotTotal += annots[k].length;
+      const total = real.length + annotTotal + formCount;
+      const name = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '') + '-edited.pdf';
+      if (hasFormFill) {
+        const missing = formRequiredMissing();
+        if (missing.length && !formWarned) {
+          formWarned = true;
+          toast(`${missing.length} required field${missing.length === 1 ? '' : 's'} still empty — press Save again to export anyway.`, 'warn');
+          focusFormField(missing[0].name);
+          const fb = container.querySelector('#etxt-finish');
+          if (fb) { fb.setAttribute('data-phase', 'idle'); setTimeout(() => fb.setAttribute('data-phase', 'idle'), 50); }
+          return;
         }
       }
-      const total = real.length + annotTotal;
-      const name = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '') + '-edited.pdf';
+      formWarned = false;
+      // Saving mid-crop should not silently discard the draft the user is
+      // adjusting — promote it to the committed crop first.
+      if (toolMode === 'crop' && cropDraft) {
+        const d = cropDraft;
+        const hasCrop = (d.top > 0.5 || d.right > 0.5 || d.bottom > 0.5 || d.left > 0.5);
+        cropPct = hasCrop ? {
+          top: Math.round((d.top || 0) * 10) / 10,
+          right: Math.round((d.right || 0) * 10) / 10,
+          bottom: Math.round((d.bottom || 0) * 10) / 10,
+          left: Math.round((d.left || 0) * 10) / 10,
+        } : null;
+        cropDraft = null;
+      }
+      // Same courtesy for a watermark being configured at save time.
+      if (toolMode === 'watermark' && wmDraft) {
+        if (wmDraft.wmKind !== 'image' || wmDraft.dataUrl) {
+          const next = { ...wmDraft };
+          if (wmEditingId) {
+            const idx = watermarks.findIndex((w) => w.id === wmEditingId);
+            if (idx >= 0) watermarks[idx] = next; else watermarks.push(next);
+          } else {
+            watermarks.push(next);
+          }
+        }
+        exitWmStudio();
+      }
+      // And for a numbering scheme being configured at save time.
+      if (toolMode === 'pagenum' && pnDraft) {
+        const next = { ...pnDraft };
+        if (pnEditingId) {
+          const idx = pageNums.findIndex((p) => p.id === pnEditingId);
+          if (idx >= 0) pageNums[idx] = next; else pageNums.push(next);
+        } else {
+          pageNums.push(next);
+        }
+        exitPnStudio();
+      }
+      const wms = watermarks.slice();
+      const pns = pageNums.slice();
+      const hasCropBox = !!(cropPct && (cropPct.top > 0 || cropPct.right > 0 || cropPct.bottom > 0 || cropPct.left > 0));
       const finishBtn = container.querySelector('#etxt-finish');
       if (finishBtn) finishBtn.setAttribute('data-phase', 'downloading');
-      renderProcessing(total || (wms.length || pns.length || cropBox || hasFormFill ? 1 : 0));
+      renderProcessing(total || (wms.length || pns.length || hasCropBox || hasFormFill ? 1 : 0));
       try {
-        if (total || wms.length || pns.length || cropBox || hasFormFill) {
-          const res = await applyEditJob(currentPdf || file, real, annots, cropBox, wms, pns);
+        if (total || wms.length || pns.length || hasCropBox || hasFormFill) {
+          const res = await applyEditJob(currentPdf || file, real, annots, cropPct, wms, pns, formPayload);
           const bits = [];
           if (res.applied) bits.push(`${res.applied} text edit${res.applied === 1 ? '' : 's'} rewritten`);
           if (res.overlaid) bits.push(`${res.overlaid} drawn as overlay`);
           if (res.annotCount) bits.push(`${res.annotCount} annotation${res.annotCount === 1 ? '' : 's'} added`);
-          if (cropBox) bits.push('crop applied');
+          if (hasCropBox) bits.push('crop applied');
           if (wms.length) bits.push('watermark added');
           if (pns.length) bits.push('page numbers added');
-          if (hasFormFill) bits.push('form filled');
+          if (hasFormFill) bits.push(formPayload.flatten ? `form flattened (${formCount} field${formCount === 1 ? '' : 's'})` : `${formCount} form field${formCount === 1 ? '' : 's'} filled`);
           showResult(new Blob([res.bytes], { type: 'application/pdf' }), name, total, bits.join(' · ') || null);
         } else {
           const src = currentPdf || file;
@@ -19487,13 +25389,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     async function exportForSign() {
       commitEditor();
       if (!file) return null;
-      const real = edits.filter(e => e.replacement && e.replacement !== e.target);
-      const wms = [], pns = []; let annotTotal = 0;
-      for (const k in annots) for (const a of annots[k]) { if (a.type === 'wm') wms.push(a); else if (a.type === 'pagenum') pns.push(a); else annotTotal++; }
+      const real = edits.filter(e => e.isNew ? !!e.replacement : e.replacement !== e.target);
+      const wms = watermarks.slice(), pns = pageNums.slice(); let annotTotal = 0;
+      for (const k in annots) annotTotal += annots[k].length;
+      const formPayload = collectFormPayload();
       const name = (file?.name || 'document.pdf').replace(/\.[^.]+$/, '') + '-edited.pdf';
+      const hasCropBox = !!(cropPct && (cropPct.top > 0 || cropPct.right > 0 || cropPct.bottom > 0 || cropPct.left > 0));
       try {
-        if (real.length || annotTotal || wms.length || pns.length || cropBox) {
-          const res = await applyEditJob(currentPdf || file, real, annots, cropBox, wms, pns);
+        if (real.length || annotTotal || wms.length || pns.length || hasCropBox || formPayload.any) {
+          const res = await applyEditJob(currentPdf || file, real, annots, cropPct, wms, pns, formPayload);
           return new File([res.bytes], name, { type: 'application/pdf' });
         }
       } catch { /* fall through to the loaded PDF */ }
@@ -19501,6 +25405,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return src instanceof File ? src : new File([await src.arrayBuffer()], name, { type: 'application/pdf' });
     }
 
+    window.__ffEditForm = {
+      model: () => formModel,
+      edits: () => formEdits,
+      collect: collectFormPayload,
+      apply: applyFormPayload,
+      kind: FORM_KIND,
+      order: () => formTabOrder,
+      detect: () => formDetect,
+      refresh: refreshFormModel,
+      overlay: renderFormOverlay
+    };
+    ensureMetricFaces();
     renderUpload();
   }
 
