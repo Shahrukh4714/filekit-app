@@ -39,6 +39,7 @@
     pdfjs:  () => U.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
       .then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; }),
     pdflib: () => U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib),
+    fontkit: () => U.loadScript('vendor/fontkit.umd.min.js').then(() => window.fontkit),
     fflate: () => U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate),
     xlsx:   () => U.loadScript('vendor/xlsx.full.min.js').then(() => window.XLSX),
     exifr:  () => U.loadScript('vendor/exifr.js', 'sha384-KrOocIA+lZcNUz2MDavnT/FuX+CbTREJihUi0bp8QUSwhE2AkGTNpv2b7yMbBkx5').then(() => window.exifr),
@@ -759,7 +760,7 @@
 
   window.__ffGpuEngine = GpuEngine;
 
-  /* ─── OCR Engine (Tesseract v4 — persistent worker with correct init sequence) ─── */
+  /* ─── OCR Engine (Tesseract v4 — parallel worker pool with SIMD acceleration) ─── */
   let _ocrWorker = null;
   let _ocrLang = null;
   let _ocrInitPromise = null;
@@ -776,6 +777,46 @@
     const path = loc.pathname;
     const dir = path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
     return origin + dir;
+  }
+
+  async function _createSingleWorker(T, base, lang, customLogger) {
+    try {
+      return await T.createWorker(lang, 1, {
+        workerPath: base + 'vendor/tesseract/worker.min.js',
+        corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+        langPath:   base + 'vendor/tesseract',
+        cachePath:  'filekit-ocr',
+        workerBlobURL: false,
+        gzip: false,
+        logger: customLogger || (() => {}),
+      });
+    } catch (initErr) {
+      const parts = String(lang || '').split('+');
+      if (parts.length > 1) {
+        console.warn('[OCR] Combined model failed, retrying English-only:', initErr);
+        return await T.createWorker('eng', 1, {
+          workerPath: base + 'vendor/tesseract/worker.min.js',
+          corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+          langPath:   base + 'vendor/tesseract',
+          cachePath:  'filekit-ocr',
+          workerBlobURL: false,
+          gzip: false,
+          logger: customLogger || (() => {}),
+        });
+      } else if (lang !== 'eng') {
+        console.warn('[OCR] Language model missing, falling back to English:', initErr);
+        return await T.createWorker('eng', 1, {
+          workerPath: base + 'vendor/tesseract/worker.min.js',
+          corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
+          langPath:   base + 'vendor/tesseract',
+          cachePath:  'filekit-ocr',
+          workerBlobURL: false,
+          gzip: false,
+          logger: customLogger || (() => {}),
+        });
+      }
+      throw initErr;
+    }
   }
 
   async function getOrInitOcrWorker(lang = 'eng') {
@@ -810,53 +851,7 @@
           if (m.status === 'recognizing text' && _ocrOnProgress) _ocrOnProgress(m.progress || 0);
         };
 
-        let worker;
-        try {
-          // All bundled models live locally (no CDN — COEP blocks cross-origin).
-          // Supports combined langs e.g. 'hin+eng' for mixed-script documents.
-          // Models are cached into IndexedDB under 'filekit-ocr/' for instant repeat starts.
-          worker = await T.createWorker(lang, 1, {
-            workerPath: base + 'vendor/tesseract/worker.min.js',
-            corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
-            langPath:   base + 'vendor/tesseract',
-            cachePath:  'filekit-ocr',
-            workerBlobURL: false,
-            gzip: false,
-            logger: makeLogger(),
-          });
-        } catch (initErr) {
-          const parts = String(lang || '').split('+');
-          if (parts.length > 1) {
-            console.warn('[OCR] Combined model failed, retrying English-only:', initErr);
-            _ocrNotify('Retrying with English model…');
-            worker = await T.createWorker('eng', 1, {
-              workerPath: base + 'vendor/tesseract/worker.min.js',
-              corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
-              langPath:   base + 'vendor/tesseract',
-              cachePath:  'filekit-ocr',
-              workerBlobURL: false,
-              gzip: false,
-              logger: makeLogger(),
-            });
-            lang = 'eng';
-          } else if (lang !== 'eng') {
-            console.warn('[OCR] Language model missing, falling back to English:', initErr);
-            _ocrNotify('Language model missing — using English…');
-            worker = await T.createWorker('eng', 1, {
-              workerPath: base + 'vendor/tesseract/worker.min.js',
-              corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
-              langPath:   base + 'vendor/tesseract',
-              cachePath:  'filekit-ocr',
-              workerBlobURL: false,
-              gzip: false,
-              logger: makeLogger(),
-            });
-            lang = 'eng';
-          } else {
-            throw initErr;
-          }
-        }
-
+        const worker = await _createSingleWorker(T, base, lang, makeLogger());
         _ocrWorker = worker;
         _ocrLang = lang;
         _ocrNotify('Ready');
@@ -874,16 +869,60 @@
   }
 
   async function ocrRecognize(canvases, onProgress, lang = 'eng') {
-    const worker = await getOrInitOcrWorker(lang);
+    const mainWorker = await getOrInitOcrWorker(lang);
     const n = canvases.length;
-    const results = [];
-    for (let i = 0; i < n; i++) {
-      _ocrOnProgress = (p) => { if (typeof onProgress === 'function') onProgress((i + p) / n); };
-      const cv = canvases[i];
-      const { data } = await worker.recognize(cv);
-      results.push(data);
-      if (typeof onProgress === 'function') onProgress((i + 1) / n);
+    if (!n) return [];
+
+    // Single-page execution uses the cached main worker directly with zero overhead
+    if (n === 1) {
+      _ocrOnProgress = (p) => { if (typeof onProgress === 'function') onProgress(p); };
+      const { data } = await mainWorker.recognize(canvases[0]);
+      _ocrOnProgress = null;
+      if (typeof onProgress === 'function') onProgress(1);
+      return [data];
     }
+
+    // Multi-page execution uses an intelligent parallel worker pool
+    const T = await load.tesseract();
+    const base = _ocrBasePath();
+    const concurrency = navigator.hardwareConcurrency ? Math.max(1, navigator.hardwareConcurrency - 1) : 2;
+    const poolSize = Math.min(concurrency, 3, n);
+
+    const pool = [mainWorker];
+    try {
+      const auxInitPromises = [];
+      for (let i = 1; i < poolSize; i++) {
+        auxInitPromises.push(_createSingleWorker(T, base, lang, () => {}));
+      }
+      const auxWorkers = await Promise.all(auxInitPromises);
+      auxWorkers.forEach(w => pool.push(w));
+    } catch (poolErr) {
+      console.warn('[OCR Pool] Auxiliary worker spawn failed, using single worker:', poolErr);
+    }
+
+    const results = new Array(n);
+    let nextIdx = 0;
+    let completedCount = 0;
+
+    async function processQueue(worker) {
+      while (nextIdx < n) {
+        const itemIdx = nextIdx++;
+        const cv = canvases[itemIdx];
+        const { data } = await worker.recognize(cv);
+        results[itemIdx] = data;
+        completedCount++;
+        if (typeof onProgress === 'function') onProgress(completedCount / n);
+        _ocrNotify(`Recognizing page ${completedCount} of ${n}…`);
+      }
+    }
+
+    await Promise.all(pool.map(w => processQueue(w)));
+
+    // Terminate auxiliary workers (keep primary cached worker warm)
+    for (let k = 1; k < pool.length; k++) {
+      try { await pool[k].terminate(); } catch {}
+    }
+
     _ocrOnProgress = null;
     return results;
   }
@@ -1339,21 +1378,25 @@
 
   function extractTableCsv(words) {
     if (!words || !words.length) return '';
-    const sorted = [...words].filter((w) => w.text && w.bbox).sort((a, b) => (a.bbox.y0 + a.bbox.y1) / 2 - (b.bbox.y0 + b.bbox.y1) / 2);
-    if (!sorted.length) return '';
+    const validWords = [...words].filter((w) => w.text && w.bbox && String(w.text).trim().length > 0);
+    if (!validWords.length) return '';
 
+    // Step 1: Sort by vertical baseline center
+    validWords.sort((a, b) => (a.bbox.y0 + a.bbox.y1) / 2 - (b.bbox.y0 + b.bbox.y1) / 2);
+
+    // Step 2: Line Band Grouping with Adaptive Height Tolerance
     const rows = [];
     let curRow = [];
     let curY = -1;
     let curH = 15;
 
-    for (const w of sorted) {
+    for (const w of validWords) {
       const yMid = (w.bbox.y0 + w.bbox.y1) / 2;
-      const h = w.bbox.y1 - w.bbox.y0;
-      if (curY < 0 || Math.abs(yMid - curY) < Math.max(8, curH * 0.6)) {
+      const h = Math.max(8, w.bbox.y1 - w.bbox.y0);
+      if (curY < 0 || Math.abs(yMid - curY) < Math.max(7, curH * 0.55)) {
         curRow.push(w);
         if (curY < 0) { curY = yMid; curH = h; }
-        else { curY = (curY + yMid) / 2; curH = (curH + h) / 2; }
+        else { curY = (curY * curRow.length + yMid) / (curRow.length + 1); curH = Math.max(curH, h); }
       } else {
         rows.push(curRow);
         curRow = [w];
@@ -1363,28 +1406,31 @@
     }
     if (curRow.length) rows.push(curRow);
 
+    // Step 3: Format Clean CSV with Gaps Thresholding
     const csvLines = rows.map((row) => {
       row.sort((a, b) => a.bbox.x0 - b.bbox.x0);
-      const cols = [];
-      let curCol = '';
+      const cells = [];
+      let curCellText = '';
       let lastX1 = -1;
 
       for (const w of row) {
+        const charW = Math.max(2, (w.bbox.x1 - w.bbox.x0) / Math.max(1, w.text.length));
         const gap = lastX1 >= 0 ? w.bbox.x0 - lastX1 : 0;
-        const wWidth = (w.bbox.x1 - w.bbox.x0) / Math.max(1, w.text.length);
-        if (lastX1 >= 0 && gap > wWidth * 2.8) {
-          cols.push(curCol.trim());
-          curCol = w.text;
+        
+        // Gaps greater than 2.4 average characters mark column transitions
+        if (lastX1 >= 0 && gap > charW * 2.4) {
+          if (curCellText.trim()) cells.push(curCellText.trim());
+          curCellText = w.text;
         } else {
-          curCol += (curCol ? ' ' : '') + w.text;
+          curCellText += (curCellText ? ' ' : '') + w.text;
         }
         lastX1 = w.bbox.x1;
       }
-      if (curCol) cols.push(curCol.trim());
-      return cols.map((c) => `"${c.replace(/"/g, '""')}"`).join(',');
+      if (curCellText.trim()) cells.push(curCellText.trim());
+      return cells.map((c) => `"${c.replace(/"/g, '""')}"`).join(',');
     });
 
-    return csvLines.join('\n');
+    return csvLines.filter(line => line.trim().length > 0).join('\n');
   }
 
   /* Detect Personally Identifiable Information (Emails, Phones, Cards, SSNs, IPs) from OCR words */
@@ -1478,11 +1524,40 @@
 
 
 
-  /* Build a searchable PDF with page normalization (Original, A4, Letter) and compression quality */
+  /* Build a searchable PDF with page normalization (Original, A4, Letter), multi-script Unicode fonts, and compression quality */
   async function searchablePdfFromCanvases(canvases, ocrResults, opts = {}) {
     const PDFLib = await load.pdflib();
     const doc = await PDFLib.PDFDocument.create();
-    const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+
+    // Check if recognized text contains non-Latin Unicode characters
+    let hasNonLatin = false;
+    for (const r of ocrResults) {
+      if (r && r.text && /[^\u0000-\u007F]/.test(r.text)) {
+        hasNonLatin = true;
+        break;
+      }
+    }
+
+    let font = null;
+    if (hasNonLatin) {
+      try {
+        if (!window.fontkit && typeof load.fontkit === 'function') await load.fontkit();
+        if (window.fontkit) {
+          doc.registerFontkit(window.fontkit);
+          const fontRes = await fetch('vendor/fonts/Arimo-Regular.ttf');
+          if (fontRes.ok) {
+            const fontBytes = await fontRes.arrayBuffer();
+            font = await doc.embedFont(fontBytes, { subset: true });
+          }
+        }
+      } catch (fontErr) {
+        console.warn('[PDF] Unicode font embedding failed, falling back to Helvetica:', fontErr);
+      }
+    }
+    if (!font) {
+      font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+    }
+
     const pageSize = opts.pageSize || 'a4'; // 'original' | 'a4' | 'letter'
     const q = opts.quality || 0.85;
 
@@ -1539,8 +1614,6 @@
         try {
           page.drawText(cleanText, { x, y, size: fsize, font, color: PDFLib.rgb(1, 1, 1) });
         } catch (e) {
-          // If text contains characters unencodable by standard WinAnsi Helvetica (e.g. Hindi, Russian, CJK, special symbols),
-          // sanitize with ASCII transliteration so the search position is preserved without failing the export.
           try {
             const asciiFallback = cleanText.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, ' ');
             if (asciiFallback.trim()) {
@@ -1549,8 +1622,6 @@
           } catch (err2) {}
         }
       }
-
-
     }
     return doc.save();
   }
@@ -2116,7 +2187,7 @@
 
     const sheetScope = opts.sheetScope || (opts.sheet ? 'single' : 'all');
     const targetSheetNo = +(opts.sheet || 1);
-    const userOrientation = opts.orientation || 'auto'; // 'auto' | 'portrait' | 'landscape'
+    const userOrientation = opts.orientation || (opts.landscape === 'portrait' ? 'portrait' : (opts.landscape === 'landscape' ? 'landscape' : 'auto'));
     const pageSizeName = opts.pageSize || 'a4'; // 'a4' | 'letter'
     const theme = opts.theme || 'slate'; // 'slate' | 'green' | 'blue' | 'monochrome'
     const showZebra = opts.zebra !== false;
@@ -2588,7 +2659,7 @@
       const XLSX = await load.xlsx();
       const PDFLib = await load.pdflib();
       const text = await file.text();
-      const delim = inputs.delim || ',';
+      const delim = inputs.delim || inputs.delimiter || ',';
       const aoa = parseCsv(text, delim);
       if (!aoa.length) throw new Error('No rows found in this CSV file.');
       const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -2672,7 +2743,7 @@
       const sheetTables = wb.SheetNames.map((name, idx) => {
         const sheet = wb.Sheets[name];
         const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
-        if (!aoa.length) return `<div class="sheet-pane ${idx === 0 ? 'active' : ''}" id="sheet-${idx}"><p style="padding:20px;color:#64748b;">No rows in this sheet.</p></div>`;
+        if (!aoa.length) return `<div class="sheet-pane ${idx === 0 ? 'active' : ''}" id="sheet-${idx}"><p style="padding:20px;color:#737373;">No rows in this sheet.</p></div>`;
 
         const header = aoa[0] || [];
         const rows = aoa.slice(1);
@@ -2697,23 +2768,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>${esc(title)}</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8FAFC; color: #0F172A; margin: 0; padding: 24px; }
-  .container { max-width: 1200px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 24px; border: 1px solid #E2E8F0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F7F7F7; color: #0A0A0A; margin: 0; padding: 24px; }
+  .container { max-width: 1200px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 24px; border: 1px solid #E5E5E5; }
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
   h1 { font-size: 20px; font-weight: 700; margin: 0; }
-  .filter-input { padding: 8px 14px; border-radius: 8px; border: 1.5px solid #E2E8F0; font-size: 13px; outline: none; width: 220px; transition: border-color 0.2s; }
+  .filter-input { padding: 8px 14px; border-radius: 8px; border: 1.5px solid #E5E5E5; font-size: 13px; outline: none; width: 220px; transition: border-color 0.2s; }
   .filter-input:focus { border-color: #2563EB; }
-  .tabs { display: flex; gap: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px; overflow-x: auto; }
-  .tab-btn { background: #F1F5F9; border: 1px solid #E2E8F0; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #475569; transition: all 0.15s; }
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid #E5E5E5; padding-bottom: 12px; margin-bottom: 16px; overflow-x: auto; }
+  .tab-btn { background: #EEEEEE; border: 1px solid #E5E5E5; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #525252; transition: all 0.15s; }
   .tab-btn.active { background: #2563EB; color: #FFFFFF; border-color: #2563EB; }
   .sheet-pane { display: none; }
   .sheet-pane.active { display: block; }
-  .table-wrap { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 8px; }
+  .table-wrap { overflow-x: auto; border: 1px solid #E5E5E5; border-radius: 8px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-  th { background: #F8FAFC; color: #334155; font-weight: 600; padding: 11px 14px; border-bottom: 1px solid #E2E8F0; position: sticky; top: 0; }
-  td { padding: 9px 14px; border-bottom: 1px solid #F1F5F9; color: #1E293B; }
+  th { background: #F7F7F7; color: #383838; font-weight: 600; padding: 11px 14px; border-bottom: 1px solid #E5E5E5; position: sticky; top: 0; }
+  td { padding: 9px 14px; border-bottom: 1px solid #EEEEEE; color: #171717; }
   tr:nth-child(even) td { background: #FAFAFA; }
-  tr:hover td { background: #F1F5F9; }
+  tr:hover td { background: #EEEEEE; }
 </style>
 </head>
 <body>
@@ -3190,8 +3261,8 @@ function filterTable(q) {
   ════════════════════════════════════════════════════════════════ */
   window.__ffMountScan = function mountScan(container) {
     container.innerHTML = '';
-    container.classList.add('cpdf-root', 'conv-root', 'app-stage-container', 'scan-tool');
-    container.classList.remove('media-shell', 'aud-shell', 'doc-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'img-workspace-active', 'org-shell', 'scan-shell');
+    container.classList.add('cpdf-root', 'app-stage-container', 'scan-tool');
+    container.classList.remove('conv-root', 'media-shell', 'aud-shell', 'doc-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'img-workspace-active', 'org-shell', 'scan-shell');
 
     const MAX_PAGES = 50;
     const A = window.__ffScanApi;
@@ -3305,7 +3376,7 @@ function filterTable(q) {
     let thumbsDrawerOpen = false;
     let activeFlyout = null; // 'tune' | 'format' | 'stamp' | 'keyword-redact' | null
     let sigTab = 'draw'; // 'draw' | 'type' | 'upload' | 'stamps'
-    let sigInk = '#0F172A';
+    let sigInk = '#0A0A0A';
     let sigFont = 'Dancing Script';
     let sigTypedName = 'Authorized Signature';
     let sigUploadedImg = null;
@@ -3495,14 +3566,14 @@ function filterTable(q) {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, cv.width, cv.height);
 
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = '#0A0A0A';
       ctx.font = 'bold 26px Inter, system-ui, sans-serif';
       ctx.fillText('IDENTITY DOCUMENT SCAN', 80, 80);
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = '#737373';
       ctx.font = '14px Inter, system-ui, sans-serif';
       ctx.fillText('Front and reverse sides digitized 100% locally on device', 80, 110);
 
-      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeStyle = '#E5E5E5';
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(80, 135); ctx.lineTo(cv.width - 80, 135); ctx.stroke();
 
@@ -3515,7 +3586,7 @@ function filterTable(q) {
       ctx.font = 'bold 15px Inter, system-ui, sans-serif';
       ctx.fillText('FRONT SIDE', x + 4, y1 - 12);
       ctx.drawImage(frontCv, x, y1, cardW, cardH);
-      ctx.strokeStyle = '#cbd5e1';
+      ctx.strokeStyle = '#D4D4D4';
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y1, cardW, cardH);
 
@@ -3524,7 +3595,7 @@ function filterTable(q) {
       ctx.font = 'bold 15px Inter, system-ui, sans-serif';
       ctx.fillText('BACK / REVERSE SIDE', x + 4, y2 - 12);
       ctx.drawImage(backCv, x, y2, cardW, cardH);
-      ctx.strokeStyle = '#cbd5e1';
+      ctx.strokeStyle = '#D4D4D4';
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y2, cardW, cardH);
 
@@ -3763,6 +3834,13 @@ function filterTable(q) {
           icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>'
         },
         {
+          id: 'pdf-edit-text',
+          name: 'Edit in Studio',
+          sub: 'Add text, signatures & annotations',
+          color: '#00B0FF',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>'
+        },
+        {
           id: 'pdf-sign',
           name: 'Sign Document',
           sub: 'Add signature or initials in studio',
@@ -3782,6 +3860,13 @@ function filterTable(q) {
           sub: 'Convert into editable Word doc',
           color: '#2563EB',
           icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+        },
+        {
+          id: 'pdf-protect',
+          name: 'Protect PDF',
+          sub: 'Encrypt with password & permissions',
+          color: '#E11D48',
+          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
         }
       ];
 
@@ -3806,12 +3891,12 @@ function filterTable(q) {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                   </div>
-                  <span style="color:#E2E8F0;margin:0 4px;">|</span>
+                  <span style="color:#E5E5E5;margin:0 4px;">|</span>
                 ` : ''}
                 <span class="cpdf-benchmark-fileinfo-text" id="scan-res-fileinfo-text" style="display:inline-flex;align-items:center;gap:6px;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                   <span>${esc(r.name)}</span>
-                  <span style="color:#94A3B8;font-weight:500;">(${sizeLine})</span>
+                  <span style="color:#8C8C8C;font-weight:500;">(${sizeLine})</span>
                 </span>
               </div>
             </div>
@@ -4382,20 +4467,20 @@ function filterTable(q) {
             <div class="drop-illustration">
               <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
                 <!-- Left: Image / Photo Card -->
-                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
-                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#737373" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
                 <!-- Center: Prominent Document Sheet -->
-                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
                 
                 <!-- Center: Downward Arrow -->
-                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
 
                 <!-- Right: Folder -->
-                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
@@ -4982,7 +5067,7 @@ function filterTable(q) {
             <div class="scan-sig-panel" id="panel-sig-draw" ${sigTab !== 'draw' ? 'hidden' : ''}>
               <div class="scan-sig-draw-controls">
                 <div class="scan-sig-ink-dots">
-                  <button type="button" class="scan-ink-dot ${sigInk === '#0F172A' ? 'is-active' : ''}" data-ink="#0F172A" style="background:#0F172A;" title="Black Ink"></button>
+                  <button type="button" class="scan-ink-dot ${sigInk === '#0A0A0A' ? 'is-active' : ''}" data-ink="#0A0A0A" style="background:#0A0A0A;" title="Black Ink"></button>
                   <button type="button" class="scan-ink-dot ${sigInk === '#1E3A8A' ? 'is-active' : ''}" data-ink="#1E3A8A" style="background:#1E3A8A;" title="Navy Ink"></button>
                   <button type="button" class="scan-ink-dot ${sigInk === '#DC2626' ? 'is-active' : ''}" data-ink="#DC2626" style="background:#DC2626;" title="Crimson Ink"></button>
                 </div>
@@ -5018,7 +5103,7 @@ function filterTable(q) {
                 <input type="checkbox" id="scan-sig-knockout-bg" checked>
                 <span>Auto-remove white background</span>
               </label>
-              <div id="scan-sig-upload-preview-wrap" style="display:none; text-align:center; padding:6px; background:#f8fafc; border-radius:6px; border:1px dashed #cbd5e1; margin-bottom:8px;">
+              <div id="scan-sig-upload-preview-wrap" style="display:none; text-align:center; padding:6px; background:#F7F7F7; border-radius:6px; border:1px dashed #D4D4D4; margin-bottom:8px;">
                 <canvas id="scan-sig-upload-canvas" style="max-height:60px; max-width:100%; display:inline-block;"></canvas>
               </div>
               <button type="button" class="scan-btn-apply-sig" id="btn-apply-upload-sig" style="display:none;">Apply Uploaded Signature</button>
@@ -5198,7 +5283,7 @@ function filterTable(q) {
                 </div>
               </div>
               <div style="margin-top:8px;">
-                <pre class="insight-csv-preview" style="background:#0f172a; color:#a78bfa; font-family:monospace; padding:8px; border-radius:6px; font-size:11px; white-space:pre-wrap; word-break:break-all;">${esc(bc.rawValue)}</pre>
+                <pre class="insight-csv-preview" style="background:#0A0A0A; color:#a78bfa; font-family:monospace; padding:8px; border-radius:6px; font-size:11px; white-space:pre-wrap; word-break:break-all;">${esc(bc.rawValue)}</pre>
               </div>
             </div>
           `;
@@ -5227,13 +5312,42 @@ function filterTable(q) {
             <span class="insight-badge compare" style="background:#e0e7ff; color:#4338ca; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${ICONS.split} Compare Document</span>
             <button type="button" class="insight-dl-btn" id="btn-launch-diff-station" style="background:#4f46e5; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">Launch Diff &rsaquo;</button>
           </div>
-          <p style="font-size:11px; color:#64748b; margin:6px 0 0 0;">Compare this page side-by-side with another PDF draft to highlight changes &amp; visual diffs.</p>
+          <p style="font-size:11px; color:#737373; margin:6px 0 0 0;">Compare this page side-by-side with another PDF draft to highlight changes &amp; visual diffs.</p>
         </div>
       `;
 
       return `<div class="scan-insights-scroll">${cardsHtml}</div>`;
     }
 
+    const calcEstSize = (count, fmt, comp) => {
+      const c = count || 1;
+      if (fmt === 'ocr_text') return `~${Math.max(1, Math.round(c * 2))} KB`;
+      let mb = 0;
+      if (fmt === 'zip') mb = c * 1.1;
+      else if (comp === 'high') mb = c * 0.72;
+      else if (comp === 'balanced') mb = c * 0.34;
+      else mb = c * 0.15;
+      return mb < 1 ? `~${Math.round(mb * 1024)} KB` : `~${mb.toFixed(1)} MB`;
+    };
+
+    const renderCustomSegment = (id, label, options, currentVal, paramKey, isVisible = true) => {
+      const activeOpt = options.find(o => String(o.value) === String(currentVal)) || options[0];
+      const extraIdAttr = id === 'panel-export-lang' ? 'id="panel-ocr-lang-row"' : '';
+      const extraStyle = !isVisible ? 'style="display:none;"' : '';
+      return `
+        <div class="scan-segment-item scan-custom-select-trigger" ${extraIdAttr} data-id="${id}" data-param="${paramKey}" ${extraStyle} tabindex="0" role="button" aria-haspopup="listbox">
+          <span class="scan-segment-label">${label}</span>
+          <div class="scan-segment-select-wrap">
+            <span class="scan-segment-val-text" id="val-${id}">${activeOpt.label}</span>
+            <select id="${id}" class="scan-segment-select" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+              ${options.map(o => `<option value="${o.value}" ${String(o.value) === String(currentVal) ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+            <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>`;
+    };
 
     function renderReviewStudio(parent) {
 
@@ -5341,6 +5455,10 @@ function filterTable(q) {
                   <div class="scan-text-layer ${showOcrLayer && !isTextSheetOpen ? 'is-active' : ''}" id="scan-text-layer" aria-hidden="${!showOcrLayer || isTextSheetOpen}"></div>
                   <div class="scan-live-text-selection-pill" id="scan-selection-pill" style="display:none;" aria-hidden="true">
                     <button type="button" id="btn-pill-copy" title="Copy selected text">${ICONS.copy}<span>Copy</span></button>
+                    <span class="scan-pill-sep"></span>
+                    <button type="button" id="btn-pill-redact" title="Redact selected text" style="color:#EF4444;">${ICONS.redact}<span>Redact</span></button>
+                    <span class="scan-pill-sep"></span>
+                    <button type="button" id="btn-pill-search" title="Find occurrences in document">${ICONS.search}<span>Find</span></button>
                     <span class="scan-pill-sep"></span>
                     <button type="button" id="btn-pill-select-all" title="Select all text on this page">${ICONS.flow}<span>Select All</span></button>
                   </div>
@@ -5492,23 +5610,20 @@ function filterTable(q) {
             </div>
           </div>
 
-          <!-- RIGHT COLUMN: Dedicated Studio Export & Options Panel (Exact Mockup Match) -->
+          <!-- RIGHT COLUMN: Dedicated Studio Export & Options Panel (Exact Compress Tool Parity) -->
           <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="scan-benchmark-panel" aria-label="Export Settings">
             <div class="cpdf-benchmark-panel-inner">
-              <!-- Header: Red/Coral Document Badge & Title -->
+              <!-- Header: Green Squircle Badge & Title Matching Compress Tool -->
               <div class="scan-exact-header">
-                <div class="scan-exact-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                <div class="scan-exact-icon" style="background: #00C466 !important;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/>
                   </svg>
                 </div>
-                <h2 class="scan-exact-title">Export Scan</h2>
+                <h2 class="scan-exact-title">Scan OCR</h2>
               </div>
 
-              <!-- Format Option Cards Stack -->
+              <!-- Format Option Cards Stack (Clean 38px single-line cards matching Compress tool) -->
               <div class="scan-exact-cards-stack" role="radiogroup" aria-label="Output Format">
                 <div class="scan-benchmark-card ${pdfFormat === 'searchable' ? 'is-active' : ''}" data-fmt="searchable" tabindex="0" role="radio" aria-checked="${pdfFormat === 'searchable'}">
                   <div class="scan-benchmark-radio">
@@ -5516,7 +5631,6 @@ function filterTable(q) {
                   </div>
                   <div class="scan-benchmark-card-text">
                     <span class="scan-benchmark-card-label">Searchable PDF</span>
-                    <span class="scan-benchmark-card-sub">Selectable text + OCR layer</span>
                   </div>
                   <div class="scan-benchmark-card-right">
                     <span class="scan-benchmark-pill-rec">Recommended</span>
@@ -5529,7 +5643,15 @@ function filterTable(q) {
                   </div>
                   <div class="scan-benchmark-card-text">
                     <span class="scan-benchmark-card-label">Standard PDF</span>
-                    <span class="scan-benchmark-card-sub">Flattened visual scan · Fast</span>
+                  </div>
+                </div>
+
+                <div class="scan-benchmark-card ${pdfFormat === 'ocr_text' ? 'is-active' : ''}" data-fmt="ocr_text" tabindex="0" role="radio" aria-checked="${pdfFormat === 'ocr_text'}">
+                  <div class="scan-benchmark-radio">
+                    <div class="scan-benchmark-radio-dot"></div>
+                  </div>
+                  <div class="scan-benchmark-card-text">
+                    <span class="scan-benchmark-card-label">Extract Text</span>
                   </div>
                 </div>
 
@@ -5539,91 +5661,67 @@ function filterTable(q) {
                   </div>
                   <div class="scan-benchmark-card-text">
                     <span class="scan-benchmark-card-label">Image ZIP</span>
-                    <span class="scan-benchmark-card-sub">Individual full-resolution JPGs</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Unified Segmented Settings Strip (Option 1: Linear / Apple Style) -->
+              <!-- Unified 3-Column Segmented Settings Strip with Custom Dropdown Popovers -->
               <div class="scan-segmented-settings-strip">
                 <!-- Segment 1: Resolution -->
-                <div class="scan-segment-item" id="panel-field-dpi">
-                  <label class="scan-segment-label" for="panel-export-dpi">Resolution</label>
-                  <div class="scan-segment-select-wrap">
-                    <select id="panel-export-dpi" class="scan-segment-select">
-                      <option value="high" ${pdfCompression === 'high' ? 'selected' : ''}>300 DPI</option>
-                      <option value="balanced" ${pdfCompression === 'balanced' ? 'selected' : ''}>150 DPI</option>
-                      <option value="compact" ${pdfCompression === 'compact' ? 'selected' : ''}>72 DPI</option>
-                    </select>
-                    <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </div>
-                </div>
+                ${renderCustomSegment('panel-export-dpi', 'Resolution', [
+                  { value: 'high', label: '300 DPI' },
+                  { value: 'balanced', label: '150 DPI' },
+                  { value: 'compact', label: '72 DPI' }
+                ], pdfCompression, 'dpi')}
 
                 <!-- Divider 1 -->
-                <div class="scan-segment-divider" aria-hidden="true"></div>
+                <div class="scan-segment-divider" id="panel-ocr-size-divider" aria-hidden="true"></div>
 
                 <!-- Segment 2: Geometry -->
-                <div class="scan-segment-item" id="panel-field-size">
-                  <label class="scan-segment-label" for="panel-export-pagesize">Geometry</label>
-                  <div class="scan-segment-select-wrap">
-                    <select id="panel-export-pagesize" class="scan-segment-select">
-                      <option value="a4" ${pdfPageSize === 'a4' ? 'selected' : ''}>A4 (210×297)</option>
-                      <option value="letter" ${pdfPageSize === 'letter' ? 'selected' : ''}>US Letter</option>
-                      <option value="original" ${pdfPageSize === 'original' ? 'selected' : ''}>Original</option>
-                    </select>
-                    <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </div>
-                </div>
+                ${renderCustomSegment('panel-export-pagesize', 'Geometry', [
+                  { value: 'a4', label: 'A4 (210×297)' },
+                  { value: 'letter', label: 'US Letter' },
+                  { value: 'original', label: 'Original' }
+                ], pdfPageSize, 'size')}
 
                 <!-- Divider 2 -->
-                <div class="scan-segment-divider" aria-hidden="true"></div>
+                <div class="scan-segment-divider" id="panel-ocr-lang-divider" aria-hidden="true" style="${(pdfFormat === 'searchable' || pdfFormat === 'ocr_text') ? '' : 'display:none;'}"></div>
 
                 <!-- Segment 3: Language -->
-                <div class="scan-segment-item" id="panel-ocr-lang-row">
-                  <label class="scan-segment-label" for="panel-export-lang">Language</label>
-                  <div class="scan-segment-select-wrap">
-                    <select id="panel-export-lang" class="scan-segment-select">
-                      <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English (EN)</option>
-                      <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (ES)</option>
-                      <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (FR)</option>
-                      <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (DE)</option>
-                      <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (IT)</option>
-                      <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (PT)</option>
-                      <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (HI)</option>
-                      <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (ZH)</option>
-                      <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (JA)</option>
-                      <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (AR)</option>
-                      <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto-Detect</option>
-                    </select>
-                    <svg class="scan-segment-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </div>
-                </div>
+                ${renderCustomSegment('panel-export-lang', 'Language', [
+                  { value: 'eng', label: 'English (EN)' },
+                  { value: 'spa', label: 'Spanish (ES)' },
+                  { value: 'fra', label: 'French (FR)' },
+                  { value: 'deu', label: 'German (DE)' },
+                  { value: 'ita', label: 'Italian (IT)' },
+                  { value: 'por', label: 'Portuguese (PT)' },
+                  { value: 'hin', label: 'Hindi (HI)' },
+                  { value: 'chi_sim', label: 'Chinese (ZH)' },
+                  { value: 'jpn', label: 'Japanese (JA)' },
+                  { value: 'ara', label: 'Arabic (AR)' },
+                  { value: 'auto', label: 'Auto-Detect' }
+                ], ocrLang, 'lang', (pdfFormat === 'searchable' || pdfFormat === 'ocr_text'))}
               </div>
 
-              <!-- Estimated Output Box (Light Mint Box with Neutral Privacy Pill & Solid Green Bar) -->
+              <!-- Estimated Output Box (Matching Compress PDF exactly) -->
               <div class="scan-exact-est-box">
-                <div class="scan-exact-est-title">Estimated output</div>
+                <div class="scan-exact-est-header">
+                  <span class="scan-exact-est-title">Estimated output</span>
+                </div>
                 <div class="scan-exact-est-row">
                   <span class="scan-exact-est-metric">
-                    <strong>${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong> · <span class="scan-est-size-tag" id="scan-panel-est-size">~${((pages.length || 1) * (pdfFormat === 'zip' ? 1.1 : (pdfCompression === 'high' ? 0.72 : (pdfCompression === 'balanced' ? 0.34 : 0.15)))).toFixed(1)} MB</span> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res' : (pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI'))}</span>
-                  </span>
-                  <span class="scan-exact-privacy-badge">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    100% Local
+                    <strong id="scan-panel-page-count">${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}</strong> · <span class="scan-est-size-tag" id="scan-panel-est-size">${calcEstSize(pages.length, pdfFormat, pdfCompression)}</span> · <span id="scan-panel-summary-meta">${pdfFormat === 'zip' ? 'High-Res' : (pdfFormat === 'ocr_text' ? 'Plain Text' : (pdfCompression === 'high' ? '300 DPI' : (pdfCompression === 'balanced' ? '150 DPI' : '72 DPI')))}</span>
                   </span>
                 </div>
                 <div class="scan-exact-track">
-                  <div class="scan-exact-bar"></div>
+                  <div class="scan-exact-bar" id="scan-est-bar" style="width: 100%;"></div>
                 </div>
               </div>
 
-              <!-- Primary Action CTA Button (Solid Obsidian Black) -->
+              <!-- Primary Action CTA Button (Solid Obsidian Black with White Arrow) -->
               <button type="button" class="scan-exact-cta" id="btn-panel-confirm-export">
                 <span id="panel-confirm-spinner" style="display:none;" class="scan-modal-spinner"></span>
-                <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF')}</span>
+                <span id="panel-confirm-text">${pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Scan OCR' : (pdfFormat === 'ocr_text' ? 'Export Extracted Text' : 'Export Standard PDF'))}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -5631,6 +5729,14 @@ function filterTable(q) {
                   <div class="scan-modal-progress-fill" id="panel-progress-fill"></div>
                 </div>
               </button>
+
+              <!-- Professional Trust Micro-Footer (Matching Compress Tool) -->
+              <div class="cpdf-local-trust-footer">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>100% Private · Processed locally on your device</span>
+              </div>
             </div>
           </aside>
         </div>
@@ -6357,7 +6463,7 @@ function filterTable(q) {
 
         // 1. Dim outer area outside crop rectangle
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.54)';
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.54)';
         ctx.beginPath();
         ctx.rect(0, 0, bufferW, bufferH);
         ctx.rect(bx, by, bw, bh);
@@ -6486,7 +6592,7 @@ function filterTable(q) {
         const handleY = bufferH / 2;
         const pillW = 20 * dpr, pillH = 34 * dpr, pillR = 10 * dpr;
         ctx.save();
-        ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+        ctx.shadowColor = 'rgba(10, 10, 10, 0.25)';
         ctx.shadowBlur = 8 * dpr;
         ctx.shadowOffsetY = 2 * dpr;
         ctx.fillStyle = '#FFFFFF';
@@ -6497,13 +6603,13 @@ function filterTable(q) {
           ctx.rect(splitX - pillW / 2, handleY - pillH / 2, pillW, pillH);
         }
         ctx.fill();
-        ctx.strokeStyle = 'rgba(226, 232, 240, 0.9)';
+        ctx.strokeStyle = 'rgba(229, 229, 229, 0.9)';
         ctx.lineWidth = 1 * dpr;
         ctx.stroke();
         ctx.restore();
 
         // Dual subtle grip bars in center of handle
-        ctx.fillStyle = '#94A3B8';
+        ctx.fillStyle = '#8C8C8C';
         ctx.fillRect(splitX - 3 * dpr, handleY - 6 * dpr, 1.5 * dpr, 12 * dpr);
         ctx.fillRect(splitX + 1.5 * dpr, handleY - 6 * dpr, 1.5 * dpr, 12 * dpr);
 
@@ -6517,7 +6623,7 @@ function filterTable(q) {
         const origText = 'Original';
         const origW = ctx.measureText(origText).width + 16 * dpr;
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.7)';
         ctx.beginPath();
         if (ctx.roundRect) {
           ctx.roundRect(12 * dpr, badgeY, origW, badgeH, 5 * dpr);
@@ -6534,7 +6640,7 @@ function filterTable(q) {
         const modeLabel = p.enhanceMode === 'bw' ? 'B&W' : (p.enhanceMode === 'photo' ? 'Photo' : 'Cleaned');
         const enhW = ctx.measureText(modeLabel).width + 16 * dpr;
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.7)';
         ctx.beginPath();
         if (ctx.roundRect) {
           ctx.roundRect(bufferW - enhW - 12 * dpr, badgeY, enhW, badgeH, 5 * dpr);
@@ -6927,7 +7033,7 @@ function filterTable(q) {
           const cur = pages[selIdx];
           const baseName = (pages[0]?.name || cur?.name || 'scanned-document').replace(/\.[^.]+$/, '');
           const name = (ocrScope === 'all' ? `${baseName}-all-${pages.length}-pages` : `${cur?.name || 'scanned-page'}`).replace(/\.[^.]+$/, '') + '.doc';
-          const content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.6;color:#0F172A;margin:1in;}p{margin-bottom:0.8em;white-space:pre-wrap;}</style></head><body>${text.split('\n\n').map(p => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`).join('')}</body></html>`;
+          const content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.6;color:#0A0A0A;margin:1in;}p{margin-bottom:0.8em;white-space:pre-wrap;}</style></head><body>${text.split('\n\n').map(p => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`).join('')}</body></html>`;
           const blob = new Blob(['\ufeff' + content], { type: 'application/msword;charset=utf-8' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -7123,9 +7229,13 @@ function filterTable(q) {
             selectionPill.setAttribute('aria-hidden', 'true');
             return;
           }
-          const pillW = 140;
-          const leftPos = Math.max(8, Math.min(pr.width - pillW, r.left - pr.left + (r.width / 2) - (pillW / 2)));
-          const topPos = Math.max(8, r.top - pr.top - 38);
+          const pillW = selectionPill.offsetWidth || 230;
+          const pillH = selectionPill.offsetHeight || 32;
+          const leftPos = Math.max(8, Math.min(pr.width - pillW - 8, r.left - pr.left + (r.width / 2) - (pillW / 2)));
+          let topPos = r.top - pr.top - pillH - 12;
+          if (topPos < 6) {
+            topPos = r.bottom - pr.top + 10;
+          }
           selectionPill.style.left = `${leftPos}px`;
           selectionPill.style.top = `${topPos}px`;
           selectionPill.classList.add('is-visible');
@@ -7155,6 +7265,51 @@ function filterTable(q) {
               updateSelectionPill();
             }, 1000);
             setStatus(`Copied selected text (${selText.length} characters).`, 'ok');
+          }
+        };
+      }
+
+      const btnPillRedact = parent.querySelector('#btn-pill-redact');
+      const btnPillSearch = parent.querySelector('#btn-pill-search');
+
+      if (btnPillRedact) {
+        btnPillRedact.onclick = (e) => {
+          e.stopPropagation();
+          const sel = window.getSelection();
+          const selText = sel ? sel.toString().trim() : '';
+          const p = pages[selIdx];
+          if (selText && p && p.ocrData?.words) {
+            pushHistoryState();
+            const wordsToRedact = p.ocrData.words.filter(w => {
+              const clean = String(w.text || '').trim();
+              return clean && selText.includes(clean);
+            });
+            if (wordsToRedact.length) {
+              wordsToRedact.forEach(w => blackoutSingleWord(p, w));
+              setStatus(`Redacted ${wordsToRedact.length} words from page.`, 'ok');
+            } else {
+              setStatus('Selected text highlighted for redaction.', 'info');
+            }
+            if (sel) sel.removeAllRanges();
+            updateSelectionPill();
+          }
+        };
+      }
+
+      if (btnPillSearch) {
+        btnPillSearch.onclick = (e) => {
+          e.stopPropagation();
+          const sel = window.getSelection();
+          const selText = sel ? sel.toString().trim() : '';
+          if (selText) {
+            searchQuery = selText;
+            showSearchBar = true;
+            const sInp = parent.querySelector('#scan-search-input');
+            if (sInp) sInp.value = selText;
+            renderTextLayer();
+            setStatus(`Highlighting matches for "${selText}".`, 'ok');
+            if (sel) sel.removeAllRanges();
+            updateSelectionPill();
           }
         };
       }
@@ -8280,16 +8435,6 @@ function filterTable(q) {
       const panelConfirmText = parent.querySelector('#panel-confirm-text');
       const stageAddMoreBtn = parent.querySelector('#btn-stage-add-more');
 
-      const calcEstSize = (count, fmt, comp) => {
-        const c = count || 1;
-        let mb = 0;
-        if (fmt === 'zip') mb = c * 1.1;
-        else if (comp === 'high') mb = c * 0.72;
-        else if (comp === 'balanced') mb = c * 0.34;
-        else mb = c * 0.15;
-        return mb < 1 ? `~${Math.round(mb * 1024)} KB` : `~${mb.toFixed(1)} MB`;
-      };
-
       if (stageAddMoreBtn) {
         stageAddMoreBtn.onclick = () => {
           const fi = parent.querySelector('#scan-file-input');
@@ -8301,9 +8446,15 @@ function filterTable(q) {
         if (panelSizeTag) {
           panelSizeTag.textContent = calcEstSize(pages.length, pdfFormat, pdfCompression);
         }
+        const panelPageCount = parent.querySelector('#scan-panel-page-count');
+        if (panelPageCount) {
+          panelPageCount.textContent = `${pages.length} ${pages.length === 1 ? 'Page' : 'Pages'}`;
+        }
         if (!panelMeta) return;
         if (pdfFormat === 'zip') {
           panelMeta.textContent = 'High-Res';
+        } else if (pdfFormat === 'ocr_text') {
+          panelMeta.textContent = 'Plain Text';
         } else if (pdfCompression === 'high') {
           panelMeta.textContent = '300 DPI';
         } else if (pdfCompression === 'balanced') {
@@ -8313,7 +8464,7 @@ function filterTable(q) {
         }
       };
 
-      const panelFmtList = ['searchable', 'image', 'zip'];
+      const panelFmtList = ['searchable', 'image', 'ocr_text', 'zip'];
       const selectPanelFormat = (fmt) => {
         if (!fmt) return;
         pdfFormat = fmt;
@@ -8324,13 +8475,72 @@ function filterTable(q) {
         });
 
         if (panelConfirmText) {
-          panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF');
+          panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Scan OCR' : (pdfFormat === 'ocr_text' ? 'Export Extracted Text' : 'Export Standard PDF'));
         }
+        const hasLang = pdfFormat === 'searchable' || pdfFormat === 'ocr_text';
         if (panelLangRow) {
-          panelLangRow.style.display = pdfFormat === 'searchable' ? '' : 'none';
+          panelLangRow.style.display = hasLang ? '' : 'none';
+        }
+        const panelLangDivider = parent.querySelector('#panel-ocr-lang-divider');
+        if (panelLangDivider) {
+          panelLangDivider.style.display = hasLang ? '' : 'none';
         }
         updatePanelMeta();
       };
+
+      // Sleek custom dropdown popovers (parity with Compress PDF)
+      parent.querySelectorAll('.scan-custom-select-trigger').forEach(trigger => {
+        trigger.onclick = (e) => {
+          e.stopPropagation();
+          const existing = trigger.querySelector('.scan-custom-select-popover');
+          parent.querySelectorAll('.scan-custom-select-popover').forEach(p => p.remove());
+          if (existing) return;
+
+          const targetId = trigger.dataset.id;
+          const sel = parent.querySelector(`#${targetId}`);
+          if (!sel) return;
+
+          const options = Array.from(sel.options).map(opt => ({
+            value: opt.value,
+            label: opt.text,
+            selected: opt.selected || opt.value === sel.value
+          }));
+
+          const popover = document.createElement('div');
+          popover.className = 'scan-custom-select-popover';
+          popover.setAttribute('role', 'listbox');
+          popover.innerHTML = options.map(o => `
+            <div class="scan-custom-option ${o.selected ? 'is-selected' : ''}" data-val="${o.value}" role="option" aria-selected="${o.selected}">
+              <span>${o.label}</span>
+              ${o.selected ? `<svg class="scan-custom-option-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00C466" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+            </div>
+          `).join('');
+
+          popover.querySelectorAll('.scan-custom-option').forEach(optEl => {
+            optEl.onclick = (ev) => {
+              ev.stopPropagation();
+              const val = optEl.dataset.val;
+              sel.value = val;
+              const valLabel = parent.querySelector(`#val-${targetId}`);
+              if (valLabel) valLabel.textContent = optEl.querySelector('span')?.textContent || val;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              popover.remove();
+            };
+          });
+
+          trigger.appendChild(popover);
+        };
+
+        trigger.onkeydown = (e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            trigger.click();
+          }
+        };
+      });
+
+      const closePopovers = () => parent.querySelectorAll('.scan-custom-select-popover').forEach(p => p.remove());
+      document.addEventListener('click', closePopovers);
 
       panelCards.forEach(card => {
         card.onclick = () => selectPanelFormat(card.getAttribute('data-fmt'));
@@ -8398,7 +8608,7 @@ function filterTable(q) {
             if (pFill) pFill.style.width = '0%';
             panelConfirmBtn.disabled = false;
             if (panelConfirmText) {
-              panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Export Searchable PDF' : 'Export Standard PDF');
+              panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Scan OCR' : (pdfFormat === 'ocr_text' ? 'Export Extracted Text' : 'Export Standard PDF'));
             }
           }
         };
@@ -9448,6 +9658,24 @@ function filterTable(q) {
           return;
         }
 
+        if (pdfFormat === 'ocr_text') {
+          updateProcessingState('Running OCR', 0.15, 'Extracting text across all pages...');
+          for (let i = 0; i < pages.length; i++) {
+            assertCurrent();
+            updateProcessingState('Extracting text', 0.15 + ((i / pages.length) * 0.75), `Recognizing page ${i + 1} of ${pages.length}...`);
+            if (!pages[i].ocrData) {
+              await runPageOcr(i);
+            }
+          }
+          const allText = typeof getCombinedAllPagesText === 'function' ? getCombinedAllPagesText() : pages.map((pg, i) => `=== Page ${i + 1} of ${pages.length} ===\n\n` + (pg.ocrData?.text || '').trim()).join('\n\n\n');
+          const blob = new Blob([allText], { type: 'text/plain;charset=utf-8' });
+          const baseName = (getScanSourceName() || 'scanned-document').replace(/\.[^/.]+$/, '');
+          A.download(blob, `${baseName}-ocr.txt`);
+          updateProcessingState('Done', 1.0, 'Text extracted successfully.');
+          showScanResult(blob, `Extracted OCR Text`, allText);
+          return;
+        }
+
         if (pdfFormat === 'image') {
           updateProcessingState('Preparing PDF', 0.12, 'Compiling pages...');
           const PDFLib = await load.pdflib();
@@ -9811,7 +10039,7 @@ function filterTable(q) {
           const textW = octx.measureText(badgeText).width;
           const badgeW = textW + 16, badgeH = 20;
 
-          octx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+          octx.fillStyle = 'rgba(10, 10, 10, 0.88)';
           octx.strokeStyle = manualQuad ? '#f59e0b' : '#10b981';
           octx.lineWidth = 1;
           octx.beginPath();
@@ -10400,7 +10628,7 @@ function filterTable(q) {
               </select>
             </label>
           </div>
-          <textarea class="doc-editor doc-editor--out" readonly style="width:100%;min-height:220px;border-radius:8px;padding:12px;font-size:13px;background:#111B2E;color:#e2e8f0;border:1px solid rgba(255,255,255,.12)">${esc(text)}</textarea>
+          <textarea class="doc-editor doc-editor--out" readonly style="width:100%;min-height:220px;border-radius:8px;padding:12px;font-size:13px;background:#111B2E;color:#E5E5E5;border:1px solid rgba(255,255,255,.12)">${esc(text)}</textarea>
           <p class="cpdf-dz-meta">Note: browser text-to-speech plays aloud but can't export an audio file — download the extracted text instead.</p>
         </div>` : `
         <div class="cpdf-dropzone drop-hero-box" id="pta-dz" tabindex="0" role="button" aria-label="Add PDF to synthesize into audio">
@@ -10408,20 +10636,20 @@ function filterTable(q) {
             <div class="drop-illustration">
               <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
                 <!-- Left: Image / Photo Card -->
-                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
-                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#737373" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
                 <!-- Center: Prominent Document Sheet -->
-                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
                 
                 <!-- Center: Downward Arrow -->
-                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
 
                 <!-- Right: Folder -->
-                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
 
@@ -12557,7 +12785,8 @@ function filterTable(q) {
       const conv = window.heic2any;
       const targetList = files && files.length ? files : [file];
       const q = Math.min(1, Math.max(0.1, Number(inputs.quality || 90) / 100));
-      const toType = inputs.format || 'image/jpeg';
+      const rawFmt = (inputs.format || 'jpeg').toLowerCase();
+      const toType = (rawFmt === 'png' || rawFmt === 'image/png') ? 'image/png' : ((rawFmt === 'webp' || rawFmt === 'image/webp') ? 'image/webp' : 'image/jpeg');
       const ext = toType === 'image/png' ? 'png' : (toType === 'image/webp' ? 'webp' : 'jpg');
       const results = [];
 
@@ -12620,7 +12849,8 @@ function filterTable(q) {
     async run({ file, inputs, onProgress, signal }) {
       onProgress?.(0.05, 'Starting video engine…');
       const [w, h] = (inputs.resolution || '720x1280').split('x').map(Number);
-      const mode = inputs.fitMode || 'blur_bg';
+      const rawMode = inputs.fitMode || inputs.framing || 'blur_bg';
+      const mode = rawMode === 'blur' ? 'blur_bg' : (rawMode === 'fit' ? 'pad' : rawMode);
 
       let vfArgs = [];
       if (mode === 'blur_bg') {
@@ -12711,7 +12941,7 @@ function filterTable(q) {
 
       // Theme colors
       const themes = {
-        indigo: { bg: '#0F172A', card: '#1E293B', wave: '#818CF8', wave2: '#C084FC', text: '#F8FAFC' },
+        indigo: { bg: '#0A0A0A', card: '#171717', wave: '#818CF8', wave2: '#C084FC', text: '#F7F7F7' },
         red: { bg: '#18181B', card: '#27272A', wave: '#F87171', wave2: '#FB923C', text: '#FAFAFA' },
         green: { bg: '#064E3B', card: '#065F46', wave: '#34D399', wave2: '#A7F3D0', text: '#ECFDF5' },
         blue: { bg: '#082F49', card: '#0C4A6E', wave: '#38BDF8', wave2: '#7DD3FC', text: '#F0F9FF' }
@@ -12967,10 +13197,12 @@ function filterTable(q) {
         }
         parsedObj = xmlToObj(xmlDoc.documentElement);
       } else if (isDelimitedTable(trimmed, ',') || isDelimitedTable(trimmed, '\t')) {
-        // CSV / TSV → array of row objects
+        // CSV / TSV → array of row objects or 2D matrix
         const delim = isDelimitedTable(trimmed, '\t') && !isDelimitedTable(trimmed, ',') ? '\t' : ',';
         const rows = parseCsv(trimmed, delim).filter((r) => r.some((c) => c !== ''));
-        if (rows.length >= 2) {
+        if (inputs.mode === 'array') {
+          parsedObj = rows;
+        } else if (rows.length >= 2) {
           const headers = rows[0].map((h, i) => (h.trim() ? h.trim() : 'col' + (i + 1)));
           parsedObj = rows.slice(1).map((r) => {
             const o = {};
@@ -12986,15 +13218,20 @@ function filterTable(q) {
 
       onProgress?.(0.6, `Serializing to ${inputs.targetFormat.toUpperCase()}…`);
       const target = inputs.targetFormat || 'yaml';
+      const mode = inputs.mode || 'standard';
       let outputText = '';
-      const spaces = Number(inputs.indent || 2);
+      const isCompact = mode === 'compact' || mode === 'minified';
+      const spaces = isCompact ? 0 : Number(inputs.indent || 2);
 
       if (target === 'json') {
-        outputText = JSON.stringify(parsedObj, null, spaces);
+        outputText = JSON.stringify(parsedObj, null, isCompact ? undefined : spaces);
       } else if (target === 'yaml') {
         // Pure JS YAML serializer
         function objToYaml(o, depth = 0) {
-          const ind = ' '.repeat(depth * spaces);
+          if (mode === 'flow') {
+            return JSON.stringify(o);
+          }
+          const ind = ' '.repeat(depth * (spaces || 2));
           let str = '';
           if (Array.isArray(o)) {
             for (const it of o) {
@@ -13020,9 +13257,18 @@ function filterTable(q) {
         outputText = objToYaml(parsedObj);
       } else if (target === 'xml') {
         function objToXml(o, tag = 'root') {
-          // Arrays get a real root element — sibling <row> without one is
-          // malformed XML that strict parsers reject.
-          if (Array.isArray(o)) return `<rows>${o.map((it) => objToXml(it, 'row')).join('')}</rows>`;
+          if (Array.isArray(o)) {
+            if (mode === 'attributes') {
+              return `<rows>\n${o.map((it) => {
+                if (typeof it === 'object' && it !== null) {
+                  const attrs = Object.entries(it).map(([k, v]) => `${k.replace(/[^a-zA-Z0-9_-]/g, '_')}="${String(v ?? '').replace(/"/g, '&quot;')}"`).join(' ');
+                  return `  <row ${attrs}/>`;
+                }
+                return `  <row>${String(it)}</row>`;
+              }).join('\n')}\n</rows>`;
+            }
+            return `<rows>${o.map((it) => objToXml(it, 'row')).join('')}</rows>`;
+          }
           let str = `<${tag}>`;
           if (typeof o === 'object' && o !== null) {
             for (const [k, v] of Object.entries(o)) {
@@ -13414,10 +13660,27 @@ function filterTable(q) {
     async run({ file, inputs }) {
       const XLSX = await load.xlsx();
       const text = await file.text();
-      const delim = inputs?.delimiter || ',';
+      const delim = inputs?.delimiter || inputs?.delim || ',';
+      const mode = inputs?.mode || 'styled';
       const aoa = parseDelimited(text, delim);
       if (!aoa.length) throw new Error('The file contains no data rows.');
       const ws = XLSX.utils.aoa_to_sheet(aoa);
+      if (mode === 'styled' && aoa.length > 0) {
+        const maxCols = Math.max(...aoa.map(r => r.length));
+        const colWidths = [];
+        for (let c = 0; c < maxCols; c++) {
+          let maxLen = 10;
+          for (let r = 0; r < Math.min(100, aoa.length); r++) {
+            const cellVal = String(aoa[r]?.[c] ?? '');
+            if (cellVal.length > maxLen) maxLen = Math.min(60, cellVal.length);
+          }
+          colWidths.push({ wch: maxLen + 2 });
+        }
+        ws['!cols'] = colWidths;
+        if (aoa.length > 1 && ws['!ref']) {
+          ws['!autofilter'] = { ref: ws['!ref'] };
+        }
+      }
       const isRtl = aoa.some((row) => row.some((cell) => cell && /[\u0590-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(cell))));
       if (isRtl) {
         ws['!views'] = [{ rightToLeft: true }];
@@ -13446,7 +13709,8 @@ function filterTable(q) {
       if (!wb.SheetNames.length) throw new Error('The workbook has no sheets.');
       const idx = Math.max(0, Math.min((+inputs?.sheet || 1) - 1, wb.SheetNames.length - 1));
       const sheet = wb.Sheets[wb.SheetNames[idx]];
-      const csv = XLSX.utils.sheet_to_csv(sheet, { FS: inputs?.delimiter || ',' });
+      const delim = inputs?.delim || inputs?.delimiter || ',';
+      const csv = XLSX.utils.sheet_to_csv(sheet, { FS: delim });
       return { preview: 'text', text: csv, filename: `${U.baseName(file.name)}.csv`, mime: 'text/csv', blob: new Blob([csv], { type: 'text/csv' }) };
     }
   });
@@ -13590,13 +13854,13 @@ function filterTable(q) {
       // Fallback simple geometric QR frame
       return `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="80" height="80" fill="#FFFFFF"/>
-        <rect x="8" y="8" width="22" height="22" rx="3" stroke="#1E293B" stroke-width="3" fill="none"/>
-        <rect x="14" y="14" width="10" height="10" fill="#1E293B"/>
-        <rect x="50" y="8" width="22" height="22" rx="3" stroke="#1E293B" stroke-width="3" fill="none"/>
-        <rect x="56" y="14" width="10" height="10" fill="#1E293B"/>
-        <rect x="8" y="50" width="22" height="22" rx="3" stroke="#1E293B" stroke-width="3" fill="none"/>
-        <rect x="14" y="56" width="10" height="10" fill="#1E293B"/>
-        <path d="M38 12h4v8h-4zm0 16h4v8h-4zm12 12h8v4h-8zm-12 12h4v8h-4zm16 4h12v4H54zm-4 8h8v4h-8zm12-16h4v12h-4z" fill="#1E293B"/>
+        <rect x="8" y="8" width="22" height="22" rx="3" stroke="#171717" stroke-width="3" fill="none"/>
+        <rect x="14" y="14" width="10" height="10" fill="#171717"/>
+        <rect x="50" y="8" width="22" height="22" rx="3" stroke="#171717" stroke-width="3" fill="none"/>
+        <rect x="56" y="14" width="10" height="10" fill="#171717"/>
+        <rect x="8" y="50" width="22" height="22" rx="3" stroke="#171717" stroke-width="3" fill="none"/>
+        <rect x="14" y="56" width="10" height="10" fill="#171717"/>
+        <path d="M38 12h4v8h-4zm0 16h4v8h-4zm12 12h8v4h-8zm-12 12h4v8h-4zm16 4h12v4H54zm-4 8h8v4h-8zm12-16h4v12h-4z" fill="#171717"/>
       </svg>`;
     }
 
@@ -13607,57 +13871,57 @@ function filterTable(q) {
           <div id="biz-live-canvas-host" style="display:flex; justify-content:center; width:100%;"></div>
         </div>
 
-        <div class="cpdf-benchmark-fileinfo-row" style="height:42px; border-top:1px solid #E2E8F0; background:#FFFFFF; display:flex; align-items:center; justify-content:space-between; padding:0 16px; width:100%;">
+        <div class="cpdf-benchmark-fileinfo-row" style="height:42px; border-top:1px solid #E5E5E5; background:#FFFFFF; display:flex; align-items:center; justify-content:space-between; padding:0 16px; width:100%;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="cpdf-ctrl-btn" id="biz-print-quick" title="Direct browser print" style="height:28px; padding:0 10px; font-size:12px; font-weight:500; border:1px solid #E2E8F0; border-radius:6px; background:#F8FAFC; color:#0F172A; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+            <button type="button" class="cpdf-ctrl-btn" id="biz-print-quick" title="Direct browser print" style="height:28px; padding:0 10px; font-size:12px; font-weight:500; border:1px solid #E5E5E5; border-radius:6px; background:#F7F7F7; color:#0A0A0A; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
               <span>Print Sheet</span>
             </button>
-            <span id="biz-stage-caption" style="font-size:12px; color:#64748B; font-weight:500;">Live Synchronized Document</span>
+            <span id="biz-stage-caption" style="font-size:12px; color:#737373; font-weight:500;">Live Synchronized Document</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="cpdf-ctrl-btn" id="biz-save-profile-btn" style="height:28px; padding:0 10px; font-size:12px; font-weight:500; border:1px solid #E2E8F0; border-radius:6px; background:#FFFFFF; color:#0F172A; cursor:pointer;">💾 Save Business Info</button>
-            <button type="button" class="cpdf-ctrl-btn" id="biz-reset-btn" style="height:28px; padding:0 10px; font-size:12px; font-weight:500; border:1px solid #E2E8F0; border-radius:6px; background:#FFFFFF; color:#64748B; cursor:pointer;">Reset</button>
+            <button type="button" class="cpdf-ctrl-btn" id="biz-save-profile-btn" style="height:28px; padding:0 10px; font-size:12px; font-weight:500; border:1px solid #E5E5E5; border-radius:6px; background:#FFFFFF; color:#0A0A0A; cursor:pointer;">💾 Save Business Info</button>
+            <button type="button" class="cpdf-ctrl-btn" id="biz-reset-btn" style="height:28px; padding:0 10px; font-size:12px; font-weight:500; border:1px solid #E5E5E5; border-radius:6px; background:#FFFFFF; color:#737373; cursor:pointer;">Reset</button>
           </div>
         </div>
       </div>
 
-      <aside class="cpdf-benchmark-inspector" style="width:380px; min-width:380px; max-width:380px; background:#FFFFFF; border-left:1px solid #E2E8F0; display:flex; flex-direction:column; height:100%; overflow:hidden;">
-        <div style="padding:16px 18px 12px; border-bottom:1px solid #F1F5F9;">
+      <aside class="cpdf-benchmark-inspector" style="width:380px; min-width:380px; max-width:380px; background:#FFFFFF; border-left:1px solid #E5E5E5; display:flex; flex-direction:column; height:100%; overflow:hidden;">
+        <div style="padding:16px 18px 12px; border-bottom:1px solid #EEEEEE;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:6px; background:#059669; color:#FFF;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6V4.5C9 3.67 9.67 3 10.5 3h3c.83 0 1.5.67 1.5 1.5V6"/><rect x="3" y="6" width="18" height="15" rx="3"/><path d="M3 11c5 2 13 2 18 0M10 13h4"/></svg>
             </span>
             <div>
-              <h2 style="font-size:14px; font-weight:600; color:#0F172A; margin:0; line-height:1.2;">Business & Invoicing</h2>
-              <span style="font-size:11px; color:#64748B;">Tax Invoices, POS Bills & GST Filing</span>
+              <h2 style="font-size:14px; font-weight:600; color:#0A0A0A; margin:0; line-height:1.2;">Business & Invoicing</h2>
+              <span style="font-size:11px; color:#737373;">Tax Invoices, POS Bills & GST Filing</span>
             </div>
           </div>
         </div>
 
-        <div style="padding:10px 14px 8px; border-bottom:1px solid #F1F5F9; background:#FAFAFA;">
+        <div style="padding:10px 14px 8px; border-bottom:1px solid #EEEEEE; background:#FAFAFA;">
           <div style="display:flex; flex-direction:column; gap:5px;">
-            <label class="biz-mode-card" data-biz-mode="invoice" style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; border:1px solid #E2E8F0; background:#FFF; cursor:pointer; transition:all 0.15s ease;">
-              <input type="radio" name="biz_mode_sel" value="invoice" ${activeMode === 'invoice' ? 'checked' : ''} style="margin:0; accent-color:#0F172A;">
+            <label class="biz-mode-card" data-biz-mode="invoice" style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; border:1px solid #E5E5E5; background:#FFF; cursor:pointer; transition:all 0.15s ease;">
+              <input type="radio" name="biz_mode_sel" value="invoice" ${activeMode === 'invoice' ? 'checked' : ''} style="margin:0; accent-color:#0A0A0A;">
               <div style="flex:1; min-width:0;">
-                <div style="font-size:12px; font-weight:600; color:#0F172A;">GST Tax Invoice (A4)</div>
-                <div style="font-size:10.5px; color:#64748B;">B2B/B2C invoice with CGST/SGST/IGST & UPI</div>
+                <div style="font-size:12px; font-weight:600; color:#0A0A0A;">GST Tax Invoice (A4)</div>
+                <div style="font-size:10.5px; color:#737373;">B2B/B2C invoice with CGST/SGST/IGST & UPI</div>
               </div>
             </label>
 
-            <label class="biz-mode-card" data-biz-mode="pos" style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; border:1px solid #E2E8F0; background:#FFF; cursor:pointer; transition:all 0.15s ease;">
-              <input type="radio" name="biz_mode_sel" value="pos" ${activeMode === 'pos' ? 'checked' : ''} style="margin:0; accent-color:#0F172A;">
+            <label class="biz-mode-card" data-biz-mode="pos" style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; border:1px solid #E5E5E5; background:#FFF; cursor:pointer; transition:all 0.15s ease;">
+              <input type="radio" name="biz_mode_sel" value="pos" ${activeMode === 'pos' ? 'checked' : ''} style="margin:0; accent-color:#0A0A0A;">
               <div style="flex:1; min-width:0;">
-                <div style="font-size:12px; font-weight:600; color:#0F172A;">POS Thermal Receipt (80mm)</div>
-                <div style="font-size:10.5px; color:#64748B;">Compact counter receipt with barcode</div>
+                <div style="font-size:12px; font-weight:600; color:#0A0A0A;">POS Thermal Receipt (80mm)</div>
+                <div style="font-size:10.5px; color:#737373;">Compact counter receipt with barcode</div>
               </div>
             </label>
 
-            <label class="biz-mode-card" data-biz-mode="filing" style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; border:1px solid #E2E8F0; background:#FFF; cursor:pointer; transition:all 0.15s ease;">
-              <input type="radio" name="biz_mode_sel" value="filing" ${activeMode === 'filing' ? 'checked' : ''} style="margin:0; accent-color:#0F172A;">
+            <label class="biz-mode-card" data-biz-mode="filing" style="display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:7px; border:1px solid #E5E5E5; background:#FFF; cursor:pointer; transition:all 0.15s ease;">
+              <input type="radio" name="biz_mode_sel" value="filing" ${activeMode === 'filing' ? 'checked' : ''} style="margin:0; accent-color:#0A0A0A;">
               <div style="flex:1; min-width:0;">
-                <div style="font-size:12px; font-weight:600; color:#0F172A;">GST Filing Aggregator</div>
-                <div style="font-size:10.5px; color:#64748B;">Drop Excel/CSV -> GSTR summary & error check</div>
+                <div style="font-size:12px; font-weight:600; color:#0A0A0A;">GST Filing Aggregator</div>
+                <div style="font-size:10.5px; color:#737373;">Drop Excel/CSV -> GSTR summary & error check</div>
               </div>
             </label>
           </div>
@@ -13665,7 +13929,7 @@ function filterTable(q) {
 
         <div id="biz-form-container" style="flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:12px;"></div>
 
-        <div style="padding:14px 18px; border-top:1px solid #E2E8F0; background:#FFFFFF;">
+        <div style="padding:14px 18px; border-top:1px solid #E5E5E5; background:#FFFFFF;">
           <button type="button" id="biz-main-cta" style="width:100%; height:40px; border-radius:8px; background:#18181B; color:#FFFFFF; font-size:13px; font-weight:600; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:background 0.15s ease;">
             <span id="biz-cta-label">Generate Invoice PDF -></span>
           </button>
@@ -13695,7 +13959,7 @@ function filterTable(q) {
     function updateModeCardsHighlight() {
       root.querySelectorAll('.biz-mode-card').forEach(card => {
         const isSel = card.dataset.bizMode === activeMode;
-        card.style.borderColor = isSel ? '#059669' : '#E2E8F0';
+        card.style.borderColor = isSel ? '#059669' : '#E5E5E5';
         card.style.background = isSel ? '#F0FDF4' : '#FFFFFF';
       });
       if (activeMode === 'invoice') {
@@ -13723,42 +13987,42 @@ function filterTable(q) {
       const upiQrSvg = getUpiQrSvg(invState.upiId, invState.sellerName, grandTotal);
 
       canvasHost.innerHTML = `
-        <div id="biz-a4-invoice-sheet" style="width:620px; min-height:860px; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:4px; box-shadow:0 8px 30px rgba(0,0,0,0.06); padding:36px 36px 28px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size:11.5px; line-height:1.45; color:#1E293B; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between;">
+        <div id="biz-a4-invoice-sheet" style="width:620px; min-height:860px; background:#FFFFFF; border:1px solid #E5E5E5; border-radius:4px; box-shadow:0 8px 30px rgba(0,0,0,0.06); padding:36px 36px 28px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size:11.5px; line-height:1.45; color:#171717; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between;">
           <div>
             <!-- Header Row -->
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0F172A; padding-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0A0A0A; padding-bottom:16px;">
               <div style="max-width:320px;">
-                <h1 style="font-size:18px; font-weight:700; color:#0F172A; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.5px;">${esc(invState.sellerName || 'Your Company Name')}</h1>
+                <h1 style="font-size:18px; font-weight:700; color:#0A0A0A; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.5px;">${esc(invState.sellerName || 'Your Company Name')}</h1>
                 <div style="font-size:11px; color:#4B4B4B; line-height:1.4;">${esc(invState.sellerAddress || '')}</div>
-                <div style="font-size:11px; font-weight:600; color:#0F172A; margin-top:4px;">GSTIN: <span style="font-family:monospace; color:#059669;">${esc(invState.sellerGstin || '—')}</span></div>
-                <div style="font-size:11px; color:#64748B;">State: <b>${esc(invState.sellerState || '27 - Maharashtra')}</b></div>
+                <div style="font-size:11px; font-weight:600; color:#0A0A0A; margin-top:4px;">GSTIN: <span style="font-family:monospace; color:#059669;">${esc(invState.sellerGstin || '—')}</span></div>
+                <div style="font-size:11px; color:#737373;">State: <b>${esc(invState.sellerState || '27 - Maharashtra')}</b></div>
               </div>
               <div style="text-align:right;">
-                <div style="display:inline-block; padding:4px 10px; background:#0F172A; color:#FFF; font-size:11px; font-weight:700; border-radius:4px; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">TAX INVOICE</div>
-                <div style="font-size:11.5px; color:#0F172A;">Invoice No: <b>${esc(invState.invNo || 'INV-001')}</b></div>
-                <div style="font-size:11px; color:#64748B;">Date: <b>${esc(invState.invDate || '')}</b></div>
-                <div style="font-size:11px; color:#64748B;">Place of Supply: <b>${esc(invState.placeOfSupply || '')}</b></div>
+                <div style="display:inline-block; padding:4px 10px; background:#0A0A0A; color:#FFF; font-size:11px; font-weight:700; border-radius:4px; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">TAX INVOICE</div>
+                <div style="font-size:11.5px; color:#0A0A0A;">Invoice No: <b>${esc(invState.invNo || 'INV-001')}</b></div>
+                <div style="font-size:11px; color:#737373;">Date: <b>${esc(invState.invDate || '')}</b></div>
+                <div style="font-size:11px; color:#737373;">Place of Supply: <b>${esc(invState.placeOfSupply || '')}</b></div>
               </div>
             </div>
 
             <!-- Bill To Row -->
-            <div style="margin:14px 0 16px; padding:10px 12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; display:flex; justify-content:space-between;">
+            <div style="margin:14px 0 16px; padding:10px 12px; background:#F7F7F7; border:1px solid #E5E5E5; border-radius:6px; display:flex; justify-content:space-between;">
               <div>
-                <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:#64748B; letter-spacing:0.5px; margin-bottom:2px;">Billed To:</div>
-                <div style="font-size:13px; font-weight:700; color:#0F172A;">${esc(invState.buyerName || 'Walk-in Client')}</div>
+                <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:#737373; letter-spacing:0.5px; margin-bottom:2px;">Billed To:</div>
+                <div style="font-size:13px; font-weight:700; color:#0A0A0A;">${esc(invState.buyerName || 'Walk-in Client')}</div>
                 <div style="font-size:11px; color:#4B4B4B;">${esc(invState.buyerAddress || '')}</div>
               </div>
               <div style="text-align:right;">
-                <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:#64748B; letter-spacing:0.5px; margin-bottom:2px;">Buyer Details:</div>
-                <div style="font-size:11px; color:#0F172A;">GSTIN: <b style="font-family:monospace; color:#059669;">${esc(invState.buyerGstin || 'URP (Unregistered)')}</b></div>
-                <div style="font-size:11px; color:#64748B;">State: <b>${esc(invState.buyerState || '27 - Maharashtra')}</b></div>
+                <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:#737373; letter-spacing:0.5px; margin-bottom:2px;">Buyer Details:</div>
+                <div style="font-size:11px; color:#0A0A0A;">GSTIN: <b style="font-family:monospace; color:#059669;">${esc(invState.buyerGstin || 'URP (Unregistered)')}</b></div>
+                <div style="font-size:11px; color:#737373;">State: <b>${esc(invState.buyerState || '27 - Maharashtra')}</b></div>
               </div>
             </div>
 
             <!-- Items Table -->
             <table style="width:100%; border-collapse:collapse; margin-bottom:14px;">
               <thead>
-                <tr style="background:#0F172A; color:#FFFFFF; font-size:10px; font-weight:600; text-transform:uppercase; text-align:left;">
+                <tr style="background:#0A0A0A; color:#FFFFFF; font-size:10px; font-weight:600; text-transform:uppercase; text-align:left;">
                   <th style="padding:7px 8px; border-top-left-radius:4px; width:28px;">#</th>
                   <th style="padding:7px 8px;">Description of Goods / Services</th>
                   <th style="padding:7px 8px; width:55px;">HSN/SAC</th>
@@ -13769,13 +14033,13 @@ function filterTable(q) {
               </thead>
               <tbody>
                 ${invState.items.map((it, idx) => `
-                  <tr style="border-bottom:1px solid #E2E8F0; font-size:11px;">
-                    <td style="padding:8px 8px; color:#64748B;">${idx + 1}</td>
-                    <td style="padding:8px 8px; font-weight:500; color:#0F172A;">${esc(it.desc || 'Item')}</td>
-                    <td style="padding:8px 8px; font-family:monospace; color:#64748B;">${esc(it.hsn || '—')}</td>
+                  <tr style="border-bottom:1px solid #E5E5E5; font-size:11px;">
+                    <td style="padding:8px 8px; color:#737373;">${idx + 1}</td>
+                    <td style="padding:8px 8px; font-weight:500; color:#0A0A0A;">${esc(it.desc || 'Item')}</td>
+                    <td style="padding:8px 8px; font-family:monospace; color:#737373;">${esc(it.hsn || '—')}</td>
                     <td style="padding:8px 8px; text-align:right; font-variant-numeric:tabular-nums;">${it.qty}</td>
                     <td style="padding:8px 8px; text-align:right; font-variant-numeric:tabular-nums;">${money(it.rate)}</td>
-                    <td style="padding:8px 8px; text-align:right; font-weight:600; color:#0F172A; font-variant-numeric:tabular-nums;">${money(it.qty * it.rate)}</td>
+                    <td style="padding:8px 8px; text-align:right; font-weight:600; color:#0A0A0A; font-variant-numeric:tabular-nums;">${money(it.qty * it.rate)}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -13784,12 +14048,12 @@ function filterTable(q) {
             <!-- Summary Breakdown & UPI QR -->
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:14px;">
               <!-- Left Bank & QR -->
-              <div style="display:flex; gap:12px; padding:10px 12px; border:1px dashed #CBD5E1; border-radius:6px; background:#FAFAFA; max-width:320px;">
-                <div style="width:72px; height:72px; flex-shrink:0; background:#FFF; border:1px solid #E2E8F0; padding:2px; display:flex; align-items:center; justify-content:center;">
+              <div style="display:flex; gap:12px; padding:10px 12px; border:1px dashed #D4D4D4; border-radius:6px; background:#FAFAFA; max-width:320px;">
+                <div style="width:72px; height:72px; flex-shrink:0; background:#FFF; border:1px solid #E5E5E5; padding:2px; display:flex; align-items:center; justify-content:center;">
                   ${upiQrSvg}
                 </div>
                 <div style="font-size:10.5px; color:#4B4B4B; line-height:1.35;">
-                  <div style="font-weight:700; color:#0F172A; margin-bottom:2px;">Scan & Pay via UPI</div>
+                  <div style="font-weight:700; color:#0A0A0A; margin-bottom:2px;">Scan & Pay via UPI</div>
                   <div>UPI: <b style="color:#059669;">${esc(invState.upiId || '—')}</b></div>
                   <div>Bank: <b>${esc(invState.bankName || '—')}</b></div>
                   <div>A/c: <b>${esc(invState.bankAcc || '—')}</b></div>
@@ -13800,21 +14064,21 @@ function filterTable(q) {
               <!-- Right Totals Table -->
               <div style="width:230px; font-size:11.5px;">
                 <div style="display:flex; justify-content:space-between; padding:4px 0; color:#4B4B4B;">
-                  <span>Taxable Value:</span><b style="color:#0F172A;">${money(taxable)}</b>
+                  <span>Taxable Value:</span><b style="color:#0A0A0A;">${money(taxable)}</b>
                 </div>
                 ${isInter ? `
                   <div style="display:flex; justify-content:space-between; padding:4px 0; color:#4B4B4B;">
-                    <span>IGST (${rate}%):</span><b style="color:#0F172A;">${money(igstAmt)}</b>
+                    <span>IGST (${rate}%):</span><b style="color:#0A0A0A;">${money(igstAmt)}</b>
                   </div>
                 ` : `
                   <div style="display:flex; justify-content:space-between; padding:4px 0; color:#4B4B4B;">
-                    <span>CGST (${rate/2}%):</span><b style="color:#0F172A;">${money(cgstAmt)}</b>
+                    <span>CGST (${rate/2}%):</span><b style="color:#0A0A0A;">${money(cgstAmt)}</b>
                   </div>
                   <div style="display:flex; justify-content:space-between; padding:4px 0; color:#4B4B4B;">
-                    <span>SGST (${rate/2}%):</span><b style="color:#0F172A;">${money(sgstAmt)}</b>
+                    <span>SGST (${rate/2}%):</span><b style="color:#0A0A0A;">${money(sgstAmt)}</b>
                   </div>
                 `}
-                <div style="border-top:2px solid #0F172A; margin-top:6px; padding-top:6px; display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#0F172A;">
+                <div style="border-top:2px solid #0A0A0A; margin-top:6px; padding-top:6px; display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#0A0A0A;">
                   <span>Total Amount:</span><span style="color:#059669;">${money(grandTotal)}</span>
                 </div>
               </div>
@@ -13822,18 +14086,18 @@ function filterTable(q) {
           </div>
 
           <!-- Bottom Footer Area -->
-          <div style="margin-top:20px; border-top:1px solid #E2E8F0; padding-top:12px;">
+          <div style="margin-top:20px; border-top:1px solid #E5E5E5; padding-top:12px;">
             <div style="font-size:10.5px; color:#4B4B4B; margin-bottom:12px;">
               <b>Total in Words:</b> <i>${amountWords}</i>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-              <div style="font-size:9.5px; color:#94A3B8; max-width:280px;">
+              <div style="font-size:9.5px; color:#8C8C8C; max-width:280px;">
                 This is a computer-generated tax invoice issued under Section 31 of CGST Act.
               </div>
               <div style="text-align:center;">
-                <div style="width:140px; height:36px; border-bottom:1px dashed #94A3B8; margin-bottom:4px;"></div>
-                <div style="font-size:10px; font-weight:600; color:#0F172A;">Authorized Signatory</div>
-                <div style="font-size:9px; color:#64748B;">For ${esc(invState.sellerName || 'Business')}</div>
+                <div style="width:140px; height:36px; border-bottom:1px dashed #8C8C8C; margin-bottom:4px;"></div>
+                <div style="font-size:10px; font-weight:600; color:#0A0A0A;">Authorized Signatory</div>
+                <div style="font-size:9px; color:#737373;">For ${esc(invState.sellerName || 'Business')}</div>
               </div>
             </div>
           </div>
@@ -13844,69 +14108,69 @@ function filterTable(q) {
     function renderInvoiceForm() {
       formContainer.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Seller Profile</div>
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Seller Profile</div>
           <div style="display:flex; flex-direction:column; gap:6px;">
-            <input type="text" id="inv-in-seller" value="${esc(invState.sellerName)}" placeholder="Business Name" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+            <input type="text" id="inv-in-seller" value="${esc(invState.sellerName)}" placeholder="Business Name" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-              <input type="text" id="inv-in-gstin" value="${esc(invState.sellerGstin)}" placeholder="GSTIN (e.g. 27ABCDE1234F1Z5)" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px; font-family:monospace;">
-              <input type="text" id="inv-in-seller-state" value="${esc(invState.sellerState)}" placeholder="State Code" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+              <input type="text" id="inv-in-gstin" value="${esc(invState.sellerGstin)}" placeholder="GSTIN (e.g. 27ABCDE1234F1Z5)" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px; font-family:monospace;">
+              <input type="text" id="inv-in-seller-state" value="${esc(invState.sellerState)}" placeholder="State Code" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
             </div>
-            <input type="text" id="inv-in-address" value="${esc(invState.sellerAddress)}" placeholder="Business Address" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+            <input type="text" id="inv-in-address" value="${esc(invState.sellerAddress)}" placeholder="Business Address" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:10px; padding-top:8px; border-top:1px solid #F1F5F9;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Buyer Details</div>
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:8px; border-top:1px solid #EEEEEE;">
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Buyer Details</div>
           <div style="display:flex; flex-direction:column; gap:6px;">
-            <input type="text" id="inv-in-buyer" value="${esc(invState.buyerName)}" placeholder="Buyer / Client Name" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+            <input type="text" id="inv-in-buyer" value="${esc(invState.buyerName)}" placeholder="Buyer / Client Name" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-              <input type="text" id="inv-in-buyer-gstin" value="${esc(invState.buyerGstin)}" placeholder="Buyer GSTIN (Optional)" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px; font-family:monospace;">
-              <input type="text" id="inv-in-no" value="${esc(invState.invNo)}" placeholder="Invoice No" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+              <input type="text" id="inv-in-buyer-gstin" value="${esc(invState.buyerGstin)}" placeholder="Buyer GSTIN (Optional)" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px; font-family:monospace;">
+              <input type="text" id="inv-in-no" value="${esc(invState.invNo)}" placeholder="Invoice No" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
             </div>
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #F1F5F9;">
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #EEEEEE;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Tax Engine</span>
+            <span style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Tax Engine</span>
             <div style="display:flex; gap:4px;">
-              <button type="button" class="biz-tax-type-btn" data-type="intra" style="padding:3px 8px; font-size:11px; border-radius:4px; border:1px solid ${invState.taxType==='intra'?'#059669':'#E2E8F0'}; background:${invState.taxType==='intra'?'#F0FDF4':'#FFF'}; font-weight:${invState.taxType==='intra'?'600':'400'}; cursor:pointer;">CGST+SGST</button>
-              <button type="button" class="biz-tax-type-btn" data-type="inter" style="padding:3px 8px; font-size:11px; border-radius:4px; border:1px solid ${invState.taxType==='inter'?'#059669':'#E2E8F0'}; background:${invState.taxType==='inter'?'#F0FDF4':'#FFF'}; font-weight:${invState.taxType==='inter'?'600':'400'}; cursor:pointer;">IGST</button>
+              <button type="button" class="biz-tax-type-btn" data-type="intra" style="padding:3px 8px; font-size:11px; border-radius:4px; border:1px solid ${invState.taxType==='intra'?'#059669':'#E5E5E5'}; background:${invState.taxType==='intra'?'#F0FDF4':'#FFF'}; font-weight:${invState.taxType==='intra'?'600':'400'}; cursor:pointer;">CGST+SGST</button>
+              <button type="button" class="biz-tax-type-btn" data-type="inter" style="padding:3px 8px; font-size:11px; border-radius:4px; border:1px solid ${invState.taxType==='inter'?'#059669':'#E5E5E5'}; background:${invState.taxType==='inter'?'#F0FDF4':'#FFF'}; font-weight:${invState.taxType==='inter'?'600':'400'}; cursor:pointer;">IGST</button>
             </div>
           </div>
           <div style="display:flex; gap:4px; align-items:center;">
-            <span style="font-size:11px; color:#64748B;">Rate:</span>
+            <span style="font-size:11px; color:#737373;">Rate:</span>
             ${[0, 5, 12, 18, 28].map(r => `
-              <button type="button" class="biz-rate-btn" data-rate="${r}" style="flex:1; height:26px; font-size:11px; border-radius:4px; border:1px solid ${invState.gstRate===r?'#0F172A':'#E2E8F0'}; background:${invState.gstRate===r?'#0F172A':'#FFF'}; color:${invState.gstRate===r?'#FFF':'#0F172A'}; font-weight:500; cursor:pointer;">${r}%</button>
+              <button type="button" class="biz-rate-btn" data-rate="${r}" style="flex:1; height:26px; font-size:11px; border-radius:4px; border:1px solid ${invState.gstRate===r?'#0A0A0A':'#E5E5E5'}; background:${invState.gstRate===r?'#0A0A0A':'#FFF'}; color:${invState.gstRate===r?'#FFF':'#0A0A0A'}; font-weight:500; cursor:pointer;">${r}%</button>
             `).join('')}
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #F1F5F9;">
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #EEEEEE;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Line Items</span>
+            <span style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Line Items</span>
             <button type="button" id="inv-add-item-btn" style="font-size:11px; font-weight:600; color:#059669; background:none; border:none; cursor:pointer;">+ Add Item</button>
           </div>
           <div id="inv-items-list" style="display:flex; flex-direction:column; gap:6px;">
             ${invState.items.map((it, idx) => `
               <div class="inv-item-row" data-idx="${idx}" style="display:grid; grid-template-columns:1fr 50px 40px 65px 20px; gap:4px; align-items:center;">
-                <input type="text" class="inv-it-desc" value="${esc(it.desc)}" placeholder="Item description" style="height:28px; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
-                <input type="text" class="inv-it-hsn" value="${esc(it.hsn||'')}" placeholder="HSN" style="height:28px; padding:0 4px; border:1px solid #E2E8F0; border-radius:4px; font-size:10.5px; font-family:monospace;">
-                <input type="number" class="inv-it-qty" value="${it.qty}" min="1" style="height:28px; padding:0 4px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px; text-align:right;">
-                <input type="number" class="inv-it-rate" value="${it.rate}" min="0" style="height:28px; padding:0 4px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px; text-align:right;">
+                <input type="text" class="inv-it-desc" value="${esc(it.desc)}" placeholder="Item description" style="height:28px; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
+                <input type="text" class="inv-it-hsn" value="${esc(it.hsn||'')}" placeholder="HSN" style="height:28px; padding:0 4px; border:1px solid #E5E5E5; border-radius:4px; font-size:10.5px; font-family:monospace;">
+                <input type="number" class="inv-it-qty" value="${it.qty}" min="1" style="height:28px; padding:0 4px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px; text-align:right;">
+                <input type="number" class="inv-it-rate" value="${it.rate}" min="0" style="height:28px; padding:0 4px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px; text-align:right;">
                 <button type="button" class="inv-it-del" style="background:none; border:none; color:#EF4444; font-size:14px; cursor:pointer; padding:0;">×</button>
               </div>
             `).join('')}
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #F1F5F9;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Banking & UPI QR</div>
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #EEEEEE;">
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Banking & UPI QR</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-            <input type="text" id="inv-in-upi" value="${esc(invState.upiId)}" placeholder="UPI ID (e.g. acme@hdfc)" style="height:28px; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
-            <input type="text" id="inv-in-bank" value="${esc(invState.bankName)}" placeholder="Bank Name" style="height:28px; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
-            <input type="text" id="inv-in-acc" value="${esc(invState.bankAcc)}" placeholder="Account No" style="height:28px; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
-            <input type="text" id="inv-in-ifsc" value="${esc(invState.bankIfsc)}" placeholder="IFSC Code" style="height:28px; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px; font-family:monospace;">
+            <input type="text" id="inv-in-upi" value="${esc(invState.upiId)}" placeholder="UPI ID (e.g. acme@hdfc)" style="height:28px; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
+            <input type="text" id="inv-in-bank" value="${esc(invState.bankName)}" placeholder="Bank Name" style="height:28px; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
+            <input type="text" id="inv-in-acc" value="${esc(invState.bankAcc)}" placeholder="Account No" style="height:28px; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
+            <input type="text" id="inv-in-ifsc" value="${esc(invState.bankIfsc)}" placeholder="IFSC Code" style="height:28px; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px; font-family:monospace;">
           </div>
         </div>
       `;
@@ -13977,21 +14241,21 @@ function filterTable(q) {
       const changeDue = Math.max(0, (posState.cashTendered || grandTotal) - grandTotal);
 
       canvasHost.innerHTML = `
-        <div id="biz-pos-receipt-sheet" style="width:330px; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:4px; box-shadow:0 8px 30px rgba(0,0,0,0.06); padding:24px 20px 20px; font-family:'SF Mono', 'Geist Mono', 'Courier New', monospace; font-size:11.5px; line-height:1.4; color:#0F172A; box-sizing:border-box;">
+        <div id="biz-pos-receipt-sheet" style="width:330px; background:#FFFFFF; border:1px solid #E5E5E5; border-radius:4px; box-shadow:0 8px 30px rgba(0,0,0,0.06); padding:24px 20px 20px; font-family:'SF Mono', 'Geist Mono', 'Courier New', monospace; font-size:11.5px; line-height:1.4; color:#0A0A0A; box-sizing:border-box;">
           <div style="text-align:center; margin-bottom:12px;">
             <div style="font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">${esc(posState.storeName || 'QUICKMART STORE')}</div>
             <div style="font-size:10.5px; color:#4B4B4B;">${esc(posState.storeAddress || '')}</div>
             <div style="font-size:10.5px; color:#4B4B4B;">GSTIN: ${esc(posState.storeGstin || '—')}</div>
           </div>
 
-          <div style="border-top:1px dashed #94A3B8; border-bottom:1px dashed #94A3B8; padding:6px 0; margin:10px 0; font-size:10.5px; display:flex; justify-content:space-between;">
+          <div style="border-top:1px dashed #8C8C8C; border-bottom:1px dashed #8C8C8C; padding:6px 0; margin:10px 0; font-size:10.5px; display:flex; justify-content:space-between;">
             <div>Receipt: <b>${esc(posState.receiptNo)}</b></div>
             <div>${esc(posState.receiptDate)}</div>
           </div>
 
           <table style="width:100%; border-collapse:collapse; margin-bottom:10px; font-size:11px;">
             <thead>
-              <tr style="border-bottom:1px solid #0F172A; text-align:left;">
+              <tr style="border-bottom:1px solid #0A0A0A; text-align:left;">
                 <th style="padding:4px 0;">Item</th>
                 <th style="padding:4px 0; text-align:center; width:36px;">Qty</th>
                 <th style="padding:4px 0; text-align:right; width:55px;">Rate</th>
@@ -14010,7 +14274,7 @@ function filterTable(q) {
             </tbody>
           </table>
 
-          <div style="border-top:1px dashed #94A3B8; padding-top:8px; font-size:11.5px;">
+          <div style="border-top:1px dashed #8C8C8C; padding-top:8px; font-size:11.5px;">
             <div style="display:flex; justify-content:space-between; padding:2px 0;">
               <span>Subtotal:</span><span>${money(subtotal)}</span>
             </div>
@@ -14022,12 +14286,12 @@ function filterTable(q) {
             <div style="display:flex; justify-content:space-between; padding:2px 0;">
               <span>Tax / GST (${posState.taxPct}%):</span><span>${money(taxAmt)}</span>
             </div>
-            <div style="border-top:2px solid #0F172A; margin-top:6px; padding-top:6px; display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
+            <div style="border-top:2px solid #0A0A0A; margin-top:6px; padding-top:6px; display:flex; justify-content:space-between; font-size:14px; font-weight:700;">
               <span>GRAND TOTAL:</span><span style="color:#059669;">${money(grandTotal)}</span>
             </div>
           </div>
 
-          <div style="border-top:1px dashed #94A3B8; margin-top:10px; padding-top:6px; font-size:10.5px;">
+          <div style="border-top:1px dashed #8C8C8C; margin-top:10px; padding-top:6px; font-size:10.5px;">
             <div style="display:flex; justify-content:space-between;">
               <span>Payment Mode:</span><b>${esc(posState.payMode)}</b>
             </div>
@@ -14042,9 +14306,9 @@ function filterTable(q) {
           </div>
 
           <!-- Barcode simulation & footer -->
-          <div style="text-align:center; margin-top:16px; padding-top:10px; border-top:1px dashed #94A3B8;">
+          <div style="text-align:center; margin-top:16px; padding-top:10px; border-top:1px dashed #8C8C8C;">
             <div style="letter-spacing:4px; font-weight:700; font-size:14px; margin-bottom:4px;">|||||| ||||| ||||||| ||||</div>
-            <div style="font-size:9.5px; color:#64748B;">${esc(posState.receiptNo)}</div>
+            <div style="font-size:9.5px; color:#737373;">${esc(posState.receiptNo)}</div>
             <div style="font-size:10px; color:#4B4B4B; margin-top:8px; line-height:1.3;">${esc(posState.footerNote)}</div>
           </div>
         </div>
@@ -14054,12 +14318,12 @@ function filterTable(q) {
     function renderPosForm() {
       formContainer.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Store & Register</div>
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Store & Register</div>
           <div style="display:flex; flex-direction:column; gap:6px;">
-            <input type="text" id="pos-in-store" value="${esc(posState.storeName)}" placeholder="Store Name" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+            <input type="text" id="pos-in-store" value="${esc(posState.storeName)}" placeholder="Store Name" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-              <input type="text" id="pos-in-no" value="${esc(posState.receiptNo)}" placeholder="Receipt No" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
-              <select id="pos-in-paymode" style="height:32px; padding:0 8px; border:1px solid #E2E8F0; border-radius:6px; font-size:12px;">
+              <input type="text" id="pos-in-no" value="${esc(posState.receiptNo)}" placeholder="Receipt No" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
+              <select id="pos-in-paymode" style="height:32px; padding:0 8px; border:1px solid #E5E5E5; border-radius:6px; font-size:12px;">
                 <option value="UPI" ${posState.payMode==='UPI'?'selected':''}>UPI / QR</option>
                 <option value="Cash" ${posState.payMode==='Cash'?'selected':''}>Cash</option>
                 <option value="Card" ${posState.payMode==='Card'?'selected':''}>Credit / Debit Card</option>
@@ -14068,38 +14332,38 @@ function filterTable(q) {
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #F1F5F9;">
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #EEEEEE;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Receipt Items</span>
+            <span style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Receipt Items</span>
             <button type="button" id="pos-add-item-btn" style="font-size:11px; font-weight:600; color:#059669; background:none; border:none; cursor:pointer;">+ Add Item</button>
           </div>
           <div id="pos-items-list" style="display:flex; flex-direction:column; gap:6px;">
             ${posState.items.map((it, idx) => `
               <div class="pos-item-row" data-idx="${idx}" style="display:grid; grid-template-columns:1fr 45px 65px 20px; gap:4px; align-items:center;">
-                <input type="text" class="pos-it-desc" value="${esc(it.desc)}" placeholder="Item name" style="height:28px; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
-                <input type="number" class="pos-it-qty" value="${it.qty}" min="1" style="height:28px; padding:0 4px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px; text-align:right;">
-                <input type="number" class="pos-it-rate" value="${it.rate}" min="0" style="height:28px; padding:0 4px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px; text-align:right;">
+                <input type="text" class="pos-it-desc" value="${esc(it.desc)}" placeholder="Item name" style="height:28px; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
+                <input type="number" class="pos-it-qty" value="${it.qty}" min="1" style="height:28px; padding:0 4px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px; text-align:right;">
+                <input type="number" class="pos-it-rate" value="${it.rate}" min="0" style="height:28px; padding:0 4px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px; text-align:right;">
                 <button type="button" class="pos-it-del" style="background:none; border:none; color:#EF4444; font-size:14px; cursor:pointer; padding:0;">×</button>
               </div>
             `).join('')}
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #F1F5F9;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Discount, Tax & Tender</div>
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:8px; border-top:1px solid #EEEEEE;">
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Discount, Tax & Tender</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
             <div>
-              <span style="font-size:10px; color:#64748B;">Discount %</span>
-              <input type="number" id="pos-in-disc" value="${posState.discountPct}" min="0" max="100" style="height:28px; width:100%; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
+              <span style="font-size:10px; color:#737373;">Discount %</span>
+              <input type="number" id="pos-in-disc" value="${posState.discountPct}" min="0" max="100" style="height:28px; width:100%; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
             </div>
             <div>
-              <span style="font-size:10px; color:#64748B;">Tax / GST %</span>
-              <input type="number" id="pos-in-tax" value="${posState.taxPct}" min="0" max="28" style="height:28px; width:100%; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
+              <span style="font-size:10px; color:#737373;">Tax / GST %</span>
+              <input type="number" id="pos-in-tax" value="${posState.taxPct}" min="0" max="28" style="height:28px; width:100%; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
             </div>
           </div>
           <div id="pos-cash-field" style="display:${posState.payMode==='Cash'?'block':'none'}; margin-top:4px;">
-            <span style="font-size:10px; color:#64748B;">Cash Tendered (₹)</span>
-            <input type="number" id="pos-in-tender" value="${posState.cashTendered}" min="0" style="height:28px; width:100%; padding:0 6px; border:1px solid #E2E8F0; border-radius:4px; font-size:11px;">
+            <span style="font-size:10px; color:#737373;">Cash Tendered (₹)</span>
+            <input type="number" id="pos-in-tender" value="${posState.cashTendered}" min="0" style="height:28px; width:100%; padding:0 6px; border:1px solid #E5E5E5; border-radius:4px; font-size:11px;">
           </div>
         </div>
       `;
@@ -14142,16 +14406,16 @@ function filterTable(q) {
     function renderFilingStage() {
       if (!filingState.rows.length) {
         canvasHost.innerHTML = `
-          <div id="biz-filing-dropzone" style="width:580px; min-height:420px; background:#FFFFFF; border:2px dashed #CBD5E1; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; cursor:pointer; box-sizing:border-box;">
+          <div id="biz-filing-dropzone" style="width:580px; min-height:420px; background:#FFFFFF; border:2px dashed #D4D4D4; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; cursor:pointer; box-sizing:border-box;">
             <div style="width:52px; height:52px; border-radius:50%; background:#F0FDF4; color:#059669; display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
             </div>
-            <h3 style="font-size:16px; font-weight:700; color:#0F172A; margin:0 0 6px;">Drop Monthly Sales Sheet (Excel / CSV)</h3>
-            <p style="font-size:12px; color:#64748B; max-width:340px; margin:0 0 16px; line-height:1.4;">Auto-detects invoice numbers, GSTINs, taxable amounts, and validates syntax for GSTR-1 preparation.</p>
+            <h3 style="font-size:16px; font-weight:700; color:#0A0A0A; margin:0 0 6px;">Drop Monthly Sales Sheet (Excel / CSV)</h3>
+            <p style="font-size:12px; color:#737373; max-width:340px; margin:0 0 16px; line-height:1.4;">Auto-detects invoice numbers, GSTINs, taxable amounts, and validates syntax for GSTR-1 preparation.</p>
             <input type="file" id="biz-filing-file-inp" accept=".xlsx,.xls,.csv" style="display:none;">
             <div style="display:flex; gap:10px;">
-              <button type="button" id="biz-filing-browse-btn" style="height:36px; padding:0 16px; border-radius:6px; background:#0F172A; color:#FFF; font-size:12px; font-weight:600; border:none; cursor:pointer;">Choose File</button>
-              <button type="button" id="biz-filing-sample-btn" style="height:36px; padding:0 14px; border-radius:6px; background:#F1F5F9; color:#0F172A; font-size:12px; font-weight:600; border:1px solid #E2E8F0; cursor:pointer;">Load Sample Invoices</button>
+              <button type="button" id="biz-filing-browse-btn" style="height:36px; padding:0 16px; border-radius:6px; background:#0A0A0A; color:#FFF; font-size:12px; font-weight:600; border:none; cursor:pointer;">Choose File</button>
+              <button type="button" id="biz-filing-sample-btn" style="height:36px; padding:0 14px; border-radius:6px; background:#EEEEEE; color:#0A0A0A; font-size:12px; font-weight:600; border:1px solid #E5E5E5; cursor:pointer;">Load Sample Invoices</button>
             </div>
           </div>
         `;
@@ -14163,7 +14427,7 @@ function filterTable(q) {
         });
         fileInp.addEventListener('change', (e) => { if (e.target.files[0]) processFilingFile(e.target.files[0]); });
         dropEl.addEventListener('dragover', (e) => { e.preventDefault(); dropEl.style.borderColor = '#059669'; });
-        dropEl.addEventListener('dragleave', () => { dropEl.style.borderColor = '#CBD5E1'; });
+        dropEl.addEventListener('dragleave', () => { dropEl.style.borderColor = '#D4D4D4'; });
         dropEl.addEventListener('drop', (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) processFilingFile(e.dataTransfer.files[0]); });
         return;
       }
@@ -14174,37 +14438,37 @@ function filterTable(q) {
         <div style="width:680px; display:flex; flex-direction:column; gap:16px;">
           <!-- 4 KPI Cards -->
           <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
-            <div style="background:#FFF; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-              <span style="font-size:10.5px; color:#64748B; font-weight:600; text-transform:uppercase;">Total Invoices</span>
-              <div style="font-size:20px; font-weight:700; color:#0F172A; margin-top:2px;">${st.totalInvoices}</div>
+            <div style="background:#FFF; border:1px solid #E5E5E5; border-radius:8px; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+              <span style="font-size:10.5px; color:#737373; font-weight:600; text-transform:uppercase;">Total Invoices</span>
+              <div style="font-size:20px; font-weight:700; color:#0A0A0A; margin-top:2px;">${st.totalInvoices}</div>
               <span style="font-size:10px; color:#059669;">${st.b2bCount} B2B · ${st.b2cCount} B2C</span>
             </div>
-            <div style="background:#FFF; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-              <span style="font-size:10.5px; color:#64748B; font-weight:600; text-transform:uppercase;">Taxable Sales</span>
-              <div style="font-size:18px; font-weight:700; color:#0F172A; margin-top:2px; font-variant-numeric:tabular-nums;">${money(st.totalTaxable)}</div>
-              <span style="font-size:10px; color:#64748B;">Net Base Value</span>
+            <div style="background:#FFF; border:1px solid #E5E5E5; border-radius:8px; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+              <span style="font-size:10.5px; color:#737373; font-weight:600; text-transform:uppercase;">Taxable Sales</span>
+              <div style="font-size:18px; font-weight:700; color:#0A0A0A; margin-top:2px; font-variant-numeric:tabular-nums;">${money(st.totalTaxable)}</div>
+              <span style="font-size:10px; color:#737373;">Net Base Value</span>
             </div>
-            <div style="background:#FFF; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-              <span style="font-size:10.5px; color:#64748B; font-weight:600; text-transform:uppercase;">Total GST Tax</span>
+            <div style="background:#FFF; border:1px solid #E5E5E5; border-radius:8px; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+              <span style="font-size:10.5px; color:#737373; font-weight:600; text-transform:uppercase;">Total GST Tax</span>
               <div style="font-size:18px; font-weight:700; color:#059669; margin-top:2px; font-variant-numeric:tabular-nums;">${money(st.totalCgst + st.totalSgst + st.totalIgst)}</div>
-              <span style="font-size:10px; color:#64748B;">CGST+SGST+IGST</span>
+              <span style="font-size:10px; color:#737373;">CGST+SGST+IGST</span>
             </div>
-            <div style="background:#FFF; border:1px solid ${st.errors.length ? '#FECACA' : '#E2E8F0'}; border-radius:8px; padding:12px 14px; background:${st.errors.length ? '#FEF2F2' : '#FFF'};">
-              <span style="font-size:10.5px; color:${st.errors.length ? '#DC2626' : '#64748B'}; font-weight:600; text-transform:uppercase;">Anomaly Check</span>
+            <div style="background:#FFF; border:1px solid ${st.errors.length ? '#FECACA' : '#E5E5E5'}; border-radius:8px; padding:12px 14px; background:${st.errors.length ? '#FEF2F2' : '#FFF'};">
+              <span style="font-size:10.5px; color:${st.errors.length ? '#DC2626' : '#737373'}; font-weight:600; text-transform:uppercase;">Anomaly Check</span>
               <div style="font-size:18px; font-weight:700; color:${st.errors.length ? '#DC2626' : '#059669'}; margin-top:2px;">${st.errors.length ? `${st.errors.length} Errors` : '0 Errors'}</div>
               <span style="font-size:10px; color:${st.errors.length ? '#DC2626' : '#059669'};">${st.errors.length ? 'Click to inspect' : '100% Valid Tax IDs'}</span>
             </div>
           </div>
 
           <!-- Aggregated Breakdown Table -->
-          <div style="background:#FFF; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
-            <div style="padding:12px 16px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; background:#FAFAFA;">
-              <span style="font-size:12px; font-weight:700; color:#0F172A;">GSTR Invoices Dataset (${filingState.fileName})</span>
+          <div style="background:#FFF; border:1px solid #E5E5E5; border-radius:8px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+            <div style="padding:12px 16px; border-bottom:1px solid #E5E5E5; display:flex; justify-content:space-between; align-items:center; background:#FAFAFA;">
+              <span style="font-size:12px; font-weight:700; color:#0A0A0A;">GSTR Invoices Dataset (${filingState.fileName})</span>
               <button type="button" id="biz-filing-reload-btn" style="font-size:11px; font-weight:600; color:#059669; background:none; border:none; cursor:pointer;">+ Load Different Sheet</button>
             </div>
             <div style="max-height:380px; overflow-y:auto;">
               <table style="width:100%; border-collapse:collapse; font-size:11px;">
-                <thead style="position:sticky; top:0; background:#0F172A; color:#FFF; font-size:10px; text-transform:uppercase;">
+                <thead style="position:sticky; top:0; background:#0A0A0A; color:#FFF; font-size:10px; text-transform:uppercase;">
                   <tr>
                     <th style="padding:8px 10px; text-align:left;">Invoice #</th>
                     <th style="padding:8px 10px; text-align:left;">GSTIN / Client</th>
@@ -14216,13 +14480,13 @@ function filterTable(q) {
                 </thead>
                 <tbody>
                   ${filingState.rows.slice(0, 30).map(r => `
-                    <tr style="border-bottom:1px solid #F1F5F9; background:${r.isError ? '#FEF2F2' : 'transparent'};">
-                      <td style="padding:8px 10px; font-weight:600; color:#0F172A;">${esc(r.invNo)}</td>
+                    <tr style="border-bottom:1px solid #EEEEEE; background:${r.isError ? '#FEF2F2' : 'transparent'};">
+                      <td style="padding:8px 10px; font-weight:600; color:#0A0A0A;">${esc(r.invNo)}</td>
                       <td style="padding:8px 10px; font-family:monospace; color:${r.isInvalidGstin ? '#DC2626' : '#4B4B4B'};">${esc(r.gstin || 'B2C Walk-in')}</td>
-                      <td style="padding:8px 10px; text-align:center;"><span style="padding:2px 6px; border-radius:4px; font-size:9.5px; font-weight:600; background:${r.isB2B ? '#F0FDF4' : '#F1F5F9'}; color:${r.isB2B ? '#059669' : '#64748B'};">${r.isB2B ? 'B2B' : 'B2C'}</span></td>
+                      <td style="padding:8px 10px; text-align:center;"><span style="padding:2px 6px; border-radius:4px; font-size:9.5px; font-weight:600; background:${r.isB2B ? '#F0FDF4' : '#EEEEEE'}; color:${r.isB2B ? '#059669' : '#737373'};">${r.isB2B ? 'B2B' : 'B2C'}</span></td>
                       <td style="padding:8px 10px; text-align:right; font-variant-numeric:tabular-nums;">${money(r.taxable)}</td>
                       <td style="padding:8px 10px; text-align:right; font-variant-numeric:tabular-nums; color:#059669;">${money(r.tax)}</td>
-                      <td style="padding:8px 10px; text-align:right; font-weight:600; color:#0F172A; font-variant-numeric:tabular-nums;">${money(r.total)}</td>
+                      <td style="padding:8px 10px; text-align:right; font-weight:600; color:#0A0A0A; font-variant-numeric:tabular-nums;">${money(r.total)}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -14242,7 +14506,7 @@ function filterTable(q) {
     function renderFilingForm() {
       if (!filingState.rows.length) {
         formContainer.innerHTML = `
-          <div style="font-size:12px; color:#64748B; line-height:1.4;">
+          <div style="font-size:12px; color:#737373; line-height:1.4;">
             Upload your sales sheet to auto-aggregate GSTR summaries, verify 15-character GSTINs, and separate B2B from B2C transactions.
           </div>
         `;
@@ -14250,20 +14514,20 @@ function filterTable(q) {
       }
       formContainer.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Filing Configuration</div>
-          <div style="padding:10px 12px; border-radius:6px; background:#F8FAFC; border:1px solid #E2E8F0; font-size:11.5px;">
-            <div style="color:#0F172A; font-weight:600; margin-bottom:2px;">${esc(filingState.fileName)}</div>
-            <div style="color:#64748B; font-size:10.5px;">${filingState.rows.length} rows processed</div>
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Filing Configuration</div>
+          <div style="padding:10px 12px; border-radius:6px; background:#F7F7F7; border:1px solid #E5E5E5; font-size:11.5px;">
+            <div style="color:#0A0A0A; font-weight:600; margin-bottom:2px;">${esc(filingState.fileName)}</div>
+            <div style="color:#737373; font-size:10.5px;">${filingState.rows.length} rows processed</div>
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:6px; padding-top:8px; border-top:1px solid #F1F5F9;">
-          <div style="font-size:11px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.5px;">Export Targets</div>
-          <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#0F172A;">
-            <input type="radio" name="filing_fmt" value="csv" checked style="accent-color:#0F172A;"> GSTR-1 Verified CSV
+        <div style="display:flex; flex-direction:column; gap:6px; padding-top:8px; border-top:1px solid #EEEEEE;">
+          <div style="font-size:11px; font-weight:700; color:#0A0A0A; text-transform:uppercase; letter-spacing:0.5px;">Export Targets</div>
+          <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#0A0A0A;">
+            <input type="radio" name="filing_fmt" value="csv" checked style="accent-color:#0A0A0A;"> GSTR-1 Verified CSV
           </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#0F172A;">
-            <input type="radio" name="filing_fmt" value="json" style="accent-color:#0F172A;"> GST Portal JSON Schema
+          <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#0A0A0A;">
+            <input type="radio" name="filing_fmt" value="json" style="accent-color:#0A0A0A;"> GST Portal JSON Schema
           </label>
         </div>
       `;
@@ -14383,8 +14647,8 @@ function filterTable(q) {
       btn.style.color = '#059669';
       setTimeout(() => {
         btn.textContent = '💾 Save Business Info';
-        btn.style.borderColor = '#E2E8F0';
-        btn.style.color = '#0F172A';
+        btn.style.borderColor = '#E5E5E5';
+        btn.style.color = '#0A0A0A';
       }, 2000);
     });
 

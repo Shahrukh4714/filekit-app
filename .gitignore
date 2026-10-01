@@ -17,11 +17,13 @@ Thumbs.db
 # Local test & audit scratch files
 test_*.html
 test-*.html
+test_*.js
 audit_screenshots/
 browser_audit_results.json
 debug_after_upload.png
 test_sample.pdf
 scratch_sample.pdf
+sample_*.pdf
 scratch/
 node_modules/
 *.png
@@ -29,6 +31,9 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Video builds & large assets
+dist_video/
+video_generator/*.wav
 
 # Benchmark corpus (user-supplied real documents)
 benchmark/samples/

@@ -21,6 +21,7 @@ const targets = [
   { in: 'js/tools-new.js', out: 'dist/js/tools-new.min.js' },
   { in: 'js/tools-premium.js', out: 'dist/js/tools-premium.min.js' },
   { in: 'js/tools-premium2.js', out: 'dist/js/tools-premium2.min.js' },
+  { in: 'js/auth-license.js', out: 'dist/js/auth-license.min.js' },
   { in: 'css/styles.css', out: 'dist/css/styles.min.css' },
   { in: 'css/edit-pdf.css', out: 'dist/css/edit-pdf.min.css' },
   { in: 'css/organize-pdf.css', out: 'dist/css/organize-pdf.min.css' },

@@ -144,20 +144,20 @@
           <div class="drop-illustration">
             <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
               <!-- Left: Image / Photo Card -->
-              <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
-              <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="18" y="46" width="66" height="54" rx="8" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="70" cy="62" r="5" stroke="#737373" stroke-width="3"/>
+              <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
               <!-- Center: Prominent Document Sheet -->
-              <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-              <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+              <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="107" y1="64" x2="153" y2="64" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="107" y1="78" x2="153" y2="78" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
               
               <!-- Center: Downward Arrow -->
-              <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+              <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
 
               <!-- Right: Folder -->
-              <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
 
@@ -898,13 +898,13 @@
         <div class="pro-reader-list" data-chapters></div>
         <div class="pro-reader-pane">
           <div class="pro-reader-meta" id="rd-meta"></div>
-          <div class="pro-reader-controls" style="display:flex;gap:8px;align-items:center;padding:8px 16px;background:rgba(0,0,0,0.03);border-bottom:1px solid var(--pro-border, #e2e8f0);">
+          <div class="pro-reader-controls" style="display:flex;gap:8px;align-items:center;padding:8px 16px;background:rgba(0,0,0,0.03);border-bottom:1px solid var(--pro-border, #E5E5E5);">
             <button type="button" id="rd-font-dn" style="padding:4px 8px;border:1px solid var(--pro-border, #ccc);border-radius:4px;background:#fff;cursor:pointer;">A-</button>
             <button type="button" id="rd-font-up" style="padding:4px 8px;border:1px solid var(--pro-border, #ccc);border-radius:4px;background:#fff;cursor:pointer;">A+</button>
             <div style="flex:1"></div>
             <button type="button" class="rd-theme-btn" data-theme="light" style="padding:4px 8px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;">Light</button>
             <button type="button" class="rd-theme-btn" data-theme="sepia" style="padding:4px 8px;border:1px solid #d2b48c;border-radius:4px;background:#fbf0d9;color:#5f4b32;cursor:pointer;">Sepia</button>
-            <button type="button" class="rd-theme-btn" data-theme="dark" style="padding:4px 8px;border:1px solid #444;border-radius:4px;background:#1e293b;color:#f8fafc;cursor:pointer;">Dark</button>
+            <button type="button" class="rd-theme-btn" data-theme="dark" style="padding:4px 8px;border:1px solid #444;border-radius:4px;background:#171717;color:#F7F7F7;cursor:pointer;">Dark</button>
           </div>
           <div class="pro-reader-text" id="rd-text" style="padding:24px;overflow-y:auto;flex:1;font-family:Georgia,serif;line-height:1.75;font-size:16px;">
             <div class="pro-live-err">Loading book…</div>
@@ -929,11 +929,11 @@
             textEl.style.background = '#fbf0d9';
             textEl.style.color = '#433422';
           } else if (t === 'dark') {
-            textEl.style.background = '#0f172a';
-            textEl.style.color = '#f1f5f9';
+            textEl.style.background = '#0A0A0A';
+            textEl.style.color = '#EEEEEE';
           } else {
             textEl.style.background = '#ffffff';
-            textEl.style.color = '#1e293b';
+            textEl.style.color = '#171717';
           }
         });
       });

@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1920, height=1080, initial-scale=1.0"/>
+<title>FileKit — Cinema Grade Promo Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #080A0F;
+    --card-bg: #10141E;
+    --card-border: rgba(255, 255, 255, 0.09);
+    --red: #FF4D4D;
+    --yellow: #FFC700;
+    --green: #00E676;
+    --blue: #00B0FF;
+    --indigo: #6366F1;
+    --text-pure: #FFFFFF;
+    --text-muted: #8E9BAE;
+    --text-dim: #4B5563;
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body, html {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--bg-dark);
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    color: var(--text-pure);
+    user-select: none;
+  }
+
+  #viewport {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    background: radial-gradient(circle at 50% 20%, #131927 0%, #080A0F 85%);
+    overflow: hidden;
+  }
+
+  /* Studio Ambient Lighting */
+  .light-beam {
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    filter: blur(140px);
+    pointer-events: none;
+    opacity: 0.25;
+    z-index: 1;
+  }
+  .beam-blue { top: -200px; left: 100px; background: radial-gradient(circle, #00B0FF, transparent 70%); }
+  .beam-indigo { bottom: -200px; right: 200px; background: radial-gradient(circle, #6366F1, transparent 70%); }
+  .beam-emerald { top: 40%; left: 40%; background: radial-gradient(circle, #00E676, transparent 70%); opacity: 0.15; }
+
+  /* Canvas for dynamic technical background grid */
+  #tech-canvas {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Global Minimal Top Bar */
+  .brand-bar {
+    position: absolute;
+    top: 36px;
+    left: 60px;
+    right: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+  }
+  .brand-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .brand-left strong {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #FFF;
+  }
+  .status-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(16, 20, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #94A3B8;
+  }
+  .status-tag .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00E676;
+    box-shadow: 0 0 12px #00E676;
+  }
+
+  /* Master Scene Wrapper */
+  .scene-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* =========================================================================
+     ACT 1: THE MANIFESTO (Kinetic Editorial Typography)
+     ========================================================================= */
+  #act-1 .manifesto-box {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .eyebrow-pill {
+    padding: 8px 22px;
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    background: rgba(255, 199, 0, 0.1);
+    border: 1px solid rgba(255, 199, 0, 0.3);
+    margin-bottom: 8px;
+  }
+  .manifesto-line {
+    font-size: 84px;
+    font-weight: 900;
+    letter-spacing: -3px;
+    line-height: 1.05;
+    color: #FFFFFF;
+    text-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  }
+  .manifesto-line.highlight {
+    background: linear-gradient(135deg, #FFFFFF 0%, #A5B4FC 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .manifesto-foot {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #64748B;
+    margin-top: 16px;
+    display: flex;
+    gap: 20px;
+  }
+  .manifesto-foot span { color: #00E676; }
+
+  /* =========================================================================
+     ACT 2: COMMAND DECK & CMDK PALETTE
+     ========================================================================= */
+  #act-2 {
+    perspective: 1400px;
+  }
+  .browser-container {
+    width: 1440px;
+    height: 820px;
+    background: #0D111A;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 176, 255, 0.12);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform-origin: center center;
+  }
+  .deck-header {
+    height: 56px;
+    background: #121724;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    justify-content: space-between;
+  }
+  .window-dots {
+    display: flex;
+    gap: 8px;
+  }
+  .w-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #FF5F56; }
+  .dot-y { background: #FFBD2E; }
+  .dot-g { background: #27C93F; }
+
+  .deck-url {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 6px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #94A3B8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .deck-url strong { color: #00E676; }
+
+  .deck-body {
+    flex: 1;
+    position: relative;
+    padding: 40px 50px;
+    background: radial-gradient(circle at 50% 0%, #141B2D 0%, #090C14 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Live Tool Header in Deck */
+  .deck-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 36px;
+  }
+  .deck-h1 {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #FFF;
+  }
+  .deck-p {
+    font-size: 16px;
+    color: #94A3B8;
+    margin-top: 6px;
+  }
+  .cmdk-trigger-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 22px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #CBD5E1;
+  }
+  .cmdk-kbd {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #A5B4FC;
+  }
+
+  /* Real FileKit Command Palette Overlay */
+  .cmdk-palette {
+    position: absolute;
+    top: 65px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 820px;
+    background: rgba(16, 22, 36, 0.96);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    border-radius: 20px;
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9), 0 0 60px rgba(99, 102, 241, 0.35);
+    backdrop-filter: blur(28px);
+    overflow: hidden;
+    z-index: 50;
+    opacity: 0;
+  }
+  .cmdk-search-bar {
+    display: flex;
+    align-items: center;
+    padding: 24px 28px;
+    gap: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .cmdk-input {
+    font-size: 24px;
+    font-weight: 600;
+    color: #FFF;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .cmdk-cursor-caret {
+    display: inline-block;
+    width: 3px;
+    height: 26px;
+    background: var(--blue);
+    margin-left: 2px;
+  }
+  .cmdk-list {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cmdk-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+  }
+  .cmdk-row.selected {
+    background: rgba(99, 102, 241, 0.16);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.1);
+  }
+  .cmdk-row-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .cmdk-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+  }
+  .badge-pdf-icon { background: rgba(255, 77, 77, 0.18); color: #FF4D4D; border: 1px solid rgba(255, 77, 77, 0.35); }
+  .badge-vid-icon { background: rgba(0, 176, 255, 0.18); color: #00B0FF; border: 1px solid rgba(0, 176, 255, 0.35); }
+  .badge-sec-icon { background: rgba(0, 230, 118, 0.18); color: #00E676; border: 1px solid rgba(0, 230, 118, 0.35); }
+  .cmdk-row-info h4 { font-size: 18px; font-weight: 700; color: #FFF; }
+  .cmdk-row-info p { font-size: 13px; color: #94A3B8; margin-top: 2px; }
+  .cmdk-action-badge {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #E2E8F0;
+  }
+
+  /* =========================================================================
+     ACT 3: THE DROPZONE & MULTI-CORE WASM EXECUTION
+     ========================================================================= */
+  #act-3 .drop-arena {
+    width: 1400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+  .hero-dropzone {
+    width: 1100px;
+    height: 380px;
+    border: 2px dashed rgba(0, 176, 255, 0.35);
+    border-radius: 32px;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 176, 255, 0.08) 0%, rgba(13, 17, 26, 0.8) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 70px rgba(0,0,0,0.6);
+  }
+  .hero-dropzone.active-drop {
+    border-color: #00E676;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 230, 118, 0.15) 0%, rgba(13, 17, 26, 0.9) 100%);
+    box-shadow: 0 0 80px rgba(0, 230, 118, 0.35), inset 0 0 40px rgba(0, 230, 118, 0.15);
+  }
+  .drop-brand-folder {
+    width: 90px;
+    height: 90px;
+    filter: drop-shadow(0 15px 30px rgba(255, 199, 0, 0.4));
+  }
+  .drop-headline {
+    font-size: 34px;
+    font-weight: 900;
+    color: #FFF;
+    letter-spacing: -0.5px;
+  }
+  .drop-subtext {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: #94A3B8;
+  }
+
+  /* Draggable Floating File Bundle */
+  .flight-cluster {
+    position: absolute;
+    top: 160px;
+    left: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 60;
+    opacity: 0;
+    filter: drop-shadow(0 25px 40px rgba(0,0,0,0.8));
+  }
+  .flight-file {
+    width: 340px;
+    padding: 16px 20px;
+    background: rgba(22, 28, 44, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(20px);
+  }
+  .flight-tag {
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 13px;
+  }
+  .tag-pdf { background: #FF4D4D; color: #FFF; }
+  .tag-vid { background: #00B0FF; color: #FFF; }
+
+  /* WASM Live Processing Grid */
+  .wasm-hud {
+    display: flex;
+    gap: 24px;
+    width: 1100px;
+    opacity: 0;
+  }
+  .wasm-card {
+    flex: 1;
+    background: #101522;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.7);
+  }
+  .wasm-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .wasm-card-title {
+    font-size: 17px;
+    font-weight: 750;
+    color: #F8FAFC;
+  }
+  .wasm-card-percent {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 800;
+    color: #00E676;
+  }
+  .wasm-meter-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+  }
+  .wasm-meter-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00B0FF, #00E676);
+    border-radius: 5px;
+    box-shadow: 0 0 16px #00E676;
+  }
+  .wasm-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .wasm-card-meta strong { color: #00E676; }
+
+  /* =========================================================================
+     ACT 4: THE 3D TANGIBLE PDF STUDIO
+     ========================================================================= */
+  #act-4 .doc-stage {
+    width: 1400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+    perspective: 1200px;
+  }
+  .doc-pages-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 10px;
+  }
+  .doc-page {
+    width: 320px;
+    height: 440px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.08);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transform-origin: center bottom;
+  }
+  .doc-page-header {
+    height: 12px;
+    width: 50%;
+    background: #0F172A;
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+  .doc-line {
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 3px;
+    margin-bottom: 12px;
+  }
+  .doc-line.w-80 { width: 80%; }
+  .doc-line.w-60 { width: 60%; }
+  .doc-line.w-95 { width: 95%; }
+  .doc-block {
+    height: 70px;
+    background: #F1F5F9;
+    border-radius: 8px;
+    margin: 14px 0;
+    border: 1px dashed #CBD5E1;
+  }
+
+  /* Watermark Stamp Overlay */
+  .doc-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: rgba(239, 68, 68, 0.4);
+    border: 4px solid rgba(239, 68, 68, 0.4);
+    padding: 8px 24px;
+    border-radius: 12px;
+    letter-spacing: 4px;
+    opacity: 0;
+  }
+
+  /* Live Animated Vector Signature */
+  .doc-sign-svg {
+    position: absolute;
+    bottom: 36px;
+    left: 24px;
+    width: 200px;
+    height: 60px;
+  }
+  .doc-sign-path {
+    fill: none;
+    stroke: #0284C7;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+  }
+  .page-number-pill {
+    position: absolute;
+    bottom: 16px;
+    right: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748B;
+  }
+
+  /* =========================================================================
+     ACT 5: ZERO CLOUD PRIVACY VAULT
+     ========================================================================= */
+  #act-5 .vault-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 36px;
+    max-width: 1200px;
+  }
+  .vault-lock-symbol {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 230, 118, 0.25) 0%, rgba(0, 230, 118, 0.04) 70%);
+    border: 2px solid rgba(0, 230, 118, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 100px rgba(0, 230, 118, 0.4), inset 0 0 50px rgba(0, 230, 118, 0.2);
+    position: relative;
+  }
+  .vault-outer-gear {
+    position: absolute;
+    inset: -24px;
+    border: 2px dashed rgba(0, 230, 118, 0.35);
+    border-radius: 50%;
+  }
+  .vault-headline {
+    font-size: 68px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1.1;
+  }
+  .vault-headline strong {
+    color: #00E676;
+    text-shadow: 0 0 40px rgba(0, 230, 118, 0.4);
+  }
+  .vault-metrics-row {
+    display: flex;
+    gap: 24px;
+  }
+  .vault-metric-pill {
+    padding: 16px 32px;
+    border-radius: 18px;
+    background: rgba(16, 22, 34, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 18px;
+    font-weight: 750;
+    color: #F1F5F9;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    backdrop-filter: blur(16px);
+  }
+
+  /* =========================================================================
+     ACT 6: CLIMAX & CALL TO ACTION
+     ========================================================================= */
+  #act-6 .climax-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 28px;
+  }
+  .climax-emblem {
+    width: 150px;
+    height: 150px;
+    filter: drop-shadow(0 25px 60px rgba(99, 102, 241, 0.6));
+  }
+  .climax-brand {
+    font-size: 96px;
+    font-weight: 900;
+    letter-spacing: -3.5px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .climax-tagline {
+    font-size: 32px;
+    font-weight: 600;
+    color: #94A3B8;
+  }
+  .climax-cta-pill {
+    margin-top: 14px;
+    padding: 24px 72px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #00B0FF 0%, #6366F1 50%, #FF4D4D 100%);
+    font-size: 28px;
+    font-weight: 800;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 25px 70px rgba(99, 102, 241, 0.7);
+    position: relative;
+    overflow: hidden;
+  }
+  .climax-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    transform: skewX(-25deg);
+  }
+  .climax-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 800;
+    color: #00E676;
+    letter-spacing: 2px;
+  }
+
+  /* Physical Cursor */
+  #mouse-pointer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transform: translate(-4px, -4px);
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6));
+  }
+  .click-shockwave {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid var(--blue);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+<div id="viewport">
+  <!-- Dynamic Canvas Grid -->
+  <canvas id="tech-canvas" width="1920" height="1080"></canvas>
+
+  <!-- Ambient Lights -->
+  <div class="light-beam beam-blue"></div>
+  <div class="light-beam beam-indigo"></div>
+  <div class="light-beam beam-emerald"></div>
+
+  <!-- Global Top Bar -->
+  <div class="brand-bar" id="brand-bar">
+    <div class="brand-left">
+      <svg width="38" height="38" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="4" width="40" height="40" rx="10" fill="#FFFFFF"/>
+        <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+        <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+        <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+        <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+        <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B"/>
+      </svg>
+      <strong>FileKit</strong>
+    </div>
+    <div class="status-tag">
+      <span class="live-dot"></span>
+      <span>100% IN-BROWSER WASM RUNTIME</span>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       ACT 1: THE MANIFESTO (0.0s - 3.0s)
+       ======================================================================= -->
+  <div class="scene-wrap" id="act-1">
+    <div class="manifesto-box">
+      <div class="eyebrow-pill" id="act1-pill">✦ LOCAL FIRST ARCHITECTURE</div>
+      <h1 class="manifesto-line" id="act1-line1">YOUR PRIVATE FILES.</h1>
+      <h1 class="manifesto-line highlight" id="act1-line2">NONE OF OUR BUSINESS.</h1>
+      <div class="manifesto-foot" id="act1-foot">
+        <div>NO UPLOADS <span>//</span> NO SERVERS <span>//</span> ZERO TRACE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       ACT 2: THE COMMAND DECK & CMDK (3.0s - 6.5s)
+       ======================================================================= -->
+  <div class="scene-wrap" id="act-2">
+    <div class="browser-container" id="browser-deck">
+      <div class="deck-header">
+        <div class="window-dots">
+          <div class="w-dot dot-r"></div>
+          <div class="w-dot dot-y"></div>
+          <div class="w-dot dot-g"></div>
+        </div>
+        <div class="deck-url">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          https://<strong>filekit.cc</strong>/app
+        </div>
+        <div style="width: 60px;"></div>
+      </div>
+      <div class="deck-body">
+        <div class="deck-title-row">
+          <div>
+            <div class="deck-h1">The Universal File Studio</div>
+            <div class="deck-p">187+ High precision document, media & audio tools</div>
+          </div>
+          <div class="cmdk-trigger-btn">
+            <span>Quick Action</span>
+            <span class="cmdk-kbd">⌘K</span>
+          </div>
+        </div>
+
+        <!-- Simulated Workspace Grid in Background -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; opacity: 0.35;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px;">
+            <div style="font-weight: 800; font-size: 18px; color: #FFF;">PDF Powerhouse</div>
+            <div style="font-size: 13px; color: #64748B; margin-top: 4px;">Convert, Compress, Sign</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px;">
+            <div style="font-weight: 800; font-size: 18px; color: #FFF;">Media Transcoder</div>
+            <div style="font-size: 13px; color: #64748B; margin-top: 4px;">MP4, WebM, H.265</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px;">
+            <div style="font-weight: 800; font-size: 18px; color: #FFF;">Image Engine</div>
+            <div style="font-size: 13px; color: #64748B; margin-top: 4px;">AVIF, WebP, Crop</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px;">
+            <div style="font-weight: 800; font-size: 18px; color: #FFF;">Vector Tools</div>
+            <div style="font-size: 13px; color: #64748B; margin-top: 4px;">SVG, Stamp, Watermark</div>
+          </div>
+        </div>
+
+        <!-- Command Palette -->
+        <div class="cmdk-palette" id="cmdk-box">
+          <div class="cmdk-search-bar">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00B0FF" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="cmdk-input"><span id="cmdk-text-display"></span><span class="cmdk-cursor-caret"></span></div>
+            <span class="cmdk-kbd">ESC</span>
+          </div>
+          <div class="cmdk-list">
+            <div class="cmdk-row selected" id="cmdk-item-1">
+              <div class="cmdk-row-left">
+                <div class="cmdk-icon-badge badge-pdf-icon">📄</div>
+                <div class="cmdk-row-info">
+                  <h4>PDF to Word (.docx)</h4>
+                  <p>Preserve editable layouts, vector tables, and fonts locally</p>
+                </div>
+              </div>
+              <div class="cmdk-action-badge">↵ Instant</div>
+            </div>
+            <div class="cmdk-row" id="cmdk-item-2">
+              <div class="cmdk-row-left">
+                <div class="cmdk-icon-badge badge-vid-icon">🎬</div>
+                <div class="cmdk-row-info">
+                  <h4>Compress 4K Video</h4>
+                  <p>In-browser multi-threaded transcode with 0 KB upload</p>
+                </div>
+              </div>
+              <div class="cmdk-action-badge">WASM</div>
+            </div>
+            <div class="cmdk-row" id="cmdk-item-3">
+              <div class="cmdk-row-left">
+                <div class="cmdk-icon-badge badge-sec-icon">🔒</div>
+                <div class="cmdk-row-info">
+                  <h4>Protect & Watermark</h4>
+                  <p>Zero-telemetry client-side document encryption</p>
+                </div>
+              </div>
+              <div class="cmdk-action-badge">Local</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       ACT 3: THE DROPZONE & MULTI-THREAD WASM ACCELERATION (6.5s - 11.0s)
+       ======================================================================= -->
+  <div class="scene-wrap" id="act-3">
+    <div class="drop-arena">
+      <div style="text-align: center;">
+        <div class="eyebrow-pill" style="display: inline-block; margin-bottom: 8px;">✦ BLAZING CLIENT-SIDE ENGINE</div>
+        <h2 style="font-size: 54px; font-weight: 900; letter-spacing: -1.5px; color: #FFF;">Drop Anything. Process Locally.</h2>
+      </div>
+
+      <div class="hero-dropzone" id="hero-dropzone-el">
+        <svg class="drop-brand-folder" viewBox="0 0 90 90" fill="none">
+          <rect x="8" y="20" width="74" height="56" rx="14" fill="#FFC700" opacity="0.9"/>
+          <path d="M8 32C8 25.3726 13.3726 20 20 20H36L44 28H70C76.6274 28 82 33.3726 82 40V70C82 76.6274 76.6274 82 70 82H20C13.3726 82 8 76.6274 8 70V32Z" fill="#FFA000"/>
+          <rect x="24" y="38" width="42" height="28" rx="8" fill="#FFFFFF" opacity="0.9"/>
+          <path d="M45 44V60M38 51L45 44L52 51" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="drop-headline">Drop files to ignite instant conversion</div>
+        <div class="drop-subtext">MULTI-CORE THREADING // 0 BYTES SENT OVER NETWORK</div>
+      </div>
+
+      <!-- Live WASM Pipeline HUD -->
+      <div class="wasm-hud" id="wasm-hud">
+        <div class="wasm-card">
+          <div class="wasm-card-top">
+            <div class="wasm-card-title">📄 annual_financial_report.pdf</div>
+            <div class="wasm-card-percent" id="wasm-p1">0%</div>
+          </div>
+          <div class="wasm-meter-track">
+            <div class="wasm-meter-bar" id="wasm-b1"></div>
+          </div>
+          <div class="wasm-card-meta">
+            <span>Layout Engine: Vector Parsing</span>
+            <span id="wasm-t1">180ms</span>
+          </div>
+        </div>
+        <div class="wasm-card">
+          <div class="wasm-card-top">
+            <div class="wasm-card-title">🎬 4k_cinematic_reel.mp4</div>
+            <div class="wasm-card-percent" id="wasm-p2">0%</div>
+          </div>
+          <div class="wasm-meter-track">
+            <div class="wasm-meter-bar" id="wasm-b2"></div>
+          </div>
+          <div class="wasm-card-meta">
+            <span>H.265 Transcode: <strong>-91.5% Size</strong></span>
+            <span id="wasm-t2">340ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Draggable File Cards -->
+    <div class="flight-cluster" id="flight-cluster">
+      <div class="flight-file">
+        <span class="flight-tag tag-pdf">PDF</span>
+        <div>
+          <div style="font-weight: 800; color: #FFF; font-size: 15px;">annual_financial_report.pdf</div>
+          <div style="font-size: 12px; color: #94A3B8;">38.4 MB • 64 Pages</div>
+        </div>
+      </div>
+      <div class="flight-file" style="transform: rotate(3deg) translate(20px, -8px);">
+        <span class="flight-tag tag-vid">MP4</span>
+        <div>
+          <div style="font-weight: 800; color: #FFF; font-size: 15px;">4k_cinematic_reel.mp4</div>
+          <div style="font-size: 12px; color: #94A3B8;">186.2 MB • Ultra HD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       ACT 4: 3D TANGIBLE PDF STUDIO (11.0s - 15.0s)
+       ======================================================================= -->
+  <div class="scene-wrap" id="act-4">
+    <div class="doc-stage">
+      <div style="text-align: center;">
+        <div class="eyebrow-pill" style="display: inline-block; margin-bottom: 8px;">✦ TANGIBLE DOCUMENT CRAFT</div>
+        <h2 style="font-size: 54px; font-weight: 900; letter-spacing: -1.5px; color: #FFF;">Full Document Studio In Your Hands.</h2>
+      </div>
+
+      <div class="doc-pages-row">
+        <!-- Page 1: Reorder -->
+        <div class="doc-page" id="doc-p1">
+          <div class="doc-page-header"></div>
+          <div class="doc-line w-80"></div>
+          <div class="doc-line w-95"></div>
+          <div class="doc-line w-60"></div>
+          <div class="doc-block"></div>
+          <div class="doc-line w-95"></div>
+          <div class="doc-line w-80"></div>
+          <div class="page-number-pill">PAGE 01</div>
+        </div>
+
+        <!-- Page 2: Watermarked -->
+        <div class="doc-page" id="doc-p2">
+          <div class="doc-page-header" style="background: #FF4D4D;"></div>
+          <div class="doc-line w-95"></div>
+          <div class="doc-line w-80"></div>
+          <div class="doc-line w-60"></div>
+          <div class="doc-block" style="background: #FEF2F2; border-color: #FECACA;"></div>
+          <div class="doc-line w-95"></div>
+          <div class="doc-watermark" id="doc-watermark-el">CONFIDENTIAL</div>
+          <div class="page-number-pill">PAGE 02</div>
+        </div>
+
+        <!-- Page 3: Live Signature -->
+        <div class="doc-page" id="doc-p3">
+          <div class="doc-page-header" style="background: #00B0FF;"></div>
+          <div class="doc-line w-80"></div>
+          <div class="doc-line w-95"></div>
+          <div class="doc-line w-60"></div>
+          <div class="doc-block" style="background: #F0F9FF; border-color: #BAE6FD;"></div>
+          <svg class="doc-sign-svg" viewBox="0 0 200 60">
+            <path class="doc-sign-path" id="sign-path-el" d="M 20 40 C 40 10, 60 50, 75 25 C 90 5, 105 35, 120 20 C 135 10, 150 45, 175 30 C 185 25, 195 20, 190 35"/>
+          </svg>
+          <div class="page-number-pill">PAGE 03</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       ACT 5: ZERO CLOUD PRIVACY VAULT (15.0s - 18.0s)
+       ======================================================================= -->
+  <div class="scene-wrap" id="act-5">
+    <div class="vault-box">
+      <div class="vault-lock-symbol" id="vault-lock">
+        <div class="vault-outer-gear" id="vault-gear"></div>
+        <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="3"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="2"/></svg>
+      </div>
+      <h2 class="vault-headline">
+        Zero Cloud Uploads.<br/>
+        <strong>100% Client-Side Privacy.</strong>
+      </h2>
+      <div class="vault-metrics-row">
+        <div class="vault-metric-pill">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Zero Server Retention
+        </div>
+        <div class="vault-metric-pill">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          No Account Required
+        </div>
+        <div class="vault-metric-pill">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Infinite File Sizes
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       ACT 6: CLIMAX & CALL TO ACTION (18.0s - 21.0s)
+       ======================================================================= -->
+  <div class="scene-wrap" id="act-6">
+    <div class="climax-box">
+      <svg class="climax-emblem" id="climax-emblem" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="4" width="40" height="40" rx="10" fill="#FFFFFF"/>
+        <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+        <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+        <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+        <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+        <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B"/>
+      </svg>
+      <h1 class="climax-brand">FileKit</h1>
+      <p class="climax-tagline">Every File Tool You Need. 100% In Your Browser.</p>
+
+      <div class="climax-cta-pill" id="climax-cta">
+        <span>Launch Instant Studio</span>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <div class="climax-shine" id="climax-shine"></div>
+      </div>
+
+      <div class="climax-url">⚡ filekit.cc</div>
+    </div>
+  </div>
+
+  <!-- Physical Cursor & Shockwave -->
+  <svg id="mouse-pointer" viewBox="0 0 24 24" fill="none">
+    <path d="M3 3l7 18 3-7 7-3L3 3z" fill="#FFFFFF" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>
+  <div class="click-shockwave" id="click-shockwave"></div>
+</div>
+
+<script>
+  // ----------------------------------------------------
+  // Kinetic Technical Grid Background
+  // ----------------------------------------------------
+  const canvas = document.getElementById('tech-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function drawTechGrid(t) {
+    ctx.clearRect(0, 0, 1920, 1080);
+
+    // Subtle isometric-feeling grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+    ctx.lineWidth = 1;
+    const spacing = 48;
+    const yOffset = (t * 12) % spacing;
+
+    for (let x = 0; x <= 1920; x += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 1080);
+      ctx.stroke();
+    }
+    for (let y = yOffset; y <= 1080; y += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1920, y);
+      ctx.stroke();
+    }
+
+    // Precise crosshair markers
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    const markers = [
+      [120, 120], [1800, 120], [120, 960], [1800, 960],
+      [960, 540]
+    ];
+    markers.forEach(([mx, my]) => {
+      ctx.beginPath();
+      ctx.moveTo(mx - 8, my); ctx.lineTo(mx + 8, my);
+      ctx.moveTo(mx, my - 8); ctx.lineTo(mx, my + 8);
+      ctx.stroke();
+    });
+  }
+
+  // Easing Utilities (Emil Kowalski / Apple standard)
+  function easeOutExpo(x) { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
+  function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+  function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function easeOutBack(x) { const c1 = 1.70158; const c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); }
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  // ----------------------------------------------------
+  // Master Deterministic Timeline (21.0s @ 30/60fps)
+  // ----------------------------------------------------
+  const act1 = document.getElementById('act-1');
+  const act2 = document.getElementById('act-2');
+  const act3 = document.getElementById('act-3');
+  const act4 = document.getElementById('act-4');
+  const act5 = document.getElementById('act-5');
+  const act6 = document.getElementById('act-6');
+  const brandBar = document.getElementById('brand-bar');
+
+  const act1Pill = document.getElementById('act1-pill');
+  const act1Line1 = document.getElementById('act1-line1');
+  const act1Line2 = document.getElementById('act1-line2');
+  const act1Foot = document.getElementById('act1-foot');
+
+  const browserDeck = document.getElementById('browser-deck');
+  const cmdkBox = document.getElementById('cmdk-box');
+  const cmdkText = document.getElementById('cmdk-text-display');
+  const cmdkItem1 = document.getElementById('cmdk-item-1');
+  const cmdkItem2 = document.getElementById('cmdk-item-2');
+
+  const heroDropzone = document.getElementById('hero-dropzone-el');
+  const flightCluster = document.getElementById('flight-cluster');
+  const wasmHud = document.getElementById('wasm-hud');
+  const wasmP1 = document.getElementById('wasm-p1');
+  const wasmB1 = document.getElementById('wasm-b1');
+  const wasmP2 = document.getElementById('wasm-p2');
+  const wasmB2 = document.getElementById('wasm-b2');
+
+  const docP1 = document.getElementById('doc-p1');
+  const docP2 = document.getElementById('doc-p2');
+  const docP3 = document.getElementById('doc-p3');
+  const docWatermark = document.getElementById('doc-watermark-el');
+  const signPath = document.getElementById('sign-path-el');
+
+  const vaultLock = document.getElementById('vault-lock');
+  const vaultGear = document.getElementById('vault-gear');
+
+  const climaxEmblem = document.getElementById('climax-emblem');
+  const climaxCta = document.getElementById('climax-cta');
+  const climaxShine = document.getElementById('climax-shine');
+
+  const mousePointer = document.getElementById('mouse-pointer');
+  const clickShockwave = document.getElementById('click-shockwave');
+
+  window.seekTime = function(t) {
+    drawTechGrid(t);
+
+    // Global Top Bar
+    if (t >= 3.0 && t < 18.5) {
+      brandBar.style.opacity = clamp((t - 3.0) / 0.3, 0, 1);
+    } else {
+      brandBar.style.opacity = 0;
+    }
+
+    // Default hide all acts
+    act1.style.opacity = 0;
+    act2.style.opacity = 0;
+    act3.style.opacity = 0;
+    act4.style.opacity = 0;
+    act5.style.opacity = 0;
+    act6.style.opacity = 0;
+    mousePointer.style.opacity = 0;
+    clickShockwave.style.opacity = 0;
+
+    // =======================================================================
+    // ACT 1: THE MANIFESTO (0.0s -> 3.0s)
+    // =======================================================================
+    if (t >= 0 && t < 3.2) {
+      act1.style.opacity = t < 2.8 ? clamp(t / 0.3, 0, 1) : clamp((3.2 - t) / 0.3, 0, 1);
+
+      // Staggered text reveals
+      const p1 = clamp(t / 0.5, 0, 1);
+      act1Pill.style.transform = `translateY(${15 * (1 - easeOutCubic(p1))}px)`;
+      act1Pill.style.opacity = p1;
+
+      const p2 = clamp((t - 0.3) / 0.5, 0, 1);
+      act1Line1.style.transform = `translateY(${25 * (1 - easeOutCubic(p2))}px)`;
+      act1Line1.style.opacity = p2;
+
+      const p3 = clamp((t - 0.7) / 0.5, 0, 1);
+      act1Line2.style.transform = `translateY(${25 * (1 - easeOutCubic(p3))}px)`;
+      act1Line2.style.opacity = p3;
+
+      const p4 = clamp((t - 1.2) / 0.4, 0, 1);
+      act1Foot.style.opacity = p4;
+    }
+
+    // =======================================================================
+    // ACT 2: THE COMMAND DECK & CMDK (3.0s -> 6.6s)
+    // =======================================================================
+    if (t >= 3.0 && t < 6.8) {
+      act2.style.opacity = t < 6.4 ? clamp((t - 3.0) / 0.3, 0, 1) : clamp((6.8 - t) / 0.3, 0, 1);
+
+      // 3D Tilt perspective zoom
+      const enterP = clamp((t - 3.0) / 0.7, 0, 1);
+      const rotX = 12 * (1 - easeOutExpo(enterP));
+      const scale = 0.92 + 0.08 * easeOutExpo(enterP);
+      const transY = 60 * (1 - easeOutExpo(enterP));
+      browserDeck.style.transform = `translateY(${transY}px) scale(${scale}) rotateX(${rotX}deg)`;
+
+      // Mouse sweeps to search button and presses ⌘K at 3.8s
+      mousePointer.style.opacity = 1;
+      if (t < 3.8) {
+        const curP = clamp((t - 3.1) / 0.7, 0, 1);
+        const curX = 1500 - 300 * easeInOutCubic(curP);
+        const curY = 700 - 450 * easeInOutCubic(curP);
+        mousePointer.style.left = `${curX}px`;
+        mousePointer.style.top = `${curY}px`;
+      } else {
+        mousePointer.style.left = `960px`;
+        mousePointer.style.top = `420px`;
+      }
+
+      // Click shockwave at 3.8s
+      if (t >= 3.8 && t < 4.2) {
+        const ripP = (t - 3.8) / 0.4;
+        clickShockwave.style.opacity = 1 - ripP;
+        clickShockwave.style.left = '960px';
+        clickShockwave.style.top = '420px';
+        clickShockwave.style.transform = `translate(-50%, -50%) scale(${ripP * 2.5})`;
+      }
+
+      // Command palette expands at 3.8s
+      if (t >= 3.8) {
+        const palP = clamp((t - 3.8) / 0.35, 0, 1);
+        cmdkBox.style.opacity = palP;
+        cmdkBox.style.transform = `translateX(-50%) scale(${0.92 + 0.08 * easeOutBack(palP)})`;
+      } else {
+        cmdkBox.style.opacity = 0;
+      }
+
+      // Real typing
+      const searchTarget = "pdf to word (.docx)";
+      if (t >= 4.2 && t < 5.8) {
+        const typeP = clamp((t - 4.2) / 1.1, 0, 1);
+        const count = Math.floor(typeP * searchTarget.length);
+        cmdkText.textContent = searchTarget.substring(0, count);
+      } else if (t >= 5.8) {
+        cmdkText.textContent = searchTarget;
+      } else {
+        cmdkText.textContent = "";
+      }
+    }
+
+    // =======================================================================
+    // ACT 3: THE DROPZONE & WASM SPEED (6.5s -> 11.0s)
+    // =======================================================================
+    if (t >= 6.5 && t < 11.2) {
+      act3.style.opacity = t < 10.8 ? clamp((t - 6.5) / 0.3, 0, 1) : clamp((11.2 - t) / 0.3, 0, 1);
+
+      mousePointer.style.opacity = 1;
+
+      // File drag trajectory
+      if (t >= 6.8 && t < 8.2) {
+        const dragP = clamp((t - 6.8) / 1.2, 0, 1);
+        const easeD = easeInOutCubic(dragP);
+        flightCluster.style.opacity = clamp((t - 6.8) / 0.15, 0, 1);
+
+        const curX = 380 + (960 - 380) * easeD;
+        const curY = 320 + (530 - 320) * easeD;
+
+        flightCluster.style.left = `${curX - 120}px`;
+        flightCluster.style.top = `${curY - 60}px`;
+        mousePointer.style.left = `${curX}px`;
+        mousePointer.style.top = `${curY}px`;
+      } else if (t >= 8.2) {
+        flightCluster.style.opacity = 0;
+        heroDropzone.classList.add('active-drop');
+        mousePointer.style.left = '960px';
+        mousePointer.style.top = '530px';
+      }
+
+      // WASM HUD activation
+      if (t >= 8.2) {
+        const hudP = clamp((t - 8.2) / 0.35, 0, 1);
+        wasmHud.style.opacity = hudP;
+
+        // Progress meter 1
+        const p1 = clamp((t - 8.4) / 1.5, 0, 1);
+        const pct1 = Math.floor(p1 * 100);
+        wasmP1.textContent = `${pct1}%`;
+        wasmB1.style.width = `${pct1}%`;
+
+        // Progress meter 2
+        const p2 = clamp((t - 8.6) / 1.8, 0, 1);
+        const pct2 = Math.floor(p2 * 100);
+        wasmP2.textContent = `${pct2}%`;
+        wasmB2.style.width = `${pct2}%`;
+      } else {
+        wasmHud.style.opacity = 0;
+        heroDropzone.classList.remove('active-drop');
+      }
+    }
+
+    // =======================================================================
+    // ACT 4: 3D TANGIBLE PDF STUDIO (10.9s -> 15.0s)
+    // =======================================================================
+    if (t >= 10.9 && t < 15.2) {
+      act4.style.opacity = t < 14.8 ? clamp((t - 10.9) / 0.3, 0, 1) : clamp((15.2 - t) / 0.3, 0, 1);
+
+      // Fan out 3 pages with 3D rotation
+      const fanP = clamp((t - 10.9) / 0.6, 0, 1);
+      const easeFan = easeOutBack(fanP);
+
+      docP1.style.transform = `rotate(-6deg) translateX(${-30 * easeFan}px)`;
+      docP2.style.transform = `scale(${0.95 + 0.05 * easeFan}) translateY(${-15 * easeFan}px)`;
+      docP3.style.transform = `rotate(6deg) translateX(${30 * easeFan}px)`;
+
+      // Page 2 Watermark stamp hits at 12.2s
+      if (t >= 12.2) {
+        const wmP = clamp((t - 12.2) / 0.25, 0, 1);
+        docWatermark.style.opacity = wmP;
+        docWatermark.style.transform = `translate(-50%, -50%) rotate(-30deg) scale(${1.4 - 0.4 * easeOutBack(wmP)})`;
+      } else {
+        docWatermark.style.opacity = 0;
+      }
+
+      // Page 3 Vector signature draws live at 12.8s
+      if (t >= 12.8) {
+        const signP = clamp((t - 12.8) / 1.4, 0, 1);
+        const dashOffset = 400 * (1 - easeOutCubic(signP));
+        signPath.style.strokeDashoffset = dashOffset;
+      } else {
+        signPath.style.strokeDashoffset = 400;
+      }
+    }
+
+    // =======================================================================
+    // ACT 5: ZERO CLOUD PRIVACY VAULT (14.9s -> 18.2s)
+    // =======================================================================
+    if (t >= 14.9 && t < 18.4) {
+      act5.style.opacity = t < 18.0 ? clamp((t - 14.9) / 0.3, 0, 1) : clamp((18.4 - t) / 0.3, 0, 1);
+
+      const s5P = clamp((t - 14.9) / 0.5, 0, 1);
+      const scale = 0.88 + 0.12 * easeOutBack(s5P);
+      vaultLock.style.transform = `scale(${scale})`;
+
+      // Gear rotation
+      vaultGear.style.transform = `rotate(${(t - 14.9) * 45}deg)`;
+    }
+
+    // =======================================================================
+    // ACT 6: CLIMAX & CALL TO ACTION (18.1s -> 21.0s)
+    // =======================================================================
+    if (t >= 18.1 && t <= 21.0) {
+      act6.style.opacity = clamp((t - 18.1) / 0.4, 0, 1);
+
+      const s6P = clamp((t - 18.1) / 0.6, 0, 1);
+      const scale = 0.9 + 0.1 * easeOutBack(s6P);
+      act6.style.transform = `scale(${scale})`;
+
+      // Emblem subtle float
+      const floatY = Math.sin((t - 18.1) * 3) * 6;
+      climaxEmblem.style.transform = `translateY(${floatY}px)`;
+
+      // CTA shine sweep
+      if (t >= 18.8) {
+        const shineP = ((t - 18.8) / 1.3) % 1;
+        climaxShine.style.left = `${-100 + shineP * 300}%`;
+      }
+    }
+  };
+
+  // Initialize frame 0
+  window.seekTime(0);
+</script>
+</body>
+</html>

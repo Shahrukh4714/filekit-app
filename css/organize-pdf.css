@@ -125,15 +125,15 @@ body #app-view .app-main-content:has(.org-shell) {
 }
 
 .org-btn-crop-page.is-active {
-  background: #0F172A !important;
-  border-color: #0F172A !important;
+  background: #0A0A0A !important;
+  border-color: #0A0A0A !important;
   color: #FFFFFF !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 .org-btn-crop-page.is-active:hover {
-  background: #1E293B !important;
-  border-color: #1E293B !important;
+  background: #171717 !important;
+  border-color: #171717 !important;
   color: #FFFFFF !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
@@ -161,80 +161,111 @@ body #app-view .app-main-content:has(.org-shell) {
   pointer-events: auto !important;
 }
 
-/* Contextual Subcontrols Slot — Anchored immediately to the right of the center capsule */
-.org-subcontrols-slot {
-  position: static !important;
-  transform: none !important;
-  margin-left: 0 !important;
-  display: inline-flex !important;
+/* ═══════════════════════════════════════════════════════════════════════════
+   Contextual Sub-Toolbar — Dedicated Small Sub-Toolbar Strip for Sub-Config
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-sub-toolbar {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  background: #FAFAFA !important;
+  border-bottom: 1px solid #E4E4E7 !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  height: 34px !important;
-  white-space: nowrap !important;
-  pointer-events: auto !important;
-  z-index: 26 !important;
+  justify-content: center !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  z-index: 38 !important;
+  user-select: none !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
   animation: orgSubtoolFade 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.org-subcontrols-slot .org-mini-btn {
-  height: 25px !important;
-  padding: 0 4px !important;
-  font-size: 10.5px !important;
-  gap: 2.5px !important;
+.org-sub-toolbar-inner {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  flex-shrink: 0 !important;
 }
 
-.org-subcontrols-slot .org-btn-group .org-mini-btn {
-  padding: 0 3.5px !important;
-  gap: 2px !important;
-}
-
-.org-subcontrols-slot .org-mini-btn svg {
-  width: 11.5px !important;
-  height: 11.5px !important;
-}
-
-.org-subcontrols-slot .org-stepper {
-  height: 25px !important;
-  padding: 1.5px !important;
-  border-radius: 5px !important;
-}
-
-.org-subcontrols-slot .org-step-btn {
-  width: 19px !important;
-  height: 20px !important;
-  font-size: 11.5px !important;
-}
-
-.org-subcontrols-slot .org-step-val {
+.org-sub-lead {
   font-size: 11px !important;
-  min-width: 15px !important;
+  font-weight: 700 !important;
+  color: #71717A !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
 }
 
-.org-subcontrols-slot .org-segmented-modes.org-segmented-mini {
-  height: 25px !important;
-  padding: 1.5px !important;
-  border-radius: 5px !important;
-}
-
-.org-subcontrols-slot .org-segmented-modes.org-segmented-mini .org-mode-tab {
-  height: 20px !important;
-  padding: 0 5px !important;
-  font-size: 10.5px !important;
+.org-sub-label {
+  font-size: 12px !important;
   font-weight: 500 !important;
+  color: #18181B !important;
+  white-space: nowrap !important;
 }
 
-.org-subcontrols-slot .org-vsep {
-  margin: 0 2px !important;
+.org-sub-unit {
+  font-size: 12px !important;
+  color: #52525B !important;
+  white-space: nowrap !important;
+}
+
+.org-sub-hint {
+  font-size: 11.5px !important;
+  color: #71717A !important;
+  white-space: nowrap !important;
+}
+
+.org-sub-badge {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #18181B !important;
+  background: #E4E4E7 !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  white-space: nowrap !important;
+}
+
+.org-sub-ctrl-group,
+.org-sub-btn-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+}
+
+.org-range-inp {
+  all: unset !important;
+  height: 26px !important;
+  width: 100px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #D4D4D8 !important;
+  border-radius: 6px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  color: #18181B !important;
+  font-family: inherit !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+.org-range-inp:focus {
+  border-color: #18181B !important;
+  outline: 2px solid rgba(24, 24, 27, 0.1) !important;
 }
 
 @keyframes orgSubtoolFade {
   from {
     opacity: 0;
-    transform: translateY(-50%) translateX(-4px);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(0);
   }
 }
 
@@ -582,8 +613,8 @@ body #app-view .app-main-content:has(.org-shell) {
 button.osui-dl-btn,
 .osui-dl-btn,
 .org-primary-cta,
-button#org-run-btn,
-#org-run-btn {
+#org-run-btn,
+button#org-run-btn {
   all: unset !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -612,62 +643,62 @@ button#org-run-btn,
   position: absolute !important;
 }
 
-/* Phase: Idle (Opensource UI Tactile 3D Brand Blue Keycap — #00B0FF) */
+/* Phase: Idle (Opensource UI Obsidian Black CTA — #18181B) */
+#org-run-btn,
+#org-run-btn[data-phase="idle"],
+#org-run-btn:not([data-phase]),
+button#org-run-btn,
+button#org-run-btn[data-phase="idle"],
+button#org-run-btn:not([data-phase]),
 button.osui-dl-btn[data-phase="idle"],
 button.osui-dl-btn:not([data-phase]),
 .osui-dl-btn[data-phase="idle"],
 .osui-dl-btn:not([data-phase]),
-button#org-run-btn[data-phase="idle"],
-button#org-run-btn:not([data-phase]),
-#org-run-btn[data-phase="idle"],
-#org-run-btn:not([data-phase]),
-#org-run-btn,
 button.org-primary-cta[data-phase="idle"],
 button.org-primary-cta:not([data-phase]),
 .org-primary-cta[data-phase="idle"],
 .org-primary-cta:not([data-phase]) {
-  background: linear-gradient(180deg, #00B0FF 0%, #008CE5 100%) !important;
+  background: #18181B !important;
   color: #FFFFFF !important;
-  box-shadow: 0 0 0 1px #0284C7,
-              0 2px 5px rgba(0, 176, 255, 0.35),
-              0 1px 2px rgba(0, 0, 0, 0.12),
-              inset 0 1px 0 rgba(255, 255, 255, 0.45),
-              inset 0 -2.5px 0 #005FA3 !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid #27272A !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.4) !important;
+  text-shadow: none !important;
 }
 
+#org-run-btn:hover:not(:disabled),
+#org-run-btn[data-phase="idle"]:hover:not(:disabled),
+#org-run-btn:not([data-phase]):hover:not(:disabled),
+button#org-run-btn:hover:not(:disabled),
+button#org-run-btn[data-phase="idle"]:hover:not(:disabled),
+button#org-run-btn:not([data-phase]):hover:not(:disabled),
 button.osui-dl-btn[data-phase="idle"]:hover:not(:disabled),
 button.osui-dl-btn:not([data-phase]):hover:not(:disabled),
 .osui-dl-btn[data-phase="idle"]:hover:not(:disabled),
 .osui-dl-btn:not([data-phase]):hover:not(:disabled),
-button#org-run-btn[data-phase="idle"]:hover:not(:disabled),
-button#org-run-btn:not([data-phase]):hover:not(:disabled),
-#org-run-btn[data-phase="idle"]:hover:not(:disabled),
-#org-run-btn:not([data-phase]):hover:not(:disabled),
-#org-run-btn:hover:not(:disabled),
 button.org-primary-cta[data-phase="idle"]:hover:not(:disabled),
 button.org-primary-cta:not([data-phase]):hover:not(:disabled),
 .org-primary-cta[data-phase="idle"]:hover:not(:disabled),
 .org-primary-cta:not([data-phase]):hover:not(:disabled) {
-  background: linear-gradient(180deg, #38C8FF 0%, #009BEF 100%) !important;
+  background: #27272A !important;
+  border-color: #3F3F46 !important;
   color: #FFFFFF !important;
-  box-shadow: 0 0 0 1px #0077C2,
-              0 3px 10px rgba(0, 176, 255, 0.45),
-              0 1px 2px rgba(0, 0, 0, 0.12),
-              inset 0 1px 0.5px rgba(255, 255, 255, 0.55),
-              inset 0 -2.5px 0 #00508A !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
 }
 
 button.osui-dl-btn[data-phase="idle"]:active:not(:disabled),
-button#org-run-btn[data-phase="idle"]:active:not(:disabled),
 #org-run-btn[data-phase="idle"]:active:not(:disabled),
-#org-run-btn:active:not(:disabled) {
-  transform: translateY(1.5px) !important;
-  background: linear-gradient(180deg, #008CE5 0%, #0070B8 100%) !important;
-  box-shadow: 0 0 0 1px #00508A,
-              0 1px 2px rgba(0, 176, 255, 0.25),
-              inset 0 1px 2px rgba(0, 0, 0, 0.25),
-              inset 0 -1px 0 #00508A !important;
+#org-run-btn:not([data-phase]):active:not(:disabled),
+#org-run-btn:active:not(:disabled),
+button#org-run-btn[data-phase="idle"]:active:not(:disabled),
+button#org-run-btn:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.99) !important;
+  background: #09090B !important;
+  border-color: #18181B !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* Phase: Downloading (Tactile Sunk 3D keycap state with spinner) */
@@ -678,11 +709,10 @@ button#org-run-btn[data-phase="downloading"],
 button.org-primary-cta[data-phase="downloading"],
 .org-primary-cta[data-phase="downloading"] {
   cursor: default !important;
-  background: #0070B8 !important;
+  background: #27272A !important;
+  border-color: #3F3F46 !important;
   color: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 0 0 1px #004F80,
-              inset 0 1px 2px rgba(0, 0, 0, 0.3),
-              inset 0 -1px 0 #004F80 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* Phase: Done (Emerald 3D keycap with rich specular gloss) */
@@ -933,7 +963,8 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  padding: 10px 0 12px 0 !important;
+  justify-content: space-between !important;
+  padding: 16px 0 !important;
   box-sizing: border-box !important;
   user-select: none !important;
   position: relative !important;
@@ -953,10 +984,10 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 3px !important;
+  gap: 6px !important;
   width: 100% !important;
   flex-shrink: 0 !important;
-  margin-top: auto !important;
+  margin: 0 !important;
 }
 
 .org-rail-bot {
@@ -1219,13 +1250,13 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
 
 /* Precision Vertical Slider */
 .org-rail-slider-wrap {
-  height: 84px !important;
+  height: 96px !important;
   width: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  padding: 2px 0 !important;
+  padding: 4px 0 !important;
 }
 
 .org-rail-slider {
@@ -1234,7 +1265,7 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   writing-mode: vertical-lr !important;
   direction: rtl !important;
   width: 4px !important;
-  height: 74px !important;
+  height: 88px !important;
   background: #E4E4E7 !important;
   border-radius: 9999px !important;
   outline: none !important;
@@ -1382,76 +1413,14 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
 }
 
 .org-pg-tile.is-drag-over-left .org-pg-thumb {
-  border-left: 2px solid #18181B !important;
-}
-
-.org-pg-tile.is-drag-over-right .org-pg-thumb {
-  border-right: 2px solid #18181B !important;
-}
-
-/* Checkbox on top-left of page sheet */
-.org-card-chk {
-  position: absolute !important;
-  top: 8px !important;
-  left: 8px !important;
-  width: 16px !important;
-  height: 16px !important;
-  accent-color: #18181B !important;
-  z-index: 10 !important;
-  cursor: pointer !important;
-  opacity: 0.75 !important;
-  transition: opacity 100ms ease !important;
-}
-
-.org-pg-tile:hover .org-card-chk,
-.org-deck-card:hover .org-card-chk,
-.org-card-chk:checked {
-  opacity: 1 !important;
-}
-
-/* Delete / Remove X on top-right of page sheet */
-.org-card-close {
-  all: unset !important;
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-  width: 20px !important;
-  height: 20px !important;
-  border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #D4D4D8 !important;
-  color: #71717A !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  z-index: 10 !important;
-  opacity: 0 !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-  transition: opacity 120ms ease, background 100ms ease, color 100ms ease !important;
-}
-
-.org-pg-tile:hover .org-card-close,
-.org-deck-card:hover .org-card-close {
-  opacity: 1 !important;
-}
-
-.org-card-close:hover {
-  background: #DC2626 !important;
-  border-color: #DC2626 !important;
-  color: #FFFFFF !important;
-}
-
-/* Physical Document Sheet Stage — Opensource UI Tactile Elevation (Sharp 90° Corners) */
-.org-pg-thumb {
   position: relative !important;
   width: 100% !important;
   height: auto !important;
-  min-height: var(--org-thumb-minh, 300px) !important;
+  min-height: 0 !important;
   background: #FFFFFF !important;
-  border-radius: 0 !important;
+  border-radius: 4px !important;
   border: none !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1578,7 +1547,7 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
 /* Meta Line */
 .org-pg-meta {
   width: 100% !important;
-  margin-top: 6px !important;
+  margin-top: 8px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1588,9 +1557,13 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
 
 .org-pg-num {
   font-size: 11px !important;
-  font-weight: 500 !important;
-  color: #71717A !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  background: #F1F5F9 !important;
+  padding: 2px 9px !important;
+  border-radius: 12px !important;
   letter-spacing: -0.01em !important;
+  line-height: 1.2 !important;
 }
 
 .org-meta-badges {
@@ -3195,3 +3168,119 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
 }
 
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Organize Tool Final Polish — Exact Checkpoint Restoration
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Card Thumbnail Base Sheet — Elevation & Visual Separation */
+.org-pg-thumb {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  background: #FFFFFF !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08),
+              0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              outline 140ms ease !important;
+  cursor: zoom-in !important;
+}
+
+/* Card Selection Badge Checkbox */
+.org-card-chk {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  position: absolute !important;
+  top: 8px !important;
+  left: 8px !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1.5px solid #CBD5E1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0 !important;
+  transition: all 120ms ease !important;
+  z-index: 25 !important;
+}
+
+.org-pg-tile:hover .org-card-chk,
+.org-deck-card:hover .org-card-chk,
+.org-card-chk:checked {
+  opacity: 1 !important;
+}
+
+.org-card-chk:checked {
+  background: #00C466 !important;
+  border-color: #00C466 !important;
+}
+
+.org-card-chk:checked::after {
+  content: '' !important;
+  display: block !important;
+  width: 5px !important;
+  height: 9px !important;
+  border: solid #FFFFFF !important;
+  border-width: 0 2px 2px 0 !important;
+  transform: rotate(45deg) translate(-1px, -1px) !important;
+}
+
+/* Card Quick Close / Delete Pill Button */
+.org-card-close {
+  all: unset !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #64748B !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 20 !important;
+  opacity: 0 !important;
+  transition: opacity 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+  box-sizing: border-box !important;
+}
+
+.org-card-close svg {
+  width: 11px !important;
+  height: 11px !important;
+  stroke: currentColor !important;
+}
+
+.org-pg-tile:hover .org-card-close,
+.org-deck-card:hover .org-card-close {
+  opacity: 1 !important;
+}
+
+.org-card-close:hover {
+  background: #FEF2F2 !important;
+  color: #EF4444 !important;
+  border-color: #FCA5A5 !important;
+  transform: scale(1.08) !important;
+}

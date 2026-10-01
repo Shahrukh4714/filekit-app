@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1920, height=1080, initial-scale=1.0"/>
+<title>FileKit Cinema Commercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=JetBrains+Mono:wght@700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-black: #050608;
+    --red: #FF3B30;
+    --yellow: #FFCC00;
+    --green: #34C759;
+    --blue: #007AFF;
+    --cyan: #32D74B;
+    --white: #FFFFFF;
+    --gray-900: #0C0E14;
+    --gray-800: #151922;
+    --gray-400: #8E9BAE;
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.2);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body, html {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--bg-black);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--white);
+    user-select: none;
+  }
+
+  /* Master Stage */
+  #stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    background: #050608;
+    overflow: hidden;
+  }
+
+  /* Cinematic Film Texture & Grain Overlay */
+  #grain-canvas {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+    z-index: 500;
+    opacity: 0.15;
+    mix-blend-mode: screen;
+  }
+
+  /* Cinematic Letterbox Mask (2.39:1 Anamorphic framing feel or full 16:9) */
+  .anamorphic-bars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 400;
+    box-shadow: inset 0 0 120px rgba(0,0,0,0.8);
+  }
+
+  /* Telemetry Overlays (Top-Left, Top-Right, Bottom-Left, Bottom-Right) */
+  .hud-tag {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #4A5568;
+    letter-spacing: 2px;
+    z-index: 350;
+    text-transform: uppercase;
+  }
+  .hud-tl { top: 40px; left: 60px; display: flex; align-items: center; gap: 12px; }
+  .hud-tr { top: 40px; right: 60px; color: #00E676; }
+  .hud-bl { bottom: 40px; left: 60px; }
+  .hud-br { bottom: 40px; right: 60px; color: #00B0FF; }
+
+  .hud-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #FF3B30;
+    box-shadow: 0 0 10px #FF3B30;
+  }
+
+  /* Master Sequence Container */
+  .seq-shot {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* =========================================================================
+     SHOT 1: THE HARD CUT & VELOCITY HOOK (0.0s - 2.2s)
+     ========================================================================= */
+  #shot-1 .hero-text-wrap {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .k-word {
+    font-size: 110px;
+    font-weight: 900;
+    letter-spacing: -4px;
+    line-height: 0.95;
+    text-transform: uppercase;
+    color: #FFF;
+    text-shadow: 0 10px 50px rgba(0,0,0,0.9);
+  }
+  .k-word.red {
+    color: #FF3B30;
+    text-shadow: 0 0 60px rgba(255, 59, 48, 0.6);
+  }
+  .k-word.cyan {
+    color: #00B0FF;
+    text-shadow: 0 0 60px rgba(0, 176, 255, 0.6);
+  }
+
+  /* =========================================================================
+     SHOT 2: THE APERTURE & COMMAND VELOCITY (2.2s - 5.5s)
+     ========================================================================= */
+  #shot-2 {
+    perspective: 1400px;
+  }
+  .terminal-deck {
+    width: 1420px;
+    height: 800px;
+    background: #0B0E15;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 40px 140px rgba(0, 0, 0, 0.95), 0 0 80px rgba(0, 122, 255, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform-origin: center center;
+  }
+  .terminal-top {
+    height: 52px;
+    background: #111520;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    justify-content: space-between;
+  }
+  .term-dots { display: flex; gap: 8px; }
+  .term-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .td-r { background: #FF5F56; } .td-y { background: #FFBD2E; } .td-g { background: #27C93F; }
+
+  .term-address {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 4px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #94A3B8;
+  }
+  .term-address strong { color: #34C759; }
+
+  .terminal-content {
+    flex: 1;
+    position: relative;
+    padding: 50px;
+    background: radial-gradient(circle at 50% 0%, #151C2C 0%, #07090F 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Rapid Command Palette Box */
+  .cmdk-aperture {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 860px;
+    background: rgba(14, 18, 28, 0.98);
+    border: 2px solid #007AFF;
+    border-radius: 20px;
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 122, 255, 0.4);
+    backdrop-filter: blur(30px);
+    overflow: hidden;
+    opacity: 0;
+  }
+  .cmdk-top-input {
+    display: flex;
+    align-items: center;
+    padding: 24px 30px;
+    gap: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .cmdk-type-area {
+    font-size: 26px;
+    font-weight: 700;
+    color: #FFF;
+    flex: 1;
+  }
+  .cmdk-cursor {
+    display: inline-block;
+    width: 3px;
+    height: 28px;
+    background: #007AFF;
+    margin-left: 2px;
+    vertical-align: middle;
+  }
+  .cmdk-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    margin: 8px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+  }
+  .cmdk-item-row.active {
+    background: rgba(0, 122, 255, 0.15);
+    border-color: rgba(0, 122, 255, 0.5);
+  }
+  .cmdk-badge-tag {
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    color: #E2E8F0;
+  }
+
+  /* =========================================================================
+     SHOT 3: THE QUANTUM DROPZONE & WASM CRUNCH (5.5s - 9.0s)
+     ========================================================================= */
+  #shot-3 .drop-arena {
+    width: 1400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+  .quantum-portal {
+    width: 1100px;
+    height: 380px;
+    border: 2px dashed rgba(0, 122, 255, 0.4);
+    border-radius: 30px;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 122, 255, 0.1) 0%, rgba(11, 14, 21, 0.85) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .quantum-portal.locked {
+    border-color: #34C759;
+    background: radial-gradient(circle at 50% 50%, rgba(52, 199, 89, 0.2) 0%, rgba(11, 14, 21, 0.95) 100%);
+    box-shadow: 0 0 100px rgba(52, 199, 89, 0.4), inset 0 0 40px rgba(52, 199, 89, 0.2);
+  }
+  .portal-icon {
+    width: 90px;
+    height: 90px;
+    filter: drop-shadow(0 15px 30px rgba(255, 204, 0, 0.5));
+  }
+  .portal-title {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #FFF;
+  }
+
+  /* Flying Document Tile */
+  .flying-doc {
+    position: absolute;
+    top: 140px;
+    left: 260px;
+    width: 380px;
+    padding: 18px 24px;
+    background: rgba(21, 26, 40, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    z-index: 60;
+    opacity: 0;
+    filter: drop-shadow(0 25px 40px rgba(0,0,0,0.85));
+  }
+  .doc-type-pill {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 14px;
+    background: #FF3B30;
+    color: #FFF;
+  }
+
+  /* Multi-Core WASM Bar HUD */
+  .wasm-crunch-hud {
+    display: flex;
+    gap: 24px;
+    width: 1100px;
+    opacity: 0;
+  }
+  .crunch-card {
+    flex: 1;
+    background: #0E121B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 26px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  }
+  .crunch-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .crunch-label {
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFF;
+  }
+  .crunch-rate {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    color: #34C759;
+  }
+  .crunch-meter {
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .crunch-meter-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #007AFF, #34C759);
+    border-radius: 6px;
+    box-shadow: 0 0 20px #34C759;
+  }
+  .crunch-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .crunch-meta strong { color: #34C759; }
+
+  /* =========================================================================
+     SHOT 4: TANGIBLE 3D DOCUMENT CRAFT (9.0s - 12.5s)
+     ========================================================================= */
+  #shot-4 .doc-fan-stage {
+    width: 1400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+    perspective: 1200px;
+  }
+  .pages-row {
+    display: flex;
+    gap: 36px;
+    margin-top: 10px;
+  }
+  .paper-page {
+    width: 330px;
+    height: 460px;
+    background: #FFFFFF;
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.06);
+    padding: 30px 26px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transform-origin: center bottom;
+  }
+  .paper-h { height: 14px; width: 55%; background: #0F172A; border-radius: 4px; margin-bottom: 24px; }
+  .paper-line { height: 8px; background: #E2E8F0; border-radius: 3px; margin-bottom: 12px; }
+  .paper-line.w80 { width: 80%; } .paper-line.w60 { width: 60%; } .paper-line.w95 { width: 95%; }
+  .paper-block { height: 75px; background: #F1F5F9; border-radius: 10px; margin: 16px 0; border: 1px dashed #CBD5E1; }
+
+  .stamp-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: rgba(255, 59, 48, 0.45);
+    border: 4px solid rgba(255, 59, 48, 0.45);
+    padding: 8px 26px;
+    border-radius: 14px;
+    letter-spacing: 4px;
+    opacity: 0;
+  }
+
+  .signature-svg {
+    position: absolute;
+    bottom: 40px;
+    left: 26px;
+    width: 220px;
+    height: 65px;
+  }
+  .signature-path {
+    fill: none;
+    stroke: #0284C7;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 450;
+    stroke-dashoffset: 450;
+  }
+
+  /* =========================================================================
+     SHOT 5: ZERO CLOUD PRIVACY VAULT (12.5s - 14.5s)
+     ========================================================================= */
+  #shot-5 .vault-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 36px;
+  }
+  .vault-iris {
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52, 199, 89, 0.3) 0%, rgba(52, 199, 89, 0.05) 70%);
+    border: 2px solid rgba(52, 199, 89, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 100px rgba(52, 199, 89, 0.5), inset 0 0 50px rgba(52, 199, 89, 0.3);
+    position: relative;
+  }
+  .vault-ring-gear {
+    position: absolute;
+    inset: -24px;
+    border: 2px dashed rgba(52, 199, 89, 0.4);
+    border-radius: 50%;
+  }
+  .vault-title {
+    font-size: 72px;
+    font-weight: 900;
+    letter-spacing: -2.5px;
+    line-height: 1.05;
+  }
+  .vault-title strong { color: #34C759; text-shadow: 0 0 50px rgba(52, 199, 89, 0.5); }
+  .vault-tags {
+    display: flex;
+    gap: 20px;
+  }
+  .v-tag {
+    padding: 16px 32px;
+    border-radius: 18px;
+    background: rgba(15, 20, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 18px;
+    font-weight: 800;
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* =========================================================================
+     SHOT 6: CLIMAX & CALL TO ACTION (14.5s - 16.0s)
+     ========================================================================= */
+  #shot-6 .climax-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 26px;
+  }
+  .climax-badge-icon {
+    width: 150px;
+    height: 150px;
+    filter: drop-shadow(0 25px 60px rgba(0, 122, 255, 0.6));
+  }
+  .climax-h1 {
+    font-size: 100px;
+    font-weight: 900;
+    letter-spacing: -4px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #D1D5DB 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .climax-p {
+    font-size: 32px;
+    font-weight: 600;
+    color: #94A3B8;
+  }
+  .climax-btn {
+    margin-top: 10px;
+    padding: 24px 76px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #007AFF, #34C759);
+    font-size: 28px;
+    font-weight: 900;
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 25px 80px rgba(0, 122, 255, 0.7);
+    position: relative;
+    overflow: hidden;
+  }
+  .climax-btn-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    transform: skewX(-25deg);
+  }
+  .climax-web-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 800;
+    color: #34C759;
+    letter-spacing: 2px;
+  }
+
+  /* Physical Mouse Pointer */
+  #cinema-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transform: translate(-4px, -4px);
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.7));
+  }
+  .cinema-ripple {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid #007AFF;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- Subtle Cinematic Grain Layer -->
+  <canvas id="grain-canvas" width="1920" height="1080"></canvas>
+  <div class="anamorphic-bars"></div>
+
+  <!-- Telemetry HUD Overlays -->
+  <div class="hud-tag hud-tl"><span class="hud-dot"></span><span>SYSTEM: WASM_ENGINE_V3</span></div>
+  <div class="hud-tag hud-tr">LATENCY: 0.00ms</div>
+  <div class="hud-tag hud-bl">STORAGE: CLIENT_ISOLATED</div>
+  <div class="hud-tag hud-br">NET_IO: 0.00 KB/s</div>
+
+  <!-- =======================================================================
+       SHOT 1: THE HARD CUT & VELOCITY HOOK (0.0s - 2.2s)
+       ======================================================================= -->
+  <div class="seq-shot" id="shot-1">
+    <div class="hero-text-wrap">
+      <div class="k-word" id="s1-w1">EVERY FILE.</div>
+      <div class="k-word cyan" id="s1-w2">EVERY FORMAT.</div>
+      <div class="k-word red" id="s1-w3">ZERO UPLOADS.</div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       SHOT 2: THE APERTURE & COMMAND VELOCITY (2.2s - 5.5s)
+       ======================================================================= -->
+  <div class="seq-shot" id="shot-2">
+    <div class="terminal-deck" id="term-deck">
+      <div class="terminal-top">
+        <div class="term-dots">
+          <div class="term-dot td-r"></div>
+          <div class="term-dot td-y"></div>
+          <div class="term-dot td-g"></div>
+        </div>
+        <div class="term-address">https://<strong>filekit.cc</strong>/suite</div>
+        <div style="width: 60px;"></div>
+      </div>
+      <div class="terminal-content">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+          <div>
+            <h2 style="font-size: 34px; font-weight: 900; color: #FFF;">The In-Browser File OS</h2>
+            <p style="color: #94A3B8; font-size: 16px; margin-top: 4px;">187+ High precision WebAssembly tools</p>
+          </div>
+          <div style="padding: 10px 20px; background: rgba(255,255,255,0.06); border-radius: 10px; font-weight: 800; color: #38BDF8; border: 1px solid rgba(255,255,255,0.12); font-family: 'JetBrains Mono', monospace;">
+            ⌘K UNIVERSAL
+          </div>
+        </div>
+
+        <!-- Simulated Tool Grid in Background -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; opacity: 0.3;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 800; font-size: 17px; color: #FFF;">PDF Converter</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Word, Excel, JPG, OCR</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 800; font-size: 17px; color: #FFF;">Video Transcode</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">MP4, WebM, H.265</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 800; font-size: 17px; color: #FFF;">Image Magic</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">AVIF, WebP, Smart Crop</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 800; font-size: 17px; color: #FFF;">Vector Tools</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">SVG, Stamp, Watermark</div>
+          </div>
+        </div>
+
+        <!-- Command Palette Box -->
+        <div class="cmdk-aperture" id="cmdk-aperture">
+          <div class="cmdk-top-input">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="cmdk-type-area"><span id="cmdk-stream-text"></span><span class="cmdk-cursor"></span></div>
+            <span class="cmdk-badge-tag">ESC</span>
+          </div>
+          <div style="padding: 12px;">
+            <div class="cmdk-item-row active" id="cmdk-r1">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 59, 48, 0.18); color: #FF3B30; display: flex; align-items: center; justify-content: center; font-weight: 900;">PDF</div>
+                <div>
+                  <h4 style="font-size: 17px; font-weight: 800; color: #FFF;">PDF to Word (.docx)</h4>
+                  <p style="font-size: 13px; color: #94A3B8;">Editable typography & tables preserved</p>
+                </div>
+              </div>
+              <div class="cmdk-badge-tag">↵ Instant</div>
+            </div>
+            <div class="cmdk-item-row" id="cmdk-r2">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(0, 122, 255, 0.18); color: #007AFF; display: flex; align-items: center; justify-content: center; font-weight: 900;">MP4</div>
+                <div>
+                  <h4 style="font-size: 17px; font-weight: 800; color: #FFF;">Compress 4K Video</h4>
+                  <p style="font-size: 13px; color: #94A3B8;">Multi-threaded browser transcoding</p>
+                </div>
+              </div>
+              <div class="cmdk-badge-tag">WASM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       SHOT 3: QUANTUM DROPZONE & WASM CRUNCH (5.5s - 9.0s)
+       ======================================================================= -->
+  <div class="seq-shot" id="shot-3">
+    <div class="drop-arena">
+      <div style="text-align: center;">
+        <h2 style="font-size: 54px; font-weight: 900; letter-spacing: -1.5px; color: #FFF;">Drop Anything. Process Instantly.</h2>
+      </div>
+
+      <div class="quantum-portal" id="q-portal">
+        <svg class="portal-icon" viewBox="0 0 90 90" fill="none">
+          <rect x="8" y="20" width="74" height="56" rx="14" fill="#FFCC00" opacity="0.9"/>
+          <path d="M8 32C8 25.3726 13.3726 20 20 20H36L44 28H70C76.6274 28 82 33.3726 82 40V70C82 76.6274 76.6274 82 70 82H20C13.3726 82 8 76.6274 8 70V32Z" fill="#FFA000"/>
+          <rect x="24" y="38" width="42" height="28" rx="8" fill="#FFFFFF" opacity="0.9"/>
+          <path d="M45 44V60M38 51L45 44L52 51" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="portal-title">Drop your file into the local WASM core</div>
+      </div>
+
+      <!-- WASM Live Meters -->
+      <div class="wasm-crunch-hud" id="crunch-hud">
+        <div class="crunch-card">
+          <div class="crunch-head">
+            <div class="crunch-label">📄 financial_deck_2026.pdf</div>
+            <div class="crunch-rate" id="cr-p1">0%</div>
+          </div>
+          <div class="crunch-meter">
+            <div class="crunch-meter-fill" id="cr-b1"></div>
+          </div>
+          <div class="crunch-meta">
+            <span>Parsing Vector Elements</span>
+            <span id="cr-t1">140ms</span>
+          </div>
+        </div>
+        <div class="crunch-card">
+          <div class="crunch-head">
+            <div class="crunch-label">🎬 keynote_reel_4k.mp4</div>
+            <div class="crunch-rate" id="cr-p2">0%</div>
+          </div>
+          <div class="crunch-meter">
+            <div class="crunch-meter-fill" id="cr-b2"></div>
+          </div>
+          <div class="crunch-meta">
+            <span>H.265 Crunch: <strong>-94.2% Size</strong></span>
+            <span id="cr-t2">290ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Draggable File Tile -->
+    <div class="flying-doc" id="flying-doc">
+      <span class="doc-type-pill">PDF</span>
+      <div>
+        <div style="font-weight: 800; color: #FFF; font-size: 16px;">financial_deck_2026.pdf</div>
+        <div style="font-size: 12px; color: #94A3B8;">48.2 MB • 64 Pages</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       SHOT 4: TANGIBLE 3D DOCUMENT CRAFT (9.0s - 12.5s)
+       ======================================================================= -->
+  <div class="seq-shot" id="shot-4">
+    <div class="doc-fan-stage">
+      <div style="text-align: center;">
+        <h2 style="font-size: 54px; font-weight: 900; letter-spacing: -1.5px; color: #FFF;">Tangible Document Manipulation.</h2>
+      </div>
+
+      <div class="pages-row">
+        <!-- Page 1 -->
+        <div class="paper-page" id="paper-p1">
+          <div class="paper-h"></div>
+          <div class="paper-line w80"></div>
+          <div class="paper-line w95"></div>
+          <div class="paper-line w60"></div>
+          <div class="paper-block"></div>
+          <div class="paper-line w95"></div>
+          <div class="paper-line w80"></div>
+        </div>
+
+        <!-- Page 2 -->
+        <div class="paper-page" id="paper-p2">
+          <div class="paper-h" style="background: #FF3B30;"></div>
+          <div class="paper-line w95"></div>
+          <div class="paper-line w80"></div>
+          <div class="paper-line w60"></div>
+          <div class="paper-block" style="background: #FEF2F2; border-color: #FECACA;"></div>
+          <div class="paper-line w95"></div>
+          <div class="stamp-watermark" id="stamp-watermark-el">CONFIDENTIAL</div>
+        </div>
+
+        <!-- Page 3 -->
+        <div class="paper-page" id="paper-p3">
+          <div class="paper-h" style="background: #007AFF;"></div>
+          <div class="paper-line w80"></div>
+          <div class="paper-line w95"></div>
+          <div class="paper-line w60"></div>
+          <div class="paper-block" style="background: #F0F9FF; border-color: #BAE6FD;"></div>
+          <svg class="signature-svg" viewBox="0 0 220 65">
+            <path class="signature-path" id="sig-path-el" d="M 20 45 C 45 10, 65 55, 80 25 C 95 5, 115 40, 130 20 C 145 10, 165 50, 195 30 C 205 25, 215 20, 205 38"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       SHOT 5: ZERO CLOUD PRIVACY VAULT (12.5s - 14.5s)
+       ======================================================================= -->
+  <div class="seq-shot" id="shot-5">
+    <div class="vault-wrap">
+      <div class="vault-iris" id="v-iris">
+        <div class="vault-ring-gear" id="v-gear"></div>
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="3"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="2"/></svg>
+      </div>
+      <h2 class="vault-title">
+        Zero Cloud Uploads.<br/>
+        <strong>100% Client-Side Privacy.</strong>
+      </h2>
+      <div class="vault-tags">
+        <div class="v-tag">✓ Zero Server Retention</div>
+        <div class="v-tag">✓ No Account Required</div>
+        <div class="v-tag">✓ Unlimited File Size</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       SHOT 6: CLIMAX & CTA (14.5s - 16.0s)
+       ======================================================================= -->
+  <div class="seq-shot" id="shot-6">
+    <div class="climax-wrap">
+      <svg class="climax-badge-icon" id="climax-icon" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="4" width="40" height="40" rx="10" fill="#FFFFFF"/>
+        <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+        <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+        <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+        <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+        <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B"/>
+      </svg>
+      <h1 class="climax-h1">FileKit</h1>
+      <p class="climax-p">Every File Tool You Need. 100% In Your Browser.</p>
+
+      <div class="climax-btn" id="climax-btn">
+        <span>Launch Instant Studio</span>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <div class="climax-btn-shine" id="btn-shine"></div>
+      </div>
+
+      <div class="climax-web-url">⚡ filekit.cc</div>
+    </div>
+  </div>
+
+  <!-- Physical Pointer & Ripple -->
+  <svg id="cinema-cursor" viewBox="0 0 24 24" fill="none">
+    <path d="M3 3l7 18 3-7 7-3L3 3z" fill="#FFFFFF" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>
+  <div class="cinema-ripple" id="cinema-ripple"></div>
+</div>
+
+<script>
+  // ----------------------------------------------------
+  // Dynamic 35mm Film Grain Generator
+  // ----------------------------------------------------
+  const gCanvas = document.getElementById('grain-canvas');
+  const gCtx = gCanvas.getContext('2d');
+
+  function generateGrain(t) {
+    gCtx.clearRect(0, 0, 1920, 1080);
+    const imgData = gCtx.createImageData(1920, 1080);
+    const buf = new Uint32Array(imgData.data.buffer);
+    const len = buf.length;
+    for (let i = 0; i < len; i += 4) {
+      if (Math.random() > 0.88) {
+        const val = Math.floor(Math.random() * 80 + 175);
+        buf[i] = (255 << 24) | (val << 16) | (val << 8) | val;
+      }
+    }
+    gCtx.putImageData(imgData, 0, 0);
+  }
+
+  // Easing functions (Emil Kowalski / Motion standards)
+  function easeOutExpo(x) { return x === 1 ? 1 : 1 - Math.pow(2, -10 * x); }
+  function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+  function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function easeOutBack(x) { const c1 = 1.70158; const c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); }
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  // ----------------------------------------------------
+  // Master Film Timeline (16.0s @ 30 FPS = 480 frames)
+  // ----------------------------------------------------
+  const shot1 = document.getElementById('shot-1');
+  const shot2 = document.getElementById('shot-2');
+  const shot3 = document.getElementById('shot-3');
+  const shot4 = document.getElementById('shot-4');
+  const shot5 = document.getElementById('shot-5');
+  const shot6 = document.getElementById('shot-6');
+
+  const s1W1 = document.getElementById('s1-w1');
+  const s1W2 = document.getElementById('s1-w2');
+  const s1W3 = document.getElementById('s1-w3');
+
+  const termDeck = document.getElementById('term-deck');
+  const cmdkAperture = document.getElementById('cmdk-aperture');
+  const cmdkStreamText = document.getElementById('cmdk-stream-text');
+
+  const qPortal = document.getElementById('q-portal');
+  const flyingDoc = document.getElementById('flying-doc');
+  const crunchHud = document.getElementById('crunch-hud');
+  const crP1 = document.getElementById('cr-p1');
+  const crB1 = document.getElementById('cr-b1');
+  const crP2 = document.getElementById('cr-p2');
+  const crB2 = document.getElementById('cr-b2');
+
+  const paperP1 = document.getElementById('paper-p1');
+  const paperP2 = document.getElementById('paper-p2');
+  const paperP3 = document.getElementById('paper-p3');
+  const stampWatermark = document.getElementById('stamp-watermark-el');
+  const sigPath = document.getElementById('sig-path-el');
+
+  const vIris = document.getElementById('v-iris');
+  const vGear = document.getElementById('v-gear');
+
+  const climaxIcon = document.getElementById('climax-icon');
+  const btnShine = document.getElementById('btn-shine');
+
+  const cursor = document.getElementById('cinema-cursor');
+  const ripple = document.getElementById('cinema-ripple');
+
+  window.seekTime = function(t) {
+    generateGrain(t);
+
+    // Default hide all shots
+    shot1.style.opacity = 0;
+    shot2.style.opacity = 0;
+    shot3.style.opacity = 0;
+    shot4.style.opacity = 0;
+    shot5.style.opacity = 0;
+    shot6.style.opacity = 0;
+    cursor.style.opacity = 0;
+    ripple.style.opacity = 0;
+
+    // =======================================================================
+    // SHOT 1: THE HARD CUT & VELOCITY HOOK (0.0s - 2.2s)
+    // =======================================================================
+    if (t >= 0 && t < 2.3) {
+      shot1.style.opacity = t < 2.0 ? clamp(t / 0.15, 0, 1) : clamp((2.3 - t) / 0.2, 0, 1);
+
+      // Staccato kinetic typography cuts
+      s1W1.style.opacity = t >= 0 ? 1 : 0;
+      s1W1.style.transform = `scale(${1.1 - 0.1 * clamp(t / 0.4, 0, 1)})`;
+
+      s1W2.style.opacity = t >= 0.6 ? 1 : 0;
+      s1W2.style.transform = `scale(${1.1 - 0.1 * clamp((t - 0.6) / 0.4, 0, 1)})`;
+
+      s1W3.style.opacity = t >= 1.2 ? 1 : 0;
+      s1W3.style.transform = `scale(${1.2 - 0.2 * clamp((t - 1.2) / 0.4, 0, 1)})`;
+    }
+
+    // =======================================================================
+    // SHOT 2: APERTURE & COMMAND VELOCITY (2.2s - 5.5s)
+    // =======================================================================
+    if (t >= 2.2 && t < 5.6) {
+      shot2.style.opacity = t < 5.2 ? clamp((t - 2.2) / 0.2, 0, 1) : clamp((5.6 - t) / 0.2, 0, 1);
+
+      // 3D Tilt perspective zoom
+      const p = clamp((t - 2.2) / 0.6, 0, 1);
+      const rotX = 14 * (1 - easeOutExpo(p));
+      const scale = 0.9 + 0.1 * easeOutExpo(p);
+      const transY = 50 * (1 - easeOutExpo(p));
+      termDeck.style.transform = `translateY(${transY}px) scale(${scale}) rotateX(${rotX}deg)`;
+
+      // Cursor sweeps to command button and clicks ⌘K at 3.0s
+      cursor.style.opacity = 1;
+      if (t < 3.0) {
+        const curP = clamp((t - 2.3) / 0.6, 0, 1);
+        const curX = 1500 - 350 * easeInOutCubic(curP);
+        const curY = 700 - 460 * easeInOutCubic(curP);
+        cursor.style.left = `${curX}px`;
+        cursor.style.top = `${curY}px`;
+      } else {
+        cursor.style.left = `960px`;
+        cursor.style.top = `400px`;
+      }
+
+      // Shockwave ripple at 3.0s
+      if (t >= 3.0 && t < 3.4) {
+        const ripP = (t - 3.0) / 0.4;
+        ripple.style.opacity = 1 - ripP;
+        ripple.style.left = '960px';
+        ripple.style.top = '400px';
+        ripple.style.transform = `translate(-50%, -50%) scale(${ripP * 2.5})`;
+      }
+
+      // Command palette appears at 3.0s
+      if (t >= 3.0) {
+        const palP = clamp((t - 3.0) / 0.3, 0, 1);
+        cmdkAperture.style.opacity = palP;
+        cmdkAperture.style.transform = `translateX(-50%) scale(${0.92 + 0.08 * easeOutBack(palP)})`;
+      } else {
+        cmdkAperture.style.opacity = 0;
+      }
+
+      // Typing animation
+      const targetTxt = "pdf to word (.docx)";
+      if (t >= 3.3 && t < 4.8) {
+        const typeP = clamp((t - 3.3) / 1.0, 0, 1);
+        const count = Math.floor(typeP * targetTxt.length);
+        cmdkStreamText.textContent = targetTxt.substring(0, count);
+      } else if (t >= 4.8) {
+        cmdkStreamText.textContent = targetTxt;
+      } else {
+        cmdkStreamText.textContent = "";
+      }
+    }
+
+    // =======================================================================
+    // SHOT 3: QUANTUM DROPZONE & WASM CRUNCH (5.4s - 9.0s)
+    // =======================================================================
+    if (t >= 5.4 && t < 9.2) {
+      shot3.style.opacity = t < 8.8 ? clamp((t - 5.4) / 0.2, 0, 1) : clamp((9.2 - t) / 0.2, 0, 1);
+      cursor.style.opacity = 1;
+
+      // File drag trajectory into portal
+      if (t >= 5.6 && t < 6.8) {
+        const dragP = clamp((t - 5.6) / 1.1, 0, 1);
+        const easeD = easeInOutCubic(dragP);
+        flyingDoc.style.opacity = clamp((t - 5.6) / 0.15, 0, 1);
+
+        const curX = 360 + (960 - 360) * easeD;
+        const curY = 300 + (530 - 300) * easeD;
+
+        flyingDoc.style.left = `${curX - 140}px`;
+        flyingDoc.style.top = `${curY - 60}px`;
+        cursor.style.left = `${curX}px`;
+        cursor.style.top = `${curY}px`;
+      } else if (t >= 6.8) {
+        flyingDoc.style.opacity = 0;
+        qPortal.classList.add('locked');
+        cursor.style.left = '960px';
+        cursor.style.top = '530px';
+      }
+
+      // WASM Crunch HUD activation
+      if (t >= 6.8) {
+        const hudP = clamp((t - 6.8) / 0.3, 0, 1);
+        crunchHud.style.opacity = hudP;
+
+        // Progress meter 1
+        const p1 = clamp((t - 7.0) / 1.4, 0, 1);
+        const pct1 = Math.floor(p1 * 100);
+        crP1.textContent = `${pct1}%`;
+        crB1.style.width = `${pct1}%`;
+
+        // Progress meter 2
+        const p2 = clamp((t - 7.2) / 1.6, 0, 1);
+        const pct2 = Math.floor(p2 * 100);
+        crP2.textContent = `${pct2}%`;
+        crB2.style.width = `${pct2}%`;
+      } else {
+        crunchHud.style.opacity = 0;
+        qPortal.classList.remove('locked');
+      }
+    }
+
+    // =======================================================================
+    // SHOT 4: TANGIBLE 3D DOCUMENT CRAFT (8.9s - 12.5s)
+    // =======================================================================
+    if (t >= 8.9 && t < 12.6) {
+      shot4.style.opacity = t < 12.2 ? clamp((t - 8.9) / 0.2, 0, 1) : clamp((12.6 - t) / 0.2, 0, 1);
+
+      // 3D Page fan out
+      const fanP = clamp((t - 8.9) / 0.5, 0, 1);
+      const easeFan = easeOutBack(fanP);
+
+      paperP1.style.transform = `rotate(-7deg) translateX(${-35 * easeFan}px)`;
+      paperP2.style.transform = `scale(${0.95 + 0.05 * easeFan}) translateY(${-18 * easeFan}px)`;
+      paperP3.style.transform = `rotate(7deg) translateX(${35 * easeFan}px)`;
+
+      // Stamp watermark impact at 10.0s
+      if (t >= 10.0) {
+        const wmP = clamp((t - 10.0) / 0.2, 0, 1);
+        stampWatermark.style.opacity = wmP;
+        stampWatermark.style.transform = `translate(-50%, -50%) rotate(-30deg) scale(${1.4 - 0.4 * easeOutBack(wmP)})`;
+      } else {
+        stampWatermark.style.opacity = 0;
+      }
+
+      // Live animated signature stroke at 10.6s
+      if (t >= 10.6) {
+        const sigP = clamp((t - 10.6) / 1.3, 0, 1);
+        const offset = 450 * (1 - easeOutCubic(sigP));
+        sigPath.style.strokeDashoffset = offset;
+      } else {
+        sigPath.style.strokeDashoffset = 450;
+      }
+    }
+
+    // =======================================================================
+    // SHOT 5: ZERO CLOUD PRIVACY VAULT (12.4s - 14.5s)
+    // =======================================================================
+    if (t >= 12.4 && t < 14.6) {
+      shot5.style.opacity = t < 14.3 ? clamp((t - 12.4) / 0.2, 0, 1) : clamp((14.6 - t) / 0.2, 0, 1);
+
+      const vP = clamp((t - 12.4) / 0.4, 0, 1);
+      vIris.style.transform = `scale(${0.88 + 0.12 * easeOutBack(vP)})`;
+      vGear.style.transform = `rotate(${(t - 12.4) * 60}deg)`;
+    }
+
+    // =======================================================================
+    // SHOT 6: CLIMAX & CALL TO ACTION (14.4s - 16.0s)
+    // =======================================================================
+    if (t >= 14.4 && t <= 16.0) {
+      shot6.style.opacity = clamp((t - 14.4) / 0.3, 0, 1);
+
+      const cP = clamp((t - 14.4) / 0.5, 0, 1);
+      climaxIcon.style.transform = `scale(${0.85 + 0.15 * easeOutBack(cP)})`;
+
+      if (t >= 14.9) {
+        const shineP = ((t - 14.9) / 1.0) % 1;
+        btnShine.style.left = `${-100 + shineP * 300}%`;
+      }
+    }
+  };
+
+  // Init frame 0
+  window.seekTime(0);
+</script>
+</body>
+</html>

@@ -14449,187 +14449,334 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function openToolPopover(toolId, anchorEl) {
-      closeAllPopovers();
-      if (!toolId || !anchorEl) return;
+      if (!toolId || !anchorEl) {
+        closeAllPopovers();
+        return;
+      }
 
       activePopover = toolId;
       currentPopoverAnchor = anchorEl;
 
-      const flyout = document.createElement('div');
-      flyout.id = 'etxt-popover-flyout';
-      flyout.className = 'etxt-popover-flyout';
-      flyout.setAttribute('role', 'dialog');
+      let flyout = document.getElementById('etxt-popover-flyout');
+      const isFresh = !flyout;
+      if (!flyout) {
+        flyout = document.createElement('div');
+        flyout.id = 'etxt-popover-flyout';
+        flyout.setAttribute('role', 'dialog');
+        document.body.appendChild(flyout);
+      }
+
+      const isDraw = (toolId === 'draw' || toolId === 'highlight');
+      const isShape = (toolId === 'shape');
+      flyout.className = isDraw ? 'etxt-popover-flyout etxt-popover-flyout--draw' : (isShape ? 'etxt-popover-flyout etxt-popover-flyout--shape' : 'etxt-popover-flyout');
+      if (isFresh) {
+        flyout.classList.add('etxt-popover-opening');
+      }
       flyout.setAttribute('aria-label', `${toolId} settings`);
 
       let contentHtml = '';
 
-      if (toolId === 'draw' || toolId === 'highlight') {
+      if (toolId === 'type') {
+        const curFont = toolOpts.textFont || 'Helvetica, Arial, sans-serif';
+        const curSize = toolOpts.textSize || 16;
+        const curColor = toolOpts.textColor || '#0A0A0A';
+        const isB = !toolOpts.isBold;
+        const isI = !toolOpts.isItalic;
+        const isU = !toolOpts.editUnderline;
+        const curAlign = toolOpts.textAlign || 'left';
+
+        contentHtml = `
+          <div class="etxt-popover-head" style="margin-bottom:8px;">
+            <span class="etxt-popover-title" style="font-size:12px;font-weight:600;color:#18181B;">Text Style</span>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Font</span>
+            <select class="etxt-pn-ghost-select" id="etxt-pop-font-family" aria-label="Font family" style="max-width:130px;">
+              <option value="Helvetica, Arial, sans-serif"${curFont.includes('Helvetica') ? ' selected' : ''}>Sans-Serif</option>
+              <option value="Times New Roman, Times, serif"${curFont.includes('Times') ? ' selected' : ''}>Serif (Times)</option>
+              <option value="Courier New, Courier, monospace"${curFont.includes('Courier') ? ' selected' : ''}>Monospace</option>
+              <option value="Georgia, serif"${curFont.includes('Georgia') ? ' selected' : ''}>Georgia</option>
+            </select>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Format</span>
+            <div class="etxt-pn-inline-controls">
+              <button type="button" class="etxt-pn-ghost-btn${isB ? ' is-on' : ''}" id="etxt-pop-t-bold" aria-label="Bold"><b>B</b></button>
+              <button type="button" class="etxt-pn-ghost-btn${isI ? ' is-on' : ''}" id="etxt-pop-t-italic" aria-label="Italic"><i>I</i></button>
+              <button type="button" class="etxt-pn-ghost-btn${isU ? ' is-on' : ''}" id="etxt-pop-t-under" aria-label="Underline"><u>U</u></button>
+              <span class="etxt-vsep" style="height:12px;margin:0 1px;background:#E4E4E7;width:1px;"></span>
+              <button type="button" class="etxt-pn-ghost-btn${curAlign === 'left' ? ' is-on' : ''}" data-pop-t-align="left" aria-label="Align Left">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <button type="button" class="etxt-pn-ghost-btn${curAlign === 'center' ? ' is-on' : ''}" data-pop-t-align="center" aria-label="Align Center">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="6" x2="3" y2="6"/><line x1="18" y1="12" x2="6" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
+              </button>
+              <button type="button" class="etxt-pn-ghost-btn${curAlign === 'right' ? ' is-on' : ''}" data-pop-t-align="right" aria-label="Align Right">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Size</span>
+            <div class="etxt-pn-slider-row">
+              <input type="range" class="etxt-flyout-slider" id="etxt-pop-t-size-slider" min="8" max="72" step="1" value="${curSize}" aria-label="Font size">
+              <span class="etxt-pn-val-label" id="etxt-pop-t-size-val">${curSize}pt</span>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row" style="margin-top:2px;">
+            <span class="etxt-pn-prop-label">Color</span>
+            <div class="etxt-pn-dot-palette">
+              ${['#000000', '#4B5563', '#DC2626', '#EA580C', '#D97706', '#16A34A', '#2563EB', '#7C3AED'].map(c => `
+                <button type="button" class="etxt-popover-swatch${curColor.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-t-col="${c}" style="background-color:${c} !important;" aria-label="Color ${c}"></button>
+              `).join('')}
+              <label class="etxt-popover-swatch etxt-popover-swatch--custom" aria-label="Custom Text Color">
+                <input type="color" id="etxt-pop-t-custom-col" value="${curColor}">
+              </label>
+            </div>
+          </div>
+        `;
+      } else if (toolId === 'draw' || toolId === 'highlight') {
         const dMode = toolOpts.drawMode || (toolId === 'highlight' ? 'highlighter' : 'pen');
         const isHl = dMode === 'highlighter';
         const isEraser = dMode === 'eraser';
-        const curC = isHl ? (toolOpts.hlColor || '#FDE047') : (toolOpts.color || '#18181B');
-        const curStroke = isHl ? (toolOpts.hlStroke || 16) : (toolOpts.penStroke || toolOpts.stroke || 2);
+        const curC = isHl ? (toolOpts.hlColor || '#FFE600') : (toolOpts.color || '#E52222');
+        const curStroke = isHl ? (toolOpts.hlStroke || 24) : (toolOpts.penStroke || toolOpts.stroke || 4);
         const curEraserSize = toolOpts.eraserSize || 20;
-        const palette = isHl ? HL_PALETTE : PEN_PALETTE;
-        const flattenOn = getFlattenInkPref();
 
         contentHtml = `
-          <div class="etxt-popover-head">
-            <div class="etxt-draw-mode-seg" role="radiogroup" aria-label="Drawing tool">
-              <button type="button" class="etxt-draw-mode${dMode === 'pen' ? ' is-on' : ''}" id="etxt-pop-tab-pen" title="Pen" aria-label="Pen">
-                ${I.pen}<span>Pen</span>
+          <div class="etxt-draw-head">
+            <div class="etxt-wm-tabs-row" role="radiogroup" aria-label="Drawing tool">
+              <button type="button" class="etxt-wm-tab-btn${dMode === 'pen' ? ' is-active' : ''}" id="etxt-pop-tab-pen" aria-label="Pen" title="Pen">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4-12 12H6v-4z"/><path d="m14 6 4 4"/></svg>
               </button>
-              <button type="button" class="etxt-draw-mode${isHl ? ' is-on' : ''}" id="etxt-pop-tab-hl" title="Highlighter" aria-label="Highlighter">
-                ${I.highlight}<span>Highlight</span>
+              <button type="button" class="etxt-wm-tab-btn${isHl ? ' is-active' : ''}" id="etxt-pop-tab-hl" aria-label="Highlighter" title="Highlighter">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h3l6-6"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
               </button>
-              <button type="button" class="etxt-draw-mode etxt-draw-mode--icon${isEraser ? ' is-on' : ''}" id="etxt-pop-tab-eraser" title="Stroke eraser" aria-label="Stroke eraser">
-                ${I.eraser}
+              <button type="button" class="etxt-wm-tab-btn${isEraser ? ' is-active' : ''}" id="etxt-pop-tab-eraser" aria-label="Eraser" title="Eraser">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
               </button>
             </div>
           </div>
 
           ${isEraser ? `
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Eraser size</span>
-              <span class="etxt-popover-val" id="etxt-pop-er-size-val">${curEraserSize}px</span>
+            <div class="etxt-draw-section-title">Eraser Size</div>
+            <div class="etxt-eraser-preview-box">
+              <div class="etxt-eraser-preview-circle" id="etxt-pop-eraser-circle" style="width:${curEraserSize}px;height:${curEraserSize}px;"></div>
             </div>
-            <div class="etxt-eraser-size-row">
-              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 12 ? ' is-on' : ''}" data-er-size="12" title="Small eraser" aria-label="Small eraser"><span class="etxt-eraser-dot" style="width:8px;height:8px;"></span></button>
-              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 20 ? ' is-on' : ''}" data-er-size="20" title="Medium eraser" aria-label="Medium eraser"><span class="etxt-eraser-dot" style="width:14px;height:14px;"></span></button>
-              <button type="button" class="etxt-eraser-size-btn${curEraserSize === 32 ? ' is-on' : ''}" data-er-size="32" title="Large eraser" aria-label="Large eraser"><span class="etxt-eraser-dot" style="width:20px;height:20px;"></span></button>
-            </div>
-          </div>
-          <div class="etxt-popover-section">
-            <button type="button" class="etxt-popover-act-btn" id="etxt-pop-erase-ink">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-              <span>Erase all page ink</span>
-            </button>
-          </div>` : `
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Colours</span>
-            </div>
-            <div class="etxt-palette-grid${isHl ? ' etxt-palette-grid--highlighter' : ''}">
-              ${palette.map(c => `
-                <button type="button" class="etxt-popover-swatch${curC.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-col="${c}" style="background-color:${c} !important;" title="${c}"></button>
-              `).join('')}
-              ${!isHl ? `
-                <label class="etxt-popover-swatch etxt-popover-swatch--custom" title="Custom Color">
-                  <input type="color" id="etxt-pop-custom-col" value="${curC}">
-                </label>
-              ` : ''}
-            </div>
-          </div>
 
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Size</span>
-              <span class="etxt-popover-val" id="etxt-pop-size-val">${curStroke}px</span>
+            <div class="etxt-draw-slider-track" style="margin-bottom:12px;">
+              <input type="range" class="etxt-draw-range-slider" id="etxt-pop-er-slider" min="6" max="64" step="2" value="${curEraserSize}" aria-label="Eraser size slider">
             </div>
-            <div class="etxt-wavy-preview-wrap">
-              <svg class="etxt-wavy-svg" viewBox="0 0 260 40">
-                <path id="etxt-pop-wavy-path" d="M 14 20 Q 75 4, 136 20 T 246 20" fill="none" stroke="${curC}" stroke-width="${curStroke}" stroke-linecap="round" stroke-linejoin="round" ${isHl ? 'stroke-opacity="0.5"' : ''}/>
+
+            <div class="etxt-pn-inline-controls" style="margin-bottom:14px;gap:5px;">
+              <button type="button" class="etxt-pn-ghost-btn${curEraserSize === 12 ? ' is-on' : ''}" data-er-size="12" aria-label="Small eraser (12px)" style="font-size:11px;padding:4px 6px;width:auto;flex:1;">12px</button>
+              <button type="button" class="etxt-pn-ghost-btn${curEraserSize === 20 ? ' is-on' : ''}" data-er-size="20" aria-label="Medium eraser (20px)" style="font-size:11px;padding:4px 6px;width:auto;flex:1;">20px</button>
+              <button type="button" class="etxt-pn-ghost-btn${curEraserSize === 32 ? ' is-on' : ''}" data-er-size="32" aria-label="Large eraser (32px)" style="font-size:11px;padding:4px 6px;width:auto;flex:1;">32px</button>
+              <button type="button" class="etxt-pn-ghost-btn${curEraserSize === 48 ? ' is-on' : ''}" data-er-size="48" aria-label="Extra large eraser (48px)" style="font-size:11px;padding:4px 6px;width:auto;flex:1;">48px</button>
+            </div>
+
+            <div class="etxt-draw-section-title" style="margin-top:6px;">Clear Drawings</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <button type="button" class="etxt-pn-ghost-action-btn etxt-pn-ghost-action-btn--full" id="etxt-pop-erase-ink">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <span>Clear page drawings</span>
+              </button>
+              <button type="button" class="etxt-pn-ghost-action-btn etxt-pn-ghost-action-btn--full" id="etxt-pop-erase-all-ink" style="color:#DC2626;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+                <span>Clear all document drawings</span>
+              </button>
+            </div>
+          ` : `
+            <div class="etxt-draw-section-title">Colours</div>
+            ${isHl ? `
+              <div class="etxt-hl-palette-row">
+                ${HL_PALETTE.map(c => `
+                  <button type="button" class="etxt-draw-swatch${curC.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-col="${c}" style="background-color:${c} !important;" aria-label="Color ${c}"></button>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="etxt-pen-palette-grid">
+                ${PEN_PALETTE.map(c => `
+                  <button type="button" class="etxt-draw-swatch${c.toLowerCase() === '#ffffff' ? ' etxt-draw-swatch--white' : ''}${curC.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-col="${c}" style="background-color:${c} !important;" aria-label="Color ${c}"></button>
+                `).join('')}
+              </div>
+            `}
+
+            <div class="etxt-draw-section-title">Size</div>
+            <div class="etxt-draw-wave-box">
+              <svg viewBox="0 0 240 56" class="etxt-draw-wave-svg" style="width:100%;height:56px;display:block;overflow:visible;">
+                <path id="etxt-pop-draw-wave" d="M 22 38 C 75 6, 135 48, 218 18" fill="none" stroke="${curC}" stroke-width="${curStroke}" stroke-linecap="${isHl ? 'butt' : 'round'}" stroke-linejoin="round"${isHl ? ' opacity="0.95"' : ''} />
               </svg>
             </div>
-            <div class="etxt-flyout-slider-wrap">
-              <input type="range" class="etxt-flyout-slider" id="etxt-pop-size-slider" min="${isHl ? 6 : 1}" max="${isHl ? 40 : 24}" step="1" value="${curStroke}">
+
+            <div class="etxt-draw-slider-track">
+              <input type="range" class="etxt-draw-range-slider" id="etxt-pop-size-slider" min="${isHl ? 6 : 1}" max="${isHl ? 54 : 32}" step="1" value="${curStroke}" aria-label="Size slider">
             </div>
-          </div>
-
-          ${!isHl ? `
-          <div class="etxt-popover-section">
-            <label class="etxt-fold-row" title="Vary pen width with stylus pressure and tilt">
-              <span class="etxt-fold-lbl">Pressure &amp; tilt</span>
-              <input type="checkbox" class="etxt-fold-input native-checkbox" id="etxt-fold-pressure"${toolOpts.pressure !== false ? ' checked' : ''}>
-              <span class="etxt-fold-switch" aria-hidden="true"></span>
-            </label>
-            <p class="etxt-popover-hint">Stylus only — pen width follows pressure and tilt.</p>
-          </div>` : ''}
-
-          <div class="etxt-popover-section">
-            <button type="button" class="etxt-popover-act-btn" id="etxt-pop-erase-ink">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-              <span>Erase page drawings</span>
-            </button>
-          </div>`}
-
-          <div class="etxt-popover-section etxt-popover-section--foot">
-            <label class="etxt-fold-row" title="Bake ink and highlights into the page content when saving">
-              <span class="etxt-fold-lbl">Flatten on save</span>
-              <input type="checkbox" class="etxt-fold-input native-checkbox" id="etxt-fold-ink"${flattenOn ? ' checked' : ''}>
-              <span class="etxt-fold-switch" aria-hidden="true"></span>
-            </label>
-            <p class="etxt-popover-hint">${flattenOn ? 'Ink &amp; highlights become permanent page content.' : 'Ink &amp; highlights stay editable PDF annotations.'}</p>
-          </div>
+          `}
         `;
       } else if (toolId === 'shape') {
         const k = toolOpts.shapeKind || 'rect';
-        const curBorderC = toolOpts.shapeColor || '#18181B';
-        const curStroke = toolOpts.shapeStroke || 2;
-        const curOpacity = Math.round((toolOpts.shapeOpacity !== undefined ? toolOpts.shapeOpacity : 1) * 100);
+        const curBorderC = toolOpts.shapeColor || '#E52222';
+        const curStroke = toolOpts.shapeStroke || 3;
+        const curFill = toolOpts.shapeFill || 'transparent';
+        const curFillOp = toolOpts.shapeFillOpacity !== undefined ? toolOpts.shapeFillOpacity : 1;
+        const activeSub = toolOpts.shapeSubmenu || null;
 
         contentHtml = `
-          <div class="etxt-popover-section">
-            <div class="etxt-shape-pills-row">
-              <button type="button" class="etxt-shape-pill${k === 'rect' ? ' is-active' : ''}" data-pop-shape="rect" title="Rectangle">${I.rect}</button>
-              <button type="button" class="etxt-shape-pill${k === 'ellipse' ? ' is-active' : ''}" data-pop-shape="ellipse" title="Ellipse">${I.ellipse}</button>
-              <button type="button" class="etxt-shape-pill${k === 'arrow' ? ' is-active' : ''}" data-pop-shape="arrow" title="Arrow">${I.arr}</button>
-              <button type="button" class="etxt-shape-pill${k === 'line' ? ' is-active' : ''}" data-pop-shape="line" title="Line">${I.line}</button>
+          <div class="etxt-shape-tb-row">
+            <button type="button" class="etxt-shape-tb-btn${activeSub === 'stickers' ? ' is-active' : ''}" id="etxt-shape-stickers-btn" aria-label="Stickers & Icons">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+            </button>
+
+            <div class="etxt-shape-tb-sep"></div>
+
+            <div class="etxt-shape-kinds-group" role="radiogroup" aria-label="Shape type">
+              <button type="button" class="etxt-shape-tb-btn${k === 'rect' ? ' is-active' : ''}" data-pop-shape="rect" aria-label="Rectangle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+                </svg>
+              </button>
+              <button type="button" class="etxt-shape-tb-btn${k === 'ellipse' ? ' is-active' : ''}" data-pop-shape="ellipse" aria-label="Circle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="8.5"/>
+                </svg>
+              </button>
+              <button type="button" class="etxt-shape-tb-btn${k === 'line' ? ' is-active' : ''}" data-pop-shape="line" aria-label="Line">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="5" x2="19" y2="19"/>
+                </svg>
+              </button>
+              <button type="button" class="etxt-shape-tb-btn${k === 'arrow' ? ' is-active' : ''}" data-pop-shape="arrow" aria-label="Arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="18" x2="6" y2="6"/>
+                  <polyline points="14 6 6 6 6 14"/>
+                </svg>
+              </button>
             </div>
+
+            <div class="etxt-shape-tb-sep"></div>
+
+            <button type="button" class="etxt-shape-dropdown-btn${activeSub === 'fill' ? ' is-open' : ''}" id="etxt-shape-fill-btn" aria-label="Fill options">
+              <span class="etxt-shape-swatch-ico">
+                ${curFill === 'transparent' ? `
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="9"/>
+                    <line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>
+                  </svg>
+                ` : `
+                  <span class="etxt-shape-filled-dot" style="background-color:${curFill};"></span>
+                `}
+              </span>
+              <span class="etxt-shape-btn-text">Fill</span>
+              <svg class="etxt-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+
+            <button type="button" class="etxt-shape-dropdown-btn${activeSub === 'outline' ? ' is-open' : ''}" id="etxt-shape-outline-btn" aria-label="Outline options">
+              <span class="etxt-shape-outline-ring-ico">
+                <span class="etxt-shape-outline-ring" style="border-color:${curBorderC};"></span>
+              </span>
+              <span class="etxt-shape-btn-text">Outline</span>
+              <svg class="etxt-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
 
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Outline Color</span>
-            </div>
-            <div class="etxt-palette-grid">
-              ${PEN_PALETTE.slice(0, 17).map(c => `
-                <button type="button" class="etxt-popover-swatch${curBorderC.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-scol="${c}" style="background-color:${c} !important;" title="${c}"></button>
-              `).join('')}
-              <label class="etxt-popover-swatch etxt-popover-swatch--custom" title="Custom Outline Color">
-                <input type="color" id="etxt-pop-custom-scol" value="${curBorderC}">
-              </label>
-            </div>
-          </div>
+          ${activeSub === 'fill' ? `
+            <div class="etxt-shape-subpanel">
+              <div class="etxt-draw-section-title">Colours</div>
+              <div class="etxt-pen-palette-grid">
+                <button type="button" class="etxt-draw-swatch etxt-draw-swatch--none${curFill === 'transparent' ? ' is-active' : ''}" data-pop-sfill="transparent" aria-label="No fill">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/></svg>
+                </button>
+                ${PEN_PALETTE.slice(1).map(c => `
+                  <button type="button" class="etxt-draw-swatch${c.toLowerCase() === '#ffffff' ? ' etxt-draw-swatch--white' : ''}${curFill.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-sfill="${c}" style="background-color:${c} !important;" aria-label="Color ${c}"></button>
+                `).join('')}
+              </div>
 
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Border Width</span>
-              <span class="etxt-popover-val" id="etxt-pop-s-stroke-val">${curStroke}px</span>
-            </div>
-            <div class="etxt-flyout-slider-wrap">
-              <input type="range" class="etxt-flyout-slider" id="etxt-pop-s-stroke-slider" min="1" max="20" step="1" value="${curStroke}">
-            </div>
-          </div>
+              <div class="etxt-draw-section-title">Opacity</div>
+              <div class="etxt-draw-wave-box" style="height:44px;margin:2px 0 10px 0;">
+                <div class="etxt-shape-fill-preview-box">
+                  <div class="etxt-shape-fill-preview-inner" id="etxt-pop-shape-fill-preview" style="background-color:${curFill === 'transparent' ? 'transparent' : curFill};opacity:${curFillOp};"></div>
+                </div>
+              </div>
 
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Opacity</span>
-              <span class="etxt-popover-val" id="etxt-pop-s-op-val">${curOpacity}%</span>
+              <div class="etxt-draw-slider-track">
+                <input type="range" class="etxt-draw-range-slider" id="etxt-pop-s-fillop-slider" min="0" max="100" step="1" value="${Math.round(curFillOp * 100)}" aria-label="Fill opacity slider">
+              </div>
             </div>
-            <div class="etxt-flyout-slider-wrap">
-              <input type="range" class="etxt-flyout-slider etxt-flyout-slider--opacity" id="etxt-pop-s-op-slider" min="10" max="100" step="5" value="${curOpacity}">
+          ` : activeSub === 'outline' ? `
+            <div class="etxt-shape-subpanel">
+              <div class="etxt-draw-section-title">Colours</div>
+              <div class="etxt-pen-palette-grid">
+                ${PEN_PALETTE.map(c => `
+                  <button type="button" class="etxt-draw-swatch${c.toLowerCase() === '#ffffff' ? ' etxt-draw-swatch--white' : ''}${curBorderC.toLowerCase() === c.toLowerCase() ? ' is-active' : ''}" data-pop-soutline="${c}" style="background-color:${c} !important;" aria-label="Color ${c}"></button>
+                `).join('')}
+              </div>
+
+              <div class="etxt-draw-section-title">Size</div>
+              <div class="etxt-draw-wave-box">
+                <svg viewBox="0 0 240 56" class="etxt-draw-wave-svg" style="width:100%;height:56px;display:block;overflow:visible;">
+                  <path id="etxt-pop-shape-outline-wave" d="M 22 38 C 75 6, 135 48, 218 18" fill="none" stroke="${curBorderC}" stroke-width="${curStroke}" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+
+              <div class="etxt-draw-slider-track">
+                <input type="range" class="etxt-draw-range-slider" id="etxt-pop-s-stroke-slider" min="1" max="32" step="1" value="${curStroke}" aria-label="Outline width slider">
+              </div>
             </div>
-          </div>
+          ` : activeSub === 'stickers' ? `
+            <div class="etxt-shape-subpanel">
+              <div class="etxt-draw-section-title">Stickers &amp; Stamps</div>
+              <div class="etxt-shape-stickers-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px;">
+                ${['⭐', '✅', '❌', '❤️', '👍', '💡', '⚠️', '🔥', '📌', '🎯', '🚀', '🔒'].map(emoji => `
+                  <button type="button" class="etxt-shape-tb-btn" data-pop-sticker="${emoji}" style="font-size:18px;width:38px;height:38px;" aria-label="Sticker ${emoji}">${emoji}</button>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
         `;
       } else if (toolId === 'redact') {
         const isW = toolOpts.redactColor === '#FFFFFF';
         contentHtml = `
-          <div class="etxt-popover-head">
-            <div class="etxt-segmented-modes" role="tablist">
-              <button type="button" class="etxt-mode-tab${!isW ? ' is-active' : ''}" data-pop-redact="#000000" title="Blackout Sensitive Text">
-                <span>⬛ Blackout</span>
-              </button>
-              <button type="button" class="etxt-mode-tab${isW ? ' is-active' : ''}" data-pop-redact="#FFFFFF" title="Whiteout Clean Erase">
-                <span>⬜ Whiteout</span>
-              </button>
+          <div class="etxt-popover-head" style="margin-bottom:8px;">
+            <span class="etxt-popover-title" style="font-size:12px;font-weight:600;color:#18181B;">Redaction</span>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Style</span>
+            <div class="etxt-wm-tabs-row">
+              <button type="button" class="etxt-wm-tab-btn${!isW ? ' is-active' : ''}" data-pop-redact="#000000">Blackout</button>
+              <button type="button" class="etxt-wm-tab-btn${isW ? ' is-active' : ''}" data-pop-redact="#FFFFFF">Whiteout</button>
             </div>
           </div>
-          <div class="etxt-popover-section" style="margin-top:8px;">
-            <p style="font-size:11.5px;color:#71717A;margin:0;line-height:1.45;">Drag across sensitive text, numbers, or barcodes on the page to permanently redact.</p>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Search</span>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <input type="text" class="etxt-pn-ghost-input etxt-pn-ghost-input--search" id="etxt-redact-search-inp" placeholder="Keyword / regex…" autocomplete="off" spellcheck="false" aria-label="Keyword or regex">
+              <button type="button" class="etxt-pn-tag-btn" id="etxt-redact-search-btn" aria-label="Mark All" style="padding:0 8px;font-size:11px;">Mark</button>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Presets</span>
+            <div class="etxt-pn-inline-controls" style="gap:3px;">
+              <button type="button" class="etxt-pn-tag-btn" data-redact-preset="ssn">SSN</button>
+              <button type="button" class="etxt-pn-tag-btn" data-redact-preset="email">Email</button>
+              <button type="button" class="etxt-pn-tag-btn" data-redact-preset="phone">Phone</button>
+              <button type="button" class="etxt-pn-tag-btn" data-redact-preset="creditcard">Card</button>
+            </div>
           </div>
         `;
+
       } else if (toolId === 'image' || toolId === 'stamp' || toolId === 'note') {
         const STAMPS = [
           { name: 'APPROVED', cls: 'approved' },
@@ -14641,37 +14788,309 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         ];
 
         contentHtml = `
-          <div class="etxt-popover-section">
-            <button type="button" class="etxt-popover-act-btn" id="etxt-pop-pick-img" style="font-weight:600;background:#F0FDF4;color:#16A34A;border-color:#DCFCE7;">
-              ${I.image} <span>Upload Image (PNG, JPG, SVG)</span>
+          <div class="etxt-popover-head" style="margin-bottom:8px;">
+            <span class="etxt-popover-title" style="font-size:12px;font-weight:600;color:#18181B;">Insert Media</span>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Image</span>
+            <button type="button" class="etxt-pn-ghost-action-btn" id="etxt-pop-pick-img">
+              ${I.image} <span>Upload image…</span>
             </button>
           </div>
 
-          <div class="etxt-popover-section">
-            <div class="etxt-popover-label-row">
-              <span class="etxt-popover-label">Rubber Stamps</span>
-            </div>
-            <div class="etxt-stamp-badge-grid">
+          <div class="etxt-pn-prop-row" style="flex-direction:column;align-items:stretch;gap:6px;padding-top:4px;">
+            <span class="etxt-pn-prop-label">Stamps</span>
+            <div class="etxt-pn-stamps-wrap">
               ${STAMPS.map(s => `
                 <button type="button" class="etxt-stamp-badge-btn etxt-stamp-badge-btn--${s.cls}" data-pop-stamp="${s.name}">${s.name}</button>
               `).join('')}
             </div>
           </div>
 
-          <div class="etxt-popover-section">
-            <button type="button" class="etxt-popover-act-btn" id="etxt-pop-add-note">
+          <div class="etxt-pn-prop-row" style="margin-top:4px;border-top:1px solid #F4F4F5;padding-top:6px;">
+            <span class="etxt-pn-prop-label">Note</span>
+            <button type="button" class="etxt-pn-ghost-action-btn" id="etxt-pop-add-note">
               ${I.note} <span>Add Sticky Note</span>
             </button>
+          </div>
+        `;
+      } else if (toolId === 'form') {
+        const counts = formFieldCounts();
+        const hasFields = counts.total > 0 || formNewFields.length > 0;
+        const curKind = formPlaceKind;
+
+        contentHtml = `
+          <div class="etxt-popover-head" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span class="etxt-popover-title" style="font-size:12px;font-weight:600;color:#18181B;">Form Fields</span>
+            ${hasFields ? `<span class="etxt-popover-val" style="font-size:10.5px;font-weight:500;color:#71717A;">${counts.filled}/${counts.total} filled</span>` : ''}
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Add Field</span>
+            <div class="etxt-pn-inline-controls" style="gap:4px;">
+              <button type="button" class="etxt-pn-ghost-btn${curKind === 'text' ? ' is-on' : ''}" data-pop-form-add="text" aria-label="Text Field" style="width:26px;height:26px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6M12 4v16"/></svg>
+              </button>
+              <button type="button" class="etxt-pn-ghost-btn${curKind === 'checkbox' ? ' is-on' : ''}" data-pop-form-add="checkbox" aria-label="Checkbox" style="width:26px;height:26px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="m8 12.5 2.7 2.7L16.5 9"/></svg>
+              </button>
+              <button type="button" class="etxt-pn-ghost-btn${curKind === 'dropdown' ? ' is-on' : ''}" data-pop-form-add="dropdown" aria-label="Dropdown" style="width:26px;height:26px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2.4"/><path d="m9.5 11 2.5 2.5L14.5 11"/></svg>
+              </button>
+              <button type="button" class="etxt-pn-ghost-btn${curKind === 'signature' ? ' is-on' : ''}" data-pop-form-add="signature" aria-label="Signature" style="width:26px;height:26px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4-12 12H6v-4z"/><path d="m14 6 4 4"/><path d="M3 21h18"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Auto-Detect</span>
+            <button type="button" class="etxt-pn-ghost-action-btn" id="etxt-pop-form-detect">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              <span>Detect fields</span>
+            </button>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Flatten on save</span>
+            <label class="etxt-fold-row" style="margin:0;padding:0;">
+              <input type="checkbox" class="etxt-fold-input native-checkbox" id="etxt-pop-form-flatten"${formFlatten ? ' checked' : ''}>
+              <span class="etxt-fold-switch" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <div class="etxt-pn-prop-row" style="margin-top:6px;border-top:1px solid #F4F4F5;padding-top:6px;">
+            <span class="etxt-pn-prop-label">Actions</span>
+            <div class="etxt-pn-links-row">
+              <button type="button" class="etxt-pn-link-btn" id="etxt-pop-form-export">Export</button>
+              <button type="button" class="etxt-pn-link-btn" id="etxt-pop-form-import">Import</button>
+              <button type="button" class="etxt-pn-link-btn" id="etxt-pop-form-order">Tab Order</button>
+            </div>
+          </div>
+        `;
+      } else if (toolId === 'watermark') {
+        if (!wmDraft) wmDraft = newWmDraft();
+        const d = wmDraft;
+        const curKind = d.wmKind || 'text';
+
+        contentHtml = `
+          <div class="etxt-popover-head" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span class="etxt-popover-title" style="font-size:12px;font-weight:600;color:#18181B;">Watermark</span>
+            <div class="etxt-wm-tabs-row" role="tablist">
+              <button type="button" class="etxt-wm-tab-btn${curKind !== 'image' ? ' is-active' : ''}" data-pop-wmtab="text">Text</button>
+              <button type="button" class="etxt-wm-tab-btn${curKind === 'image' ? ' is-active' : ''}" data-pop-wmtab="image">Image</button>
+            </div>
+          </div>
+
+          ${curKind !== 'image' ? `
+            <div class="etxt-pn-prop-row">
+              <span class="etxt-pn-prop-label">Text</span>
+              <input type="text" class="etxt-pn-ghost-input etxt-pn-ghost-input--full" id="etxt-pop-wm-text" placeholder="Watermark text" maxlength="80" spellcheck="false" value="${_esc(d.text || '')}">
+            </div>
+
+            <div class="etxt-pn-prop-row">
+              <span class="etxt-pn-prop-label">Style</span>
+              <div class="etxt-pn-inline-controls">
+                <select class="etxt-pn-ghost-select" id="etxt-pop-wm-font" style="max-width:90px;">
+                  ${Object.entries(WM_FONTS).map(([k, v]) => `<option value="${k}"${d.font === k ? ' selected' : ''}>${v.label}</option>`).join('')}
+                </select>
+                <button type="button" class="etxt-pn-ghost-btn${d.bold ? ' is-on' : ''}" id="etxt-pop-wm-bold" aria-label="Bold"><b>B</b></button>
+                <label class="etxt-pn-color-dot" aria-label="Text Color" style="background:${d.color || '#8C8C8C'};">
+                  <input type="color" id="etxt-pop-wm-custom-col" value="${d.color || '#8C8C8C'}">
+                </label>
+              </div>
+            </div>
+
+            <div class="etxt-pn-prop-row">
+              <span class="etxt-pn-prop-label">Size</span>
+              <div class="etxt-pn-slider-row">
+                <input type="range" class="etxt-flyout-slider" id="etxt-pop-wm-size" min="8" max="220" step="1" value="${Math.round(d.size || 48)}">
+                <span class="etxt-pn-val-label" id="etxt-pop-wm-size-val">${Math.round(d.size || 48)}pt</span>
+              </div>
+            </div>
+          ` : `
+            <div class="etxt-pn-prop-row">
+              <span class="etxt-pn-prop-label">Source</span>
+              <input type="file" id="etxt-pop-wm-img-inp" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" hidden>
+              <button type="button" class="etxt-pn-ghost-action-btn" id="etxt-pop-wm-pick-img">
+                ${I.image} <span>${d.dataUrl ? 'Change Image…' : 'Upload Image…'}</span>
+              </button>
+            </div>
+
+            <div class="etxt-pn-prop-row">
+              <span class="etxt-pn-prop-label">Scale</span>
+              <div class="etxt-pn-slider-row">
+                <input type="range" class="etxt-flyout-slider" id="etxt-pop-wm-scale" min="5" max="100" step="1" value="${Math.round(d.imageScale || 30)}">
+                <span class="etxt-pn-val-label" id="etxt-pop-wm-scale-val">${Math.round(d.imageScale || 30)}%</span>
+              </div>
+            </div>
+          `}
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Opacity</span>
+            <div class="etxt-pn-slider-row">
+              <input type="range" class="etxt-flyout-slider etxt-flyout-slider--opacity" id="etxt-pop-wm-op" min="3" max="100" step="1" value="${Math.round((d.opacity ?? 0.22) * 100)}">
+              <span class="etxt-pn-val-label" id="etxt-pop-wm-op-val">${Math.round((d.opacity ?? 0.22) * 100)}%</span>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Rotation</span>
+            <div class="etxt-pn-slider-row">
+              <input type="range" class="etxt-flyout-slider" id="etxt-pop-wm-rot" min="-180" max="180" step="1" value="${Math.round(wmRotation(d))}">
+              <span class="etxt-pn-val-label" id="etxt-pop-wm-rot-val">${Math.round(wmRotation(d))}°</span>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Layer</span>
+            <select class="etxt-pn-ghost-select" id="etxt-pop-wm-layer">
+              <option value="over"${d.layer !== 'under' ? ' selected' : ''}>Above Content</option>
+              <option value="under"${d.layer === 'under' ? ' selected' : ''}>Behind Content</option>
+            </select>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Pattern</span>
+            <select class="etxt-pn-ghost-select" id="etxt-pop-wm-mode">
+              <option value="single"${!d.tile ? ' selected' : ''}>Single</option>
+              <option value="tile"${d.tile ? ' selected' : ''}>Tiled (3×3)</option>
+            </select>
+          </div>
+
+          <div class="etxt-popover-section etxt-popover-section--foot" style="margin-top:10px;padding-top:8px;border-top:1px solid #F4F4F5;">
+            <div style="display:flex;gap:6px;width:100%;">
+              <button type="button" id="etxt-pop-wm-cancel" class="etxt-pop-btn etxt-pop-btn--cancel">Cancel</button>
+              <button type="button" id="etxt-pop-wm-apply" class="etxt-pop-btn etxt-pop-btn--apply">${wmEditingId ? 'Save Changes' : 'Add to PDF'}</button>
+            </div>
+          </div>
+        `;
+      } else if (toolId === 'pagenum') {
+        if (!pnDraft) pnDraft = newPnDraft();
+        const d = pnDraft;
+        const total = pageCount || 1;
+        const knownFormat = PN_FORMATS.some(f => f.value === d.format);
+        const sampleText = pnTextFor(d, 0, total, pnCompute(d, total)) || `Page 1 of ${total}`;
+
+        contentHtml = `
+          <div class="etxt-popover-head" style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span class="etxt-popover-title" style="font-size:12px;font-weight:600;color:#18181B;">Page Numbers</span>
+            <span class="etxt-popover-val" id="etxt-pop-pn-sample" style="font-size:10.5px;color:#71717A;font-weight:500;">${_esc(sampleText)}</span>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Position</span>
+            <div class="etxt-pn-matrix-flat">
+              <button type="button" class="etxt-pn-dot-btn${d.vAlign === 'top' && d.hAlign === 'left' ? ' is-active' : ''}" data-pop-pnzone="top,left" aria-label="Top Left">
+                <span class="etxt-pn-dot"></span>
+              </button>
+              <button type="button" class="etxt-pn-dot-btn${d.vAlign === 'top' && d.hAlign === 'center' ? ' is-active' : ''}" data-pop-pnzone="top,center" aria-label="Top Center">
+                <span class="etxt-pn-dot"></span>
+              </button>
+              <button type="button" class="etxt-pn-dot-btn${d.vAlign === 'top' && d.hAlign === 'right' ? ' is-active' : ''}" data-pop-pnzone="top,right" aria-label="Top Right">
+                <span class="etxt-pn-dot"></span>
+              </button>
+              <button type="button" class="etxt-pn-dot-btn${d.vAlign === 'bottom' && d.hAlign === 'left' ? ' is-active' : ''}" data-pop-pnzone="bottom,left" aria-label="Bottom Left">
+                <span class="etxt-pn-dot"></span>
+              </button>
+              <button type="button" class="etxt-pn-dot-btn${d.vAlign === 'bottom' && d.hAlign === 'center' ? ' is-active' : ''}" data-pop-pnzone="bottom,center" aria-label="Bottom Center">
+                <span class="etxt-pn-dot"></span>
+              </button>
+              <button type="button" class="etxt-pn-dot-btn${d.vAlign === 'bottom' && d.hAlign === 'right' ? ' is-active' : ''}" data-pop-pnzone="bottom,right" aria-label="Bottom Right">
+                <span class="etxt-pn-dot"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Format</span>
+            <select class="etxt-pn-ghost-select" id="etxt-pop-pn-format">
+              ${PN_FORMATS.map(f => `<option value="${_esc(f.value)}"${d.format === f.value ? ' selected' : ''}>${_esc(f.label)}</option>`).join('')}
+              <option value="__custom"${knownFormat ? '' : ' selected'}>Custom…</option>
+            </select>
+          </div>
+          <div class="etxt-pn-prop-row" id="etxt-pop-pn-custom-row"${knownFormat ? ' hidden' : ''}>
+            <span class="etxt-pn-prop-label">Custom text</span>
+            <input type="text" class="etxt-pn-ghost-input etxt-pn-ghost-input--full" id="etxt-pop-pn-custom" placeholder="e.g. Page {n} of {p}" maxlength="80" value="${_esc(knownFormat ? '' : (d.format || ''))}">
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Style</span>
+            <div class="etxt-pn-inline-controls">
+              <select class="etxt-pn-ghost-select" id="etxt-pop-pn-numeral" style="max-width:80px;">
+                ${PN_NUMERALS.map(n => `<option value="${n.value}"${d.numeral === n.value ? ' selected' : ''}>${_esc(n.label)}</option>`).join('')}
+              </select>
+              <button type="button" class="etxt-pn-ghost-btn${d.bold ? ' is-on' : ''}" id="etxt-pop-pn-bold" aria-label="Bold"><b>B</b></button>
+              <button type="button" class="etxt-pn-ghost-btn${d.italic ? ' is-on' : ''}" id="etxt-pop-pn-italic" aria-label="Italic"><i>I</i></button>
+              <label class="etxt-pn-color-dot" aria-label="Number Color" style="background:${/^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#4B4B4B'};">
+                <input type="color" id="etxt-pop-pn-custom-col" value="${/^#[0-9a-f]{6}$/i.test(d.color || '') ? d.color : '#4B4B4B'}">
+              </label>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Size</span>
+            <div class="etxt-pn-slider-row">
+              <input type="range" class="etxt-flyout-slider" id="etxt-pop-pn-size" min="6" max="36" step="1" value="${Math.round(d.size || 10)}">
+              <span class="etxt-pn-val-label" id="etxt-pop-pn-size-val">${Math.round(d.size || 10)}pt</span>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Start numbering</span>
+            <div class="etxt-pn-num-wrap">
+              <input type="number" id="etxt-pop-pn-start" class="etxt-pn-ghost-input" min="1" max="9999" value="${Math.max(1, Math.round(d.startNumber || 1))}">
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Skip cover</span>
+            <div class="etxt-pn-num-wrap">
+              <input type="number" id="etxt-pop-pn-skip" class="etxt-pn-ghost-input" min="0" max="500" value="${Math.max(0, Math.round(d.skipFirst || 0))}">
+              <span class="etxt-pn-unit">pgs</span>
+            </div>
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Pages</span>
+            <select class="etxt-pn-ghost-select" id="etxt-pop-pn-scope">
+              <option value="all"${d.scope === 'all' ? ' selected' : ''}>All pages</option>
+              <option value="odd"${d.scope === 'odd' ? ' selected' : ''}>Odd pages</option>
+              <option value="even"${d.scope === 'even' ? ' selected' : ''}>Even pages</option>
+              <option value="range"${d.scope === 'range' ? ' selected' : ''}>Custom range…</option>
+            </select>
+          </div>
+
+          <div class="etxt-pn-prop-row" id="etxt-pop-pn-range-row"${d.scope === 'range' ? '' : ' hidden'}>
+            <span class="etxt-pn-prop-label">Range</span>
+            <input type="text" class="etxt-pn-ghost-input etxt-pn-ghost-input--full" id="etxt-pop-pn-range" placeholder="e.g. 1-3, 5" value="${_esc(d.range || '')}">
+          </div>
+
+          <div class="etxt-pn-prop-row">
+            <span class="etxt-pn-prop-label">Facing</span>
+            <select class="etxt-pn-ghost-select" id="etxt-pop-pn-facing">
+              <option value="off"${!d.facing ? ' selected' : ''}>Standard</option>
+              <option value="on"${d.facing ? ' selected' : ''}>Mirror on facing</option>
+            </select>
+          </div>
+
+          <div class="etxt-popover-section etxt-popover-section--foot" style="margin-top:10px;padding-top:8px;border-top:1px solid #F4F4F5;">
+            <div style="display:flex;gap:6px;width:100%;">
+              <button type="button" id="etxt-pop-pn-cancel" class="etxt-pop-btn etxt-pop-btn--cancel">Cancel</button>
+              <button type="button" id="etxt-pop-pn-apply" class="etxt-pop-btn etxt-pop-btn--apply">${pnEditingId ? 'Save Changes' : 'Add to PDF'}</button>
+            </div>
           </div>
         `;
       }
 
       flyout.innerHTML = contentHtml;
-      document.body.appendChild(flyout);
 
       // Compute precise anchor positioning
       const rect = anchorEl.getBoundingClientRect();
-      const popW = 290;
+      const isDrawPop = (toolId === 'draw' || toolId === 'highlight');
+      const isShapePop = (toolId === 'shape');
+      const popW = isDrawPop ? 272 : (isShapePop ? (flyout.offsetWidth || 340) : 290);
       const left = Math.max(12, Math.min(window.innerWidth - popW - 12, rect.left + (rect.width / 2) - (popW / 2)));
       const top = rect.bottom + 6;
       flyout.style.left = `${left}px`;
@@ -14679,24 +15098,141 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       wirePopoverEvents(flyout, toolId);
 
-      const onDocPointer = (ev) => {
-        // Crop keeps its popover while the user drags the rectangle on the page,
-        // otherwise the Apply/Reset actions vanish mid-flow.
-        if (toolMode === 'crop' && ev.target.closest && ev.target.closest('.etxt-canvas-wrap')) return;
-        if (!flyout.contains(ev.target) && !anchorEl.contains(ev.target) && !ev.target.closest('.etxt-unified-toolbar')) {
-          closeAllPopovers();
-        }
-      };
-      setTimeout(() => {
-        if (document.getElementById('etxt-popover-flyout') === flyout) {
-          popoverDocHandler = onDocPointer;
-          document.addEventListener('pointerdown', popoverDocHandler);
-        }
-      }, 10);
+      if (isFresh) {
+        const onDocPointer = (ev) => {
+          // Crop, Watermark & Page Numbers keep their popover while the user drags/interacts on the page
+          if ((toolMode === 'crop' || toolMode === 'watermark' || toolMode === 'pagenum') && ev.target.closest && ev.target.closest('.etxt-canvas-wrap')) return;
+          if (!flyout.contains(ev.target) && !anchorEl.contains(ev.target) && !ev.target.closest('.etxt-unified-toolbar')) {
+            closeAllPopovers();
+          }
+        };
+        setTimeout(() => {
+          if (document.getElementById('etxt-popover-flyout') === flyout) {
+            popoverDocHandler = onDocPointer;
+            document.addEventListener('pointerdown', popoverDocHandler);
+          }
+        }, 10);
+      }
     }
 
     function wirePopoverEvents(flyout, toolId) {
       if (!flyout) return;
+
+      // Typography Popover Event Handlers (Text Tool [T])
+      const typeFontSel = flyout.querySelector('#etxt-pop-font-family');
+      if (typeFontSel) {
+        typeFontSel.onchange = (e) => {
+          toolOpts.textFont = e.target.value;
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.fontFamily = toolOpts.textFont;
+            renderAnnots();
+          }
+        };
+      }
+
+      const typeBold = flyout.querySelector('#etxt-pop-t-bold');
+      if (typeBold) {
+        typeBold.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.isBold = !toolOpts.isBold;
+          typeBold.classList.toggle('is-on', toolOpts.isBold);
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.isBold = toolOpts.isBold;
+            sa.fontWeight = toolOpts.isBold ? '700' : '400';
+            renderAnnots();
+          }
+        };
+      }
+
+      const typeItalic = flyout.querySelector('#etxt-pop-t-italic');
+      if (typeItalic) {
+        typeItalic.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.isItalic = !toolOpts.isItalic;
+          typeItalic.classList.toggle('is-on', toolOpts.isItalic);
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.isItalic = toolOpts.isItalic;
+            sa.fontStyle = toolOpts.isItalic ? 'italic' : 'normal';
+            renderAnnots();
+          }
+        };
+      }
+
+      const typeUnder = flyout.querySelector('#etxt-pop-t-under');
+      if (typeUnder) {
+        typeUnder.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.editUnderline = !toolOpts.editUnderline;
+          typeUnder.classList.toggle('is-on', toolOpts.editUnderline);
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.underline = toolOpts.editUnderline;
+            renderAnnots();
+          }
+        };
+      }
+
+      flyout.querySelectorAll('[data-pop-t-align]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.textAlign = btn.dataset.popTAlign;
+          flyout.querySelectorAll('[data-pop-t-align]').forEach(b => b.classList.toggle('is-on', b === btn));
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.textAlign = toolOpts.textAlign;
+            renderAnnots();
+          }
+        };
+      });
+
+      const typeSizeSlider = flyout.querySelector('#etxt-pop-t-size-slider');
+      const typeSizeVal = flyout.querySelector('#etxt-pop-t-size-val');
+      if (typeSizeSlider) {
+        typeSizeSlider.oninput = (e) => {
+          const sz = Number(e.target.value);
+          toolOpts.textSize = sz;
+          if (typeSizeVal) typeSizeVal.textContent = `${sz}pt`;
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.fontSize = sz;
+            sa.size = sz;
+            renderAnnots();
+          }
+        };
+      }
+
+      flyout.querySelectorAll('[data-pop-t-col]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const c = btn.dataset.popTCol;
+          toolOpts.textColor = c;
+          flyout.querySelectorAll('[data-pop-t-col]').forEach(b => b.classList.toggle('is-active', b === btn));
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.color = c;
+            sa.textColor = c;
+            renderAnnots();
+          }
+        };
+      });
+
+      const typeCustomCol = flyout.querySelector('#etxt-pop-t-custom-col');
+      if (typeCustomCol) {
+        typeCustomCol.oninput = (e) => {
+          const c = e.target.value;
+          toolOpts.textColor = c;
+          flyout.querySelectorAll('[data-pop-t-col]').forEach(b => b.classList.remove('is-active'));
+          const sa = selAnnot ? (annots[page - 1] || []).find(x => x.id === selAnnot) : null;
+          if (sa && (sa.type === 'text' || sa.kind === 'text')) {
+            sa.color = c;
+            sa.textColor = c;
+            renderAnnots();
+          }
+        };
+      }
 
       // Draw mode switching inside popover (Pen <-> Highlighter <-> Eraser)
       const switchDrawMode = (mode, e) => {
@@ -14717,14 +15253,37 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const tabEraser = flyout.querySelector('#etxt-pop-tab-eraser');
       if (tabEraser) tabEraser.onclick = (e) => switchDrawMode('eraser', e);
 
-      // Eraser size (matches the live size cursor)
+      // Eraser size slider & quick size buttons
+      const erSlider = flyout.querySelector('#etxt-pop-er-slider');
+      const erCircle = flyout.querySelector('#etxt-pop-eraser-circle');
+      if (erSlider) {
+        updateSliderTrackFill(erSlider);
+        erSlider.oninput = (e) => {
+          const sz = Number(e.target.value);
+          toolOpts.eraserSize = sz;
+          if (erCircle) {
+            erCircle.style.width = `${sz}px`;
+            erCircle.style.height = `${sz}px`;
+          }
+          flyout.querySelectorAll('[data-er-size]').forEach(b => b.classList.toggle('is-on', Number(b.dataset.erSize) === sz));
+          updateSliderTrackFill(erSlider);
+        };
+      }
+
       flyout.querySelectorAll('[data-er-size]').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
-          toolOpts.eraserSize = Number(btn.dataset.erSize);
+          const sz = Number(btn.dataset.erSize);
+          toolOpts.eraserSize = sz;
           flyout.querySelectorAll('[data-er-size]').forEach(b => b.classList.toggle('is-on', b === btn));
-          const val = flyout.querySelector('#etxt-pop-er-size-val');
-          if (val) val.textContent = `${toolOpts.eraserSize}px`;
+          if (erSlider) {
+            erSlider.value = sz;
+            updateSliderTrackFill(erSlider);
+          }
+          if (erCircle) {
+            erCircle.style.width = `${sz}px`;
+            erCircle.style.height = `${sz}px`;
+          }
         };
       });
 
@@ -14744,8 +15303,36 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (foldPressure) {
         foldPressure.onchange = (e) => {
           e.stopPropagation();
-          toolOpts.pressure = !!foldPressure.checked;
+          toolOpts.pressure = !foldPressure.checked;
           setPressurePref(toolOpts.pressure);
+        };
+      }
+
+      // Draw & Highlighter dynamic wave & slider track fill
+      const drawWavePath = flyout.querySelector('#etxt-pop-draw-wave');
+      const sizeSlider = flyout.querySelector('#etxt-pop-size-slider');
+
+      const updateSliderTrackFill = (slider) => {
+        if (!slider) return;
+        const min = Number(slider.min) || 0;
+        const max = Number(slider.max) || 100;
+        const val = Number(slider.value) || 0;
+        const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+        slider.style.background = `linear-gradient(to right, #0066FF 0%, #0066FF ${pct}%, #9E9E9E ${pct}%, #9E9E9E 100%)`;
+      };
+
+      if (sizeSlider) {
+        updateSliderTrackFill(sizeSlider);
+        sizeSlider.oninput = (e) => {
+          const sz = Number(e.target.value);
+          if (toolOpts.drawMode === 'highlighter') {
+            toolOpts.hlStroke = sz;
+          } else {
+            toolOpts.penStroke = sz;
+            toolOpts.stroke = sz;
+          }
+          if (drawWavePath) drawWavePath.setAttribute('stroke-width', String(sz));
+          updateSliderTrackFill(sizeSlider);
         };
       }
 
@@ -14758,36 +15345,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           else toolOpts.color = c;
 
           flyout.querySelectorAll('[data-pop-col]').forEach(b => b.classList.toggle('is-active', b === btn));
-          const wavy = flyout.querySelector('#etxt-pop-wavy-path');
-          if (wavy) wavy.setAttribute('stroke', c);
+          if (drawWavePath) drawWavePath.setAttribute('stroke', c);
         };
       });
-
-      const customCol = flyout.querySelector('#etxt-pop-custom-col');
-      if (customCol) {
-        customCol.oninput = (e) => {
-          const c = e.target.value;
-          if (toolOpts.drawMode === 'highlighter') toolOpts.hlColor = c;
-          else toolOpts.color = c;
-          flyout.querySelectorAll('[data-pop-col]').forEach(b => b.classList.remove('is-active'));
-          const wavy = flyout.querySelector('#etxt-pop-wavy-path');
-          if (wavy) wavy.setAttribute('stroke', c);
-        };
-      }
-
-      // Draw size slider
-      const sizeSlider = flyout.querySelector('#etxt-pop-size-slider');
-      const sizeVal = flyout.querySelector('#etxt-pop-size-val');
-      const wavyPath = flyout.querySelector('#etxt-pop-wavy-path');
-      if (sizeSlider) {
-        sizeSlider.oninput = (e) => {
-          const sz = Number(e.target.value);
-          if (toolOpts.drawMode === 'highlighter') toolOpts.hlStroke = sz;
-          else { toolOpts.penStroke = sz; toolOpts.stroke = sz; }
-          if (sizeVal) sizeVal.textContent = `${sz}px`;
-          if (wavyPath) wavyPath.setAttribute('stroke-width', String(sz));
-        };
-      }
 
       // Erase page ink drawings
       const eraseInkBtn = flyout.querySelector('#etxt-pop-erase-ink');
@@ -14810,66 +15370,166 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       }
 
-      // Shape kind pills
+      // Erase all document drawings
+      const eraseAllInkBtn = flyout.querySelector('#etxt-pop-erase-all-ink');
+      if (eraseAllInkBtn) {
+        eraseAllInkBtn.onclick = (e) => {
+          e.stopPropagation();
+          let removedTotal = 0;
+          pushUndo();
+          for (let i = 0; i < (annots || []).length; i++) {
+            const list = annots[i] || [];
+            const inkCount = list.filter(a => a.type === 'ink' || a.type === 'hl').length;
+            if (inkCount > 0) {
+              removedTotal += inkCount;
+              annots[i] = list.filter(a => a.type !== 'ink' && a.type !== 'hl');
+            }
+          }
+          if (removedTotal > 0) {
+            selAnnot = null;
+            renderAnnots();
+            toast(`Cleared ${removedTotal} drawing${removedTotal > 1 ? 's' : ''} across document.`);
+          } else {
+            toast('No drawings found in document.');
+          }
+          closeAllPopovers();
+        };
+      }
+
+      // Shape Toolbar & Subpanels (Fill & Outline)
+      const shapeStickersBtn = flyout.querySelector('#etxt-shape-stickers-btn');
+      if (shapeStickersBtn) {
+        shapeStickersBtn.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.shapeSubmenu = (toolOpts.shapeSubmenu === 'stickers' ? null : 'stickers');
+          openToolPopover('shape', currentPopoverAnchor);
+        };
+      }
+
+      // Shape kind selector
       flyout.querySelectorAll('[data-pop-shape]').forEach(b => {
         b.onclick = (e) => {
           e.stopPropagation();
           toolOpts.shapeKind = b.dataset.popShape;
           flyout.querySelectorAll('[data-pop-shape]').forEach(btn => btn.classList.toggle('is-active', btn === b));
-          try { renderOptbar(); } catch { /* noop */ }
-        };
-      });
-
-      // Shape outline color swatches
-      flyout.querySelectorAll('[data-pop-scol]').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          toolOpts.shapeColor = btn.dataset.popScol;
-          flyout.querySelectorAll('[data-pop-scol]').forEach(b => b.classList.toggle('is-active', b === btn));
-        };
-      });
-
-      const customSCol = flyout.querySelector('#etxt-pop-custom-scol');
-      if (customSCol) {
-        customSCol.oninput = (e) => {
-          toolOpts.shapeColor = e.target.value;
-          flyout.querySelectorAll('[data-pop-scol]').forEach(b => b.classList.remove('is-active'));
-        };
-      }
-
-      // Shape stroke slider
-      const shapeStrokeSlider = flyout.querySelector('#etxt-pop-s-stroke-slider');
-      const shapeStrokeVal = flyout.querySelector('#etxt-pop-s-stroke-val');
-      if (shapeStrokeSlider) {
-        shapeStrokeSlider.oninput = (e) => {
-          const val = Number(e.target.value);
-          toolOpts.shapeStroke = val;
-          if (shapeStrokeVal) shapeStrokeVal.textContent = `${val}px`;
-        };
-      }
-
-      // Shape opacity slider (live on the selected shape, undoable)
-      const shapeOpSlider = flyout.querySelector('#etxt-pop-s-op-slider');
-      const shapeOpVal = flyout.querySelector('#etxt-pop-s-op-val');
-      let opSnap = null;
-      if (shapeOpSlider) {
-        shapeOpSlider.oninput = (e) => {
-          const val = Number(e.target.value);
-          toolOpts.shapeOpacity = val / 100;
-          if (shapeOpVal) shapeOpVal.textContent = `${val}%`;
           const sa = selAnnot ? findAnnotById(selAnnot) : null;
           if (sa && sa.type === 'shape') {
-            if (!opSnap) opSnap = snapshotState();
-            sa.opacity = val / 100;
+            pushUndo();
+            sa.kind = toolOpts.shapeKind;
             renderAnnots();
           }
         };
-        shapeOpSlider.onchange = () => {
-          if (opSnap) { commitUndoSnapshot(opSnap); opSnap = null; }
+      });
+
+      // Shape Fill & Outline Submenu Toggles
+      const shapeFillBtn = flyout.querySelector('#etxt-shape-fill-btn');
+      if (shapeFillBtn) {
+        shapeFillBtn.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.shapeSubmenu = (toolOpts.shapeSubmenu === 'fill' ? null : 'fill');
+          openToolPopover('shape', currentPopoverAnchor);
         };
       }
 
-      // Redaction mode toggle
+      const shapeOutlineBtn = flyout.querySelector('#etxt-shape-outline-btn');
+      if (shapeOutlineBtn) {
+        shapeOutlineBtn.onclick = (e) => {
+          e.stopPropagation();
+          toolOpts.shapeSubmenu = (toolOpts.shapeSubmenu === 'outline' ? null : 'outline');
+          openToolPopover('shape', currentPopoverAnchor);
+        };
+      }
+
+      // Fill Submenu: Color Swatches
+      const fillPreview = flyout.querySelector('#etxt-pop-shape-fill-preview');
+      flyout.querySelectorAll('[data-pop-sfill]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const c = btn.dataset.popSfill;
+          toolOpts.shapeFill = c;
+          flyout.querySelectorAll('[data-pop-sfill]').forEach(b => b.classList.toggle('is-active', b === btn));
+          if (fillPreview) fillPreview.style.backgroundColor = (c === 'transparent' ? 'transparent' : c);
+          const sa = selAnnot ? findAnnotById(selAnnot) : null;
+          if (sa && sa.type === 'shape') {
+            pushUndo();
+            sa.fill = c;
+            renderAnnots();
+          }
+        };
+      });
+
+      // Fill Submenu: Opacity Slider
+      const fillOpSlider = flyout.querySelector('#etxt-pop-s-fillop-slider');
+      if (fillOpSlider) {
+        fillOpSlider.oninput = (e) => {
+          const val = Number(e.target.value) / 100;
+          toolOpts.shapeFillOpacity = val;
+          if (fillPreview) fillPreview.style.opacity = String(val);
+          const sa = selAnnot ? findAnnotById(selAnnot) : null;
+          if (sa && sa.type === 'shape') {
+            sa.fillOpacity = val;
+            renderAnnots();
+          }
+        };
+      }
+
+      // Outline Submenu: Color Swatches
+      const outlineWavePath = flyout.querySelector('#etxt-pop-shape-outline-wave');
+      flyout.querySelectorAll('[data-pop-soutline]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const c = btn.dataset.popSoutline;
+          toolOpts.shapeColor = c;
+          flyout.querySelectorAll('[data-pop-soutline]').forEach(b => b.classList.toggle('is-active', b === btn));
+          if (outlineWavePath) outlineWavePath.setAttribute('stroke', c);
+          const sa = selAnnot ? findAnnotById(selAnnot) : null;
+          if (sa && sa.type === 'shape') {
+            pushUndo();
+            sa.color = c;
+            renderAnnots();
+          }
+        };
+      });
+
+      // Outline Submenu: Stroke Slider
+      const strokeSlider = flyout.querySelector('#etxt-pop-s-stroke-slider');
+      if (strokeSlider) {
+        updateSliderTrackFill(strokeSlider);
+        strokeSlider.oninput = (e) => {
+          const sz = Number(e.target.value);
+          toolOpts.shapeStroke = sz;
+          if (outlineWavePath) outlineWavePath.setAttribute('stroke-width', String(sz));
+          updateSliderTrackFill(strokeSlider);
+          const sa = selAnnot ? findAnnotById(selAnnot) : null;
+          if (sa && sa.type === 'shape') {
+            sa.strokeWidth = sz;
+            renderAnnots();
+          }
+        };
+      }
+
+      // Sticker items
+      flyout.querySelectorAll('[data-pop-sticker]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const emoji = btn.dataset.popSticker;
+          pushUndo();
+          addAnnot({
+            id: Math.random().toString(36).slice(2, 9),
+            type: 'stamp',
+            kind: 'sticker',
+            text: emoji,
+            x: curPageW / 2 - 20,
+            y: curPageH / 2 - 20,
+            w: 40,
+            h: 40
+          });
+          renderAnnots();
+          closeAllPopovers();
+        };
+      });
+
+      // Redaction Popover Event Handlers
       flyout.querySelectorAll('[data-pop-redact]').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
@@ -14878,7 +15538,30 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       });
 
-      // Insert image
+      const redactSearchBtn = flyout.querySelector('#etxt-redact-search-btn');
+      const redactSearchInp = flyout.querySelector('#etxt-redact-search-inp');
+      if (redactSearchBtn && redactSearchInp) {
+        const runRedactSearch = () => {
+          const q = redactSearchInp.value.trim();
+          if (q) {
+            closeAllPopovers();
+            performAutoRedact(q, q);
+          }
+        };
+        redactSearchBtn.onclick = (e) => { e.stopPropagation(); runRedactSearch(); };
+        redactSearchInp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); runRedactSearch(); } };
+      }
+
+      flyout.querySelectorAll('[data-redact-preset]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const preset = btn.dataset.redactPreset;
+          closeAllPopovers();
+          applyRedactPreset(preset);
+        };
+      });
+
+      // Media / Insert Popover Event Handlers
       const pickImgBtn = flyout.querySelector('#etxt-pop-pick-img');
       if (pickImgBtn) {
         pickImgBtn.onclick = (e) => {
@@ -14889,7 +15572,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       }
 
-      // Insert stamp
       flyout.querySelectorAll('[data-pop-stamp]').forEach(b => {
         b.onclick = (e) => {
           e.stopPropagation();
@@ -14909,7 +15591,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       });
 
-      // Insert note
       const addNoteBtn = flyout.querySelector('#etxt-pop-add-note');
       if (addNoteBtn) {
         addNoteBtn.onclick = (e) => {
@@ -14928,8 +15609,388 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           renderAnnots();
         };
       }
-    }
 
+      // Form Fields Popover Event Handlers
+      if (toolId === 'form') {
+        flyout.querySelectorAll('[data-pop-form-add]').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const kind = btn.dataset.popFormAdd;
+            formPlaceKind = kind;
+            flyout.querySelectorAll('[data-pop-form-add]').forEach(b => b.classList.toggle('is-on', b === btn));
+            toast(`Click anywhere on the document to place a ${kind} field.`);
+          };
+        });
+
+        const popFormDetect = flyout.querySelector('#etxt-pop-form-detect');
+        if (popFormDetect) {
+          popFormDetect.onclick = (e) => {
+            e.stopPropagation();
+            closeAllPopovers();
+            runFormDetect();
+          };
+        }
+
+        const popFormFlatten = flyout.querySelector('#etxt-pop-form-flatten');
+        if (popFormFlatten) {
+          popFormFlatten.onchange = (e) => {
+            e.stopPropagation();
+            formFlatten = popFormFlatten.checked;
+          };
+        }
+
+        const popFormExport = flyout.querySelector('#etxt-pop-form-export');
+        if (popFormExport) {
+          popFormExport.onclick = (e) => {
+            e.stopPropagation();
+            closeAllPopovers();
+            exportFormData('json');
+          };
+        }
+
+        const popFormImport = flyout.querySelector('#etxt-pop-form-import');
+        if (popFormImport) {
+          popFormImport.onclick = (e) => {
+            e.stopPropagation();
+            closeAllPopovers();
+            container.querySelector('#etxt-fimport-input')?.click();
+          };
+        }
+
+        const popFormOrder = flyout.querySelector('#etxt-pop-form-order');
+        if (popFormOrder) {
+          popFormOrder.onclick = (e) => {
+            e.stopPropagation();
+            closeAllPopovers();
+            startTabOrder();
+          };
+        }
+      }
+
+      // Watermark Popover Event Handlers
+      if (toolId === 'watermark') {
+        flyout.querySelectorAll('[data-pop-wmtab]').forEach(tab => {
+          tab.onclick = (e) => {
+            e.stopPropagation();
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.wmKind = tab.dataset.popWmtab;
+            openToolPopover('watermark', currentPopoverAnchor);
+            renderWatermarks();
+          };
+        });
+
+        const popWmText = flyout.querySelector('#etxt-pop-wm-text');
+        if (popWmText) {
+          popWmText.oninput = () => {
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.text = popWmText.value;
+            wmDraft.wmKind = 'text';
+            renderWatermarks();
+          };
+        }
+
+        const popWmFont = flyout.querySelector('#etxt-pop-wm-font');
+        if (popWmFont) {
+          popWmFont.onchange = (e) => {
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.font = e.target.value;
+            renderWatermarks();
+          };
+        }
+
+        const popWmBold = flyout.querySelector('#etxt-pop-wm-bold');
+        if (popWmBold) {
+          popWmBold.onclick = (e) => {
+            e.stopPropagation();
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.bold = !wmDraft.bold;
+            popWmBold.classList.toggle('is-on', wmDraft.bold);
+            renderWatermarks();
+          };
+        }
+
+        const popWmCustomCol = flyout.querySelector('#etxt-pop-wm-custom-col');
+        if (popWmCustomCol) {
+          popWmCustomCol.oninput = (e) => {
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.color = e.target.value;
+            const dot = popWmCustomCol.closest('.etxt-pn-color-dot');
+            if (dot) dot.style.background = e.target.value;
+            renderWatermarks();
+          };
+        }
+
+        const popWmSize = flyout.querySelector('#etxt-pop-wm-size');
+        const popWmSizeVal = flyout.querySelector('#etxt-pop-wm-size-val');
+        if (popWmSize) {
+          popWmSize.oninput = (e) => {
+            const v = Number(e.target.value);
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.size = v;
+            if (popWmSizeVal) popWmSizeVal.textContent = `${v}pt`;
+            renderWatermarks();
+          };
+        }
+
+        const popWmPickImg = flyout.querySelector('#etxt-pop-wm-pick-img');
+        const popWmImgInp = flyout.querySelector('#etxt-pop-wm-img-inp');
+        if (popWmPickImg && popWmImgInp) {
+          popWmPickImg.onclick = (e) => { e.stopPropagation(); popWmImgInp.click(); };
+          popWmImgInp.onchange = (e) => {
+            const f = e.target.files && e.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = () => {
+              if (!wmDraft) wmDraft = newWmDraft();
+              wmDraft.dataUrl = r.result;
+              wmDraft.wmKind = 'image';
+              const img = new Image();
+              img.onload = () => {
+                wmDraft.imgAspect = (img.naturalHeight || 1) / (img.naturalWidth || 1);
+                renderWatermarks();
+                openToolPopover('watermark', currentPopoverAnchor);
+              };
+              img.src = r.result;
+            };
+            r.readAsDataURL(f);
+          };
+        }
+
+        const popWmScale = flyout.querySelector('#etxt-pop-wm-scale');
+        const popWmScaleVal = flyout.querySelector('#etxt-pop-wm-scale-val');
+        if (popWmScale) {
+          popWmScale.oninput = (e) => {
+            const v = Number(e.target.value);
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.imageScale = v;
+            if (popWmScaleVal) popWmScaleVal.textContent = `${v}%`;
+            renderWatermarks();
+          };
+        }
+
+        const popWmOp = flyout.querySelector('#etxt-pop-wm-op');
+        const popWmOpVal = flyout.querySelector('#etxt-pop-wm-op-val');
+        if (popWmOp) {
+          popWmOp.oninput = (e) => {
+            const v = Number(e.target.value);
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.opacity = v / 100;
+            if (popWmOpVal) popWmOpVal.textContent = `${v}%`;
+            renderWatermarks();
+          };
+        }
+
+        const popWmRot = flyout.querySelector('#etxt-pop-wm-rot');
+        const popWmRotVal = flyout.querySelector('#etxt-pop-wm-rot-val');
+        if (popWmRot) {
+          popWmRot.oninput = (e) => {
+            const v = Number(e.target.value);
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.rotation = v;
+            if (popWmRotVal) popWmRotVal.textContent = `${v}°`;
+            renderWatermarks();
+          };
+        }
+
+        const popWmLayer = flyout.querySelector('#etxt-pop-wm-layer');
+        if (popWmLayer) {
+          popWmLayer.onchange = (e) => {
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.layer = e.target.value;
+            renderWatermarks();
+          };
+        }
+
+        const popWmMode = flyout.querySelector('#etxt-pop-wm-mode');
+        if (popWmMode) {
+          popWmMode.onchange = (e) => {
+            if (!wmDraft) wmDraft = newWmDraft();
+            wmDraft.tile = (e.target.value === 'tile');
+            renderWatermarks();
+          };
+        }
+
+        const popWmCancel = flyout.querySelector('#etxt-pop-wm-cancel');
+        if (popWmCancel) {
+          popWmCancel.onclick = (e) => {
+            e.stopPropagation();
+            cancelWmStudio();
+            closeAllPopovers();
+          };
+        }
+
+        const popWmApply = flyout.querySelector('#etxt-pop-wm-apply');
+        if (popWmApply) {
+          popWmApply.onclick = (e) => {
+            e.stopPropagation();
+            applyWmStudio();
+            closeAllPopovers();
+          };
+        }
+      }
+
+      // Page Numbers Popover Event Handlers
+      if (toolId === 'pagenum') {
+        flyout.querySelectorAll('[data-pop-pnzone]').forEach(dot => {
+          dot.onclick = (e) => {
+            e.stopPropagation();
+            if (!pnDraft) pnDraft = newPnDraft();
+            const [v, h] = dot.dataset.popPnzone.split(',');
+            pnDraft.vAlign = v;
+            pnDraft.hAlign = h;
+            flyout.querySelectorAll('[data-pop-pnzone]').forEach(b => b.classList.toggle('is-active', b === dot));
+            renderPageNumbers();
+          };
+        });
+
+        const popPnFormat = flyout.querySelector('#etxt-pop-pn-format');
+        const popPnCustomRow = flyout.querySelector('#etxt-pop-pn-custom-row');
+        const popPnCustom = flyout.querySelector('#etxt-pop-pn-custom');
+        if (popPnFormat) {
+          popPnFormat.onchange = (e) => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            const isCust = (e.target.value === '__custom');
+            if (popPnCustomRow) popPnCustomRow.hidden = !isCust;
+            if (!isCust) {
+              pnDraft.format = e.target.value;
+              renderPageNumbers();
+              const samp = flyout.querySelector('#etxt-pop-pn-sample');
+              if (samp) samp.textContent = pnTextFor(pnDraft, 0, pageCount || 1, pnCompute(pnDraft, pageCount || 1));
+            }
+          };
+        }
+
+        if (popPnCustom) {
+          popPnCustom.oninput = () => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.format = popPnCustom.value;
+            renderPageNumbers();
+            const samp = flyout.querySelector('#etxt-pop-pn-sample');
+            if (samp) samp.textContent = pnTextFor(pnDraft, 0, pageCount || 1, pnCompute(pnDraft, pageCount || 1));
+          };
+        }
+
+        const popPnNumeral = flyout.querySelector('#etxt-pop-pn-numeral');
+        if (popPnNumeral) {
+          popPnNumeral.onchange = (e) => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.numeral = e.target.value;
+            renderPageNumbers();
+            const samp = flyout.querySelector('#etxt-pop-pn-sample');
+            if (samp) samp.textContent = pnTextFor(pnDraft, 0, pageCount || 1, pnCompute(pnDraft, pageCount || 1));
+          };
+        }
+
+        const popPnBold = flyout.querySelector('#etxt-pop-pn-bold');
+        if (popPnBold) {
+          popPnBold.onclick = (e) => {
+            e.stopPropagation();
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.bold = !pnDraft.bold;
+            popPnBold.classList.toggle('is-on', pnDraft.bold);
+            renderPageNumbers();
+          };
+        }
+
+        const popPnItalic = flyout.querySelector('#etxt-pop-pn-italic');
+        if (popPnItalic) {
+          popPnItalic.onclick = (e) => {
+            e.stopPropagation();
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.italic = !pnDraft.italic;
+            popPnItalic.classList.toggle('is-on', pnDraft.italic);
+            renderPageNumbers();
+          };
+        }
+
+        const popPnCustomCol = flyout.querySelector('#etxt-pop-pn-custom-col');
+        if (popPnCustomCol) {
+          popPnCustomCol.oninput = (e) => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.color = e.target.value;
+            const dot = popPnCustomCol.closest('.etxt-pn-color-dot');
+            if (dot) dot.style.background = e.target.value;
+            renderPageNumbers();
+          };
+        }
+
+        const popPnSize = flyout.querySelector('#etxt-pop-pn-size');
+        const popPnSizeVal = flyout.querySelector('#etxt-pop-pn-size-val');
+        if (popPnSize) {
+          popPnSize.oninput = (e) => {
+            const v = Number(e.target.value);
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.size = v;
+            if (popPnSizeVal) popPnSizeVal.textContent = `${v}pt`;
+            renderPageNumbers();
+          };
+        }
+
+        const popPnStart = flyout.querySelector('#etxt-pop-pn-start');
+        if (popPnStart) {
+          popPnStart.oninput = () => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.startNumber = Math.max(1, parseInt(popPnStart.value, 10) || 1);
+            renderPageNumbers();
+          };
+        }
+
+        const popPnSkip = flyout.querySelector('#etxt-pop-pn-skip');
+        if (popPnSkip) {
+          popPnSkip.oninput = () => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.skipFirst = Math.max(0, parseInt(popPnSkip.value, 10) || 0);
+            renderPageNumbers();
+          };
+        }
+
+        const popPnScope = flyout.querySelector('#etxt-pop-pn-scope');
+        const popPnRangeRow = flyout.querySelector('#etxt-pop-pn-range-row');
+        const popPnRange = flyout.querySelector('#etxt-pop-pn-range');
+        if (popPnScope) {
+          popPnScope.onchange = (e) => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.scope = e.target.value;
+            if (popPnRangeRow) popPnRangeRow.hidden = (e.target.value !== 'range');
+            renderPageNumbers();
+          };
+        }
+        if (popPnRange) {
+          popPnRange.oninput = () => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.range = popPnRange.value;
+            renderPageNumbers();
+          };
+        }
+
+        const popPnFacing = flyout.querySelector('#etxt-pop-pn-facing');
+        if (popPnFacing) {
+          popPnFacing.onchange = (e) => {
+            if (!pnDraft) pnDraft = newPnDraft();
+            pnDraft.facing = (e.target.value === 'on');
+            renderPageNumbers();
+          };
+        }
+
+        const popPnCancel = flyout.querySelector('#etxt-pop-pn-cancel');
+        if (popPnCancel) {
+          popPnCancel.onclick = (e) => {
+            e.stopPropagation();
+            cancelPnStudio();
+            closeAllPopovers();
+          };
+        }
+
+        const popPnApply = flyout.querySelector('#etxt-pop-pn-apply');
+        if (popPnApply) {
+          popPnApply.onclick = (e) => {
+            e.stopPropagation();
+            applyPnStudio();
+            closeAllPopovers();
+          };
+        }
+      }
+    }
     function renderSubcontrols() {
       // Replaced by contextual popover flyouts (openToolPopover)
     }
@@ -14955,74 +16016,71 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       container.innerHTML = `
         <header class="etxt-unified-toolbar" role="toolbar" aria-label="Edit PDF Toolbar">
-          <!-- Left: Document & Selection Tools -->
-          <div class="etxt-toolbar-left" role="toolbar" aria-label="Document Tools">
-            <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-change-file" aria-label="Change File">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <!-- Left: Open PDF, Undo, Redo -->
+          <div class="etxt-toolbar-left" role="toolbar" aria-label="Document Operations">
+            <button type="button" class="etxt-file-btn" id="etxt-change-file" aria-label="Open PDF">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>Open PDF</span>
             </button>
             <span class="etxt-vsep"></span>
-            <button type="button" class="etxt-tool-icon-btn${toolMode==='select'?' is-active':''}" id="etxt-tb-select" data-tool="select" aria-label="Select Pointer">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></svg>
-              <span class="etxt-tool-label">Select</span>
-            </button>
-            <button type="button" class="etxt-tool-icon-btn${toolMode==='crop'?' is-active':''}" id="etxt-tb-crop" data-tool="crop" aria-label="Crop Page Margins">
-              ${I.crop}
-              <span class="etxt-tool-label">Crop</span>
-            </button>
-            <span class="etxt-vsep"></span>
-            <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-tb-watermark" data-tool="watermark" aria-label="Add Watermark">
-              ${I.watermark}
-            </button>
-            <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-tb-pagenum" data-tool="pagenum" aria-label="Add Page Numbers">
-              ${I.pagenum}
-            </button>
-            <button type="button" class="etxt-tool-icon-btn" id="etxt-tb-formfill" data-tool="form" aria-label="Fill Interactive Forms">
-              ${I.form}
-              <span class="etxt-tool-label">Forms</span>
-            </button>
+            <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-undo" aria-label="Undo" ${undoStack.length ? '' : 'disabled'}>${I.undo}</button>
+            <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-redo" aria-label="Redo" ${redoStack.length ? '' : 'disabled'}>${I.redo}</button>
           </div>
 
-          <!-- Center: Segmented Mode Capsule (Only Main Tools with Text) -->
+          <!-- Center: All 11 Editing Tools Naked (Icon above, Text below) -->
           <div class="etxt-toolbar-center">
             <div class="etxt-segmented-modes" role="tablist" data-slot="segmented-toggle-button" aria-label="Edit Modes">
-              <span class="etxt-segmented-indicator" aria-hidden="true"${lastEditIndicatorWidth ? ` style="width:${lastEditIndicatorWidth};transform:${lastEditIndicatorTransform};opacity:1;transition:none !important;"` : ' style="opacity:0;transition:none !important;"'}></span>
               <button type="button" class="etxt-mode-tab${toolMode==='edit-text'?' is-active':''}" data-tool="edit-text" role="tab" aria-selected="${toolMode==='edit-text'}">
                 ${I.text}
-                <span>Edit</span>
+                <span class="etxt-mode-lbl">Edit</span>
               </button>
               <button type="button" class="etxt-mode-tab${toolMode==='type'?' is-active':''}" data-tool="type" role="tab" aria-selected="${toolMode==='type'}">
                 ${I.type}
-                <span>Text</span>
+                <span class="etxt-mode-lbl">Text</span>
               </button>
               <button type="button" class="etxt-mode-tab${toolMode==='draw'||toolMode==='highlight'?' is-active':''}" data-tool="draw" role="tab" aria-selected="${toolMode==='draw'||toolMode==='highlight'}">
                 ${I.pen}
-                <span>Draw</span>
+                <span class="etxt-mode-lbl">Draw</span>
               </button>
               <button type="button" class="etxt-mode-tab${toolMode==='shape'?' is-active':''}" data-tool="shape" role="tab" aria-selected="${toolMode==='shape'}">
                 ${I.shape}
-                <span>Shapes</span>
+                <span class="etxt-mode-lbl">Shapes</span>
+              </button>
+              <button type="button" class="etxt-mode-tab${toolMode==='image'||toolMode==='stamp'||toolMode==='note'?' is-active':''}" data-tool="image" role="tab" aria-selected="${toolMode==='image'||toolMode==='stamp'||toolMode==='note'}">
+                ${I.image}
+                <span class="etxt-mode-lbl">Image</span>
               </button>
               <button type="button" class="etxt-mode-tab${toolMode==='sign'?' is-active':''}" data-tool="sign" role="tab" aria-selected="${toolMode==='sign'}">
                 ${I.sign}
-                <span>Sign</span>
+                <span class="etxt-mode-lbl">Sign</span>
+              </button>
+              <button type="button" class="etxt-mode-tab${toolMode==='crop'?' is-active':''}" data-tool="crop" role="tab" aria-selected="${toolMode==='crop'}">
+                ${I.crop}
+                <span class="etxt-mode-lbl">Crop</span>
               </button>
               <button type="button" class="etxt-mode-tab${toolMode==='redact'?' is-active':''}" data-tool="redact" role="tab" aria-selected="${toolMode==='redact'}">
                 ${I.redact}
-                <span>Redact</span>
+                <span class="etxt-mode-lbl">Redact</span>
+              </button>
+              <button type="button" class="etxt-mode-tab${toolMode==='form'||toolMode==='form-fill'?' is-active':''}" data-tool="form" role="tab" aria-selected="${toolMode==='form'||toolMode==='form-fill'}">
+                ${I.form}
+                <span class="etxt-mode-lbl">Forms</span>
+              </button>
+              <button type="button" class="etxt-mode-tab${toolMode==='watermark'?' is-active':''}" data-tool="watermark" role="tab" aria-selected="${toolMode==='watermark'}">
+                ${I.watermark}
+                <span class="etxt-mode-lbl">Watermark</span>
+              </button>
+              <button type="button" class="etxt-mode-tab${toolMode==='pagenum'?' is-active':''}" data-tool="pagenum" role="tab" aria-selected="${toolMode==='pagenum'}">
+                ${I.pagenum}
+                <span class="etxt-mode-lbl">Page #</span>
               </button>
             </div>
           </div>
 
-          <!-- Right: History, Insert, Preview, Save PDF & Close -->
+          <!-- Right: Search, Preview & Save PDF -->
           <div class="etxt-toolbar-right">
-            <div class="etxt-history-group" role="group" aria-label="History &amp; Insert">
+            <div class="etxt-history-group" role="group" aria-label="Utility Tools">
               <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-find-replace" aria-label="Find in Document">${I.find}</button>
-              <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-undo" aria-label="Undo" ${undoStack.length ? '' : 'disabled'}>${I.undo}</button>
-              <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-redo" aria-label="Redo" ${redoStack.length ? '' : 'disabled'}>${I.redo}</button>
-              <button type="button" class="etxt-tool-icon-btn${toolMode==='image'||toolMode==='stamp'||toolMode==='note'?' is-active':''}" id="etxt-tb-insert" data-tool="image" aria-label="Insert Images, Stamps &amp; Notes">
-                ${I.image}
-                <span class="etxt-tool-label">Insert</span>
-              </button>
               <button type="button" class="etxt-tool-icon-btn etxt-icon-only etxt-preview-btn" id="etxt-preview-toggle" aria-label="Preview Original" aria-pressed="false">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
@@ -15050,8 +16108,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 <span class="osui-dl-label-layer osui-dl-label--done">Saved</span>
               </span>
             </button>
-
-            <button type="button" class="etxt-tool-icon-btn etxt-icon-only etxt-close-btn" id="etxt-close" aria-label="Close document">${I.x}</button>
           </div>
         </header>
 
@@ -15190,7 +16246,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           if (menu) menu.hidden = true;
           activateTool(targetTool, true);
 
-          if (['draw', 'shape', 'redact', 'image'].includes(targetTool)) {
+          if (['draw', 'shape', 'redact', 'image', 'form', 'watermark', 'pagenum', 'type'].includes(targetTool)) {
             toggleToolPopover(targetTool, btn);
           } else {
             closeAllPopovers();
@@ -17724,19 +18780,27 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function enterWmStudio() {
       toolMode = 'watermark';
       wmEditingId = null;
-      wmDraft = newWmDraft();
-      renderWmPanel();
+      if (!wmDraft) wmDraft = newWmDraft();
+      container.querySelectorAll('.etxt-mode-tab[data-tool]').forEach(b => {
+        const on = b.dataset.tool === 'watermark';
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      updateEditSegmentedIndicator();
       renderWatermarks();
-      syncWmPanel();
     }
 
     function editWm(wm) {
       toolMode = 'watermark';
       wmEditingId = wm.id;
       wmDraft = JSON.parse(JSON.stringify(wm));
-      renderWmPanel();
+      container.querySelectorAll('.etxt-mode-tab[data-tool]').forEach(b => {
+        const on = b.dataset.tool === 'watermark';
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      updateEditSegmentedIndicator();
       renderWatermarks();
-      syncWmPanel();
     }
 
     function exitWmStudio() {
@@ -18379,18 +19443,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function enterPnStudio() {
       toolMode = 'pagenum';
       pnEditingId = null;
-      pnDraft = newPnDraft();
-      renderPnPanel();
+      if (!pnDraft) pnDraft = newPnDraft();
+      container.querySelectorAll('.etxt-mode-tab[data-tool]').forEach(b => {
+        const on = b.dataset.tool === 'pagenum';
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      updateEditSegmentedIndicator();
       renderPageNumbers();
-      syncPnPanel();
     }
     function editPn(scheme) {
       toolMode = 'pagenum';
       pnEditingId = scheme.id;
       pnDraft = JSON.parse(JSON.stringify(scheme));
-      renderPnPanel();
+      container.querySelectorAll('.etxt-mode-tab[data-tool]').forEach(b => {
+        const on = b.dataset.tool === 'pagenum';
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      updateEditSegmentedIndicator();
       renderPageNumbers();
-      syncPnPanel();
     }
     function exitPnStudio() {
       if (pnDragCleanup) { pnDragCleanup(); pnDragCleanup = null; }
@@ -22787,7 +23859,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         closeFormMenu();
         renderFormOverlay();
         updateFormBanner();
-        openFormsDrawer();
       } else {
         closeFormMenu();
         renderFormOverlay();
@@ -27775,6 +28846,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let cfg = {};
     let families = [];   // per-file family, parallel to files[]
     let formatIds = [];  // per-file chosen target id, parallel to files[]
+    let convStage = 1;
+    let previewPage = 1;
+    let totalPages = 1;
     const preset = tool?.id && TOOL_INDEX[tool.id] ? TOOL_INDEX[tool.id] : null;
 
     // Targets are resolved per active file so each queued file can convert to its own format.
@@ -28821,14 +29895,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       const currentFile = files[activeIndex] || files[0];
       file = currentFile;
-      const totalBytes = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
       const t = target();
-      const famLabel = family && FAMILIES[family] ? FAMILIES[family].label : 'Files';
       const list = targets();
-      const groupsShown = GROUPS.filter((g) => list.some((x) => x.g === g));
-      const fields = cfgFields();
       cfg = cfg || {};
+      const fields = cfgFields();
       for (const f of fields) {
         if (cfg[f.key] === undefined) {
           cfg[f.key] = (t.inputs && t.inputs[f.key] !== undefined) ? t.inputs[f.key] : (f.default !== undefined ? f.default : '');
@@ -28836,134 +29907,369 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
 
       const buttonLabel = files.length > 1 ? `Convert ${files.length} files to ${t.out}` : `Convert to ${t.out}`;
-      const fileInfoMain = files.length > 1 ? `${files.length} files queued` : `File 1: ${_esc(_midTrunc(currentFile.name, 22))}`;
-      const fileInfoSub = files.length > 1 ? `${_bytes(totalBytes)} total &nbsp;&middot;&nbsp; <span id="conv-proc-status" class="conv-trust-dot">● 100% In-Browser</span>` : `${_bytes(currentFile.size)} &nbsp;&middot;&nbsp; <span id="conv-proc-status" class="conv-trust-dot">● 100% In-Browser</span>`;
 
-      const isDirectTranscode = !hasModalConfig(t, family, (t.out || t.ext || '').toLowerCase());
+      // Paper-fold brand icon helpers
+      function _brandIcon(item) {
+        const out = (item.out || '').toUpperCase();
+        const color = item.color || '#64748B';
+        let abbr = out;
+        if (abbr === 'DOCX') abbr = 'W';
+        else if (abbr === 'XLSX') abbr = 'X';
+        else if (abbr === 'PPTX') abbr = 'P';
+        else if (abbr === 'EPUB') abbr = 'ePub';
+        else if (abbr.length > 4) abbr = abbr.slice(0, 4);
+        return `<div class="conv-brand-icon" style="background:${color};">${abbr}</div>`;
+      }
 
-      container.innerHTML = `
-        <div class="cpdf-body cpdf-body--center" style="padding: 16px 0; overflow-y: auto; background: #FFFFFF !important;">
-          <div class="conv-studio-wrapper" id="conv-studio-wrapper">
-            <div class="conv-studio-stage-row">
-              
-              <!-- LEFT: Source Document Preview Card with Batch Carousel Navigation -->
-              <div class="conv-studio-file-card" id="conv-studio-file-card" title="Click or drop files to add/change">
-                
-                ${files.length > 1 ? `
-                <div class="conv-batch-nav">
-                  <button type="button" class="conv-batch-nav-btn" id="conv-prev-file" ${activeIndex === 0 ? 'disabled style="opacity:0.35;"' : ''} title="Previous file">‹</button>
-                  <span class="conv-batch-counter">File <strong>${activeIndex + 1}</strong> of <strong>${files.length}</strong></span>
-                  <button type="button" class="conv-batch-nav-btn" id="conv-next-file" ${activeIndex === files.length - 1 ? 'disabled style="opacity:0.35;"' : ''} title="Next file">›</button>
-                  <button type="button" class="conv-batch-del-btn" id="conv-del-file" title="Remove this file">✕</button>
-                </div>
-                ` : ''}
+      function _brandIconLg(item) {
+        const out = (item.out || '').toUpperCase();
+        const color = item.color || '#64748B';
+        let abbr = out;
+        if (abbr === 'DOCX') abbr = 'W';
+        else if (abbr === 'XLSX') abbr = 'X';
+        else if (abbr === 'PPTX') abbr = 'P';
+        else if (abbr === 'EPUB') abbr = 'ePub';
+        else if (abbr.length > 4) abbr = abbr.slice(0, 4);
+        return `<div class="conv-brand-icon conv-brand-icon-lg" style="background:${color};">${abbr}</div>`;
+      }
 
-                <div class="conv-studio-thumb-container" id="conv-studio-thumb-box">
-                  <div class="conv-studio-badge">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"></path>
-                    </svg>
+      container.className = 'cpdf-root conv-root';
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
+      // Stage 2 configuration options based on target
+      let stage2OptionsHtml = '';
+      const currentOut = (t.out || '').toUpperCase();
+      const currentTool = t.tool || '';
+
+      if (currentTool === 'pdf-to-word' || currentOut === 'DOCX') {
+        const curMode = cfg.mode || 'editable';
+        stage2OptionsHtml = `
+          <div class="conv-config-row ${curMode === 'editable' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="editable" role="radio" aria-checked="${curMode === 'editable'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">★ Editable Document</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Recommended</span>
+              </div>
+              <span class="conv-config-desc">Real paragraphs, headings, lists & tables for Microsoft Word</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curMode === 'exact' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="exact" role="radio" aria-checked="${curMode === 'exact'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Exact Layout</span>
+              </div>
+              <span class="conv-config-desc">Preserves precise character placement, columns and typography</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curMode === 'ocr' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="ocr" role="radio" aria-checked="${curMode === 'ocr'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Full Page Images</span>
+              </div>
+              <span class="conv-config-desc">Visual raster reproduction inside Word document</span>
+            </div>
+          </div>
+        `;
+      } else if (currentTool === 'pdf-to-excel' || currentOut === 'XLSX') {
+        const curMode = cfg.mode || 'tables';
+        stage2OptionsHtml = `
+          <div class="conv-config-row ${curMode === 'tables' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="tables" role="radio" aria-checked="${curMode === 'tables'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Extract Data Tables</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Recommended</span>
+              </div>
+              <span class="conv-config-desc">Detects table boundaries and isolates clean spreadsheet rows</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curMode === 'grid' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="grid" role="radio" aria-checked="${curMode === 'grid'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Full Sheet Layout</span>
+              </div>
+              <span class="conv-config-desc">Maps all text coordinates directly onto sheet cells</span>
+            </div>
+          </div>
+        `;
+      } else if (currentTool === 'pdf-to-ppt' || currentOut === 'PPTX') {
+        const curMode = cfg.mode || 'editable';
+        stage2OptionsHtml = `
+          <div class="conv-config-row ${curMode === 'editable' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="editable" role="radio" aria-checked="${curMode === 'editable'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Editable Slides</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Recommended</span>
+              </div>
+              <span class="conv-config-desc">Converts text frames, shapes and images into slide elements</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curMode === 'images' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="images" role="radio" aria-checked="${curMode === 'images'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">High-Res Slide Images</span>
+              </div>
+              <span class="conv-config-desc">Preserves 100% visual layout as full-bleed slide presentations</span>
+            </div>
+          </div>
+        `;
+      } else if (currentTool === 'pdf-grayscale' || (currentOut === 'PDF' && (t.inputs?.mode === 'grayscale' || (t.label || '').includes('Grayscale')))) {
+        const curMode = cfg.mode || 'grayscale';
+        stage2OptionsHtml = `
+          <div class="conv-config-row ${curMode === 'grayscale' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="grayscale" role="radio" aria-checked="${curMode === 'grayscale'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Monochrome Grayscale</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Standard</span>
+              </div>
+              <span class="conv-config-desc">Standard 8-bit black & white document conversion</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curMode === 'contrast' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="contrast" role="radio" aria-checked="${curMode === 'contrast'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">High-Contrast Text</span>
+              </div>
+              <span class="conv-config-desc">Enhances document text legibility and cleans background</span>
+            </div>
+          </div>
+        `;
+      } else if (currentTool === 'pdf-compress' || (currentOut === 'PDF' && (t.label || '').includes('Compress'))) {
+        const curMode = cfg.mode || 'balanced';
+        stage2OptionsHtml = `
+          <div class="conv-config-row ${curMode === 'balanced' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="balanced" role="radio" aria-checked="${curMode === 'balanced'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Recommended Compression</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Balanced</span>
+              </div>
+              <span class="conv-config-desc">Balanced compression with clean visual quality</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curMode === 'extreme' ? 'is-active' : ''}" data-cfg-key="mode" data-cfg-val="extreme" role="radio" aria-checked="${curMode === 'extreme'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Maximum Compression</span>
+              </div>
+              <span class="conv-config-desc">Aggressive optimization for email and strict upload limits</span>
+            </div>
+          </div>
+        `;
+      } else if (['JPG', 'PNG', 'WEBP'].includes(currentOut)) {
+        const curDpi = cfg.dpi || '2';
+        stage2OptionsHtml = `
+          <div class="conv-config-row ${curDpi === '2' ? 'is-active' : ''}" data-cfg-key="dpi" data-cfg-val="2" role="radio" aria-checked="${curDpi === '2'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">High Resolution (300 DPI)</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Crisp</span>
+              </div>
+              <span class="conv-config-desc">Best for print, archiving, and ultra-sharp text</span>
+            </div>
+          </div>
+          <div class="conv-config-row ${curDpi === '1' ? 'is-active' : ''}" data-cfg-key="dpi" data-cfg-val="1" role="radio" aria-checked="${curDpi === '1'}">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Standard Web (150 DPI)</span>
+              </div>
+              <span class="conv-config-desc">Optimized file size for web display and fast sharing</span>
+            </div>
+          </div>
+        `;
+      } else {
+        stage2OptionsHtml = `
+          <div class="conv-config-row is-active" role="radio" aria-checked="true">
+            <div class="conv-config-radio"><div class="conv-config-radio-dot"></div></div>
+            <div class="conv-config-content">
+              <div class="conv-config-title-row">
+                <span class="conv-config-title">Standard Conversion</span>
+                <span class="conv-badge-pro" style="background:#ECFDF5;color:#059669;">Ready</span>
+              </div>
+              <span class="conv-config-desc">High-speed client-side local conversion</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const rightPanelContent = convStage === 2 ? `
+        <!-- Stage 2 Header -->
+        <div class="conv-stage2-header">
+          <div class="conv-stage2-header-top">
+            <button type="button" class="conv-choose-another-btn" id="conv-back-to-formats">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span>&larr; Choose another format</span>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+            ${_brandIconLg(t)}
+            <div>
+              <h2 class="conv-stage-title" style="margin:0;font-size:16px;">${_esc(t.label || t.out)}</h2>
+              <div style="font-size:12px;color:#737373;">.${(t.out || t.ext || '').toLowerCase()}</div>
+            </div>
+          </div>
+        </div>
+
+        ${files.length > 1 ? `
+          <button type="button" class="conv-apply-all-btn" id="conv-apply-all-btn" title="Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files</span>
+          </button>
+        ` : ''}
+
+        <!-- Configuration Option Cards Stack -->
+        <div class="conv-cards-stack" id="conv-cfg-cards-stack" role="radiogroup" aria-label="Format Options">
+          ${stage2OptionsHtml}
+        </div>
+
+        <!-- Convert CTA Button -->
+        <button type="button" class="conv-primary-cta" id="conv-run">
+          <span class="conv-btn-normal-content" style="display:inline-flex;align-items:center;gap:8px;">
+            <span>${buttonLabel}</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+          <span class="conv-btn-proc-content" style="display:none;align-items:center;gap:8px;">
+            <span class="conv-proc-spinner"></span>
+            <span>Converting <strong id="conv-pct">0%</strong></span>
+          </span>
+        </button>
+
+        <!-- Trust Footnote -->
+        <p class="conv-trust-footnote" style="margin-top:10px;font-size:11px;color:#94A3B8;text-align:center;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          100% local &middot; your files never leave this device
+        </p>
+      ` : `
+        <!-- Stage 1 Header -->
+        <div class="conv-stage-header">
+          <div class="conv-header-icon" style="background:#EF4444;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 16.15V18.85C11 21.1 10.1 22 7.85 22H5.15C2.9 22 2 21.1 2 18.85V16.15C2 13.9 2.9 13 5.15 13H7.85C10.1 13 11 13.9 11 16.15Z"/><path d="M22 15C22 18.87 18.87 22 15 22L16.05 20.25"/><path d="M2 9C2 5.13 5.13 2 9 2L7.95 3.75"/><path d="M17.5 11C19.9853 11 22 8.98528 22 6.5C22 4.01472 19.9853 2 17.5 2C15.0147 2 13 4.01472 13 6.5C13 8.98528 15.0147 11 17.5 11Z"/>
+            </svg>
+          </div>
+          <h2 class="conv-stage-title">Convert to:</h2>
+        </div>
+
+        ${files.length > 1 ? `
+          <button type="button" class="conv-apply-all-btn" id="conv-apply-all-btn" title="Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files</span>
+          </button>
+        ` : ''}
+
+        <!-- Format Cards Stack -->
+        <div class="conv-cards-stack" role="radiogroup" aria-label="Available Formats">
+          ${list.map(item => {
+            const displayLabel = item.label !== item.out && item.out
+              ? item.label
+              : (item.label || item.out);
+            const isActive = item.id === formatIds[activeIndex];
+            return `
+              <div class="conv-format-row ${isActive ? 'is-active' : ''}" data-fid="${item.id}" role="radio" aria-checked="${isActive}" style="${isActive ? 'border:1.5px solid #0A0A0A;' : ''}">
+                <div class="conv-format-left">
+                  ${_brandIcon(item)}
+                  <div class="conv-format-label">
+                    <span class="conv-format-name">${_esc(displayLabel)}</span>
+                    <span class="conv-format-ext">.${(item.out || item.ext || '').toLowerCase()}</span>
                   </div>
                 </div>
-                
-                <div class="conv-studio-file-footer">
-                  <strong class="conv-studio-title" title="${_esc(currentFile.name)}">${_esc(_midTrunc(currentFile.name, 20))}</strong>
-                  <button type="button" class="conv-studio-crop-btn" id="conv-add-btn" title="Add or replace files">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                      <path d="M12 5v14M5 12h14"/>
-                    </svg>
+                <div class="conv-format-right">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+
+        <!-- Convert CTA Button -->
+        <button type="button" class="conv-primary-cta" id="conv-run">
+          <span class="conv-btn-normal-content" style="display:inline-flex;align-items:center;gap:8px;">
+            <span>${buttonLabel}</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+          <span class="conv-btn-proc-content" style="display:none;align-items:center;gap:8px;">
+            <span class="conv-proc-spinner"></span>
+            <span>Converting <strong id="conv-pct">0%</strong></span>
+          </span>
+        </button>
+
+        <!-- Trust Footnote -->
+        <p class="conv-trust-footnote" style="margin-top:10px;font-size:11px;color:#94A3B8;text-align:center;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          100% local &middot; your files never leave this device
+        </p>
+      `;
+
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation conv-root">
+
+            <!-- LEFT STAGE: Calm slate canvas + document preview -->
+            <div class="cpdf-benchmark-stage" style="position:relative;">
+              <div class="cpdf-benchmark-paper" id="conv-stage-paper-wrap" style="background:transparent;box-shadow:none;border:none;display:flex;align-items:center;justify-content:center;flex:1 1 auto;width:100%;padding:32px 24px;box-sizing:border-box;">
+                <div id="conv-stage-thumb-box" style="margin:auto;display:flex;align-items:center;justify-content:center;">
+                  <div style="padding:60px 40px;color:#94A3B8;">Loading preview...</div>
+                </div>
+              </div>
+
+              <!-- Multi-page navigation pill -->
+              <div id="conv-page-nav-pill" style="display:none;position:absolute;bottom:54px;left:50%;transform:translateX(-50%);background:#FFFFFF;border:1px solid #E5E5E5;border-radius:9999px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:3px 12px;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#0A0A0A;z-index:10;">
+                <button type="button" id="conv-prev-page" style="all:unset;cursor:pointer;padding:2px 6px;color:#737373;font-size:14px;line-height:1;">&lsaquo;</button>
+                <span id="conv-page-label">Page 1 of 1</span>
+                <button type="button" id="conv-next-page" style="all:unset;cursor:pointer;padding:2px 6px;color:#737373;font-size:14px;line-height:1;">&rsaquo;</button>
+              </div>
+
+              <!-- File info status bar -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text">${_esc(currentFile.name)} (${_bytes(currentFile.size)})${files.length > 1 ? ` &middot; File ${activeIndex + 1} of ${files.length}` : ''}</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  ${files.length > 1 ? `
+                    <button type="button" class="cpdf-benchmark-btn-add" id="conv-prev-file" ${activeIndex === 0 ? 'disabled style="opacity:0.4;"' : ''} title="Previous file">&lsaquo; Prev</button>
+                    <button type="button" class="cpdf-benchmark-btn-add" id="conv-next-file" ${activeIndex === files.length - 1 ? 'disabled style="opacity:0.4;"' : ''} title="Next file">Next &rsaquo;</button>
+                  ` : ''}
+                  <button type="button" class="cpdf-benchmark-btn-add" id="conv-add-btn" title="Add or change files">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>${files.length > 1 ? 'Add Files' : 'Change File'}</span>
                   </button>
-                </div>
-                <input id="conv-add-input" type="file" accept="${ACCEPT}" multiple hidden>
-              </div>
-
-              <!-- CENTER: Action & Pipeline Controls Hub with 3D Pushable Button -->
-              <div class="conv-studio-center-column">
-                <button type="button" class="conv-studio-btn-convert" id="conv-run">
-                  <span class="shadow"></span>
-                  <span class="edge"></span>
-                  <span class="front">
-                    <span class="conv-btn-normal-content">
-                      <span>${buttonLabel}</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" width="18" height="18">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"></path>
-                      </svg>
-                    </span>
-                    <span class="conv-btn-proc-content" style="display: none;">
-                      <span class="conv-proc-spinner"></span>
-                      <span>Converting <strong id="conv-pct">6%</strong></span>
-                    </span>
-                  </span>
-                </button>
-
-                <div class="conv-studio-file-info-chip">
-                  <div class="conv-info-main">${fileInfoMain}</div>
-                  <div class="conv-info-sub">${fileInfoSub}</div>
-                </div>
-
-                ${renderCenterInlineModeControls(t, currentFile, family, cfg)}
-
-                ${!isDirectTranscode ? `
-                <button type="button" class="conv-studio-btn-gear" id="conv-gear-btn" title="Conversion Settings &amp; Options" aria-label="Conversion Settings">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" width="16" height="16">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
-                  </svg>
-                  <span>Options</span>
-                </button>
-                ` : `
-                <div class="conv-direct-transcode-tag" title="Direct 1:1 bitstream conversion">
-                  <span class="conv-trust-dot">●</span> Direct Transcode
-                </div>
-                `}
-              </div>
-
-              <!-- RIGHT: Open Format Selection Panel Directly -->
-              <div class="conv-studio-target-card conv-studio-format-panel" id="conv-studio-target-card">
-                <div class="conv-format-panel-header">
-                  <span class="conv-format-panel-title">SELECT FORMAT</span>
-                  <span class="conv-format-panel-active-tag">${(t.out || t.label).toUpperCase()}</span>
-                </div>
-                ${files.length > 1 ? `
-                  <button type="button" class="conv-apply-all-btn" id="conv-apply-all-btn" title="Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span>Apply ${(t.out || t.label).toUpperCase()} to all ${files.length} files</span>
-                  </button>
-                ` : ''}
-                <div class="conv-studio-select-menu" id="conv-format-menu">
-                  ${groupsShown.map(g => {
-                    const items = list.filter((x) => x.g === g);
-                    return `
-                      <div class="conv-studio-menu-header">${g.toUpperCase()}</div>
-                      ${items.map(item => {
-                        const displayLabel = item.label !== item.out && item.out ? `${item.label} (${item.out})` : (item.label || item.out);
-                        const isActive = item.id === formatId;
-                        return `
-                        <div class="conv-studio-menu-item ${isActive ? 'active' : ''}" data-fid="${item.id}">
-                          <span>${_esc(displayLabel)}</span>
-                          ${isActive ? `<span class="conv-check-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
-                        </div>`;
-                      }).join('')}
-                    `;
-                  }).join('')}
+                  <input id="conv-add-input" type="file" accept="${ACCEPT}" multiple hidden>
                 </div>
               </div>
-
             </div>
 
-            <div id="conv-err" hidden style="display:none;max-width:640px;margin:12px auto 0;padding:10px 14px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;font-size:13px;font-weight:600;text-align:center;"></div>
+            <!-- RIGHT PANEL: Format selector -->
+            <div class="cpdf-benchmark-panel">
+              <div class="cpdf-benchmark-panel-inner">
+                ${rightPanelContent}
+              </div>
+            </div>
 
           </div>
         </div>`;
 
-      // Asynchronously render live file thumbnail (Image preview, PDF page 1, audio card, or handcrafted illustration)
+      // Render left stage preview
       const fileExt = (currentFile?.name || '').split('.').pop() || family || '';
+      const stageBox = container.querySelector('#conv-stage-thumb-box');
       if (currentFile && (currentFile.type?.startsWith('image/') || family === 'image' || /\.(png|jpe?g|webp|gif|svg|bmp|ico|avif)$/i.test(currentFile.name))) {
         try {
           const imgUrl = URL.createObjectURL(currentFile);
-          const thumbBox = container.querySelector('#conv-studio-thumb-box');
-          if (thumbBox) {
-            thumbBox.innerHTML = `<img src="${imgUrl}" alt="Preview" class="conv-studio-thumb-img" style="max-width:100%;max-height:240px;border-radius:6px;box-shadow:0 8px 24px -4px rgba(0,0,0,0.18);object-fit:contain;"/>`;
+          if (stageBox) {
+            stageBox.innerHTML = `<img src="${imgUrl}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 220px);border-radius:4px;box-shadow:0 14px 34px -10px rgba(15,23,42,0.12);"/>`;
           }
         } catch (_) {}
       } else if (currentFile && (currentFile.type === 'application/pdf' || /\.pdf$/i.test(currentFile.name))) {
@@ -28971,78 +30277,82 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           try {
             const pdfjs = await loadJs();
             const doc = await pdfjs.getDocument({ data: new Uint8Array(await currentFile.arrayBuffer()) }).promise;
-            const page = await doc.getPage(1);
+            totalPages = doc.numPages || 1;
+            if (previewPage > totalPages) previewPage = totalPages;
+            if (previewPage < 1) previewPage = 1;
+
+            const pageNavPill = container.querySelector('#conv-page-nav-pill');
+            const pageLabel = container.querySelector('#conv-page-label');
+            if (pageNavPill && totalPages > 1) {
+              pageNavPill.style.display = 'inline-flex';
+              if (pageLabel) pageLabel.textContent = `Page ${previewPage} of ${totalPages}`;
+            }
+
+            const page = await doc.getPage(previewPage);
             const vp1 = page.getViewport({ scale: 1 });
-            const maxW = 200;
-            const maxH = 260;
-            const sc = Math.min(maxW / vp1.width, maxH / vp1.height, 1.2);
+            const sc = Math.min(600 / vp1.width, 700 / vp1.height, 1);
             const dpr = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
             const vp = page.getViewport({ scale: sc * dpr });
             const c = document.createElement('canvas');
             c.width = Math.round(vp.width);
             c.height = Math.round(vp.height);
-            c.className = 'conv-studio-pdf-sheet';
+            c.style.display = 'block';
             c.style.maxWidth = '100%';
-            c.style.maxHeight = '240px';
-            c.style.aspectRatio = `${vp1.width} / ${vp1.height}`;
-            c.style.boxShadow = '0 6px 18px -2px rgba(0, 0, 0, 0.16), 0 1px 4px rgba(0, 0, 0, 0.08)';
+            c.style.maxHeight = 'calc(100vh - 220px)';
             c.style.borderRadius = '4px';
-            c.style.background = '#FFFFFF';
+            c.style.boxShadow = '0 14px 34px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05)';
             const ctx = c.getContext('2d');
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            const thumbBox = container.querySelector('#conv-studio-thumb-box');
-            if (thumbBox) {
-              thumbBox.innerHTML = '';
-              thumbBox.append(c);
+            if (stageBox) {
+              stageBox.innerHTML = '';
+              stageBox.append(c);
             }
           } catch (e) {
             console.warn('[Convert] PDF thumb error:', e);
-            const thumbBox = container.querySelector('#conv-studio-thumb-box');
-            if (thumbBox) {
-              thumbBox.innerHTML = buildHandcraftedIllustration('pdf', currentFile?.name || 'Document', _bytes(currentFile?.size || 0), 'stage');
+            if (stageBox) {
+              stageBox.innerHTML = buildHandcraftedIllustration('pdf', currentFile.name, _bytes(currentFile.size), 'stage');
             }
           }
         })();
       } else {
-        const thumbBox = container.querySelector('#conv-studio-thumb-box');
-        if (thumbBox) {
-          thumbBox.innerHTML = buildHandcraftedIllustration(fileExt, currentFile?.name || 'Document', _bytes(currentFile?.size || 0), 'stage');
+        if (stageBox) {
+          stageBox.innerHTML = buildHandcraftedIllustration(fileExt, currentFile?.name || 'Document', _bytes(currentFile?.size || 0), 'stage');
         }
       }
 
-      // Event Listeners for Batch Carousel Navigation
+      // Page navigation for PDF
+      container.querySelector('#conv-prev-page')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (previewPage > 1) { previewPage--; renderConfigure(); }
+      });
+      container.querySelector('#conv-next-page')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (previewPage < totalPages) { previewPage++; renderConfigure(); }
+      });
+
+      // Batch navigation
       container.querySelector('#conv-prev-file')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (activeIndex > 0) {
-          activeIndex--;
-          renderConfigure();
-        }
+        if (activeIndex > 0) { activeIndex--; syncActive(); previewPage = 1; renderConfigure(); }
       });
-
       container.querySelector('#conv-next-file')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (activeIndex < files.length - 1) {
-          activeIndex++;
-          renderConfigure();
-        }
+        if (activeIndex < files.length - 1) { activeIndex++; syncActive(); previewPage = 1; renderConfigure(); }
       });
 
-      container.querySelector('#conv-del-file')?.addEventListener('click', (e) => {
+      // Add / Change file
+      const addInp = container.querySelector('#conv-add-input');
+      container.querySelector('#conv-add-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        files.splice(activeIndex, 1);
-        families.splice(activeIndex, 1);
-        formatIds.splice(activeIndex, 1);
-        if (activeIndex >= files.length) activeIndex = files.length - 1;
-        if (!files.length) {
-          family = null; formatId = null;
-          renderUpload();
-        } else {
-          renderConfigure();
-        }
+        addInp.click();
+      });
+      addInp?.addEventListener('change', () => {
+        if (addInp.files && addInp.files.length) pickFiles(Array.from(addInp.files));
       });
 
+      // Apply-all for batch
       container.querySelector('#conv-apply-all-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         const currentFid = formatIds[activeIndex] || formatId;
@@ -29057,94 +30367,47 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             if (match) formatIds[i] = match.id;
           }
         }
-        if (window.FF?.util?.toast) {
-          window.FF.util.toast(`Applied ${currentOut} to all files`, 'success');
-        }
+        if (window.FF?.util?.toast) window.FF.util.toast(`Applied ${currentOut} to all files`, 'success');
         renderConfigure();
       });
 
-      // Add more files listeners
-      const fileCard = container.querySelector('#conv-studio-file-card');
-      const addInp = container.querySelector('#conv-add-input');
-      
-      container.querySelector('#conv-add-btn')?.addEventListener('click', (e) => {
+      // Back to Stage 1 format list
+      container.querySelector('#conv-back-to-formats')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        addInp.click();
+        convStage = 1;
+        renderConfigure();
       });
 
-      fileCard?.addEventListener('click', (e) => {
-        if (e.target.closest('#conv-add-btn') || e.target.closest('.conv-batch-nav')) return;
-        addInp.click();
-      });
-      addInp?.addEventListener('change', () => {
-        if (addInp.files && addInp.files.length) pickFiles(Array.from(addInp.files));
-      });
-
-      fileCard?.addEventListener('dragover', (e) => { e.preventDefault(); fileCard.classList.add('cpdf-dz--over'); });
-      fileCard?.addEventListener('dragleave', () => fileCard.classList.remove('cpdf-dz--over'));
-      fileCard?.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileCard.classList.remove('cpdf-dz--over');
-        const fList = e.dataTransfer?.files;
-        if (fList && fList.length) pickFiles(Array.from(fList));
-      });
-
-      // Format selection listener
-      container.querySelectorAll('.conv-studio-menu-item').forEach((it) => {
-        it.onclick = () => {
-          const fid = it.dataset.fid;
-          formatIds[activeIndex] = fid;
-          formatId = fid;
+      // Stage 1 Format card selection -> switches to Stage 2
+      container.querySelectorAll('.conv-format-row[data-fid]').forEach(row => {
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
+          formatIds[activeIndex] = row.dataset.fid;
+          formatId = row.dataset.fid;
+          convStage = 2;
           renderConfigure();
-        };
-      });
-
-      // Settings modal trigger
-      container.querySelector('#conv-gear-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openConversionOptionsModal({
-          target: t,
-          file: currentFile,
-          family: family,
-          cfg: cfg,
-          onSave: (newCfg) => {
-            Object.assign(cfg, newCfg);
-            renderConfigure();
-          }
         });
       });
 
-      // Universal listener for all inline mode segment buttons
-      container.querySelectorAll('.conv-mode-seg-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
+      // Stage 2 Configuration Option Cards selection
+      container.querySelectorAll('.conv-config-row[data-cfg-key]').forEach(row => {
+        row.addEventListener('click', (e) => {
           e.stopPropagation();
-          const modeKey = btn.dataset.cfgKey || 'mode';
-          const modeVal = btn.dataset.mode;
-          cfg[modeKey] = modeVal;
-          const parentGroup = btn.closest('.conv-mode-segmented');
-          if (parentGroup) {
-            parentGroup.querySelectorAll('.conv-mode-seg-btn').forEach((b) => {
-              const on = b.dataset.mode === modeVal;
-              b.classList.toggle('active', on);
-              b.setAttribute('aria-checked', on ? 'true' : 'false');
+          const key = row.dataset.cfgKey;
+          const val = row.dataset.cfgVal;
+          if (key) {
+            cfg[key] = val;
+            container.querySelectorAll(`.conv-config-row[data-cfg-key="${key}"]`).forEach(r => {
+              const active = r === row;
+              r.classList.toggle('is-active', active);
+              r.setAttribute('aria-checked', active ? 'true' : 'false');
             });
           }
-          const descEl = container.querySelector('#conv-inline-mode-desc');
-          if (descEl && btn.dataset.desc) {
-            descEl.textContent = btn.dataset.desc;
-          }
         });
       });
 
-      // Trigger conversion run
-      container.querySelector('#conv-run')?.addEventListener('click', () => {
-        runConvert();
-      });
-
-      // Trigger conversion run
-      container.querySelector('#conv-run')?.addEventListener('click', () => {
-        runConvert();
-      });
+      // Run conversion
+      container.querySelector('#conv-run')?.addEventListener('click', () => runConvert());
     }
 
     /* ── Step 3: Run & Result ── */
@@ -29725,6 +30988,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let optAnnots = true;
     let optLayers = true;
     let optAppearances = true;
+    let unlockStripLimits = true;
+    let unlockPreserveSigs = true;
 
     const isPdf = f => {
       const n = (f?.name || '').toLowerCase();
@@ -30392,6 +31657,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let optAnnots = true;
     let optLayers = true;
     let optAppearances = true;
+    let unlockStripLimits = true;
+    let unlockPreserveSigs = true;
     let stripExif = true;
     let addWatermark = false;
     let watermarkText = 'CONFIDENTIAL';
@@ -30834,77 +32101,179 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   <!-- Dynamic Context Area -->
                   <div class="prot-context-box" id="prot-context-area">
                     ${isFlatten ? `
-                      <div class="prot-flatten-grid">
-                        <div class="prot-flat-chip ${optForms ? 'is-active' : ''}" id="prot-flat-forms" role="button" tabindex="0">
-                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.edit}</span> Forms</span>
-                          <span class="prot-chip-badge">${optForms ? 'Bake' : 'Skip'}</span>
+                      <div class="prot-input-group">
+                        <!-- Scope Anchor 1: Matches first password input budget -->
+                        <div class="prot-scope-card">
+                          <span>Target Document Scope</span>
+                          <span class="prot-scope-badge">All ${totalPages} Pages Selected</span>
                         </div>
-                        <div class="prot-flat-chip ${optAnnots ? 'is-active' : ''}" id="prot-flat-annots" role="button" tabindex="0">
-                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.edit}</span> Annots</span>
-                          <span class="prot-chip-badge">${optAnnots ? 'Bake' : 'Skip'}</span>
+
+                        <!-- Scope Anchor 2: Matches confirm password budget -->
+                        <div class="prot-scope-card">
+                          <span>Rendering Fidelity</span>
+                          <span class="prot-scope-badge" style="background:#EFF6FF;color:#1D4ED8;">100% Vector Quality</span>
                         </div>
-                        <div class="prot-flat-chip ${optLayers ? 'is-active' : ''}" id="prot-flat-layers" role="button" tabindex="0">
-                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.doc}</span> Layers</span>
-                          <span class="prot-chip-badge">${optLayers ? 'Bake' : 'Skip'}</span>
+
+                        <!-- iOS Inset Switch Flatten Controls -->
+                        <div class="prot-ios-group">
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.edit}
+                              <span class="prot-ios-row-text">Bake Fillable Form Fields</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-flat-forms" ${optForms ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.edit}
+                              <span class="prot-ios-row-text">Bake Ink & Annotations</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-flat-annots" ${optAnnots ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.doc}
+                              <span class="prot-ios-row-text">Merge Vector Layers (OCGs)</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-flat-layers" ${optLayers ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
                         </div>
-                        <div class="prot-flat-chip ${optAppearances ? 'is-active' : ''}" id="prot-flat-apps" role="button" tabindex="0">
-                          <span class="prot-chip-top"><span class="prot-chip-icon">${I.eye}</span> Widgets</span>
-                          <span class="prot-chip-badge">${optAppearances ? 'Bake' : 'Skip'}</span>
+
+                        <!-- Balanced Micro-Note matching master toggle -->
+                        <div class="prot-master-toggle" style="cursor:default;opacity:0.85;">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                          <span>PDF 1.7 Standard Compliant Output</span>
                         </div>
                       </div>
-                    ` : `
+                    ` : isUnlock ? `
                       <div class="prot-input-group">
                         <div class="prot-input-wrap">
-                          <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="${isProtect ? 'Set encryption password…' : 'Enter decryption password…'}" value="${_esc(password)}">
+                          <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Enter decryption password…" value="${_esc(password)}">
                           <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
                             ${showPw ? I.eyeOff : I.eye}
                           </button>
                         </div>
 
-                        ${isProtect ? `
-                          <div class="prot-input-wrap">
-                            <input id="prot-pw-confirm" class="prot-input prot-input--confirm" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm password…" value="${_esc(confirmPw)}">
-                            <div id="prot-match-pill" class="prot-match-pill ${confirmPw ? (confirmPw === password ? 'is-match' : 'is-mismatch') : ''}" style="display:${confirmPw ? 'inline-flex' : 'none'};">
-                              ${confirmPw ? (confirmPw === password ? '✓ Match' : '✕ Mismatch') : ''}
+                        <!-- Scope Anchor 2: Matches confirm password budget -->
+                        <div class="prot-scope-card">
+                          <span>Decryption Scope</span>
+                          <span class="prot-scope-badge" style="background:#F3E8FF;color:#6B21A8;">Full Permissions</span>
+                        </div>
+
+                        <!-- iOS Inset Switch Unlock Controls -->
+                        <div class="prot-ios-group">
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.check}
+                              <span class="prot-ios-row-text">Strip Password Protection</span>
                             </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-unlock-strip" ${unlockStripLimits ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
                           </div>
-
-                          <!-- 3-Column Granular Permissions Strip -->
-                          <div class="prot-perm-row">
-                            <button type="button" class="prot-perm-btn ${permPrint ? 'is-active' : ''}" id="prot-perm-print" title="Allow/Block Printing">
-                              <span class="prot-perm-ico">${I.print}</span>
-                              <span class="prot-perm-txt">Print</span>
-                              <span class="prot-perm-dot"></span>
-                            </button>
-                            <button type="button" class="prot-perm-btn ${permCopy ? 'is-active' : ''}" id="prot-perm-copy" title="Allow/Block Copying Text">
-                              <span class="prot-perm-ico">${I.copy}</span>
-                              <span class="prot-perm-txt">Copy</span>
-                              <span class="prot-perm-dot"></span>
-                            </button>
-                            <button type="button" class="prot-perm-btn ${permEdit ? 'is-active' : ''}" id="prot-perm-edit" title="Allow/Block Editing">
-                              <span class="prot-perm-ico">${I.edit}</span>
-                              <span class="prot-perm-txt">Edit</span>
-                              <span class="prot-perm-dot"></span>
-                            </button>
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.doc}
+                              <span class="prot-ios-row-text">Preserve Digital Signatures</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-unlock-sigs" ${unlockPreserveSigs ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
                           </div>
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.edit}
+                              <span class="prot-ios-row-text">Scrub Security Metadata</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-unlock-scrub" checked>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
+                        </div>
 
-                          <!-- Master Password Micro-Disclosure -->
-                          <button type="button" class="prot-master-toggle" id="prot-toggle-adv">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            <span>${showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)'}</span>
+                        <!-- Balanced Micro-Note matching master toggle -->
+                        <div class="prot-master-toggle" style="cursor:default;opacity:0.85;">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          <span>AES-256 Decryption Engine Active</span>
+                        </div>
+                      </div>
+                    ` : `
+                      <div class="prot-input-group">
+                        <div class="prot-input-wrap">
+                          <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Set encryption password…" value="${_esc(password)}">
+                          <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
+                            ${showPw ? I.eyeOff : I.eye}
                           </button>
+                        </div>
 
-                          <div class="prot-master-box" id="prot-adv-body" style="${showAdvanced ? 'display: block;' : 'display: none;'}">
-                            <div class="prot-input-wrap">
-                              <input id="prot-owner-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Master / Owner password…" value="${_esc(ownerPassword)}" style="height:30px;font-size:11.5px;">
-                            </div>
+                        <div class="prot-input-wrap">
+                          <input id="prot-pw-confirm" class="prot-input prot-input--confirm" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm password…" value="${_esc(confirmPw)}">
+                          <div id="prot-match-pill" class="prot-match-pill ${confirmPw ? (confirmPw === password ? 'is-match' : 'is-mismatch') : ''}" style="display:${confirmPw ? 'inline-flex' : 'none'};">
+                            ${confirmPw ? (confirmPw === password ? '✓ Match' : '✕ Mismatch') : ''}
                           </div>
-                        ` : ''}
+                        </div>
+
+                        <!-- iOS Inset Switch Permission Controls -->
+                        <div class="prot-ios-group">
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.print}
+                              <span class="prot-ios-row-text">Allow Printing</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-perm-print" ${permPrint ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.copy}
+                              <span class="prot-ios-row-text">Allow Text Copying</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-perm-copy" ${permCopy ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
+                          <div class="prot-ios-row">
+                            <div class="prot-ios-row-left">
+                              ${I.edit}
+                              <span class="prot-ios-row-text">Allow Form Modifications</span>
+                            </div>
+                            <label class="prot-ios-switch">
+                              <input type="checkbox" id="prot-perm-edit" ${permEdit ? 'checked' : ''}>
+                              <span class="prot-ios-slider"></span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <!-- Master Password Micro-Disclosure -->
+                        <button type="button" class="prot-master-toggle" id="prot-toggle-adv">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          <span>${showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)'}</span>
+                        </button>
+
+                        <div class="prot-master-box" id="prot-adv-body" style="${showAdvanced ? 'display: block;' : 'display: none;'}">
+                          <div class="prot-input-wrap">
+                            <input id="prot-owner-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Master / Owner password…" value="${_esc(ownerPassword)}" style="height:30px;font-size:11.5px;">
+                          </div>
+                        </div>
                       </div>
                     `}
                   </div>
                 `}
-
                 <!-- Compact Estimated Security Specification Box -->
                 <div class="cpdf-benchmark-est-box">
                   <div class="cpdf-benchmark-est-title">${isProtect ? 'Security Specification' : isFlatten ? 'Flattening Specification' : 'Decryption Status'}</div>
@@ -31008,39 +32377,30 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       });
 
-      // Permission button toggles
-      const bindPermBtn = (id, getter, setter) => {
-        const btn = container.querySelector(id);
-        if (!btn) return;
-        btn.addEventListener('click', () => {
-          const newVal = !getter();
-          setter(newVal);
-          btn.classList.toggle('is-active', newVal);
-          syncModeCards();
+      // iOS Switch Event Bindings (Protect, Unlock, Flatten)
+      const bindSwitch = (id, setter, onChange) => {
+        const sw = container.querySelector(id);
+        if (!sw) return;
+        sw.addEventListener('change', (e) => {
+          setter(e.target.checked);
+          if (onChange) onChange(e.target.checked);
         });
       };
 
-      bindPermBtn('#prot-perm-print', () => permPrint, v => { permPrint = v; });
-      bindPermBtn('#prot-perm-copy', () => permCopy, v => { permCopy = v; });
-      bindPermBtn('#prot-perm-edit', () => permEdit, v => { permEdit = v; });
+      // Protect Mode Switches
+      bindSwitch('#prot-perm-print', v => { permPrint = v; }, () => syncModeCards());
+      bindSwitch('#prot-perm-copy', v => { permCopy = v; }, () => syncModeCards());
+      bindSwitch('#prot-perm-edit', v => { permEdit = v; }, () => syncModeCards());
 
-      // Flatten Target Chips
-      const bindFlatChip = (id, getter, setter) => {
-        const chip = container.querySelector(id);
-        if (!chip) return;
-        chip.addEventListener('click', () => {
-          const newVal = !getter();
-          setter(newVal);
-          chip.classList.toggle('is-active', newVal);
-          const badge = chip.querySelector('.prot-chip-badge');
-          if (badge) badge.textContent = newVal ? 'Bake' : 'Skip';
-        });
-      };
+      // Unlock Mode Switches
+      bindSwitch('#prot-unlock-strip', v => { unlockStripLimits = v; });
+      bindSwitch('#prot-unlock-sigs', v => { unlockPreserveSigs = v; });
+      bindSwitch('#prot-unlock-scrub', v => {});
 
-      bindFlatChip('#prot-flat-forms', () => optForms, v => { optForms = v; });
-      bindFlatChip('#prot-flat-annots', () => optAnnots, v => { optAnnots = v; });
-      bindFlatChip('#prot-flat-layers', () => optLayers, v => { optLayers = v; });
-      bindFlatChip('#prot-flat-apps', () => optAppearances, v => { optAppearances = v; });
+      // Flatten Mode Switches
+      bindSwitch('#prot-flat-forms', v => { optForms = v; });
+      bindSwitch('#prot-flat-annots', v => { optAnnots = v; });
+      bindSwitch('#prot-flat-layers', v => { optLayers = v; });
 
       // Image toggles
       const exifCard = container.querySelector('#prot-card-exif');
@@ -37084,19 +38444,15 @@ trailer<</Root 1 0 R>>`;
       function renderToolbar() {
         return `
           <header class="org-unified-toolbar">
-            <!-- Left: Opensource UI Depth Outline Button (+ Add Files & Crop Page) -->
+            <!-- Left: Opensource UI Depth Outline Button (+ Add Files) -->
             <div class="org-toolbar-left">
               <button type="button" class="org-btn-add-files" id="org-add-more" aria-label="Add PDF, image, or document files">
                 ${ICONS.add}
                 <span>Add Files</span>
               </button>
-              <button type="button" class="org-btn-add-files org-btn-crop-page${activeCroppingId ? ' is-active' : ''}" id="org-tb-crop-page" aria-label="Crop page" title="Crop selected page or first active page">
-                ${ICONS.crop}
-                <span>Crop Page</span>
-              </button>
             </div>
 
-            <!-- Center: Opensource UI Segmented Mode Capsule + Inline Mode Controls -->
+            <!-- Center: Opensource UI Segmented Mode Capsule -->
             <div class="org-toolbar-center">
               <div class="org-segmented-modes" role="tablist" data-slot="segmented-toggle-button" aria-label="Organize Modes">
                 <span class="org-segmented-indicator" aria-hidden="true"${lastMainIndicatorWidth ? ` style="width:${lastMainIndicatorWidth};transform:${lastMainIndicatorTransform};opacity:1;transition:none !important;"` : ' style="opacity:0;transition:none !important;"'}></span>
@@ -37106,90 +38462,6 @@ trailer<</Root 1 0 R>>`;
                     <span>${m.label}</span>
                   </button>
                 `).join('')}
-              </div>
-
-              <!-- Contextual Sub-Tools Slot (Anchored to right of centered capsule) -->
-              <div class="org-subcontrols-slot" id="org-subcontrols-slot">
-                ${mode === 'organize' ? `
-                  <span class="org-vsep"></span>
-                  <div class="org-toolbar-inline-ctrl" aria-label="Organize Actions">
-                    <button type="button" class="org-mini-btn" id="org-insert-blank" aria-label="Insert a blank page at the end" title="Insert a blank page at the end">
-                      ${ICONS.add} <span>Blank Page</span>
-                    </button>
-                    <button type="button" class="org-mini-btn" id="org-reverse-all" aria-label="Reverse all pages" title="Reverse order of all active pages">
-                      ${ICONS.reverse} <span>Reverse</span>
-                    </button>
-                  </div>
-                ` : ''}
-
-                ${mode === 'merge' ? `
-                  <!-- Merge subcontrols slot empty: capsule remains centered -->
-                ` : ''}
-
-                ${mode === 'split' ? `
-                  <span class="org-vsep"></span>
-                  <div class="org-toolbar-inline-ctrl" aria-label="Split Modes">
-                    <div class="org-segmented-modes org-segmented-mini" role="tablist" data-slot="segmented-toggle-button">
-                      <button type="button" class="org-mode-tab ${splitMethod === 'every' ? 'is-active' : ''}" data-split-method="every" title="Split into equal parts of N pages">Every</button>
-                      <button type="button" class="org-mode-tab ${splitMethod === 'range' ? 'is-active' : ''}" data-split-method="range" title="Custom page ranges e.g. 1-3, 4-6">Range</button>
-                      <button type="button" class="org-mode-tab ${splitMethod === 'burst' ? 'is-active' : ''}" data-split-method="burst" title="Extract every page into individual PDF">Burst</button>
-                    </div>
-
-                    ${splitMethod === 'every' ? `
-                      <div class="org-stepper" role="group" aria-label="Pages per split">
-                        <button type="button" class="org-step-btn" id="org-split-dec" aria-label="Decrease interval" ${splitEvery <= 1 ? 'disabled' : ''}>−</button>
-                        <span class="org-step-val" id="org-split-val">${splitEvery}</span>
-                        <button type="button" class="org-step-btn" id="org-split-inc" aria-label="Increase interval" ${splitEvery >= Math.max(1, items.filter(it => !it.isDeleted).length) ? 'disabled' : ''}>+</button>
-                      </div>
-                      <span class="org-inline-unit">pgs</span>
-                    ` : ''}
-
-                    ${splitMethod === 'range' ? `
-                      <input type="text" class="org-range-inp" id="org-split-range-inp" value="${_esc(splitRanges)}" placeholder="e.g. 1-3, 4-6" aria-label="Page ranges to split">
-                    ` : ''}
-                  </div>
-                ` : ''}
-
-                ${mode === 'extract' ? `
-                  <span class="org-vsep"></span>
-                  <div class="org-toolbar-inline-ctrl" aria-label="Extract Options">
-                    <div class="org-segmented-modes org-segmented-mini" role="tablist" data-slot="segmented-toggle-button">
-                      <span class="org-segmented-indicator" aria-hidden="true"${lastMiniIndicatorWidth ? ` style="width:${lastMiniIndicatorWidth};transform:${lastMiniIndicatorTransform};opacity:1;transition:none !important;"` : ' style="opacity:0;transition:none !important;"'}></span>
-                      <button type="button" class="org-mode-tab ${!extractSeparate ? 'is-active' : ''}" id="org-ext-combined" title="Download selected as single PDF">Single</button>
-                      <button type="button" class="org-mode-tab ${extractSeparate ? 'is-active' : ''}" id="org-ext-separate" title="Download selected as separate ZIP">ZIP</button>
-                    </div>
-                    <div class="org-btn-group" role="group" aria-label="Extract Page Selection">
-                      <button type="button" class="org-mini-btn" id="org-ext-sel-all" title="Select all pages">All</button>
-                      <button type="button" class="org-mini-btn" id="org-ext-clear" title="Clear selection" ${selectedIds.size ? '' : 'disabled'}>Clear</button>
-                    </div>
-                  </div>
-                ` : ''}
-
-                ${mode === 'rotate' ? `
-                  <span class="org-vsep"></span>
-                  <div class="org-toolbar-inline-ctrl" aria-label="Rotate All Controls">
-                    <div class="org-btn-group" role="group" aria-label="Rotate All Pages">
-                      <button type="button" class="org-mini-btn" id="org-rot-all-ccw" title="Rotate all 90° CCW">
-                        ${ICONS.rotLeft} <span>-90°</span>
-                      </button>
-                      <button type="button" class="org-mini-btn" id="org-rot-all-cw" title="Rotate all 90° CW">
-                        ${ICONS.rotate} <span>+90°</span>
-                      </button>
-                      <button type="button" class="org-mini-btn" id="org-rot-all-180" title="Flip all 180°">
-                        ${ICONS.flip180} <span>180°</span>
-                      </button>
-                    </div>
-                  </div>
-                ` : ''}
-
-                ${mode === 'delete' ? `
-                  <span class="org-vsep"></span>
-                  <div class="org-toolbar-inline-ctrl" aria-label="Delete Status">
-                    <span class="org-inline-unit" style="display:inline-block;min-width:140px;text-align:center;color: ${items.filter(it => it.isDeleted).length ? '#DC2626' : '#71717A'}; font-weight: 500;">
-                      ${items.filter(it => it.isDeleted).length ? `${items.filter(it => it.isDeleted).length} marked for removal` : 'Click delete on any card'}
-                    </span>
-                  </div>
-                ` : ''}
               </div>
             </div>
 
@@ -37221,6 +38493,138 @@ trailer<</Root 1 0 R>>`;
               </button>
             </div>
           </header>`;
+      }
+
+      function renderSubToolbar() {
+        const activeCount = items.filter(it => !it.isDeleted).length;
+
+        if (mode === 'split') {
+          return `
+            <div class="org-sub-toolbar" id="org-sub-toolbar" role="region" aria-label="Split Options">
+              <div class="org-sub-toolbar-inner">
+                <span class="org-sub-lead">Split:</span>
+                <div class="org-segmented-modes org-segmented-mini" role="tablist" data-slot="segmented-toggle-button" aria-label="Split Method">
+                  <button type="button" class="org-mode-tab ${splitMethod === 'every' ? 'is-active' : ''}" data-split-method="every" title="Split into equal parts of N pages">Every N Pages</button>
+                  <button type="button" class="org-mode-tab ${splitMethod === 'range' ? 'is-active' : ''}" data-split-method="range" title="Custom page ranges e.g. 1-3, 4-6">Page Ranges</button>
+                  <button type="button" class="org-mode-tab ${splitMethod === 'burst' ? 'is-active' : ''}" data-split-method="burst" title="Extract every page into individual PDF">Burst All</button>
+                </div>
+
+                <span class="org-vsep"></span>
+
+                ${splitMethod === 'every' ? `
+                  <div class="org-sub-ctrl-group">
+                    <span class="org-sub-label">Split every:</span>
+                    <div class="org-stepper" role="group" aria-label="Pages per split">
+                      <button type="button" class="org-step-btn" id="org-split-dec" aria-label="Decrease interval" ${splitEvery <= 1 ? 'disabled' : ''}>−</button>
+                      <span class="org-step-val" id="org-split-val">${splitEvery}</span>
+                      <button type="button" class="org-step-btn" id="org-split-inc" aria-label="Increase interval" ${splitEvery >= Math.max(1, activeCount) ? 'disabled' : ''}>+</button>
+                    </div>
+                    <span class="org-sub-unit">page${splitEvery > 1 ? 's' : ''}</span>
+                    <span class="org-sub-hint">→ Creates ${Math.ceil(activeCount / splitEvery)} PDFs</span>
+                  </div>
+                ` : splitMethod === 'range' ? `
+                  <div class="org-sub-ctrl-group">
+                    <span class="org-sub-label">Ranges:</span>
+                    <input type="text" class="org-range-inp" id="org-split-range-inp" value="${_esc(splitRanges)}" placeholder="e.g. 1-3, 4-6" aria-label="Page ranges to split">
+                    <span class="org-sub-hint">Click scissor cuts on cards or type ranges</span>
+                  </div>
+                ` : `
+                  <div class="org-sub-ctrl-group">
+                    <span class="org-sub-hint">Splits document into ${activeCount} single-page PDFs</span>
+                  </div>
+                `}
+              </div>
+            </div>`;
+        }
+
+        if (mode === 'rotate') {
+          return `
+            <div class="org-sub-toolbar" id="org-sub-toolbar" role="region" aria-label="Rotate Options">
+              <div class="org-sub-toolbar-inner">
+                <span class="org-sub-lead">Rotate All:</span>
+                <div class="org-btn-group" role="group" aria-label="Rotate All Pages">
+                  <button type="button" class="org-mini-btn" id="org-rot-all-ccw" title="Rotate all 90° CCW">
+                    ${ICONS.rotLeft} <span>-90° Left</span>
+                  </button>
+                  <button type="button" class="org-mini-btn" id="org-rot-all-cw" title="Rotate all 90° CW">
+                    ${ICONS.rotate} <span>+90° Right</span>
+                  </button>
+                  <button type="button" class="org-mini-btn" id="org-rot-all-180" title="Flip all 180°">
+                    ${ICONS.flip180} <span>180° Flip</span>
+                  </button>
+                </div>
+                <span class="org-vsep"></span>
+                <span class="org-sub-hint">Tip: Hover page thumbnails to rotate individual cards</span>
+              </div>
+            </div>`;
+        }
+
+        if (mode === 'extract') {
+          return `
+            <div class="org-sub-toolbar" id="org-sub-toolbar" role="region" aria-label="Extract Options">
+              <div class="org-sub-toolbar-inner">
+                <span class="org-sub-lead">Format:</span>
+                <div class="org-segmented-modes org-segmented-mini" role="tablist" data-slot="segmented-toggle-button">
+                  <span class="org-segmented-indicator" aria-hidden="true"${lastMiniIndicatorWidth ? ` style="width:${lastMiniIndicatorWidth};transform:${lastMiniIndicatorTransform};opacity:1;transition:none !important;"` : ' style="opacity:0;transition:none !important;"'}></span>
+                  <button type="button" class="org-mode-tab ${!extractSeparate ? 'is-active' : ''}" id="org-ext-combined" title="Download selected as single PDF">Single PDF</button>
+                  <button type="button" class="org-mode-tab ${extractSeparate ? 'is-active' : ''}" id="org-ext-separate" title="Download selected as separate ZIP">Separate ZIP</button>
+                </div>
+                <span class="org-vsep"></span>
+                <div class="org-btn-group" role="group" aria-label="Extract Page Selection">
+                  <button type="button" class="org-mini-btn" id="org-ext-sel-all" title="Select all pages">Select All</button>
+                  <button type="button" class="org-mini-btn" id="org-ext-clear" title="Clear selection" ${selectedIds.size ? '' : 'disabled'}>Clear</button>
+                </div>
+                <span class="org-vsep"></span>
+                <span class="org-sub-badge">${selectedIds.size ? `${selectedIds.size} page(s) selected` : 'Select pages to extract'}</span>
+              </div>
+            </div>`;
+        }
+
+        if (mode === 'organize') {
+          return `
+            <div class="org-sub-toolbar" id="org-sub-toolbar" role="region" aria-label="Organize Options">
+              <div class="org-sub-toolbar-inner">
+                <button type="button" class="org-mini-btn" id="org-insert-blank" aria-label="Insert a blank page at the end" title="Insert a blank page at the end">
+                  ${ICONS.add} <span>Add Blank Page</span>
+                </button>
+                <span class="org-vsep"></span>
+                <span class="org-sub-hint">Drag cards to rearrange page order</span>
+              </div>
+            </div>`;
+        }
+
+        if (mode === 'delete') {
+          const delCount = items.filter(it => it.isDeleted).length;
+          return `
+            <div class="org-sub-toolbar" id="org-sub-toolbar" role="region" aria-label="Delete Options">
+              <div class="org-sub-toolbar-inner">
+                <span class="org-sub-label" style="color: ${delCount ? '#DC2626' : '#71717A'}; font-weight: 500;">
+                  ${delCount ? `${delCount} page(s) marked for removal` : 'Click trash on any card to mark for removal'}
+                </span>
+                ${delCount ? `
+                  <button type="button" class="org-mini-btn" id="org-restore-all" style="margin-left:6px;">Restore All</button>
+                ` : ''}
+              </div>
+            </div>`;
+        }
+
+        if (mode === 'merge') {
+          return `
+            <div class="org-sub-toolbar" id="org-sub-toolbar" role="region" aria-label="Merge Options">
+              <div class="org-sub-toolbar-inner">
+                <button type="button" class="org-mini-btn" id="org-merge-add" aria-label="Add more files to merge">
+                  ${ICONS.add} <span>Add More Files</span>
+                </button>
+                <button type="button" class="org-mini-btn" id="org-insert-blank" aria-label="Insert a blank page">
+                  ${ICONS.add} <span>Add Blank Page</span>
+                </button>
+                <span class="org-vsep"></span>
+                <span class="org-sub-hint">Drag files or pages to order them before merging</span>
+              </div>
+            </div>`;
+        }
+
+        return '';
       }
 
       function renderRightRail() {
@@ -37539,6 +38943,7 @@ trailer<</Root 1 0 R>>`;
         container.innerHTML = `
           <div class="org-flow">
             ${renderToolbar()}
+            ${renderSubToolbar()}
             <div class="org-studio-body">
               ${renderGridMarkup()}
               ${renderRightRail()}
@@ -38085,11 +39490,11 @@ trailer<</Root 1 0 R>>`;
         }
 
         // 5. Sub-Mode Split Stepper, Range Input & Burst
-        const sDec = container.querySelector('#org-step-dec');
-        const sInc = container.querySelector('#org-step-inc');
+        const sDec = container.querySelector('#org-step-dec, #org-split-dec');
+        const sInc = container.querySelector('#org-step-inc, #org-split-inc');
         if (sDec) sDec.onclick = () => { if (splitEvery > 1) { splitEvery--; syncSplitCuts(); renderWorkbench(); } };
         if (sInc) sInc.onclick = () => { if (splitEvery < items.length) { splitEvery++; syncSplitCuts(); renderWorkbench(); } };
-        const rangeInp = container.querySelector('#org-split-range');
+        const rangeInp = container.querySelector('#org-split-range, #org-split-range-inp');
         if (rangeInp) {
           rangeInp.addEventListener('change', () => {
             rangesToCuts(rangeInp.value);
@@ -38127,6 +39532,13 @@ trailer<</Root 1 0 R>>`;
           renderWorkbench();
         };
 
+        const restoreAll = container.querySelector('#org-restore-all');
+        if (restoreAll) restoreAll.onclick = () => {
+          recordState();
+          items.forEach(it => it.isDeleted = false);
+          renderWorkbench();
+        };
+
         const revAll = container.querySelector('#org-reverse-all');
         if (revAll) revAll.onclick = () => {
           recordState();
@@ -38147,10 +39559,9 @@ trailer<</Root 1 0 R>>`;
         // 7. Add More Files
         const addInp = container.querySelector('#org-add-inp');
         const openPicker = () => addInp && addInp.click();
-        const addMore = container.querySelector('#org-add-more');
-        const endAdd = container.querySelector('#org-end-add');
-        if (addMore) addMore.onclick = openPicker;
-        if (endAdd) endAdd.onclick = openPicker;
+        container.querySelectorAll('#org-add-more, #org-merge-add, #org-end-add').forEach(btn => {
+          btn.onclick = openPicker;
+        });
         if (addInp) addInp.onchange = () => { const arr = [...(addInp.files || [])]; addInp.value = ''; if (arr.length) acceptFiles(arr); };
 
         // 7b. Toolbar Crop Page Trigger

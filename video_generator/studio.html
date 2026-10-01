@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1920, height=1080, initial-scale=1.0"/>
+<title>FileKit Promo Video Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+  }
+  body, html {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #07090E;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #F8FAFC;
+    user-select: none;
+  }
+
+  /* Master Stage */
+  #stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    background: radial-gradient(ellipse 90% 70% at 50% -10%, #151d36 0%, #07090e 100%);
+    overflow: hidden;
+  }
+
+  /* Dynamic Animated Background Grid & Particles */
+  #bg-canvas {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Glow Orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    opacity: 0.6;
+    z-index: 2;
+  }
+  .orb-1 {
+    width: 650px;
+    height: 650px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(99, 102, 241, 0) 70%);
+    top: -100px;
+    left: 200px;
+  }
+  .orb-2 {
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0) 70%);
+    bottom: -150px;
+    right: 150px;
+  }
+  .orb-3 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.25) 0%, rgba(236, 72, 153, 0) 70%);
+    top: 300px;
+    right: -100px;
+  }
+
+  /* Scenes Container */
+  .scene {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateZ(0);
+  }
+
+  /* Top Bar Branding Overlay */
+  .top-overlay {
+    position: absolute;
+    top: 40px;
+    left: 60px;
+    right: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+  }
+  .top-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #FFF;
+  }
+  .top-pill {
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #A5B4FC;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .top-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 10px #10B981;
+  }
+
+  /* ========================================================
+     SCENE 1: THE HOOK (Glitch & Problem Statement)
+     ======================================================== */
+  #scene-1 .hook-wrapper {
+    text-align: center;
+    max-width: 1300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+  .pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #F87171;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.25);
+  }
+  .hook-title {
+    font-size: 72px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hook-title .danger-text {
+    background: linear-gradient(180deg, #FF6B6B 0%, #EE5253 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+  }
+  .danger-cards {
+    display: flex;
+    gap: 24px;
+    margin-top: 15px;
+  }
+  .danger-card {
+    background: rgba(18, 20, 29, 0.7);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 16px;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #FCA5A5;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .huge-strike {
+    position: absolute;
+    width: 1400px;
+    height: 12px;
+    background: linear-gradient(90deg, #FF4D4D, #FF0055);
+    box-shadow: 0 0 40px #FF0055;
+    border-radius: 6px;
+    transform: rotate(-12deg) scaleX(0);
+    z-index: 50;
+  }
+
+  /* ========================================================
+     SCENE 2: REVEAL & COMMAND PALETTE
+     ======================================================== */
+  #scene-2 {
+    perspective: 1200px;
+  }
+  .browser-mockup {
+    width: 1380px;
+    height: 780px;
+    background: #0E121B;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), 0 0 60px rgba(99, 102, 241, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform-origin: center center;
+  }
+  .mock-header {
+    height: 60px;
+    background: #141926;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    justify-content: space-between;
+  }
+  .mock-dots {
+    display: flex;
+    gap: 8px;
+  }
+  .mock-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .dot-red { background: #FF5F56; }
+  .dot-yellow { background: #FFBD2E; }
+  .dot-green { background: #27C93F; }
+
+  .mock-address {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 6px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #94A3B8;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mock-address span {
+    color: #10B981;
+    font-weight: 700;
+  }
+
+  .mock-body {
+    flex: 1;
+    position: relative;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at 50% 0%, #171E31 0%, #0B0E17 100%);
+  }
+
+  /* Command Palette Modal */
+  .cmd-palette {
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    width: 780px;
+    background: rgba(18, 24, 38, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.3);
+    backdrop-filter: blur(24px);
+    overflow: hidden;
+    opacity: 0;
+    z-index: 30;
+  }
+  .cmd-input-wrap {
+    display: flex;
+    align-items: center;
+    padding: 22px 28px;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .cmd-input-text {
+    font-size: 22px;
+    font-weight: 600;
+    color: #FFF;
+    flex: 1;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .cmd-caret {
+    display: inline-block;
+    width: 3px;
+    height: 24px;
+    background: #6366F1;
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.8s infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .cmd-results {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cmd-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+  .cmd-item.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+  .cmd-item-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .cmd-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .icon-pdf { background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .icon-vid { background: rgba(168, 85, 247, 0.15); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .icon-img { background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .cmd-item-info h4 { font-size: 17px; font-weight: 700; color: #FFF; }
+  .cmd-item-info p { font-size: 13px; color: #94A3B8; }
+  .cmd-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    font-weight: 700;
+    color: #CBD5E1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ========================================================
+     SCENE 3: DRAG & DROP + WASM ENGINE
+     ======================================================== */
+  #scene-3 .drop-stage {
+    width: 1300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+  .drop-zone {
+    width: 1000px;
+    height: 380px;
+    border: 2px dashed rgba(99, 102, 241, 0.4);
+    border-radius: 28px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(14, 18, 27, 0.6) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .drop-zone.active {
+    border-color: #6366F1;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(14, 18, 27, 0.8) 100%);
+    box-shadow: 0 0 60px rgba(99, 102, 241, 0.4), inset 0 0 40px rgba(99, 102, 241, 0.2);
+  }
+  .drop-icon-box {
+    width: 84px;
+    height: 84px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #6366F1, #3B82F6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
+  }
+  .drop-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #FFF;
+  }
+  .drop-sub {
+    font-size: 18px;
+    color: #94A3B8;
+  }
+
+  /* Floating Drag Files */
+  .drag-cluster {
+    position: absolute;
+    top: 150px;
+    left: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 50;
+    opacity: 0;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.7));
+  }
+  .file-card {
+    width: 320px;
+    padding: 16px 20px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    backdrop-filter: blur(16px);
+  }
+  .file-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .file-pdf { background: #EF4444; color: #FFF; }
+  .file-doc { background: #3B82F6; color: #FFF; }
+  .file-vid { background: #8B5CF6; color: #FFF; }
+
+  /* Processing Live HUD */
+  .processing-hud {
+    display: flex;
+    gap: 24px;
+    width: 1080px;
+    margin-top: 10px;
+  }
+  .proc-card {
+    flex: 1;
+    background: #111624;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  }
+  .proc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .proc-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #F1F5F9;
+  }
+  .proc-percent {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 800;
+    color: #10B981;
+  }
+  .proc-bar-bg {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+  .proc-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6366F1, #10B981);
+    border-radius: 4px;
+    box-shadow: 0 0 12px #10B981;
+  }
+  .proc-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #64748B;
+  }
+
+  /* ========================================================
+     SCENE 4: BENTO GRID OF CAPABILITIES
+     ======================================================== */
+  #scene-4 .bento-container {
+    width: 1420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+  .section-tag {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #6366F1;
+    background: rgba(99, 102, 241, 0.12);
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+  .bento-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-rows: 240px 240px;
+    gap: 24px;
+    width: 100%;
+  }
+  .bento-card {
+    background: #0F1420;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 24px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .bento-card-large {
+    grid-row: span 2;
+  }
+  .bento-card-highlight {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.15) 0%, #0F1420 70%);
+  }
+  .bento-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .bento-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .bento-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #FFF;
+  }
+  .bento-desc {
+    font-size: 15px;
+    color: #94A3B8;
+    line-height: 1.5;
+  }
+  .bento-visual {
+    margin-top: 15px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .metric-badge {
+    padding: 12px 20px;
+    border-radius: 14px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34D399;
+    font-size: 24px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ========================================================
+     SCENE 5: ZERO CLOUD PRIVACY FORTRESS
+     ======================================================== */
+  #scene-5 .shield-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 40px;
+    max-width: 1200px;
+  }
+  .shield-emblem {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.05) 70%);
+    border: 2px solid rgba(16, 185, 129, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 80px rgba(16, 185, 129, 0.4), inset 0 0 40px rgba(16, 185, 129, 0.2);
+    position: relative;
+  }
+  .shield-ring {
+    position: absolute;
+    inset: -20px;
+    border: 1px dashed rgba(16, 185, 129, 0.3);
+    border-radius: 50%;
+  }
+  .privacy-title {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.15;
+  }
+  .privacy-title span {
+    color: #10B981;
+    text-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+  }
+  .privacy-pills {
+    display: flex;
+    gap: 20px;
+  }
+  .privacy-pill {
+    padding: 14px 28px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 18px;
+    font-weight: 700;
+    color: #E2E8F0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* ========================================================
+     SCENE 6: OUTRO / CLIMAX
+     ======================================================== */
+  #scene-6 .outro-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 32px;
+  }
+  .logo-massive {
+    width: 140px;
+    height: 140px;
+    filter: drop-shadow(0 20px 40px rgba(99, 102, 241, 0.5));
+  }
+  .outro-title {
+    font-size: 92px;
+    font-weight: 900;
+    letter-spacing: -3px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .outro-sub {
+    font-size: 32px;
+    font-weight: 600;
+    color: #94A3B8;
+  }
+  .outro-cta-btn {
+    margin-top: 15px;
+    padding: 22px 64px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4F46E5, #06B6D4);
+    font-size: 26px;
+    font-weight: 800;
+    color: #FFF;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 20px 60px rgba(79, 70, 229, 0.6), 0 0 30px rgba(6, 182, 212, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-25deg);
+  }
+  .outro-domain {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: #38BDF8;
+    letter-spacing: 2px;
+  }
+
+  /* Animated Virtual Cursor */
+  #cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    z-index: 1000;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+  }
+  .cursor-ripple {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #6366F1;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- Dynamic Particles Canvas -->
+  <canvas id="bg-canvas" width="1920" height="1080"></canvas>
+
+  <!-- Ambient Glow Orbs -->
+  <div class="orb orb-1" id="orb-1"></div>
+  <div class="orb orb-2" id="orb-2"></div>
+  <div class="orb orb-3" id="orb-3"></div>
+
+  <!-- Persistent Global Top Header -->
+  <div class="top-overlay" id="top-overlay">
+    <div class="top-brand">
+      <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="4" width="40" height="40" rx="10" fill="#FFFFFF"/>
+        <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+        <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+        <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+        <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+        <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B"/>
+      </svg>
+      <span>FileKit</span>
+    </div>
+    <div class="top-pill">
+      <span class="dot"></span>
+      <span>100% Client-Side Engine Active</span>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCENE 1: THE HOOK
+       ======================================================== -->
+  <div class="scene" id="scene-1">
+    <div class="hook-wrapper">
+      <div class="pill-badge badge-danger">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        The Hidden Cost of Cloud File Converters
+      </div>
+      <h1 class="hook-title">
+        Still uploading your private files<br/>
+        to <span class="danger-text">random web servers?</span>
+      </h1>
+      <div class="danger-cards">
+        <div class="danger-card">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
+          Data Leaks & Snooping
+        </div>
+        <div class="danger-card">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Slow Upload Queues
+        </div>
+        <div class="danger-card">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Paywalls & Size Caps
+        </div>
+      </div>
+    </div>
+    <div class="huge-strike" id="scene1-strike"></div>
+  </div>
+
+  <!-- ========================================================
+       SCENE 2: COMMAND PALETTE REVEAL
+       ======================================================== -->
+  <div class="scene" id="scene-2">
+    <div class="browser-mockup" id="browser-mock">
+      <div class="mock-header">
+        <div class="mock-dots">
+          <div class="mock-dot dot-red"></div>
+          <div class="mock-dot dot-yellow"></div>
+          <div class="mock-dot dot-green"></div>
+        </div>
+        <div class="mock-address">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          https://<span>filekit.cc</span>/suite
+        </div>
+        <div style="width: 50px;"></div>
+      </div>
+      <div class="mock-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+          <div>
+            <h2 style="font-size: 32px; font-weight: 800; color: #FFF;">The In-Browser File Operating System</h2>
+            <p style="color: #94A3B8; font-size: 16px; margin-top: 4px;">187+ High performance local WebAssembly tools</p>
+          </div>
+          <div style="padding: 10px 20px; background: rgba(255,255,255,0.06); border-radius: 10px; font-weight: 700; color: #A5B4FC; border: 1px solid rgba(255,255,255,0.1);">
+            ⌘K Universal Palette
+          </div>
+        </div>
+
+        <!-- Simulated Tool Grid in Background -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; opacity: 0.35;">
+          <div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-weight: 700; color: #FFF;">PDF Converter</div>
+            <div style="font-size: 13px; color: #64748B;">Word, Excel, JPG, OCR</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-weight: 700; color: #FFF;">Video Transcode</div>
+            <div style="font-size: 13px; color: #64748B;">MP4, WebM, MOV, Compress</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-weight: 700; color: #FFF;">Image Magic</div>
+            <div style="font-size: 13px; color: #64748B;">AVIF, WebP, Smart Crop</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-weight: 700; color: #FFF;">Audio Studio</div>
+            <div style="font-size: 13px; color: #64748B;">MP3, WAV, Extract, Trim</div>
+          </div>
+        </div>
+
+        <!-- Active Command Palette Overlay -->
+        <div class="cmd-palette" id="cmd-palette">
+          <div class="cmd-input-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="cmd-input-text"><span id="typed-text"></span><span class="cmd-caret"></span></div>
+            <div class="cmd-badge">ESC</div>
+          </div>
+          <div class="cmd-results" id="cmd-results-list">
+            <div class="cmd-item active" id="cmd-item-1">
+              <div class="cmd-item-left">
+                <div class="cmd-item-icon icon-pdf">📄</div>
+                <div class="cmd-item-info">
+                  <h4>PDF to Word (.docx)</h4>
+                  <p>Convert with editable layout and typography preserved</p>
+                </div>
+              </div>
+              <div class="cmd-badge">↵ Instant</div>
+            </div>
+            <div class="cmd-item" id="cmd-item-2">
+              <div class="cmd-item-left">
+                <div class="cmd-item-icon icon-vid">🎬</div>
+                <div class="cmd-item-info">
+                  <h4>Compress 4K Video</h4>
+                  <p>Reduce size by up to 90% without losing visual quality</p>
+                </div>
+              </div>
+              <div class="cmd-badge">WASM</div>
+            </div>
+            <div class="cmd-item" id="cmd-item-3">
+              <div class="cmd-item-left">
+                <div class="cmd-item-icon icon-img">⚡</div>
+                <div class="cmd-item-info">
+                  <h4>Add Watermark & Stamp</h4>
+                  <p>Multi-page vector stamping with signature support</p>
+                </div>
+              </div>
+              <div class="cmd-badge">0ms Upload</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCENE 3: DRAG & DROP + MULTI-THREAD WASM SPEED
+       ======================================================== -->
+  <div class="scene" id="scene-3">
+    <div class="drop-stage">
+      <div style="text-align: center;">
+        <div class="section-tag" style="margin-bottom: 12px; display: inline-block;">Blazing Fast Execution</div>
+        <h2 style="font-size: 54px; font-weight: 900; letter-spacing: -1.5px; color: #FFF;">Drag. Drop. Instant Result.</h2>
+      </div>
+
+      <div class="drop-zone" id="drop-zone-elem">
+        <div class="drop-icon-box">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="drop-title">Drop your files right here</div>
+        <div class="drop-sub">Zero network transmission • Multi-core CPU acceleration</div>
+      </div>
+
+      <!-- Live Processing Cards -->
+      <div class="processing-hud" id="processing-hud" style="opacity: 0;">
+        <div class="proc-card">
+          <div class="proc-head">
+            <div class="proc-name">📄 quarterly_financials_2026.pdf</div>
+            <div class="proc-percent" id="proc-p1">0%</div>
+          </div>
+          <div class="proc-bar-bg">
+            <div class="proc-bar-fill" id="proc-b1"></div>
+          </div>
+          <div class="proc-meta">
+            <span>Converting to .docx (WASM Engine)</span>
+            <span id="proc-time1">140ms</span>
+          </div>
+        </div>
+        <div class="proc-card">
+          <div class="proc-head">
+            <div class="proc-name">🎬 launch_keynote_4k.mp4</div>
+            <div class="proc-percent" id="proc-p2">0%</div>
+          </div>
+          <div class="proc-bar-bg">
+            <div class="proc-bar-fill" id="proc-b2"></div>
+          </div>
+          <div class="proc-meta">
+            <span>Compressing (-88% size)</span>
+            <span id="proc-time2">380ms</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Draggable File Cards -->
+    <div class="drag-cluster" id="drag-cluster">
+      <div class="file-card">
+        <div class="file-icon file-pdf">PDF</div>
+        <div>
+          <div style="font-weight: 700; color: #FFF;">quarterly_financials.pdf</div>
+          <div style="font-size: 12px; color: #94A3B8;">18.4 MB • 42 Pages</div>
+        </div>
+      </div>
+      <div class="file-card" style="transform: rotate(4deg) translate(20px, -10px);">
+        <div class="file-icon file-vid">MP4</div>
+        <div>
+          <div style="font-weight: 700; color: #FFF;">launch_keynote_4k.mp4</div>
+          <div style="font-size: 12px; color: #94A3B8;">142.8 MB • H.265</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+     SCENE 4: BENTO GRID CAPABILITIES
+     ======================================================== -->
+  <div class="scene" id="scene-4">
+    <div class="bento-container">
+      <div style="text-align: center;">
+        <div class="section-tag" style="margin-bottom: 12px; display: inline-block;">All-In-One Toolkit</div>
+        <h2 style="font-size: 54px; font-weight: 900; letter-spacing: -1.5px; color: #FFF;">One Suite. Unlimited Superpowers.</h2>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Card 1: PDF Powerhouse -->
+        <div class="bento-card bento-card-large bento-card-highlight">
+          <div>
+            <div class="bento-header">
+              <div class="bento-icon" style="background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.4);">📄</div>
+              <div>
+                <div class="bento-title">Complete PDF Suite</div>
+                <div class="bento-desc">Edit, convert, sign, merge, watermark, and OCR.</div>
+              </div>
+            </div>
+            <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="padding: 12px 16px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 600;">
+                <span>PDF ➔ Word / Excel / PPT</span>
+                <span style="color: #10B981;">100% Editable</span>
+              </div>
+              <div style="padding: 12px 16px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 600;">
+                <span>Visual Page Reorder & Split</span>
+                <span style="color: #6366F1;">Instant Grid</span>
+              </div>
+              <div style="padding: 12px 16px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 600;">
+                <span>Digital Signatures & Stamps</span>
+                <span style="color: #F59E0B;">Vector Quality</span>
+              </div>
+            </div>
+          </div>
+          <div class="metric-badge">
+            ⚡ 0.2s Average Latency
+          </div>
+        </div>
+
+        <!-- Card 2: Video Studio -->
+        <div class="bento-card">
+          <div class="bento-header">
+            <div class="bento-icon" style="background: rgba(168, 85, 247, 0.2); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.4);">🎬</div>
+            <div>
+              <div class="bento-title">Video & Media</div>
+              <div class="bento-desc">In-browser ffmpeg transcoding</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 15px;">
+            <div style="font-size: 18px; font-weight: 800; color: #94A3B8; text-decoration: line-through;">84.2 MB</div>
+            <div style="font-size: 26px; font-weight: 900; color: #10B981;">7.4 MB <span style="font-size: 14px; background: rgba(16,185,129,0.2); padding: 4px 8px; border-radius: 6px;">-91%</span></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Image Engine -->
+        <div class="bento-card">
+          <div class="bento-header">
+            <div class="bento-icon" style="background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.4);">🖼️</div>
+            <div>
+              <div class="bento-title">Modern Image Tech</div>
+              <div class="bento-desc">WebP, AVIF, SVG, Smart Crop</div>
+            </div>
+          </div>
+          <div style="font-size: 15px; font-weight: 700; color: #38BDF8; margin-top: 15px;">
+            ✦ Lanczos3 Precision Resampling
+          </div>
+        </div>
+
+        <!-- Card 4: 100% Private Offline -->
+        <div class="bento-card" style="grid-column: span 2;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="bento-header">
+              <div class="bento-icon" style="background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4);">🛡️</div>
+              <div>
+                <div class="bento-title">187+ Tools & Offline PWA Ready</div>
+                <div class="bento-desc">Works seamlessly without an internet connection.</div>
+              </div>
+            </div>
+            <div style="padding: 10px 24px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10B981; font-weight: 800; font-size: 16px;">
+              ✓ 100% Free Forever
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+     SCENE 5: ZERO CLOUD PRIVACY FORTRESS
+     ======================================================== -->
+  <div class="scene" id="scene-5">
+    <div class="shield-wrapper">
+      <div class="shield-emblem" id="shield-emblem">
+        <div class="shield-ring"></div>
+        <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      </div>
+      <h2 class="privacy-title">
+        Your Files <span>Never</span> Leave<br/>Your Own Computer.
+      </h2>
+      <div class="privacy-pills">
+        <div class="privacy-pill">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Zero Server Uploads
+        </div>
+        <div class="privacy-pill">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          No Account Required
+        </div>
+        <div class="privacy-pill">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          No File Size Limits
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+     SCENE 6: OUTRO / CLIMAX
+     ======================================================== -->
+  <div class="scene" id="scene-6">
+    <div class="outro-box">
+      <!-- FileKit 4-Color Brand Icon -->
+      <svg class="logo-massive" viewBox="0 0 48 48" fill="none" id="outro-logo">
+        <defs>
+          <filter id="fk-huge-shadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#6366F1" flood-opacity="0.5"/>
+          </filter>
+        </defs>
+        <g filter="url(#fk-huge-shadow)">
+          <rect x="4" y="4" width="40" height="40" rx="10" fill="#FFFFFF"/>
+          <rect x="18" y="10" width="12" height="12" rx="3.5" fill="#FF4D4D"/>
+          <rect x="26" y="18" width="12" height="12" rx="3.5" fill="#FFC700"/>
+          <rect x="18" y="26" width="12" height="12" rx="3.5" fill="#00E676"/>
+          <rect x="10" y="18" width="12" height="12" rx="3.5" fill="#00B0FF"/>
+          <rect x="20.5" y="20.5" width="7" height="7" rx="2" fill="#18181B"/>
+        </g>
+      </svg>
+      <h1 class="outro-title">FileKit</h1>
+      <p class="outro-sub">Every File Tool You Need. 100% In Your Browser.</p>
+      
+      <div class="outro-cta-btn" id="outro-cta">
+        <span>Launch Instant App</span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <div class="cta-shine" id="cta-shine"></div>
+      </div>
+
+      <div class="outro-domain">⚡ filekit.cc</div>
+    </div>
+  </div>
+
+  <!-- Virtual Cursor -->
+  <svg id="cursor" viewBox="0 0 24 24" fill="none">
+    <path d="M3 3l7 18 3-7 7-3L3 3z" fill="#FFFFFF" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>
+  <div class="cursor-ripple" id="cursor-ripple"></div>
+</div>
+
+<script>
+  // ----------------------------------------------------
+  // Dynamic Background Particles & Animated Grid
+  // ----------------------------------------------------
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+
+  const NUM_PARTICLES = 60;
+  const particles = [];
+  for (let i = 0; i < NUM_PARTICLES; i++) {
+    particles.push({
+      x: Math.random() * 1920,
+      y: Math.random() * 1080,
+      radius: Math.random() * 2 + 0.8,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      alpha: Math.random() * 0.5 + 0.2
+    });
+  }
+
+  function drawBackground(t) {
+    ctx.clearRect(0, 0, 1920, 1080);
+    
+    // Subtle Perspective Grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+    ctx.lineWidth = 1;
+    const gridSize = 60;
+    const gridOffset = (t * 20) % gridSize;
+
+    for (let x = 0; x <= 1920; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 1080);
+      ctx.stroke();
+    }
+    for (let y = gridOffset; y <= 1080; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1920, y);
+      ctx.stroke();
+    }
+
+    // Stars / Particles
+    for (let i = 0; i < NUM_PARTICLES; i++) {
+      const p = particles[i];
+      const px = (p.x + p.vx * t * 60 + 1920) % 1920;
+      const py = (p.y + p.vy * t * 60 + 1080) % 1080;
+      ctx.fillStyle = `rgba(165, 180, 252, ${p.alpha * (0.6 + 0.4 * Math.sin(t * 2 + i))})`;
+      ctx.beginPath();
+      ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ----------------------------------------------------
+  // Easing Utilities
+  // ----------------------------------------------------
+  function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+  function easeInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function easeOutBack(x) { const c1 = 1.70158; const c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); }
+  function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+  // ----------------------------------------------------
+  // Master Animation Timeline Driver (Deterministic)
+  // Total Duration: 22.0 seconds @ 60fps = 1320 frames
+  // ----------------------------------------------------
+  const TOTAL_DURATION = 22.0;
+
+  const scene1 = document.getElementById('scene-1');
+  const scene2 = document.getElementById('scene-2');
+  const scene3 = document.getElementById('scene-3');
+  const scene4 = document.getElementById('scene-4');
+  const scene5 = document.getElementById('scene-5');
+  const scene6 = document.getElementById('scene-6');
+  const topOverlay = document.getElementById('top-overlay');
+  const cursor = document.getElementById('cursor');
+  const cursorRipple = document.getElementById('cursor-ripple');
+
+  const s1Strike = document.getElementById('scene1-strike');
+  const browserMock = document.getElementById('browser-mock');
+  const cmdPalette = document.getElementById('cmd-palette');
+  const typedText = document.getElementById('typed-text');
+  const cmdItem1 = document.getElementById('cmd-item-1');
+  const cmdItem2 = document.getElementById('cmd-item-2');
+  const cmdItem3 = document.getElementById('cmd-item-3');
+
+  const dropZone = document.getElementById('drop-zone-elem');
+  const dragCluster = document.getElementById('drag-cluster');
+  const procHud = document.getElementById('processing-hud');
+  const procP1 = document.getElementById('proc-p1');
+  const procB1 = document.getElementById('proc-b1');
+  const procP2 = document.getElementById('proc-p2');
+  const procB2 = document.getElementById('proc-b2');
+
+  const shieldEmblem = document.getElementById('shield-emblem');
+  const outroLogo = document.getElementById('outro-logo');
+  const outroCta = document.getElementById('outro-cta');
+  const ctaShine = document.getElementById('cta-shine');
+
+  window.seekTime = function(t) {
+    drawBackground(t);
+
+    // Global Top Overlay Visibility (appears from 3.2s onwards)
+    if (t >= 3.2 && t < 19.5) {
+      topOverlay.style.opacity = clamp((t - 3.2) / 0.4, 0, 1);
+    } else {
+      topOverlay.style.opacity = 0;
+    }
+
+    // Default hide all scenes
+    scene1.style.opacity = 0; scene1.style.transform = 'scale(1)';
+    scene2.style.opacity = 0;
+    scene3.style.opacity = 0;
+    scene4.style.opacity = 0;
+    scene5.style.opacity = 0;
+    scene6.style.opacity = 0;
+    cursor.style.opacity = 0;
+    cursorRipple.style.opacity = 0;
+
+    // ========================================================
+    // SCENE 1: 0.0s -> 3.3s (Hook & Problem)
+    // ========================================================
+    if (t >= 0 && t < 3.4) {
+      const p = t / 3.4;
+      scene1.style.opacity = t < 3.0 ? clamp(t / 0.4, 0, 1) : clamp((3.4 - t) / 0.4, 0, 1);
+      
+      const scale = 1 + p * 0.05;
+      scene1.style.transform = `scale(${scale})`;
+
+      // Strike line hits at t = 1.8s
+      if (t >= 1.7) {
+        const strikeP = clamp((t - 1.7) / 0.25, 0, 1);
+        s1Strike.style.transform = `rotate(-12deg) scaleX(${easeOutBack(strikeP)})`;
+      } else {
+        s1Strike.style.transform = 'rotate(-12deg) scaleX(0)';
+      }
+    }
+
+    // ========================================================
+    // SCENE 2: 3.2s -> 7.2s (Browser reveal & Cmd+K)
+    // ========================================================
+    if (t >= 3.2 && t < 7.4) {
+      const p = (t - 3.2) / 4.0;
+      scene2.style.opacity = t < 7.0 ? clamp((t - 3.2) / 0.4, 0, 1) : clamp((7.4 - t) / 0.4, 0, 1);
+
+      // 3D Tilt perspective animation on browser mock
+      const enterP = clamp((t - 3.2) / 0.8, 0, 1);
+      const rotateX = 15 * (1 - easeOutCubic(enterP));
+      const scale = 0.9 + 0.1 * easeOutCubic(enterP);
+      const translateY = 80 * (1 - easeOutCubic(enterP));
+      browserMock.style.transform = `translateY(${translateY}px) scale(${scale}) rotateX(${rotateX}deg)`;
+
+      // Cursor moves to search bar & clicks at 4.2s
+      cursor.style.opacity = 1;
+      if (t < 4.2) {
+        const curP = clamp((t - 3.4) / 0.8, 0, 1);
+        const curX = 1400 - 450 * easeInOutCubic(curP);
+        const curY = 800 - 300 * easeInOutCubic(curP);
+        cursor.style.left = `${curX}px`;
+        cursor.style.top = `${curY}px`;
+      } else {
+        cursor.style.left = `950px`;
+        cursor.style.top = `500px`;
+      }
+
+      // Ripple at 4.2s
+      if (t >= 4.2 && t < 4.6) {
+        const ripP = (t - 4.2) / 0.4;
+        cursorRipple.style.opacity = 1 - ripP;
+        cursorRipple.style.left = '950px';
+        cursorRipple.style.top = '500px';
+        cursorRipple.style.transform = `translate(-50%, -50%) scale(${ripP * 2.5})`;
+      }
+
+      // Command Palette opens at 4.2s
+      if (t >= 4.2) {
+        const palP = clamp((t - 4.2) / 0.35, 0, 1);
+        cmdPalette.style.opacity = palP;
+        cmdPalette.style.transform = `translateX(-50%) scale(${0.9 + 0.1 * easeOutBack(palP)})`;
+      } else {
+        cmdPalette.style.opacity = 0;
+      }
+
+      // Typing simulation from 4.6s to 6.2s
+      const fullText = "PDF to Word (Editable Docx)";
+      if (t >= 4.6 && t < 6.4) {
+        const typeProgress = clamp((t - 4.6) / 1.2, 0, 1);
+        const charsToShow = Math.floor(typeProgress * fullText.length);
+        typedText.textContent = fullText.substring(0, charsToShow);
+      } else if (t >= 6.4) {
+        typedText.textContent = fullText;
+      } else {
+        typedText.textContent = "";
+      }
+
+      // Active result highlight switch
+      if (t >= 5.8) {
+        cmdItem1.classList.add('active');
+        cmdItem2.classList.remove('active');
+      }
+    }
+
+    // ========================================================
+    // SCENE 3: 7.0s -> 11.5s (Drag & Drop + WASM Speed)
+    // ========================================================
+    if (t >= 7.0 && t < 11.7) {
+      const p = (t - 7.0) / 4.5;
+      scene3.style.opacity = t < 11.2 ? clamp((t - 7.0) / 0.4, 0, 1) : clamp((11.7 - t) / 0.5, 0, 1);
+
+      cursor.style.opacity = 1;
+
+      // Dragging files from top left into center drop zone
+      if (t >= 7.2 && t < 8.6) {
+        const dragP = clamp((t - 7.2) / 1.2, 0, 1);
+        const easeDrag = easeInOutCubic(dragP);
+        
+        dragCluster.style.opacity = clamp((t - 7.2) / 0.2, 0, 1);
+        const curX = 350 + (960 - 350) * easeDrag;
+        const curY = 320 + (540 - 320) * easeDrag;
+
+        dragCluster.style.left = `${curX - 100}px`;
+        dragCluster.style.top = `${curY - 60}px`;
+        cursor.style.left = `${curX}px`;
+        cursor.style.top = `${curY}px`;
+      } else if (t >= 8.6) {
+        // Files dropped!
+        dragCluster.style.opacity = 0;
+        dropZone.classList.add('active');
+        cursor.style.left = '960px';
+        cursor.style.top = '540px';
+      }
+
+      // Drop zone ripple & HUD activation at 8.6s
+      if (t >= 8.6) {
+        const hudP = clamp((t - 8.6) / 0.4, 0, 1);
+        procHud.style.opacity = hudP;
+
+        // WASM multi-thread progress bars
+        const prog1 = clamp((t - 8.8) / 1.6, 0, 1);
+        const pct1 = Math.floor(prog1 * 100);
+        procP1.textContent = `${pct1}%`;
+        procB1.style.width = `${pct1}%`;
+
+        const prog2 = clamp((t - 9.0) / 2.0, 0, 1);
+        const pct2 = Math.floor(prog2 * 100);
+        procP2.textContent = `${pct2}%`;
+        procB2.style.width = `${pct2}%`;
+      } else {
+        procHud.style.opacity = 0;
+        dropZone.classList.remove('active');
+      }
+    }
+
+    // ========================================================
+    // SCENE 4: 11.4s -> 15.8s (Bento Grid of Capabilities)
+    // ========================================================
+    if (t >= 11.4 && t < 16.0) {
+      scene4.style.opacity = t < 15.4 ? clamp((t - 11.4) / 0.4, 0, 1) : clamp((16.0 - t) / 0.5, 0, 1);
+
+      const bentoP = clamp((t - 11.4) / 0.6, 0, 1);
+      const scale = 0.92 + 0.08 * easeOutCubic(bentoP);
+      scene4.style.transform = `scale(${scale})`;
+    }
+
+    // ========================================================
+    // SCENE 5: 15.7s -> 19.2s (Zero Cloud Security Fortress)
+    // ========================================================
+    if (t >= 15.7 && t < 19.4) {
+      scene5.style.opacity = t < 18.8 ? clamp((t - 15.7) / 0.4, 0, 1) : clamp((19.4 - t) / 0.5, 0, 1);
+
+      const s5P = clamp((t - 15.7) / 0.6, 0, 1);
+      const s5Scale = 0.85 + 0.15 * easeOutBack(s5P);
+      shieldEmblem.style.transform = `scale(${s5Scale})`;
+    }
+
+    // ========================================================
+    // SCENE 6: 19.0s -> 22.0s (Outro Climax & CTA)
+    // ========================================================
+    if (t >= 19.0 && t <= 22.0) {
+      scene6.style.opacity = clamp((t - 19.0) / 0.5, 0, 1);
+
+      const s6P = clamp((t - 19.0) / 0.7, 0, 1);
+      const scale = 0.85 + 0.15 * easeOutBack(s6P);
+      scene6.style.transform = `scale(${scale})`;
+
+      // Logo floating glow
+      const floatY = Math.sin((t - 19.0) * 3) * 8;
+      outroLogo.style.transform = `translateY(${floatY}px)`;
+
+      // CTA Button shine sweep
+      if (t >= 19.8) {
+        const shineP = ((t - 19.8) / 1.5) % 1;
+        ctaShine.style.left = `${-100 + shineP * 300}%`;
+      }
+    }
+  };
+
+  // Initial preview render at t = 0
+  window.seekTime(0);
+</script>
+</body>
+</html>

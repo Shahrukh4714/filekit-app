@@ -522,7 +522,7 @@
   function dzIllustration(toolId) {
     const cat = FF.registry.get(toolId)?.category;
     const catColors = { 'PDF': '#7b61e8', 'Images': '#f3a400', 'Documents': '#1e8ee8', 'Spreadsheets': '#18ad68', 'Video': '#ef5b75', 'Audio': '#c357d7', 'Archives': '#e17636', 'Developer': '#168f82', 'Security': '#087443', 'QR & Barcodes': '#15a69a' };
-    const color = (DZ_ILLUSTRATIONS[toolId] || [])[0] || catColors[cat] || '#94a3b8';
+    const color = (DZ_ILLUSTRATIONS[toolId] || [])[0] || catColors[cat] || '#8C8C8C';
     const p1 = (DZ_ILLUSTRATIONS[toolId] || [])[1] || 'M8 4h12l6 6v16H8z';
     const p2 = (DZ_ILLUSTRATIONS[toolId] || [])[2] || 'M12 14h9M12 19h7';
     return `<svg class="dz-illustration" viewBox="0 0 32 32" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="10" fill="${color}" opacity=".08" stroke="none"/><path d="${p1}"/><path d="${p2}"/></svg>`;
@@ -961,14 +961,16 @@ try {
       isZip ? (isCollection ? `${files.length} Files ZIP` : 'ZIP Archive') : `${ext.toUpperCase()} File`
     );
 
-    // Guaranteed Exactly 4 Curated Recommendations for Every Format
+    // Guaranteed Exactly 6 Curated Recommendations for Every Format
     let smartTools = opts.smartTools;
-    if (!smartTools || smartTools.length !== 4) {
+    if (!smartTools || smartTools.length !== 6) {
       if (isPdf) {
         smartTools = [
           { id: 'pdf-compress', name: 'Compress PDF', sub: 'Reduce file size with high visual quality', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'pdf-edit-text', name: 'Edit in Studio', sub: 'Add text, signatures & annotations', color: '#00B0FF', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' },
           { id: 'organize', name: 'Organize Pages', sub: 'Merge, split, reorder & rotate', color: '#8B5CF6', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>' },
+          { id: 'pdf-sign', name: 'Sign Document', sub: 'Draw or stamp electronic signature', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>' },
+          { id: 'pdf-to-word', name: 'PDF to Word', sub: 'Convert into editable Word document', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
           { id: 'pdf-protect', name: 'Protect PDF', sub: 'Encrypt with password & permissions', color: '#E11D48', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' }
         ];
       } else if (isImage) {
@@ -976,26 +978,34 @@ try {
           { id: 'image-compress', name: 'Compress Image', sub: 'Reduce image payload size', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'image-crop', name: 'Crop & Resize', sub: 'Adjust canvas and dimensions', color: '#0284C7', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>' },
           { id: 'bg-remover', name: 'Remove Background', sub: 'AI cutouts in-browser', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>' },
+          { id: 'image-convert', name: 'Convert Format', sub: 'Transcode to PNG, JPG, WebP', color: '#EA580C', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>' },
+          { id: 'image-watermark', name: 'Watermark Image', sub: 'Stamp text or logo protection', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
           { id: 'image-to-pdf', name: 'Convert to PDF', sub: 'Package into clean PDF document', color: '#DC2626', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' }
         ];
       } else if (isVideo) {
         smartTools = [
           { id: 'video-compress', name: 'Compress Video', sub: 'Reduce bitrate and file size', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'video-trim', name: 'Trim Video', sub: 'Cut start and end timestamps', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>' },
+          { id: 'video-convert', name: 'Convert Video', sub: 'Transcode MP4, WebM, AVI', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>' },
           { id: 'video-extract-audio', name: 'Extract Audio', sub: 'Rip soundtrack to MP3/WAV', color: '#D97706', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' },
-          { id: 'video-gif', name: 'Video to GIF', sub: 'Generate animated GIF loops', color: '#DB2777', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' }
+          { id: 'video-gif', name: 'Video to GIF', sub: 'Generate animated GIF loops', color: '#DB2777', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' },
+          { id: 'video-to-shorts', name: 'Convert to Shorts', sub: 'Convert into 9:16 vertical clip', color: '#8B5CF6', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>' }
         ];
       } else if (isAudio) {
         smartTools = [
           { id: 'audio-trim', name: 'Trim Audio', sub: 'Cut sound file duration', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>' },
           { id: 'audio-normalize', name: 'Normalize Volume', sub: 'Balance peak decibel levels', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h2l2-7 3 14 3-10 2 5h6"/></svg>' },
           { id: 'audio-convert', name: 'Convert Format', sub: 'Transcode to MP3, WAV, AAC', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>' },
-          { id: 'audio-merge', name: 'Merge Audio', sub: 'Combine sound clips into one track', color: '#D97706', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' }
+          { id: 'audio-merge', name: 'Merge Audio', sub: 'Combine sound clips into one track', color: '#D97706', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' },
+          { id: 'audio-compress', name: 'Compress Audio', sub: 'Reduce bitrate and file size', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
+          { id: 'audio-speed', name: 'Adjust Speed', sub: 'Speed up or slow down audio', color: '#8B5CF6', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' }
         ];
       } else if (isSpreadsheet) {
         smartTools = [
           { id: 'excel-to-pdf', name: 'Excel to PDF', sub: 'Convert spreadsheet to PDF document', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
           { id: 'csv-to-excel', name: 'Spreadsheet Studio', sub: 'Analyze, filter and transform tables', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>' },
+          { id: 'excel-to-json', name: 'Excel to JSON', sub: 'Export rows to structured data', color: '#8B5CF6', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' },
+          { id: 'excel-to-csv', name: 'Excel to CSV', sub: 'Convert workbook into raw CSV', color: '#EA580C', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
           { id: 'excel-compress', name: 'Compress Sheet', sub: 'Optimize workbook storage payload', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'excel-protect', name: 'Protect Sheet', sub: 'Encrypt workbook with password', color: '#E11D48', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' }
         ];
@@ -1004,6 +1014,8 @@ try {
           { id: 'docx-to-pdf', name: 'Word to PDF', sub: 'Convert document into clean PDF', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
           { id: 'pdf-compress', name: 'Compress Doc', sub: 'Reduce document file payload', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'pdf-edit-text', name: 'Edit Document', sub: 'Add text annotations and signatures', color: '#00B0FF', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' },
+          { id: 'pdf-sign', name: 'Sign Document', sub: 'Add digital signature or initials', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>' },
+          { id: 'docx-to-html', name: 'Convert to HTML', sub: 'Package into clean web HTML', color: '#EA580C', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>' },
           { id: 'docx-to-txt', name: 'Extract Text', sub: 'Extract text transcripts directly', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>' }
         ];
       } else if (isPptx) {
@@ -1011,85 +1023,132 @@ try {
           { id: 'pptx-to-pdf', name: 'PPT to PDF', sub: 'Export slide presentation to PDF', color: '#EA580C', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
           { id: 'pdf-compress', name: 'Compress PPT', sub: 'Reduce presentation file size', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'pdf-to-image', name: 'Convert to Images', sub: 'Render slides as PNG photos', color: '#0284C7', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' },
+          { id: 'pdf-edit-text', name: 'Edit in Studio', sub: 'Add text annotations and notes', color: '#00B0FF', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' },
+          { id: 'pdf-sign', name: 'Sign Deck', sub: 'Draw or stamp electronic signature', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>' },
           { id: 'pdf-protect', name: 'Protect Deck', sub: 'Encrypt slides with password', color: '#E11D48', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' }
         ];
       } else if (isEpub) {
         smartTools = [
           { id: 'epub-to-pdf', name: 'EPUB to PDF', sub: 'Convert ebook to readable PDF', color: '#D97706', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+          { id: 'epub-reader', name: 'EPUB Reader', sub: 'Read ebook in browser viewer', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
           { id: 'pdf-extract-text', name: 'Extract Text', sub: 'Extract text transcripts directly', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>' },
           { id: 'pdf-compress', name: 'Compress eBook', sub: 'Reduce digital book payload', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
-          { id: 'pdf-to-word', name: 'Convert to Word', sub: 'Package into editable DOCX', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' }
+          { id: 'pdf-to-word', name: 'Convert to Word', sub: 'Package into editable DOCX', color: '#2563EB', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+          { id: 'pdf-edit-text', name: 'Edit in Studio', sub: 'Add text annotations and notes', color: '#00B0FF', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' }
         ];
       } else if (isZip) {
         smartTools = [
           { id: 'zip-extract', name: 'Extract ZIP', sub: 'Unpack files to device', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
+          { id: 'archive-7z-extract', name: 'Extract 7Z/RAR', sub: 'Unpack modern archive formats', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10l-6 8h6"/></svg>' },
           { id: 'pdf-compress', name: 'Compress Archive', sub: 'Optimize archive compression', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'image-to-pdf', name: 'Convert to PDF', sub: 'Combine documents into single PDF', color: '#DC2626', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-          { id: 'zip-create', name: 'Inspect Contents', sub: 'Browse files inside bundle', color: '#0284C7', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>' }
+          { id: 'zip-create', name: 'Inspect Contents', sub: 'Browse files inside bundle', color: '#0284C7', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>' },
+          { id: 'pdf-protect', name: 'Encrypt Archive', sub: 'Password protect archive bundle', color: '#E11D48', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' }
         ];
       } else {
         smartTools = [
           { id: 'pdf-compress', name: 'Compress File', sub: 'Reduce payload file size', color: '#16A34A', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
           { id: 'pdf-convert', name: 'Convert File', sub: 'Transcode to other formats', color: '#7C3AED', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>' },
           { id: 'pdf-edit-text', name: 'View Document', sub: 'Open in document workspace', color: '#00B0FF', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>' },
+          { id: 'pdf-sign', name: 'Sign Document', sub: 'Draw or stamp electronic signature', color: '#0D9488', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5ZM15 5l4 4"/></svg>' },
+          { id: 'organize', name: 'Organize Pages', sub: 'Merge, split, reorder & rotate', color: '#8B5CF6', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>' },
           { id: 'pdf-protect', name: 'Protect File', sub: 'Encrypt file with password', color: '#E11D48', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' }
         ];
       }
     }
 
     function getBrandSquircle(brand) {
-      if (brand === 'word') {
+      const b = (brand || "").toLowerCase().trim();
+      if (b === "word" || b === "docx" || b === "doc") {
         return `<div class="fk-brand-icon-box" style="background:#185ABD;"><span class="fk-app-letter">W</span></div>`;
       }
-      if (brand === 'excel') {
+      if (b === "excel" || b === "xlsx" || b === "xls") {
         return `<div class="fk-brand-icon-box" style="background:#107C41;"><span class="fk-app-letter">X</span></div>`;
       }
-      if (brand === 'powerpoint') {
+      if (b === "powerpoint" || b === "pptx" || b === "ppt") {
         return `<div class="fk-brand-icon-box" style="background:#D83B01;"><span class="fk-app-letter">P</span></div>`;
       }
-      if (brand === 'image-jpg' || brand === 'image-png' || brand === 'image-webp' || brand === 'image') {
-        const bg = brand === 'image-png' ? '#059669' : (brand === 'image-webp' ? '#0891B2' : '#F59E0B');
-        return `<div class="fk-brand-icon-box" style="background:${bg};">
+      if (b === "pdfa") {
+        return `<div class="fk-brand-icon-box" style="background:#C5221F;"><span class="fk-app-mini-text">PDF/A</span></div>`;
+      }
+      if (b === "pdf") {
+        return `<div class="fk-brand-icon-box" style="background:#E5252A;"><span class="fk-app-mini-text" style="font-size:9.5px;">PDF</span></div>`;
+      }
+      if (b === "image-png" || b === "png") {
+        return `<div class="fk-brand-icon-box" style="background:#059669;"><span class="fk-app-mini-text" style="font-size:9.5px;">PNG</span></div>`;
+      }
+      if (b === "image-jpg" || b === "jpg" || b === "jpeg") {
+        return `<div class="fk-brand-icon-box" style="background:#F59E0B;"><span class="fk-app-mini-text" style="font-size:9.5px;">JPG</span></div>`;
+      }
+      if (b === "image-webp" || b === "webp") {
+        return `<div class="fk-brand-icon-box" style="background:#0891B2;"><span class="fk-app-mini-text" style="font-size:9px;">WEBP</span></div>`;
+      }
+      if (b === "svg") {
+        return `<div class="fk-brand-icon-box" style="background:#EA580C;"><span class="fk-app-mini-text" style="font-size:9.5px;">SVG</span></div>`;
+      }
+      if (b === "image" || b === "ico" || b === "bmp" || b === "gif") {
+        return `<div class="fk-brand-icon-box" style="background:#0284C7;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="17.5" cy="6.5" r="2.2" fill="#FFFFFF" stroke="none"/>
             <path d="m3 16 5-5a1 1 0 0 1 1.4 0l3.6 3.6m2-2 3-3a1 1 0 0 1 1.4 0L21 16"/>
           </svg>
         </div>`;
       }
-      if (brand === 'pdfa') {
-        return `<div class="fk-brand-icon-box" style="background:#E5252A;"><span class="fk-app-mini-text">PDF/A</span></div>`;
+      if (b === "txt" || b === "text") {
+        return `<div class="fk-brand-icon-box" style="background:#525252;"><span class="fk-app-mini-text" style="font-size:9.5px;">TXT</span></div>`;
       }
-      if (brand === 'pdf') {
-        return `<div class="fk-brand-icon-box" style="background:#E5252A;"><span class="fk-app-mini-text" style="font-size:9.5px;">PDF</span></div>`;
-      }
-      if (brand === 'txt') {
-        return `<div class="fk-brand-icon-box" style="background:#475569;"><span class="fk-app-mini-text" style="font-size:9.5px;">TXT</span></div>`;
-      }
-      if (brand === 'csv') {
+      if (b === "csv") {
         return `<div class="fk-brand-icon-box" style="background:#0D9488;"><span class="fk-app-mini-text" style="font-size:9.5px;">CSV</span></div>`;
       }
-      if (brand === 'zip') {
+      if (b === "tsv") {
+        return `<div class="fk-brand-icon-box" style="background:#0284C7;"><span class="fk-app-mini-text" style="font-size:9.5px;">TSV</span></div>`;
+      }
+      if (b === "json") {
+        return `<div class="fk-brand-icon-box" style="background:#D97706;"><span class="fk-app-mini-text" style="font-size:9.5px;">JSON</span></div>`;
+      }
+      if (b === "yaml" || b === "yml") {
+        return `<div class="fk-brand-icon-box" style="background:#CB171E;"><span class="fk-app-mini-text" style="font-size:9px;">YAML</span></div>`;
+      }
+      if (b === "xml") {
+        return `<div class="fk-brand-icon-box" style="background:#EA580C;"><span class="fk-app-mini-text" style="font-size:9.5px;">XML</span></div>`;
+      }
+      if (b === "md" || b === "markdown") {
+        return `<div class="fk-brand-icon-box" style="background:#0A0A0A;"><span class="fk-app-mini-text" style="font-size:9.5px;">MD</span></div>`;
+      }
+      if (b === "html") {
+        return `<div class="fk-brand-icon-box" style="background:#E34F26;"><span class="fk-app-mini-text" style="font-size:9px;">HTML</span></div>`;
+      }
+      if (b === "epub") {
+        return `<div class="fk-brand-icon-box" style="background:#854D0E;"><span class="fk-app-mini-text" style="font-size:9px;">EPUB</span></div>`;
+      }
+      if (b === "zip" || b === "files") {
         return `<div class="fk-brand-icon-box" style="background:#EAB308;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/>
           </svg>
         </div>`;
       }
-      if (brand === 'audio' || brand === 'audio-wav' || brand === 'audio-ogg') {
+      if (b === "tar" || b === "tar.gz" || b === "gz") {
+        return `<div class="fk-brand-icon-box" style="background:#CA8A04;"><span class="fk-app-mini-text" style="font-size:9.5px;">TAR</span></div>`;
+      }
+      if (b === "audio" || b === "audio-wav" || b === "audio-ogg" || b === "mp3" || b === "wav" || b === "ogg" || b === "m4a" || b === "flac" || b === "opus") {
         return `<div class="fk-brand-icon-box" style="background:#8B5CF6;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3" fill="#FFFFFF"/><circle cx="18" cy="16" r="3" fill="#FFFFFF"/>
           </svg>
         </div>`;
       }
-      if (brand === 'video' || brand === 'video-webm') {
+      if (b === "video" || b === "video-webm" || b === "mp4" || b === "webm" || b === "mov") {
         return `<div class="fk-brand-icon-box" style="background:#2563EB;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="#FFFFFF" stroke="none">
             <polygon points="5 3 19 12 5 21 5 3"/>
           </svg>
         </div>`;
       }
-      return `<div class="fk-brand-icon-box" style="background:#64748B;"><span class="fk-app-mini-text">${(brand || 'FILE').slice(0, 4).toUpperCase()}</span></div>`;
+      if (b === "ttf" || b === "otf" || b === "woff" || b === "woff2" || b === "font") {
+        return `<div class="fk-brand-icon-box" style="background:#4F46E5;"><span class="fk-app-letter">F</span></div>`;
+      }
+      return `<div class="fk-brand-icon-box" style="background:#737373;"><span class="fk-app-mini-text">${(b || "FILE").slice(0, 4).toUpperCase()}</span></div>`;
     }
 
     let exportOptions = opts.exportOptions;
@@ -1159,7 +1218,11 @@ try {
       }
     }
 
-    const hasSavings = Number(opts.originalBytes) > Number(opts.resultBytes) && Number(opts.originalBytes) > 0;
+    const origBytes = Number(opts.originalBytes) || 0;
+    const resBytes = Number(opts.resultBytes) || 0;
+    const hasSavings = origBytes > resBytes && origBytes > 0;
+    const savedBytes = opts.savedBytes != null ? opts.savedBytes : (hasSavings ? (origBytes - resBytes) : 0);
+    const reductionPct = opts.reductionPct != null ? opts.reductionPct : (hasSavings ? Math.round(((origBytes - resBytes) / origBytes) * 100) : 0);
     const fileExt = (filename.split('.').pop() || '').toUpperCase();
     const ctaLabel = isCollection ? 'Download All (.zip)' : (fileExt && fileExt.length <= 4 && !fileExt.includes(' ') ? `Download ${fileExt}` : 'Download File');
 
@@ -1176,19 +1239,19 @@ try {
                     ${window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('docx', filename, outSize, 'stage') : ''}
                   </div>
                 ` : isPdf ? `
-                  <div class="org-res-pdf-loading" id="org-res-pdf-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.414; width: min(320px, calc(100% - 48px)); height: min(452px, calc(100% - 48px)); background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05); color: #94A3B8; font-size: 13px; font-weight: 500; gap: 10px;">
-                    <div class="cpdf-proc-spin-circle" style="width: 22px; height: 22px; border: 2px solid #E2E8F0; border-top-color: #00C466; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                  <div class="org-res-pdf-loading" id="org-res-pdf-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.414; width: min(320px, calc(100% - 48px)); height: min(452px, calc(100% - 48px)); background: #FFFFFF; border-radius: 6px; box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05); color: #8C8C8C; font-size: 13px; font-weight: 500; gap: 10px;">
+                    <div class="cpdf-proc-spin-circle" style="width: 22px; height: 22px; border: 2px solid #E5E5E5; border-top-color: #00C466; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
                     <span>Rendering PDF preview…</span>
                   </div>
                 ` : isImage && url ? `
-                  <img src="${url}" alt="Preview" onerror="this.outerHTML = window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('${ext}', '${_esc(filename)}', '${outSize}', 'stage') : ''" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06); image-rendering: auto; margin: auto;" />
+                  <img src="${url}" alt="Preview" onerror="this.outerHTML = window.FF?.buildHandcraftedIllustration ? window.FF.buildHandcraftedIllustration('${ext}', '${_esc(filename)}', '${outSize}', 'stage') : ''" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(10, 10, 10, 0.16), 0 0 0 1px rgba(10, 10, 10, 0.06); image-rendering: auto; margin: auto;" />
                 ` : isVideo && url ? `
-                  <video src="${url}" controls preload="metadata" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06); margin: auto;"></video>
+                  <video src="${url}" controls preload="metadata" style="display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(10, 10, 10, 0.16), 0 0 0 1px rgba(10, 10, 10, 0.06); margin: auto;"></video>
                 ` : isText && opts.text ? `
-                  <div style="width: min(840px, calc(100% - 32px)); height: calc(100% - 32px); max-width: 100%; max-height: 100%; padding: 28px 26px; overflow: auto; box-sizing: border-box; background: #FFFFFF; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06); margin: auto;">
-                    <pre id="org-res-text-preview" style="margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #1E293B; white-space: pre-wrap; word-break: break-word; line-height: 1.6;">${_esc(opts.text || 'Reading preview…')}</pre>
+                  <div style="width: min(840px, calc(100% - 32px)); height: calc(100% - 32px); max-width: 100%; max-height: 100%; padding: 28px 26px; overflow: auto; box-sizing: border-box; background: #FFFFFF; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(10, 10, 10, 0.14), 0 0 0 1px rgba(10, 10, 10, 0.06); margin: auto;">
+                    <pre id="org-res-text-preview" style="margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #171717; white-space: pre-wrap; word-break: break-word; line-height: 1.6;">${_esc(opts.text || 'Reading preview…')}</pre>
                   </div>
-                ` : (window.FF?.buildHandcraftedIllustration ? `<div style="width: 320px; height: 420px; max-width: 100%; max-height: 100%; margin: auto; display: flex; align-items: center; justify-content: center;">${window.FF.buildHandcraftedIllustration(ext, filename, outSize, 'stage')}</div>` : `<div style="width: 320px; height: 420px; aspect-ratio: 1 / 1.414; max-width: 100%; max-height: 100%; padding: 40px; text-align: center; font-weight: 600; color: #64748B; background: #FFFFFF; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.14); margin: auto; display: flex; align-items: center; justify-content: center;">${_esc(filename)}</div>`)}
+                ` : (window.FF?.buildHandcraftedIllustration ? `<div style="width: 320px; height: 420px; max-width: 100%; max-height: 100%; margin: auto; display: flex; align-items: center; justify-content: center;">${window.FF.buildHandcraftedIllustration(ext, filename, outSize, 'stage')}</div>` : `<div style="width: 320px; height: 420px; aspect-ratio: 1 / 1.414; max-width: 100%; max-height: 100%; padding: 40px; text-align: center; font-weight: 600; color: #737373; background: #FFFFFF; border-radius: 6px; box-shadow: 0 16px 36px -8px rgba(10, 10, 10, 0.14); margin: auto; display: flex; align-items: center; justify-content: center;">${_esc(filename)}</div>`)}
               </div>
             </div>
 
@@ -1225,14 +1288,14 @@ try {
                 <div class="org-res-stat-row">
                   <div class="org-res-stat-left">
                     <strong class="cpdf-benchmark-est-new">${outSize}</strong>
-                    ${hasSavings ? `<span class="org-res-stat-from">from <del class="cpdf-benchmark-est-old">${_bytes(opts.originalBytes)}</del></span>` : `<span class="org-res-stat-from">Original size</span>`}
+                    ${hasSavings ? `<span class="org-res-stat-from">from <del class="cpdf-benchmark-est-old">${_bytes(origBytes)}</del></span>` : `<span class="org-res-stat-from">Original size</span>`}
                   </div>
                   <div class="org-res-stat-right">
-                    ${hasSavings && opts.reductionPct ? `<span class="cpdf-benchmark-est-pct org-res-badge-pct">-${opts.reductionPct}%</span>` : `<span class="cpdf-benchmark-est-pct org-res-badge-pct org-res-badge-pct--neutral">Optimal</span>`}
+                    ${hasSavings && reductionPct > 0 ? `<span class="cpdf-benchmark-est-pct org-res-badge-pct">-${reductionPct}%</span>` : `<span class="cpdf-benchmark-est-pct org-res-badge-pct org-res-badge-pct--neutral">Optimal</span>`}
                   </div>
                 </div>
                 <div class="org-res-stat-sub">
-                  <span>${hasSavings && opts.savedBytes ? `Saved ${_bytes(opts.savedBytes)} · Local processing` : (hasSavings ? `Reduced by ${opts.reductionPct}% · Lossless` : `Already optimal · Original fidelity`)}</span>
+                  <span>${hasSavings && savedBytes > 0 ? `Saved ${_bytes(savedBytes)} · Local processing` : (hasSavings && reductionPct > 0 ? `Reduced by ${reductionPct}% · Lossless` : `Already optimal · Original fidelity`)}</span>
                   ${opts.onBacktrack ? `<button type="button" class="org-res-backtrack-link" id="org-backtrack-btn" title="Adjust settings">Edit settings</button>` : ''}
                 </div>
               </div>
@@ -1336,13 +1399,13 @@ try {
                 </button>
               </div>
 
-              <!-- "Or continue in" Workflow Continuation (Curated 4 Cards) -->
+              <!-- "Or continue in" Workflow Continuation (Curated 6 Cards) -->
               <div class="org-continue-section">
                 <div class="org-continue-header">
                   <span class="org-continue-title">Or continue in</span>
                 </div>
                 <div class="conv-smart-tools-list org-continue-list">
-                  ${smartTools.slice(0, 4).map(st => `
+                  ${smartTools.slice(0, 6).map(st => `
                     <div class="conv-smart-tool-item org-continue-item" data-tool-id="${st.id}" tabindex="0" role="button" title="${_esc(st.name)} - ${_esc(st.sub || '')}">
                       <div class="conv-smart-tool-left">
                         <span class="conv-smart-tool-icon org-continue-badge" style="background:${st.color || '#00B0FF'};">${st.icon || ''}</span>
@@ -2008,7 +2071,7 @@ try {
           c.style.width = `${displayW}px`;
           c.style.height = `${displayH}px`;
           c.style.borderRadius = '6px';
-          c.style.boxShadow = '0 16px 36px -8px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06)';
+          c.style.boxShadow = '0 16px 36px -8px rgba(10, 10, 10, 0.16), 0 0 0 1px rgba(10, 10, 10, 0.06)';
           c.style.background = '#FFFFFF';
           c.className = 'scan-studio-canvas';
           const ctx = c.getContext('2d');
@@ -2095,7 +2158,7 @@ try {
             if (!window.JSZip) await load('vendor/jszip.min.js');
             if (!window.docx) await load('vendor/docx-preview.min.js');
             if (!window.docx || !window.docx.renderAsync) {
-              root.innerHTML = '<div style="padding:40px;color:#94A3B8;text-align:center;font-size:12.5px;">Preview engine unavailable — download to view the Word file.</div>';
+              root.innerHTML = '<div style="padding:40px;color:#8C8C8C;text-align:center;font-size:12.5px;">Preview engine unavailable — download to view the Word file.</div>';
               return;
             }
             root.style.background = '#3F4652';
@@ -2112,7 +2175,7 @@ try {
             // Improve fidelity notes: textboxes/pictures rendered as-is by the engine.
           } catch (e) {
             console.warn('[UnifiedResult] docx preview error:', e);
-            root.innerHTML = '<div style="padding:40px;color:#94A3B8;text-align:center;font-size:12.5px;">Preview could not be rendered — your Word file is ready to download.</div>';
+            root.innerHTML = '<div style="padding:40px;color:#8C8C8C;text-align:center;font-size:12.5px;">Preview could not be rendered — your Word file is ready to download.</div>';
           }
         })();
       }
@@ -2385,6 +2448,10 @@ try {
       const setFiles = (list) => {
         const files = [...list].filter(Boolean);
         if (!files.length) return;
+        const totalBatchCount = tool.multiple ? (state.files.length + files.length) : files.length;
+        if (window.FK_Auth && !window.FK_Auth.checkBatchLimit(totalBatchCount)) {
+          return;
+        }
         for (const f of files) {
           const ext = extOf(f.name);
           if (tool.accepts && tool.accepts.length && !tool.accepts.includes(ext)) {
@@ -2946,7 +3013,7 @@ try {
       return { task: 'flatten', color: '#4F46E5', hover: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', glow: 'rgba(79,70,229,0.25)', cardBorder: '#E0E7FF' };
     }
     if (/organize|rotate/i.test(id)) {
-      return { task: 'organize', color: '#0F172A', hover: '#1E293B', bg: '#F8FAFC', border: '#CBD5E1', glow: 'rgba(15,23,42,0.06)', cardBorder: '#E2E8F0' };
+      return { task: 'organize', color: '#0A0A0A', hover: '#171717', bg: '#F7F7F7', border: '#D4D4D4', glow: 'rgba(10, 10, 10,0.06)', cardBorder: '#E5E5E5' };
     }
     if (/audio/i.test(id) || cat === 'audio') {
       return { task: 'audio', color: '#E11D48', hover: '#BE123C', bg: '#FFF1F2', border: '#FECDD3', glow: 'rgba(225,29,72,0.25)', cardBorder: '#FFE4E6' };
@@ -2962,14 +3029,14 @@ try {
 
   window.FF.getToolDropzoneGraphic = function getToolDropzoneGraphic(toolId, category) {
     return `<svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
-      <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
-      <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-      <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-      <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
-      <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="18" y="46" width="66" height="54" rx="8" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="70" cy="62" r="5" stroke="#737373" stroke-width="3"/>
+      <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="107" y1="64" x2="153" y2="64" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="107" y1="78" x2="153" y2="78" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+      <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
   };
 
@@ -2991,6 +3058,7 @@ try {
     const categories = [...byCategory.keys()].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
     const home = document.getElementById('home-view');
     const toolView = document.getElementById('tool-view') || document.getElementById('seo-tool-view');
+    const pricingView = document.getElementById('pricing-view');
     const stage = document.getElementById('stage');
     const drawerEl = document.getElementById('tool-drawer');
     const drawer = drawerEl || { hidden: true, addEventListener() {}, removeEventListener() {}, querySelectorAll: () => [], querySelector: () => null, setAttribute() {}, focus() {}, classList: { add() {}, remove() {}, toggle() {} } };
@@ -3144,11 +3212,11 @@ try {
       },
       'pdf-sanitize-pii': {
         solid: '#E5252A',
-        svg: '<rect x="7" y="6" width="18" height="20" rx="3" fill="#FFFFFF" fill-opacity="0.95"/><rect x="10" y="11" width="12" height="3" rx="1" fill="#991B1B"/><rect x="10" y="16" width="8" height="3" rx="1" fill="#991B1B"/><line x1="10" y1="21.5" x2="22" y2="21.5" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>'
+        svg: '<rect x="7" y="6" width="18" height="20" rx="3" fill="#FFFFFF" fill-opacity="0.95"/><rect x="10" y="11" width="12" height="3" rx="1" fill="#991B1B"/><rect x="10" y="16" width="8" height="3" rx="1" fill="#991B1B"/><line x1="10" y1="21.5" x2="22" y2="21.5" stroke="#D4D4D4" stroke-width="1.5" stroke-linecap="round"/>'
       },
       'pdf-redact': {
-        solid: '#334155',
-        svg: '<rect x="7" y="6" width="18" height="20" rx="3" fill="#FFFFFF" fill-opacity="0.95"/><rect x="10" y="11" width="12" height="3.5" rx="1" fill="#0F172A"/><rect x="10" y="16" width="8" height="3.5" rx="1" fill="#0F172A"/><line x1="10" y1="21.5" x2="22" y2="21.5" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>'
+        solid: '#383838',
+        svg: '<rect x="7" y="6" width="18" height="20" rx="3" fill="#FFFFFF" fill-opacity="0.95"/><rect x="10" y="11" width="12" height="3.5" rx="1" fill="#0A0A0A"/><rect x="10" y="16" width="8" height="3.5" rx="1" fill="#0A0A0A"/><line x1="10" y1="21.5" x2="22" y2="21.5" stroke="#D4D4D4" stroke-width="1.5" stroke-linecap="round"/>'
       },
       'audio-trim': {
         solid: '#F43F5E',
@@ -3289,7 +3357,55 @@ try {
     let appViewMode = 'grid';
     let appSpecialFilter = '';
     let appTask = '';
-    const taskToolIds = { compress: ['pdf-compress','image-compress','video-compress','audio-normalize','audio-bitrate','audio-sample-rate','pdf-to-pdf','pdf-flatten','pdf-grayscale','pdf-resize','image-resize','svg-optimize','exif-strip','video-resolution','video-framerate','video-strip-audio','audio-strip-metadata','zip-create','targz-create','file-split'],    convert: ['pdf-convert','pdf-to-word','pdf-to-excel','pdf-to-ppt','pdf-to-md','pptx-to-pdf','pptx-to-html','pptx-to-txt','pptx-to-md','pdf-to-image','pdf-to-jpg','pdf-to-html','pdf-to-csv','pdf-to-epub','pdf-to-audio','pdf-to-zip','pdf-to-pdfa','docx-to-pdf','excel-to-pdf','csv-to-pdf','md-to-pdf','html-to-pdf','txt-to-pdf','image-to-pdf','epub-to-pdf','handwriting-to-pdf','docx-to-html','docx-to-md','docx-to-txt','md-to-html','html-to-md','epub-to-html','epub-to-txt','image-convert','image-heic-convert','png-trace','svg-to-raster','img-to-base64','base64-to-img','video-convert','video-to-shorts','video-gif','video-extract-audio','video-to-images','audio-convert','audio-to-wav','audiogram-generator','data-transcode','excel-to-json','txt-to-html','txt-to-md','md-to-txt','html-to-txt','font-convert'], organize: ['organize','pdf-merge','pdf-split','pdf-rotate','pdf-crop','pdf-extract-range','pdf-extract-images','pdf-extract-text','image-rotate','image-crop','sprite-sheet','palette','archive-7z-extract','zip-extract','targz-extract','file-split','doc-dedupe','doc-sort','audio-merge','audio-split-silence','video-merge','video-extract-frame','epub-chapters','epub-cover'], edit: ['pdf-edit-text','pdf-sign','pdf-redact','pdf-sanitize-pii','pdf-redact-pii','pdf-watermark','pdf-headers-footers','pdf-page-numbers','pdf-form-filler','pdf-repair','pdf-invert','pdf-compare','image-crop','image-resize','image-rotate','image-watermark','image-sharpen','image-round','image-border','exif-strip','video-trim','video-watermark','video-subtitles','video-speed','video-mute','video-reverse','audio-trim','audio-speed','audio-reverse','audio-normalize','audio-strip-metadata','epub-metadata','doc-case'], protect: ['pdf-protect','pdf-unlock','pdf-flatten'], scan: ['scan-document','pdf-extract-text','pdf-to-audio','pdf-to-csv','pdf-summarize'], workflow: ['workflow-builder','scan-document','pdf-to-audio','pdf-to-zip','pdf-create'], image: ['image-hub'], qr: ['qr-hub'], more: [] };
+    const taskToolIds = {
+      compress: [
+        'pdf-compress','image-compress','video-compress','audio-normalize','audio-bitrate','audio-sample-rate',
+        'pdf-to-pdf','pdf-flatten','pdf-grayscale','pdf-resize','image-resize','svg-optimize','exif-strip',
+        'video-resolution','video-framerate','video-strip-audio','audio-strip-metadata','zip-create','targz-create','file-split'
+      ],
+      convert: [
+        'pdf-convert','pdf-to-word','pdf-to-excel','pdf-to-ppt','pdf-to-md','pptx-to-pdf','pptx-to-html','pptx-to-txt','pptx-to-md',
+        'pdf-to-image','pdf-to-jpg','pdf-to-html','pdf-to-csv','pdf-to-epub','pdf-to-audio','pdf-to-zip','pdf-to-pdfa',
+        'docx-to-pdf','excel-to-pdf','csv-to-pdf','md-to-pdf','html-to-pdf','txt-to-pdf','image-to-pdf','epub-to-pdf','handwriting-to-pdf',
+        'docx-to-html','docx-to-md','docx-to-txt','md-to-html','html-to-md','epub-to-html','epub-to-txt',
+        'image-convert','image-heic-convert','png-trace','svg-to-raster','img-to-base64','base64-to-img',
+        'video-convert','video-to-shorts','video-gif','video-extract-audio','video-to-images',
+        'audio-convert','audio-to-wav','audiogram-generator','data-transcode','excel-to-json','txt-to-html','txt-to-md','md-to-txt','html-to-txt',
+        'font-convert','font-metadata','font-glyphs','font-preview',
+        'json-to-excel','excel-to-xml','excel-to-md','excel-to-html','excel-to-image','csv-to-excel','excel-to-csv',
+        'base64','url-encode','epub-reader','epub-chapters','epub-cover'
+      ],
+      organize: [
+        'organize','pdf-merge','pdf-split','pdf-rotate','pdf-crop','pdf-extract-range','pdf-extract-images','pdf-extract-text',
+        'image-rotate','image-crop','sprite-sheet','palette','archive-7z-extract','zip-extract','targz-extract','file-split',
+        'doc-dedupe','doc-sort','audio-merge','audio-split-silence','video-merge','video-extract-frame','epub-chapters','epub-cover'
+      ],
+      edit: [
+        'pdf-edit-text','pdf-redact','pdf-sanitize-pii','pdf-redact-pii','pdf-watermark',
+        'pdf-headers-footers','pdf-page-numbers','pdf-form-filler','pdf-repair','pdf-invert','pdf-compare',
+        'image-crop','image-resize','image-rotate','image-watermark','image-sharpen','image-round','image-border','exif-strip',
+        'video-trim','video-watermark','video-subtitles','video-speed','video-mute','video-reverse',
+        'audio-trim','audio-speed','audio-reverse','audio-normalize','audio-strip-metadata','epub-metadata','doc-case'
+      ],
+      sign: [
+        'pdf-sign','pdf-form-filler'
+      ],
+      protect: [
+        'pdf-protect','pdf-unlock','pdf-flatten','pdf-redact','pdf-sanitize-pii','pdf-redact-pii',
+        'password-gen','password-strength','aes','steganography','metadata-strip','exif-strip',
+        'jwt-security','cert-inspect','hash-generate','privacy-scanner','fingerprint-generator'
+      ],
+      scan: [
+        'scan-document','pdf-extract-text','pdf-to-audio','pdf-to-csv','pdf-summarize',
+        'qr-generate','qr-read','barcode-generate','qr-hub'
+      ],
+      workflow: [
+        'workflow-builder','scan-document','pdf-to-audio','pdf-to-zip','pdf-create',
+        'gst-invoice','pos-billing','gst-filing-prep','pdf-workflow'
+      ],
+      image: ['image-hub'],
+      qr: ['qr-hub']
+    };
 
     const CATEGORY_META = {
       'PDF': { icon: '📄', color: '#E5252A', bg: '#FEF2F2', border: '#FCA5A5', desc: 'Merge, split, compress, edit, convert, and sign PDF files with 100% offline privacy.' },
@@ -3366,7 +3482,7 @@ try {
     function showHome(scrollTarget = null) {
       FF.util.revokeAll();
       if (!home || !toolView) return;
-      home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; 
+      home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; if (pricingView) pricingView.hidden = true;
       document.title = 'FileKit — Every File Tool You Need';
       const defaultDesc = 'FileKit is the modern, 100% private in-browser file suite. Convert, compress, edit, and organize documents, media, and archives locally.';
       const descEl = document.querySelector('meta[name="description"]');
@@ -3396,7 +3512,7 @@ try {
     function showApp(category = 'Home') {
       FF.util.revokeAll();
       if (!home || !toolView) return;
-      home.hidden = true; toolView.hidden = true; if (appView) appView.hidden = false;
+      home.hidden = true; toolView.hidden = true; if (pricingView) pricingView.hidden = true; if (appView) appView.hidden = false;
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = true;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = false;
       const footer = document.querySelector('footer'); if (footer) footer.hidden = true;
@@ -3405,6 +3521,23 @@ try {
       window.history.replaceState({ app: true, category: appCategory }, '', '#app');
       window.scrollTo({ top: 0, behavior: 'instant' });
       renderAppWorkspace();
+    }
+
+    function showPricing() {
+      FF.util.revokeAll();
+      if (home) home.hidden = true;
+      if (toolView) toolView.hidden = true;
+      if (appView) appView.hidden = true;
+      const pv = pricingView || document.getElementById('pricing-view');
+      if (pv) pv.hidden = false;
+
+      const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = false;
+      const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = true;
+      const footer = document.querySelector('footer'); if (footer) footer.hidden = false;
+
+      document.title = 'Plans & Pricing — FileKit';
+      try { window.history.replaceState({ pricing: true }, '', '#pricing'); } catch { window.history.replaceState({}, '', '#pricing'); }
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
     // --- Hamburger Category Drawer Controller ---
@@ -3535,7 +3668,7 @@ try {
             { title: 'Repair', toolId: 'pdf-repair', color: '#fb923c', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' },
             { title: 'Extract Text', toolId: 'pdf-extract-text', color: '#60a5fa', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' },
             { title: 'OCR', toolId: 'pdf-ocr', color: '#f472b6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 3H5a2 2 0 0 0-2 2v2m0 10v2a2 2 0 0 0 2 2h2m10-18h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2"/></svg>' },
-            { title: 'Grayscale', toolId: 'pdf-grayscale', color: '#94a3b8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" opacity="0.25" stroke="none"/></svg>' },
+            { title: 'Grayscale', toolId: 'pdf-grayscale', color: '#8C8C8C', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" opacity="0.25" stroke="none"/></svg>' },
             { title: 'Form Filler', toolId: 'pdf-form-filler', color: '#22d3ee', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' },
             { title: 'Optimize', toolId: 'pdf-to-pdf', color: '#4ade80', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' },
             { title: 'Create PDF', toolId: 'pdf-create', color: '#34d399', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15h6"/></svg>' },
@@ -3596,8 +3729,8 @@ try {
             { title: 'Bitrate', toolId: 'audio-bitrate', color: '#38bdf8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15V9M12 15v-4M17 15v-7"/></svg>' },
             { title: 'Split Silence', toolId: 'audio-split-silence', color: '#f472b6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48 20 20"/></svg>' },
             { title: 'From Video', toolId: 'audio-from-video', color: '#f43f5e', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' },
-            { title: 'Strip Metadata', toolId: 'audio-strip-metadata', color: '#94a3b8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h10M4 17h13"/></svg>' },
-            { title: 'Generate Silence', toolId: 'audio-silence', color: '#64748b', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>' },
+            { title: 'Strip Metadata', toolId: 'audio-strip-metadata', color: '#8C8C8C', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h10M4 17h13"/></svg>' },
+            { title: 'Generate Silence', toolId: 'audio-silence', color: '#737373', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>' },
           ]
         }
       ],
@@ -3621,17 +3754,17 @@ try {
           isMore: true,
           svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
           more: [
-            { title: 'DOCX → TXT', toolId: 'docx-to-txt', color: '#64748b', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+            { title: 'DOCX → TXT', toolId: 'docx-to-txt', color: '#737373', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
             { title: 'DOCX → MD', toolId: 'docx-to-md', color: '#0d9488', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
             { title: 'MD → HTML', toolId: 'md-to-html', color: '#0891b2', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' },
             { title: 'HTML → MD', toolId: 'html-to-md', color: '#2563eb', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' },
             { title: 'MD → PDF', toolId: 'md-to-pdf', color: '#7c3aed', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
             { title: 'HTML → PDF', toolId: 'html-to-pdf', color: '#db2777', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-            { title: 'TXT → PDF', toolId: 'txt-to-pdf', color: '#334155', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+            { title: 'TXT → PDF', toolId: 'txt-to-pdf', color: '#383838', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
             { title: 'Char Count', toolId: 'doc-char-count', color: '#3b82f6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>' },
             { title: 'Reading Time', toolId: 'doc-reading-time', color: '#14b8a6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' },
             { title: 'Dedupe Lines', toolId: 'doc-dedupe', color: '#f43f5e', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' },
-            { title: 'Whitespace', toolId: 'doc-whitespace', color: '#94a3b8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h10M4 17h13"/></svg>' },
+            { title: 'Whitespace', toolId: 'doc-whitespace', color: '#8C8C8C', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h10M4 17h13"/></svg>' },
           ]
         }
       ],
@@ -3810,6 +3943,9 @@ try {
     // drive the rail exactly like the app-level dropzone does.
     window.FF.app = window.FF.app || {};
     window.FF.app.openTool = openTool;
+    window.FF.app.showHome = showHome;
+    window.FF.app.showApp = showApp;
+    window.FF.app.showPricing = showPricing;
     window.FF.app.updateSidebarForFileCategory = updateSidebarForFileCategory;
     window.FF.app.restoreDefaultSidebar = restoreDefaultSidebar;
     window.FF.app.detectCategoryFromFile = detectCategoryFromFile;
@@ -4007,10 +4143,10 @@ try {
     document.getElementById('app-exit-home')?.addEventListener('click', () => showHome());
 
     document.getElementById('app-getpro-btn')?.addEventListener('click', () => {
-      FF.util.toast('FileKit is 100% free and local. All tools are already unlocked — no Pro needed!', 'success');
+      if (window.FK_Auth) window.FK_Auth.openPricingModal();
     });
     document.getElementById('app-login-btn')?.addEventListener('click', () => {
-      FF.util.toast('FileKit runs 100% locally in your browser. No account or login required — your files never leave your device.', 'info');
+      if (window.FK_Auth) window.FK_Auth.openAuthModal('login');
     });
 
     document.querySelectorAll('.rail-item[data-rail-cat], .app-nav-links button[data-rail-cat]').forEach(btn => {
@@ -4057,225 +4193,10 @@ try {
     }
     bindRailTaskButtons();
 
-    // ── All Tools flyout: pinnable categories for the main rail ──
-    // Categories that don't ship in the main siderail live here; users pin
-    // the ones they want as rail icons. Pins persist in localStorage.
-    const PINNED_RAIL_KEY = 'filekit-pinned-rail-cats';
-    const FLYOUT_CATS = [
-      {
-        id: 'business',
-        label: 'Business & Office',
-        cat: 'Business',
-        task: 'business',
-        color: '#059669',
-        desc: 'Invoices, billing & legal forms',
-        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6V4.5C9 3.67 9.67 3 10.5 3h3c.83 0 1.5.67 1.5 1.5V6"/><rect x="3" y="6" width="18" height="15" rx="3"/><path d="M3 11c5 2 13 2 18 0M10 13h4"/></svg>'
-      },
-      {
-        id: 'developer',
-        label: 'Developer & Data',
-        cat: 'Developer',
-        color: '#6366F1',
-        desc: 'QR, JSON, Base64 & Archives',
-        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6M14 4.5l-4 15"/></svg>'
-      },
-      {
-        id: 'ebooks',
-        label: 'Education & E-Books',
-        cat: 'E-Books',
-        color: '#8B5CF6',
-        desc: 'EPUB reader & OCR text extract',
-        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M10 6h6M10 10h4"/></svg>'
-      },
-      {
-        id: 'security',
-        label: 'Forensics & Privacy',
-        cat: 'Security',
-        color: '#0F766E',
-        desc: 'EXIF metadata & GPS location wiper',
-        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.53 9.47A3.5 3.5 0 0 0 9.47 14.53"/><path d="M17.82 5.77C16.07 4.45 14.07 3.73 12 3.73c-3.53 0-6.82 2.08-9.11 5.68a5.7 5.7 0 0 0 0 5.19c.79 1.24 1.71 2.31 2.71 3.17M8.42 19.53c1.14.48 2.35.74 3.58.74 3.53 0 6.82-2.08 9.11-5.68a5.7 5.7 0 0 0 0-5.19c-.33-.52-.69-1.01-1.06-1.47"/><path d="m2 2 20 20"/></svg>'
-      }
-    ];
-
-    function getPinnedCats() {
-      try { return JSON.parse(localStorage.getItem(PINNED_RAIL_KEY) || '[]'); } catch { return []; }
-    }
-    function savePinnedCats(list) {
-      localStorage.setItem(PINNED_RAIL_KEY, JSON.stringify(list));
-    }
-    function countForCat(cat) {
-      // Task-scoped categories that ship a taskToolIds map count their own tools;
-      // otherwise fall back to a category count so every row is honest.
-      if (cat.task && taskToolIds[cat.task]?.length) {
-        return tools.filter(t => taskToolIds[cat.task].includes(t.id)).length;
-      }
-      return tools.filter(t => t.category === cat.cat).length;
-    }
-    function openFlyoutCat(cat) {
-      closeAllToolsFlyout();
-      document.querySelectorAll('.app-sidebar-rail .rail-item').forEach(r => r.classList.remove('active'));
-      // Highlight the pinned rail item when present; otherwise the flyout's
-      // anchor stays as the fallback active state.
-      const pinnedItem = document.querySelector(`.app-sidebar-rail .rail-item[data-pinned-cat="${cat.id}"]`);
-      (pinnedItem || document.querySelector('.app-sidebar-rail .rail-item[data-task-rail="more"]')).classList.add('active');
-      if (cat.task) { openTool(cat.task); return; }
-      appCategory = cat.cat;
-      appTask = '';
-      appSpecialFilter = '';
-      if (appWorkspaceSearch) appWorkspaceSearch.value = '';
-      renderAppWorkspace();
-    }
-
-    // Insert pinned categories as rail items just before "All tools".
-    function renderPinnedRailItems() {
-      const railNav = document.querySelector('.app-sidebar-rail .rail-nav');
-      if (!railNav) return;
-      railNav.querySelectorAll('.rail-item[data-pinned-cat]').forEach(b => b.remove());
-      const moreBtn = railNav.querySelector('.rail-item[data-task-rail="more"]');
-      const pinned = getPinnedCats();
-      pinned.forEach(id => {
-        const cat = FLYOUT_CATS.find(c => c.id === id);
-        if (!cat) return;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'rail-item';
-        btn.dataset.pinnedCat = cat.id;
-        // Category-based pins get data-rail-cat so the browse view's active-state
-        // sync highlights them; task-based pins (e.g. Workflow) launch a tool.
-        if (cat.cat) btn.dataset.railCat = cat.cat;
-        btn.setAttribute('aria-label', cat.label + ' tools');
-        btn.innerHTML = `<span class="rail-icon">${cat.icon}</span><span class="rail-label">${cat.label}</span>`;
-        btn.addEventListener('click', () => openFlyoutCat(cat));
-        railNav.insertBefore(btn, moreBtn);
-      });
-      initRailHoverIntelligence();
-    }
-
-    let allToolsFlyoutEl = null;
-    let allToolsCloseTimer = null;
-
-    function scheduleAllToolsClose() {
-      clearTimeout(allToolsCloseTimer);
-      allToolsCloseTimer = setTimeout(closeAllToolsFlyout, 160);
-    }
-
-    function closeAllToolsFlyout() {
-      clearTimeout(allToolsCloseTimer);
-      allToolsCloseTimer = null;
-      if (allToolsFlyoutEl) { allToolsFlyoutEl.remove(); allToolsFlyoutEl = null; }
-      document.querySelectorAll('.rail-item[data-task-rail="more"]').forEach(b => b.classList.remove('is-more-open'));
-      if (window._allToolsOutside) { document.removeEventListener('pointerdown', window._allToolsOutside, true); window._allToolsOutside = null; }
-      if (window._allToolsKey) { document.removeEventListener('keydown', window._allToolsKey, true); window._allToolsKey = null; }
-    }
-
-    function openAllToolsFlyout(anchorBtn) {
-      closeAllToolsFlyout();
-      if (!anchorBtn) return;
-      const pinned = getPinnedCats();
-      const menu = document.createElement('div');
-      menu.className = 'all-tools-flyout';
-      menu.setAttribute('role', 'menu');
-      menu.setAttribute('aria-label', 'All tools categories');
-      menu.innerHTML = `
-        <div class="all-tools-flyout-head">
-          <span class="all-tools-flyout-title">More Studios & Labs</span>
-          <span class="all-tools-flyout-hint">Specialized domain tool suites</span>
-        </div>
-        <div class="all-tools-flyout-list">
-          ${FLYOUT_CATS.map(cat => {
-            const isPinned = pinned.includes(cat.id);
-            const count = countForCat(cat);
-            return `
-              <div class="all-tools-row" role="menuitem" data-cat-id="${cat.id}">
-                <span class="all-tools-ico" style="--c:${cat.color}">${cat.icon}</span>
-                <div style="display:flex;flex-direction:column;min-width:0;flex:1;gap:1px;">
-                  <span class="all-tools-label">${cat.label}</span>
-                  <span style="font-size:10.5px;color:#94A3B8;line-height:1.2;">${cat.desc || ''}</span>
-                </div>
-                <span class="all-tools-count">${count}</span>
-                <button type="button" class="all-tools-pin${isPinned ? ' pinned' : ''}" data-pin-cat="${cat.id}" title="${isPinned ? 'Remove from rail' : 'Pin to rail'}" aria-pressed="${isPinned}">
-                  ${isPinned
-                    ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>'
-                    : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>'}
-                </button>
-              </div>`;
-          }).join('')}
-        </div>
-      `;
-      document.body.appendChild(menu);
-      allToolsFlyoutEl = menu;
-      anchorBtn.classList.add('is-more-open');
-
-      const place = () => {
-        const r = anchorBtn.getBoundingClientRect();
-        const mw = menu.offsetWidth || 240;
-        const mh = menu.offsetHeight || 360;
-        let left = r.right + 10;
-        let top = r.top + r.height / 2 - mh / 2;
-        if (left + mw > window.innerWidth - 8) left = Math.max(8, r.left - mw - 10);
-        if (top < 8) top = 8;
-        if (top + mh > window.innerHeight - 8) top = Math.max(8, window.innerHeight - mh - 8);
-        menu.style.left = left + 'px';
-        menu.style.top = top + 'px';
-      };
-      place();
-      requestAnimationFrame(place);
-
-      menu.querySelectorAll('.all-tools-row').forEach(row => {
-        const pinBtn = row.querySelector('.all-tools-pin');
-        row.addEventListener('click', (e) => {
-          if (e.target.closest('.all-tools-pin')) return;
-          const cat = FLYOUT_CATS.find(c => c.id === row.dataset.catId);
-          if (cat) openFlyoutCat(cat);
-        });
-        pinBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = pinBtn.dataset.pinCat;
-          const list = getPinnedCats();
-          const idx = list.indexOf(id);
-          if (idx >= 0) list.splice(idx, 1); else list.push(id);
-          savePinnedCats(list);
-          renderPinnedRailItems();
-          // Refresh pin state in place (keep flyout open so user can configure more)
-          const isPinned = list.includes(id);
-          pinBtn.classList.toggle('pinned', isPinned);
-          pinBtn.setAttribute('aria-pressed', String(isPinned));
-          // pinBtn.title removed
-          const cat = FLYOUT_CATS.find(c => c.id === id);
-          pinBtn.innerHTML = isPinned
-            ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>'
-            : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>';
-        });
-      });
-
-      // Hover-away closes with a small grace period; hovering the menu cancels it
-      menu.addEventListener('mouseenter', () => clearTimeout(allToolsCloseTimer));
-      menu.addEventListener('mouseleave', scheduleAllToolsClose);
-      anchorBtn.addEventListener('mouseleave', scheduleAllToolsClose);
-      anchorBtn.addEventListener('mouseenter', () => clearTimeout(allToolsCloseTimer));
-
-      window._allToolsOutside = (e) => {
-        if (menu.contains(e.target) || anchorBtn.contains(e.target)) return;
-        closeAllToolsFlyout();
-      };
-      window._allToolsKey = (e) => {
-        if (e.key === 'Escape') closeAllToolsFlyout();
-      };
-      document.addEventListener('pointerdown', window._allToolsOutside, true);
-      document.addEventListener('keydown', window._allToolsKey, true);
-      window.addEventListener('resize', closeAllToolsFlyout, { once: true });
-    }
-
-    function bindAllToolsFlyout() {
-      // Hover activation completely removed so hovering over rail icons is 100% silent
-      document.querySelectorAll('.rail-item[data-task-rail="more"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (allToolsFlyoutEl) closeAllToolsFlyout();
-          else openAllToolsFlyout(btn);
-        });
-      });
-    }
+    // Siderail flyout & pinned items removed: specialized tools are absorbed into core rail tasks (Protect, Scan, Convert, Workflow)
+    function closeAllToolsFlyout() {}
+    function renderPinnedRailItems() {}
+    function bindAllToolsFlyout() {}
     // ═══════════════════════════════════════════════════════════════════════
     // Siderail Precision Tooltip Card (Faded Glass & Razor-Sharp Micro-Border)
     // ═══════════════════════════════════════════════════════════════════════
@@ -4328,7 +4249,10 @@ try {
     initRailHoverIntelligence();
 
     document.getElementById('rail-account-btn')?.addEventListener('click', () => {
-      FF.util.toast('FileKit runs 100% locally in your browser. No account required, all data stays private on your device.', 'info');
+      if (window.FK_Auth) {
+        if (window.FK_Auth.state.isLoggedIn) window.FK_Auth.openAccountModal();
+        else window.FK_Auth.openPricingModal();
+      }
     });
 
     // --- Curated Tool Icon & Theme Registry for Original Sharp Cards ---
@@ -4746,6 +4670,7 @@ try {
       const appHomeView = document.getElementById('app-home-view');
       const appCategoryView = document.getElementById('app-category-view');
       const appWorkspaceToolView = document.getElementById('app-workspace-tool-view');
+      const appAccountView = document.getElementById('app-account-view');
 
       // The rail keeps its default task icons until a file is actually dropped —
       // handleDroppedFile() then swaps it to the tools for that file's format.
@@ -4764,6 +4689,19 @@ try {
 
       const workspaceTitle = document.getElementById('app-workspace-title');
       const topbarCenter = document.getElementById('app-topbar-center');
+
+      const topbarUpgrade = document.getElementById('app-getpro-btn');
+      if (appCategory === 'Account') {
+        if (appHomeView) appHomeView.hidden = true;
+        if (appCategoryView) appCategoryView.hidden = true;
+        if (appWorkspaceToolView) appWorkspaceToolView.hidden = true;
+        if (appAccountView) appAccountView.hidden = false;
+        if (topbarCenter) topbarCenter.innerHTML = '';
+        if (topbarUpgrade) topbarUpgrade.style.display = 'none';
+        return;
+      }
+      if (topbarUpgrade) topbarUpgrade.style.display = '';
+      if (appAccountView) appAccountView.hidden = true;
 
       if ((!appCategory || appCategory === 'Home' || appCategory === 'All') && !q) {
         // --- SHOW SMALLPDF APP HOME VIEW ---
@@ -4800,21 +4738,25 @@ try {
             title: 'Drag and drop files to edit',
             sub: 'Supports PDF, Images, Video, Audio'
           },
+          sign: {
+            title: 'Drag and drop PDF to sign or fill forms',
+            sub: 'Supports PDF contracts, agreements, NDAs, and forms'
+          },
           protect: {
-            title: 'Drag and drop PDF to protect or unlock',
-            sub: 'Supports PDF'
+            title: 'Drag and drop files to protect, encrypt, or redact',
+            sub: 'Supports PDF, Images, Documents, and Data files'
           },
           scan: {
-            title: 'Drag and drop files to scan or OCR',
-            sub: 'Supports PDF, JPG, PNG, WEBP'
+            title: 'Drag and drop files to scan, OCR, or read QR/barcodes',
+            sub: 'Supports PDF, JPG, PNG, WEBP, and Camera Scans'
           },
           qr: {
             title: 'Drag and drop QR or barcode images',
             sub: 'Supports PNG, JPG, WEBP, SVG'
           },
           workflow: {
-            title: 'Drag and drop files to run workflow',
-            sub: 'Supports PDF, Images, Word, Excel'
+            title: 'Drag and drop files to run workflows & business tools',
+            sub: 'Supports PDF, Invoices, Images, Word, Excel'
           }
         };
 
@@ -5134,6 +5076,7 @@ try {
       // Show SEO Landing Page
       home.hidden = true;
       if (appView) appView.hidden = true;
+      if (pricingView) pricingView.hidden = true;
       toolView.hidden = false;
       closeDrawer();
       document.body.style.overflow = '';
@@ -5544,6 +5487,7 @@ try {
       // Show App View
       home.hidden = true;
       toolView.hidden = true;
+      if (pricingView) pricingView.hidden = true;
       if (appView) appView.hidden = false;
       closeDrawer();
 
@@ -5557,12 +5501,14 @@ try {
       const _appStg = document.getElementById('app-tool-stage');
       const _appHV  = document.getElementById('app-home-view');
       const _appCV  = document.getElementById('app-category-view');
+      const _appAV  = document.getElementById('app-account-view');
       const _appCvs = document.getElementById('app-canvas');
       const _appMC  = document.querySelector('.app-main-content');
 
       if (_appWTV) _appWTV.dataset.prevView = (!_appCV || _appCV.hidden) ? 'home' : 'category';
       if (_appHV)  _appHV.hidden  = true;
       if (_appCV)  _appCV.hidden  = true;
+      if (_appAV)  _appAV.hidden  = true;
       if (_appWTV) _appWTV.hidden = false;
 
       if (_appCvs) _appCvs.classList.add('ff-tool-active');
@@ -5587,7 +5533,7 @@ try {
       if (_tCenter) _tCenter.innerHTML = '';
 
       // Highlight matching siderail button accurately (or deselect all for standalone tools)
-      const validRails = ['compress', 'convert', 'organize', 'edit', 'protect', 'scan', 'workflow'];
+      const validRails = ['compress', 'convert', 'organize', 'edit', 'sign', 'protect', 'scan', 'workflow'];
       let matchedRail = null;
       for (const [rKey, rTools] of Object.entries(taskToolIds)) {
         if (validRails.includes(rKey) && Array.isArray(rTools) && rTools.includes(id)) {
@@ -5789,15 +5735,15 @@ try {
     function openDrawer(event) {
       drawerTrigger = event?.currentTarget || document.activeElement;
       drawer.hidden = false; document.body.classList.add('drawer-open'); drawerBackground.forEach(node => node.inert = true);
-      document.getElementById('tools-button').setAttribute('aria-expanded', 'true');
-      document.getElementById('mobile-menu').setAttribute('aria-expanded', 'true');
+      document.getElementById('tools-button')?.setAttribute('aria-expanded', 'true');
+      document.getElementById('mobile-menu')?.setAttribute('aria-expanded', 'true');
       document.getElementById('drawer-search').focus();
     }
     function closeDrawer() {
       if (drawer.hidden) return;
       drawer.hidden = true; document.body.classList.remove('drawer-open'); drawerBackground.forEach(node => node.inert = false);
-      document.getElementById('tools-button').setAttribute('aria-expanded', 'false');
-      document.getElementById('mobile-menu').setAttribute('aria-expanded', 'false');
+      document.getElementById('tools-button')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('mobile-menu')?.setAttribute('aria-expanded', 'false');
       document.getElementById('header-search-trigger')?.setAttribute('aria-expanded', 'false');
       drawerTrigger?.focus();
     }
@@ -6496,7 +6442,7 @@ try {
         badge: 'Free & Open',
         html: `<p>FileKit is provided completely free for personal and commercial file operations.</p>
         <ul style="margin:12px 0 16px 20px;line-height:1.7;">
-          <li><strong>Commercial & Personal Use:</strong> You may use all 38+ tools without licensing fees, subscriptions, or attribution requirements.</li>
+          <li><strong>Commercial & Personal Use:</strong> You may use all 197+ tools without licensing fees, subscriptions, or attribution requirements.</li>
           <li><strong>Open Standards:</strong> FileKit is built on open-source WebAssembly libraries including PDF-Lib, PDF.js, FFmpeg, ONNX Runtime, and fflate.</li>
           <li><strong>As-Is Warranty:</strong> Software is provided "as is" without warranty of any kind. Always maintain backups of your original documents.</li>
         </ul>`
@@ -6506,13 +6452,13 @@ try {
         badge: 'Next-Gen File Suite',
         html: `<p>FileKit is an in-browser productivity suite engineered to replace bulky cloud converters with ultra-fast, local WebAssembly engines.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
-          <div style="background:#F8FAFC;padding:12px;border-radius:8px;border:1px solid #E2E8F0;">
-            <strong style="display:block;margin-bottom:4px;color:#0F172A;">⚡ Zero Latency</strong>
-            <span style="font-size:13px;color:#64748B;">No upload or download queues. Conversions run directly on your hardware.</span>
+          <div style="background:#F7F7F7;padding:12px;border-radius:8px;border:1px solid #E5E5E5;">
+            <strong style="display:block;margin-bottom:4px;color:#0A0A0A;">⚡ Zero Latency</strong>
+            <span style="font-size:13px;color:#737373;">No upload or download queues. Conversions run directly on your hardware.</span>
           </div>
-          <div style="background:#F8FAFC;padding:12px;border-radius:8px;border:1px solid #E2E8F0;">
-            <strong style="display:block;margin-bottom:4px;color:#0F172A;">🔒 Total Privacy</strong>
-            <span style="font-size:13px;color:#64748B;">Confidential financial, medical, and legal documents remain strictly on your machine.</span>
+          <div style="background:#F7F7F7;padding:12px;border-radius:8px;border:1px solid #E5E5E5;">
+            <strong style="display:block;margin-bottom:4px;color:#0A0A0A;">🔒 Total Privacy</strong>
+            <span style="font-size:13px;color:#737373;">Confidential financial, medical, and legal documents remain strictly on your machine.</span>
           </div>
         </div>`
       },
@@ -6535,14 +6481,14 @@ try {
         title: 'Keyboard Shortcuts',
         badge: 'Power User',
         html: `<div style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
-          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0;">
-            <span>Search all tools</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #CBD5E1;border-radius:4px;font-family:monospace;font-size:12px;">Ctrl + K / /</kbd>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F7F7F7;border-radius:6px;border:1px solid #E5E5E5;">
+            <span>Search all tools</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #D4D4D4;border-radius:4px;font-family:monospace;font-size:12px;">Ctrl + K / /</kbd>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0;">
-            <span>Close modal / Go Home</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #CBD5E1;border-radius:4px;font-family:monospace;font-size:12px;">Esc</kbd>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F7F7F7;border-radius:6px;border:1px solid #E5E5E5;">
+            <span>Close modal / Go Home</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #D4D4D4;border-radius:4px;font-family:monospace;font-size:12px;">Esc</kbd>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F8FAFC;border-radius:6px;border:1px solid #E2E8F0;">
-            <span>Open file dialog</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #CBD5E1;border-radius:4px;font-family:monospace;font-size:12px;">Space / Enter</kbd>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#F7F7F7;border-radius:6px;border:1px solid #E5E5E5;">
+            <span>Open file dialog</span> <kbd style="background:#fff;padding:2px 6px;border:1px solid #D4D4D4;border-radius:4px;font-family:monospace;font-size:12px;">Space / Enter</kbd>
           </div>
         </div>`
       }
@@ -6555,23 +6501,23 @@ try {
 
       const backdrop = document.createElement('div');
       backdrop.id = 'fk-info-modal-backdrop';
-      backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity 0.2s ease;';
+      backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(10, 10, 10,0.6);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity 0.2s ease;';
       
       const modal = document.createElement('div');
-      modal.style.cssText = 'background:#FFFFFF;border-radius:14px;max-width:540px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;transform:scale(0.96);transition:transform 0.2s cubic-bezier(0.16,1,0.3,1);font-family:Inter,system-ui,sans-serif;color:#0F172A;';
+      modal.style.cssText = 'background:#FFFFFF;border-radius:14px;max-width:540px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;transform:scale(0.96);transition:transform 0.2s cubic-bezier(0.16,1,0.3,1);font-family:Inter,system-ui,sans-serif;color:#0A0A0A;';
       modal.innerHTML = `
-        <div style="padding:18px 24px;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;background:#FAFAFC;">
+        <div style="padding:18px 24px;border-bottom:1px solid #E5E5E5;display:flex;align-items:center;justify-content:space-between;background:#FAFAFC;">
           <div style="display:flex;align-items:center;gap:10px;">
             <h3 style="margin:0;font-size:17px;font-weight:700;">${data.title}</h3>
             <span style="font-size:11px;font-weight:700;text-transform:uppercase;background:#EFF6FF;color:#2563EB;padding:3px 8px;border-radius:100px;border:1px solid #DBEAFE;">${data.badge}</span>
           </div>
-          <button type="button" id="fk-info-modal-close" style="border:none;background:transparent;cursor:pointer;font-size:20px;line-height:1;color:#64748B;padding:4px 8px;border-radius:6px;">×</button>
+          <button type="button" id="fk-info-modal-close" style="border:none;background:transparent;cursor:pointer;font-size:20px;line-height:1;color:#737373;padding:4px 8px;border-radius:6px;">×</button>
         </div>
-        <div style="padding:22px 24px;font-size:14px;line-height:1.6;color:#334155;">
+        <div style="padding:22px 24px;font-size:14px;line-height:1.6;color:#383838;">
           ${data.html}
         </div>
-        <div style="padding:14px 24px;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;background:#FAFAFC;">
-          <button type="button" id="fk-info-modal-done" style="background:#0F172A;color:#FFFFFF;border:none;padding:8px 18px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;">Close</button>
+        <div style="padding:14px 24px;border-top:1px solid #E5E5E5;display:flex;justify-content:flex-end;background:#FAFAFC;">
+          <button type="button" id="fk-info-modal-done" style="background:#0A0A0A;color:#FFFFFF;border:none;padding:8px 18px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;">Close</button>
         </div>
       `;
 
@@ -6599,6 +6545,10 @@ try {
     document.querySelectorAll('[data-footer-link]').forEach(button => {
       button.addEventListener('click', () => {
         const linkKey = (button.dataset.footerLink || '').toLowerCase();
+        if (linkKey === 'pricing' || linkKey === 'plans') {
+          showPricing();
+          return;
+        }
         showInfoModal(linkKey);
       });
     });
@@ -6610,6 +6560,10 @@ try {
       }
       if (!route) {
         showHome();
+        return;
+      }
+      if (route === 'pricing' || route === 'plans') {
+        showPricing();
         return;
       }
       if (route === 'app') {
@@ -7434,7 +7388,7 @@ try {
             label.style.display = 'block';
             label.style.fontSize = '12px';
             label.style.fontWeight = '600';
-            label.style.color = '#334155';
+            label.style.color = '#383838';
             label.style.marginBottom = '4px';
             label.textContent = field.label;
 
@@ -7444,7 +7398,7 @@ try {
               ctrl.style.width = '100%';
               ctrl.style.padding = '8px';
               ctrl.style.borderRadius = '6px';
-              ctrl.style.border = '1px solid #cbd5e1';
+              ctrl.style.border = '1px solid #D4D4D4';
               field.options.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = typeof opt === 'object' ? opt.value : opt;
@@ -7469,7 +7423,7 @@ try {
               ctrl.style.width = '100%';
               ctrl.style.padding = '8px';
               ctrl.style.borderRadius = '6px';
-              ctrl.style.border = '1px solid #cbd5e1';
+              ctrl.style.border = '1px solid #D4D4D4';
               ctrl.addEventListener('input', (e) => { inputsState[field.key] = e.target.value; });
             }
             fieldGroup.append(label, ctrl);
@@ -7597,9 +7551,11 @@ try {
       const appWTV = document.getElementById('app-workspace-tool-view');
       const appHV  = document.getElementById('app-home-view');
       const appCV  = document.getElementById('app-category-view');
+      const appAV  = document.getElementById('app-account-view');
       const appCvs = document.getElementById('app-canvas');
       const appMC  = document.querySelector('.app-main-content');
       if (appWTV) appWTV.hidden = true;
+      if (appAV)  appAV.hidden  = true;
       // Restore canvas padding / main-content margin
       if (appCvs) appCvs.classList.remove('ff-tool-active');
       if (appMC)  appMC.classList.remove('ff-tool-active');
@@ -7634,7 +7590,8 @@ try {
     const isCatBtn   = !!e.target.closest('[data-rail-cat]');
     const isTaskBtn  = !!e.target.closest('[data-task-rail]');
     const isBrandBtn = !!e.target.closest('#app-home-brand-btn, #app-brand-text-btn');
-    if (isCatBtn || isTaskBtn || isBrandBtn) closeTool();
+    const isAcctBtn  = !!e.target.closest('#rail-account-btn, #app-getpro-btn, #topbar-user-badge');
+    if (isCatBtn || isTaskBtn || isBrandBtn || isAcctBtn) closeTool();
   }, true); // capture = before existing handlers
 })();
 
@@ -8041,18 +7998,18 @@ try {
   window.FF.ToolSeoEngine = {
     getEditPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the first and only in-browser PDF editor you'll love. Edit PDF documents online with powerful text, shape, annotation, and form tools.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Edit PDF by adding text, shapes, comments and highlights</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% free to use</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>No registration or installation required</span>
           </div>
@@ -8062,22 +8019,22 @@ try {
       <!-- Section 1: Edit Your PDFs The Easy Way -->
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #00A896; text-transform: uppercase; margin-bottom: 8px;">INTUITIVE PDF WORKSPACE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Edit Your PDFs The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">A simplified PDF editing solution with all the tools you need to personalize your documents without leaving your browser.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Edit Your PDFs The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">A simplified PDF editing solution with all the tools you need to personalize your documents without leaving your browser.</p>
       </div>
 
       <!-- Story 1: Fast and Powerful PDF Editing -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast and Powerful PDF Editing</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast and Powerful PDF Editing</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Eliminate repetitive tasks with our PDF editor, allowing you to quickly format documents, add signatures, type or draw text, or organize PDF pages without interrupting your workflow.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
   <defs>
     <linearGradient id="s1-screen-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC"/>
-      <stop offset="100%" stop-color="#E2E8F0"/>
+      <stop offset="0%" stop-color="#F7F7F7"/>
+      <stop offset="100%" stop-color="#E5E5E5"/>
     </linearGradient>
     <filter id="s1-glow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#00A896" flood-opacity="0.12"/>
@@ -8095,8 +8052,8 @@ try {
   <ellipse cx="255" cy="348" rx="140" ry="16" fill="#0D9488" opacity="0.12"/>
 
   <!-- Monitor Stand Base & Stem -->
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
 
   <!-- Desktop Monitor Body -->
   <g filter="url(#s1-glow)">
@@ -8111,56 +8068,56 @@ try {
 
     <!-- Screen App Top Header -->
     <rect x="122" y="87" width="266" height="26" rx="8 8 0 0" fill="#FFFFFF"/>
-    <line x1="122" y1="113" x2="388" y2="113" stroke="#E2E8F0" stroke-width="1.5"/>
+    <line x1="122" y1="113" x2="388" y2="113" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="100" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="100" r="3.5" fill="#F59E0B"/>
     <circle cx="158" cy="100" r="3.5" fill="#10B981"/>
     <!-- Search / Title Bar in Screen -->
-    <rect x="180" y="93" width="150" height="14" rx="4" fill="#F1F5F9"/>
-    <rect x="190" y="97" width="60" height="6" rx="2" fill="#94A3B8"/>
+    <rect x="180" y="93" width="150" height="14" rx="4" fill="#EEEEEE"/>
+    <rect x="190" y="97" width="60" height="6" rx="2" fill="#8C8C8C"/>
 
     <!-- 6 App Feature Tool Cards on Screen -->
     <!-- Tool 1: Text Tool (Coral) -->
-    <rect x="138" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="138" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
     <rect x="146" y="134" width="20" height="20" rx="4" fill="#FEF2F2"/>
     <text x="156" y="149" fill="#EF4444" font-family="'Outfit', sans-serif" font-size="13" font-weight="900" text-anchor="middle">T</text>
-    <rect x="172" y="137" width="24" height="4" rx="2" fill="#64748B"/>
-    <rect x="172" y="145" width="16" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="172" y="137" width="24" height="4" rx="2" fill="#737373"/>
+    <rect x="172" y="145" width="16" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Tool 2: Draw / Pencil (Teal) -->
-    <rect x="214" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="214" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
     <rect x="222" y="134" width="20" height="20" rx="4" fill="#ECFDF5"/>
     <path d="M 230 148 L 238 138 L 240 140 L 232 150 Z" fill="#00A896"/>
-    <rect x="248" y="137" width="24" height="4" rx="2" fill="#64748B"/>
-    <rect x="248" y="145" width="16" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="248" y="137" width="24" height="4" rx="2" fill="#737373"/>
+    <rect x="248" y="145" width="16" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Tool 3: Shapes (Gold) -->
-    <rect x="290" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="290" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
     <rect x="298" y="134" width="20" height="20" rx="4" fill="#FFFBEB"/>
     <rect x="303" y="139" width="10" height="10" rx="2" fill="#F59E0B"/>
-    <rect x="324" y="137" width="24" height="4" rx="2" fill="#64748B"/>
-    <rect x="324" y="145" width="16" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="324" y="137" width="24" height="4" rx="2" fill="#737373"/>
+    <rect x="324" y="145" width="16" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Tool 4: Image Insert (Blue) -->
-    <rect x="138" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="138" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
     <rect x="146" y="186" width="20" height="20" rx="4" fill="#EFF6FF"/>
     <circle cx="156" cy="196" r="4" fill="#3B82F6"/>
-    <rect x="172" y="189" width="24" height="4" rx="2" fill="#64748B"/>
-    <rect x="172" y="197" width="16" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="172" y="189" width="24" height="4" rx="2" fill="#737373"/>
+    <rect x="172" y="197" width="16" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Tool 5: Sign PDF (Purple) -->
-    <rect x="214" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="214" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
     <rect x="222" y="186" width="20" height="20" rx="4" fill="#FAF5FF"/>
     <path d="M 228 198 Q 232 190 236 198 T 241 195" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" fill="none"/>
-    <rect x="248" y="189" width="24" height="4" rx="2" fill="#64748B"/>
-    <rect x="248" y="197" width="16" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="248" y="189" width="24" height="4" rx="2" fill="#737373"/>
+    <rect x="248" y="197" width="16" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Tool 6: Form Fill (Emerald) -->
-    <rect x="290" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <rect x="290" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
     <rect x="298" y="186" width="20" height="20" rx="4" fill="#ECFDF5"/>
     <path d="M 303 196 L 306 199 L 313 191" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <rect x="324" y="189" width="24" height="4" rx="2" fill="#64748B"/>
-    <rect x="324" y="197" width="16" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="324" y="189" width="24" height="4" rx="2" fill="#737373"/>
+    <rect x="324" y="197" width="16" height="4" rx="2" fill="#8C8C8C"/>
   </g>
 
   <!-- Glowing 3D Lightbulb Hovering Top-Right -->
@@ -8173,9 +8130,9 @@ try {
     <line x1="28" y1="34" x2="28" y2="52" stroke="#D97706" stroke-width="2.5"/>
     <line x1="36" y1="34" x2="36" y2="52" stroke="#D97706" stroke-width="2.5"/>
     <!-- Screw Base -->
-    <rect x="22" y="68" width="20" height="6" rx="2" fill="#CBD5E1"/>
-    <rect x="24" y="74" width="16" height="5" rx="2" fill="#94A3B8"/>
-    <path d="M 28 79 H 36 L 34 84 H 30 Z" fill="#64748B"/>
+    <rect x="22" y="68" width="20" height="6" rx="2" fill="#D4D4D4"/>
+    <rect x="24" y="74" width="16" height="5" rx="2" fill="#8C8C8C"/>
+    <path d="M 28 79 H 36 L 34 84 H 30 Z" fill="#737373"/>
 
     <!-- Yellow Sparkle Rays around Bulb -->
     <line x1="32" y1="-4" x2="32" y2="4" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
@@ -8203,7 +8160,7 @@ try {
       <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#00A896" flood-opacity="0.15"/>
     </filter>
     <filter id="s2-bar-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.2"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#171717" flood-opacity="0.2"/>
     </filter>
   </defs>
 
@@ -8223,9 +8180,9 @@ try {
 
     <!-- Document Content Lines -->
     <rect x="185" y="115" width="80" height="8" rx="4" fill="#00A896" opacity="0.8"/>
-    <rect x="185" y="140" width="140" height="5" rx="2.5" fill="#CBD5E1"/>
-    <rect x="185" y="155" width="140" height="5" rx="2.5" fill="#CBD5E1"/>
-    <rect x="185" y="170" width="125" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="185" y="140" width="140" height="5" rx="2.5" fill="#D4D4D4"/>
+    <rect x="185" y="155" width="140" height="5" rx="2.5" fill="#D4D4D4"/>
+    <rect x="185" y="170" width="125" height="5" rx="2.5" fill="#D4D4D4"/>
 
     <!-- Active Text Edit Box (Dotted Outline with Blue Highlight) -->
     <rect x="185" y="195" width="145" height="42" rx="4" fill="#F0FDFA" stroke="#00A896" stroke-width="1.8" stroke-dasharray="4 3"/>
@@ -8235,26 +8192,26 @@ try {
     <line x1="275" y1="204" x2="275" y2="215" stroke="#00A896" stroke-width="2.5" stroke-linecap="round"/>
 
     <!-- Remaining Document Lines -->
-    <rect x="185" y="255" width="140" height="5" rx="2.5" fill="#CBD5E1"/>
-    <rect x="185" y="270" width="130" height="5" rx="2.5" fill="#CBD5E1"/>
-    <rect x="185" y="285" width="95" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="185" y="255" width="140" height="5" rx="2.5" fill="#D4D4D4"/>
+    <rect x="185" y="270" width="130" height="5" rx="2.5" fill="#D4D4D4"/>
+    <rect x="185" y="285" width="95" height="5" rx="2.5" fill="#D4D4D4"/>
   </g>
 
   <!-- Floating Rich Editor Toolbar Pill (Hovering Above Document) -->
   <g filter="url(#s2-bar-shadow)" transform="translate(100, 115)">
-    <rect x="0" y="0" width="190" height="46" rx="23" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+    <rect x="0" y="0" width="190" height="46" rx="23" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
     
     <!-- Tool 1: Text T (Active Highlighted) -->
     <rect x="6" y="5" width="36" height="36" rx="18" fill="#ECFDF5"/>
     <text x="24" y="28" fill="#00A896" font-family="'Outfit', sans-serif" font-size="16" font-weight="900" text-anchor="middle">T</text>
 
     <!-- Divider -->
-    <line x1="48" y1="12" x2="48" y2="34" stroke="#E2E8F0" stroke-width="1.5"/>
+    <line x1="48" y1="12" x2="48" y2="34" stroke="#E5E5E5" stroke-width="1.5"/>
 
     <!-- Tool 2: Pencil / Draw -->
     <g transform="translate(56, 12)">
       <path d="M 4 18 L 16 6 L 19 9 L 7 21 Z" fill="#F59E0B"/>
-      <polygon points="4,18 2,23 7,21" fill="#1E293B"/>
+      <polygon points="4,18 2,23 7,21" fill="#171717"/>
     </g>
 
     <!-- Tool 3: Shapes Rectangle -->
@@ -8267,7 +8224,7 @@ try {
     </g>
 
     <!-- Dropdown Chevron -->
-    <path d="M 172 20 L 176 25 L 180 20" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M 172 20 L 176 25 L 180 20" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   </g>
 
   <!-- Wooden Pencil Actively Drawing on Page -->
@@ -8278,10 +8235,10 @@ try {
     <rect x="335" y="140" width="7" height="95" fill="#FCD34D"/>
     <!-- Pencil Eraser & Ferrule -->
     <rect x="320" y="125" width="22" height="15" rx="2" fill="#F43F5E"/>
-    <rect x="320" y="137" width="22" height="5" fill="#CBD5E1"/>
+    <rect x="320" y="137" width="22" height="5" fill="#D4D4D4"/>
     <!-- Wooden Sharpened Cone & Graphite Tip -->
     <polygon points="320,235 342,235 331,258" fill="#FDE68A"/>
-    <polygon points="327,249 335,249 331,258" fill="#1E293B"/>
+    <polygon points="327,249 335,249 331,258" fill="#171717"/>
   </g>
 
   <!-- Sparkles around Pencil Tip -->
@@ -8291,7 +8248,7 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Document Organization at a Glance</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Document Organization at a Glance</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our integrated tool automatically organizes pages into interactive thumbnails, letting you crop, reorder, rotate, or delete pages easily from one intuitive view.</p>
         </div>
       </div>
@@ -8299,7 +8256,7 @@ try {
       <!-- Story 3: Quick to Save, Easy to Share -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Quick to Save, Easy to Share</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Quick to Save, Easy to Share</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Exporting and sharing documents with others is effortless. Generate links, export to cloud storage or download directly. Perfect for fast collaboration with clients or teammates.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -8323,12 +8280,12 @@ try {
   <!-- Modern Open Laptop -->
   <g filter="url(#s3-laptop-shadow)">
     <!-- Laptop Base / Keyboard Deck -->
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
     <!-- Laptop Trackpad Notch -->
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Laptop Display Lid (Upright) -->
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#1E293B" stroke="#0F172A" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#171717" stroke="#0A0A0A" stroke-width="2"/>
     <!-- Screen Glass -->
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#00A896"/>
     <!-- Screen Header Bar -->
@@ -8339,9 +8296,9 @@ try {
     <!-- Document in Screen with Central Download / Export Shield -->
     <rect x="175" y="148" width="170" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="190" y="160" width="70" height="6" rx="3" fill="#00A896"/>
-    <rect x="190" y="172" width="140" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="190" y="180" width="120" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="190" y="188" width="90" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="190" y="172" width="140" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="190" y="180" width="120" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="190" y="188" width="90" height="4" rx="2" fill="#E5E5E5"/>
 
     <!-- Central Download / Cloud Circle Emblem -->
     <circle cx="260" cy="216" r="18" fill="#00A896"/>
@@ -8364,10 +8321,10 @@ try {
   <g filter="url(#s3-env-shadow)" transform="translate(355, 100)">
     <!-- Flying Document Paper -->
     <g transform="rotate(12 30 10)">
-      <rect x="15" y="-18" width="46" height="58" rx="4" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <rect x="15" y="-18" width="46" height="58" rx="4" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
       <rect x="22" y="-10" width="22" height="4" rx="2" fill="#00A896"/>
-      <rect x="22" y="-2" width="32" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="22" y="4" width="28" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="22" y="-2" width="32" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="22" y="4" width="28" height="3" rx="1.5" fill="#D4D4D4"/>
     </g>
 
     <!-- Envelope Body -->
@@ -8391,27 +8348,27 @@ try {
       <div style="background: #EEF4FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #DBEAFE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Edit a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Edit a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your document into the PDF Editor.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your document into the PDF Editor.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Insert annotations &amp; text:</strong> Add text, images, shapes, or hand-drawn annotations as needed.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Insert annotations &amp; text:</strong> Add text, images, shapes, or hand-drawn annotations as needed.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Style elements:</strong> Edit size, font, color, and positioning of added content.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Style elements:</strong> Edit size, font, color, and positioning of added content.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Save finalized PDF:</strong> Download your finalized PDF file or share it directly with others.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Save finalized PDF:</strong> Download your finalized PDF file or share it directly with others.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Convert or compress:</strong> (Optional) Optimize or transcode your PDF before saving.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Convert or compress:</strong> (Optional) Optimize or transcode your PDF before saving.</span>
             </li>
           </ul>
         </div>
@@ -8424,32 +8381,32 @@ try {
   <!-- Character Mascot: Folded Sheet of Paper -->
   <g>
     <!-- Paper Sheet Body -->
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
     
     <!-- Top-Left Folded Ear -->
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
     <!-- Left Arm Resting on Ground -->
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
     <!-- Big Round Spectacles with Turquoise Tint -->
-    <circle cx="106" cy="182" r="19" fill="#CCFBF1" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#CCFBF1" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#CCFBF1" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#CCFBF1" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
     <!-- Happy Smiling Mouth -->
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
     <!-- Right Arm Extending Up Holding Stylus Pen -->
-    <path d="M 160 180 Q 172 172 182 158" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 172 172 182 158" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
   </g>
 
   <!-- Stylus Touch Pen in Hand -->
   <g transform="rotate(-20 185 150)">
-    <rect x="180" y="110" width="11" height="46" rx="3" fill="#0F172A"/>
+    <rect x="180" y="110" width="11" height="46" rx="3" fill="#0A0A0A"/>
     <rect x="180" y="132" width="11" height="16" fill="#00A896"/>
     <polygon points="180,110 191,110 185.5,98" fill="#F59E0B"/>
   </g>
@@ -8492,7 +8449,7 @@ try {
       <!-- Section 3: Free PDF editing — Quick & Easy -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #00A896; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF editing — Quick &amp; Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF editing — Quick &amp; Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -8505,8 +8462,8 @@ try {
       <path d="M 11 28 Q 8 32 6 34 Q 10 32 14 30 Z" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Powerful Tools, Zero Training</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Add annotations, edit text, insert images, and fill forms with an intuitive interface designed for everyone.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Powerful Tools, Zero Training</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Add annotations, edit text, insert images, and fill forms with an intuitive interface designed for everyone.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -8517,8 +8474,8 @@ try {
       <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Safe &amp; Reliable Online PDF Editor</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">All editing happens client-side in your browser WebAssembly sandbox. Files never upload to remote servers.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Safe &amp; Reliable Online PDF Editor</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">All editing happens client-side in your browser WebAssembly sandbox. Files never upload to remote servers.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -8531,8 +8488,8 @@ try {
       <line x1="17" y1="26" x2="21" y2="26" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Edit PDFs for Free</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Access complete PDF editing capabilities without paywalls, subscriptions, or hidden watermarks.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Edit PDFs for Free</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Access complete PDF editing capabilities without paywalls, subscriptions, or hidden watermarks.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -8543,8 +8500,8 @@ try {
       <path d="M 9 26 H 31 L 29 28 H 11 Z" fill="#008F80"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Works Anywhere</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Seamlessly edit PDF files on Mac, Windows, Linux, iOS, iPadOS, and Android browsers.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Works Anywhere</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Seamlessly edit PDF files on Mac, Windows, Linux, iOS, iPadOS, and Android browsers.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -8553,8 +8510,8 @@ try {
       <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Effortless In-Memory Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Instant rendering and sub-second tool responsiveness with no upload wait times.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Effortless In-Memory Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Instant rendering and sub-second tool responsiveness with no upload wait times.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -8564,8 +8521,8 @@ try {
       <path d="M 12 27 L 17 22 L 14 19 L 9 24 C 8 25 8 27 10 28 C 11 29 11 28 12 27 Z" fill="#A855F7"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">More Than Just an Editor</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Rotate, crop, merge, organize, and sign your documents in one unified workstation.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">More Than Just an Editor</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Rotate, crop, merge, organize, and sign your documents in one unified workstation.</p>
           </div>
         </div>
       </div>
@@ -8573,12 +8530,12 @@ try {
       <!-- Section 4: PDF Editing FAQs -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #00A896; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Editing FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Editing FAQs</h2>
       </div>
 
       <div class="fk-edit-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-edit-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-edit-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>What is a PDF Editor?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -8587,8 +8544,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How do you edit text in a PDF document?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -8597,8 +8554,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I add images to a PDF?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -8607,8 +8564,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I fill in and sign interactive PDF forms?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -8617,8 +8574,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are files in the PDF editor secure and private?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -8630,18 +8587,18 @@ try {
 `; },
     getCompressPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit delivers powerful, client-side PDF compression. Shrink bulky PDF files up to 90% of their original file size for email, web publishing, and storage — while preserving crystal-clear text sharpness and embedded image fidelity.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Up to 90% file size reduction with smart DPI re-sampling</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Multiple compression modes (Extreme, Recommended, Low)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly compression</span>
           </div>
@@ -8651,14 +8608,14 @@ try {
       <!-- Section 1: Introduction Title -->
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">SMART LOSSLESS SQUEEZE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Compress PDF Files Online for Free</h2>
-        <p style="color: #64748B; font-size: 15px;">Reduce your PDF file size without sacrificing readability, formatting, or image clarity.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Compress PDF Files Online for Free</h2>
+        <p style="color: #737373; font-size: 15px;">Reduce your PDF file size without sacrificing readability, formatting, or image clarity.</p>
       </div>
 
       <!-- Story 1: Smart Squeeze -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Reduce PDF File Size by up to 90%</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Reduce PDF File Size by up to 90%</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Large PDF documents with high-resolution photos, embedded fonts, and vector illustrations frequently exceed email attachment limits (e.g. Gmail 25MB threshold) and slow down web portals.</p>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">FileKit intelligently strips redundant metadata, deduplicates embedded font subsets, and applies adaptive perceptual image compression to dramatically shrink file size while maintaining pristine document aesthetics.</p>
         </div>
@@ -8726,8 +8683,8 @@ try {
     
     <!-- Document Header -->
     <rect x="30" y="30" width="100" height="10" rx="5" fill="#FACC15"/>
-    <rect x="30" y="52" width="220" height="5" rx="2.5" fill="#CBD5E1"/>
-    <rect x="30" y="66" width="180" height="5" rx="2.5" fill="#CBD5E1"/>
+    <rect x="30" y="52" width="220" height="5" rx="2.5" fill="#D4D4D4"/>
+    <rect x="30" y="66" width="180" height="5" rx="2.5" fill="#D4D4D4"/>
 
     <!-- High-Res Photo Block -->
     <g transform="translate(30, 95)">
@@ -8740,12 +8697,12 @@ try {
 
     <!-- Floating Magnifying Glass Loupe Inspecting Sharp Text -->
     <g transform="translate(185, 185)">
-      <path d="M 65 65 L 100 100" stroke="#0F172A" stroke-width="12" stroke-linecap="round"/>
+      <path d="M 65 65 L 100 100" stroke="#0A0A0A" stroke-width="12" stroke-linecap="round"/>
       <path d="M 65 65 L 95 95" stroke="#FACC15" stroke-width="7" stroke-linecap="round"/>
-      <circle cx="38" cy="38" r="42" fill="#FFFFFF" stroke="#0F172A" stroke-width="5"/>
+      <circle cx="38" cy="38" r="42" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="5"/>
       <circle cx="38" cy="38" r="36" fill="#FEFCE8"/>
       
-      <text x="38" y="30" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="14" font-weight="900" text-anchor="middle">100%</text>
+      <text x="38" y="30" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="14" font-weight="900" text-anchor="middle">100%</text>
       <text x="38" y="46" fill="#CA8A04" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">SHARP</text>
       <path d="M 22 54 L 32 62 L 52 40" stroke="#10B981" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
@@ -8757,9 +8714,9 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Crystal-Clear Text &amp; Image Sharpness</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Crystal-Clear Text &amp; Image Sharpness</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Unlike primitive compression tools that produce blurry, illegible scans, FileKit uses perceptual quantization algorithms that safeguard delicate typographic serifs, fine mathematical lines, and photo clarity.</p>
-          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #334155;">
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #383838;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #EAB308; font-weight: bold;">✓</span> <strong>Adaptive Resampling:</strong> Downsamples heavy 600 DPI graphics to clean 150–300 DPI web standards.
             </li>
@@ -8776,7 +8733,7 @@ try {
       <!-- Story 3: 100% In-Memory Privacy -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Zero Server Uploads &amp; 100% Client Privacy</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Zero Server Uploads &amp; 100% Client Privacy</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Most PDF websites upload your sensitive personal and corporate documents to third-party cloud servers. FileKit executes the entire compression pipeline inside your browser using WebAssembly.</p>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your files never leave your device, ensuring total privacy, GDPR/HIPAA compliance, and lightning-fast processing speeds without queue times.</p>
         </div>
@@ -8810,27 +8767,27 @@ try {
       <div style="background: #FEFCE8; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FEF08A;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Compress PDF Files for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Compress PDF Files for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the sunny yellow dropzone above or click "Select file".</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the sunny yellow dropzone above or click "Select file".</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Choose compression level:</strong> Select Recommended Compression for the ideal balance between quality and file size.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Choose compression level:</strong> Select Recommended Compression for the ideal balance between quality and file size.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Compress:</strong> WebAssembly optimizes images, streams, and font subsets in milliseconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Compress:</strong> WebAssembly optimizes images, streams, and font subsets in milliseconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Preview size savings:</strong> Review your exact byte savings (e.g. 14.8 MB ➔ 1.9 MB, 85% saved).</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Preview size savings:</strong> Review your exact byte savings (e.g. 14.8 MB ➔ 1.9 MB, 85% saved).</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download optimized PDF:</strong> Save your lightweight, email-ready PDF to your local device.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download optimized PDF:</strong> Save your lightweight, email-ready PDF to your local device.</span>
             </li>
           </ul>
         </div>
@@ -8881,7 +8838,7 @@ try {
       <!-- 6 Performance Benefits Grid (Using the 80x80 Multi-Color Icons) -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Ultra-Fast Lossless PDF Optimization</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Ultra-Fast Lossless PDF Optimization</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -8917,8 +8874,8 @@ try {
   <path fill="#87AFFF" d="M28.169 8.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0L30.2 9.365a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0L28.17 8.972Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Instant WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Client-side WebAssembly processes large multi-megabyte PDFs in milliseconds with zero queue delay.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Client-side WebAssembly processes large multi-megabyte PDFs in milliseconds with zero queue delay.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -8936,8 +8893,8 @@ try {
   <path fill="#FFB700" fill-rule="evenodd" d="M21 71.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Browser Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero cloud uploads — documents are compressed locally in device RAM and never saved to any server.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Browser Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero cloud uploads — documents are compressed locally in device RAM and never saved to any server.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -8957,8 +8914,8 @@ try {
   <circle cx="36" cy="63" r="3" fill="#FFFFFF"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Custom Compression Levels</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Choose between Extreme (-90%), Recommended (-80%), and Low compression for tailored balance.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Custom Compression Levels</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Choose between Extreme (-90%), Recommended (-80%), and Low compression for tailored balance.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -8976,8 +8933,8 @@ try {
   <path fill="#87AFFF" d="M70.169 68.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% Visual Clarity Retention</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Preserves original vector fonts, high-res photos, bookmarks, metadata, and form fields.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% Visual Clarity Retention</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Preserves original vector fonts, high-res photos, bookmarks, metadata, and form fields.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -9005,8 +8962,8 @@ try {
   </defs>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Compress PDFs seamlessly on macOS, Windows, Linux, iOS, iPadOS, and Android web browsers.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Compress PDFs seamlessly on macOS, Windows, Linux, iOS, iPadOS, and Android web browsers.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -9017,8 +8974,8 @@ try {
   <circle cx="57" cy="40" r="3" fill="#C084FC"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Compressions</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your optimized PDF documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Compressions</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your optimized PDF documents.</p>
           </div>
         </div>
       </div>
@@ -9026,12 +8983,12 @@ try {
       <!-- FAQ Accordion -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Compression FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Compression FAQs</h2>
       </div>
 
       <div class="fk-compress-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-compress-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-compress-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will compressing my PDF degrade text quality or image sharpness?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9040,8 +8997,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How much can I reduce my PDF file size?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9050,8 +9007,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I compress PDFs to fit under the 25MB Gmail attachment limit?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9060,8 +9017,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are my confidential documents secure during compression?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9072,18 +9029,18 @@ try {
       </div>
 `; },
     getMergePdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest and most secure in-browser PDF merger. Combine multiple PDF files, presentations, and scans into one unified document with perfect page ordering.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Combine multiple PDF files into one clean document</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Drag and drop to rearrange and rotate pages</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly fusion</span>
           </div>
@@ -9092,13 +9049,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">MULTI-DOCUMENT FUSION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Merge Your PDFs The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Combine contracts, invoices, portfolios, and reports into a single, cohesive PDF without downloading bulky desktop software.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Merge Your PDFs The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Combine contracts, invoices, portfolios, and reports into a single, cohesive PDF without downloading bulky desktop software.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Powerful PDF Merging</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast &amp; Powerful PDF Merging</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Drag and drop as many PDF documents as you need into our workstation. Our high-performance WebAssembly engine stitches pages, bookmarks, and font tables together seamlessly in under a second with zero loss in resolution.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -9120,8 +9077,8 @@ try {
   <ellipse cx="255" cy="348" rx="145" ry="16" fill="#3730A3" opacity="0.14"/>
 
   <!-- Desktop Workstation / Screen Base & Stand -->
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
 
   <!-- Main Merge Screen in Indigo -->
   <g filter="url(#ms1-shadow)">
@@ -9133,12 +9090,12 @@ try {
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
 
     <!-- Screen Header Bar -->
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F8FAFC"/>
-    <line x1="122" y1="111" x2="388" y2="111" stroke="#E2E8F0" stroke-width="1.5"/>
+    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
     <circle cx="158" cy="99" r="3.5" fill="#10B981"/>
-    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E2E8F0"/>
+    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E5E5E5"/>
 
     <!-- Left: 3 Stacked Input Documents Funneling In -->
     <g transform="translate(138, 122)">
@@ -9149,9 +9106,9 @@ try {
       <!-- Doc 1 (Top) -->
       <rect x="0" y="0" width="46" height="62" rx="3" fill="#FFFFFF" stroke="#4F46E5" stroke-width="1.5"/>
       <rect x="6" y="8" width="20" height="4" rx="2" fill="#4F46E5"/>
-      <rect x="6" y="16" width="34" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="6" y="22" width="34" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="6" y="28" width="26" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="6" y="16" width="34" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="6" y="22" width="34" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="6" y="28" width="26" height="3" rx="1.5" fill="#D4D4D4"/>
       <rect x="6" y="44" width="34" height="10" rx="2" fill="#EEF2FF"/>
       <text x="23" y="52" fill="#4338CA" font-family="'Outfit', sans-serif" font-size="7.5" font-weight="800" text-anchor="middle">3 FILES</text>
     </g>
@@ -9176,9 +9133,9 @@ try {
 
       <!-- Document Content on Front Cover -->
       <rect x="16" y="12" width="32" height="5" rx="2.5" fill="#4F46E5"/>
-      <rect x="16" y="22" width="44" height="3.5" rx="1.75" fill="#94A3B8"/>
-      <rect x="16" y="29" width="44" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="16" y="36" width="36" height="3.5" rx="1.75" fill="#CBD5E1"/>
+      <rect x="16" y="22" width="44" height="3.5" rx="1.75" fill="#8C8C8C"/>
+      <rect x="16" y="29" width="44" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="16" y="36" width="36" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
       <!-- Unified Master Badge -->
       <rect x="16" y="56" width="44" height="18" rx="4" fill="#4F46E5"/>
@@ -9226,19 +9183,19 @@ try {
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
 
     <!-- Board Header -->
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">REORDER &amp; ARRANGE PAGES</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">REORDER &amp; ARRANGE PAGES</text>
     <rect x="330" y="80" width="55" height="18" rx="4" fill="#4F46E5"/>
     <text x="357" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">SORT</text>
 
     <!-- Thumbnail 1 (Slot 1) -->
     <g transform="translate(120, 125)">
-      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="8" y="10" width="28" height="4" rx="2" fill="#4F46E5"/>
-      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
-      <rect x="8" y="27" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
-      <rect x="8" y="34" width="40" height="3" rx="1.5" fill="#E2E8F0"/>
+      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
+      <rect x="8" y="27" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
+      <rect x="8" y="34" width="40" height="3" rx="1.5" fill="#E5E5E5"/>
       <!-- Number Tag -->
       <circle cx="60" cy="74" r="7" fill="#4F46E5"/>
       <text x="60" y="77" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="800" text-anchor="middle">1</text>
@@ -9252,29 +9209,29 @@ try {
 
     <!-- Thumbnail 3 (Slot 3) -->
     <g transform="translate(290, 125)">
-      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="8" y="10" width="28" height="4" rx="2" fill="#4F46E5"/>
-      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
-      <rect x="8" y="27" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
-      <rect x="8" y="34" width="40" height="3" rx="1.5" fill="#E2E8F0"/>
+      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
+      <rect x="8" y="27" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
+      <rect x="8" y="34" width="40" height="3" rx="1.5" fill="#E5E5E5"/>
       <circle cx="60" cy="74" r="7" fill="#4F46E5"/>
       <text x="60" y="77" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="800" text-anchor="middle">3</text>
     </g>
 
     <!-- Bottom Row Thumbnail 4 -->
     <g transform="translate(120, 222)">
-      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="8" y="10" width="28" height="4" rx="2" fill="#4F46E5"/>
-      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
-      <rect x="8" y="27" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
+      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
+      <rect x="8" y="27" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
       <circle cx="60" cy="74" r="7" fill="#4F46E5"/>
       <text x="60" y="77" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="800" text-anchor="middle">4</text>
     </g>
     <!-- Bottom Row Thumbnail 5 -->
     <g transform="translate(205, 222)">
-      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="70" height="85" rx="4" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="8" y="10" width="28" height="4" rx="2" fill="#4F46E5"/>
-      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E2E8F0"/>
+      <rect x="8" y="20" width="54" height="3" rx="1.5" fill="#E5E5E5"/>
       <circle cx="60" cy="74" r="7" fill="#4F46E5"/>
       <text x="60" y="77" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="800" text-anchor="middle">5</text>
     </g>
@@ -9294,7 +9251,7 @@ try {
 
   <!-- Interactive Drag Pointer / Cursor Finger -->
   <g filter="drop-shadow(0 4px 8px rgba(0,0,0,0.25))" transform="translate(270, 165)">
-    <path d="M 0 0 L 6 18 L 11 13 L 18 19 L 21 16 L 14 10 L 19 8 Z" fill="#0F172A" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M 0 0 L 6 18 L 11 13 L 18 19 L 21 16 L 14 10 L 19 8 Z" fill="#0A0A0A" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
   </g>
 
   <!-- Ambient Golden Accents -->
@@ -9303,14 +9260,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Document Organization at a Glance</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Document Organization at a Glance</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Take full control over your combined file with intuitive visual page thumbnails. Drag cards to change reading order, rotate upside-down pages, or remove unwanted sheets with a single click before exporting.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential records, tax filings, and legal contracts remain strictly private on your device. Assembly executes entirely in your browser's isolated memory sandbox — no remote servers, zero data logging, and 100% GDPR compliance.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -9334,11 +9291,11 @@ try {
   <!-- Modern Open Laptop -->
   <g filter="url(#ms3-laptop-shadow)">
     <!-- Laptop Deck / Base -->
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
     <!-- Upright Display Frame in Indigo -->
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#3730A3"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
@@ -9346,8 +9303,8 @@ try {
     <!-- Screen Canvas: WebAssembly Stream Combiner -->
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#4F46E5"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <!-- Local In-Memory Fusion Badge -->
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#EEF2FF" stroke="#C7D2FE"/>
@@ -9368,7 +9325,7 @@ try {
 
   <!-- Floating Team / Fast Download Emblem (Right) -->
   <g filter="url(#ms3-shield-shadow)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#EEF2FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#4F46E5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -9383,27 +9340,27 @@ try {
       <div style="background: #EEF2FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #C7D2FE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Merge PDF Files for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Merge PDF Files for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload PDF files:</strong> Select or drag and drop two or more PDF files into the merge box.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload PDF files:</strong> Select or drag and drop two or more PDF files into the merge box.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Arrange page order:</strong> Drag and drop file cards or page thumbnails into your desired sequence.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Arrange page order:</strong> Drag and drop file cards or page thumbnails into your desired sequence.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Rotate or delete sheets:</strong> (Optional) Adjust orientation or remove duplicate pages.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Rotate or delete sheets:</strong> (Optional) Adjust orientation or remove duplicate pages.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Merge PDF:</strong> In-memory WebAssembly stitches documents together in milliseconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Merge PDF:</strong> In-memory WebAssembly stitches documents together in milliseconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download unified file:</strong> Save your consolidated master PDF to your device.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download unified file:</strong> Save your consolidated master PDF to your device.</span>
             </li>
           </ul>
         </div>
@@ -9414,30 +9371,30 @@ try {
 
   <!-- Character Mascot: Folded Sheet of Paper -->
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
     <!-- Round Spectacles with Indigo Tint -->
-    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
     <!-- Mascot Holding Big Golden Stapler -->
-    <path d="M 160 180 Q 175 170 195 162" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="195" cy="162" r="5" fill="#0F172A"/>
+    <path d="M 160 180 Q 175 170 195 162" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="195" cy="162" r="5" fill="#0A0A0A"/>
   </g>
 
   <!-- Heavy Duty Industrial Desktop Binder / Stapler Machine Merging Pages -->
   <g transform="translate(210, 85)">
     <!-- Base Plate -->
-    <path d="M 20 150 H 160 V 162 H 20 Z" fill="#334155"/>
+    <path d="M 20 150 H 160 V 162 H 20 Z" fill="#383838"/>
     <rect x="25" y="110" width="30" height="40" rx="3" fill="#4B4B4B"/>
     
     <!-- Multi-Color PDF Stacks Under Stapler Head -->
@@ -9453,7 +9410,7 @@ try {
     <circle cx="148" cy="54" r="3" fill="#D97706"/>
 
     <!-- Staple Punch Pin -->
-    <rect x="65" y="96" width="6" height="20" fill="#94A3B8"/>
+    <rect x="65" y="96" width="6" height="20" fill="#8C8C8C"/>
     <path d="M 62 108 L 74 108" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
   </g>
 
@@ -9467,7 +9424,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Merging — Quick &amp; Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Merging — Quick &amp; Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -9477,8 +9434,8 @@ try {
       <path d="M 15 22 L 20 17 M 25 22 L 20 27 M 17 19 C 19 17 23 17 25 19 L 28 22 C 30 24 30 28 28 30 C 26 32 22 32 20 30" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Seamless Multi-File Fusion</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Stitch dozens of PDFs together with clean bookmark tables and metadata preserved.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Seamless Multi-File Fusion</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Stitch dozens of PDFs together with clean bookmark tables and metadata preserved.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -9490,8 +9447,8 @@ try {
       <rect x="22" y="22" width="7" height="7" rx="1.5" fill="#93C5FD"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Visual Drag &amp; Drop Reordering</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Rearrange pages and documents visually with interactive real-time thumbnails.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Visual Drag &amp; Drop Reordering</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Rearrange pages and documents visually with interactive real-time thumbnails.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -9502,8 +9459,8 @@ try {
       <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Sandbox</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server uploads — all document merging executes locally inside your web browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Sandbox</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server uploads — all document merging executes locally inside your web browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -9512,8 +9469,8 @@ try {
       <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Lightning Fast Assembly</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Sub-second execution with WebAssembly speed that outpaces traditional cloud converters.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Lightning Fast Assembly</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Sub-second execution with WebAssembly speed that outpaces traditional cloud converters.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -9522,12 +9479,12 @@ try {
       <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
       <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
       <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
       <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Works on Every Device</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Merge PDF files effortlessly on Mac, Windows, Linux, iPhone, iPad, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Works on Every Device</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Merge PDF files effortlessly on Mac, Windows, Linux, iPhone, iPad, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -9536,20 +9493,20 @@ try {
       <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Usage, 100% Free</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No arbitrary page caps, paywalls, or watermarks — assemble as many documents as needed.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Usage, 100% Free</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No arbitrary page caps, paywalls, or watermarks — assemble as many documents as needed.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Merging FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Merging FAQs</h2>
       </div>
 
       <div class="fk-merge-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-merge-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-merge-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How do I merge multiple PDF files into one?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9557,8 +9514,8 @@ try {
             Simply drop all your PDF files into the upload box above. Arrange the thumbnail cards into your preferred sequence, click "Merge PDF", and download your unified document instantly.
           </div>
         </div>
-        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I change the order of pages before merging?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9566,8 +9523,8 @@ try {
             Yes! Our interactive organizer displays visual thumbnails for every document. You can drag and drop entire files or individual pages, rotate orientations, and remove pages before merging.
           </div>
         </div>
-        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Is there a limit on how many PDFs I can combine?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9575,8 +9532,8 @@ try {
             No. Because FileKit performs all processing locally inside your computer's RAM using WebAssembly, you can merge dozens of PDF files containing hundreds of pages without cloud limits or subscription prompts.
           </div>
         </div>
-        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are my documents safe when combining them online?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9584,8 +9541,8 @@ try {
             Yes, 100%. Unlike other web tools that upload your files to remote third-party cloud servers, FileKit executes all merging locally in your browser memory. Your sensitive files never leave your device.
           </div>
         </div>
-        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-merge-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-merge-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will merging reduce the quality of my images or text?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -9597,18 +9554,18 @@ try {
 `; },
     getSplitPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit provides surgical, in-browser PDF page extraction. Separate multi-page reports into custom page ranges, extract single chapters, or split every page into standalone documents — with zero quality loss and 100% in-browser privacy.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Custom range splitting (e.g. 1-5, 8, 11-14)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Lossless byte-level extraction without re-compression</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly execution</span>
           </div>
@@ -9618,14 +9575,14 @@ try {
       <!-- Section 1: Introduction Title -->
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">PRECISION RANGE EXTRACTION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Split PDF Pages Online for Free</h2>
-        <p style="color: #64748B; font-size: 15px;">Extract specific pages or separate large PDF documents into smaller files in seconds.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Split PDF Pages Online for Free</h2>
+        <p style="color: #737373; font-size: 15px;">Extract specific pages or separate large PDF documents into smaller files in seconds.</p>
       </div>
 
       <!-- Story 1: Precision Range Splitting (Mechanical Guillotine Trimmer) -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Extract Exactly the Pages You Need</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Extract Exactly the Pages You Need</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Whether you need to isolate a single invoice from a 200-page accounting ledger, separate legal contract exhibits, or extract specific slides from a pitch deck, FileKit gives you surgical precision.</p>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Type intuitive page range intervals (e.g. <code>1-4, 8, 12-16</code>) or visually click page thumbnails to instantly slice your document into organized, standalone PDF packages.</p>
         </div>
@@ -9664,7 +9621,7 @@ try {
     </g>
 
     <!-- Cutting Mat Millimeter Grid -->
-    <g stroke="#F1F5F9" stroke-width="1.5">
+    <g stroke="#EEEEEE" stroke-width="1.5">
       <line x1="40" y1="34" x2="40" y2="290"/><line x1="80" y1="34" x2="80" y2="290"/>
       <line x1="120" y1="34" x2="120" y2="290"/><line x1="160" y1="34" x2="160" y2="290"/>
       <line x1="200" y1="34" x2="200" y2="290"/><line x1="240" y1="34" x2="240" y2="290"/>
@@ -9679,9 +9636,9 @@ try {
     <g transform="translate(35, 60)">
       <rect x="0" y="0" width="140" height="185" rx="8" fill="#FFF1F2" stroke="#FECDD3" stroke-width="2"/>
       <rect x="15" y="18" width="50" height="8" rx="4" fill="#E11D48"/>
-      <rect x="15" y="36" width="110" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="48" width="110" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="60" width="80" height="4" rx="2" fill="#CBD5E1"/>
+      <rect x="15" y="36" width="110" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="48" width="110" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="60" width="80" height="4" rx="2" fill="#D4D4D4"/>
       
       <!-- Output Document 1 Badge -->
       <rect x="15" y="135" width="110" height="32" rx="8" fill="#E11D48"/>
@@ -9692,9 +9649,9 @@ try {
     <g transform="translate(205, 60)">
       <rect x="0" y="0" width="140" height="185" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="2"/>
       <rect x="15" y="18" width="50" height="8" rx="4" fill="#2563EB"/>
-      <rect x="15" y="36" width="110" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="48" width="110" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="60" width="80" height="4" rx="2" fill="#CBD5E1"/>
+      <rect x="15" y="36" width="110" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="48" width="110" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="60" width="80" height="4" rx="2" fill="#D4D4D4"/>
 
       <!-- Output Document 2 Badge -->
       <rect x="15" y="135" width="110" height="32" rx="8" fill="#2563EB"/>
@@ -9702,24 +9659,24 @@ try {
     </g>
 
     <!-- Cutting Channel Groove in Baseplate -->
-    <rect x="186" y="34" width="8" height="256" fill="#0F172A" opacity="0.15"/>
+    <rect x="186" y="34" width="8" height="256" fill="#0A0A0A" opacity="0.15"/>
     <line x1="190" y1="34" x2="190" y2="290" stroke="#E11D48" stroke-width="2" stroke-dasharray="6 4"/>
 
     <!-- Heavy Steel Slicing Blade Lever (Angled Down Slicing) -->
     <g transform="translate(178, 25)">
       <!-- Lever Pivot Bolt -->
-      <circle cx="12" cy="12" r="14" fill="#0F172A" stroke="#E11D48" stroke-width="3"/>
+      <circle cx="12" cy="12" r="14" fill="#0A0A0A" stroke="#E11D48" stroke-width="3"/>
       <circle cx="12" cy="12" r="6" fill="#FFFFFF"/>
 
       <!-- Chrome Cutting Blade Arm -->
-      <polygon points="6,12 18,12 28,260 4,260" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2"/>
-      <polygon points="12,12 18,12 28,260 22,260" fill="#CBD5E1"/>
+      <polygon points="6,12 18,12 28,260 4,260" fill="#E5E5E5" stroke="#8C8C8C" stroke-width="2"/>
+      <polygon points="12,12 18,12 28,260 22,260" fill="#D4D4D4"/>
       <!-- Razor Cutting Edge Highlight -->
       <line x1="5" y1="14" x2="5" y2="258" stroke="#E11D48" stroke-width="3" stroke-linecap="round"/>
 
       <!-- Ergonomic Safety Grip Handle -->
       <g transform="translate(0, 240)">
-        <rect x="-8" y="0" width="40" height="32" rx="8" fill="#E11D48" stroke="#0F172A" stroke-width="2.5"/>
+        <rect x="-8" y="0" width="40" height="32" rx="8" fill="#E11D48" stroke="#0A0A0A" stroke-width="2.5"/>
         <line x1="-2" y1="10" x2="26" y2="10" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
         <line x1="-2" y1="16" x2="26" y2="16" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
         <line x1="-2" y1="22" x2="26" y2="22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
@@ -9736,12 +9693,12 @@ try {
           <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="Organized Fanned-Out Document Folders">
   <defs>
     <filter id="fld-sh" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0F172A" flood-opacity="0.12"/>
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0A0A0A" flood-opacity="0.12"/>
     </filter>
   </defs>
 
   <!-- Ambient Backdrop Geometry -->
-  <rect x="60" y="50" width="480" height="380" rx="36" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2.5"/>
+  <rect x="60" y="50" width="480" height="380" rx="36" fill="#F7F7F7" stroke="#E5E5E5" stroke-width="2.5"/>
   <ellipse cx="300" cy="425" rx="210" ry="20" fill="#E11D48" opacity="0.1"/>
 
   <!-- Accents -->
@@ -9759,9 +9716,9 @@ try {
       <!-- Inset Paper Sheet -->
       <rect x="15" y="20" width="200" height="225" rx="8" fill="#FFFFFF"/>
       <rect x="30" y="35" width="60" height="8" rx="4" fill="#10B981"/>
-      <rect x="30" y="55" width="140" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="30" y="68" width="140" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="30" y="81" width="90" height="4" rx="2" fill="#CBD5E1"/>
+      <rect x="30" y="55" width="140" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="30" y="68" width="140" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="30" y="81" width="90" height="4" rx="2" fill="#D4D4D4"/>
       <rect x="30" y="180" width="140" height="24" rx="6" fill="#ECFDF5"/>
       <text x="100" y="196" fill="#047857" font-family="'Outfit', sans-serif" font-size="10" font-weight="800" text-anchor="middle">Pages 15–22 (8 Pgs)</text>
     </g>
@@ -9776,9 +9733,9 @@ try {
       <!-- Inset Paper Sheet -->
       <rect x="15" y="20" width="200" height="225" rx="8" fill="#FFFFFF"/>
       <rect x="30" y="35" width="60" height="8" rx="4" fill="#3B82F6"/>
-      <rect x="30" y="55" width="140" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="30" y="68" width="140" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="30" y="81" width="90" height="4" rx="2" fill="#CBD5E1"/>
+      <rect x="30" y="55" width="140" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="30" y="68" width="140" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="30" y="81" width="90" height="4" rx="2" fill="#D4D4D4"/>
       <rect x="30" y="180" width="140" height="24" rx="6" fill="#EFF6FF"/>
       <text x="100" y="196" fill="#1D4ED8" font-family="'Outfit', sans-serif" font-size="10" font-weight="800" text-anchor="middle">Pages 6–14 (9 Pgs)</text>
     </g>
@@ -9793,9 +9750,9 @@ try {
       <!-- Inset Paper Sheet -->
       <rect x="16" y="22" width="208" height="232" rx="10" fill="#FFFFFF"/>
       <rect x="32" y="38" width="70" height="10" rx="5" fill="#E11D48"/>
-      <rect x="32" y="60" width="145" height="4.5" rx="2.25" fill="#CBD5E1"/>
-      <rect x="32" y="74" width="145" height="4.5" rx="2.25" fill="#CBD5E1"/>
-      <rect x="32" y="88" width="100" height="4.5" rx="2.25" fill="#CBD5E1"/>
+      <rect x="32" y="60" width="145" height="4.5" rx="2.25" fill="#D4D4D4"/>
+      <rect x="32" y="74" width="145" height="4.5" rx="2.25" fill="#D4D4D4"/>
+      <rect x="32" y="88" width="100" height="4.5" rx="2.25" fill="#D4D4D4"/>
       
       <!-- Extracted Page Range Badge -->
       <rect x="32" y="175" width="145" height="30" rx="8" fill="#FFF1F2" stroke="#FECDD3"/>
@@ -9805,15 +9762,15 @@ try {
 
   <!-- Download Package ZIP Tag Badge Floating Top Right -->
   <g transform="translate(420, 80)">
-    <rect x="0" y="0" width="130" height="46" rx="23" fill="#0F172A" stroke="#E11D48" stroke-width="2.5"/>
+    <rect x="0" y="0" width="130" height="46" rx="23" fill="#0A0A0A" stroke="#E11D48" stroke-width="2.5"/>
     <text x="65" y="28" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="12.5" font-weight="900" text-anchor="middle">📦 3 PDFS in ZIP</text>
   </g>
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">3 Flexible Extraction Modes</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">3 Flexible Extraction Modes</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Configure how your output files are compiled to match your exact workflow requirements:</p>
-          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #334155;">
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #383838;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #E11D48; font-weight: bold;">✓</span> <strong>Custom Page Ranges:</strong> Bundle specific page intervals into separate custom documents.
             </li>
@@ -9830,7 +9787,7 @@ try {
       <!-- Story 3: Exploded Binary Object Tree Decomposer -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Lossless Object Slicing &amp; Zero Cloud Uploads</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Lossless Object Slicing &amp; Zero Cloud Uploads</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Unlike low-quality tools that render pages as raster images and re-compress them, FileKit operates directly on the underlying PDF cross-reference object tree.</p>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Original vector typography, embedded high-res photography, form fields, and hyperlinks remain 100% untouched. Everything processes locally in your browser memory with zero files sent to external servers.</p>
         </div>
@@ -9854,7 +9811,7 @@ try {
   <g filter="url(#tree-sh)" transform="translate(110, 80)">
     <!-- Root Master PDF Container (Top Center) -->
     <g transform="translate(130, 15)">
-      <rect x="0" y="0" width="120" height="46" rx="10" fill="#0F172A" stroke="#E11D48" stroke-width="2.5"/>
+      <rect x="0" y="0" width="120" height="46" rx="10" fill="#0A0A0A" stroke="#E11D48" stroke-width="2.5"/>
       <text x="60" y="28" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="12" font-weight="900" text-anchor="middle">ROOT /Catalog</text>
     </g>
 
@@ -9911,27 +9868,27 @@ try {
       <div style="background: #FFF1F2; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FECDD3;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Split a PDF Online for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Split a PDF Online for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the coral rose dropzone above or click "Select file".</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the coral rose dropzone above or click "Select file".</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Choose your split mode:</strong> Select "Custom Range", "Split Every X Pages", or "Extract All Pages".</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Choose your split mode:</strong> Select "Custom Range", "Split Every X Pages", or "Extract All Pages".</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Specify page numbers:</strong> Enter your exact ranges (e.g. 1-3, 5, 8-12) or click thumbnails to select.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Specify page numbers:</strong> Enter your exact ranges (e.g. 1-3, 5, 8-12) or click thumbnails to select.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Split PDF:</strong> Instant client-side WebAssembly slices the object tree in milliseconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Split PDF:</strong> Instant client-side WebAssembly slices the object tree in milliseconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download your split files:</strong> Save individual PDFs or download all extracted files in a neat ZIP folder.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download your split files:</strong> Save individual PDFs or download all extracted files in a neat ZIP folder.</span>
             </li>
           </ul>
         </div>
@@ -9960,14 +9917,14 @@ try {
 
     <!-- Tabletop Cutting Mat & Sliced Sheets on the Right -->
     <g transform="translate(210, 80)">
-      <rect x="0" y="0" width="165" height="155" rx="10" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+      <rect x="0" y="0" width="165" height="155" rx="10" fill="#0A0A0A" stroke="#383838" stroke-width="2"/>
       
       <!-- Green Self-Healing Mat Grid Lines -->
-      <line x1="20" y1="0" x2="20" y2="155" stroke="#1E293B" stroke-width="1.5"/>
-      <line x1="50" y1="0" x2="50" y2="155" stroke="#1E293B" stroke-width="1.5"/>
-      <line x1="80" y1="0" x2="80" y2="155" stroke="#1E293B" stroke-width="1.5"/>
-      <line x1="110" y1="0" x2="110" y2="155" stroke="#1E293B" stroke-width="1.5"/>
-      <line x1="140" y1="0" x2="140" y2="155" stroke="#1E293B" stroke-width="1.5"/>
+      <line x1="20" y1="0" x2="20" y2="155" stroke="#171717" stroke-width="1.5"/>
+      <line x1="50" y1="0" x2="50" y2="155" stroke="#171717" stroke-width="1.5"/>
+      <line x1="80" y1="0" x2="80" y2="155" stroke="#171717" stroke-width="1.5"/>
+      <line x1="110" y1="0" x2="110" y2="155" stroke="#171717" stroke-width="1.5"/>
+      <line x1="140" y1="0" x2="140" y2="155" stroke="#171717" stroke-width="1.5"/>
 
       <!-- Split Left Page (Pages 1–3) -->
       <rect x="15" y="25" width="55" height="75" rx="4" fill="#FFFFFF" stroke="#E11D48" stroke-width="2"/>
@@ -9997,7 +9954,7 @@ try {
       <!-- 6 Performance Benefits Grid (Using the 80x80 Multi-Color Icons) -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Enterprise-Grade PDF Splitting for Everyone</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Enterprise-Grade PDF Splitting for Everyone</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -10033,8 +9990,8 @@ try {
   <path fill="#87AFFF" d="M28.169 8.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0L30.2 9.365a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0L28.17 8.972Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Instant WASM Extraction</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Client-side WebAssembly separates hundreds of pages in milliseconds without upload lag.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant WASM Extraction</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Client-side WebAssembly separates hundreds of pages in milliseconds without upload lag.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -10052,8 +10009,8 @@ try {
   <path fill="#87AFFF" d="M70.169 68.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% Lossless Quality</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Direct object-level extraction preserves original vector text, font subsets, and image resolution.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% Lossless Quality</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Direct object-level extraction preserves original vector text, font subsets, and image resolution.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -10073,8 +10030,8 @@ try {
   <circle cx="36" cy="63" r="3" fill="#FFFFFF"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Flexible Split Modes</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Extract custom ranges (1-5, 8), split uniformly every X pages, or separate all pages into single files.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Flexible Split Modes</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Extract custom ranges (1-5, 8), split uniformly every X pages, or separate all pages into single files.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -10092,8 +10049,8 @@ try {
   <path fill="#FFB700" fill-rule="evenodd" d="M21 71.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Browser Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — document parsing occurs entirely in local device RAM with zero cloud exposure.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Browser Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — document parsing occurs entirely in local device RAM with zero cloud exposure.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -10121,8 +10078,8 @@ try {
   </defs>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Split PDFs smoothly on macOS, Windows, Linux, iOS, iPadOS, and Android web browsers.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Split PDFs smoothly on macOS, Windows, Linux, iOS, iPadOS, and Android web browsers.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -10133,8 +10090,8 @@ try {
   <circle cx="57" cy="40" r="3" fill="#C084FC"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your extracted PDF documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your extracted PDF documents.</p>
           </div>
         </div>
       </div>
@@ -10142,12 +10099,12 @@ try {
       <!-- FAQ Accordion -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Splitting FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Splitting FAQs</h2>
       </div>
 
       <div class="fk-split-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-split-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-split-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How do I split specific page ranges from a large PDF?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10156,8 +10113,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-split-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-split-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Does splitting a PDF reduce its image or vector font quality?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10166,8 +10123,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-split-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-split-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I extract every single page into separate individual PDF files at once?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10176,8 +10133,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-split-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-split-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-split-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are my confidential contracts and documents private during splitting?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10188,18 +10145,18 @@ try {
       </div>
 `; },
     getPdfToWordSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the most accurate in-browser PDF to Word converter. Convert PDF documents to fully editable Microsoft Word (.docx) files with layouts, tables, and typography intact.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Convert PDF to editable DOCX with intact layout</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Retain tables, columns, and embedded images</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly conversion</span>
           </div>
@@ -10208,13 +10165,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">FLAWLESS DOCX CONVERSION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Convert PDF to Word The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Transform static PDF files into editable Microsoft Word documents without losing formatting or font styles.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Convert PDF to Word The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Transform static PDF files into editable Microsoft Word documents without losing formatting or font styles.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Accurate Word Conversion</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast &amp; Accurate Word Conversion</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Extract text paragraphs, headings, bulleted lists, and images directly into a native Microsoft Word (.docx) document. Edit typography, rephrase content, and update layouts freely in Microsoft Word, Google Docs, or LibreOffice.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -10232,8 +10189,8 @@ try {
   <rect x="75" y="65" width="290" height="240" rx="24" transform="rotate(5 220 185)" fill="#DBEAFE" opacity="0.75"/>
   <ellipse cx="255" cy="348" rx="145" ry="16" fill="#1E40AF" opacity="0.14"/>
 
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
 
   <g filter="url(#ws1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#2563EB" stroke="#1D4ED8" stroke-width="2"/>
@@ -10241,20 +10198,20 @@ try {
     <circle cx="255" cy="266" r="3.5" fill="#BFDBFE"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F8FAFC"/>
-    <line x1="122" y1="111" x2="388" y2="111" stroke="#E2E8F0" stroke-width="1.5"/>
+    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
     <circle cx="158" cy="99" r="3.5" fill="#10B981"/>
-    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E2E8F0"/>
+    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E5E5E5"/>
 
     <!-- Left: Source PDF File -->
     <g transform="translate(138, 122)">
-      <rect x="0" y="0" width="56" height="78" rx="4" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <rect x="0" y="0" width="56" height="78" rx="4" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
       <rect x="8" y="8" width="24" height="4" rx="2" fill="#EF4444"/>
-      <rect x="8" y="18" width="40" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="8" y="25" width="40" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="8" y="32" width="30" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="8" y="18" width="40" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="8" y="25" width="40" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="8" y="32" width="30" height="3" rx="1.5" fill="#D4D4D4"/>
       <rect x="8" y="52" width="40" height="16" rx="3" fill="#FEE2E2"/>
       <text x="28" y="64" fill="#B91C1C" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">PDF</text>
     </g>
@@ -10270,8 +10227,8 @@ try {
       <rect x="0" y="0" width="62" height="82" rx="4" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
       <rect x="8" y="8" width="28" height="4" rx="2" fill="#2563EB"/>
       <rect x="8" y="18" width="46" height="3" rx="1.5" fill="#93C5FD"/>
-      <rect x="8" y="25" width="46" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="8" y="32" width="38" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="8" y="25" width="46" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="8" y="32" width="38" height="3" rx="1.5" fill="#D4D4D4"/>
       <!-- Editable Text Cursor Indicator -->
       <line x1="48" y1="30" x2="48" y2="37" stroke="#2563EB" stroke-width="1.8"/>
       <!-- Blue Word Badge -->
@@ -10308,27 +10265,27 @@ try {
 
   <g filter="url(#ws2-shadow)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PRESERVE LAYOUT &amp; TABLES</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PRESERVE LAYOUT &amp; TABLES</text>
     <rect x="320" y="80" width="65" height="18" rx="4" fill="#2563EB"/>
     <text x="352" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">EDITABLE</text>
 
     <!-- Multi-Column Layout Visual -->
     <g transform="translate(125, 125)">
       <!-- Left Column -->
-      <rect x="0" y="0" width="115" height="175" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+      <rect x="0" y="0" width="115" height="175" rx="4" fill="#F7F7F7" stroke="#E5E5E5"/>
       <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#2563EB"/>
-      <rect x="10" y="24" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="10" y="32" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="10" y="40" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+      <rect x="10" y="24" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="10" y="32" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="10" y="40" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
       <!-- Small Embedded Image -->
       <rect x="10" y="55" width="95" height="40" rx="3" fill="#EFF6FF" stroke="#BFDBFE"/>
       <circle cx="25" cy="70" r="4" fill="#2563EB"/>
       <path d="M 15 90 L 30 78 L 45 88 L 65 72 L 95 90 Z" fill="#93C5FD"/>
-      <rect x="10" y="105" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="10" y="113" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="10" y="121" width="60" height="3.5" rx="1.75" fill="#CBD5E1"/>
+      <rect x="10" y="105" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="10" y="113" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="10" y="121" width="60" height="3.5" rx="1.75" fill="#D4D4D4"/>
     </g>
 
     <!-- Right Column: Formatted Table Grid -->
@@ -10348,9 +10305,9 @@ try {
 
       <!-- Table Row 2 -->
       <rect x="6" y="50" width="113" height="16" rx="1" fill="#FFFFFF"/>
-      <rect x="12" y="56" width="25" height="3.5" rx="1.75" fill="#64748B"/>
-      <text x="60" y="62" fill="#64748B" font-family="'Outfit', sans-serif" font-size="7" font-weight="700">01</text>
-      <text x="95" y="62" fill="#64748B" font-family="'Outfit', sans-serif" font-size="7" font-weight="700">\\\$120</text>
+      <rect x="12" y="56" width="25" height="3.5" rx="1.75" fill="#737373"/>
+      <text x="60" y="62" fill="#737373" font-family="'Outfit', sans-serif" font-size="7" font-weight="700">01</text>
+      <text x="95" y="62" fill="#737373" font-family="'Outfit', sans-serif" font-size="7" font-weight="700">\\\$120</text>
 
       <!-- Table Row 3 -->
       <rect x="6" y="70" width="113" height="16" rx="1" fill="#EFF6FF"/>
@@ -10359,10 +10316,10 @@ try {
       <text x="95" y="82" fill="#1E40AF" font-family="'Outfit', sans-serif" font-size="7" font-weight="700">\\\$890</text>
 
       <!-- Bottom Summary Box -->
-      <rect x="6" y="100" width="113" height="65" rx="3" fill="#F8FAFC" stroke="#E2E8F0"/>
+      <rect x="6" y="100" width="113" height="65" rx="3" fill="#F7F7F7" stroke="#E5E5E5"/>
       <rect x="12" y="110" width="50" height="4" rx="2" fill="#2563EB"/>
-      <rect x="12" y="122" width="100" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="12" y="130" width="100" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="12" y="122" width="100" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="12" y="130" width="100" height="3" rx="1.5" fill="#D4D4D4"/>
     </g>
   </g>
 
@@ -10371,14 +10328,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Preserve Layouts, Tables &amp; Columns</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Preserve Layouts, Tables &amp; Columns</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our intelligent document parser preserves complex structures including multi-column layouts, financial tables, callout blocks, and embedded charts without scrambled characters or broken alignment.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential resumes, legal agreements, and corporate briefs never leave your device. All parsing and conversion run strictly inside your browser's private WebAssembly memory sandbox.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -10397,18 +10354,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#1E40AF" opacity="0.14"/>
 
   <g filter="url(#ws3-laptop-shadow)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#2563EB"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#1E40AF"/>
     <circle cx="158" cy="126" r="3" fill="#BFDBFE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#2563EB"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#EFF6FF" stroke="#BFDBFE"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -10425,7 +10382,7 @@ try {
   </g>
 
   <g filter="url(#ws3-shield-shadow)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#EFF6FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -10439,27 +10396,27 @@ try {
       <div style="background: #EFF6FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #BFDBFE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Convert PDF to Word Online for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Convert PDF to Word Online for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the converter box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the converter box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Select output format:</strong> Choose Microsoft Word (.docx) or Rich Text (.rtf).</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Select output format:</strong> Choose Microsoft Word (.docx) or Rich Text (.rtf).</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Instant local processing:</strong> WebAssembly reconstructs text, fonts, and layout locally.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Instant local processing:</strong> WebAssembly reconstructs text, fonts, and layout locally.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download DOCX:</strong> Save your editable Word document to your computer or phone.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download DOCX:</strong> Save your editable Word document to your computer or phone.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Edit freely:</strong> Open the file in Microsoft Word or Google Docs to make your changes.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Edit freely:</strong> Open the file in Microsoft Word or Google Docs to make your changes.</span>
             </li>
           </ul>
         </div>
@@ -10469,25 +10426,25 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#BFDBFE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#EFF6FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#EFF6FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#EFF6FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#EFF6FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
     <!-- Mascot Holding Blue Pen Writing into Word Sheet -->
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#2563EB"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -10496,9 +10453,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#2563EB"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <!-- DOCX Tag -->
     <rect x="10" y="115" width="42" height="18" rx="3" fill="#2563EB"/>
@@ -10514,7 +10471,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF to Word Conversion — Quick &amp; Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF to Word Conversion — Quick &amp; Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -10525,8 +10482,8 @@ try {
       <text x="20" y="24" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="900" text-anchor="middle">W</text>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Fully Editable DOCX Output</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Reconstructs live text, headings, and paragraphs ready for Microsoft Word.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Fully Editable DOCX Output</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Reconstructs live text, headings, and paragraphs ready for Microsoft Word.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10538,8 +10495,8 @@ try {
       <line x1="20" y1="11" x2="20" y2="29" stroke="#2563EB" stroke-width="1.5"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Table &amp; Grid Retention</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Maintains cell borders, multi-column articles, and embedded tables accurately.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Table &amp; Grid Retention</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Maintains cell borders, multi-column articles, and embedded tables accurately.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10550,8 +10507,8 @@ try {
       <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero cloud uploads — documents are converted entirely inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero cloud uploads — documents are converted entirely inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10560,8 +10517,8 @@ try {
       <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Instant WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Sub-second conversion without waiting in remote server upload queues.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Sub-second conversion without waiting in remote server upload queues.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10570,12 +10527,12 @@ try {
       <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
       <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
       <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
       <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Cross-Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Convert PDF files on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Cross-Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Convert PDF files on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10584,20 +10541,20 @@ try {
       <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Conversions</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your files.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Conversions</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your files.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF to Word FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF to Word FAQs</h2>
       </div>
 
       <div class="fk-word-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-word-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-word-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How do I convert a PDF to an editable Word document?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10605,8 +10562,8 @@ try {
             Drag your PDF file into the upload zone above. FileKit will process the document locally and generate an editable .docx file that you can download immediately.
           </div>
         </div>
-        <div class="fk-word-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-word-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will the converted Word document keep the original formatting?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10614,8 +10571,8 @@ try {
             Yes! Our converter maps fonts, paragraph styles, lists, tables, and images directly into native Word XML elements so your document looks virtually identical to the original PDF.
           </div>
         </div>
-        <div class="fk-word-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-word-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I convert scanned PDF files with OCR?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10623,8 +10580,8 @@ try {
             Yes. Scanned PDFs are analyzed using high-accuracy optical character recognition (OCR) to extract text into editable Word characters.
           </div>
         </div>
-        <div class="fk-word-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-word-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-word-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are my converted files secure and confidential?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -10635,18 +10592,18 @@ try {
       </div>
 `; },
     getPdfToExcelSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest and most accurate in-browser PDF to Excel converter. Extract financial tables, bank statements, invoices, and ledgers into clean Microsoft Excel (.xlsx) spreadsheets.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Extract tables into formatted Microsoft Excel (.xlsx)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Preserve numbers, currencies, and cell boundaries</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser financial data extraction</span>
           </div>
@@ -10655,13 +10612,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">PRECISE TABLE EXTRACTION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Convert PDF to Excel The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Extract structured data grids and tabular information directly into editable XLSX spreadsheets.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Convert PDF to Excel The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Extract structured data grids and tabular information directly into editable XLSX spreadsheets.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Accurate Excel Conversion</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast &amp; Accurate Excel Conversion</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Stop retyping numbers manually from PDF receipts and balance sheets. Our table recognition engine detects rows and columns automatically, converting static data into native Excel cells ready for formulas, charts, and pivot tables.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -10679,8 +10636,8 @@ try {
   <rect x="75" y="65" width="290" height="240" rx="24" transform="rotate(5 220 185)" fill="#D1FAE5" opacity="0.75"/>
   <ellipse cx="255" cy="348" rx="145" ry="16" fill="#047857" opacity="0.14"/>
 
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
 
   <g filter="url(#es1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#059669" stroke="#047857" stroke-width="2"/>
@@ -10688,20 +10645,20 @@ try {
     <circle cx="255" cy="266" r="3.5" fill="#A7F3D0"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F8FAFC"/>
-    <line x1="122" y1="111" x2="388" y2="111" stroke="#E2E8F0" stroke-width="1.5"/>
+    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
     <circle cx="158" cy="99" r="3.5" fill="#10B981"/>
-    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E2E8F0"/>
+    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E5E5E5"/>
 
     <!-- Left: Source PDF Invoice with Table Lines -->
     <g transform="translate(138, 122)">
-      <rect x="0" y="0" width="56" height="78" rx="4" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      <rect x="0" y="0" width="56" height="78" rx="4" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
       <rect x="8" y="8" width="24" height="4" rx="2" fill="#EF4444"/>
-      <rect x="8" y="18" width="40" height="16" rx="2" fill="#F8FAFC" stroke="#E2E8F0"/>
-      <line x1="8" y1="26" x2="48" y2="26" stroke="#CBD5E1"/>
-      <line x1="28" y1="18" x2="28" y2="34" stroke="#CBD5E1"/>
+      <rect x="8" y="18" width="40" height="16" rx="2" fill="#F7F7F7" stroke="#E5E5E5"/>
+      <line x1="8" y1="26" x2="48" y2="26" stroke="#D4D4D4"/>
+      <line x1="28" y1="18" x2="28" y2="34" stroke="#D4D4D4"/>
       <rect x="8" y="52" width="40" height="16" rx="3" fill="#FEE2E2"/>
       <text x="28" y="64" fill="#B91C1C" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">PDF</text>
     </g>
@@ -10761,9 +10718,9 @@ try {
 
   <g filter="url(#es2-shadow)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">AUTOMATIC TABLE DETECTION</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">AUTOMATIC TABLE DETECTION</text>
     <rect x="320" y="80" width="65" height="18" rx="4" fill="#059669"/>
     <text x="352" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">FORMULAS</text>
 
@@ -10788,10 +10745,10 @@ try {
         <text x="222" y="16" fill="#059669" font-family="'Outfit', sans-serif" font-size="8" font-weight="900">\\\$112,350</text>
 
         <rect x="0" y="24" width="250" height="24" fill="#FFFFFF"/>
-        <line x1="0" y1="48" x2="250" y2="48" stroke="#E2E8F0"/>
-        <text x="15" y="40" fill="#334155" font-family="'Outfit', sans-serif" font-size="8" font-weight="700">Pro Teams</text>
-        <text x="105" y="40" fill="#334155" font-family="'Outfit', sans-serif" font-size="8" font-weight="700">\\\$21,400</text>
-        <text x="175" y="40" fill="#334155" font-family="'Outfit', sans-serif" font-size="8" font-weight="700">\\\$29,800</text>
+        <line x1="0" y1="48" x2="250" y2="48" stroke="#E5E5E5"/>
+        <text x="15" y="40" fill="#383838" font-family="'Outfit', sans-serif" font-size="8" font-weight="700">Pro Teams</text>
+        <text x="105" y="40" fill="#383838" font-family="'Outfit', sans-serif" font-size="8" font-weight="700">\\\$21,400</text>
+        <text x="175" y="40" fill="#383838" font-family="'Outfit', sans-serif" font-size="8" font-weight="700">\\\$29,800</text>
         <text x="222" y="40" fill="#059669" font-family="'Outfit', sans-serif" font-size="8" font-weight="900">\\\$51,200</text>
 
         <rect x="0" y="48" width="250" height="24" fill="#ECFDF5"/>
@@ -10816,14 +10773,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Preserve Numbers &amp; Multi-Sheet Grids</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Preserve Numbers &amp; Multi-Sheet Grids</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Numeric values, decimal formatting, and currency symbols are preserved with 100% precision. Multi-page PDF reports can be exported as individual worksheets or combined into a single unified sheet.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local Financial Privacy</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Local Financial Privacy</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your private accounting sheets, payroll records, and tax filings never leave your device. All table extraction runs locally in your web browser with zero server uploads.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -10842,18 +10799,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#047857" opacity="0.14"/>
 
   <g filter="url(#es3-laptop-shadow)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#059669"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#047857"/>
     <circle cx="158" cy="126" r="3" fill="#A7F3D0"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#059669"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#ECFDF5" stroke="#A7F3D0"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -10870,7 +10827,7 @@ try {
   </g>
 
   <g filter="url(#es3-shield-shadow)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#ECFDF5"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#059669" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -10884,27 +10841,27 @@ try {
       <div style="background: #ECFDF5; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #A7F3D0;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Convert PDF to Excel Online for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Convert PDF to Excel Online for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the converter box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the converter box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Select output format:</strong> Choose Excel Workbook (.xlsx) or CSV format.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Select output format:</strong> Choose Excel Workbook (.xlsx) or CSV format.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Instant table extraction:</strong> In-memory WebAssembly parses rows and columns in seconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Instant table extraction:</strong> In-memory WebAssembly parses rows and columns in seconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download spreadsheet:</strong> Save your formatted XLSX file directly to your device.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download spreadsheet:</strong> Save your formatted XLSX file directly to your device.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Analyze in Excel:</strong> Open in Microsoft Excel, Google Sheets, or Apple Numbers.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Analyze in Excel:</strong> Open in Microsoft Excel, Google Sheets, or Apple Numbers.</span>
             </li>
           </ul>
         </div>
@@ -10914,25 +10871,25 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#A7F3D0" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#ECFDF5" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#ECFDF5" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#ECFDF5" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#ECFDF5" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
     <!-- Mascot Holding Green Spreadsheet Ruler & Pointer -->
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#059669"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -10945,8 +10902,8 @@ try {
     <line x1="10" y1="41" x2="105" y2="41" stroke="#A7F3D0"/>
     <line x1="57" y1="26" x2="57" y2="56" stroke="#A7F3D0"/>
 
-    <rect x="10" y="65" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="73" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="65" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="73" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <!-- XLSX Tag -->
     <rect x="10" y="115" width="42" height="18" rx="3" fill="#059669"/>
@@ -10962,7 +10919,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF to Excel Conversion — Quick &amp; Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF to Excel Conversion — Quick &amp; Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -10973,8 +10930,8 @@ try {
       <text x="20" y="24" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="900" text-anchor="middle">X</text>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Formatted Excel Workbooks</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Generates clean .xlsx spreadsheets ready for formulas, charts, and analysis.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Formatted Excel Workbooks</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Generates clean .xlsx spreadsheets ready for formulas, charts, and analysis.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10986,8 +10943,8 @@ try {
       <line x1="20" y1="11" x2="20" y2="29" stroke="#059669" stroke-width="1.5"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Automatic Grid Recognition</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Detects borders, rows, columns, and data cells automatically.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Automatic Grid Recognition</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Detects borders, rows, columns, and data cells automatically.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -10998,8 +10955,8 @@ try {
       <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — ideal for sensitive financial and tax records.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — ideal for sensitive financial and tax records.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11008,8 +10965,8 @@ try {
       <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second Execution</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Fast client-side WebAssembly parser extracts tables in milliseconds.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second Execution</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Fast client-side WebAssembly parser extracts tables in milliseconds.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11018,12 +10975,12 @@ try {
       <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
       <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
       <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
       <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Multi-Device Ready</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Extract spreadsheets seamlessly on Mac, Windows, iOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Multi-Device Ready</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Extract spreadsheets seamlessly on Mac, Windows, iOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11032,20 +10989,20 @@ try {
       <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Extractions</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Convert as many PDF tables as you need without limits or paywalls.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Extractions</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Convert as many PDF tables as you need without limits or paywalls.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF to Excel FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF to Excel FAQs</h2>
       </div>
 
       <div class="fk-excel-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-excel-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-excel-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-excel-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-excel-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How do I convert PDF tables to an Excel spreadsheet?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11053,8 +11010,8 @@ try {
             Upload your PDF invoice, statement, or report into the box above. FileKit automatically parses rows and columns and produces a formatted .xlsx file for immediate download.
           </div>
         </div>
-        <div class="fk-excel-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-excel-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-excel-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-excel-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will numbers and currencies remain editable?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11062,8 +11019,8 @@ try {
             Yes. Numbers are extracted as numeric values rather than static images or text blocks, allowing you to use SUM, AVERAGE, and other Excel formulas immediately.
           </div>
         </div>
-        <div class="fk-excel-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-excel-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-excel-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-excel-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Is my financial data safe and private?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11074,18 +11031,18 @@ try {
       </div>
 `; },
     getSignPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the premier in-browser electronic signature tool. Draw, type, or upload digital signatures to sign contracts, agreements, and forms legally in seconds.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Draw, type, or upload legal electronic signatures</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>ESIGN &amp; eIDAS compliant audit trail certification</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser cryptographic security</span>
           </div>
@@ -11094,13 +11051,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">LEGAL ELECTRONIC SIGNATURES</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Sign PDF Documents The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Create legally binding digital signatures on PDF contracts and documents from any browser.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Sign PDF Documents The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Create legally binding digital signatures on PDF contracts and documents from any browser.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast &amp; Legally Binding Signatures</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast &amp; Legally Binding Signatures</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Sign contracts, NDAs, lease agreements, and invoices with an intuitive signature drawing pad or stylized calligraphy typeface. Place signature seals, initials, and date stamps anywhere on your document.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -11118,8 +11075,8 @@ try {
   <rect x="75" y="65" width="290" height="240" rx="24" transform="rotate(5 220 185)" fill="#CCFBF1" opacity="0.75"/>
   <ellipse cx="255" cy="348" rx="145" ry="16" fill="#115E59" opacity="0.14"/>
 
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
 
   <g filter="url(#sgn1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#0F766E" stroke="#115E59" stroke-width="2"/>
@@ -11127,20 +11084,20 @@ try {
     <circle cx="255" cy="266" r="3.5" fill="#99F6E4"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F8FAFC"/>
-    <line x1="122" y1="111" x2="388" y2="111" stroke="#E2E8F0" stroke-width="1.5"/>
+    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
     <circle cx="158" cy="99" r="3.5" fill="#10B981"/>
-    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E2E8F0"/>
+    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E5E5E5"/>
 
     <!-- Document Contract with Signature Field -->
     <g transform="translate(138, 122)">
       <rect x="0" y="0" width="125" height="115" rx="4" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5"/>
       <rect x="10" y="10" width="40" height="5" rx="2.5" fill="#0F766E"/>
-      <rect x="10" y="22" width="105" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="10" y="28" width="105" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="10" y="34" width="85" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="10" y="22" width="105" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="10" y="28" width="105" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="10" y="34" width="85" height="3" rx="1.5" fill="#D4D4D4"/>
 
       <!-- Signature Line & Calligraphic Stroke -->
       <rect x="10" y="55" width="105" height="45" rx="4" fill="#F0FDFA" stroke="#99F6E4"/>
@@ -11154,7 +11111,7 @@ try {
       <rect x="0" y="0" width="14" height="60" rx="3" fill="#0F766E"/>
       <rect x="0" y="15" width="14" height="6" fill="#F59E0B"/>
       <polygon points="0,60 7,75 14,60" fill="#F59E0B"/>
-      <polygon points="4,67 7,75 10,67" fill="#0F172A"/>
+      <polygon points="4,67 7,75 10,67" fill="#0A0A0A"/>
       <circle cx="7" cy="8" r="3" fill="#FFFFFF"/>
     </g>
   </g>
@@ -11187,9 +11144,9 @@ try {
 
   <g filter="url(#sgn2-shadow)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#99F6E4" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">DRAW, TYPE, OR UPLOAD SIGNATURE</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">DRAW, TYPE, OR UPLOAD SIGNATURE</text>
     <rect x="320" y="80" width="65" height="18" rx="4" fill="#0F766E"/>
     <text x="352" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">VERIFIED</text>
 
@@ -11202,15 +11159,15 @@ try {
 
       <!-- 2. Type Signature -->
       <g transform="translate(90, 0)">
-        <rect x="0" y="0" width="80" height="80" rx="6" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
-        <text x="40" y="20" fill="#64748B" font-family="'Outfit', sans-serif" font-size="9" font-weight="800" text-anchor="middle">TYPE</text>
-        <text x="40" y="55" fill="#0F172A" font-family="'Brush Script MT', cursive, sans-serif" font-size="18" text-anchor="middle">John Doe</text>
+        <rect x="0" y="0" width="80" height="80" rx="6" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
+        <text x="40" y="20" fill="#737373" font-family="'Outfit', sans-serif" font-size="9" font-weight="800" text-anchor="middle">TYPE</text>
+        <text x="40" y="55" fill="#0A0A0A" font-family="'Brush Script MT', cursive, sans-serif" font-size="18" text-anchor="middle">John Doe</text>
       </g>
 
       <!-- 3. Upload Stamp -->
       <g transform="translate(180, 0)">
-        <rect x="0" y="0" width="80" height="80" rx="6" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
-        <text x="40" y="20" fill="#64748B" font-family="'Outfit', sans-serif" font-size="9" font-weight="800" text-anchor="middle">UPLOAD</text>
+        <rect x="0" y="0" width="80" height="80" rx="6" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
+        <text x="40" y="20" fill="#737373" font-family="'Outfit', sans-serif" font-size="9" font-weight="800" text-anchor="middle">UPLOAD</text>
         <circle cx="40" cy="50" r="16" fill="#EFF6FF"/>
         <path d="M 32 50 L 40 42 L 48 50 M 40 42 V 58" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
       </g>
@@ -11218,11 +11175,11 @@ try {
 
     <!-- Bottom Audit Stamp Certificate -->
     <g transform="translate(120, 220)">
-      <rect x="0" y="0" width="260" height="85" rx="6" fill="#F8FAFC" stroke="#E2E8F0"/>
+      <rect x="0" y="0" width="260" height="85" rx="6" fill="#F7F7F7" stroke="#E5E5E5"/>
       <circle cx="28" cy="42" r="16" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>
       <path d="M 22 42 L 26 46 L 34 38" stroke="#10B981" stroke-width="2" stroke-linecap="round"/>
-      <text x="56" y="36" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="11" font-weight="800">Audit Trail Certified (eIDAS &amp; ESIGN)</text>
-      <text x="56" y="52" fill="#64748B" font-family="'Poppins', sans-serif" font-size="9">Cryptographic hash embedded with timestamp verification</text>
+      <text x="56" y="36" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="11" font-weight="800">Audit Trail Certified (eIDAS &amp; ESIGN)</text>
+      <text x="56" y="52" fill="#737373" font-family="'Poppins', sans-serif" font-size="9">Cryptographic hash embedded with timestamp verification</text>
     </g>
   </g>
 
@@ -11231,14 +11188,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Draw, Type, or Upload Signature Stamps</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Draw, Type, or Upload Signature Stamps</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Customize your signature exactly how you prefer. Draw freehand using a mouse or touchscreen, type your full name with elegant handwriting typefaces, or upload an existing signature stamp image with automatic background removal.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Privacy &amp; ESIGN Compliance</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Privacy &amp; ESIGN Compliance</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential legal contracts never leave your device. All cryptographic signature embedding executes locally in your browser memory sandbox with zero external tracking.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -11257,18 +11214,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#115E59" opacity="0.14"/>
 
   <g filter="url(#sgn3-laptop-shadow)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#0F766E"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#115E59"/>
     <circle cx="158" cy="126" r="3" fill="#99F6E4"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#0F766E"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#F0FDFA" stroke="#99F6E4"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#0F766E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -11285,7 +11242,7 @@ try {
   </g>
 
   <g filter="url(#sgn3-shield-shadow)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#F0FDFA"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#0F766E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -11299,27 +11256,27 @@ try {
       <div style="background: #F0FDFA; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #99F6E4;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Sign a PDF Online for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Sign a PDF Online for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your contract or form into the box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your contract or form into the box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Create your signature:</strong> Draw with a pen/mouse, type your name, or upload an image.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Create your signature:</strong> Draw with a pen/mouse, type your name, or upload an image.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Place signature &amp; date:</strong> Position and resize signature seals on the signature line.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Place signature &amp; date:</strong> Position and resize signature seals on the signature line.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Finish &amp; Sign:</strong> Instant in-memory WebAssembly flattens and certifies the file.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Finish &amp; Sign:</strong> Instant in-memory WebAssembly flattens and certifies the file.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download signed PDF:</strong> Save your legally finalized document ready to share.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download signed PDF:</strong> Save your legally finalized document ready to share.</span>
             </li>
           </ul>
         </div>
@@ -11329,22 +11286,22 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#99F6E4" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#F0FDFA" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#F0FDFA" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#F0FDFA" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#F0FDFA" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
     <!-- Mascot Holding Golden Pen -->
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#0F766E"/>
       <polygon points="0,35 5,45 10,35" fill="#F59E0B"/>
@@ -11356,9 +11313,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#0F766E"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <!-- Signature Block on Sheet -->
     <rect x="10" y="75" width="95" height="40" rx="3" fill="#F0FDFA" stroke="#99F6E4"/>
@@ -11378,7 +11335,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Signing — Quick &amp; Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Signing — Quick &amp; Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -11389,8 +11346,8 @@ try {
       <polygon points="14,26 11,31 18,30" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Draw, Type, or Stamp</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Multiple signature modes to suit personal preference or corporate branding.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Draw, Type, or Stamp</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Multiple signature modes to suit personal preference or corporate branding.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11400,8 +11357,8 @@ try {
       <path d="M 16 20 L 19 23 L 24 17" stroke="#0F766E" stroke-width="2" stroke-linecap="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Legally Binding &amp; Valid</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Complies with international electronic signature laws including ESIGN &amp; eIDAS.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Legally Binding &amp; Valid</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Complies with international electronic signature laws including ESIGN &amp; eIDAS.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11412,8 +11369,8 @@ try {
       <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — confidential contracts are never transmitted over the web.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — confidential contracts are never transmitted over the web.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11422,8 +11379,8 @@ try {
       <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Lightning Fast Signing</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Complete signing workflows in seconds without registration or software setup.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Lightning Fast Signing</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Complete signing workflows in seconds without registration or software setup.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11432,12 +11389,12 @@ try {
       <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
       <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
       <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+      <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
       <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Touch &amp; Stylus Ready</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Draw natural smooth signatures on iPad, iPhone, Android, or touchscreen laptops.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Touch &amp; Stylus Ready</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Draw natural smooth signatures on iPad, iPhone, Android, or touchscreen laptops.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -11446,20 +11403,20 @@ try {
       <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Document Signing</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Sign as many contracts and documents as needed with no hidden fees or paywalls.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Document Signing</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Sign as many contracts and documents as needed with no hidden fees or paywalls.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Signing FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Signing FAQs</h2>
       </div>
 
       <div class="fk-sign-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-sign-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-sign-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-sign-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-sign-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Is signing a PDF with FileKit legally binding?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11467,8 +11424,8 @@ try {
             Yes. Electronic signatures created with FileKit comply with the US Federal ESIGN Act and the European eIDAS regulation, making them legally valid for commercial agreements, leases, and business contracts.
           </div>
         </div>
-        <div class="fk-sign-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-sign-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-sign-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-sign-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I draw my signature on mobile or tablet?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11476,8 +11433,8 @@ try {
             Yes! Our signature pad is optimized for finger touch and Apple Pencil / stylus drawing on iOS, iPadOS, and Android devices.
           </div>
         </div>
-        <div class="fk-sign-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-sign-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-sign-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-sign-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are my signed documents confidential and secure?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11489,18 +11446,18 @@ try {
 `; },
     getProtectPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit provides ironclad, in-browser PDF encryption. Lock confidential contracts, bank statements, tax documents, and personal records with military-grade 256-bit AES encryption — with zero files ever uploaded to external servers.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Military-grade 256-bit AES encryption standard</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Granular permission controls (restrict printing &amp; copying)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly encryption</span>
           </div>
@@ -11510,14 +11467,14 @@ try {
       <!-- Section 1: Introduction Title -->
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">MILITARY-GRADE SECURITY VAULT</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Password Protect PDF Documents Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Lock your confidential documents with unbreakable 256-bit AES encryption in seconds.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Password Protect PDF Documents Online</h2>
+        <p style="color: #737373; font-size: 15px;">Lock your confidential documents with unbreakable 256-bit AES encryption in seconds.</p>
       </div>
 
       <!-- Story 1: 256-bit AES Encryption Vault -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Unbreakable 256-bit AES Encryption</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Unbreakable 256-bit AES Encryption</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Protect your sensitive files using the exact same cryptographic standard adopted by banks, global enterprises, and government agencies worldwide. Once encrypted, unauthorized viewers cannot open, preview, or inspect the PDF structure without your exact secret password.</p>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our cryptographic engine utilizes standard PBKDF2 key derivation and AES-GCM-256 bit block ciphering, guaranteeing 100% interoperability with Adobe Acrobat Reader, Apple Preview, Google Chrome, and standard mobile PDF readers.</p>
         </div>
@@ -11588,32 +11545,32 @@ try {
     <g transform="translate(30, 90)">
       <circle cx="20" cy="20" r="18" fill="#FEE2E2"/>
       <path d="M 12 20 H 28 M 20 12 V 28" stroke="#EF4444" stroke-width="3" stroke-linecap="round" transform="rotate(45 20 20)"/>
-      <text x="50" y="20" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="14" font-weight="800">Printing Restricted</text>
-      <text x="50" y="34" fill="#64748B" font-family="'Poppins', sans-serif" font-size="11">Blocks export &amp; paper print</text>
+      <text x="50" y="20" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="14" font-weight="800">Printing Restricted</text>
+      <text x="50" y="34" fill="#737373" font-family="'Poppins', sans-serif" font-size="11">Blocks export &amp; paper print</text>
       <rect x="235" y="8" width="46" height="24" rx="12" fill="#EF4444"/>
       <circle cx="247" cy="20" r="8" fill="#FFFFFF"/>
     </g>
 
-    <line x1="30" y1="155" x2="310" y2="155" stroke="#F1F5F9" stroke-width="2"/>
+    <line x1="30" y1="155" x2="310" y2="155" stroke="#EEEEEE" stroke-width="2"/>
 
     <!-- Rule 2: Content Copying Restrict -->
     <g transform="translate(30, 175)">
       <circle cx="20" cy="20" r="18" fill="#FEE2E2"/>
       <rect x="14" y="14" width="12" height="12" rx="2" stroke="#EF4444" stroke-width="2.5" fill="none"/>
-      <text x="50" y="20" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="14" font-weight="800">Copying Blocked</text>
-      <text x="50" y="34" fill="#64748B" font-family="'Poppins', sans-serif" font-size="11">Clipboard extraction disabled</text>
+      <text x="50" y="20" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="14" font-weight="800">Copying Blocked</text>
+      <text x="50" y="34" fill="#737373" font-family="'Poppins', sans-serif" font-size="11">Clipboard extraction disabled</text>
       <rect x="235" y="8" width="46" height="24" rx="12" fill="#EF4444"/>
       <circle cx="247" cy="20" r="8" fill="#FFFFFF"/>
     </g>
 
-    <line x1="30" y1="240" x2="310" y2="240" stroke="#F1F5F9" stroke-width="2"/>
+    <line x1="30" y1="240" x2="310" y2="240" stroke="#EEEEEE" stroke-width="2"/>
 
     <!-- Rule 3: Password Read Access -->
     <g transform="translate(30, 260)">
       <circle cx="20" cy="20" r="18" fill="#CCFBF1"/>
       <path d="M 14 20 L 18 24 L 26 16" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="50" y="20" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="14" font-weight="800">Password Read Access</text>
-      <text x="50" y="34" fill="#64748B" font-family="'Poppins', sans-serif" font-size="11">Requires secret key to open</text>
+      <text x="50" y="20" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="14" font-weight="800">Password Read Access</text>
+      <text x="50" y="34" fill="#737373" font-family="'Poppins', sans-serif" font-size="11">Requires secret key to open</text>
       <rect x="235" y="8" width="46" height="24" rx="12" fill="#0F766E"/>
       <circle cx="269" cy="20" r="8" fill="#FFFFFF"/>
     </g>
@@ -11621,9 +11578,9 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Granular Permission Management</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Granular Permission Management</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Take complete command over how recipients interact with your documents. In addition to a master viewing password, configure fine-grained restriction flags to prevent confidential leaks:</p>
-          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #334155;">
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #383838;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #0F766E; font-weight: bold;">✓</span> <strong>Restrict Printing:</strong> Prevents physical printing and virtual PDF exporting.
             </li>
@@ -11640,7 +11597,7 @@ try {
       <!-- Story 3: 100% In-Memory Privacy -->
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Privacy &amp; Zero Cloud Uploads</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Privacy &amp; Zero Cloud Uploads</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Traditional online PDF converters require uploading your most private files to their remote cloud servers, creating massive compliance and security risks. FileKit changes this forever.</p>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">All cryptographic key derivation and PDF stream encryption execute 100% locally inside your device's browser memory using WebAssembly. Your files, passwords, and decrypted streams never leave your device.</p>
         </div>
@@ -11677,27 +11634,27 @@ try {
       <div style="background: #F0FDFA; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #CCFBF1;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Password Protect a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Password Protect a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the secure dropzone above or click "Select file".</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the secure dropzone above or click "Select file".</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Enter a strong password:</strong> Type your secret passphrase and confirm it to prevent typing errors.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Enter a strong password:</strong> Type your secret passphrase and confirm it to prevent typing errors.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Set permission restrictions:</strong> Optionally check boxes to restrict printing, copying text, or editing.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Set permission restrictions:</strong> Optionally check boxes to restrict printing, copying text, or editing.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Encrypt PDF:</strong> Instant client-side WebAssembly applies 256-bit AES encryption in milliseconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Encrypt PDF:</strong> Instant client-side WebAssembly applies 256-bit AES encryption in milliseconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0F766E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download protected file:</strong> Save your encrypted PDF, ready for confidential sharing via email or cloud storage.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download protected file:</strong> Save your encrypted PDF, ready for confidential sharing via email or cloud storage.</span>
             </li>
           </ul>
         </div>
@@ -11750,7 +11707,7 @@ try {
       <!-- 6 Performance & Security Benefits Grid (Using the 80x80 Multi-Color Icons) -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Enterprise-Grade PDF Security for Everyone</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Enterprise-Grade PDF Security for Everyone</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -11786,8 +11743,8 @@ try {
   <path fill="#87AFFF" d="M28.169 8.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0L30.2 9.365a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0L28.17 8.972Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Instant WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning-fast client-side WebAssembly applies 256-bit AES encryption in milliseconds without network latency.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning-fast client-side WebAssembly applies 256-bit AES encryption in milliseconds without network latency.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -11805,8 +11762,8 @@ try {
   <path fill="#FFB700" fill-rule="evenodd" d="M21 71.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Bank-Grade 256-bit AES</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Highest cryptographic security tier locking your PDF with unbreakable mathematical key derivation.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Bank-Grade 256-bit AES</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Highest cryptographic security tier locking your PDF with unbreakable mathematical key derivation.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -11826,8 +11783,8 @@ try {
   <circle cx="36" cy="63" r="3" fill="#FFFFFF"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Granular Permission Controls</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Block printing, restrict text and image copying, and lock annotations with custom owner passwords.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Granular Permission Controls</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Block printing, restrict text and image copying, and lock annotations with custom owner passwords.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -11845,8 +11802,8 @@ try {
   <path fill="#87AFFF" d="M70.169 68.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% Quality &amp; Structure</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Encrypted files preserve original vector fonts, high-res photos, bookmarks, and document metadata.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% Quality &amp; Structure</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Encrypted files preserve original vector fonts, high-res photos, bookmarks, and document metadata.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -11874,8 +11831,8 @@ try {
   </defs>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Encrypted PDFs open seamlessly on macOS, Windows, Linux, iOS, iPadOS, and Android PDF readers.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Encrypted PDFs open seamlessly on macOS, Windows, Linux, iOS, iPadOS, and Android PDF readers.</p>
           </div>
         </div>
         <div style="display: flex; gap: 18px; align-items: flex-start;">
@@ -11886,8 +11843,8 @@ try {
   <circle cx="57" cy="40" r="3" fill="#C084FC"/>
 </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your encrypted documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your encrypted documents.</p>
           </div>
         </div>
       </div>
@@ -11895,12 +11852,12 @@ try {
       <!-- FAQ Accordion -->
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Password Protection FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Password Protection FAQs</h2>
       </div>
 
       <div class="fk-protect-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-protect-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-protect-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How secure is the 256-bit AES encryption on FileKit?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11909,8 +11866,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-protect-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-protect-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Does FileKit see, save, or store my password or files?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11919,8 +11876,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-protect-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-protect-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>What is the difference between an Open Password and Permission Restrictions?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11929,8 +11886,8 @@ try {
           </div>
         </div>
 
-        <div class="fk-protect-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-protect-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-protect-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I unlock or remove the password later?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -11941,19 +11898,19 @@ try {
       </div>
 `; },
     getUnlockPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF password remover. Decrypt password-protected PDF files, remove printing and copying restrictions, and unlock full access to your documents.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Remove PDF owner and viewing passwords</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Strip restrictions on printing and text extraction</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly decryption</span>
           </div>
@@ -11962,13 +11919,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">INSTANT SECURITY STRIPPER</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Unlock PDF Files Online The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Remove passwords and unlock read/write permissions from your authorized PDF files.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Unlock PDF Files Online The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Remove passwords and unlock read/write permissions from your authorized PDF files.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Instant Password Removal</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Instant Password Removal</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Unlock password-protected PDF files in seconds. Remove tedious login prompts for documents you frequently open and export an unencrypted PDF ready for easy viewing across any device.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -11986,8 +11943,8 @@ try {
   <rect x="75" y="65" width="290" height="240" rx="24" transform="rotate(5 220 185)" fill="#FECDD3" opacity="0.75"/>
   <ellipse cx="255" cy="348" rx="145" ry="16" fill="#BE123C" opacity="0.14"/>
 
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#94A3B8" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#CBD5E1"/>
+  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
+  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
 
   <g filter="url(#s1-sh-coral)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#E11D48" stroke="#BE123C" stroke-width="2"/>
@@ -11995,18 +11952,18 @@ try {
     <circle cx="255" cy="266" r="3.5" fill="#FECDD3"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F8FAFC"/>
-    <line x1="122" y1="111" x2="388" y2="111" stroke="#E2E8F0" stroke-width="1.5"/>
+    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
     <circle cx="158" cy="99" r="3.5" fill="#10B981"/>
-    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E2E8F0"/>
+    <rect x="180" y="93" width="120" height="12" rx="3" fill="#E5E5E5"/>
 
     
       <g transform="translate(138, 122)">
-        <rect x="0" y="0" width="120" height="115" rx="4" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+        <rect x="0" y="0" width="120" height="115" rx="4" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
         <rect x="10" y="10" width="35" height="5" rx="2.5" fill="#E11D48"/>
-        <rect x="10" y="20" width="100" height="3" rx="1.5" fill="#CBD5E1"/>
+        <rect x="10" y="20" width="100" height="3" rx="1.5" fill="#D4D4D4"/>
         <g transform="translate(35, 42)">
           <rect x="0" y="20" width="50" height="42" rx="6" fill="#E11D48"/>
           <path d="M 10 20 V 6 C 10 0 35 0 35 6 V 12" stroke="#F59E0B" stroke-width="4" fill="none" stroke-linecap="round"/>
@@ -12049,9 +12006,9 @@ try {
 
   <g filter="url(#s2-sh-coral)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#FECDD3" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">RESTORE ACCESS</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">RESTORE ACCESS</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#E11D48"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -12072,14 +12029,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Restore Printing & Copying Capabilities</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Restore Printing & Copying Capabilities</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">If an owner password has disabled printing, commenting, or text copying on your file, our tool strips security flags instantly so you can print and copy freely.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Decryption</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Decryption</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your files remain strictly confidential. Decryption executes entirely inside your browser's private memory sandbox with zero external server transmission.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -12098,18 +12055,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#BE123C" opacity="0.14"/>
 
   <g filter="url(#s3-sh-coral)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#E11D48"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#BE123C"/>
     <circle cx="158" cy="126" r="3" fill="#FECDD3"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#E11D48"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#FFF1F2" stroke="#FECDD3"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#E11D48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -12126,7 +12083,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-coral)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#FFF1F2"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#E11D48" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -12140,28 +12097,28 @@ try {
       <div style="background: #FFF1F2; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FECDD3;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Unlock a PDF Online for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Unlock a PDF Online for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your locked PDF file into the box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your locked PDF file into the box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Enter password:</strong> Type the file password if required to authenticate access.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Enter password:</strong> Type the file password if required to authenticate access.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Unlock PDF:</strong> In-memory WebAssembly strips all encryption layers instantly.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Unlock PDF:</strong> In-memory WebAssembly strips all encryption layers instantly.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download unlocked PDF:</strong> Save your unrestricted document ready for printing and editing.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download unlocked PDF:</strong> Save your unrestricted document ready for printing and editing.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #E11D48; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Open anywhere:</strong> Open the file without password prompts on any phone, tablet, or PC.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Open anywhere:</strong> Open the file without password prompts on any phone, tablet, or PC.</span>
             </li>
           </ul>
         </div>
@@ -12171,24 +12128,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#FECDD3" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#FFF1F2" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#FFF1F2" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#FFF1F2" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#FFF1F2" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#E11D48"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -12196,9 +12153,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#E11D48" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#E11D48"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#E11D48"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -12213,7 +12170,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Unlocking — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Unlocking — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -12224,8 +12181,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Instant Password Stripping</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Permanently remove password restrictions so files open immediately.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant Password Stripping</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Permanently remove password restrictions so files open immediately.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12235,8 +12192,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#E11D48"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Restore Printing & Copying</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Re-enable locked document permissions with a single click.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Restore Printing & Copying</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Re-enable locked document permissions with a single click.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12247,8 +12204,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12257,8 +12214,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12267,12 +12224,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12281,21 +12238,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #E11D48; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Unlock FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Unlock FAQs</h2>
       </div>
 
       <div class="fk-unlock-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-unlock-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-unlock-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-unlock-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-unlock-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can FileKit unlock a PDF if I don't know the password?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -12303,8 +12260,8 @@ try {
             Owner restrictions (print/copy restrictions) can be stripped immediately. For files with open/read passwords, you will be prompted to enter the password once so FileKit can remove it permanently.
           </div>
         </div>
-        <div class="fk-unlock-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-unlock-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-unlock-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-unlock-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Is unlocking PDFs legal?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -12312,8 +12269,8 @@ try {
             Yes, provided you have the legal right or authorization to access the document.
           </div>
         </div>
-        <div class="fk-unlock-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-unlock-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-unlock-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-unlock-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Are my decrypted files secure?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -12324,19 +12281,19 @@ try {
       </div>
 `; },
     getPdfToPptSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest in-browser PDF to PowerPoint converter. Transform PDF slide decks into fully editable Microsoft PowerPoint (.pptx) presentations with intact layouts and vector elements.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Convert PDF to editable PowerPoint (.pptx) slides</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Preserve vector graphics, fonts, and slide layouts</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly conversion</span>
           </div>
@@ -12345,13 +12302,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #EA580C; text-transform: uppercase; margin-bottom: 8px;">PRESENTATION RECONSTRUCTION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Convert PDF to PowerPoint The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Transform static PDF slides into dynamic, editable PPTX presentations.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Convert PDF to PowerPoint The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Transform static PDF slides into dynamic, editable PPTX presentations.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Fast & Accurate PPTX Conversion</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast & Accurate PPTX Conversion</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Rebuild entire presentation slide decks with editable text boxes, graphics, and bullet points ready to customize in PowerPoint, Keynote, or Google Slides.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -12369,12 +12326,12 @@ try {
   <g filter="url(#ppt1-sh)" transform="translate(130, 80)">
     <!-- Static PDF Slide (Left) -->
     <g transform="translate(0, 20)">
-      <rect x="0" y="0" width="105" height="135" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="105" height="135" rx="6" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="12" y="12" width="35" height="5" rx="2.5" fill="#EF4444"/>
-      <rect x="12" y="25" width="80" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="12" y="33" width="80" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="12" y="55" width="80" height="50" rx="4" fill="#F1F5F9"/>
-      <text x="52" y="120" fill="#94A3B8" font-family="'Outfit', sans-serif" font-size="9" font-weight="800" text-anchor="middle">Static PDF</text>
+      <rect x="12" y="25" width="80" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="12" y="33" width="80" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="12" y="55" width="80" height="50" rx="4" fill="#EEEEEE"/>
+      <text x="52" y="120" fill="#8C8C8C" font-family="'Outfit', sans-serif" font-size="9" font-weight="800" text-anchor="middle">Static PDF</text>
     </g>
 
     <!-- Transformation Arrow -->
@@ -12393,7 +12350,7 @@ try {
         <rect x="10" y="30" width="14" height="25" rx="2" fill="#FB923C"/>
         <rect x="30" y="15" width="14" height="40" rx="2" fill="#F97316"/>
         <rect x="50" y="5" width="14" height="50" rx="2" fill="#EA580C"/>
-        <line x1="0" y1="58" x2="120" y2="58" stroke="#E2E8F0" stroke-width="1.5"/>
+        <line x1="0" y1="58" x2="120" y2="58" stroke="#E5E5E5" stroke-width="1.5"/>
       </g>
     </g>
 
@@ -12425,9 +12382,9 @@ try {
 
   <g filter="url(#s2-sh-orange)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#FED7AA" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">SLIDE MATRIX</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">SLIDE MATRIX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#EA580C"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -12448,14 +12405,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Vector Shapes & Slide Master Retention</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Vector Shapes & Slide Master Retention</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our presentation parser extracts vector shapes, icons, and diagrams as editable objects rather than static flat images, allowing full recoloring and resizing.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local In-Browser Processing</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Local In-Browser Processing</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential pitch decks, quarterly financial slides, and strategic roadmaps never leave your computer. Conversion runs locally in WebAssembly memory.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -12474,18 +12431,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#C2410C" opacity="0.14"/>
 
   <g filter="url(#s3-sh-orange)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#EA580C"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#C2410C"/>
     <circle cx="158" cy="126" r="3" fill="#FED7AA"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#EA580C"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#FFF7ED" stroke="#FED7AA"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -12502,7 +12459,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-orange)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#FFF7ED"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#EA580C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -12516,28 +12473,28 @@ try {
       <div style="background: #FFF7ED; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FED7AA;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #EA580C; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Convert PDF to PowerPoint for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Convert PDF to PowerPoint for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your presentation:</strong> Drag and drop your PDF slide deck into the box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your presentation:</strong> Drag and drop your PDF slide deck into the box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Choose PowerPoint format:</strong> Select Microsoft PowerPoint (.pptx) output.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Choose PowerPoint format:</strong> Select Microsoft PowerPoint (.pptx) output.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Instant local extraction:</strong> In-browser WebAssembly builds editable presentation slides.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Instant local extraction:</strong> In-browser WebAssembly builds editable presentation slides.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download PPTX:</strong> Save your editable presentation directly to your computer.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download PPTX:</strong> Save your editable presentation directly to your computer.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #EA580C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Present & customize:</strong> Open in PowerPoint or Google Slides to animate and present.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Present & customize:</strong> Open in PowerPoint or Google Slides to animate and present.</span>
             </li>
           </ul>
         </div>
@@ -12547,24 +12504,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#FED7AA" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#FFF7ED" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#FFF7ED" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#FFF7ED" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#FFF7ED" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#EA580C"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -12572,9 +12529,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#EA580C" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#EA580C"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#EA580C"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -12589,7 +12546,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #EA580C; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF to PPT Conversion — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF to PPT Conversion — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -12600,8 +12557,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Native .PPTX Slides</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Reconstructs slides with live typography and adjustable layout frames.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Native .PPTX Slides</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Reconstructs slides with live typography and adjustable layout frames.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12611,8 +12568,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#EA580C"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Vector Shape Retention</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Diagrams and icons remain sharp vector graphics ready for editing.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Vector Shape Retention</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Diagrams and icons remain sharp vector graphics ready for editing.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12623,8 +12580,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12633,8 +12590,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12643,12 +12600,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12657,21 +12614,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #EA580C; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF to PPT FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF to PPT FAQs</h2>
       </div>
 
       <div class="fk-ppt-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-ppt-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-ppt-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-ppt-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-ppt-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will text in the converted slides be editable?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -12679,8 +12636,8 @@ try {
             Yes! Headings, body text, and lists are converted to native PowerPoint text boxes.
           </div>
         </div>
-        <div class="fk-ppt-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-ppt-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-ppt-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-ppt-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I open the converted file in Google Slides?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -12691,19 +12648,19 @@ try {
       </div>
 `; },
     getImageToPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the fastest in-browser image to PDF converter. Combine JPG, PNG, WEBP, and HEIC photos into a unified high-resolution PDF document with custom margins and orientations.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Convert JPG, PNG, WEBP, and HEIC to PDF</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Merge multiple photos into one unified document</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly conversion</span>
           </div>
@@ -12712,13 +12669,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #D97706; text-transform: uppercase; margin-bottom: 8px;">PHOTO TO PDF CONVERSION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Convert Images to PDF Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Turn photos, receipts, and scans into professional PDF documents in seconds.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Convert Images to PDF Online</h2>
+        <p style="color: #737373; font-size: 15px;">Turn photos, receipts, and scans into professional PDF documents in seconds.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Combine Multiple Photos into One PDF</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Combine Multiple Photos into One PDF</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Drag and drop multiple JPG, PNG, GIF, or WEBP photos to combine them into a single clean PDF catalog or multi-page presentation.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -12736,23 +12693,23 @@ try {
   <g filter="url(#img1-sh)">
     <!-- Bottom Polaroid (Rotated Left) -->
     <g transform="translate(130, 110) rotate(-12)">
-      <rect x="0" y="0" width="120" height="145" rx="6" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+      <rect x="0" y="0" width="120" height="145" rx="6" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
       <rect x="10" y="10" width="100" height="95" rx="3" fill="#60A5FA"/>
       <!-- Mountain and Sun -->
       <circle cx="85" cy="35" r="10" fill="#FEF08A"/>
       <polygon points="10,105 45,55 75,105" fill="#1E3A8A"/>
       <polygon points="50,105 75,65 110,105" fill="#3B82F6"/>
-      <text x="60" y="128" fill="#94A3B8" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">IMG_001.JPG</text>
+      <text x="60" y="128" fill="#8C8C8C" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">IMG_001.JPG</text>
     </g>
 
     <!-- Middle Polaroid (Rotated Right) -->
     <g transform="translate(250, 100) rotate(14)">
-      <rect x="0" y="0" width="120" height="145" rx="6" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+      <rect x="0" y="0" width="120" height="145" rx="6" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
       <rect x="10" y="10" width="100" height="95" rx="3" fill="#F472B6"/>
       <!-- Sunset and Beach -->
       <circle cx="60" cy="55" r="16" fill="#FDE047"/>
       <path d="M 10 90 Q 60 75 110 90 L 110 105 L 10 105 Z" fill="#BE185D"/>
-      <text x="60" y="128" fill="#94A3B8" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">BEACH_SUNSET.PNG</text>
+      <text x="60" y="128" fill="#8C8C8C" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">BEACH_SUNSET.PNG</text>
     </g>
 
     <!-- Top Unified PDF Binder Card (Center) -->
@@ -12801,7 +12758,7 @@ try {
 
     <!-- Portrait Sheet (Left) -->
     <g transform="translate(135, 125)">
-      <rect x="0" y="0" width="105" height="140" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="105" height="140" rx="4" fill="#F7F7F7" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="12" y="12" width="81" height="116" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/>
       <circle cx="52" cy="55" r="14" fill="#F59E0B"/>
       <path d="M 22 105 L 42 80 L 62 98 L 74 85 L 82 105 Z" fill="#D97706"/>
@@ -12810,7 +12767,7 @@ try {
 
     <!-- Landscape Sheet (Right) -->
     <g transform="translate(265, 140)">
-      <rect x="0" y="0" width="125" height="95" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="125" height="95" rx="4" fill="#F7F7F7" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="10" y="10" width="105" height="75" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/>
       <circle cx="45" cy="38" r="10" fill="#F59E0B"/>
       <path d="M 18 75 L 38 52 L 60 70 L 78 50 L 98 75 Z" fill="#D97706"/>
@@ -12823,14 +12780,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Custom Page Sizes & Orientations</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Custom Page Sizes & Orientations</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Choose from standard page sizes (A4, US Letter, Fit to Image) and adjust margins and portrait/landscape orientation to build beautiful documents.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Photo Privacy</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Photo Privacy</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your private photos, ID cards, and receipts are never uploaded to remote servers. All processing executes locally in your browser.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -12876,28 +12833,28 @@ try {
       <div style="background: #FFFBEB; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FDE68A;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #D97706; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Convert Images to PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Convert Images to PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #D97706; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your images:</strong> Select or drag JPG, PNG, or WEBP files into the box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your images:</strong> Select or drag JPG, PNG, or WEBP files into the box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #D97706; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Rearrange sequence:</strong> Drag image thumbnails to set your preferred page order.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Rearrange sequence:</strong> Drag image thumbnails to set your preferred page order.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #D97706; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Configure layout:</strong> Choose page orientation, margins, and paper size.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Configure layout:</strong> Choose page orientation, margins, and paper size.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #D97706; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Convert to PDF:</strong> Instant WebAssembly compiles your PDF in milliseconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Convert to PDF:</strong> Instant WebAssembly compiles your PDF in milliseconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #D97706; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download document:</strong> Save your high-resolution PDF document immediately.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download document:</strong> Save your high-resolution PDF document immediately.</span>
             </li>
           </ul>
         </div>
@@ -12907,24 +12864,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#FDE68A" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#FFFBEB" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#FFFBEB" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#FFFBEB" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#FFFBEB" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#D97706"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -12932,9 +12889,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#D97706" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#D97706"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#D97706"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -12949,7 +12906,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #D97706; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free Image to PDF Conversion — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free Image to PDF Conversion — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -12960,8 +12917,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">High-Resolution Output</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Maintains 100% original photo clarity without compression artifacts.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">High-Resolution Output</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Maintains 100% original photo clarity without compression artifacts.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12971,8 +12928,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#D97706"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Multi-Format Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Converts JPG, PNG, WEBP, GIF, BMP, and TIFF effortlessly.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Multi-Format Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Converts JPG, PNG, WEBP, GIF, BMP, and TIFF effortlessly.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12983,8 +12940,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -12993,8 +12950,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13003,12 +12960,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13017,21 +12974,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #D97706; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Image to PDF FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Image to PDF FAQs</h2>
       </div>
 
       <div class="fk-image-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-image-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-image-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-image-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-image-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How many images can I combine into one PDF?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -13039,8 +12996,8 @@ try {
             There is no limit! You can combine dozens of photos into a single PDF document.
           </div>
         </div>
-        <div class="fk-image-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-image-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-image-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-image-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will my image resolution be preserved?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -13051,19 +13008,19 @@ try {
       </div>
 `; },
     getOcrPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the most accurate in-browser Optical Character Recognition (OCR) tool. Convert scanned PDFs and paper document images into fully searchable, selectable, and editable text.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Recognize text with 99.8% neural OCR accuracy</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Make scanned documents searchable & selectable</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly engine</span>
           </div>
@@ -13072,13 +13029,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">NEURAL TEXT EXTRACTION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">OCR PDF & Extract Text Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Transform scanned receipts, books, and contracts into selectable text documents.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">OCR PDF & Extract Text Online</h2>
+        <p style="color: #737373; font-size: 15px;">Transform scanned receipts, books, and contracts into selectable text documents.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Instant Optical Character Recognition</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Instant Optical Character Recognition</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Extract text from scanned PDFs with incredible precision. Search for keywords with Ctrl+F, highlight sentences, and copy text directly into your favorite editor.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -13104,9 +13061,9 @@ try {
     
     <!-- Document Text Lines -->
     <rect x="25" y="25" width="80" height="8" rx="4" fill="#7C3AED"/>
-    <rect x="25" y="45" width="180" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="25" y="57" width="180" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="25" y="69" width="140" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="25" y="45" width="180" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="25" y="57" width="180" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="25" y="69" width="140" height="4" rx="2" fill="#E5E5E5"/>
 
     <!-- Glowing Blue-Violet Laser Scanning Beam -->
     <rect x="10" y="85" width="210" height="45" fill="url(#ocr-laser)"/>
@@ -13173,16 +13130,16 @@ try {
     <g transform="translate(130, 135)">
       <rect x="0" y="0" width="260" height="165" rx="8" fill="#FAF5FF" stroke="#E9D5FF"/>
       <rect x="15" y="18" width="60" height="6" rx="3" fill="#7C3AED"/>
-      <rect x="15" y="34" width="230" height="4" rx="2" fill="#CBD5E1"/>
+      <rect x="15" y="34" width="230" height="4" rx="2" fill="#D4D4D4"/>
       
       <!-- Highlighted Search Result -->
       <rect x="15" y="48" width="115" height="18" rx="3" fill="#FEF08A" stroke="#FACC15"/>
       <text x="22" y="61" fill="#854D0E" font-family="'Outfit', sans-serif" font-size="9" font-weight="900">Invoice #8492</text>
       
-      <rect x="140" y="54" width="105" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="76" width="230" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="88" width="200" height="4" rx="2" fill="#CBD5E1"/>
-      <rect x="15" y="100" width="170" height="4" rx="2" fill="#CBD5E1"/>
+      <rect x="140" y="54" width="105" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="76" width="230" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="88" width="200" height="4" rx="2" fill="#D4D4D4"/>
+      <rect x="15" y="100" width="170" height="4" rx="2" fill="#D4D4D4"/>
 
       <rect x="15" y="125" width="230" height="24" rx="6" fill="#FFFFFF" stroke="#7C3AED"/>
       <text x="130" y="141" fill="#7C3AED" font-family="'Outfit', sans-serif" font-size="9.5" font-weight="800" text-anchor="middle">Selectable · Copyable · Ctrl+F Ready</text>
@@ -13191,14 +13148,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Multi-Language Character Recognition</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Multi-Language Character Recognition</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Supports dozens of languages including English, Spanish, French, German, Chinese, Japanese, and Arabic with advanced neural character segmenting.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory OCR Privacy</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory OCR Privacy</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Scanned bank statements, medical charts, and legal contracts are processed locally inside your web browser using WebAssembly Tesseract OCR.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -13249,28 +13206,28 @@ try {
       <div style="background: #FAF5FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #DDD6FE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To OCR a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To OCR a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload scanned PDF:</strong> Drag and drop your scanned document into the box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload scanned PDF:</strong> Drag and drop your scanned document into the box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Select document language:</strong> Choose document language for maximum character accuracy.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Select document language:</strong> Choose document language for maximum character accuracy.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Start OCR:</strong> In-browser neural engine extracts text characters locally.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Start OCR:</strong> In-browser neural engine extracts text characters locally.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download searchable PDF:</strong> Save your searchable PDF with selectable text layers.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download searchable PDF:</strong> Save your searchable PDF with selectable text layers.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Copy & Search:</strong> Search text with Ctrl+F or copy paragraphs freely.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Copy & Search:</strong> Search text with Ctrl+F or copy paragraphs freely.</span>
             </li>
           </ul>
         </div>
@@ -13280,24 +13237,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#DDD6FE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#FAF5FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#FAF5FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#FAF5FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#FAF5FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#7C3AED"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -13305,9 +13262,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#7C3AED"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#7C3AED"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -13322,7 +13279,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF OCR — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF OCR — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -13333,8 +13290,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">99.8% Neural Accuracy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">State-of-the-art OCR recognizes degraded scans, low-contrast fonts, and skewed lines.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">99.8% Neural Accuracy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">State-of-the-art OCR recognizes degraded scans, low-contrast fonts, and skewed lines.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13344,8 +13301,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#7C3AED"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Searchable PDF Output</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Embeds invisible searchable text layers behind scanned page images.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Searchable PDF Output</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Embeds invisible searchable text layers behind scanned page images.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13356,8 +13313,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13366,8 +13323,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13376,12 +13333,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13390,21 +13347,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF OCR FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF OCR FAQs</h2>
       </div>
 
       <div class="fk-ocr-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-ocr-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-ocr-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-ocr-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-ocr-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>How does OCR make scanned PDFs searchable?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -13412,8 +13369,8 @@ try {
             OCR analyzes the pixel shapes on scanned pages, recognizes characters, and embeds an invisible text layer directly aligned with the original images.
           </div>
         </div>
-        <div class="fk-ocr-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-ocr-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-ocr-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-ocr-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Does FileKit support handwritten notes?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -13424,19 +13381,19 @@ try {
       </div>
 `; },
     getRotatePdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF page rotator. Rotate individual upside-down pages or entire documents permanently by 90°, 180°, or 270° degrees.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Rotate single pages or all pages simultaneously</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Save orientation permanently with zero quality loss</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly rotation</span>
           </div>
@@ -13445,13 +13402,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">PERMANENT ORIENTATION FIX</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Rotate PDF Pages The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Fix upside-down and sideways PDF pages permanently with a single click.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Rotate PDF Pages The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Fix upside-down and sideways PDF pages permanently with a single click.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Instant Visual Page Rotation</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Instant Visual Page Rotation</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Click on individual page thumbnails to rotate them 90 degrees clockwise or counterclockwise, or apply global rotation across all pages in seconds.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -13474,9 +13431,9 @@ try {
     <g transform="translate(105, 122) rotate(35)">
       <rect x="-80" y="-95" width="160" height="190" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="3"/>
       <rect x="-65" y="-75" width="55" height="7" rx="3.5" fill="#4F46E5"/>
-      <rect x="-65" y="-55" width="130" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="-65" y="-45" width="130" height="3.5" rx="1.75" fill="#CBD5E1"/>
-      <rect x="-65" y="-35" width="100" height="3.5" rx="1.75" fill="#CBD5E1"/>
+      <rect x="-65" y="-55" width="130" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="-65" y="-45" width="130" height="3.5" rx="1.75" fill="#D4D4D4"/>
+      <rect x="-65" y="-35" width="100" height="3.5" rx="1.75" fill="#D4D4D4"/>
       
       <circle cx="0" cy="30" r="28" fill="#EEF2FF" stroke="#6366F1" stroke-width="2"/>
       <path d="M -12 30 H 12 M 4 22 L 12 30 L 4 38" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -13516,9 +13473,9 @@ try {
 
   <g filter="url(#s2-sh-indigo)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">ROTATION MATRIX</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">ROTATION MATRIX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#4F46E5"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -13535,14 +13492,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Permanent Lossless Rotation</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Permanent Lossless Rotation</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Unlike viewer temporary rotations, FileKit updates the internal PDF rotation matrices permanently so pages stay right-side-up in all viewers and print queues.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Fast Rotation</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Fast Rotation</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your documents are processed locally without uploading to external servers, providing instantaneous performance and total privacy.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -13561,18 +13518,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#4338CA" opacity="0.14"/>
 
   <g filter="url(#s3-sh-indigo)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#4338CA"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#4F46E5"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#EEF2FF" stroke="#C7D2FE"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -13589,7 +13546,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-indigo)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#EEF2FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#4F46E5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -13603,24 +13560,24 @@ try {
       <div style="background: #EEF2FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #C7D2FE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Rotate PDF Pages for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Rotate PDF Pages for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the rotation box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the rotation box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Rotate pages:</strong> Click rotate buttons on individual thumbnails or rotate all.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Rotate pages:</strong> Click rotate buttons on individual thumbnails or rotate all.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Apply Rotation:</strong> In-browser WebAssembly updates page matrices permanently.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Apply Rotation:</strong> In-browser WebAssembly updates page matrices permanently.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download rotated PDF:</strong> Save your right-side-up document ready for sharing.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download rotated PDF:</strong> Save your right-side-up document ready for sharing.</span>
             </li>
           </ul>
         </div>
@@ -13630,24 +13587,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#C7D2FE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#4F46E5"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -13655,9 +13612,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#4F46E5"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#4F46E5"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -13672,7 +13629,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Rotation — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Rotation — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -13683,8 +13640,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Single Page or Batch</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Rotate one stubborn page or adjust the entire document at once.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Single Page or Batch</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Rotate one stubborn page or adjust the entire document at once.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13694,8 +13651,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#4F46E5"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Lossless Quality</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Modifies document coordinates with zero recompression or quality loss.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Lossless Quality</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Modifies document coordinates with zero recompression or quality loss.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13706,8 +13663,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13716,8 +13673,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13726,12 +13683,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -13740,21 +13697,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Rotate FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Rotate FAQs</h2>
       </div>
 
       <div class="fk-rotate-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-rotate-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-rotate-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-rotate-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-rotate-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will the rotation remain permanent when I print?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -13762,8 +13719,8 @@ try {
             Yes! FileKit permanently writes the rotation angle into the PDF structure.
           </div>
         </div>
-        <div class="fk-rotate-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-rotate-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-rotate-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-rotate-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I rotate only specific pages?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -13774,19 +13731,19 @@ try {
       </div>
 `; },
     getWatermarkPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF watermark generator. Stamp custom text or transparent company logos onto PDF documents to prevent unauthorized copying and protect intellectual property.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Add custom text stamps or transparent logo images</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Customize opacity, typography, angle, and position</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly watermarking</span>
           </div>
@@ -13795,13 +13752,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">BRAND & COPYRIGHT PROTECTION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Watermark PDF Files Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Stamp confidential notices, copyright marks, and brand logos across your PDF pages.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Watermark PDF Files Online</h2>
+        <p style="color: #737373; font-size: 15px;">Stamp confidential notices, copyright marks, and brand logos across your PDF pages.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Custom Text & Image Watermarks</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Custom Text & Image Watermarks</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Choose between text watermarks (like 'CONFIDENTIAL' or 'DRAFT') or upload your company logo. Control font size, rotation angle, and opacity effortlessly.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -13821,10 +13778,10 @@ try {
     
     <!-- Background Text -->
     <rect x="25" y="25" width="60" height="6" rx="3" fill="#7C3AED"/>
-    <rect x="25" y="40" width="195" height="3" rx="1.5" fill="#E2E8F0"/>
-    <rect x="25" y="50" width="195" height="3" rx="1.5" fill="#E2E8F0"/>
-    <rect x="25" y="60" width="195" height="3" rx="1.5" fill="#E2E8F0"/>
-    <rect x="25" y="70" width="160" height="3" rx="1.5" fill="#E2E8F0"/>
+    <rect x="25" y="40" width="195" height="3" rx="1.5" fill="#E5E5E5"/>
+    <rect x="25" y="50" width="195" height="3" rx="1.5" fill="#E5E5E5"/>
+    <rect x="25" y="60" width="195" height="3" rx="1.5" fill="#E5E5E5"/>
+    <rect x="25" y="70" width="160" height="3" rx="1.5" fill="#E5E5E5"/>
 
     <!-- Large Diagonal Crimson Rubber Stamp Impression -->
     <g transform="translate(125, 120) rotate(-28)">
@@ -13865,9 +13822,9 @@ try {
 
   <g filter="url(#s2-sh-violet)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#DDD6FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">STAMP MATRIX</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">STAMP MATRIX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#7C3AED"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -13884,14 +13841,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Precise Position & Opacity Control</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Precise Position & Opacity Control</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Place watermarks centered diagonally, in the header/footer, or tiled across the whole page with adjustable transparency so text beneath remains readable.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Watermarking</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Watermarking</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential contracts and drafts are stamped locally inside your web browser. Zero server uploads.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -13910,18 +13867,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#6D28D9" opacity="0.14"/>
 
   <g filter="url(#s3-sh-violet)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#7C3AED"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#6D28D9"/>
     <circle cx="158" cy="126" r="3" fill="#DDD6FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#7C3AED"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#FAF5FF" stroke="#DDD6FE"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -13938,7 +13895,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-violet)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#FAF5FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -13952,28 +13909,28 @@ try {
       <div style="background: #FAF5FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #DDD6FE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Watermark a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Watermark a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the watermarking box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the watermarking box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Choose watermark type:</strong> Type custom text or upload a transparent PNG logo.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Choose watermark type:</strong> Type custom text or upload a transparent PNG logo.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Customize appearance:</strong> Adjust opacity slider, rotation angle, font, and color.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Customize appearance:</strong> Adjust opacity slider, rotation angle, font, and color.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Apply Watermark:</strong> In-browser WebAssembly stamps all pages in seconds.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Apply Watermark:</strong> In-browser WebAssembly stamps all pages in seconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #7C3AED; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download stamped PDF:</strong> Save your protected document ready for distribution.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download stamped PDF:</strong> Save your protected document ready for distribution.</span>
             </li>
           </ul>
         </div>
@@ -13983,24 +13940,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#DDD6FE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#FAF5FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#FAF5FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#FAF5FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#FAF5FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#7C3AED"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -14008,9 +13965,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#7C3AED" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#7C3AED"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#7C3AED"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -14025,7 +13982,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Watermarking — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Watermarking — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -14036,8 +13993,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Text & Logo Stamps</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Use bold calligraphic stamps or transparent corporate logos.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Text & Logo Stamps</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Use bold calligraphic stamps or transparent corporate logos.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14047,8 +14004,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#7C3AED"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Adjustable Transparency</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Fine-tune opacity to protect IP without obscuring document content.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Adjustable Transparency</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Fine-tune opacity to protect IP without obscuring document content.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14059,8 +14016,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14069,8 +14026,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14079,12 +14036,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14093,21 +14050,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #7C3AED; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Watermark FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Watermark FAQs</h2>
       </div>
 
       <div class="fk-watermark-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-watermark-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-watermark-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-watermark-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-watermark-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can recipients easily remove the watermark?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -14115,8 +14072,8 @@ try {
             Watermarks are embedded directly into the PDF content stream, making them permanent and hard to strip.
           </div>
         </div>
-        <div class="fk-watermark-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-watermark-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-watermark-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-watermark-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I apply watermarks to only specific pages?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -14127,19 +14084,19 @@ try {
       </div>
 `; },
     getRedactPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the ultimate in-browser PDF redaction tool. Permanently black out and sanitize sensitive personal information, social security numbers, and private data with zero recovery risk.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BE123C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Permanently black out text, numbers, and images</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BE123C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Sanitize underlying metadata and hidden text glyphs</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BE123C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly sanitation</span>
           </div>
@@ -14148,13 +14105,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #BE123C; text-transform: uppercase; margin-bottom: 8px;">PERMANENT DATA SANITIZATION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Redact PDF Online The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Permanently black out sensitive data and ensure total compliance with privacy laws.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Redact PDF Online The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Permanently black out sensitive data and ensure total compliance with privacy laws.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Irreversible Text & Image Redaction</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Irreversible Text & Image Redaction</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Unlike basic highlight tools that merely draw over text, FileKit strips the underlying font glyphs and pixel data completely from the document binary so redacted content can never be uncovered or copied.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -14174,19 +14131,19 @@ try {
     <rect x="25" y="25" width="70" height="8" rx="4" fill="#BE123C"/>
     
     <!-- Unredacted Safe Lines -->
-    <rect x="25" y="45" width="195" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="25" y="55" width="195" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="25" y="45" width="195" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="25" y="55" width="195" height="4" rx="2" fill="#E5E5E5"/>
 
     <!-- Blacked Out Sensitive Line 1 (SSN) -->
-    <rect x="25" y="70" width="130" height="18" rx="3" fill="#0F172A"/>
-    <text x="32" y="83" fill="#64748B" font-family="monospace" font-size="9" opacity="0.4">XXX-XX-XXXX</text>
-    <rect x="165" y="76" width="55" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="25" y="70" width="130" height="18" rx="3" fill="#0A0A0A"/>
+    <text x="32" y="83" fill="#737373" font-family="monospace" font-size="9" opacity="0.4">XXX-XX-XXXX</text>
+    <rect x="165" y="76" width="55" height="4" rx="2" fill="#E5E5E5"/>
 
     <!-- Unredacted Safe Lines -->
-    <rect x="25" y="98" width="195" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="25" y="98" width="195" height="4" rx="2" fill="#E5E5E5"/>
 
     <!-- Blacked Out Sensitive Line 2 (Credit Card & Name) -->
-    <rect x="25" y="112" width="195" height="18" rx="3" fill="#0F172A"/>
+    <rect x="25" y="112" width="195" height="18" rx="3" fill="#0A0A0A"/>
     <text x="32" y="125" fill="#EF4444" font-family="'Outfit', sans-serif" font-size="9" font-weight="900">PERMANENTLY ERASED</text>
 
     <!-- Disintegrating Glyph Particles Floating Off -->
@@ -14225,9 +14182,9 @@ try {
 
   <g filter="url(#s2-sh-crimson)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#FECDD3" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">SANITIZED</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">SANITIZED</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#BE123C"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -14244,14 +14201,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Metadata & Hidden Stream Sanitation</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Metadata & Hidden Stream Sanitation</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Removes author names, creation timestamps, GPS data, and hidden revision histories so confidential files are clean for public disclosure.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Security</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Security</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Redaction runs strictly on your machine. Sensitive personal identifiers are erased in local memory with zero remote telemetry.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -14270,18 +14227,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#9F1239" opacity="0.14"/>
 
   <g filter="url(#s3-sh-crimson)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#BE123C"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#9F1239"/>
     <circle cx="158" cy="126" r="3" fill="#FECDD3"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#BE123C"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#FFF1F2" stroke="#FECDD3"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#BE123C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -14298,7 +14255,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-crimson)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#FFF1F2"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#BE123C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -14312,28 +14269,28 @@ try {
       <div style="background: #FFF1F2; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FECDD3;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #BE123C; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Redact a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Redact a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #BE123C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload confidential document:</strong> Drag and drop your PDF file into the redaction box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload confidential document:</strong> Drag and drop your PDF file into the redaction box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #BE123C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Highlight sensitive areas:</strong> Draw black redaction boxes over text, numbers, or images.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Highlight sensitive areas:</strong> Draw black redaction boxes over text, numbers, or images.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #BE123C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Sanitize metadata:</strong> Check option to strip document author and revision history.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Sanitize metadata:</strong> Check option to strip document author and revision history.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #BE123C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Apply Redaction:</strong> In-browser WebAssembly permanently strips underlying data.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Apply Redaction:</strong> In-browser WebAssembly permanently strips underlying data.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #BE123C; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download sanitized PDF:</strong> Save your irreversibly redacted PDF ready for public release.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download sanitized PDF:</strong> Save your irreversibly redacted PDF ready for public release.</span>
             </li>
           </ul>
         </div>
@@ -14343,24 +14300,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#FECDD3" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#FFF1F2" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#FFF1F2" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#FFF1F2" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#FFF1F2" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#BE123C"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -14368,9 +14325,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#BE123C" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#BE123C"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#BE123C"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -14385,7 +14342,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #BE123C; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Redaction — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Redaction — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -14396,8 +14353,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Permanent Sanitization</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Underlying vector and text glyphs are destroyed and cannot be uncovered.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Permanent Sanitization</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Underlying vector and text glyphs are destroyed and cannot be uncovered.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14407,8 +14364,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#BE123C"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Metadata Cleaning</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Erases hidden revision streams and author tags completely.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Metadata Cleaning</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Erases hidden revision streams and author tags completely.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14419,8 +14376,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14429,8 +14386,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14439,12 +14396,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14453,21 +14410,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #BE123C; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Redact FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Redact FAQs</h2>
       </div>
 
       <div class="fk-redact-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-redact-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-redact-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-redact-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-redact-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can someone copy text underneath the black redaction box?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -14475,8 +14432,8 @@ try {
             No! FileKit completely removes the text characters and vector glyphs from the PDF code.
           </div>
         </div>
-        <div class="fk-redact-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-redact-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-redact-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-redact-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Does FileKit work for court-mandated redaction?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -14487,19 +14444,19 @@ try {
       </div>
 `; },
     getCropPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the premier in-browser PDF page cropper. Trim white margins, adjust bounding box dimensions, and crop PDF pages with visual drag-and-drop handles.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Visual bounding box selection with drag handles</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Auto-trim blank margins across all pages</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly processing</span>
           </div>
@@ -14508,13 +14465,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0891B2; text-transform: uppercase; margin-bottom: 8px;">PRECISION MARGIN TRIMMING</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Crop PDF Pages The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Trim extra margins, headers, or footers from your PDF documents in seconds.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Crop PDF Pages The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Trim extra margins, headers, or footers from your PDF documents in seconds.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Interactive Visual Crop Box</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Interactive Visual Crop Box</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Drag corner grips to define the exact visible area of your document. Apply crops to a single page, selected page ranges, or across the entire document simultaneously.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -14540,9 +14497,9 @@ try {
     <!-- Document Sheet Inside -->
     <rect x="30" y="30" width="190" height="185" rx="4" fill="#FFFFFF" opacity="0.95"/>
     <rect x="45" y="45" width="60" height="6" rx="3" fill="#0891B2"/>
-    <rect x="45" y="60" width="160" height="3" rx="1.5" fill="#CBD5E1"/>
-    <rect x="45" y="68" width="160" height="3" rx="1.5" fill="#CBD5E1"/>
-    <rect x="45" y="76" width="130" height="3" rx="1.5" fill="#CBD5E1"/>
+    <rect x="45" y="60" width="160" height="3" rx="1.5" fill="#D4D4D4"/>
+    <rect x="45" y="68" width="160" height="3" rx="1.5" fill="#D4D4D4"/>
+    <rect x="45" y="76" width="130" height="3" rx="1.5" fill="#D4D4D4"/>
 
     <!-- Dynamic Crop Box Overlay -->
     <rect x="40" y="40" width="170" height="145" fill="#06B6D4" fill-opacity="0.15" stroke="#06B6D4" stroke-width="2.5" stroke-dasharray="6 4"/>
@@ -14591,12 +14548,12 @@ try {
     
     <!-- Before Sheet (Huge Unnecessary Margins) -->
     <g transform="translate(135, 100)">
-      <rect x="0" y="0" width="110" height="150" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+      <rect x="0" y="0" width="110" height="150" rx="6" fill="#F7F7F7" stroke="#E5E5E5" stroke-width="2"/>
       <rect x="30" y="35" width="50" height="75" fill="#E0F2FE" stroke="#38BDF8" stroke-dasharray="3 2"/>
       <rect x="35" y="45" width="40" height="4" rx="2" fill="#0284C7"/>
-      <rect x="35" y="55" width="40" height="2" rx="1" fill="#94A3B8"/>
-      <rect x="35" y="61" width="40" height="2" rx="1" fill="#94A3B8"/>
-      <rect x="35" y="67" width="30" height="2" rx="1" fill="#94A3B8"/>
+      <rect x="35" y="55" width="40" height="2" rx="1" fill="#8C8C8C"/>
+      <rect x="35" y="61" width="40" height="2" rx="1" fill="#8C8C8C"/>
+      <rect x="35" y="67" width="30" height="2" rx="1" fill="#8C8C8C"/>
       <text x="55" y="132" fill="#EF4444" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="900" text-anchor="middle">❌ WASTED MARGINS</text>
     </g>
 
@@ -14618,14 +14575,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Auto-Detect White Margins</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Auto-Detect White Margins</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our intelligent layout analyzer detects blank white borders automatically, allowing one-click auto-cropping for clean eBook reading on Kindle and tablets.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Private In-Memory Cropping</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Private In-Memory Cropping</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Crop files locally without cloud uploads for lightning-fast speeds and ironclad security.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -14667,28 +14624,28 @@ try {
       <div style="background: #ECFEFF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #A5F3FC;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0891B2; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Crop a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Crop a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0891B2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the crop box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the crop box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0891B2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Adjust crop boundary:</strong> Drag handles on the visual preview to frame the target area.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Adjust crop boundary:</strong> Drag handles on the visual preview to frame the target area.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0891B2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Select page range:</strong> Choose to apply the crop to all pages or specific sheets.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Select page range:</strong> Choose to apply the crop to all pages or specific sheets.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0891B2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Crop PDF:</strong> In-browser WebAssembly adjusts the bounding box instantly.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Crop PDF:</strong> In-browser WebAssembly adjusts the bounding box instantly.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #0891B2; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download cropped PDF:</strong> Save your trimmed PDF ready for e-readers or printing.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download cropped PDF:</strong> Save your trimmed PDF ready for e-readers or printing.</span>
             </li>
           </ul>
         </div>
@@ -14698,24 +14655,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#A5F3FC" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#ECFEFF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#ECFEFF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#ECFEFF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#ECFEFF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#0891B2"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -14723,9 +14680,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#0891B2" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#0891B2"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#0891B2"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -14740,7 +14697,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0891B2; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Cropping — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Cropping — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -14751,8 +14708,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Precision Drag Handles</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Easily adjust crop boundaries with pixel-perfect visual handles.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Precision Drag Handles</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Easily adjust crop boundaries with pixel-perfect visual handles.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14762,8 +14719,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#0891B2"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Auto-Trim Margins</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Instantly remove excess white space around text blocks.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Auto-Trim Margins</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Instantly remove excess white space around text blocks.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14774,8 +14731,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14784,8 +14741,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14794,12 +14751,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -14808,21 +14765,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0891B2; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Crop FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Crop FAQs</h2>
       </div>
 
       <div class="fk-crop-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-crop-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-crop-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-crop-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-crop-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Does cropping reduce file quality?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -14830,8 +14787,8 @@ try {
             No! Cropping updates the MediaBox and CropBox coordinates with zero compression loss.
           </div>
         </div>
-        <div class="fk-crop-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-crop-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-crop-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-crop-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I undo a crop later?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -14842,19 +14799,19 @@ try {
       </div>
 `; },
     getPageNumbersSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the easiest in-browser PDF page number generator. Insert sequential page numbers, customized Bates numbering, headers, and footers into PDF documents.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Choose position (Header / Footer / Corners)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Custom number formats (e.g. 'Page 1 of N', Bates)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly rendering</span>
           </div>
@@ -14863,13 +14820,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">DOCUMENT NUMBERING & HEADERS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Add Page Numbers to PDF Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Insert sequential numbers, headers, and footers with custom fonts and positions.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Add Page Numbers to PDF Online</h2>
+        <p style="color: #737373; font-size: 15px;">Insert sequential numbers, headers, and footers with custom fonts and positions.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Customizable Numbering Schemes</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Customizable Numbering Schemes</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Choose starting number, numbering style (1, 2, 3 or i, ii, iii), font family, font size, text color, and exact margins for professional publishing.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -14889,8 +14846,8 @@ try {
     <g transform="translate(0, 20)">
       <rect x="0" y="0" width="75" height="110" rx="4" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
       <rect x="10" y="10" width="25" height="4" rx="2" fill="#2563EB"/>
-      <rect x="10" y="20" width="55" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="10" y="28" width="55" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="10" y="20" width="55" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="10" y="28" width="55" height="3" rx="1.5" fill="#D4D4D4"/>
       <!-- Page Number Footer -->
       <rect x="25" y="88" width="25" height="14" rx="3" fill="#EFF6FF" stroke="#3B82F6"/>
       <text x="37" y="99" fill="#1D4ED8" font-family="'Outfit', sans-serif" font-size="9" font-weight="900" text-anchor="middle">1 / 3</text>
@@ -14900,9 +14857,9 @@ try {
     <g transform="translate(90, 0)">
       <rect x="0" y="0" width="80" height="120" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="2.5"/>
       <rect x="10" y="10" width="30" height="5" rx="2.5" fill="#2563EB"/>
-      <rect x="10" y="22" width="60" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="10" y="30" width="60" height="3" rx="1.5" fill="#CBD5E1"/>
-      <rect x="10" y="38" width="40" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="10" y="22" width="60" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="10" y="30" width="60" height="3" rx="1.5" fill="#D4D4D4"/>
+      <rect x="10" y="38" width="40" height="3" rx="1.5" fill="#D4D4D4"/>
       <!-- Page Number Footer -->
       <rect x="25" y="96" width="30" height="16" rx="4" fill="#2563EB"/>
       <text x="40" y="108" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">2 / 3</text>
@@ -14912,7 +14869,7 @@ try {
     <g transform="translate(185, 20)">
       <rect x="0" y="0" width="75" height="110" rx="4" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5"/>
       <rect x="10" y="10" width="25" height="4" rx="2" fill="#2563EB"/>
-      <rect x="10" y="20" width="55" height="3" rx="1.5" fill="#CBD5E1"/>
+      <rect x="10" y="20" width="55" height="3" rx="1.5" fill="#D4D4D4"/>
       <!-- Page Number Footer -->
       <rect x="25" y="88" width="25" height="14" rx="3" fill="#EFF6FF" stroke="#3B82F6"/>
       <text x="37" y="99" fill="#1D4ED8" font-family="'Outfit', sans-serif" font-size="9" font-weight="900" text-anchor="middle">3 / 3</text>
@@ -14947,9 +14904,9 @@ try {
 
   <g filter="url(#s2-sh-blue)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">BATES INDEX</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">BATES INDEX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#2563EB"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -14966,14 +14923,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Bates Numbering for Legal Files</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Bates Numbering for Legal Files</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Add custom prefixes, suffixes, leading zeros, and legal case identifiers (e.g. 'CONF-000145') across thousands of discovery documents seamlessly.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory Fast Rendering</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory Fast Rendering</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">All page number positioning and vector font embedding runs strictly inside your local browser memory sandbox.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -14992,18 +14949,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#1D4ED8" opacity="0.14"/>
 
   <g filter="url(#s3-sh-blue)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#2563EB"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#1D4ED8"/>
     <circle cx="158" cy="126" r="3" fill="#BFDBFE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#2563EB"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#EFF6FF" stroke="#BFDBFE"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -15020,7 +14977,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-blue)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#EFF6FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -15034,28 +14991,28 @@ try {
       <div style="background: #EFF6FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #BFDBFE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Add Page Numbers to a PDF</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Add Page Numbers to a PDF</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the numbering box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the numbering box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Choose position:</strong> Select header, footer, top-right, bottom-center, etc.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Choose position:</strong> Select header, footer, top-right, bottom-center, etc.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Format text:</strong> Choose number format, font family, size, and starting count.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Format text:</strong> Choose number format, font family, size, and starting count.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Add Numbers:</strong> In-browser WebAssembly renders vector numbering across all pages.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Add Numbers:</strong> In-browser WebAssembly renders vector numbering across all pages.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download numbered PDF:</strong> Save your organized, sequentially indexed document.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download numbered PDF:</strong> Save your organized, sequentially indexed document.</span>
             </li>
           </ul>
         </div>
@@ -15065,24 +15022,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#BFDBFE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#EFF6FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#EFF6FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#EFF6FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#EFF6FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#2563EB"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -15090,9 +15047,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#2563EB"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#2563EB"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -15107,7 +15064,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Numbering — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Numbering — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -15118,8 +15075,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Flexible Formatting</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Insert 'Page X of Y', Roman numerals, or Bates numbering.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Flexible Formatting</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Insert 'Page X of Y', Roman numerals, or Bates numbering.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15129,8 +15086,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#2563EB"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Custom Positioning</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Place numbers in 6 different page header and footer slots.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Custom Positioning</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Place numbers in 6 different page header and footer slots.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15141,8 +15098,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15151,8 +15108,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15161,12 +15118,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15175,21 +15132,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Page Numbers FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Page Numbers FAQs</h2>
       </div>
 
       <div class="fk-page-numbers-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-page-numbers-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-page-numbers-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-page-numbers-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-page-numbers-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I exclude page numbers from the cover page?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -15197,8 +15154,8 @@ try {
             Yes! You can choose to start numbering from page 2 or any specific page number.
           </div>
         </div>
-        <div class="fk-page-numbers-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-page-numbers-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-page-numbers-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-page-numbers-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will page numbers overlap existing text?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -15209,19 +15166,19 @@ try {
       </div>
 `; },
     getFlattenPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the ultimate in-browser PDF flattening tool. Merge interactive form fields, electronic signatures, and multi-layer vector annotations into a single static PDF print stream.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Lock interactive form fields permanently</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Fuse complex layer stacks for 100% viewer compatibility</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly processing</span>
           </div>
@@ -15230,13 +15187,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">LAYER & FORM CONSOLIDATION</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Flatten PDF Forms & Layers Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Lock fillable fields and annotations into an unalterable, read-only PDF file.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Flatten PDF Forms & Layers Online</h2>
+        <p style="color: #737373; font-size: 15px;">Lock fillable fields and annotations into an unalterable, read-only PDF file.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Permanent Form & Signature Lockdown</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Permanent Form & Signature Lockdown</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Prevent other users from tampering with entered form data or repositioning signature blocks by fusing all dynamic annotations directly into the base page canvas.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -15261,7 +15218,7 @@ try {
       <rect x="0" y="0" width="200" height="36" rx="6" fill="#FFFFFF" stroke="#818CF8" stroke-width="2"/>
       <rect x="12" y="10" width="70" height="16" rx="3" fill="#EEF2FF" stroke="#6366F1"/>
       <text x="47" y="22" fill="#4F46E5" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="800" text-anchor="middle">Input Field</text>
-      <text x="140" y="22" fill="#64748B" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700">✍️ Signature Layer</text>
+      <text x="140" y="22" fill="#737373" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700">✍️ Signature Layer</text>
     </g>
 
     <!-- Compression Arrows -->
@@ -15300,9 +15257,9 @@ try {
 
   <g filter="url(#s2-sh-indigo)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PRINT STREAM</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PRINT STREAM</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#4F46E5"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -15319,14 +15276,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Compatibility with All Printers & Devices</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Compatibility with All Printers & Devices</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Flattened PDFs eliminate font rendering discrepancies and annotation dropouts across older PDF viewers, mobile devices, and industrial print shops.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Local In-Memory Fusing</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Local In-Memory Fusing</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Fusing operations execute in private browser WebAssembly memory for instantaneous rendering and strict privacy.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -15345,18 +15302,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#4338CA" opacity="0.14"/>
 
   <g filter="url(#s3-sh-indigo)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#4338CA"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#4F46E5"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#EEF2FF" stroke="#C7D2FE"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -15373,7 +15330,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-indigo)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#EEF2FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#4F46E5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -15387,24 +15344,24 @@ try {
       <div style="background: #EEF2FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #C7D2FE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Flatten a PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Flatten a PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload filled form:</strong> Drag and drop your interactive PDF form into the box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload filled form:</strong> Drag and drop your interactive PDF form into the box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Select flattening mode:</strong> Choose to flatten forms, annotations, or entire layer stacks.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Select flattening mode:</strong> Choose to flatten forms, annotations, or entire layer stacks.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Flatten PDF:</strong> In-browser WebAssembly converts form widgets to static vectors.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Flatten PDF:</strong> In-browser WebAssembly converts form widgets to static vectors.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download flattened PDF:</strong> Save your secure, tamper-proof read-only document.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download flattened PDF:</strong> Save your secure, tamper-proof read-only document.</span>
             </li>
           </ul>
         </div>
@@ -15414,24 +15371,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#C7D2FE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#4F46E5"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -15439,9 +15396,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#4F46E5"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#4F46E5"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -15456,7 +15413,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Flattening — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Flattening — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -15467,8 +15424,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Tamper-Proof Forms</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Converts fillable text boxes into locked visual paths.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Tamper-Proof Forms</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Converts fillable text boxes into locked visual paths.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15478,8 +15435,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#4F46E5"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Print Readiness</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Guarantees that signatures and annotations print cleanly.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Print Readiness</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Guarantees that signatures and annotations print cleanly.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15490,8 +15447,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15500,8 +15457,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15510,12 +15467,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15524,21 +15481,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Flatten FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Flatten FAQs</h2>
       </div>
 
       <div class="fk-flatten-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-flatten-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-flatten-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-flatten-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-flatten-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>What happens to form fields after flattening?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -15546,8 +15503,8 @@ try {
             All entered form data is rendered as permanent vector content, making it impossible to edit or alter.
           </div>
         </div>
-        <div class="fk-flatten-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-flatten-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-flatten-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-flatten-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Will flattening reduce document clarity?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -15558,19 +15515,19 @@ try {
       </div>
 `; },
     getRepairPdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the premier in-browser corrupted PDF repair tool. Analyze broken PDF binary structures, recover orphaned page trees, rebuild corrupted XREF cross-reference tables, and restore unreadable documents.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Rebuild corrupted XREF cross-reference tables</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Recover damaged page objects and stream headers</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly recovery</span>
           </div>
@@ -15579,13 +15536,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">AUTOMATED DATA RECOVERY</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Repair Corrupted PDF Files Online</h2>
-        <p style="color: #64748B; font-size: 15px;">Recover unreadable, damaged, or truncated PDF files in your browser.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Repair Corrupted PDF Files Online</h2>
+        <p style="color: #737373; font-size: 15px;">Recover unreadable, damaged, or truncated PDF files in your browser.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Deep Binary Stream Reconstruction</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Deep Binary Stream Reconstruction</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our deep repair parser scans unreadable PDF files for intact text dictionaries and image blobs, generating a brand new valid PDF container so your document opens cleanly in any PDF reader.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -15658,9 +15615,9 @@ try {
 
   <g filter="url(#s2-sh-emerald)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">RECOVERY LOG</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">RECOVERY LOG</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#059669"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -15677,14 +15634,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Recover Broken XREF Tables & Lost Pages</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Recover Broken XREF Tables & Lost Pages</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Fixes files corrupted by interrupted downloads, faulty email attachments, or disk errors by reconstructing missing cross-reference tables and byte-offset indices.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% In-Memory File Recovery</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% In-Memory File Recovery</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Damaged corporate files are parsed strictly in local browser memory without uploading to cloud servers.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -15703,18 +15660,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#047857" opacity="0.14"/>
 
   <g filter="url(#s3-sh-emerald)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#059669"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#047857"/>
     <circle cx="158" cy="126" r="3" fill="#A7F3D0"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#059669"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#ECFDF5" stroke="#A7F3D0"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -15731,7 +15688,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-emerald)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#ECFDF5"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#059669" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -15745,24 +15702,24 @@ try {
       <div style="background: #ECFDF5; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #A7F3D0;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Repair a Damaged PDF for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Repair a Damaged PDF for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload damaged PDF:</strong> Drag and drop your broken or unreadable PDF file above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload damaged PDF:</strong> Drag and drop your broken or unreadable PDF file above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Deep structural scan:</strong> WebAssembly analyzes the file stream to extract intact data.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Deep structural scan:</strong> WebAssembly analyzes the file stream to extract intact data.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Rebuild PDF container:</strong> Generates a clean XREF table and repaired dictionary.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Rebuild PDF container:</strong> Generates a clean XREF table and repaired dictionary.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #059669; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download restored PDF:</strong> Save your fixed document and open it in any viewer.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download restored PDF:</strong> Save your fixed document and open it in any viewer.</span>
             </li>
           </ul>
         </div>
@@ -15772,24 +15729,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#A7F3D0" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#ECFDF5" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#ECFDF5" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#ECFDF5" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#ECFDF5" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#059669"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -15797,9 +15754,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#059669" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#059669"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#059669"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -15814,7 +15771,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Repair — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Repair — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -15825,8 +15782,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Automated Diagnosis</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Detects and repairs syntax errors and broken trailers automatically.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Automated Diagnosis</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Detects and repairs syntax errors and broken trailers automatically.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15836,8 +15793,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#059669"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">High Recovery Rate</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Recovers maximum readable text, graphics, and page structures.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">High Recovery Rate</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Recovers maximum readable text, graphics, and page structures.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15848,8 +15805,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15858,8 +15815,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15868,12 +15825,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -15882,21 +15839,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #059669; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Repair FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Repair FAQs</h2>
       </div>
 
       <div class="fk-repair-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-repair-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-repair-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-repair-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-repair-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can FileKit repair completely corrupted files?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -15904,8 +15861,8 @@ try {
             As long as portions of the PDF stream contain salvageable data, FileKit will reconstruct valid pages.
           </div>
         </div>
-        <div class="fk-repair-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-repair-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-repair-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-repair-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Is there any fee to repair large files?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -15916,19 +15873,19 @@ try {
       </div>
 `; },
     getOrganizePdfSeoHtml() { return `
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
+      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
         <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the most intuitive in-browser PDF organizer. Drag and drop page thumbnails to reorder, delete unwanted pages, rotate orientations, and insert blank pages seamlessly.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Visual thumbnail drag-and-drop page reordering</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>Delete, duplicate, and rotate individual pages</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #1E293B;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>100% private in-browser WebAssembly processing</span>
           </div>
@@ -15937,13 +15894,13 @@ try {
 
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">VISUAL PAGE MANAGER</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0F172A; margin-bottom: 10px;">Organize PDF Pages Online The Easy Way</h2>
-        <p style="color: #64748B; font-size: 15px;">Sort, delete, and rearrange pages in any PDF document with instant visual feedback.</p>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Organize PDF Pages Online The Easy Way</h2>
+        <p style="color: #737373; font-size: 15px;">Sort, delete, and rearrange pages in any PDF document with instant visual feedback.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Drag-and-Drop Page Grid</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Drag-and-Drop Page Grid</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Rearrange page sequence by simply dragging thumbnails into place. Hover over any thumbnail to delete or duplicate pages with a single click.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -15965,7 +15922,7 @@ try {
 
     <!-- Card 1 -->
     <g transform="translate(18, 48)">
-      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F7F7F7" stroke="#D4D4D4" stroke-width="1.5"/>
       <rect x="8" y="8" width="25" height="4" rx="2" fill="#4F46E5"/>
       <text x="32" y="70" fill="#4F46E5" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 1</text>
     </g>
@@ -15980,20 +15937,20 @@ try {
 
     <!-- Card 3 -->
     <g transform="translate(178, 48)">
-      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
-      <text x="32" y="70" fill="#64748B" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 3</text>
+      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F7F7F7" stroke="#D4D4D4" stroke-width="1.5"/>
+      <text x="32" y="70" fill="#737373" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 3</text>
     </g>
 
     <!-- Card 4 -->
     <g transform="translate(18, 142)">
-      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
-      <text x="32" y="70" fill="#64748B" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 4</text>
+      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F7F7F7" stroke="#D4D4D4" stroke-width="1.5"/>
+      <text x="32" y="70" fill="#737373" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 4</text>
     </g>
 
     <!-- Card 5 -->
     <g transform="translate(98, 142)">
-      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
-      <text x="32" y="70" fill="#64748B" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 5</text>
+      <rect x="0" y="0" width="65" height="80" rx="4" fill="#F7F7F7" stroke="#D4D4D4" stroke-width="1.5"/>
+      <text x="32" y="70" fill="#737373" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">Page 5</text>
     </g>
 
     <!-- Delete Drop Target -->
@@ -16028,9 +15985,9 @@ try {
 
   <g filter="url(#s2-sh-indigo)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F8FAFC"/>
-    <line x1="100" y1="108" x2="400" y2="108" stroke="#E2E8F0" stroke-width="1.5"/>
-    <text x="120" y="94" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">BULK EDIT</text>
+    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
+    <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">BULK EDIT</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#4F46E5"/>
     <text x="350" y="92" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">ACTIVE</text>
 
@@ -16047,14 +16004,14 @@ try {
 </svg>
         </div>
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">Multi-Select & Bulk Operations</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Multi-Select & Bulk Operations</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Select multiple pages at once using Shift or Ctrl to batch-rotate, batch-delete, or extract designated sections into separate files.</p>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 14px;">100% Private In-Memory Organizing</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Private In-Memory Organizing</h3>
           <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Page rearrangement executes in memory without file transfers to remote servers.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -16073,18 +16030,18 @@ try {
   <ellipse cx="260" cy="350" rx="150" ry="16" fill="#4338CA" opacity="0.14"/>
 
   <g filter="url(#s3-sh-indigo)">
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#CBD5E1"/>
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#94A3B8"/>
+    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
+    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
 
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0F172A" stroke="#020617" stroke-width="2"/>
+    <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
     <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#4338CA"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
     <rect x="185" y="160" width="95" height="6" rx="3" fill="#4F46E5"/>
-    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E2E8F0"/>
-    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E2E8F0"/>
+    <rect x="185" y="172" width="150" height="4" rx="2" fill="#E5E5E5"/>
+    <rect x="185" y="180" width="130" height="4" rx="2" fill="#E5E5E5"/>
 
     <rect x="185" y="196" width="150" height="42" rx="6" fill="#EEF2FF" stroke="#C7D2FE"/>
     <path d="M 198 217 L 204 223 L 216 211" stroke="#4F46E5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -16101,7 +16058,7 @@ try {
   </g>
 
   <g filter="url(#s3-shd-indigo)" transform="translate(360, 95)">
-    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="35" cy="35" r="32" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="2"/>
     <circle cx="35" cy="35" r="26" fill="#EEF2FF"/>
     <path d="M 24 35 L 32 43 L 48 27" stroke="#4F46E5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -16115,28 +16072,28 @@ try {
       <div style="background: #EEF2FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #C7D2FE;">
         <div>
           <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 24px;">How To Organize PDF Pages for Free</h2>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Organize PDF Pages for Free</h2>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
             
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the organizer box above.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF file into the organizer box above.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Drag to reorder:</strong> Move page thumbnails into your desired sequence.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Drag to reorder:</strong> Move page thumbnails into your desired sequence.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Delete or rotate:</strong> Remove unwanted pages or rotate individual sheets.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Delete or rotate:</strong> Remove unwanted pages or rotate individual sheets.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Click Save Changes:</strong> In-browser WebAssembly compiles your new page order.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Save Changes:</strong> In-browser WebAssembly compiles your new page order.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
               <span style="width: 28px; height: 28px; border-radius: 14px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #334155; line-height: 1.65;"><strong>Download organized PDF:</strong> Save your perfectly structured document.</span>
+              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download organized PDF:</strong> Save your perfectly structured document.</span>
             </li>
           </ul>
         </div>
@@ -16146,24 +16103,24 @@ try {
   <ellipse cx="295" cy="255" rx="48" ry="8" fill="#C7D2FE" opacity="0.8"/>
 
   <g>
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
 
-    <path d="M 75 195 L 68 242" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0F172A"/>
+    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
 
-    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0F172A"/>
-    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0F172A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0F172A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0F172A" stroke-width="4"/>
+    <circle cx="106" cy="182" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
+    <circle cx="146" cy="178" r="19" fill="#EEF2FF" stroke="#0A0A0A" stroke-width="4"/>
+    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
+    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
 
-    <path d="M 126 206 Q 133 218 142 206" fill="#0F172A" stroke="#0F172A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
 
-    <path d="M 160 180 Q 185 165 210 150" stroke="#0F172A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 160 180 Q 185 165 210 150" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
     <g transform="translate(205, 140) rotate(35)">
       <rect x="0" y="0" width="10" height="35" rx="3" fill="#4F46E5"/>
-      <polygon points="0,35 5,45 10,35" fill="#0F172A"/>
+      <polygon points="0,35 5,45 10,35" fill="#0A0A0A"/>
       <circle cx="5" cy="5" r="2.5" fill="#FFFFFF"/>
     </g>
   </g>
@@ -16171,9 +16128,9 @@ try {
   <g transform="translate(230, 85)">
     <rect x="0" y="0" width="115" height="155" rx="6" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
     <rect x="10" y="12" width="45" height="5" rx="2.5" fill="#4F46E5"/>
-    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#CBD5E1"/>
-    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#CBD5E1"/>
+    <rect x="10" y="26" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="34" width="95" height="3.5" rx="1.75" fill="#D4D4D4"/>
+    <rect x="10" y="42" width="75" height="3.5" rx="1.75" fill="#D4D4D4"/>
 
     <rect x="10" y="115" width="55" height="18" rx="3" fill="#4F46E5"/>
     <text x="37" y="127" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8" font-weight="900" text-anchor="middle">READY</text>
@@ -16188,7 +16145,7 @@ try {
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">Free PDF Organizer — Quick & Easy</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF Organizer — Quick & Easy</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
@@ -16199,8 +16156,8 @@ try {
           <path d="M 15 15 H 25 M 15 19 H 25 M 15 23 H 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Visual Thumbnail Grid</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Crisp previews of every single page make sorting easy.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Visual Thumbnail Grid</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Crisp previews of every single page make sorting easy.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -16210,8 +16167,8 @@ try {
           <circle cx="20" cy="20" r="4" fill="#4F46E5"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Instant Page Removal</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Discard cover pages or blank sheets with one click.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant Page Removal</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Discard cover pages or blank sheets with one click.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -16222,8 +16179,8 @@ try {
           <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Memory Privacy</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero server storage — documents and data are processed locally inside your browser.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -16232,8 +16189,8 @@ try {
           <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Sub-Second WASM Speed</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Lightning fast client-side execution with zero remote upload waiting time.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -16242,12 +16199,12 @@ try {
           <rect x="10" y="12" width="18" height="13" rx="2" fill="#00A896"/>
           <rect x="12" y="14" width="14" height="9" rx="1" fill="#CCFBF1"/>
           <path d="M 8 27 H 30" stroke="#008F80" stroke-width="2" stroke-linecap="round"/>
-          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0F172A"/>
+          <rect x="23" y="18" width="8" height="13" rx="2" fill="#0A0A0A"/>
           <rect x="25" y="20" width="4" height="8" rx="0.5" fill="#FFFFFF"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Universal Device Support</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Works seamlessly on Mac, Windows, Linux, iOS, iPadOS, and Android.</p>
           </div>
         </div>
         <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -16256,21 +16213,21 @@ try {
           <path d="M 15 20 C 12 16 8 16 8 20 C 8 24 12 24 15 20 C 18 16 22 16 22 20 C 22 24 18 24 15 20 Z" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg></div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Unlimited Free Usage</h4>
-            <p style="font-size: 14px; color: #64748B; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Usage</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily usage caps, or watermarks added to your documents.</p>
           </div>
         </div>
       </div>
 
       <div style="text-align: center; margin-bottom: 40px;">
         <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0F172A;">PDF Organize FAQs</h2>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Organize FAQs</h2>
       </div>
 
       <div class="fk-organize-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
         
-        <div class="fk-organize-faq-item active" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-organize-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-organize-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-organize-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Can I combine pages from multiple PDFs?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -16278,8 +16235,8 @@ try {
             Yes! You can add additional files directly to the organizer grid to merge and interleave pages.
           </div>
         </div>
-        <div class="fk-organize-faq-item" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-organize-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <div class="fk-organize-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-organize-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
             <span>Does reordering alter page formatting?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
