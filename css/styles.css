@@ -33568,8 +33568,8 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
 }
 
 .prot-root .prot-clean-input-box:focus-within {
-  border-color: #0066FF !important;
-  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.12) !important;
+  border-color: #111827 !important;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.12) !important;
 }
 
 .prot-root .prot-clean-input-icon {
@@ -33578,7 +33578,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   display: flex !important;
   align-items: center !important;
   pointer-events: none !important;
-  color: #9CA3AF !important;
+  color: #6B7280 !important;
 }
 
 .prot-root .prot-clean-input {
@@ -53721,14 +53721,14 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     border: none !important;
     font-size: 12px !important;
     font-weight: 500 !important;
-    color: #64748B !important;
+    color: #4B5563 !important;
     background: transparent !important;
   }
 
   body #app-view .prot-root .prot-tab.is-active,
   .prot-root .prot-tab.is-active {
     background: #FFFFFF !important;
-    color: #0F172A !important;
+    color: #111827 !important;
     font-weight: 600 !important;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1) !important;
   }
@@ -53780,8 +53780,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .prot-root .prot-clean-input-box:focus-within,
   .prot-root .prot-clean-input-box:focus-within {
-    border-color: #0066FF !important;
-    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.12) !important;
+    border-color: #111827 !important;
+    box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.12) !important;
   }
 
   body #app-view .prot-root .prot-clean-input-icon,
@@ -53791,7 +53791,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: flex !important;
     align-items: center !important;
     pointer-events: none !important;
-    color: #9CA3AF !important;
+    color: #6B7280 !important;
   }
 
   body #app-view .prot-root .prot-clean-input,
@@ -53928,10 +53928,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: none !important;
   }
 
-  /* Primary Action Button: Vibrant Blue Reference */
+  /* Primary Action Button: Pure Black CTA */
   body #app-view .prot-root #prot-studio-run,
   .prot-root #prot-studio-run {
-    background: #0066FF !important;
+    background: #111827 !important;
     color: #FFFFFF !important;
     border: none !important;
     border-radius: 8px !important;
@@ -53939,10 +53939,15 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     min-height: 46px !important;
     font-size: 15px !important;
     font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(17, 24, 39, 0.18) !important;
     margin-top: 4px !important;
     margin-bottom: 0 !important;
     transition: all 0.15s ease !important;
+  }
+
+  body #app-view .prot-root #prot-studio-run:hover:not(:disabled),
+  .prot-root #prot-studio-run:hover:not(:disabled) {
+    background: #000000 !important;
   }
 
   body #app-view .prot-root #prot-studio-run:disabled,
