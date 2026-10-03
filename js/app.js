@@ -4141,19 +4141,12 @@ try {
     document.getElementById('app-home-brand-btn')?.addEventListener('click', () => showApp('Home'));
     document.getElementById('app-brand-text-btn')?.addEventListener('click', () => showApp('Home'));
     document.getElementById('app-workspace-title')?.addEventListener('click', () => showApp('Home'));
-    document.getElementById('app-topbar-back-btn')?.addEventListener('click', () => showApp('Home'));
     document.getElementById('app-exit-home')?.addEventListener('click', () => showHome());
 
     document.getElementById('app-getpro-btn')?.addEventListener('click', () => {
       if (window.FK_Auth) window.FK_Auth.openPricingModal();
     });
-    document.getElementById('app-topbar-pro-btn')?.addEventListener('click', () => {
-      if (window.FK_Auth) window.FK_Auth.openPricingModal();
-    });
     document.getElementById('app-login-btn')?.addEventListener('click', () => {
-      if (window.FK_Auth) window.FK_Auth.openAuthModal('login');
-    });
-    document.getElementById('app-topbar-user-btn')?.addEventListener('click', () => {
       if (window.FK_Auth) window.FK_Auth.openAuthModal('login');
     });
 
@@ -5531,7 +5524,7 @@ try {
 
       const _wt = document.getElementById('app-workspace-title');
       if (_wt) {
-        const toolTitle = (tool.id === 'pdf-protect' ? 'Protect' : (tool.id === 'pdf-unlock' ? 'Unlock' : (tool.id === 'pdf-flatten' ? 'Flatten' : (FF.ToolUX?.for(tool)?.title || tool.name))));
+        const toolTitle = FF.ToolUX?.for(tool)?.title || tool.name;
         _wt.innerHTML = `<button class="app-breadcrumb-home-btn" id="app-breadcrumb-home-btn" type="button" title="Back to App Home">Home</button><span class="app-breadcrumb-sep">›</span><span class="app-topbar-tool-title">${toolTitle}</span>`;
         document.getElementById('app-breadcrumb-home-btn')?.addEventListener('click', (e) => {
           e.preventDefault();

@@ -396,28 +396,9 @@
 
       if (!this.state.isLoggedIn) {
         topbarRight.innerHTML = `
-          <button type="button" class="app-topbar-pro-btn" id="app-topbar-pro-btn" title="Upgrade to Pro" aria-label="Upgrade to Pro">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
-            </svg>
-          </button>
-          <button type="button" class="app-topbar-user-btn" id="app-topbar-user-btn" title="Account" aria-label="Account">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </button>
           <button type="button" class="fk-topbar-pricing-btn" id="app-upgrade-trigger">Pricing</button>
           <button type="button" class="app-login-btn" id="app-login-btn">Log In</button>
         `;
-        document.getElementById('app-topbar-pro-btn')?.addEventListener('click', () => {
-          if (window.FF?.app?.showPricing) {
-            window.FF.app.showPricing();
-          } else {
-            this.openPricingModal();
-          }
-        });
-        document.getElementById('app-topbar-user-btn')?.addEventListener('click', () => this.openAuthModal('login'));
         document.getElementById('app-upgrade-trigger')?.addEventListener('click', () => {
           if (window.FF?.app?.showPricing) {
             window.FF.app.showPricing();
