@@ -53519,41 +53519,15 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     font-size: 10.5px !important;
   }
 
+  /* Security Specification Box: Hidden on mobile protect sheet */
   body #app-view .prot-root .cpdf-benchmark-est-box,
   .prot-root .cpdf-benchmark-est-box {
-    padding: 4px 10px !important;
-    margin: 0 0 4px 0 !important;
-    flex-shrink: 0 !important;
-  }
-
-  body #app-view .prot-root .cpdf-benchmark-est-title,
-  .prot-root .cpdf-benchmark-est-title {
-    font-size: 10px !important;
-  }
-
-  body #app-view .prot-root .cpdf-benchmark-est-metrics,
-  .prot-root .cpdf-benchmark-est-metrics {
-    margin: 1px 0 2px 0 !important;
-  }
-
-  body #app-view .prot-root .cpdf-benchmark-est-new,
-  .prot-root .cpdf-benchmark-est-new {
-    font-size: 12px !important;
-  }
-
-  body #app-view .prot-root .cpdf-benchmark-est-pct,
-  .prot-root .cpdf-benchmark-est-pct {
-    font-size: 10px !important;
-  }
-
-  body #app-view .prot-root .cpdf-benchmark-track,
-  .prot-root .cpdf-benchmark-track {
-    height: 3px !important;
+    display: none !important;
   }
 
   body #app-view .prot-root #prot-studio-run,
   .prot-root #prot-studio-run {
-    margin-top: 4px !important;
+    margin-top: 8px !important;
     margin-bottom: 0 !important;
     flex-shrink: 0 !important;
     height: 44px !important;
