@@ -13079,7 +13079,8 @@ footer button,
 
 @media (max-width: 640px) {
   .sp-tools-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
   }
   .sp-extension-banner {
     flex-direction: column !important;
@@ -20120,11 +20121,11 @@ body #app-view .app-dropzone-hero { display: flex; flex-direction: column; align
 }
 
 @media (max-width: 640px) {
-  body #app-view aside.app-sidebar-rail { width: 56px !important; min-width: 56px !important; }
-  body #app-view .app-topbar-brand-zone { width: 56px !important; min-width: 56px !important; }
-  body #app-view .app-main-content { margin-left: 56px !important; }
-  body #app-view #app-canvas.app-canvas { padding: 16px 16px 36px 16px !important; }
-  body #app-view .sp-tools-grid { grid-template-columns: 1fr !important; }
+  body #app-view aside.app-sidebar-rail { display: none !important; width: 0 !important; min-width: 0 !important; }
+  body #app-view .app-topbar-brand-zone { width: 52px !important; min-width: 52px !important; }
+  body #app-view .app-main-content { margin-left: 0 !important; }
+  body #app-view #app-canvas.app-canvas { padding: 12px 14px 72px 14px !important; }
+  body #app-view .sp-tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
   body #app-view .sp-section-header { flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }
 }
 
@@ -47901,49 +47902,64 @@ body #app-view .rail-item.active {
    EXACT EXPORT PANEL MATCH (1-to-1 Pixel Fidelity with User Mockup)
    ══════════════════════════════════════════════════════════════════════════════ */
 
-.scan-benchmark-panel,
-.conv-root .scan-benchmark-panel,
-.scan-tool .scan-benchmark-panel,
-#scan-benchmark-panel {
-  background: #FFFFFF !important;
-  border-left: 1px solid #E5EAF2 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  align-items: center !important;
-  height: 100% !important;
-  width: 380px !important;
-  min-width: 380px !important;
-  max-width: 380px !important;
-  padding: 24px 28px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  box-sizing: border-box !important;
-  z-index: 20 !important;
+@media (min-width: 769px) {
+  .scan-benchmark-panel,
+  .conv-root .scan-benchmark-panel,
+  .scan-tool .scan-benchmark-panel,
+  #scan-benchmark-panel {
+    background: #FFFFFF !important;
+    border-left: 1px solid #E5EAF2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100% !important;
+    width: 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
+    padding: 24px 28px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    z-index: 20 !important;
+  }
+
+  .scan-benchmark-panel .cpdf-benchmark-panel-inner,
+  .conv-root .scan-benchmark-panel .cpdf-benchmark-panel-inner,
+  .scan-tool .scan-benchmark-panel .cpdf-benchmark-panel-inner,
+  .scan-tool .cpdf-benchmark-panel-inner,
+  #scan-benchmark-panel .cpdf-benchmark-panel-inner {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: stretch !important;
+    gap: 7px !important;
+    width: 100% !important;
+    max-width: 280px !important;
+    margin: auto !important;
+    box-sizing: border-box !important;
+  }
 }
 
-.scan-benchmark-panel .cpdf-benchmark-panel-inner,
-.conv-root .scan-benchmark-panel .cpdf-benchmark-panel-inner,
-.scan-tool .scan-benchmark-panel .cpdf-benchmark-panel-inner,
-.scan-tool .cpdf-benchmark-panel-inner,
-#scan-benchmark-panel .cpdf-benchmark-panel-inner {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  align-items: stretch !important;
-  gap: 7px !important;
-  width: 100% !important;
-  max-width: 280px !important;
-  margin: auto !important;
-  box-sizing: border-box !important;
+.mobile-sheet-drag-handle,
+.mobile-sheet-toggle-btn,
+.scan-benchmark-card-sub {
+  display: none !important;
 }
 
-/* Header */
 .scan-exact-header {
   display: flex !important;
   align-items: center !important;
+  justify-content: space-between !important;
   gap: 10px !important;
   margin-bottom: 2px !important;
+}
+
+.scan-exact-header-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
 }
 
 .scan-exact-icon {
@@ -51857,12 +51873,22 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   /* ══════════════════════════════════════════════════
      1. HIDE DESKTOP SIDEBAR — FREE UP 76px WIDTH
      ══════════════════════════════════════════════════ */
+  body #app-view aside.app-sidebar-rail,
+  body aside.app-sidebar-rail,
+  aside.app-sidebar-rail,
   .app-sidebar-rail {
     display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
   }
 
+  body #app-view .app-main-content,
+  body .app-main-content,
   .app-main-content {
     margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* ══════════════════════════════════════════════════
@@ -51871,29 +51897,85 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   .app-topbar {
     height: calc(52px + env(safe-area-inset-top)) !important;
     padding-top: env(safe-area-inset-top) !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
   }
 
+  body #app-view .app-topbar-brand-zone,
   .app-topbar-brand-zone {
-    width: 52px !important;
+    width: 48px !important;
+    min-width: 48px !important;
     height: calc(52px + env(safe-area-inset-top)) !important;
     padding-top: env(safe-area-inset-top) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   .app-topbar-content {
     height: 52px !important;
-    padding: 0 16px !important;
+    padding: 0 10px 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .app-topbar-left {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
   }
 
   .app-topbar-page-title {
-    font-size: 15px !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    color: #111827 !important;
+  }
+
+  .app-topbar-divider {
+    font-size: 12px !important;
+    opacity: 0.4 !important;
+    flex-shrink: 0 !important;
   }
 
   .app-brand-name {
-    font-size: 15px !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
   }
 
-  /* Hide the filter bar from topbar center on mobile
-     (it becomes a standalone sticky row below) */
+  .app-topbar-right {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  /* Hide Pricing button in app topbar on mobile to eliminate clutter */
+  .fk-topbar-pricing-btn,
+  #app-upgrade-trigger {
+    display: none !important;
+  }
+
+  .app-login-btn {
+    height: 30px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Hide the filter bar from topbar center on mobile */
   .app-topbar-center {
     display: none !important;
   }
@@ -51905,12 +51987,22 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   }
 
   /* ══════════════════════════════════════════════════
-     3. APP CANVAS — OFFSET FROM SLIM TOPBAR
+     3. APP CANVAS — OFFSET FROM SLIM TOPBAR (NO GAP)
      ══════════════════════════════════════════════════ */
+  body #app-view .app-layout-wrapper {
+    margin-top: calc(52px + env(safe-area-inset-top)) !important;
+  }
+
+  body #app-view #app-canvas.app-canvas,
+  body #app-view #app-canvas.app-canvas:has(#app-home-view:not([hidden])),
   .app-canvas {
-    padding-top: calc(52px + env(safe-area-inset-top)) !important;
-    /* Bottom padding to avoid tab bar overlap */
-    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px) !important;
+    padding-top: 10px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    /* Bottom padding to avoid permanent tab bar overlap */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
   }
 
   /* ══════════════════════════════════════════════════
@@ -51924,7 +52016,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     z-index: 150 !important;
     background: #ffffff !important;
     border-bottom: 1px solid #E5E5E5 !important;
-    padding: 10px 16px !important;
+    padding: 8px 12px !important;
     gap: 8px !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -51958,91 +52050,166 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   #sp-home-filter-bar button.active,
   #sp-home-filter-bar button[aria-selected="true"],
   #sp-home-filter-bar [role="tab"][aria-selected="true"] {
-    background: #7C3AED !important;
+    background: #111827 !important;
     color: #ffffff !important;
-    border-color: #7C3AED !important;
+    border-color: #111827 !important;
     font-weight: 600 !important;
   }
 
   /* ══════════════════════════════════════════════════
-     5. TOOL GRID — 2 COLUMNS, BIGGER CARDS
+     5. TOOL GRID — 4 IN ONE ROW (NATIVE SQUIRCLE ICONS)
+        Matching Adobe Acrobat mobile & More Tools sheet
      ══════════════════════════════════════════════════ */
+  body #app-view .sp-tools-grid,
+  body .sp-tools-grid,
   .sp-tools-grid,
   .app-tools-container,
   #sp-popular-grid,
   #app-tools-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-    padding: 12px 16px !important;
     display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px 6px !important;
+    padding: 8px 4px 18px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  /* Tool cards — finger-friendly */
+  /* Native App Icon Card: icon on top, name centered below, transparent base */
+  body #app-view .sp-card,
+  body .sp-card,
+  .sp-card,
   .tool-card {
-    min-height: 80px !important;
-    padding: 14px 12px !important;
-    border-radius: 12px !important;
-    -webkit-tap-highlight-color: transparent;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 4px 2px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent !important;
+    gap: 0 !important;
+    text-align: center !important;
   }
 
+  body #app-view .sp-card:active,
+  body .sp-card:active,
+  .sp-card:active,
   .tool-card:active {
-    transform: scale(0.97) !important;
-    transition: transform 80ms ease !important;
+    transform: scale(0.92) !important;
+    transition: transform 80ms cubic-bezier(0.32, 0.72, 0, 1) !important;
   }
 
+  /* Squircle icon container (52x52px, 14px radius, soft elevation) */
+  body #app-view .sp-card-icon,
+  body .sp-card-icon,
+  .sp-card-icon,
   .tool-card .card-icon {
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 10px !important;
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    max-width: 52px !important;
+    border-radius: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto 6px !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
   }
 
-  .tool-card .card-icon svg,
-  .tool-card .card-icon img {
-    width: 22px !important;
-    height: 22px !important;
+  body #app-view .sp-card-icon svg,
+  body .sp-card-icon svg,
+  .sp-card-icon svg,
+  .tool-card .card-icon svg {
+    width: 24px !important;
+    height: 24px !important;
   }
 
-  .card-copy b,
+  /* Tool Name Centered Below Icon (11px, 2 lines clamp) */
+  body #app-view .sp-card-name,
+  body .sp-card-name,
+  .sp-card-name,
   .tool-card .tool-name,
-  .card-copy strong {
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
-    line-height: 1.3 !important;
-  }
-
-  .card-copy small {
+  .card-copy b {
     font-size: 11px !important;
-    display: none !important; /* Hide subtitle on mobile — not enough space */
+    font-weight: 500 !important;
+    color: #374151 !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 !important;
+    padding: 0 2px !important;
+    width: 100% !important;
+    justify-content: center !important;
   }
 
-  /* Favorite toggle — hide on mobile, not needed */
-  .favorite-toggle {
+  .card-copy small,
+  .favorite-toggle,
+  .sp-crown-icon {
     display: none !important;
   }
 
   /* ══════════════════════════════════════════════════
-     6. SECTION HEADERS — COMPACT
+     6. SECTION HEADERS — COMPACT & NATIVE
      ══════════════════════════════════════════════════ */
+  body #app-view .sp-section,
   .sp-section {
     padding: 0 !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 16px !important;
   }
 
+  body #app-view .sp-section-header,
   .sp-section-header {
-    padding: 16px 16px 10px !important;
+    padding: 8px 6px 4px !important;
+    margin-bottom: 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-direction: row !important;
   }
 
+  body #app-view .sp-section-title-wrap,
+  .sp-section-title-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  body #app-view .sp-section-heading,
   .sp-section-heading {
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
+    color: #111827 !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 !important;
   }
 
   .sp-section-desc {
     display: none !important;
   }
 
+  body #app-view .sp-section-badge,
   .sp-section-badge {
     font-size: 11px !important;
+    background: #F3F4F6 !important;
+    color: #6B7280 !important;
+    border-radius: 20px !important;
+    padding: 2px 8px !important;
+    font-weight: 500 !important;
   }
 
   /* ══════════════════════════════════════════════════
@@ -52089,7 +52256,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   }
 
   /* ══════════════════════════════════════════════════
-     8. BOTTOM TAB BAR — MOBILE NAVIGATION
+     8. ADOBE-GRADE MOBILE DOCK & BOTTOM SHEET
      ══════════════════════════════════════════════════ */
   .mobile-tab-bar {
     display: flex !important;
@@ -52097,18 +52264,24 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    height: calc(56px + env(safe-area-inset-bottom)) !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
-    background: rgba(255, 255, 255, 0.94) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
     border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
-    z-index: 300 !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03) !important;
+    z-index: 600 !important;
     box-sizing: border-box;
+    align-items: center !important;
+    justify-content: space-around !important;
   }
 
+  /* Bottom toolbar is permanent across ALL mobile views (home, dropzone, and active tools) */
+
   .mtab {
-    flex: 1 !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -52116,34 +52289,912 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     gap: 3px !important;
     font-size: 10px !important;
     font-weight: 500 !important;
-    color: #8C8C8C !important;
+    color: #4B5563 !important;
     background: none !important;
     border: none !important;
-    padding: 6px 4px !important;
-    min-height: 44px !important;
+    padding: 5px 2px !important;
+    height: 100% !important;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent !important;
-    transition: color 0.15s ease;
+    transition: color 0.15s ease, transform 0.1s ease;
     font-family: inherit !important;
   }
 
+  .mtab span {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    letter-spacing: -0.01em;
+  }
+
   .mtab svg {
-    stroke: #8C8C8C;
-    transition: stroke 0.15s ease;
+    stroke: #374151;
+    transition: stroke 0.15s ease, transform 0.15s ease;
     flex-shrink: 0;
   }
 
   .mtab.active {
-    color: #7C3AED !important;
+    color: #111827 !important;
+    font-weight: 600 !important;
   }
 
   .mtab.active svg {
-    stroke: #7C3AED !important;
+    stroke: #111827 !important;
+    transform: translateY(-1px);
   }
 
   .mtab:active {
-    transform: scale(0.91) !important;
-    transition: transform 80ms ease !important;
+    transform: scale(0.92) !important;
+    transition: transform 80ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+
+  /* ══════════════════════════════════════════════════
+     8b. NATIVE SPRING BOTTOM SHEET ("More Tools" Popover)
+     ══════════════════════════════════════════════════ */
+  .mobile-sheet-overlay {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1000 !important;
+    pointer-events: none;
+    transition: visibility 0.28s ease;
+  }
+
+  .mobile-sheet-overlay:not([hidden]) {
+    pointer-events: auto;
+  }
+
+  .mobile-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.46);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .mobile-sheet-overlay.active .mobile-sheet-backdrop {
+    opacity: 1;
+  }
+
+  .mobile-sheet-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 82dvh;
+    background: #FFFFFF;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  .mobile-sheet-overlay.active .mobile-sheet-container {
+    transform: translateY(0);
+  }
+
+  .mobile-sheet-handle-bar {
+    width: 100%;
+    padding: 10px 0 6px;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+
+  .mobile-sheet-pill {
+    width: 40px;
+    height: 4.5px;
+    background: #D1D5DB;
+    border-radius: 3px;
+  }
+
+  .mobile-sheet-header {
+    padding: 4px 20px 14px;
+    flex-shrink: 0;
+  }
+
+  .mobile-sheet-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    margin: 0 0 4px !important;
+    letter-spacing: -0.02em;
+  }
+
+  .mobile-sheet-sub {
+    font-size: 12.5px !important;
+    color: #4B5563 !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+  }
+
+  .mobile-sheet-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px 8px !important;
+    padding: 8px 16px 16px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-height: 60vh;
+  }
+
+  .msheet-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    background: none !important;
+    border: none !important;
+    padding: 4px 2px !important;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: transform 0.1s ease;
+  }
+
+  .msheet-item:active {
+    transform: scale(0.92) !important;
+  }
+
+  .msheet-icon-box {
+    width: 58px !important;
+    height: 58px !important;
+    border-radius: 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 6px !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .msheet-label {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    text-align: center !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.01em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Pastel Squircle Tints matching Adobe Acrobat mobile */
+  .msheet-tint-purple  { background: #F5F3FF !important; }
+  .msheet-tint-blue    { background: #EEF2FF !important; }
+  .msheet-tint-cyan    { background: #ECFEFF !important; }
+  .msheet-tint-green   { background: #F0FDF4 !important; }
+  .msheet-tint-pink    { background: #FFF1F2 !important; }
+  .msheet-tint-teal    { background: #F0FDFA !important; }
+  .msheet-tint-magenta { background: #FDF2F8 !important; }
+  .msheet-tint-yellow  { background: #FEF3C7 !important; }
+  .msheet-tint-peach   { background: #FFF7ED !important; }
+  .msheet-tint-slate   { background: #F1F5F9 !important; }
+  .msheet-tint-violet  { background: #FAF5FF !important; }
+  .msheet-tint-neutral { background: #F3F4F6 !important; }
+
+  /* ══════════════════════════════════════════════════
+     8c. VERTICAL DUAL-PANE TOOL WORKSTATION (MOBILE)
+     Zero Overshadowing · Canvas Above + Sheet Below
+     ══════════════════════════════════════════════════ */
+  body.ff-tool-active {
+    overflow: hidden !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+  }
+
+  body.ff-tool-active #app-view {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  /* Exactly bounded between slim topbar (52px) and native dock (56px) */
+  body.ff-tool-active #app-view .app-layout-wrapper,
+  body.ff-tool-active .app-layout-wrapper {
+    margin-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
+    margin-bottom: 0 !important;
+    height: calc(100dvh - 52px - 56px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100dvh - 52px - 56px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.ff-tool-active #app-view .app-main-content,
+  body.ff-tool-active #app-view .app-canvas,
+  body.ff-tool-active .app-main-content,
+  body.ff-tool-active .app-canvas {
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.ff-tool-active #app-workspace-tool-view,
+  body.ff-tool-active #app-tool-stage,
+  body.ff-tool-active .cpdf-benchmark-body {
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Workstation Vertical Stacking */
+  body #app-view .cpdf-benchmark-workstation,
+  .conv-root .cpdf-benchmark-workstation,
+  .org-root .cpdf-benchmark-workstation,
+  .cpdf-benchmark-workstation {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #FFFFFF !important;
+    margin: 0 !important;
+  }
+
+  /* 1. TOP PANE: Canvas / Document Preview Stage (~40%) */
+  body #app-view .cpdf-benchmark-stage,
+  .conv-root .cpdf-benchmark-stage,
+  .org-root .cpdf-benchmark-stage,
+  .cpdf-benchmark-stage,
+  .scan-result-stage,
+  .org-result-stage {
+    flex: 0 0 40% !important;
+    height: 40% !important;
+    min-height: 0 !important;
+    max-height: 40% !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    padding: 6px 12px !important;
+    box-sizing: border-box !important;
+    background: #8E9AA8 !important;
+    overflow: hidden !important;
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  /* Centered Paper Sheet */
+  body #app-view .cpdf-benchmark-paper,
+  body #app-view #comp-studio-thumb-box,
+  .cpdf-benchmark-paper,
+  .org-res-paper,
+  .cpdf-benchmark-stage .org-stage-canvas-viewport {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body #app-view .cpdf-benchmark-paper canvas,
+  body #app-view .cpdf-benchmark-paper img,
+  body #app-view .cpdf-benchmark-paper video,
+  body #app-view #comp-studio-thumb-box img,
+  body #app-view #comp-studio-thumb-box canvas,
+  .cpdf-benchmark-paper canvas,
+  .cpdf-benchmark-paper img,
+  .cpdf-benchmark-paper video,
+  .org-res-paper canvas,
+  .org-res-paper img,
+  .org-res-paper video {
+    max-height: calc(40vh - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
+    object-fit: contain !important;
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 6px !important;
+    width: auto !important;
+    height: auto !important;
+    display: block !important;
+    margin: auto !important;
+  }
+
+  /* Multi-Paper Batch Carousel */
+  body #app-view .cpdf-multi-stage-carousel,
+  .cpdf-multi-stage-carousel {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+    padding: 6px 12px !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-height: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  body #app-view .cpdf-multi-paper-card,
+  .cpdf-multi-paper-card {
+    flex: 0 0 120px !important;
+    width: 120px !important;
+    height: 165px !important;
+    scroll-snap-align: center !important;
+    padding: 6px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  body #app-view .cpdf-multi-paper-thumb,
+  .cpdf-multi-paper-thumb {
+    height: 105px !important;
+  }
+
+  /* 2. BOTTOM PANE: Configuration Sheet (~60%) */
+  body #app-view .scan-benchmark-panel,
+  body #app-view #comp-benchmark-panel,
+  body #app-view .cpdf-benchmark-panel,
+  body #app-view .cpdf-benchmark-panel.scan-result-panel,
+  .scan-benchmark-panel,
+  #comp-benchmark-panel,
+  .conv-root .cpdf-benchmark-panel,
+  .org-root .cpdf-benchmark-panel,
+  .cpdf-benchmark-panel,
+  .scan-result-panel,
+  .org-result-panel {
+    flex: 1 1 60% !important;
+    height: 60% !important;
+    min-height: 0 !important;
+    max-height: 60% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    border-left: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 20 !important;
+    box-sizing: border-box !important;
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  /* Drawer Collapsed (Peek) Mode - Full Stage Inspection */
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage {
+    flex: 1 1 calc(100% - 76px) !important;
+    height: calc(100% - 76px) !important;
+    max-height: calc(100% - 76px) !important;
+  }
+
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage canvas,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage img,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage video,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage canvas,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage img,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage video {
+    max-height: calc(100dvh - 52px - 56px - 96px) !important;
+  }
+
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed #comp-benchmark-panel,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .scan-benchmark-panel,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel,
+  .cpdf-benchmark-workstation.is-sheet-collapsed #comp-benchmark-panel,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .scan-benchmark-panel,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel {
+    flex: 0 0 76px !important;
+    height: 76px !important;
+    max-height: 76px !important;
+    min-height: 76px !important;
+    overflow: hidden !important;
+    cursor: pointer;
+  }
+
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel-inner,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel-inner {
+    padding: 0 14px 10px !important;
+    overflow: hidden !important;
+  }
+
+  .cpdf-benchmark-workstation.is-sheet-collapsed .mobile-sheet-chevron {
+    transform: rotate(180deg) !important;
+  }
+
+  /* Configuration Panel Scrollable Body (Zero Overshadowing) */
+  body #app-view .scan-benchmark-panel .cpdf-benchmark-panel-inner,
+  body #app-view #comp-benchmark-panel .cpdf-benchmark-panel-inner,
+  .cpdf-benchmark-panel-inner {
+    flex: 1 1 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    padding: 12px 14px 32px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Result Panel Scrollable Body (Full Scroll Flow) */
+  body #app-view .scan-result-panel-top,
+  .scan-result-panel-top,
+  body #app-view .org-result-panel-content,
+  .org-result-panel-content {
+    flex: 1 1 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    padding: 14px 16px 64px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Result stat box and split buttons full width on mobile */
+  body #app-view .org-res-est-box,
+  .org-res-est-box,
+  body #app-view .org-split-dl-wrapper,
+  .org-split-dl-wrapper,
+  body #app-view .org-export-as-wrapper,
+  .org-export-as-wrapper,
+  body #app-view .org-utility-trio,
+  .org-utility-trio {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-sheet-drag-handle {
+    display: block !important;
+    width: 38px !important;
+    height: 4px !important;
+    background: #CBD5E1 !important;
+    border-radius: 9999px !important;
+    margin: 8px auto 6px auto !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+  }
+
+  .scan-exact-header {
+    margin-top: 0 !important;
+    margin-bottom: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+
+  .scan-exact-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  .mobile-sheet-toggle-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 30px !important;
+    height: 30px !important;
+    background: #F1F5F9 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    color: #475569 !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+    transition: background 0.15s ease !important;
+  }
+
+  .mobile-sheet-toggle-btn:active {
+    background: #E2E8F0 !important;
+  }
+
+  .mobile-sheet-chevron {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .scan-exact-title {
+    font-size: 16px !important;
+    margin: 0 !important;
+  }
+
+  .scan-exact-cards-stack {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 5px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .scan-exact-cards-stack .scan-benchmark-card {
+    height: auto !important;
+    min-height: 42px !important;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #FFFFFF !important;
+    box-sizing: border-box !important;
+  }
+
+  .scan-exact-cards-stack .scan-benchmark-card.is-active {
+    border: 1.5px solid #0A0A0A !important;
+    background: #FAFAFA !important;
+  }
+
+  .scan-exact-cards-stack .scan-benchmark-card.is-active .scan-benchmark-radio {
+    border-color: #0A0A0A !important;
+    background: #0A0A0A !important;
+  }
+
+  .scan-exact-cards-stack .scan-benchmark-card.is-active .scan-benchmark-radio-dot {
+    background: #FFFFFF !important;
+  }
+
+  .scan-benchmark-card-text {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    min-width: 0 !important;
+  }
+
+  .scan-exact-cards-stack .scan-benchmark-card-label {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0A0A0A !important;
+    line-height: 1.2 !important;
+  }
+
+  .scan-benchmark-card-sub {
+    display: block !important;
+    font-size: 10.5px !important;
+    font-weight: 450 !important;
+    color: #64748B !important;
+    line-height: 1.2 !important;
+  }
+
+  .scan-benchmark-card.is-active .scan-benchmark-card-sub {
+    color: #334155 !important;
+  }
+
+  .scan-segmented-settings-strip {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Dropdown popover right edge boundary safety */
+  .scan-segment-item:last-child .scan-custom-select-popover {
+    left: auto !important;
+    right: 0 !important;
+  }
+
+  .scan-exact-est-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 6px 10px !important;
+    margin-top: 1px !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+
+  .scan-exact-est-title {
+    font-size: 10.5px !important;
+  }
+
+  .scan-exact-est-metric {
+    font-size: 12px !important;
+  }
+
+  /* Primary Action CTA Bar */
+  .cpdf-benchmark-cta-btn,
+  .org-res-download-btn,
+  .cpdf-proc-btn,
+  body #app-view .conv-primary-cta,
+  body #app-view .scan-exact-cta,
+  .scan-exact-cta {
+    height: 44px !important;
+    min-height: 44px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    touch-action: manipulation;
+    margin-top: 6px !important;
+    margin-bottom: 2px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Professional Trust Micro-Footer (Never Cut Off) */
+  .cpdf-local-trust-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+    color: #64748B !important;
+    margin: 4px 0 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ══════════════════════════════════════════════════
+     CONVERT TOOL: Mobile Two-Pane Drawer Parity
+     ══════════════════════════════════════════════════ */
+  body #app-view .conv-root .conv-cards-stack,
+  .conv-root .conv-cards-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    gap: 7px !important;
+    margin-bottom: 8px !important;
+    padding-right: 2px !important;
+  }
+
+  body #app-view .conv-root #conv-cfg-cards-stack,
+  .conv-root #conv-cfg-cards-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body #app-view .conv-root .conv-primary-cta,
+  .conv-root .conv-primary-cta {
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .conv-trust-footnote {
+    margin: 5px 0 2px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .conv-root .cpdf-benchmark-panel-inner,
+  .conv-root .cpdf-benchmark-panel-inner {
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    padding: 10px 14px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .conv-stage-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-bottom: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .conv-stage-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  .conv-stage2-header {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    margin-bottom: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .conv-stage2-header-main {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .conv-stage2-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  .conv-stage2-header-top {
+    display: flex !important;
+    align-items: center !important;
+    margin-top: 4px !important;
+  }
+
+  .conv-choose-another-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    color: #2563EB !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 2px 0 6px 0 !important;
+  }
+
+  .conv-choose-another-btn svg {
+    stroke: #2563EB !important;
+  }
+
+  body #app-view .conv-root .conv-format-row,
+  .conv-root .conv-format-row {
+    min-height: 48px !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  body #app-view .conv-root .conv-format-row.is-active,
+  .conv-root .conv-format-row.is-active {
+    border: 1.5px solid #0A0A0A !important;
+    background: #FAFAFA !important;
+  }
+
+  body #app-view .conv-root .conv-config-row,
+  .conv-root .conv-config-row {
+    min-height: 52px !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  body #app-view .conv-root .conv-config-row.is-active,
+  .conv-root .conv-config-row.is-active {
+    border: 1.5px solid #0A0A0A !important;
+    background: #FAFAFA !important;
+  }
+
+
+
+  body #app-view .conv-root.is-sheet-collapsed .cpdf-benchmark-panel-inner,
+  .conv-root.is-sheet-collapsed .cpdf-benchmark-panel-inner {
+    margin: 0 !important;
+    padding: 0 14px 10px !important;
+    overflow: hidden !important;
+    justify-content: flex-start !important;
+  }
+
+  body #app-view .conv-root.is-sheet-collapsed .conv-cards-stack,
+  .conv-root.is-sheet-collapsed .conv-cards-stack,
+  body #app-view .conv-root.is-sheet-collapsed .conv-primary-cta,
+  .conv-root.is-sheet-collapsed .conv-primary-cta,
+  body #app-view .conv-root.is-sheet-collapsed .conv-stage2-header-top,
+  .conv-root.is-sheet-collapsed .conv-stage2-header-top,
+  body #app-view .conv-root.is-sheet-collapsed .conv-trust-footnote,
+  .conv-root.is-sheet-collapsed .conv-trust-footnote,
+  body #app-view .conv-root.is-sheet-collapsed .conv-apply-all-btn,
+  .conv-root.is-sheet-collapsed .conv-apply-all-btn {
+    display: none !important;
+  }
+
+  /* 3. Dropzone in Tool Workspace (Idle State) — Auto-Fits above persistent toolbar */
+  body #app-workspace-tool-view .drop-hero-box,
+  body.ff-tool-active .drop-hero-box,
+  body #app-view .cpdf-dropzone {
+    height: calc(100dvh - 52px - 56px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
+    max-height: calc(100dvh - 52px - 56px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px) !important;
+    min-height: 0 !important;
+    margin: 12px !important;
+    border: 1.5px dashed #CBD5E1 !important;
+    border-radius: 16px !important;
+    background: #F8FAFC !important;
+    padding: 20px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+
+  body #app-view .drop-illustration svg {
+    max-width: 160px !important;
+    height: auto !important;
+  }
+
+  body #app-view .drop-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    margin: 10px 0 !important;
+  }
+
+  body #app-view .select-files-main-btn {
+    height: 44px !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    padding: 0 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  body #app-view .drop-formats {
+    font-size: 11px !important;
+    color: #64748B !important;
+    margin-top: 10px !important;
+    line-height: 1.35 !important;
   }
 
   /* ══════════════════════════════════════════════════
@@ -54833,44 +55884,46 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
    CONVERT STUDIO PANEL — PHYSICAL PAPER FOLD ICONS & COMPLETE STAGE 1 + 2
    ========================================================================== */
 
-.conv-root .cpdf-benchmark-workstation {
-  display: grid !important;
-  grid-template-columns: 1fr 380px !important;
-  width: 100% !important;
-  min-height: calc(100vh - 64px) !important;
-  height: 100% !important;
-}
+@media (min-width: 769px) {
+  .conv-root .cpdf-benchmark-workstation {
+    display: grid !important;
+    grid-template-columns: 1fr 380px !important;
+    width: 100% !important;
+    min-height: calc(100vh - 64px) !important;
+    height: 100% !important;
+  }
 
-.conv-root .cpdf-benchmark-stage {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-}
+  .conv-root .cpdf-benchmark-stage {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+  }
 
-.conv-root .cpdf-benchmark-panel {
-  width: 380px !important;
-  min-width: 380px !important;
-  max-width: 380px !important;
-  padding: 24px 28px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  align-items: center !important;
-  box-sizing: border-box !important;
-  min-height: 480px !important;
-}
+  .conv-root .cpdf-benchmark-panel {
+    width: 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
+    padding: 24px 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    min-height: 480px !important;
+  }
 
-.conv-root .cpdf-benchmark-panel-inner {
-  width: 100% !important;
-  max-width: 320px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  margin: auto !important;
+  .conv-root .cpdf-benchmark-panel-inner {
+    width: 100% !important;
+    max-width: 320px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin: auto !important;
+  }
 }
 
 /* Stage 1 Header */

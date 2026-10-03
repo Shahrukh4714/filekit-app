@@ -9614,15 +9614,23 @@ ${linksOverlay}    </div>
 
             <!-- Right Panel: Studio Panel with Options (Scan Parity) -->
             <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="comp-benchmark-panel" aria-label="Compression Settings">
+              <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
               <div class="cpdf-benchmark-panel-inner">
-                <!-- Header: Green squircle + Title -->
+                <!-- Header: Green squircle + Title + Mobile Collapse Chevron -->
                 <div class="scan-exact-header">
-                  <div class="scan-exact-icon" style="background: #00C466 !important;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
-                    </svg>
+                  <div class="scan-exact-header-left">
+                    <div class="scan-exact-icon" style="background: #00C466 !important;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
+                      </svg>
+                    </div>
+                    <h2 class="scan-exact-title">${panelTitle}</h2>
                   </div>
-                  <h2 class="scan-exact-title">${panelTitle}</h2>
+                  <button type="button" class="mobile-sheet-toggle-btn" aria-label="Toggle options drawer">
+                    <svg class="mobile-sheet-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
                 </div>
 
                 <!-- Format Option Cards Stack (Clean 38px cards with only Recommended badge) -->
@@ -9634,6 +9642,7 @@ ${linksOverlay}    </div>
                     </div>
                     <div class="scan-benchmark-card-text">
                       <span class="scan-benchmark-card-label">Medium</span>
+                      <span class="scan-benchmark-card-sub">Optimal balance of size & quality</span>
                     </div>
                     <div class="scan-benchmark-card-right">
                       <span class="scan-benchmark-pill-rec">Recommended</span>
@@ -9647,6 +9656,7 @@ ${linksOverlay}    </div>
                     </div>
                     <div class="scan-benchmark-card-text">
                       <span class="scan-benchmark-card-label">Light</span>
+                      <span class="scan-benchmark-card-sub">Minor compression, maximum sharpness</span>
                     </div>
                   </div>
 
@@ -9657,6 +9667,7 @@ ${linksOverlay}    </div>
                     </div>
                     <div class="scan-benchmark-card-text">
                       <span class="scan-benchmark-card-label">Heavy</span>
+                      <span class="scan-benchmark-card-sub">Maximum compression, smallest size</span>
                     </div>
                   </div>
 
@@ -9668,6 +9679,7 @@ ${linksOverlay}    </div>
                       </div>
                       <div class="scan-benchmark-card-text">
                         <span class="scan-benchmark-card-label">Exact Target Size</span>
+                        <span class="scan-benchmark-card-sub">Set a specific target file size limit</span>
                       </div>
                     </div>
                     ${selectedTier === 'custom' ? `
@@ -9917,6 +9929,30 @@ ${linksOverlay}    </div>
 
       const normBox = container.querySelector('#comp-normalize-loudness');
       if (normBox) normBox.onchange = () => { normalizeLoudness = !!normBox.checked; };
+
+      // Mobile Bottom Sheet Collapse/Expand Drawer Toggle (Smallpdf Parity)
+      const workstation = container.querySelector('.cpdf-benchmark-workstation');
+      const sheetToggleBtn = container.querySelector('.mobile-sheet-toggle-btn');
+      const toggleDrawer = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (workstation) workstation.classList.toggle('is-sheet-collapsed');
+      };
+      if (sheetToggleBtn) sheetToggleBtn.onclick = toggleDrawer;
+      if (sheetDragHandle) sheetDragHandle.onclick = toggleDrawer;
+
+      const headerEl = container.querySelector('.scan-exact-header');
+      if (headerEl) {
+        headerEl.onclick = (e) => {
+          if (workstation && workstation.classList.contains('is-sheet-collapsed')) {
+            e.preventDefault();
+            e.stopPropagation();
+            workstation.classList.remove('is-sheet-collapsed');
+          }
+        };
+      }
 
       // Universal live analyzed estimate across all file types & reactive controls
       runUniversalEstimate();
@@ -13269,6 +13305,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     /* ── Annotation engine (all real tools) ── */
     let pageScale = 1;         // CSS px per user-space point (page render scale)
     let annots = {};           // annots[pageIdx] = [annot, ...] in page user-space coords
+    window.__filekitAnnots = annots;
     let selAnnot = null;       // selected annot id on the current page
     let draft = null;          // in-progress drag { kind, start, cur, points, el }
     let cropPct = null;        // committed crop margins { top, right, bottom, left } in page % — applied to every page proportionally
@@ -13964,9 +14001,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     function addAnnot(annot) {
       const idx = (typeof annot.pageIdx === 'number') ? annot.pageIdx : (page - 1);
       if (!annots[idx]) annots[idx] = [];
-      annot.id = 'a' + (annotSeq++);
+      if (!annot.id) annot.id = 'a' + (annotSeq++);
       annot.pageIdx = idx;
       annots[idx].push(annot);
+      window.__filekitAnnots = annots;
       renderAnnots();
       return annot;
     }
@@ -17958,6 +17996,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
     /* ── Render all annotations for all pages ── */
     function renderAnnots() {
+      const P = pageScale > 0 ? pageScale : 1;
       container.querySelectorAll('.etxt-page').forEach(pageEl => {
         const pNum = Number(pageEl.dataset.page) || 1;
         const layer = pageEl.querySelector('.etxt-annot-layer');
@@ -17987,6 +18026,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               if (a.kind === 'signature' || a.type === 'stamp' || a.type === 'img') {
                 const pop = document.createElement('div');
                 pop.className = 'etxt-annot-popover';
+                if ((a.y * P) < 42) {
+                  pop.classList.add('etxt-annot-popover--below');
+                }
                 if (a.kind === 'signature') {
                   pop.innerHTML = `
                     <button type="button" class="etxt-annot-pop-btn" data-annot-act="edit" aria-label="Change Signature">🖊️ Change</button>
@@ -17995,6 +18037,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                     <button type="button" class="etxt-annot-swatch" data-annot-color="#1E3A8A" style="background:#1E3A8A;" aria-label="Navy Blue"></button>
                     <button type="button" class="etxt-annot-swatch" data-annot-color="#334155" style="background:#334155;" aria-label="Charcoal"></button>
                     <span class="etxt-annot-pop-sep"></span>
+                    <button type="button" class="etxt-annot-pop-btn" data-annot-act="date" aria-label="Add Date">📅 Date</button>
                     <button type="button" class="etxt-annot-pop-btn" data-annot-act="dup" aria-label="Duplicate Signature">Duplicate</button>
                     <button type="button" class="etxt-annot-pop-btn etxt-annot-pop-btn--del" data-annot-act="del" aria-label="Delete Signature">✕</button>
                   `;
@@ -20982,8 +21025,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         if (popBtn) {
           e.preventDefault();
           e.stopPropagation();
-          const list = annots[page - 1] || [];
-          const a = list.find(x => x.id === selAnnot);
+          const a = findAnnotById(selAnnot);
           if (!a) return;
           const act = popBtn.dataset.annotAct;
           if (act === 'del') {
@@ -20991,9 +21033,31 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             removeAnnot(selAnnot);
             selAnnot = null;
             renderAnnots();
+          } else if (act === 'date') {
+            pushUndo();
+            const d = new Date();
+            const dateStr = d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+            const pageIdx = (typeof a.pageIdx === 'number') ? a.pageIdx : (page - 1);
+            const dateAnnot = {
+              id: Math.random().toString(36).slice(2, 9),
+              type: 'type',
+              text: dateStr,
+              color: a.color || '#0F172A',
+              size: 14,
+              font: 'Helvetica',
+              x: Math.min(curPageW - 90, a.x + a.w + 14),
+              y: a.y + Math.max(0, (a.h - 22) / 2),
+              w: 80,
+              h: 22,
+              pageIdx: pageIdx
+            };
+            addAnnot(dateAnnot);
+            renderAnnots();
+            toast(`Date stamp added: ${dateStr}`);
           } else if (act === 'dup') {
             pushUndo();
             const dup = { ...JSON.parse(JSON.stringify(a)), id: Math.random().toString(36).slice(2, 9), x: a.x + 20, y: a.y + 20 };
+            dup.pageIdx = (typeof a.pageIdx === 'number') ? a.pageIdx : (page - 1);
             addAnnot(dup);
             selAnnot = dup.id;
             renderAnnots();
@@ -21003,6 +21067,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           } else if (popBtn.dataset.annotColor) {
             pushUndo();
             a.color = popBtn.dataset.annotColor;
+            if (a.sigType === 'type') {
+              a.dataUrl = rasterizeTypedSignature(a);
+            }
             renderAnnots();
           }
           return;
@@ -21036,7 +21103,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               };
               resizeDrag = { id: a.id, dir, startX: startU.x, startY: startU.y, orig: bb, geom, snap: snapshotState(), moved: false };
             } else {
-              resizeDrag = { id: a.id, startX: startU.x, startY: startU.y, initW: a.w, initH: a.h, ratio: a.w / Math.max(1, a.h), snap: snapshotState(), moved: false };
+              resizeDrag = { id: a.id, startX: startU.x, startY: startU.y, initW: a.w, initH: a.h, initSize: a.size || 26, ratio: a.w / Math.max(1, a.h), snap: snapshotState(), moved: false };
             }
           }
           return;
@@ -21131,7 +21198,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           if (saved) {
             pushUndo();
             const newAnnot = {
-              id: Math.random().toString(36).slice(2, 9),
+              id: 'a' + (annotSeq++),
               type: 'stamp',
               kind: 'signature',
               sigType: saved.type,
@@ -21143,13 +21210,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               x: targetPos.x - (saved.w || 150) / 2,
               y: targetPos.y - (saved.h || 56) / 2,
               w: saved.w || 150,
-              h: saved.h || 56
+              h: saved.h || 56,
+              pageIdx: page - 1
             };
-            addAnnot(newAnnot);
             selAnnot = newAnnot.id;
+            addAnnot(newAnnot);
             renderAnnots();
-            activateTool('select');
-            toast('Signature placed! Drag to reposition, use corner handles to resize.');
+            if (!e.shiftKey) {
+              activateTool('select');
+              toast('Signature placed! Drag to reposition, use corner handles to resize.');
+            } else {
+              toast('Signature placed! Click to place another, or switch tool.');
+            }
           } else {
             openAcrobatSignatureModal(targetPos);
           }
@@ -21205,6 +21277,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           if (Math.abs(dw) > 1) resizeDrag.moved = true;
           a.w = Math.max(30, resizeDrag.initW + dw);
           a.h = Math.max(15, a.w / resizeDrag.ratio);
+          if (a.kind === 'signature' && a.sigType === 'type') {
+            const baseSize = resizeDrag.initSize || 26;
+            a.size = Math.max(10, Math.min(96, Math.round(baseSize * (a.w / Math.max(1, resizeDrag.initW)))));
+            a.dataUrl = rasterizeTypedSignature(a);
+          }
           renderAnnots();
           return;
         }
@@ -21363,7 +21440,20 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               const dx = e.key === 'ArrowLeft' ? -nudge : e.key === 'ArrowRight' ? nudge : 0;
               const dy = e.key === 'ArrowUp' ? -nudge : e.key === 'ArrowDown' ? nudge : 0;
               pushUndo();
-              if (Array.isArray(a.points)) a.points = a.points.map((p) => [p[0] + dx, p[1] + dy]);
+              if (Array.isArray(a.points)) {
+                a.points = a.points.map((p) => {
+                  if (Array.isArray(p)) return [p[0] + dx, p[1] + dy];
+                  if (p && typeof p.x === 'number') return { ...p, x: p.x + dx, y: p.y + dy };
+                  return p;
+                });
+              }
+              if (Array.isArray(a.strokePaths)) {
+                a.strokePaths = a.strokePaths.map((st) => st.map((p) => {
+                  if (Array.isArray(p)) return [p[0] + dx, p[1] + dy];
+                  if (p && typeof p.x === 'number') return { ...p, x: p.x + dx, y: p.y + dy };
+                  return p;
+                }));
+              }
               if (typeof a.x1 === 'number') { a.x1 += dx; a.y1 += dy; a.x2 += dx; a.y2 += dy; }
               if (typeof a.x === 'number') a.x += dx;
               if (typeof a.y === 'number') a.y += dy;
@@ -21383,7 +21473,21 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               pushUndo();
               const dup = JSON.parse(JSON.stringify(a));
               dup.id = Math.random().toString(36).slice(2, 9);
-              if (Array.isArray(dup.points)) dup.points = dup.points.map((p) => [p[0] + 14, p[1] + 14]);
+              dup.pageIdx = (typeof a.pageIdx === 'number') ? a.pageIdx : (page - 1);
+              if (Array.isArray(dup.points)) {
+                dup.points = dup.points.map((p) => {
+                  if (Array.isArray(p)) return [p[0] + 14, p[1] + 14];
+                  if (p && typeof p.x === 'number') return { ...p, x: p.x + 14, y: p.y + 14 };
+                  return p;
+                });
+              }
+              if (Array.isArray(dup.strokePaths)) {
+                dup.strokePaths = dup.strokePaths.map((st) => st.map((p) => {
+                  if (Array.isArray(p)) return [p[0] + 14, p[1] + 14];
+                  if (p && typeof p.x === 'number') return { ...p, x: p.x + 14, y: p.y + 14 };
+                  return p;
+                }));
+              }
               if (typeof dup.x1 === 'number') { dup.x1 += 14; dup.y1 += 14; dup.x2 += 14; dup.y2 += 14; }
               if (typeof dup.x === 'number') dup.x += 14;
               if (typeof dup.y === 'number') dup.y += 14;
@@ -21454,16 +21558,51 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     ];
     let sigFontIdx = 0;
 
+    function rasterizeTypedSignature(annot) {
+      if (!annot || !annot.text) return null;
+      try {
+        const dpr = 3;
+        const baseW = Math.max(120, annot.w || 150);
+        const baseH = Math.max(48, annot.h || 56);
+        const c = document.createElement('canvas');
+        c.width = Math.round(baseW * dpr);
+        c.height = Math.round(baseH * dpr);
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+        const fontFam = annot.font || "'Dancing Script', cursive";
+        const fontSize = Math.round((annot.size || 26) * dpr);
+        ctx.font = `${fontSize}px ${fontFam}`;
+        ctx.fillStyle = annot.color || '#0F172A';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(annot.text, c.width / 2, c.height / 2);
+        return c.toDataURL('image/png');
+      } catch { return null; }
+    }
+
     function getSavedSignature() {
       try {
-        return JSON.parse(localStorage.getItem('filekit.saved-signature') || 'null');
+        const single = JSON.parse(localStorage.getItem('filekit.saved-signature') || 'null');
+        if (single) return single;
+        const plural = JSON.parse(localStorage.getItem('filekit.saved-signatures') || 'null');
+        if (Array.isArray(plural) && plural.length > 0) return plural[0];
+        return null;
       } catch { return null; }
     }
 
     function saveUserSignature(sig) {
+      if (!sig) return;
       try {
         localStorage.setItem('filekit.saved-signature', JSON.stringify(sig));
-      } catch { /* noop */ }
+      } catch (err) {
+        try {
+          const lightSig = { ...sig };
+          if (lightSig.dataUrl && lightSig.dataUrl.length > 200000) {
+            delete lightSig.dataUrl;
+          }
+          localStorage.setItem('filekit.saved-signature', JSON.stringify(lightSig));
+        } catch { /* noop */ }
+      }
     }
 
     /* ── Adobe Acrobat-Style Signature Studio Modal (Complete State Flow) ── */
@@ -21482,14 +21621,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (!dlg) return;
 
       const saved = getSavedSignature();
-      let activeTab = editingAnnot ? (editingAnnot.sigType || 'type') : 'type';
+      let activeTab = editingAnnot ? (editingAnnot.sigType || 'type') : (saved?.type || 'type');
       let activeColor = editingAnnot?.color || saved?.color || '#0F172A';
       let sigFontIdx = 0;
       if (editingAnnot?.font) {
         const found = SIG_FONTS.findIndex(f => f === editingAnnot.font || f.includes(editingAnnot.font));
         if (found >= 0) sigFontIdx = found;
       }
-      let typedText = editingAnnot ? (editingAnnot.text || '') : (saved?.type === 'type' && saved.text ? saved.text : (saved?.name || 'Shahrukh Khan'));
+      let typedText = editingAnnot ? (editingAnnot.text || '') : (saved?.type === 'type' && saved.text ? saved.text : (saved?.name || ''));
       let penStyle = 'fountain';
       let strokeWidth = 2.8;
       let strokePaths = editingAnnot?.strokePaths ? [...editingAnnot.strokePaths] : (saved?.type === 'draw' && saved.strokePaths ? [...saved.strokePaths] : []);
@@ -21763,15 +21902,36 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         updateSaveBtnState();
       };
 
+      // Update live font chip previews with user's typed name
+      const updateStyleChipPreviews = () => {
+        const raw = (nameInput?.value || '').trim();
+        const preview = raw || 'Signature';
+        dlg.querySelectorAll('.acrobat-sig-style-chip').forEach(chip => {
+          chip.textContent = preview;
+        });
+      };
+
       // Update active signature style
       const applyStyleAndColor = () => {
         if (nameInput) {
           nameInput.style.fontFamily = SIG_FONTS[sigFontIdx];
           nameInput.style.color = activeColor;
         }
+        updateStyleChipPreviews();
         redrawCanvas();
       };
       applyStyleAndColor();
+
+      // Blanket keyboard isolation: stop hotkey propagation to canvas & editor
+      dlg.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeModal();
+        }
+      });
+      dlg.addEventListener('keyup', (e) => e.stopPropagation());
+      dlg.addEventListener('keypress', (e) => e.stopPropagation());
 
       // Ink Color switching
       dlg.querySelectorAll('.acrobat-sig-ink-dot').forEach(dot => {
@@ -21857,6 +22017,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       nameInput.addEventListener('keypress', (e) => e.stopPropagation());
       nameInput.addEventListener('input', (e) => {
         e.stopPropagation();
+        updateStyleChipPreviews();
         updateSaveBtnState();
       });
 
@@ -21876,6 +22037,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         e.stopPropagation();
         if (activeTab === 'type') {
           nameInput.value = '';
+          updateStyleChipPreviews();
           nameInput.focus();
         } else if (activeTab === 'draw') {
           strokePaths = [];
@@ -21936,19 +22098,37 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const processSignatureImage = (img) => {
         rawImgEl = img;
         if (removeWhiteBg) {
-          // Luminance alpha transparency pass
+          // Luminance alpha transparency pass with RGB un-premultiplication
+          const maxDim = 1200;
+          let tw = img.naturalWidth || 600;
+          let th = img.naturalHeight || 200;
+          if (tw > maxDim || th > maxDim) {
+            const scale = maxDim / Math.max(tw, th);
+            tw = Math.round(tw * scale);
+            th = Math.round(th * scale);
+          }
           const tCanvas = document.createElement('canvas');
-          tCanvas.width = img.naturalWidth || 600;
-          tCanvas.height = img.naturalHeight || 200;
+          tCanvas.width = tw;
+          tCanvas.height = th;
           const tCtx = tCanvas.getContext('2d');
-          tCtx.drawImage(img, 0, 0);
+          tCtx.drawImage(img, 0, 0, tw, th);
           const iData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height);
           const d = iData.data;
           for (let i = 0; i < d.length; i += 4) {
             const r = d[i], g = d[i+1], b = d[i+2];
             const lum = (r * 299 + g * 587 + b * 114) / 1000;
-            if (lum > 215) d[i+3] = 0;
-            else if (lum > 170) d[i+3] = Math.round((215 - lum) / 45 * 255);
+            if (lum > 215) {
+              d[i+3] = 0;
+            } else if (lum > 170) {
+              const alpha = Math.round((215 - lum) / 45 * 255);
+              d[i+3] = alpha;
+              const factor = alpha / 255;
+              if (factor > 0.01) {
+                d[i] = Math.min(255, Math.round(r * factor));
+                d[i+1] = Math.min(255, Math.round(g * factor));
+                d[i+2] = Math.min(255, Math.round(b * factor));
+              }
+            }
           }
           tCtx.putImageData(iData, 0, 0);
           imgDataUrl = tCanvas.toDataURL('image/png');
@@ -21959,6 +22139,59 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         imgWrap.hidden = false;
         uploadBox.hidden = true;
         updateSaveBtnState();
+      };
+
+      const getTrimmedDrawnSignature = () => {
+        try {
+          const { ctx, w, h } = getCanvasContext();
+          const dpr = window.devicePixelRatio || 2;
+          const sw = canvas.width, sh = canvas.height;
+          const imgData = ctx.getImageData(0, 0, sw, sh);
+          const d = imgData.data;
+          let minX = sw, minY = sh, maxX = -1, maxY = -1;
+          for (let y = 0; y < sh; y++) {
+            for (let x = 0; x < sw; x++) {
+              const a = d[(y * sw + x) * 4 + 3];
+              if (a > 15) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+          if (maxX < minX || maxY < minY) {
+            return { dataUrl: canvas.toDataURL('image/png'), w: 160, h: 60 };
+          }
+          const pad = Math.round(8 * dpr);
+          const cropX = Math.max(0, minX - pad);
+          const cropY = Math.max(0, minY - pad);
+          const cropW = Math.min(sw - cropX, (maxX - minX) + pad * 2);
+          const cropH = Math.min(sh - cropY, (maxY - minY) + pad * 2);
+
+          const tCan = document.createElement('canvas');
+          tCan.width = cropW;
+          tCan.height = cropH;
+          const tCtx = tCan.getContext('2d');
+          tCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+          const aspect = cropW / Math.max(1, cropH);
+          let targetW = 160;
+          let targetH = Math.round(targetW / aspect);
+          if (targetH > 90) {
+            targetH = 90;
+            targetW = Math.round(targetH * aspect);
+          }
+          targetW = Math.max(80, Math.min(260, targetW));
+          targetH = Math.max(30, Math.min(110, targetH));
+          return {
+            dataUrl: tCan.toDataURL('image/png'),
+            w: targetW,
+            h: targetH
+          };
+        } catch {
+          return { dataUrl: canvas.toDataURL('image/png'), w: 160, h: 60 };
+        }
       };
 
       uploadBox.onclick = () => fileInput.click();
@@ -22019,29 +22252,43 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             text: val,
             font: SIG_FONTS[sigFontIdx],
             color: activeColor,
-            w: Math.max(120, Math.min(240, val.length * 16)),
+            w: Math.max(120, Math.min(260, val.length * 16)),
             h: 56
           };
+          sigResult.dataUrl = rasterizeTypedSignature(sigResult);
         } else if (activeTab === 'draw') {
           if (!strokePaths.length) return;
+          const trimmed = getTrimmedDrawnSignature();
           sigResult = {
             type: 'draw',
             points: strokePaths.flat().map(getPt),
             strokePaths: strokePaths.map(st => st.map(getPt)),
             strokeWidth: strokeWidth,
             color: activeColor,
-            dataUrl: canvas.toDataURL('image/png'),
-            w: 160,
-            h: 60
+            dataUrl: trimmed.dataUrl,
+            w: trimmed.w || 160,
+            h: trimmed.h || 60
           };
         } else if (activeTab === 'image') {
           if (!imgDataUrl) return;
+          let imgAspect = 160 / 60;
+          if (rawImgEl) {
+            imgAspect = (rawImgEl.naturalWidth || 160) / Math.max(1, rawImgEl.naturalHeight || 60);
+          }
+          let imgW = 160;
+          let imgH = Math.round(imgW / imgAspect);
+          if (imgH > 100) {
+            imgH = 100;
+            imgW = Math.round(imgH * imgAspect);
+          }
+          imgW = Math.max(60, Math.min(260, imgW));
+          imgH = Math.max(30, Math.min(130, imgH));
           sigResult = {
             type: 'image',
             dataUrl: imgDataUrl,
             color: activeColor,
-            w: 160,
-            h: 60
+            w: imgW,
+            h: imgH
           };
         }
 
@@ -22064,12 +22311,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           editingAnnot.color = sigResult.color;
           editingAnnot.w = sigResult.w;
           editingAnnot.h = sigResult.h;
+          activateTool('select');
           selAnnot = editingAnnot.id;
+          renderAnnots();
         } else {
           const pos = targetPos || { x: curPageW / 2 - (sigResult.w || 150) / 2, y: curPageH / 2 - (sigResult.h || 56) / 2 };
           pushUndo();
           const newAnnot = {
-            id: Math.random().toString(36).slice(2, 9),
+            id: 'a' + (annotSeq++),
             type: 'stamp',
             kind: 'signature',
             sigType: sigResult.type,
@@ -22082,14 +22331,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             x: pos.x,
             y: pos.y,
             w: sigResult.w || 150,
-            h: sigResult.h || 56
+            h: sigResult.h || 56,
+            pageIdx: page - 1
           };
           addAnnot(newAnnot);
+          activateTool('select');
           selAnnot = newAnnot.id;
+          renderAnnots();
         }
-
-        renderAnnots();
-        activateTool('select');
         toast('Signature placed! Drag to reposition, use corner handles to resize.');
       };
     }
@@ -24960,7 +25209,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
     async function drawAnnot(doc, page, a, pw, ph) {
       const L = window.PDFLib;
-      const yFlip = (y) => ph - y;
+      let ox = 0, oy = 0;
+      try {
+        const crop = (typeof page.getCropBox === 'function') ? page.getCropBox() : null;
+        if (crop && typeof crop.x === 'number' && typeof crop.y === 'number') {
+          ox = crop.x;
+          oy = crop.y;
+        }
+      } catch { /* noop */ }
+      const yFlip = (y) => ph - y + oy;
+      const getX = (x) => x + ox;
       if (a.type === 'text') {
         const isBold = a.fontWeight === '700' || a.isBold;
         const isItalic = a.fontStyle === 'italic' || a.isItalic;
@@ -25137,15 +25395,23 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         });
       } else if (a.type === 'stamp') {
         if (a.kind === 'signature') {
-          if ((a.sigType === 'image' || a.sigType === 'draw') && a.dataUrl) {
-            const img = await embedImageData(doc, a.dataUrl);
+          let dataUrlToEmbed = a.dataUrl;
+          if (!dataUrlToEmbed && a.sigType === 'type' && a.text) {
+            dataUrlToEmbed = rasterizeTypedSignature(a);
+          }
+          if (dataUrlToEmbed) {
+            const img = await embedImageData(doc, dataUrlToEmbed);
             page.drawImage(img, { x: a.x, y: yFlip(a.y + a.h), width: a.w, height: a.h });
           } else if (a.points && a.points.length) {
-            const d = smoothPath((a.points || []).map(p => [a.x + p.x * a.w, yFlip(a.y + p.y * a.h)]));
+            const d = smoothPath((a.points || []).map(p => {
+              const px = (typeof p.x === 'number') ? p.x : (Array.isArray(p) ? p[0] : 0);
+              const py = (typeof p.y === 'number') ? p.y : (Array.isArray(p) ? p[1] : 0);
+              return [a.x + px * a.w, yFlip(a.y + py * a.h)];
+            }));
             page.drawSvgPath(d, {
               x: 0, y: 0,
               color: L.rgb(1, 1, 1), opacity: 0.001,
-              borderColor: a.color ? rgbOf(a.color) : L.rgb(0.06, 0.09, 0.16), borderWidth: 2.4, borderOpacity: 1,
+              borderColor: a.color ? rgbOf(a.color) : L.rgb(0.06, 0.09, 0.16), borderWidth: a.strokeWidth || 2.4, borderOpacity: 1,
               borderLineCap: 1, borderLineJoin: 1,
             });
           } else {
@@ -26549,8 +26815,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let pages = [];            // per-page { thumb, full } — real pdf.js renders
     let pdfDoc = null;         // live pdf.js document
     let docToken = 0;          // invalidates in-flight renders when a new file loads
+    let renderToken = 0;       // tracks active page render requests
     let pageW = 612;           // current page user-space size (for export math)
     let pageH = 792;
+    let pageScale = 1;
     /** @type {{id:string,page:number,x:number,y:number,label:string,kind:string,points?:number[][],color?:string,dataUrl?:string,style?:string}[]} */
     let marks = [];
     let markSeq = 0;
@@ -26587,7 +26855,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       return s.slice(0, max - 1 - ext.length) + '…' + ext;
     };
 
-    const loadJs = () => window.FF.util.loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
+    const _loadScript = (src, sri) => (window.FF?.util?.loadScript || window.FileKit?.U?.loadScript || window.U?.loadScript || ((s) => new Promise((r, j) => { const el = document.createElement('script'); el.src = s; el.onload = r; el.onerror = j; document.head.appendChild(el); })))(src, sri);
+    const loadJs = () => _loadScript('vendor/pdfjs.min.js', 'sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z')
       .then(() => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'; return window.pdfjsLib; });
 
     async function renderPageAt(i, scale) {
@@ -26733,7 +27002,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
         docToken++;
         renderWorkspace();
-        wireAsyncRenders();
+        renderFullPage();
+        renderThumbsAsync();
       } catch (err) {
         console.error('[Sign] load PDF', err);
         renderUpload();
@@ -27599,8 +27869,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       try {
         const base = await pdfDoc.getPage(page);
         const baseVp = base.getViewport({ scale: 1 });
-        curPageW = baseVp.width;
-        curPageH = baseVp.height;
+        pageW = baseVp.width;
+        pageH = baseVp.height;
         
         // Calculate fit scale based on viewport and zoom level
         const availH = Math.max(500, (window.innerHeight || 768) - 150);
@@ -27613,44 +27883,42 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const c = await renderPageAt(i, finalScale);
         if (myDoc !== docToken || myToken !== renderToken || !pages[i]) return;
         pages[i].full = c;
-        c.className = 'etxt-full-canvas';
-        const ph = container.querySelector('#etxt-page-ph') || container.querySelector('.etxt-full-canvas');
+        c.className = 'sign-page-canvas';
+        const ph = container.querySelector('#sign-page-ph') || container.querySelector('.sign-page-canvas');
         if (ph) ph.replaceWith(c);
         
-        const pageEl = container.querySelector('.etxt-page');
+        const pageEl = container.querySelector('#sign-page') || container.querySelector('.sign-page');
         if (pageEl) {
           pageEl.style.width = Math.round(baseVp.width * finalScale) + 'px';
           pageEl.style.height = Math.round(baseVp.height * finalScale) + 'px';
         }
-      } catch (err) { console.warn('[Edit] page render', err); }
+      } catch (err) { console.warn('[Sign] page render', err); }
     }
 
     function renderThumbsAsync() {
       if (!pdfDoc) return;
       pages.forEach((pg, i) => {
         if (pg.thumb) {
-          const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
+          const btn = container.querySelector(`.sign-thumb[data-page="${i + 1}"]`);
           if (btn && !btn.querySelector('canvas')) {
-            const num = btn.querySelector('.etxt-thumb-num');
-            if (num) btn.insertBefore(pg.thumb, num);
-            else btn.appendChild(pg.thumb);
+            const ph = btn.querySelector('.sign-thumb-ph');
+            if (ph) ph.replaceWith(pg.thumb);
+            else btn.insertBefore(pg.thumb, btn.firstChild);
           }
           return;
         }
         renderPageAt(i, 0.25).then(c => {
           if (!pages[i]) return;
           pages[i].thumb = c;
-          c.className = 'etxt-thumb-canvas';
-          const btn = container.querySelector(`.etxt-thumb[data-page="${i + 1}"]`);
+          c.className = 'sign-thumb-canvas';
+          const btn = container.querySelector(`.sign-thumb[data-page="${i + 1}"]`);
           if (btn) {
-            const ph = btn.querySelector('.etxt-thumb-ph');
-            if (ph) ph.remove();
-            const num = btn.querySelector('.etxt-thumb-num');
-            if (num) btn.insertBefore(c, num);
-            else btn.appendChild(c);
+            const ph = btn.querySelector('.sign-thumb-ph');
+            if (ph) ph.replaceWith(c);
+            else btn.insertBefore(c, btn.firstChild);
           }
         }).catch(err => {
-          console.warn('[Edit] thumb render error page', i + 1, err);
+          console.warn('[Sign] thumb render error page', i + 1, err);
         });
       });
     }
@@ -27662,7 +27930,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
     async function finishExport() {
       try {
-        await window.FF.util.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI');
+        await _loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI');
         const L = window.PDFLib;
         const src = new Uint8Array(await file.arrayBuffer());
         const doc = await L.PDFDocument.load(src, { ignoreEncryption: true });
@@ -30112,18 +30380,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const rightPanelContent = convStage === 2 ? `
         <!-- Stage 2 Header -->
         <div class="conv-stage2-header">
+          <div class="conv-stage2-header-main">
+            <div class="conv-stage2-header-left">
+              ${_brandIconLg(t)}
+              <div>
+                <h2 class="conv-stage-title" style="margin:0;font-size:16px;">Convert to ${_esc(t.label || t.out)}</h2>
+                <div style="font-size:12px;color:#737373;">.${(t.out || t.ext || '').toLowerCase()}</div>
+              </div>
+            </div>
+            <button type="button" class="mobile-sheet-toggle-btn" aria-label="Toggle options drawer">
+              <svg class="mobile-sheet-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+          </div>
           <div class="conv-stage2-header-top">
             <button type="button" class="conv-choose-another-btn" id="conv-back-to-formats">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              <span>&larr; Choose another format</span>
+              <span>Choose another format</span>
             </button>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-            ${_brandIconLg(t)}
-            <div>
-              <h2 class="conv-stage-title" style="margin:0;font-size:16px;">${_esc(t.label || t.out)}</h2>
-              <div style="font-size:12px;color:#737373;">.${(t.out || t.ext || '').toLowerCase()}</div>
-            </div>
           </div>
         </div>
 
@@ -30159,12 +30434,19 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       ` : `
         <!-- Stage 1 Header -->
         <div class="conv-stage-header">
-          <div class="conv-header-icon" style="background:#EF4444;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 16.15V18.85C11 21.1 10.1 22 7.85 22H5.15C2.9 22 2 21.1 2 18.85V16.15C2 13.9 2.9 13 5.15 13H7.85C10.1 13 11 13.9 11 16.15Z"/><path d="M22 15C22 18.87 18.87 22 15 22L16.05 20.25"/><path d="M2 9C2 5.13 5.13 2 9 2L7.95 3.75"/><path d="M17.5 11C19.9853 11 22 8.98528 22 6.5C22 4.01472 19.9853 2 17.5 2C15.0147 2 13 4.01472 13 6.5C13 8.98528 15.0147 11 17.5 11Z"/>
-            </svg>
+          <div class="conv-stage-header-left">
+            <div class="conv-header-icon" style="background:#0284C7;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 16.15V18.85C11 21.1 10.1 22 7.85 22H5.15C2.9 22 2 21.1 2 18.85V16.15C2 13.9 2.9 13 5.15 13H7.85C10.1 13 11 13.9 11 16.15Z"/><path d="M22 15C22 18.87 18.87 22 15 22L16.05 20.25"/><path d="M2 9C2 5.13 5.13 2 9 2L7.95 3.75"/><path d="M17.5 11C19.9853 11 22 8.98528 22 6.5C22 4.01472 19.9853 2 17.5 2C15.0147 2 13 4.01472 13 6.5C13 8.98528 15.0147 11 17.5 11Z"/>
+              </svg>
+            </div>
+            <h2 class="conv-stage-title">Convert to:</h2>
           </div>
-          <h2 class="conv-stage-title">Convert to:</h2>
+          <button type="button" class="mobile-sheet-toggle-btn" aria-label="Toggle options drawer">
+            <svg class="mobile-sheet-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
         </div>
 
         ${files.length > 1 ? `
@@ -30197,7 +30479,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           }).join('')}
         </div>
 
-        <!-- Convert CTA Button -->
+        <!-- Convert CTA Button (Smallpdf / Compress Parity) -->
         <button type="button" class="conv-primary-cta" id="conv-run">
           <span class="conv-btn-normal-content" style="display:inline-flex;align-items:center;gap:8px;">
             <span>${buttonLabel}</span>
@@ -30210,7 +30492,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         </button>
 
         <!-- Trust Footnote -->
-        <p class="conv-trust-footnote" style="margin-top:10px;font-size:11px;color:#94A3B8;text-align:center;">
+        <p class="conv-trust-footnote" style="margin:4px 0 6px;font-size:11px;color:#94A3B8;text-align:center;">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           100% local &middot; your files never leave this device
         </p>
@@ -30253,7 +30535,8 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
 
             <!-- RIGHT PANEL: Format selector -->
-            <div class="cpdf-benchmark-panel">
+            <div class="cpdf-benchmark-panel" id="cpdf-right-panel">
+              <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
               <div class="cpdf-benchmark-panel-inner">
                 ${rightPanelContent}
               </div>
@@ -30405,6 +30688,59 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           }
         });
       });
+
+      // Mobile Bottom Sheet Collapse/Expand Drawer Toggle (Smallpdf Parity)
+      const workstation = container.querySelector('.cpdf-benchmark-workstation');
+      const sheetToggleBtn = container.querySelector('.mobile-sheet-toggle-btn');
+      const sheetDragHandle = container.querySelector('.mobile-sheet-drag-handle');
+      const rightPanel = container.querySelector('#cpdf-right-panel');
+
+      const toggleDrawer = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (workstation) {
+          const isCollapsing = !workstation.classList.contains('is-sheet-collapsed');
+          workstation.classList.toggle('is-sheet-collapsed');
+          if (isCollapsing) {
+            const inner = workstation.querySelector('.cpdf-benchmark-panel-inner');
+            if (inner) inner.scrollTop = 0;
+          }
+        }
+      };
+      if (sheetToggleBtn) sheetToggleBtn.onclick = toggleDrawer;
+      if (sheetDragHandle) sheetDragHandle.onclick = toggleDrawer;
+
+      const headerStage1 = container.querySelector('.conv-stage-header');
+      if (headerStage1) {
+        headerStage1.onclick = (e) => {
+          if (workstation && workstation.classList.contains('is-sheet-collapsed')) {
+            e.preventDefault();
+            e.stopPropagation();
+            workstation.classList.remove('is-sheet-collapsed');
+          }
+        };
+      }
+      const headerStage2 = container.querySelector('.conv-stage2-header-main');
+      if (headerStage2) {
+        headerStage2.onclick = (e) => {
+          if (workstation && workstation.classList.contains('is-sheet-collapsed')) {
+            e.preventDefault();
+            e.stopPropagation();
+            workstation.classList.remove('is-sheet-collapsed');
+          }
+        };
+      }
+      if (rightPanel) {
+        rightPanel.onclick = (e) => {
+          if (workstation && workstation.classList.contains('is-sheet-collapsed')) {
+            e.preventDefault();
+            e.stopPropagation();
+            workstation.classList.remove('is-sheet-collapsed');
+          }
+        };
+      }
 
       // Run conversion
       container.querySelector('#conv-run')?.addEventListener('click', () => runConvert());

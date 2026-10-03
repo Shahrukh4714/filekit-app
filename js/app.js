@@ -3403,6 +3403,7 @@ try {
         'workflow-builder','scan-document','pdf-to-audio','pdf-to-zip','pdf-create',
         'gst-invoice','pos-billing','gst-filing-prep','pdf-workflow'
       ],
+      combine: ['pdf-merge'],
       image: ['image-hub'],
       qr: ['qr-hub']
     };
@@ -5156,6 +5157,7 @@ try {
         'edit': window.__ffMountEditText,
         'pdf-sign': window.__ffMountSign,
         'sign': window.__ffMountSign,
+        'sign-pdf': window.__ffMountSign,
         'pdf-compress': window.__ffMountCompress,
         'compress': window.__ffMountCompress,
         'pdf-merge': window.__ffMountMerge,
@@ -5513,6 +5515,7 @@ try {
 
       if (_appCvs) _appCvs.classList.add('ff-tool-active');
       if (_appMC)  _appMC.classList.add('ff-tool-active');
+      document.body.classList.add('ff-tool-active');
 
       const _appCC = document.getElementById('app-crumb-category');
       const _appCT = document.getElementById('app-crumb-tool');
@@ -7582,6 +7585,7 @@ try {
     const mc  = document.querySelector('.app-main-content');
     if (cvs) cvs.classList.remove('ff-tool-active');
     if (mc)  mc.classList.remove('ff-tool-active');
+    document.body.classList.remove('ff-tool-active');
     document.body.style.overflow = '';
   }
 
@@ -16358,6 +16362,26 @@ try {
    Runs after DOM is ready, only activates when .mobile-tab-bar exists.
    ========================================================================== */
 (function initMobileTabs() {
+  function openMoreSheet() {
+    var overlay = document.getElementById('mobile-more-overlay');
+    if (!overlay) return;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function() {
+      overlay.classList.add('active');
+    });
+  }
+
+  function closeMoreSheet() {
+    var overlay = document.getElementById('mobile-more-overlay');
+    if (!overlay || overlay.hidden) return;
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(function() {
+      overlay.hidden = true;
+    }, 280);
+  }
+
   function wire() {
     var tabs = document.querySelectorAll('.mtab');
     if (!tabs.length) return;
@@ -16366,17 +16390,123 @@ try {
       tab.addEventListener('click', function() {
         var task = tab.dataset.taskRail;
 
+        // If More Tools is tapped, slide up the spring bottom sheet
+        if (task === 'more' || tab.id === 'mobile-rail-more-btn') {
+          openMoreSheet();
+          return;
+        }
+
         // Sync active state on mobile tabs
         tabs.forEach(function(t) { t.classList.remove('active'); });
         tab.classList.add('active');
+
+        if (task === 'combine') {
+          if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool('pdf-merge', true);
+          } else {
+            location.hash = '#app/pdf-merge';
+          }
+          return;
+        }
 
         // Trigger the equivalent desktop rail item so all existing JS logic runs
         var railBtn = document.querySelector('.rail-item[data-task-rail="' + task + '"]');
         if (railBtn) {
           railBtn.click();
+        } else if (typeof openTool === 'function' && window.taskToolIds && window.taskToolIds[task]) {
+          openTool(window.taskToolIds[task][0], true);
         }
       });
     });
+
+    function clearActiveTabs() {
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+    }
+
+    window.addEventListener('hashchange', function() {
+      if (!location.hash || location.hash === '#app' || location.hash === '#') {
+        clearActiveTabs();
+      }
+    });
+
+    var homeBrandBtn = document.getElementById('app-home-brand-btn');
+    if (homeBrandBtn) {
+      homeBrandBtn.addEventListener('click', clearActiveTabs);
+    }
+    var homeBrandText = document.getElementById('app-brand-text-btn');
+    if (homeBrandText) {
+      homeBrandText.addEventListener('click', clearActiveTabs);
+    }
+    var overlay = document.getElementById('mobile-more-overlay');
+    var backdrop = document.getElementById('mobile-more-backdrop');
+    var container = document.getElementById('mobile-more-container');
+
+    if (backdrop) {
+      backdrop.addEventListener('click', closeMoreSheet);
+    }
+
+    // Touch swipe-down gesture to dismiss bottom sheet
+    if (container) {
+      var startY = 0;
+      var currentY = 0;
+      var isDragging = false;
+
+      container.addEventListener('touchstart', function(e) {
+        if (container.scrollTop > 5) return;
+        startY = e.touches[0].clientY;
+        isDragging = true;
+      }, { passive: true });
+
+      container.addEventListener('touchmove', function(e) {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        var diff = currentY - startY;
+        if (diff > 0) {
+          container.style.transform = 'translateY(' + diff + 'px)';
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchend', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        var diff = currentY - startY;
+        container.style.transform = '';
+        if (diff > 90) {
+          closeMoreSheet();
+        }
+      }, { passive: true });
+    }
+
+    // Handle tool item clicks inside bottom sheet
+    document.querySelectorAll('.msheet-item[data-tool-action]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var action = btn.dataset.toolAction;
+        closeMoreSheet();
+        if (action) {
+          window._navFromAppWorkspace = true;
+          if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
+            window.FF.app.openTool(action, true);
+          } else {
+            location.hash = '#app/' + action;
+          }
+          window._navFromAppWorkspace = false;
+        }
+      });
+    });
+
+    var browseAllBtn = document.getElementById('msheet-browse-all');
+    if (browseAllBtn) {
+      browseAllBtn.addEventListener('click', function() {
+        closeMoreSheet();
+        var drawer = document.getElementById('tool-drawer');
+        if (drawer) {
+          drawer.hidden = false;
+          drawer.classList.add('open');
+        } else if (typeof showApp === 'function') {
+          showApp('More');
+        }
+      });
+    }
 
     // Keep mobile tab active state in sync when rail items are clicked elsewhere
     var railItems = document.querySelectorAll('.rail-item[data-task-rail]');
