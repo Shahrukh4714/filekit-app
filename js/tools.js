@@ -32333,7 +32333,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     function renderConfigure() {
-      container.className = 'cpdf-root';
+      container.className = 'cpdf-root prot-root';
       container.classList.remove('spdf-shell');
       const fam = fileFamily(file);
       const entropy = computeEntropy(password);
@@ -32390,15 +32390,23 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
             <!-- Right Panel: Zero-Scroll Precision Studio Inspector -->
             <div class="cpdf-benchmark-panel">
+              <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
               <div class="cpdf-benchmark-panel-inner">
                 <!-- Top Header -->
-                <div class="cpdf-benchmark-header">
-                  <div class="cpdf-benchmark-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                <div class="cpdf-benchmark-header prot-stage-header">
+                  <div class="prot-stage-header-left">
+                    <div class="cpdf-benchmark-icon" style="background:#0D9488 !important;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                    </div>
+                    <h2 class="cpdf-benchmark-title">Protect</h2>
                   </div>
-                  <h2 class="cpdf-benchmark-title">Protect</h2>
+                  <button type="button" class="mobile-sheet-toggle-btn" aria-label="Toggle options drawer">
+                    <svg class="mobile-sheet-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
                 </div>
 
                 ${fam === 'image' ? `
@@ -32629,6 +32637,12 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                   </svg>
                 </button>
+
+                <!-- Trust Footnote -->
+                <p class="prot-trust-footnote" style="margin:5px 0 2px;font-size:11px;color:#94A3B8;text-align:center;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  100% local &middot; your files never leave this device
+                </p>
               </div>
             </div>
           </div>
@@ -32764,6 +32778,26 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       if (ctaBtn) {
         ctaBtn.addEventListener('click', () => {
           if (canRun()) executeSecurityPipeline();
+        });
+      }
+
+      // Mobile Drawer Collapse / Expand Toggle
+      const workstation = container.querySelector('.cpdf-benchmark-workstation');
+      const toggleBtn = container.querySelector('.mobile-sheet-toggle-btn');
+      const headerEl = container.querySelector('.prot-stage-header');
+
+      if (toggleBtn && workstation) {
+        toggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          workstation.classList.toggle('is-sheet-collapsed');
+        });
+      }
+
+      if (headerEl && workstation) {
+        headerEl.addEventListener('click', (e) => {
+          if (workstation.classList.contains('is-sheet-collapsed')) {
+            workstation.classList.remove('is-sheet-collapsed');
+          }
         });
       }
     }

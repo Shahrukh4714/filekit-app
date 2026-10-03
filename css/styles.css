@@ -53147,6 +53147,203 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: none !important;
   }
 
+  /* ══════════════════════════════════════════════════
+     PROTECT / UNLOCK / FLATTEN: Mobile Bottom Sheet Parity (Zero-Scroll & Compact Fit)
+     ══════════════════════════════════════════════════ */
+  body #app-view .prot-root .cpdf-benchmark-workstation,
+  .prot-root .cpdf-benchmark-workstation {
+    background: #FFFFFF !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-stage,
+  .prot-root .cpdf-benchmark-stage {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: none !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-panel,
+  .prot-root .cpdf-benchmark-panel {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: calc(100% - 80px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-panel-inner,
+  .prot-root .cpdf-benchmark-panel-inner {
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 8px 14px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  .prot-stage-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-bottom: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .prot-stage-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  body #app-view .prot-root .prot-segmented-tabs,
+  .prot-root .prot-segmented-tabs {
+    margin-bottom: 4px !important;
+    height: 30px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .prot-root #prot-context-area,
+  .prot-root #prot-context-area,
+  body #app-view .prot-root .cpdf-cards-stack,
+  .prot-root .cpdf-cards-stack {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin-bottom: 4px !important;
+    scrollbar-width: none !important;
+  }
+
+  body #app-view .prot-root #prot-context-area::-webkit-scrollbar,
+  .prot-root #prot-context-area::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  body #app-view .prot-root .prot-input-group,
+  .prot-root .prot-input-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+  }
+
+  body #app-view .prot-root .prot-input-wrap .prot-input,
+  .prot-root .prot-input-wrap .prot-input {
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+
+  body #app-view .prot-root .prot-ios-group,
+  .prot-root .prot-ios-group {
+    margin-top: 2px !important;
+  }
+
+  body #app-view .prot-root .prot-ios-row,
+  .prot-root .prot-ios-row {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+
+  body #app-view .prot-root .prot-master-toggle,
+  .prot-root .prot-master-toggle {
+    margin-top: 2px !important;
+    padding: 1px 0 !important;
+    font-size: 10.5px !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-est-box,
+  .prot-root .cpdf-benchmark-est-box {
+    padding: 4px 10px !important;
+    margin: 0 0 4px 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-est-title,
+  .prot-root .cpdf-benchmark-est-title {
+    font-size: 10px !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-est-metrics,
+  .prot-root .cpdf-benchmark-est-metrics {
+    margin: 1px 0 2px 0 !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-est-new,
+  .prot-root .cpdf-benchmark-est-new {
+    font-size: 12px !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-est-pct,
+  .prot-root .cpdf-benchmark-est-pct {
+    font-size: 10px !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-track,
+  .prot-root .cpdf-benchmark-track {
+    height: 3px !important;
+  }
+
+  body #app-view .prot-root #prot-studio-run,
+  .prot-root #prot-studio-run {
+    margin-top: 4px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    border-radius: 9999px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  .prot-trust-footnote {
+    margin: 3px 0 0 !important;
+    font-size: 10.5px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .prot-root.is-sheet-collapsed .prot-segmented-tabs,
+  .prot-root.is-sheet-collapsed .prot-segmented-tabs,
+  body #app-view .prot-root.is-sheet-collapsed #prot-context-area,
+  .prot-root.is-sheet-collapsed #prot-context-area,
+  body #app-view .prot-root.is-sheet-collapsed .cpdf-cards-stack,
+  .prot-root.is-sheet-collapsed .cpdf-cards-stack,
+  body #app-view .prot-root.is-sheet-collapsed #prot-wm-wrap,
+  .prot-root.is-sheet-collapsed #prot-wm-wrap,
+  body #app-view .prot-root.is-sheet-collapsed .cpdf-benchmark-est-box,
+  .prot-root.is-sheet-collapsed .cpdf-benchmark-est-box,
+  body #app-view .prot-root.is-sheet-collapsed #prot-studio-run,
+  .prot-root.is-sheet-collapsed #prot-studio-run,
+  body #app-view .prot-root.is-sheet-collapsed .prot-trust-footnote,
+  .prot-root.is-sheet-collapsed .prot-trust-footnote,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .prot-segmented-tabs,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .prot-segmented-tabs,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed #prot-context-area,
+  .cpdf-benchmark-workstation.is-sheet-collapsed #prot-context-area,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-cards-stack,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-cards-stack,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed #prot-wm-wrap,
+  .cpdf-benchmark-workstation.is-sheet-collapsed #prot-wm-wrap,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-est-box,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-est-box,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed #prot-studio-run,
+  .cpdf-benchmark-workstation.is-sheet-collapsed #prot-studio-run,
+  body #app-view .cpdf-benchmark-workstation.is-sheet-collapsed .prot-trust-footnote,
+  .cpdf-benchmark-workstation.is-sheet-collapsed .prot-trust-footnote {
+    display: none !important;
+  }
+
   /* 3. Dropzone in Tool Workspace (Idle State) — Auto-Fits above persistent toolbar */
   body #app-workspace-tool-view .drop-hero-box,
   body.ff-tool-active .drop-hero-box,
