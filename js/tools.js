@@ -30464,16 +30464,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               : (item.label || item.out);
             const isActive = item.id === formatIds[activeIndex];
             return `
-              <div class="conv-format-row ${isActive ? 'is-active' : ''}" data-fid="${item.id}" role="radio" aria-checked="${isActive}" style="${isActive ? 'border:1.5px solid #0A0A0A;' : ''}">
+              <div class="conv-format-row ${isActive ? 'is-active' : ''}" data-fid="${item.id}" role="radio" aria-checked="${isActive}">
                 <div class="conv-format-left">
                   ${_brandIcon(item)}
                   <div class="conv-format-label">
                     <span class="conv-format-name">${_esc(displayLabel)}</span>
-                    <span class="conv-format-ext">.${(item.out || item.ext || '').toLowerCase()}</span>
+                    ${item.out || item.ext ? `<span class="conv-format-ext">(.${(item.out || item.ext || '').toLowerCase()})</span>` : ''}
                   </div>
                 </div>
                 <div class="conv-format-right">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 </div>
               </div>`;
           }).join('')}
