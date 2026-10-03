@@ -52960,16 +52960,11 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     flex-shrink: 0 !important;
   }
 
-  /* Professional Trust Micro-Footer (Never Cut Off) */
-  .cpdf-local-trust-footer {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    font-size: 11px !important;
-    color: #64748B !important;
-    margin: 4px 0 8px !important;
-    flex-shrink: 0 !important;
+  /* Professional Trust Micro-Footer (Hidden on Mobile Sheets) */
+  .cpdf-local-trust-footer,
+  .conv-trust-footnote,
+  .prot-trust-footnote {
+    display: none !important;
   }
 
   /* ══════════════════════════════════════════════════
@@ -53039,7 +53034,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     width: 100% !important;
     height: auto !important;
     max-height: none !important;
-    padding: 6px 14px 10px !important;
+    padding: 6px 14px 12px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -53276,14 +53271,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .conv-root .conv-trust-footnote,
   .conv-root .conv-trust-footnote {
-    margin: 3px 0 0 !important;
-    font-size: 10.5px !important;
-    color: #64748B !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
   }
 
   /* Drawer Collapsed (Peek) Mode */
@@ -53387,7 +53375,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     width: 100% !important;
     height: auto !important;
     max-height: none !important;
-    padding: 8px 14px 10px !important;
+    padding: 8px 14px 12px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -53514,10 +53502,9 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     font-weight: 600 !important;
   }
 
+  body #app-view .prot-root .prot-trust-footnote,
   .prot-trust-footnote {
-    margin: 3px 0 0 !important;
-    font-size: 10.5px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
   }
 
   body #app-view .prot-root.is-sheet-collapsed .prot-segmented-tabs,
@@ -53616,7 +53603,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     width: 100% !important;
     height: auto !important;
     max-height: none !important;
-    padding: 6px 14px 10px !important;
+    padding: 6px 14px 12px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -53721,14 +53708,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .scan-tool .cpdf-local-trust-footer,
   .scan-tool .cpdf-local-trust-footer {
-    margin: 3px 0 0 !important;
-    font-size: 10.5px !important;
-    color: #64748B !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
   }
 
   /* Drawer Collapsed (Peek) Mode */
@@ -53834,7 +53814,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     width: 100% !important;
     height: auto !important;
     max-height: none !important;
-    padding: 6px 14px 10px !important;
+    padding: 6px 14px 12px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -53980,14 +53960,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .comp-root .cpdf-local-trust-footer,
   .comp-root .cpdf-local-trust-footer {
-    margin: 3px 0 0 !important;
-    font-size: 10.5px !important;
-    color: #64748B !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
   }
 
   /* Drawer Collapsed (Peek) Mode */
