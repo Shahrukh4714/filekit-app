@@ -1540,6 +1540,12 @@
 
     <div class="app-topbar-content">
       <div class="app-topbar-left">
+        <button type="button" class="app-topbar-back-btn" id="app-topbar-back-btn" title="Back to tools" aria-label="Back to tools">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 14L4 9l5-5"/>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+          </svg>
+        </button>
         <strong class="app-brand-name" id="app-brand-text-btn" style="cursor:pointer;">FileKit</strong>
         <span class="app-topbar-divider">/</span>
         <h1 class="app-topbar-page-title" id="app-workspace-title">Home</h1>
@@ -1550,6 +1556,17 @@
       </div>
 
       <div class="app-topbar-right">
+        <button type="button" class="app-topbar-pro-btn" id="app-topbar-pro-btn" title="Upgrade to Pro" aria-label="Upgrade to Pro">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+          </svg>
+        </button>
+        <button type="button" class="app-topbar-user-btn" id="app-topbar-user-btn" title="Account" aria-label="Account">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </button>
         <button type="button" class="app-login-btn" id="app-login-btn">Log In</button>
       </div>
     </div>

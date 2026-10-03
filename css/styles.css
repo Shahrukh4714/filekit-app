@@ -10703,6 +10703,11 @@ footer button,
   color: #1A1714;
 }
 
+.app-topbar-pro-btn,
+.app-topbar-user-btn {
+  display: none;
+}
+
 
 /* -------------------------------------------------------
    APP CANVAS
@@ -33553,6 +33558,119 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   border: 1px solid #FECDD3 !important;
 }
 
+/* Clean White Input Box (Universal Desktop & Mobile) */
+.prot-root .prot-clean-input-box {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 42px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.prot-root .prot-clean-input-box:focus-within {
+  border-color: #0066FF !important;
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.12) !important;
+}
+
+.prot-root .prot-clean-input-icon {
+  position: absolute !important;
+  left: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  pointer-events: none !important;
+  color: #9CA3AF !important;
+}
+
+.prot-root .prot-clean-input {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  padding: 0 38px 0 38px !important;
+  font-size: 13.5px !important;
+  color: #111827 !important;
+  box-sizing: border-box !important;
+}
+
+.prot-root .prot-clean-input::placeholder {
+  color: #9CA3AF !important;
+  font-size: 13px !important;
+}
+
+.prot-root .prot-meter-row {
+  display: flex !important;
+  gap: 6px !important;
+  margin-top: 6px !important;
+  margin-bottom: 10px !important;
+  width: 100% !important;
+}
+
+.prot-root .prot-meter-seg {
+  flex: 1 !important;
+  height: 3px !important;
+  background: #E5E7EB !important;
+  border-radius: 9999px !important;
+  transition: background 0.2s ease !important;
+}
+
+.prot-root .prot-meter-seg.is-weak {
+  background: #EF4444 !important;
+}
+
+.prot-root .prot-meter-seg.is-med {
+  background: #F59E0B !important;
+}
+
+.prot-root .prot-meter-seg.is-strong {
+  background: #10B981 !important;
+}
+
+.prot-root .prot-clean-info-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin: 8px 0 12px 0 !important;
+  user-select: none !important;
+}
+
+.prot-root .prot-clean-switches {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  width: 100% !important;
+  margin-bottom: 12px !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.prot-root .prot-clean-switch-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 9px 0 !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  background: transparent !important;
+}
+
+.prot-root .prot-clean-switch-row:last-child {
+  border-bottom: none !important;
+}
+
+.prot-root .prot-clean-switch-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #111827 !important;
+}
+
 /* 3-Column Granular Permission Controls */
 .prot-perm-row {
   display: grid !important;
@@ -53533,7 +53651,269 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     height: 0 !important;
   }
 
-  /* Neutral Context Input Group */
+  /* Deep Navy Header in Workstation Mode (Exact Smallpdf reference match!) */
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar,
+  body #app-view:has(.prot-root) .app-topbar,
+  body.ff-tool-active .app-topbar {
+    background: #001F54 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    padding: 0 !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-brand-zone,
+  body #app-view:has(.prot-root) .app-topbar-brand-zone,
+  body.ff-tool-active .app-topbar-brand-zone {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 0 4px 0 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-brand-zone .brand-icon,
+  body #app-view:has(.prot-root) .app-topbar-brand-zone .brand-icon,
+  body.ff-tool-active .app-topbar-brand-zone .brand-icon {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-content,
+  body #app-view:has(.prot-root) .app-topbar-content,
+  body.ff-tool-active .app-topbar-content {
+    background: transparent !important;
+    padding: 0 12px 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    border: none !important;
+    height: 100% !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-left,
+  body #app-view:has(.prot-root) .app-topbar-left,
+  body.ff-tool-active .app-topbar-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-back-btn,
+  body #app-view:has(.prot-root) .app-topbar-back-btn,
+  body.ff-tool-active .app-topbar-back-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-back-btn:hover,
+  body #app-view:has(.prot-root) .app-topbar-back-btn:hover,
+  body.ff-tool-active .app-topbar-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-topbar-page-title,
+  body #app-view:has(.prot-root) .app-topbar .app-topbar-page-title,
+  body.ff-tool-active .app-topbar .app-topbar-page-title {
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-topbar-tool-title,
+  body #app-view:has(.prot-root) .app-topbar .app-topbar-tool-title,
+  body.ff-tool-active .app-topbar .app-topbar-tool-title {
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-brand-name,
+  body #app-view:has(.prot-root) .app-topbar .app-brand-name,
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-topbar-divider,
+  body #app-view:has(.prot-root) .app-topbar .app-topbar-divider,
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-breadcrumb-home-btn,
+  body #app-view:has(.prot-root) .app-topbar .app-breadcrumb-home-btn,
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-breadcrumb-sep,
+  body #app-view:has(.prot-root) .app-topbar .app-breadcrumb-sep,
+  body.ff-tool-active .app-topbar .app-brand-name,
+  body.ff-tool-active .app-topbar .app-topbar-divider,
+  body.ff-tool-active .app-topbar .app-breadcrumb-home-btn,
+  body.ff-tool-active .app-topbar .app-breadcrumb-sep {
+    display: none !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-right,
+  body #app-view:has(.prot-root) .app-topbar-right,
+  body.ff-tool-active .app-topbar-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar .app-login-btn,
+  body #app-view:has(.prot-root) .app-topbar .app-login-btn,
+  body.ff-tool-active .app-topbar .app-login-btn {
+    display: none !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-pro-btn,
+  body #app-view:has(.prot-root) .app-topbar-pro-btn,
+  body.ff-tool-active .app-topbar-pro-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #FFC700 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view:has(.cpdf-benchmark-workstation) .app-topbar-user-btn,
+  body #app-view:has(.prot-root) .app-topbar-user-btn,
+  body.ff-tool-active .app-topbar-user-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #FFFFFF !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Hide bottom nav bar in mobile workstation */
+  body #app-view:has(.cpdf-benchmark-workstation) .mobile-tab-bar,
+  body #app-view:has(.prot-root) .mobile-tab-bar,
+  body.ff-tool-active .mobile-tab-bar {
+    display: none !important;
+  }
+
+  /* ══════════════════════════════════════════════════
+     PROTECT TOOL MOBILE BOTTOM SHEET (Clean White Smallpdf Reference)
+     ══════════════════════════════════════════════════ */
+  body #app-view .prot-root .cpdf-benchmark-panel,
+  .prot-root .cpdf-benchmark-panel {
+    background: #FFFFFF !important;
+    border-radius: 16px 16px 0 0 !important;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08) !important;
+    border: none !important;
+  }
+
+  body #app-view .prot-root .mobile-sheet-drag-handle,
+  .prot-root .mobile-sheet-drag-handle {
+    display: none !important;
+  }
+
+  body #app-view .prot-root .cpdf-benchmark-panel-inner,
+  .prot-root .cpdf-benchmark-panel-inner {
+    padding: 14px 16px 16px !important;
+    background: #FFFFFF !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Header: Coral Pink Lock Badge + Bold "Add a password" */
+  body #app-view .prot-root .prot-hero-icon,
+  .prot-root .prot-hero-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  body #app-view .prot-root .prot-stage-title,
+  .prot-root .prot-stage-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  body #app-view .prot-root .mobile-sheet-chevron,
+  .prot-root .mobile-sheet-chevron {
+    color: #6B7280 !important;
+  }
+
+  /* Segmented Tabs: Minimal Borderless Pill */
+  body #app-view .prot-root .prot-segmented-tabs,
+  .prot-root .prot-segmented-tabs {
+    background: #F1F5F9 !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 2.5px !important;
+    margin-bottom: 12px !important;
+    gap: 2px !important;
+    height: 30px !important;
+  }
+
+  body #app-view .prot-root .prot-tab,
+  .prot-root .prot-tab {
+    border-radius: 9999px !important;
+    border: none !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #64748B !important;
+    background: transparent !important;
+  }
+
+  body #app-view .prot-root .prot-tab.is-active,
+  .prot-root .prot-tab.is-active {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1) !important;
+  }
+
+  /* Clean Input Groups on Pure White (No Borders, No Grays) */
   body #app-view .prot-root .prot-input-group,
   .prot-root .prot-input-group {
     display: flex !important;
@@ -53546,313 +53926,180 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin-bottom: 4px !important;
   }
 
-  /* Unified Inset Password Card */
-  body #app-view .prot-root .prot-pw-card,
-  .prot-root .prot-pw-card {
+  body #app-view .prot-root .prot-field-unit,
+  .prot-root .prot-field-unit {
+    width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 0 !important;
-    background: #FFFFFF !important;
-    border: 1px solid #E2E8F0 !important;
-    border-radius: 9px !important;
-    overflow: hidden !important;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+    margin-bottom: 4px !important;
+  }
+
+  body #app-view .prot-root .prot-input-label,
+  .prot-root .prot-input-label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
     margin-bottom: 6px !important;
-  }
-
-  body #app-view .prot-root .prot-pw-card .prot-input-wrap,
-  .prot-root .prot-pw-card .prot-input-wrap {
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-    width: 100% !important;
-  }
-
-  body #app-view .prot-root .prot-pw-card .prot-input-wrap:first-child,
-  .prot-root .prot-pw-card .prot-input-wrap:first-child {
-    border-bottom: 1px solid #F1F5F9 !important;
-  }
-
-  body #app-view .prot-root .prot-pw-card .prot-input-wrap .prot-input,
-  .prot-root .prot-pw-card .prot-input-wrap .prot-input {
-    height: 38px !important;
-    font-size: 12.5px !important;
-    border: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: #0F172A !important;
-    outline: none !important;
-    box-shadow: none !important;
-    padding: 0 34px 0 11px !important;
-  }
-
-  body #app-view .prot-root .prot-pw-card .prot-input-wrap .prot-input::placeholder,
-  .prot-root .prot-pw-card .prot-input-wrap .prot-input::placeholder {
-    color: #94A3B8 !important;
-    font-size: 12px !important;
-  }
-
-  /* Single Password Input in Unlock Mode */
-  body #app-view .prot-root .prot-input-group > .prot-input-wrap,
-  .prot-root .prot-input-group > .prot-input-wrap {
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-    width: 100% !important;
-    margin-bottom: 6px !important;
-  }
-
-  body #app-view .prot-root .prot-input-group > .prot-input-wrap .prot-input,
-  .prot-root .prot-input-group > .prot-input-wrap .prot-input {
-    height: 38px !important;
-    font-size: 12.5px !important;
-    border: 1px solid #E2E8F0 !important;
-    border-radius: 9px !important;
-    background: #FFFFFF !important;
-    color: #0F172A !important;
-    outline: none !important;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
-    padding: 0 34px 0 11px !important;
-  }
-
-  body #app-view .prot-root .prot-input-group > .prot-input-wrap .prot-input::placeholder,
-  .prot-root .prot-input-group > .prot-input-wrap .prot-input::placeholder {
-    color: #94A3B8 !important;
-    font-size: 12px !important;
-  }
-
-  /* Collapsible Permissions & Restrictions Accordion */
-  body #app-view .prot-root .prot-advanced-section,
-  .prot-root .prot-advanced-section {
-    width: 100% !important;
-    margin: 0 0 6px 0 !important;
-  }
-
-  body #app-view .prot-root .prot-advanced-toggle,
-  .prot-root .prot-advanced-toggle {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    padding: 7px 11px !important;
-    margin: 0 !important;
-    background: #F8FAFC !important;
-    border: 1px solid #E2E8F0 !important;
-    border-radius: 9px !important;
-    font-family: inherit !important;
-    font-size: 11.5px !important;
-    font-weight: 500 !important;
-    color: #475569 !important;
-    cursor: pointer !important;
     user-select: none !important;
-    transition: all 0.15s ease !important;
   }
 
-  body #app-view .prot-root .prot-advanced-toggle:active,
-  .prot-root .prot-advanced-toggle:active {
-    background: #F1F5F9 !important;
-    border-color: #CBD5E1 !important;
-    color: #0F172A !important;
-  }
-
-  body #app-view .prot-root .prot-adv-toggle-left,
-  .prot-root .prot-adv-toggle-left {
+  /* Clean White Input Box (Exact Reference) */
+  body #app-view .prot-root .prot-clean-input-box,
+  .prot-root .prot-clean-input-box {
+    position: relative !important;
     display: flex !important;
     align-items: center !important;
-    gap: 7px !important;
+    width: 100% !important;
+    height: 44px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
   }
 
-  body #app-view .prot-root .prot-adv-toggle-left svg,
-  .prot-root .prot-adv-toggle-left svg {
-    width: 13px !important;
-    height: 13px !important;
-    color: #64748B !important;
-    flex-shrink: 0 !important;
+  body #app-view .prot-root .prot-clean-input-box:focus-within,
+  .prot-root .prot-clean-input-box:focus-within {
+    border-color: #0066FF !important;
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.12) !important;
   }
 
-  body #app-view .prot-root .prot-adv-chevron,
-  .prot-root .prot-adv-chevron {
-    width: 13px !important;
-    height: 13px !important;
-    color: #94A3B8 !important;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    flex-shrink: 0 !important;
+  body #app-view .prot-root .prot-clean-input-icon,
+  .prot-root .prot-clean-input-icon {
+    position: absolute !important;
+    left: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    pointer-events: none !important;
+    color: #9CA3AF !important;
   }
 
-  body #app-view .prot-root .prot-adv-chevron.is-expanded,
-  .prot-root .prot-adv-chevron.is-expanded {
-    transform: rotate(180deg) !important;
+  body #app-view .prot-root .prot-clean-input,
+  .prot-root .prot-clean-input {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    padding: 0 38px 0 38px !important;
+    font-size: 13.5px !important;
+    color: #111827 !important;
+    box-sizing: border-box !important;
   }
 
-  body #app-view .prot-root .prot-advanced-body,
-  .prot-root .prot-advanced-body {
-    margin-top: 5px !important;
+  body #app-view .prot-root .prot-clean-input::placeholder,
+  .prot-root .prot-clean-input::placeholder {
+    color: #9CA3AF !important;
+    font-size: 13px !important;
   }
 
   body #app-view .prot-root .prot-eye-btn,
   .prot-root .prot-eye-btn {
-    right: 8px !important;
-    color: #94A3B8 !important;
+    position: absolute !important;
+    right: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #6B7280 !important;
+    cursor: pointer !important;
     padding: 4px !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   body #app-view .prot-root .prot-match-pill,
   .prot-root .prot-match-pill {
-    right: 8px !important;
-    font-size: 10px !important;
-    padding: 2px 6px !important;
-  }
-
-  /* Refined iOS Inset Permissions Card */
-  body #app-view .prot-root .prot-ios-group,
-  .prot-root .prot-ios-group {
-    background: #F8FAFC !important;
-    border: 1px solid #E2E8F0 !important;
-    border-radius: 9px !important;
-    overflow: hidden !important;
-    margin-top: 0 !important;
-    margin-bottom: 6px !important;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
-  }
-
-  body #app-view .prot-root .prot-ios-row,
-  .prot-root .prot-ios-row {
-    padding: 6.5px 10px !important;
-    border-bottom: 1px solid #EDF2F7 !important;
-    background: transparent !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
-
-  body #app-view .prot-root .prot-ios-row:last-child,
-  .prot-root .prot-ios-row:last-child {
-    border-bottom: none !important;
-  }
-
-  body #app-view .prot-root .prot-ios-row-left,
-  .prot-root .prot-ios-row-left {
-    display: flex !important;
-    align-items: center !important;
-    gap: 7px !important;
-  }
-
-  body #app-view .prot-root .prot-ios-row-left svg,
-  .prot-root .prot-ios-row-left svg {
-    width: 13px !important;
-    height: 13px !important;
-    color: #64748B !important;
-    opacity: 1 !important;
-  }
-
-  body #app-view .prot-root .prot-ios-row-text,
-  .prot-root .prot-ios-row-text {
-    font-size: 11.5px !important;
-    font-weight: 500 !important;
-    color: #1E293B !important;
-    letter-spacing: -0.01em !important;
-  }
-
-  /* Refined Micro Switch */
-  body #app-view .prot-root .prot-ios-switch,
-  .prot-root .prot-ios-switch {
-    width: 34px !important;
-    height: 19px !important;
-    position: relative !important;
-    display: inline-block !important;
-    flex-shrink: 0 !important;
-  }
-
-  body #app-view .prot-root .prot-ios-switch input,
-  .prot-root .prot-ios-switch input {
-    opacity: 0 !important;
-    width: 0 !important;
-    height: 0 !important;
     position: absolute !important;
-  }
-
-  body #app-view .prot-root .prot-ios-slider,
-  .prot-root .prot-ios-slider {
-    position: absolute !important;
-    cursor: pointer !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: #CBD5E1 !important;
-    transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    right: 10px !important;
+    font-size: 10.5px !important;
+    padding: 2px 7px !important;
     border-radius: 9999px !important;
   }
 
-  body #app-view .prot-root .prot-ios-slider:before,
-  .prot-root .prot-ios-slider:before {
-    position: absolute !important;
-    content: "" !important;
-    height: 15px !important;
-    width: 15px !important;
-    left: 2px !important;
-    bottom: 2px !important;
-    background: #FFFFFF !important;
-    border-radius: 50% !important;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25) !important;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  /* 3-Segment Password Strength Meter (Exact Reference) */
+  body #app-view .prot-root .prot-meter-row,
+  .prot-root .prot-meter-row {
+    display: flex !important;
+    gap: 6px !important;
+    margin-top: 6px !important;
+    margin-bottom: 10px !important;
+    width: 100% !important;
   }
 
-  body #app-view .prot-root .prot-ios-switch input:checked + .prot-ios-slider,
-  .prot-root .prot-ios-switch input:checked + .prot-ios-slider {
-    background: #00C466 !important;
+  body #app-view .prot-root .prot-meter-seg,
+  .prot-root .prot-meter-seg {
+    flex: 1 !important;
+    height: 3px !important;
+    background: #E5E7EB !important;
+    border-radius: 9999px !important;
+    transition: background 0.2s ease !important;
   }
 
-  body #app-view .prot-root .prot-ios-switch input:checked + .prot-ios-slider:before,
-  .prot-root .prot-ios-switch input:checked + .prot-ios-slider:before {
-    transform: translateX(15px) !important;
+  body #app-view .prot-root .prot-meter-seg.is-weak,
+  .prot-root .prot-meter-seg.is-weak {
+    background: #EF4444 !important;
   }
 
-  /* Master Key Micro-Slot */
-  body #app-view .prot-root .prot-master-toggle,
-  .prot-root .prot-master-toggle {
+  body #app-view .prot-root .prot-meter-seg.is-med,
+  .prot-root .prot-meter-seg.is-med {
+    background: #F59E0B !important;
+  }
+
+  body #app-view .prot-root .prot-meter-seg.is-strong,
+  .prot-root .prot-meter-seg.is-strong {
+    background: #10B981 !important;
+  }
+
+  /* Security Micro-Copy Row (Exact Reference) */
+  body #app-view .prot-root .prot-clean-info-row,
+  .prot-root .prot-clean-info-row {
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 5px !important;
-    margin: 0 0 6px 0 !important;
-    padding: 4.5px 8px !important;
-    font-size: 11px !important;
+    gap: 7px !important;
+    font-size: 12.5px !important;
     font-weight: 500 !important;
-    color: #64748B !important;
-    background: #F8FAFC !important;
-    border: 1px dashed #CBD5E1 !important;
-    border-radius: 7px !important;
-    cursor: pointer !important;
-    transition: all 0.15s ease !important;
+    color: #374151 !important;
+    margin: 8px 0 12px 0 !important;
+    user-select: none !important;
+  }
+
+  body #app-view .prot-root .prot-clean-info-row svg,
+  .prot-root .prot-clean-info-row svg {
+    color: #4B5563 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Flatten Mode Clean Switches Directly on White (No Gray Box, No Multiple Borders) */
+  body #app-view .prot-root .prot-clean-switches,
+  .prot-root .prot-clean-switches {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
     width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  body #app-view .prot-root .prot-master-toggle:active,
-  .prot-root .prot-master-toggle:active {
-    background: #F1F5F9 !important;
-    border-color: #94A3B8 !important;
-    color: #0F172A !important;
-  }
-
-  body #app-view .prot-root .prot-master-box,
-  .prot-root .prot-master-box {
-    margin-bottom: 6px !important;
-    background: #FFFFFF !important;
-    border: 1px solid #E2E8F0 !important;
-    border-radius: 8px !important;
-    overflow: hidden !important;
-  }
-
-  body #app-view .prot-root .prot-master-box .prot-input,
-  .prot-root .prot-master-box .prot-input {
-    height: 32px !important;
-    border: none !important;
-    font-size: 11.5px !important;
-    padding: 0 10px !important;
+    margin-bottom: 12px !important;
     background: transparent !important;
+    border: none !important;
+  }
+
+  body #app-view .prot-root .prot-clean-switch-row,
+  .prot-root .prot-clean-switch-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 9px 0 !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+    background: transparent !important;
+  }
+
+  body #app-view .prot-root .prot-clean-switch-row:last-child,
+  .prot-root .prot-clean-switch-row:last-child {
+    border-bottom: none !important;
+  }
+
+  body #app-view .prot-root .prot-clean-switch-label,
+  .prot-root .prot-clean-switch-label {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #111827 !important;
   }
 
   /* Security Specification Box: Hidden on mobile protect sheet */
@@ -53861,30 +54108,31 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: none !important;
   }
 
-  /* Primary Action CTA Button */
+  /* Primary Action Button: Vibrant Blue Reference */
   body #app-view .prot-root #prot-studio-run,
   .prot-root #prot-studio-run {
+    background: #0066FF !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
     margin-top: 4px !important;
     margin-bottom: 0 !important;
-    flex-shrink: 0 !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    border-radius: 9999px !important;
-    font-size: 13.5px !important;
-    font-weight: 600 !important;
-    letter-spacing: -0.01em !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
     transition: all 0.15s ease !important;
   }
 
   body #app-view .prot-root #prot-studio-run:disabled,
   .prot-root #prot-studio-run:disabled {
-    background: #F1F5F9 !important;
+    background: #E2E8F0 !important;
     color: #94A3B8 !important;
-    border: 1px solid #E2E8F0 !important;
+    border: none !important;
     box-shadow: none !important;
     opacity: 1 !important;
-    cursor: not-allowed;
+    cursor: not-allowed !important;
   }
 
   body #app-view .prot-root #prot-studio-run:active:not(:disabled),

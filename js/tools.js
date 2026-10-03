@@ -32297,10 +32297,29 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             : isFlatten
               ? 'Flatten PDF'
               : isProtect
-                ? 'Protect PDF'
+                ? 'Protect'
                 : 'Unlock PDF';
         }
         ctaBtn.disabled = !canRun();
+      }
+
+      // Update 3-segment strength meter (Exact Smallpdf reference match!)
+      const meterRow = container.querySelector('#prot-meter-row');
+      if (meterRow) {
+        const segs = meterRow.querySelectorAll('.prot-meter-seg');
+        segs.forEach(s => { s.className = 'prot-meter-seg'; });
+        if (password) {
+          if (entropy.score <= 1) {
+            segs[0]?.classList.add('is-weak');
+          } else if (entropy.score === 2) {
+            segs[0]?.classList.add('is-med');
+            segs[1]?.classList.add('is-med');
+          } else {
+            segs[0]?.classList.add('is-strong');
+            segs[1]?.classList.add('is-strong');
+            segs[2]?.classList.add('is-strong');
+          }
+        }
       }
 
       const summarySpec = container.querySelector('#prot-summary-spec');
@@ -32394,15 +32413,25 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <div class="cpdf-benchmark-panel">
               <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
               <div class="cpdf-benchmark-panel-inner">
-                <!-- Top Header -->
+                <!-- Top Header (Clean Smallpdf-Inspired) -->
                 <div class="cpdf-benchmark-header prot-stage-header">
                   <div class="prot-stage-header-left">
-                    <div class="cpdf-benchmark-icon" style="background:#0D9488 !important;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                      </svg>
+                    <div class="cpdf-benchmark-icon prot-hero-icon" style="background:${isProtect ? '#FF4D6D' : isUnlock ? '#8B5CF6' : '#0D9488'} !important;">
+                      ${isProtect ? `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                      ` : isUnlock ? `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+                        </svg>
+                      ` : `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>
+                        </svg>
+                      `}
                     </div>
-                    <h2 class="cpdf-benchmark-title">Protect</h2>
+                    <h2 class="cpdf-benchmark-title prot-stage-title">${isProtect ? 'Add a password' : isUnlock ? 'Unlock PDF' : 'Flatten PDF'}</h2>
                   </div>
                   <button type="button" class="mobile-sheet-toggle-btn" aria-label="Toggle options drawer">
                     <svg class="mobile-sheet-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -32428,7 +32457,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                     <input type="text" id="prot-wm-text" class="cpdf-target-inp" style="width:100%;height:34px;box-sizing:border-box;border-radius:6px;" value="${_esc(watermarkText)}" placeholder="e.g. CONFIDENTIAL">
                   </div>
                 ` : `
-                  <!-- Linear-Grade Segmented Mode Tabs -->
+                  <!-- Borderless Segmented Mode Tabs -->
                   <div class="prot-segmented-tabs" role="tablist" aria-label="Security Mode">
                     <button type="button" class="prot-tab ${isProtect ? 'is-active' : ''}" data-mode="protect" role="tab">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -32447,189 +32476,96 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   <!-- Dynamic Context Area -->
                   <div class="prot-context-box" id="prot-context-area">
                     ${isFlatten ? `
-                      <div class="prot-input-group">
-                        <!-- Scope Anchor 1: Matches first password input budget -->
-                        <div class="prot-scope-card">
-                          <span>Target Document Scope</span>
-                          <span class="prot-scope-badge">All ${totalPages} Pages Selected</span>
+                      <div class="prot-input-group prot-mode-flatten">
+                        <div class="prot-clean-info-row" style="margin-top:2px;margin-bottom:8px;">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          <span>Bake forms, ink annotations, and layers into page ink</span>
                         </div>
 
-                        <!-- Scope Anchor 2: Matches confirm password budget -->
-                        <div class="prot-scope-card">
-                          <span>Rendering Fidelity</span>
-                          <span class="prot-scope-badge" style="background:#EFF6FF;color:#1D4ED8;">100% Vector Quality</span>
-                        </div>
-
-                        <!-- iOS Inset Switch Flatten Controls -->
-                        <div class="prot-ios-group">
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.edit}
-                              <span class="prot-ios-row-text">Bake Fillable Form Fields</span>
-                            </div>
+                        <!-- Clean Switch Rows directly on pure white (No nested borders!) -->
+                        <div class="prot-clean-switches">
+                          <div class="prot-clean-switch-row">
+                            <span class="prot-clean-switch-label">Bake Fillable Form Fields</span>
                             <label class="prot-ios-switch">
                               <input type="checkbox" id="prot-flat-forms" ${optForms ? 'checked' : ''}>
                               <span class="prot-ios-slider"></span>
                             </label>
                           </div>
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.edit}
-                              <span class="prot-ios-row-text">Bake Ink & Annotations</span>
-                            </div>
+                          <div class="prot-clean-switch-row">
+                            <span class="prot-clean-switch-label">Bake Ink &amp; Annotations</span>
                             <label class="prot-ios-switch">
                               <input type="checkbox" id="prot-flat-annots" ${optAnnots ? 'checked' : ''}>
                               <span class="prot-ios-slider"></span>
                             </label>
                           </div>
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.doc}
-                              <span class="prot-ios-row-text">Merge Vector Layers (OCGs)</span>
-                            </div>
+                          <div class="prot-clean-switch-row">
+                            <span class="prot-clean-switch-label">Merge Vector Layers (OCGs)</span>
                             <label class="prot-ios-switch">
                               <input type="checkbox" id="prot-flat-layers" ${optLayers ? 'checked' : ''}>
                               <span class="prot-ios-slider"></span>
                             </label>
                           </div>
                         </div>
-
-                        <!-- Balanced Micro-Note matching master toggle -->
-                        <div class="prot-master-toggle" style="cursor:default;opacity:0.85;">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                          <span>PDF 1.7 Standard Compliant Output</span>
-                        </div>
                       </div>
                     ` : isUnlock ? `
-                      <div class="prot-input-group">
-                        <div class="prot-input-wrap">
-                          <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Enter decryption password…" value="${_esc(password)}">
-                          <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
-                            ${showPw ? I.eyeOff : I.eye}
-                          </button>
-                        </div>
-
-                        <!-- Scope Anchor 2: Matches confirm password budget -->
-                        <div class="prot-scope-card">
-                          <span>Decryption Scope</span>
-                          <span class="prot-scope-badge" style="background:#F3E8FF;color:#6B21A8;">Full Permissions</span>
-                        </div>
-
-                        <!-- iOS Inset Switch Unlock Controls -->
-                        <div class="prot-ios-group">
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.check}
-                              <span class="prot-ios-row-text">Strip Password Protection</span>
-                            </div>
-                            <label class="prot-ios-switch">
-                              <input type="checkbox" id="prot-unlock-strip" ${unlockStripLimits ? 'checked' : ''}>
-                              <span class="prot-ios-slider"></span>
-                            </label>
-                          </div>
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.doc}
-                              <span class="prot-ios-row-text">Preserve Digital Signatures</span>
-                            </div>
-                            <label class="prot-ios-switch">
-                              <input type="checkbox" id="prot-unlock-sigs" ${unlockPreserveSigs ? 'checked' : ''}>
-                              <span class="prot-ios-slider"></span>
-                            </label>
-                          </div>
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.edit}
-                              <span class="prot-ios-row-text">Scrub Security Metadata</span>
-                            </div>
-                            <label class="prot-ios-switch">
-                              <input type="checkbox" id="prot-unlock-scrub" checked>
-                              <span class="prot-ios-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <!-- Balanced Micro-Note matching master toggle -->
-                        <div class="prot-master-toggle" style="cursor:default;opacity:0.85;">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                          <span>AES-256 Decryption Engine Active</span>
-                        </div>
-                      </div>
-                    ` : `
-                      <div class="prot-input-group">
-                        <div class="prot-pw-card">
-                          <div class="prot-input-wrap">
-                            <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Set encryption password…" value="${_esc(password)}">
-                            <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
+                      <div class="prot-input-group prot-mode-unlock">
+                        <div class="prot-field-unit">
+                          <label class="prot-input-label">Decryption password</label>
+                          <div class="prot-clean-input-box">
+                            <span class="prot-clean-input-icon">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </span>
+                            <input id="prot-pw" class="prot-clean-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Enter decryption password" value="${_esc(password)}">
+                            <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility">
                               ${showPw ? I.eyeOff : I.eye}
                             </button>
                           </div>
+                        </div>
 
-                          <div class="prot-input-wrap">
-                            <input id="prot-pw-confirm" class="prot-input prot-input--confirm" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm password…" value="${_esc(confirmPw)}">
+                        <!-- 256-bit AES decryption Micro-Copy -->
+                        <div class="prot-clean-info-row">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          <span>Strip password lock &amp; restore open access</span>
+                        </div>
+                      </div>
+                    ` : `
+                      <div class="prot-input-group prot-mode-protect">
+                        <div class="prot-field-unit">
+                          <label class="prot-input-label">Type password</label>
+                          <div class="prot-clean-input-box">
+                            <span class="prot-clean-input-icon">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </span>
+                            <input id="prot-pw" class="prot-clean-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Set your password" value="${_esc(password)}">
+                            <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility">
+                              ${showPw ? I.eyeOff : I.eye}
+                            </button>
+                          </div>
+                          <!-- 3-Segment Password Strength Indicator (Exact reference match!) -->
+                          <div class="prot-meter-row" id="prot-meter-row" aria-hidden="true">
+                            <span class="prot-meter-seg ${password ? (entropy.score >= 1 ? (entropy.score === 1 ? 'is-weak' : entropy.score === 2 ? 'is-med' : 'is-strong') : 'is-weak') : ''}"></span>
+                            <span class="prot-meter-seg ${password && entropy.score >= 2 ? (entropy.score === 2 ? 'is-med' : 'is-strong') : ''}"></span>
+                            <span class="prot-meter-seg ${password && entropy.score >= 3 ? 'is-strong' : ''}"></span>
+                          </div>
+                        </div>
+
+                        <div class="prot-field-unit">
+                          <label class="prot-input-label">Repeat password</label>
+                          <div class="prot-clean-input-box">
+                            <span class="prot-clean-input-icon">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </span>
+                            <input id="prot-pw-confirm" class="prot-clean-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm your password" value="${_esc(confirmPw)}">
                             <div id="prot-match-pill" class="prot-match-pill ${confirmPw ? (confirmPw === password ? 'is-match' : 'is-mismatch') : ''}" style="display:${confirmPw ? 'inline-flex' : 'none'};">
                               ${confirmPw ? (confirmPw === password ? '✓ Match' : '✕ Mismatch') : ''}
                             </div>
                           </div>
                         </div>
 
-                        <!-- Collapsible Permissions & Master Key Section -->
-                        <div class="prot-advanced-section">
-                          <button type="button" class="prot-advanced-toggle" id="prot-toggle-permissions" aria-expanded="${showPermissions ? 'true' : 'false'}">
-                            <div class="prot-adv-toggle-left">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                              <span>Permissions &amp; Master Key (Optional)</span>
-                            </div>
-                            <svg class="prot-adv-chevron ${showPermissions ? 'is-expanded' : ''}" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                          </button>
-
-                          <div class="prot-advanced-body" id="prot-permissions-body" style="${showPermissions ? 'display: block;' : 'display: none;'}">
-                            <!-- iOS Inset Switch Permission Controls -->
-                            <div class="prot-ios-group">
-                              <div class="prot-ios-row">
-                                <div class="prot-ios-row-left">
-                                  ${I.print}
-                                  <span class="prot-ios-row-text">Allow Printing</span>
-                                </div>
-                                <label class="prot-ios-switch">
-                                  <input type="checkbox" id="prot-perm-print" ${permPrint ? 'checked' : ''}>
-                                  <span class="prot-ios-slider"></span>
-                                </label>
-                              </div>
-                              <div class="prot-ios-row">
-                                <div class="prot-ios-row-left">
-                                  ${I.copy}
-                                  <span class="prot-ios-row-text">Allow Text Copying</span>
-                                </div>
-                                <label class="prot-ios-switch">
-                                  <input type="checkbox" id="prot-perm-copy" ${permCopy ? 'checked' : ''}>
-                                  <span class="prot-ios-slider"></span>
-                                </label>
-                              </div>
-                              <div class="prot-ios-row">
-                                <div class="prot-ios-row-left">
-                                  ${I.edit}
-                                  <span class="prot-ios-row-text">Allow Form Modifications</span>
-                                </div>
-                                <label class="prot-ios-switch">
-                                  <input type="checkbox" id="prot-perm-edit" ${permEdit ? 'checked' : ''}>
-                                  <span class="prot-ios-slider"></span>
-                                </label>
-                              </div>
-                            </div>
-
-                            <!-- Master Password Micro-Disclosure -->
-                            <button type="button" class="prot-master-toggle" id="prot-toggle-adv">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                              <span>${showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)'}</span>
-                            </button>
-
-                            <div class="prot-master-box" id="prot-adv-body" style="${showAdvanced ? 'display: block;' : 'display: none;'}">
-                              <div class="prot-input-wrap">
-                                <input id="prot-owner-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Master / Owner password…" value="${_esc(ownerPassword)}" style="height:30px;font-size:11.5px;">
-                              </div>
-                            </div>
-                          </div>
+                        <!-- 256-bit AES encryption protection Micro-Copy (Exact reference match!) -->
+                        <div class="prot-clean-info-row">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          <span>256-bit AES encryption protection</span>
                         </div>
                       </div>
                     `}
@@ -32647,9 +32583,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                   </div>
                 </div>
 
-                <!-- Primary Action CTA Button (Tailwind Black) -->
-                <button type="button" class="cpdf-benchmark-cta" id="prot-studio-run" ${canRun() ? '' : 'disabled'}>
-                  <span>${fam === 'image' ? 'Scrub & Secure' : isFlatten ? 'Flatten PDF' : isProtect ? 'Protect PDF' : 'Unlock PDF'}</span>
+                <!-- Primary Action CTA Button (Vibrant Blue Reference) -->
+                <button type="button" class="cpdf-benchmark-cta prot-clean-cta" id="prot-studio-run" ${canRun() ? '' : 'disabled'}>
+                  <span>${fam === 'image' ? 'Scrub & Secure' : isFlatten ? 'Flatten PDF' : isProtect ? 'Protect' : 'Unlock PDF'}</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                   </svg>
