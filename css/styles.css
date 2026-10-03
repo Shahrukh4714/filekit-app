@@ -53463,9 +53463,32 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .prot-root .prot-segmented-tabs,
   .prot-root .prot-segmented-tabs {
-    margin-bottom: 4px !important;
-    height: 30px !important;
+    margin-bottom: 6px !important;
+    height: 32px !important;
     flex-shrink: 0 !important;
+    background: #F1F5F9 !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    padding: 2.5px !important;
+    gap: 2px !important;
+  }
+
+  body #app-view .prot-root .prot-tab,
+  .prot-root .prot-tab {
+    height: 25px !important;
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    color: #64748B !important;
+    border-radius: 6px !important;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  body #app-view .prot-root .prot-tab.is-active,
+  .prot-root .prot-tab.is-active {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
   }
 
   body #app-view .prot-root #prot-context-area,
@@ -53477,7 +53500,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     max-height: none !important;
     min-height: 0 !important;
     overflow: visible !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 0 !important;
     scrollbar-width: none !important;
   }
 
@@ -53488,35 +53511,215 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     height: 0 !important;
   }
 
+  /* Unified Inset Password Card */
   body #app-view .prot-root .prot-input-group,
   .prot-root .prot-input-group {
     display: flex !important;
     flex-direction: column !important;
-    gap: 3px !important;
+    gap: 0 !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 9px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+    margin-bottom: 6px !important;
+  }
+
+  body #app-view .prot-root .prot-input-wrap,
+  .prot-root .prot-input-wrap {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  body #app-view .prot-root .prot-input-wrap:first-child,
+  .prot-root .prot-input-wrap:first-child {
+    border-bottom: 1px solid #F1F5F9 !important;
   }
 
   body #app-view .prot-root .prot-input-wrap .prot-input,
   .prot-root .prot-input-wrap .prot-input {
-    height: 32px !important;
+    height: 36px !important;
+    font-size: 12.5px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #0F172A !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 34px 0 11px !important;
+  }
+
+  body #app-view .prot-root .prot-input-wrap .prot-input::placeholder,
+  .prot-root .prot-input-wrap .prot-input::placeholder {
+    color: #94A3B8 !important;
     font-size: 12px !important;
   }
 
+  body #app-view .prot-root .prot-eye-btn,
+  .prot-root .prot-eye-btn {
+    right: 8px !important;
+    color: #94A3B8 !important;
+    padding: 4px !important;
+  }
+
+  body #app-view .prot-root .prot-match-pill,
+  .prot-root .prot-match-pill {
+    right: 8px !important;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+  }
+
+  /* Refined iOS Inset Permissions Card */
   body #app-view .prot-root .prot-ios-group,
   .prot-root .prot-ios-group {
-    margin-top: 2px !important;
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 9px !important;
+    overflow: hidden !important;
+    margin-top: 0 !important;
+    margin-bottom: 6px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
   }
 
   body #app-view .prot-root .prot-ios-row,
   .prot-root .prot-ios-row {
-    padding: 4px 8px !important;
-    font-size: 11px !important;
+    padding: 6.5px 10px !important;
+    border-bottom: 1px solid #EDF2F7 !important;
+    background: transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
   }
 
+  body #app-view .prot-root .prot-ios-row:last-child,
+  .prot-root .prot-ios-row:last-child {
+    border-bottom: none !important;
+  }
+
+  body #app-view .prot-root .prot-ios-row-left,
+  .prot-root .prot-ios-row-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+  }
+
+  body #app-view .prot-root .prot-ios-row-left svg,
+  .prot-root .prot-ios-row-left svg {
+    width: 13px !important;
+    height: 13px !important;
+    color: #64748B !important;
+    opacity: 1 !important;
+  }
+
+  body #app-view .prot-root .prot-ios-row-text,
+  .prot-root .prot-ios-row-text {
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  /* Refined Micro Switch */
+  body #app-view .prot-root .prot-ios-switch,
+  .prot-root .prot-ios-switch {
+    width: 34px !important;
+    height: 19px !important;
+    position: relative !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .prot-root .prot-ios-switch input,
+  .prot-root .prot-ios-switch input {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+  }
+
+  body #app-view .prot-root .prot-ios-slider,
+  .prot-root .prot-ios-slider {
+    position: absolute !important;
+    cursor: pointer !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: #CBD5E1 !important;
+    transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border-radius: 9999px !important;
+  }
+
+  body #app-view .prot-root .prot-ios-slider:before,
+  .prot-root .prot-ios-slider:before {
+    position: absolute !important;
+    content: "" !important;
+    height: 15px !important;
+    width: 15px !important;
+    left: 2px !important;
+    bottom: 2px !important;
+    background: #FFFFFF !important;
+    border-radius: 50% !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25) !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  body #app-view .prot-root .prot-ios-switch input:checked + .prot-ios-slider,
+  .prot-root .prot-ios-switch input:checked + .prot-ios-slider {
+    background: #00C466 !important;
+  }
+
+  body #app-view .prot-root .prot-ios-switch input:checked + .prot-ios-slider:before,
+  .prot-root .prot-ios-switch input:checked + .prot-ios-slider:before {
+    transform: translateX(15px) !important;
+  }
+
+  /* Master Key Micro-Slot */
   body #app-view .prot-root .prot-master-toggle,
   .prot-root .prot-master-toggle {
-    margin-top: 2px !important;
-    padding: 1px 0 !important;
-    font-size: 10.5px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    margin: 0 0 6px 0 !important;
+    padding: 4.5px 8px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #64748B !important;
+    background: #F8FAFC !important;
+    border: 1px dashed #CBD5E1 !important;
+    border-radius: 7px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  body #app-view .prot-root .prot-master-toggle:active,
+  .prot-root .prot-master-toggle:active {
+    background: #F1F5F9 !important;
+    border-color: #94A3B8 !important;
+    color: #0F172A !important;
+  }
+
+  body #app-view .prot-root .prot-master-box,
+  .prot-root .prot-master-box {
+    margin-bottom: 6px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+
+  body #app-view .prot-root .prot-master-box .prot-input,
+  .prot-root .prot-master-box .prot-input {
+    height: 32px !important;
+    border: none !important;
+    font-size: 11.5px !important;
+    padding: 0 10px !important;
+    background: transparent !important;
   }
 
   /* Security Specification Box: Hidden on mobile protect sheet */
@@ -53525,16 +53728,35 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: none !important;
   }
 
+  /* Primary Action CTA Button */
   body #app-view .prot-root #prot-studio-run,
   .prot-root #prot-studio-run {
-    margin-top: 8px !important;
+    margin-top: 4px !important;
     margin-bottom: 0 !important;
     flex-shrink: 0 !important;
-    height: 44px !important;
-    min-height: 44px !important;
+    height: 42px !important;
+    min-height: 42px !important;
     border-radius: 9999px !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.15s ease !important;
+  }
+
+  body #app-view .prot-root #prot-studio-run:disabled,
+  .prot-root #prot-studio-run:disabled {
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+  }
+
+  body #app-view .prot-root #prot-studio-run:active:not(:disabled),
+  .prot-root #prot-studio-run:active:not(:disabled) {
+    transform: scale(0.98) !important;
   }
 
   body #app-view .prot-root .prot-trust-footnote,
