@@ -53565,6 +53565,265 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     transform: rotate(180deg) !important;
   }
 
+  /* ══════════════════════════════════════════════════
+     COMPRESS TOOL: Mobile Bottom Sheet Parity (Zero-Scroll & Compact Fit)
+     ══════════════════════════════════════════════════ */
+  body #app-view .comp-root .cpdf-benchmark-workstation,
+  .comp-root .cpdf-benchmark-workstation {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #FFFFFF !important;
+    margin: 0 !important;
+  }
+
+  body #app-view .comp-root .cpdf-benchmark-stage,
+  .comp-root .cpdf-benchmark-stage {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    background: #EEF2F6 !important;
+    overflow: hidden !important;
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  body #app-view .comp-root #comp-benchmark-panel,
+  .comp-root #comp-benchmark-panel {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: calc(100% - 80px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 20 !important;
+    box-sizing: border-box !important;
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  body #app-view .comp-root #comp-benchmark-panel .cpdf-benchmark-panel-inner,
+  .comp-root #comp-benchmark-panel .cpdf-benchmark-panel-inner {
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 6px 14px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    gap: 4px !important;
+  }
+
+  body #app-view .comp-root .scan-exact-cards-stack,
+  .comp-root .scan-exact-cards-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3.5px !important;
+    margin: 0 0 2px 0 !important;
+  }
+
+  body #app-view .comp-root .scan-exact-cards-stack .scan-benchmark-card,
+  .comp-root .scan-exact-cards-stack .scan-benchmark-card {
+    height: 35px !important;
+    min-height: 35px !important;
+    padding: 0 10px !important;
+    border-radius: 7px !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+
+  body #app-view .comp-root .scan-benchmark-card-sub,
+  .comp-root .scan-benchmark-card-sub {
+    display: none !important;
+  }
+
+  body #app-view .comp-root .scan-benchmark-card-text,
+  .comp-root .scan-benchmark-card-text {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  body #app-view .comp-root .scan-exact-cards-stack .scan-benchmark-card-label,
+  .comp-root .scan-exact-cards-stack .scan-benchmark-card-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+
+  body #app-view .comp-root .scan-benchmark-pill-rec,
+  .comp-root .scan-benchmark-pill-rec {
+    font-size: 9.5px !important;
+    padding: 1.5px 5px !important;
+  }
+
+  body #app-view .comp-root .cpdf-benchmark-card--target.is-active,
+  .comp-root .cpdf-benchmark-card--target.is-active {
+    height: auto !important;
+    min-height: 35px !important;
+    padding: 4px 10px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  body #app-view .comp-root .cpdf-target-row-top,
+  .comp-root .cpdf-target-row-top {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  body #app-view .comp-root .cpdf-target-input-wrap,
+  .comp-root .cpdf-target-input-wrap {
+    margin-top: 3px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  body #app-view .comp-root .cpdf-target-inp,
+  .comp-root .cpdf-target-inp {
+    height: 28px !important;
+    font-size: 12px !important;
+  }
+
+  body #app-view .comp-root .cpdf-target-unit-sel,
+  .comp-root .cpdf-target-unit-sel {
+    height: 28px !important;
+    font-size: 12px !important;
+  }
+
+  body #app-view .comp-root .scan-segmented-settings-strip,
+  .comp-root .scan-segmented-settings-strip {
+    height: 32px !important;
+    min-height: 32px !important;
+    margin: 2px 0 !important;
+  }
+
+  body #app-view .comp-root .scan-segment-title,
+  .comp-root .scan-segment-title {
+    font-size: 9.5px !important;
+  }
+
+  body #app-view .comp-root .scan-segment-val,
+  .comp-root .scan-segment-val {
+    font-size: 11px !important;
+  }
+
+  body #app-view .comp-root .scan-exact-est-box,
+  .comp-root .scan-exact-est-box {
+    padding: 3px 8px !important;
+    margin: 1px 0 !important;
+  }
+
+  body #app-view .comp-root .scan-exact-est-title,
+  .comp-root .scan-exact-est-title {
+    font-size: 9.5px !important;
+  }
+
+  body #app-view .comp-root .scan-exact-est-row,
+  .comp-root .scan-exact-est-row {
+    margin: 1px 0 2px 0 !important;
+  }
+
+  body #app-view .comp-root .scan-exact-est-metric,
+  .comp-root .scan-exact-est-metric {
+    font-size: 11px !important;
+  }
+
+  body #app-view .comp-root .scan-exact-track,
+  .comp-root .scan-exact-track {
+    height: 3px !important;
+  }
+
+  body #app-view .comp-root #comp-studio-run,
+  .comp-root #comp-studio-run {
+    height: 42px !important;
+    min-height: 42px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    margin-top: 4px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .comp-root .cpdf-local-trust-footer,
+  .comp-root .cpdf-local-trust-footer {
+    margin: 3px 0 0 !important;
+    font-size: 10.5px !important;
+    color: #64748B !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Drawer Collapsed (Peek) Mode */
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage {
+    flex: 1 1 calc(100% - 76px) !important;
+    height: calc(100% - 76px) !important;
+    max-height: calc(100% - 76px) !important;
+  }
+
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed #comp-benchmark-panel,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed #comp-benchmark-panel {
+    flex: 0 0 76px !important;
+    height: 76px !important;
+    max-height: 76px !important;
+    min-height: 76px !important;
+    overflow: hidden !important;
+    cursor: pointer;
+  }
+
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed #comp-benchmark-panel .cpdf-benchmark-panel-inner,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed #comp-benchmark-panel .cpdf-benchmark-panel-inner {
+    padding: 0 14px 10px !important;
+    overflow: hidden !important;
+  }
+
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .scan-exact-cards-stack,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .scan-exact-cards-stack,
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .scan-segmented-settings-strip,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .scan-segmented-settings-strip,
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .scan-exact-est-box,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .scan-exact-est-box,
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed #comp-studio-run,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed #comp-studio-run,
+  body #app-view .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-local-trust-footer,
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-local-trust-footer {
+    display: none !important;
+  }
+
+  .comp-root .cpdf-benchmark-workstation.is-sheet-collapsed .mobile-sheet-chevron {
+    transform: rotate(180deg) !important;
+  }
+
   /* 3. Dropzone in Tool Workspace (Idle State) — Auto-Fits above persistent toolbar */
   body #app-workspace-tool-view .drop-hero-box,
   body.ff-tool-active .drop-hero-box,
