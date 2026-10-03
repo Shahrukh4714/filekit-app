@@ -31985,6 +31985,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let confirmPw = '';
     let ownerPassword = '';
     let showAdvanced = false;
+    let showPermissions = false;
     let showPw = false;
     let permPrint = true;
     let permCopy = true;
@@ -32042,6 +32043,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       confirmPw = '';
       ownerPassword = '';
       showAdvanced = false;
+      showPermissions = false;
       currentPage = 1;
       totalPages = 1;
       pdfDoc = null;
@@ -32555,63 +32557,78 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                       </div>
                     ` : `
                       <div class="prot-input-group">
-                        <div class="prot-input-wrap">
-                          <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Set encryption password…" value="${_esc(password)}">
-                          <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
-                            ${showPw ? I.eyeOff : I.eye}
-                          </button>
-                        </div>
-
-                        <div class="prot-input-wrap">
-                          <input id="prot-pw-confirm" class="prot-input prot-input--confirm" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm password…" value="${_esc(confirmPw)}">
-                          <div id="prot-match-pill" class="prot-match-pill ${confirmPw ? (confirmPw === password ? 'is-match' : 'is-mismatch') : ''}" style="display:${confirmPw ? 'inline-flex' : 'none'};">
-                            ${confirmPw ? (confirmPw === password ? '✓ Match' : '✕ Mismatch') : ''}
-                          </div>
-                        </div>
-
-                        <!-- iOS Inset Switch Permission Controls -->
-                        <div class="prot-ios-group">
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.print}
-                              <span class="prot-ios-row-text">Allow Printing</span>
-                            </div>
-                            <label class="prot-ios-switch">
-                              <input type="checkbox" id="prot-perm-print" ${permPrint ? 'checked' : ''}>
-                              <span class="prot-ios-slider"></span>
-                            </label>
-                          </div>
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.copy}
-                              <span class="prot-ios-row-text">Allow Text Copying</span>
-                            </div>
-                            <label class="prot-ios-switch">
-                              <input type="checkbox" id="prot-perm-copy" ${permCopy ? 'checked' : ''}>
-                              <span class="prot-ios-slider"></span>
-                            </label>
-                          </div>
-                          <div class="prot-ios-row">
-                            <div class="prot-ios-row-left">
-                              ${I.edit}
-                              <span class="prot-ios-row-text">Allow Form Modifications</span>
-                            </div>
-                            <label class="prot-ios-switch">
-                              <input type="checkbox" id="prot-perm-edit" ${permEdit ? 'checked' : ''}>
-                              <span class="prot-ios-slider"></span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <!-- Master Password Micro-Disclosure -->
-                        <button type="button" class="prot-master-toggle" id="prot-toggle-adv">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                          <span>${showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)'}</span>
-                        </button>
-
-                        <div class="prot-master-box" id="prot-adv-body" style="${showAdvanced ? 'display: block;' : 'display: none;'}">
+                        <div class="prot-pw-card">
                           <div class="prot-input-wrap">
-                            <input id="prot-owner-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Master / Owner password…" value="${_esc(ownerPassword)}" style="height:30px;font-size:11.5px;">
+                            <input id="prot-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Set encryption password…" value="${_esc(password)}">
+                            <button type="button" class="prot-eye-btn" id="prot-toggle-eye" title="Toggle password visibility" aria-label="Toggle password visibility">
+                              ${showPw ? I.eyeOff : I.eye}
+                            </button>
+                          </div>
+
+                          <div class="prot-input-wrap">
+                            <input id="prot-pw-confirm" class="prot-input prot-input--confirm" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Confirm password…" value="${_esc(confirmPw)}">
+                            <div id="prot-match-pill" class="prot-match-pill ${confirmPw ? (confirmPw === password ? 'is-match' : 'is-mismatch') : ''}" style="display:${confirmPw ? 'inline-flex' : 'none'};">
+                              ${confirmPw ? (confirmPw === password ? '✓ Match' : '✕ Mismatch') : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Collapsible Permissions & Master Key Section -->
+                        <div class="prot-advanced-section">
+                          <button type="button" class="prot-advanced-toggle" id="prot-toggle-permissions" aria-expanded="${showPermissions ? 'true' : 'false'}">
+                            <div class="prot-adv-toggle-left">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                              <span>Permissions &amp; Master Key (Optional)</span>
+                            </div>
+                            <svg class="prot-adv-chevron ${showPermissions ? 'is-expanded' : ''}" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+
+                          <div class="prot-advanced-body" id="prot-permissions-body" style="${showPermissions ? 'display: block;' : 'display: none;'}">
+                            <!-- iOS Inset Switch Permission Controls -->
+                            <div class="prot-ios-group">
+                              <div class="prot-ios-row">
+                                <div class="prot-ios-row-left">
+                                  ${I.print}
+                                  <span class="prot-ios-row-text">Allow Printing</span>
+                                </div>
+                                <label class="prot-ios-switch">
+                                  <input type="checkbox" id="prot-perm-print" ${permPrint ? 'checked' : ''}>
+                                  <span class="prot-ios-slider"></span>
+                                </label>
+                              </div>
+                              <div class="prot-ios-row">
+                                <div class="prot-ios-row-left">
+                                  ${I.copy}
+                                  <span class="prot-ios-row-text">Allow Text Copying</span>
+                                </div>
+                                <label class="prot-ios-switch">
+                                  <input type="checkbox" id="prot-perm-copy" ${permCopy ? 'checked' : ''}>
+                                  <span class="prot-ios-slider"></span>
+                                </label>
+                              </div>
+                              <div class="prot-ios-row">
+                                <div class="prot-ios-row-left">
+                                  ${I.edit}
+                                  <span class="prot-ios-row-text">Allow Form Modifications</span>
+                                </div>
+                                <label class="prot-ios-switch">
+                                  <input type="checkbox" id="prot-perm-edit" ${permEdit ? 'checked' : ''}>
+                                  <span class="prot-ios-slider"></span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <!-- Master Password Micro-Disclosure -->
+                            <button type="button" class="prot-master-toggle" id="prot-toggle-adv">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                              <span>${showAdvanced ? 'Hide Master Key' : 'Add Master/Owner Key (Optional)'}</span>
+                            </button>
+
+                            <div class="prot-master-box" id="prot-adv-body" style="${showAdvanced ? 'display: block;' : 'display: none;'}">
+                              <div class="prot-input-wrap">
+                                <input id="prot-owner-pw" class="prot-input" type="${showPw ? 'text' : 'password'}" autocomplete="new-password" spellcheck="false" placeholder="Master / Owner password…" value="${_esc(ownerPassword)}" style="height:30px;font-size:11.5px;">
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -32700,6 +32717,19 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const eyeBtn = container.querySelector('#prot-toggle-eye');
         if (eyeBtn) eyeBtn.innerHTML = showPw ? I.eyeOff : I.eye;
       });
+
+      // Permissions & Master Key accordion toggle
+      const permToggle = container.querySelector('#prot-toggle-permissions');
+      if (permToggle) {
+        permToggle.addEventListener('click', () => {
+          showPermissions = !showPermissions;
+          const body = container.querySelector('#prot-permissions-body');
+          const chev = permToggle.querySelector('.prot-adv-chevron');
+          if (body) body.style.display = showPermissions ? 'block' : 'none';
+          if (chev) chev.classList.toggle('is-expanded', showPermissions);
+          permToggle.setAttribute('aria-expanded', showPermissions ? 'true' : 'false');
+        });
+      }
 
       // Master Key disclosure toggle
       const advToggle = container.querySelector('#prot-toggle-adv');
