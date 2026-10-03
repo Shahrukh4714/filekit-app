@@ -52565,7 +52565,6 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   /* 1. TOP PANE: Canvas / Document Preview Stage (~40%) */
   body #app-view .cpdf-benchmark-stage,
-  .conv-root .cpdf-benchmark-stage,
   .org-root .cpdf-benchmark-stage,
   .cpdf-benchmark-stage,
   .scan-result-stage,
@@ -52671,7 +52670,6 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   body #app-view .cpdf-benchmark-panel.scan-result-panel,
   .scan-benchmark-panel,
   #comp-benchmark-panel,
-  .conv-root .cpdf-benchmark-panel,
   .org-root .cpdf-benchmark-panel,
   .cpdf-benchmark-panel,
   .scan-result-panel,
@@ -52975,132 +52973,217 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   }
 
   /* ══════════════════════════════════════════════════
-     CONVERT TOOL: Mobile Two-Pane Drawer Parity
+     CONVERT TOOL: Mobile Bottom Sheet Parity (Zero-Scroll & Compact Fit)
      ══════════════════════════════════════════════════ */
-  body #app-view .conv-root .conv-cards-stack,
-  .conv-root .conv-cards-stack {
+  body #app-view .conv-root.cpdf-benchmark-workstation,
+  body #app-view .conv-root .cpdf-benchmark-workstation,
+  .conv-root.cpdf-benchmark-workstation,
+  .conv-root .cpdf-benchmark-workstation {
     display: flex !important;
     flex-direction: column !important;
-    height: auto !important;
-    max-height: none !important;
-    flex: 1 1 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain !important;
-    gap: 7px !important;
-    margin-bottom: 8px !important;
-    padding-right: 2px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #FFFFFF !important;
+    margin: 0 !important;
   }
 
-  body #app-view .conv-root #conv-cfg-cards-stack,
-  .conv-root #conv-cfg-cards-stack {
+  body #app-view .conv-root .cpdf-benchmark-stage,
+  .conv-root .cpdf-benchmark-stage {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    background: #EEF2F6 !important;
+    overflow: hidden !important;
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  body #app-view .conv-root #cpdf-right-panel,
+  body #app-view .conv-root .cpdf-benchmark-panel,
+  .conv-root #cpdf-right-panel,
+  .conv-root .cpdf-benchmark-panel {
+    flex: 0 0 auto !important;
     height: auto !important;
-    max-height: none !important;
-    flex: 1 1 auto !important;
+    max-height: calc(100% - 80px) !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain !important;
-    gap: 8px !important;
-    margin-bottom: 8px !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 20 !important;
+    box-sizing: border-box !important;
+    transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
-  body #app-view .conv-root .conv-primary-cta,
-  .conv-root .conv-primary-cta {
-    margin-top: auto !important;
-    margin-bottom: 0 !important;
-    flex-shrink: 0 !important;
-  }
-
-  .conv-trust-footnote {
-    margin: 5px 0 2px !important;
-    flex-shrink: 0 !important;
-  }
-
+  body #app-view .conv-root #cpdf-right-panel .cpdf-benchmark-panel-inner,
   body #app-view .conv-root .cpdf-benchmark-panel-inner,
   .conv-root .cpdf-benchmark-panel-inner {
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    padding: 10px 14px 10px !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 6px 14px 10px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
     align-items: stretch !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     box-sizing: border-box !important;
+    gap: 4px !important;
   }
 
-  .conv-stage-header {
+  body #app-view .conv-root .conv-stage-header,
+  .conv-root .conv-stage-header {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     width: 100% !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
     flex-shrink: 0 !important;
   }
 
-  .conv-stage-header-left {
+  body #app-view .conv-root .conv-stage-header-left,
+  .conv-root .conv-stage-header-left {
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
     min-width: 0 !important;
   }
 
-  .conv-stage2-header {
+  body #app-view .conv-root .conv-header-icon,
+  .conv-root .conv-header-icon {
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .conv-root .conv-header-icon svg,
+  .conv-root .conv-header-icon svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  body #app-view .conv-root .conv-stage-title,
+  .conv-root .conv-stage-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #0F172A !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  body #app-view .conv-root .conv-stage2-header,
+  .conv-root .conv-stage2-header {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
     flex-shrink: 0 !important;
   }
 
-  .conv-stage2-header-main {
+  body #app-view .conv-root .conv-stage2-header-main,
+  .conv-root .conv-stage2-header-main {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     width: 100% !important;
   }
 
-  .conv-stage2-header-left {
+  body #app-view .conv-root .conv-stage2-header-left,
+  .conv-root .conv-stage2-header-left {
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
     min-width: 0 !important;
   }
 
-  .conv-stage2-header-top {
+  body #app-view .conv-root .conv-stage2-header-top,
+  .conv-root .conv-stage2-header-top {
     display: flex !important;
     align-items: center !important;
-    margin-top: 4px !important;
+    margin-top: 2px !important;
   }
 
-  .conv-choose-another-btn {
+  body #app-view .conv-root .conv-choose-another-btn,
+  .conv-root .conv-choose-another-btn {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 4px !important;
     color: #2563EB !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
     font-weight: 600 !important;
-    padding: 2px 0 6px 0 !important;
+    padding: 1px 0 2px 0 !important;
   }
 
-  .conv-choose-another-btn svg {
+  body #app-view .conv-root .conv-choose-another-btn svg,
+  .conv-root .conv-choose-another-btn svg {
     stroke: #2563EB !important;
+  }
+
+  body #app-view .conv-root .conv-apply-all-btn,
+  .conv-root .conv-apply-all-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 0 10px !important;
+    border-radius: 6px !important;
+    margin-bottom: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .conv-root .conv-cards-stack,
+  .conv-root .conv-cards-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    max-height: 220px !important;
+    flex: 0 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    gap: 4px !important;
+    margin-bottom: 4px !important;
+    padding-right: 1px !important;
   }
 
   body #app-view .conv-root .conv-format-row,
   .conv-root .conv-format-row {
-    min-height: 48px !important;
-    padding: 10px 12px !important;
-    border-radius: 8px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 10px !important;
+    border-radius: 7px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #FFFFFF !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     box-sizing: border-box !important;
   }
 
@@ -53110,12 +53193,51 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     background: #FAFAFA !important;
   }
 
+  body #app-view .conv-root .conv-format-left,
+  .conv-root .conv-format-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  body #app-view .conv-root .conv-format-name,
+  .conv-root .conv-format-name {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #0F172A !important;
+    line-height: 1.2 !important;
+  }
+
+  body #app-view .conv-root .conv-format-ext,
+  .conv-root .conv-format-ext {
+    font-size: 11px !important;
+    color: #64748B !important;
+  }
+
+  body #app-view .conv-root #conv-cfg-cards-stack,
+  .conv-root #conv-cfg-cards-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    gap: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
   body #app-view .conv-root .conv-config-row,
   .conv-root .conv-config-row {
-    min-height: 52px !important;
-    padding: 10px 12px !important;
-    border-radius: 8px !important;
+    min-height: 42px !important;
+    padding: 6px 10px !important;
+    border-radius: 7px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #FFFFFF !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   body #app-view .conv-root .conv-config-row.is-active,
@@ -53124,10 +53246,76 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     background: #FAFAFA !important;
   }
 
+  body #app-view .conv-root .conv-config-title,
+  .conv-root .conv-config-title {
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+  }
 
+  body #app-view .conv-root .conv-config-desc,
+  .conv-root .conv-config-desc {
+    font-size: 10.5px !important;
+    color: #64748B !important;
+    line-height: 1.2 !important;
+  }
+
+  body #app-view .conv-root .conv-primary-cta,
+  .conv-root .conv-primary-cta {
+    height: 42px !important;
+    min-height: 42px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    width: 100% !important;
+    touch-action: manipulation;
+    margin-top: 4px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body #app-view .conv-root .conv-trust-footnote,
+  .conv-root .conv-trust-footnote {
+    margin: 3px 0 0 !important;
+    font-size: 10.5px !important;
+    color: #64748B !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Drawer Collapsed (Peek) Mode */
+  body #app-view .conv-root.is-sheet-collapsed .cpdf-benchmark-stage,
+  .conv-root.is-sheet-collapsed .cpdf-benchmark-stage,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-stage {
+    flex: 1 1 calc(100% - 76px) !important;
+    height: calc(100% - 76px) !important;
+    max-height: calc(100% - 76px) !important;
+  }
+
+  body #app-view .conv-root.is-sheet-collapsed #cpdf-right-panel,
+  body #app-view .conv-root.is-sheet-collapsed .cpdf-benchmark-panel,
+  .conv-root.is-sheet-collapsed #cpdf-right-panel,
+  .conv-root.is-sheet-collapsed .cpdf-benchmark-panel,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed #cpdf-right-panel,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed #cpdf-right-panel,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel {
+    flex: 0 0 76px !important;
+    height: 76px !important;
+    max-height: 76px !important;
+    min-height: 76px !important;
+    overflow: hidden !important;
+    cursor: pointer;
+  }
 
   body #app-view .conv-root.is-sheet-collapsed .cpdf-benchmark-panel-inner,
-  .conv-root.is-sheet-collapsed .cpdf-benchmark-panel-inner {
+  .conv-root.is-sheet-collapsed .cpdf-benchmark-panel-inner,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel-inner,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .cpdf-benchmark-panel-inner {
     margin: 0 !important;
     padding: 0 14px 10px !important;
     overflow: hidden !important;
@@ -53136,6 +53324,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .conv-root.is-sheet-collapsed .conv-cards-stack,
   .conv-root.is-sheet-collapsed .conv-cards-stack,
+  body #app-view .conv-root.is-sheet-collapsed #conv-cfg-cards-stack,
+  .conv-root.is-sheet-collapsed #conv-cfg-cards-stack,
   body #app-view .conv-root.is-sheet-collapsed .conv-primary-cta,
   .conv-root.is-sheet-collapsed .conv-primary-cta,
   body #app-view .conv-root.is-sheet-collapsed .conv-stage2-header-top,
@@ -53143,8 +53333,25 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   body #app-view .conv-root.is-sheet-collapsed .conv-trust-footnote,
   .conv-root.is-sheet-collapsed .conv-trust-footnote,
   body #app-view .conv-root.is-sheet-collapsed .conv-apply-all-btn,
-  .conv-root.is-sheet-collapsed .conv-apply-all-btn {
+  .conv-root.is-sheet-collapsed .conv-apply-all-btn,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-cards-stack,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-cards-stack,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed #conv-cfg-cards-stack,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed #conv-cfg-cards-stack,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-primary-cta,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-primary-cta,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-stage2-header-top,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-stage2-header-top,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-trust-footnote,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-trust-footnote,
+  body #app-view .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-apply-all-btn,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .conv-apply-all-btn {
     display: none !important;
+  }
+
+  .conv-root.is-sheet-collapsed .mobile-sheet-chevron,
+  .conv-root .cpdf-benchmark-workstation.is-sheet-collapsed .mobile-sheet-chevron {
+    transform: rotate(180deg) !important;
   }
 
   /* ══════════════════════════════════════════════════
