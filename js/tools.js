@@ -32830,30 +32830,30 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     }
 
     async function executeSecurityPipeline() {
-      renderProcessing();
-      const fill = container.querySelector('#prot-bar-fill');
-      const pct = container.querySelector('#prot-pct-label');
-      const step = container.querySelector('#prot-step-label');
-
       const fam = fileFamily(file);
       const isProtect = mode === 'protect';
       const isFlatten = mode === 'flatten';
 
-      const seq = fam === 'image'
-        ? [[35, 'Decoding image raster…'], [70, 'Stripping EXIF, GPS & camera tags…'], [90, 'Re-encoding clean pixels…'], [100, 'Done']]
-        : isFlatten
-          ? [[30, 'Scanning interactive widget trees…'], [60, 'Baking form fields & annotations…'], [85, optLayers ? 'Collapsing OCG layers into page…' : 'Preserving base content…'], [100, 'Done']]
-          : isProtect
-            ? [[28, 'Parsing document dictionary…'], [55, 'Deriving 256-bit AES key via PBKDF2…'], [80, 'Encrypting object streams & ACLs…'], [100, 'Done']]
-            : [[30, 'Verifying decryption credentials…'], [65, 'Decrypting xref streams…'], [85, 'Unpacking open document…'], [100, 'Done']];
-
-      for (const [val, label] of seq) {
-        await new Promise(r => setTimeout(r, 200));
-        if (fill) fill.style.width = `${val}%`;
-        if (pct) pct.textContent = `${val}%`;
-        if (step) step.textContent = label;
+      const ctaBtn = container.querySelector('#prot-studio-run');
+      const originalBtnHtml = ctaBtn ? ctaBtn.innerHTML : '';
+      if (ctaBtn) {
+        ctaBtn.disabled = true;
+        ctaBtn.style.opacity = '0.9';
+        ctaBtn.style.pointerEvents = 'none';
+        const actionLabel = fam === 'image' ? 'Scrubbing…' : isFlatten ? 'Flattening…' : isProtect ? 'Protecting…' : 'Decrypting…';
+        ctaBtn.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:8px;">
+            <svg class="cpdf-benchmark-icon--spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+              <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+              <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+            </svg>
+            <span>${actionLabel}</span>
+          </span>
+        `;
       }
-      await new Promise(r => setTimeout(r, 120));
+      await new Promise(r => setTimeout(r, 60));
 
       let output = null;
 
@@ -32921,14 +32921,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       } catch (err) {
         console.error('[Protect] pipeline execution error:', err);
+        if (ctaBtn) {
+          ctaBtn.disabled = false;
+          ctaBtn.style.opacity = '';
+          ctaBtn.style.pointerEvents = '';
+          ctaBtn.innerHTML = originalBtnHtml;
+        }
         alert('Operation failed: ' + (err?.message || 'Error processing document'));
-        renderConfigure();
         return;
       }
 
       if (!output || !output.blob) {
+        if (ctaBtn) {
+          ctaBtn.disabled = false;
+          ctaBtn.style.opacity = '';
+          ctaBtn.style.pointerEvents = '';
+          ctaBtn.innerHTML = originalBtnHtml;
+        }
         alert('Security processing failed to generate file.');
-        renderConfigure();
         return;
       }
 
