@@ -5548,7 +5548,7 @@ function filterTable(q) {
                 </div>
 
                 <!-- Apple-Grade Frosted Glass Floating Stage Dock (Zero Document Overlap) -->
-                <div class="scan-stage-dock" id="scan-stage-dock" style="${isTextSheetOpen ? 'display:none;' : ''}" role="toolbar" aria-label="Page and View Controls">
+                <div class="scan-stage-dock ${pages.length <= 1 ? 'is-single-page' : ''}" id="scan-stage-dock" style="${isTextSheetOpen ? 'display:none;' : ''}" role="toolbar" aria-label="Page and View Controls">
                   <div class="scan-dock-stepper">
                     <button type="button" class="scan-dock-icon-btn" id="btn-rail-prev" ${selIdx <= 0 ? 'disabled' : ''} title="Previous page (Left Arrow)">${ICONS.prev}</button>
                     <span class="scan-dock-page-text">Page <strong>${selIdx + 1}</strong> of ${pages.length}</span>

@@ -33684,7 +33684,7 @@ html body #app-view #app-canvas.app-canvas.ff-tool-active:has(.cpdf-result-body)
   bottom: 54px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  display: flex !important;
+  display: flex;
   align-items: center !important;
   gap: 6px !important;
   background: rgba(255, 255, 255, 0.96) !important;
@@ -52684,8 +52684,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     background: #FFFFFF !important;
     border-top: 1px solid #E2E8F0 !important;
     border-left: none !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
@@ -53014,8 +53014,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
     background: #FFFFFF !important;
     border-top: 1px solid #E2E8F0 !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
@@ -53024,6 +53024,30 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     z-index: 20 !important;
     box-sizing: border-box !important;
     transition: flex 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  /* Multi-page preview pill relocated to top-center of stage on mobile */
+  body #app-view #conv-page-nav-pill,
+  #conv-page-nav-pill {
+    top: 10px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 28px !important;
+    padding: 2px 10px !important;
+    font-size: 11px !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 10 !important;
+  }
+  body #app-view #conv-page-nav-pill[style*="display: none"],
+  body #app-view #conv-page-nav-pill[style*="display:none"],
+  #conv-page-nav-pill[style*="display: none"],
+  #conv-page-nav-pill[style*="display:none"] {
+    display: none !important;
   }
 
   body #app-view .conv-root #cpdf-right-panel .cpdf-benchmark-panel-inner,
@@ -53366,6 +53390,43 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     min-height: 0 !important;
     margin: 0 !important;
     background: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Multi-page preview pill relocated to top-center of stage on mobile */
+  body #app-view .prot-stage-pager,
+  .prot-stage-pager {
+    top: 10px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 28px !important;
+    padding: 2px 10px !important;
+    font-size: 11px !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 10 !important;
+  }
+  body #app-view .prot-stage-pager[style*="display: none"],
+  body #app-view .prot-stage-pager[style*="display:none"],
+  .prot-stage-pager[style*="display: none"],
+  .prot-stage-pager[style*="display:none"] {
+    display: none !important;
+  }
+  body #app-view .prot-stage-pager .prot-pager-btn,
+  .prot-stage-pager .prot-pager-btn {
+    width: 22px !important;
+    height: 22px !important;
+    padding: 0 !important;
+  }
+  body #app-view .prot-stage-pager .prot-pager-label,
+  .prot-stage-pager .prot-pager-label {
+    font-size: 11px !important;
   }
 
   body #app-view .prot-root .cpdf-benchmark-panel-inner,
@@ -53570,9 +53631,40 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .scan-tool .scan-stage-dock,
   .scan-tool .scan-stage-dock {
-    bottom: 8px !important;
-    padding: 3px 8px !important;
+    top: 10px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 28px !important;
+    padding: 2px 8px !important;
     font-size: 11px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    z-index: 25 !important;
+  }
+
+  body #app-view .scan-tool .scan-stage-dock.is-single-page,
+  .scan-tool .scan-stage-dock.is-single-page {
+    display: none !important;
+  }
+
+  body #app-view .scan-tool .scan-stage-dock .scan-dock-zoom-group,
+  body #app-view .scan-tool .scan-stage-dock .scan-dock-sep,
+  body #app-view .scan-tool .scan-stage-dock .scan-dock-device-pill,
+  .scan-tool .scan-stage-dock .scan-dock-zoom-group,
+  .scan-tool .scan-stage-dock .scan-dock-sep,
+  .scan-tool .scan-stage-dock .scan-dock-device-pill {
+    display: none !important;
+  }
+
+  body #app-view .scan-tool .scan-stage-dock .scan-dock-stepper,
+  .scan-tool .scan-stage-dock .scan-dock-stepper {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
   }
 
   body #app-view .scan-tool .scan-benchmark-panel,
@@ -53584,8 +53676,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
     background: #FFFFFF !important;
     border-top: 1px solid #E2E8F0 !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
@@ -53795,8 +53887,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
     background: #FFFFFF !important;
     border-top: 1px solid #E2E8F0 !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
