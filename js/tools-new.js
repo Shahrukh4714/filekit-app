@@ -5612,15 +5612,23 @@ function filterTable(q) {
 
           <!-- RIGHT COLUMN: Dedicated Studio Export & Options Panel (Exact Compress Tool Parity) -->
           <aside class="cpdf-benchmark-panel scan-benchmark-panel" id="scan-benchmark-panel" aria-label="Export Settings">
+            <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
             <div class="cpdf-benchmark-panel-inner">
               <!-- Header: Green Squircle Badge & Title Matching Compress Tool -->
               <div class="scan-exact-header">
-                <div class="scan-exact-icon" style="background: #00C466 !important;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/>
-                  </svg>
+                <div class="scan-exact-header-left">
+                  <div class="scan-exact-icon" style="background: #00C466 !important;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/>
+                    </svg>
+                  </div>
+                  <h2 class="scan-exact-title">Scan OCR</h2>
                 </div>
-                <h2 class="scan-exact-title">Scan OCR</h2>
+                <button type="button" class="mobile-sheet-toggle-btn" aria-label="Toggle options drawer">
+                  <svg class="mobile-sheet-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
               </div>
 
               <!-- Format Option Cards Stack (Clean 38px single-line cards matching Compress tool) -->
@@ -8610,6 +8618,38 @@ function filterTable(q) {
             if (panelConfirmText) {
               panelConfirmText.textContent = pdfFormat === 'zip' ? 'Download Image ZIP' : (pdfFormat === 'searchable' ? 'Scan OCR' : (pdfFormat === 'ocr_text' ? 'Export Extracted Text' : 'Export Standard PDF'));
             }
+          }
+        };
+      }
+
+      // Mobile Bottom Sheet Collapse/Expand Drawer Toggle (Compress & Protect Parity)
+      const workstation = parent.querySelector('.scan-benchmark-workstation');
+      const sheetToggleBtn = parent.querySelector('.mobile-sheet-toggle-btn');
+      const sheetDragHandle = parent.querySelector('.mobile-sheet-drag-handle');
+      const toggleDrawer = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (workstation) {
+          const isCollapsing = !workstation.classList.contains('is-sheet-collapsed');
+          workstation.classList.toggle('is-sheet-collapsed');
+          if (isCollapsing) {
+            const inner = workstation.querySelector('.cpdf-benchmark-panel-inner');
+            if (inner) inner.scrollTop = 0;
+          }
+        }
+      };
+      if (sheetToggleBtn) sheetToggleBtn.onclick = toggleDrawer;
+      if (sheetDragHandle) sheetDragHandle.onclick = toggleDrawer;
+
+      const headerEl = parent.querySelector('.scan-exact-header');
+      if (headerEl) {
+        headerEl.onclick = (e) => {
+          if (workstation && workstation.classList.contains('is-sheet-collapsed')) {
+            e.preventDefault();
+            e.stopPropagation();
+            workstation.classList.remove('is-sheet-collapsed');
           }
         };
       }
