@@ -4413,9 +4413,22 @@ try {
       iconDiv.className = `sp-card-icon ${meta.themeClass}`;
       iconDiv.innerHTML = meta.svg;
 
+      const textDiv = document.createElement('div');
+      textDiv.className = 'sp-card-text';
+
       const nameSpan = document.createElement('span');
       nameSpan.className = 'sp-card-name';
       nameSpan.textContent = title || id;
+
+      const subSpan = document.createElement('span');
+      subSpan.className = 'sp-card-sub';
+      subSpan.textContent = tool?.description || '';
+
+      textDiv.append(nameSpan, subSpan);
+
+      const chevronDiv = document.createElement('div');
+      chevronDiv.className = 'sp-card-chevron';
+      chevronDiv.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
 
       if (hasCrown) {
         const crown = document.createElement('span');
@@ -4424,7 +4437,7 @@ try {
         nameSpan.append(crown);
       }
 
-      card.append(iconDiv, nameSpan);
+      card.append(iconDiv, textDiv, chevronDiv);
       card.addEventListener('click', () => openWorkspaceTool(id));
       return card;
     }
@@ -4605,6 +4618,70 @@ try {
       }
     }
 
+    const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function createMobHeroCard(toolId, title, desc, gradient, svgPath) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'sp-mob-hero-card';
+      card.setAttribute('data-tool-id', toolId);
+      card.setAttribute('aria-label', title);
+
+      card.innerHTML = `
+        <div class="sp-mob-hero-top">
+          <div class="sp-mob-hero-icon" style="background: ${gradient};">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${svgPath}</svg>
+          </div>
+          <svg class="sp-mob-hero-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </div>
+        <div class="sp-mob-hero-bottom">
+          <div class="sp-mob-hero-name">${_esc(title)}</div>
+          <div class="sp-mob-hero-desc">${_esc(desc)}</div>
+        </div>
+      `;
+
+      card.addEventListener('click', () => openWorkspaceTool(toolId));
+      return card;
+    }
+
+    function createMobInsetRow(toolId, title, sub, explicitColor, explicitSvg) {
+      const tool = window.FF?.registry?.get(toolId) || {};
+      const displayTitle = title || tool.name || toolId;
+      const displaySub = sub || tool.desc || tool.description || (tool.category ? `${tool.category} tool` : 'Fast in-browser tool');
+      const visuals = resolveToolCardVisuals(toolId, tool, explicitColor, explicitSvg);
+
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'sp-mob-inset-row';
+      row.setAttribute('data-tool-id', toolId);
+      row.setAttribute('aria-label', displayTitle);
+
+      const left = document.createElement('div');
+      left.className = 'sp-mob-row-left';
+
+      const icon = document.createElement('div');
+      icon.className = `sp-mob-row-icon ${visuals.themeClass}`;
+      if (explicitColor) icon.style.background = explicitColor;
+      icon.innerHTML = visuals.svg;
+
+      const text = document.createElement('div');
+      text.className = 'sp-mob-row-text';
+      text.innerHTML = `
+        <span class="sp-mob-row-title">${_esc(displayTitle)}</span>
+        <span class="sp-mob-row-sub">${_esc(displaySub)}</span>
+      `;
+
+      left.append(icon, text);
+
+      const right = document.createElement('div');
+      right.className = 'sp-mob-row-right';
+      right.innerHTML = `<svg class="sp-mob-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+
+      row.append(left, right);
+      row.addEventListener('click', () => openWorkspaceTool(toolId));
+      return row;
+    }
+
     function renderSmallpdfHome() {
       const container = document.getElementById('sp-home-sections-container');
       const appHomeView = document.getElementById('app-home-view');
@@ -4616,8 +4693,13 @@ try {
       const targetContainer = container || appHomeView;
       if (!targetContainer) return;
 
-      // 2. Render Structured Sections
       targetContainer.innerHTML = '';
+
+      // ──────────────────────────────────────────────────────────
+      // 1. DESKTOP VIEW CONTAINER
+      // ──────────────────────────────────────────────────────────
+      const desktopContainer = document.createElement('div');
+      desktopContainer.className = 'sp-desktop-home-sections';
 
       CAPABILITY_SECTIONS.forEach(sec => {
         const secEl = document.createElement('section');
@@ -4660,8 +4742,159 @@ try {
 
         secEl.appendChild(headerEl);
         secEl.appendChild(gridEl);
-        targetContainer.appendChild(secEl);
+        desktopContainer.appendChild(secEl);
       });
+
+      targetContainer.appendChild(desktopContainer);
+
+      // ──────────────────────────────────────────────────────────
+      // 2. MOBILE VIEW CONTAINER (Direction B · No Pills · Dark Ink)
+      // ──────────────────────────────────────────────────────────
+      const mobContainer = document.createElement('div');
+      mobContainer.className = 'sp-mob-home-container';
+
+      // 2a. Mobile Search Bar
+      const searchBox = document.createElement('div');
+      searchBox.className = 'sp-mob-search-box';
+      searchBox.innerHTML = `
+        <svg class="sp-mob-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" class="sp-mob-search-input" placeholder="Search 60+ tools (e.g. compress, word)..." autocomplete="off" spellcheck="false">
+      `;
+      mobContainer.appendChild(searchBox);
+
+      // 2b. Main Content Container (Hero Bento + Inset Sections)
+      const mainContent = document.createElement('div');
+      mainContent.className = 'sp-mob-main-content';
+
+      // Quick Actions (Hero Bento 2x2)
+      const qaOverline = document.createElement('div');
+      qaOverline.className = 'sp-mob-sec-overline';
+      qaOverline.innerHTML = `<span>Quick Actions</span>`;
+      mainContent.appendChild(qaOverline);
+
+      const heroBento = document.createElement('div');
+      heroBento.className = 'sp-mob-hero-bento';
+      heroBento.appendChild(createMobHeroCard('pdf-compress', 'Compress PDF', 'Extreme reduction', 'linear-gradient(135deg, #EF4444, #DC2626)', '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>'));
+      heroBento.appendChild(createMobHeroCard('pdf-convert', 'Convert PDF', 'Office & Images', 'linear-gradient(135deg, #2563EB, #1D4ED8)', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/>'));
+      heroBento.appendChild(createMobHeroCard('pdf-edit', 'Edit & Sign', 'Freehand & text', 'linear-gradient(135deg, #059669, #047857)', '<path d="M3 18c3 0 4-3 6-7s2-6 4-6 2 2 1 4-3 4-7 5"/><path d="M3 21h18"/>'));
+      heroBento.appendChild(createMobHeroCard('pdf-protect', 'Protect PDF', 'AES-256 local lock', 'linear-gradient(135deg, #0D9488, #0F766E)', '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'));
+      mainContent.appendChild(heroBento);
+
+      // Section 1: PDF Essentials
+      const sec1Overline = document.createElement('div');
+      sec1Overline.className = 'sp-mob-sec-overline';
+      sec1Overline.innerHTML = `<span>PDF Essentials</span>`;
+      mainContent.appendChild(sec1Overline);
+
+      const sec1Card = document.createElement('div');
+      sec1Card.className = 'sp-mob-inset-card';
+      sec1Card.appendChild(createMobInsetRow('pdf-merge', 'Merge PDF', 'Combine multiple documents into one', '#6366F1'));
+      sec1Card.appendChild(createMobInsetRow('pdf-split', 'Split PDF', 'Separate pages or extract ranges', '#8B5CF6'));
+      sec1Card.appendChild(createMobInsetRow('pdf-rotate', 'Rotate PDF', 'Fix orientation for all or single pages', '#3B82F6'));
+      sec1Card.appendChild(createMobInsetRow('pdf-ocr', 'PDF OCR', 'Extract searchable text from scans', '#10B981'));
+      sec1Card.appendChild(createMobInsetRow('pdf-organize', 'Organize PDF', 'Reorder, delete, and duplicate pages', '#F97316'));
+      mainContent.appendChild(sec1Card);
+
+      // Section 2: Media & Graphics
+      const sec2Overline = document.createElement('div');
+      sec2Overline.className = 'sp-mob-sec-overline';
+      sec2Overline.innerHTML = `<span>Media & Graphics</span>`;
+      mainContent.appendChild(sec2Overline);
+
+      const sec2Card = document.createElement('div');
+      sec2Card.className = 'sp-mob-inset-card';
+      sec2Card.appendChild(createMobInsetRow('image-convert', 'Convert Image', 'JPG, PNG, WebP, AVIF, HEIC', '#F59E0B'));
+      sec2Card.appendChild(createMobInsetRow('video-convert', 'Convert Video', 'MP4, WebM, GIF, MOV', '#6366F1'));
+      sec2Card.appendChild(createMobInsetRow('image-compress', 'Compress Image', 'Lossless & lossy web optimization', '#10B981'));
+      sec2Card.appendChild(createMobInsetRow('image-crop', 'Crop Image', 'Smart crop & aspect ratio presets', '#0D9488'));
+      sec2Card.appendChild(createMobInsetRow('video-compress', 'Compress Video', 'H.264 / H.265 / VP9 downsizing', '#F43F5E'));
+      mainContent.appendChild(sec2Card);
+
+      // Section 3: Security & Privacy
+      const sec3Overline = document.createElement('div');
+      sec3Overline.className = 'sp-mob-sec-overline';
+      sec3Overline.innerHTML = `<span>Security & Privacy</span>`;
+      mainContent.appendChild(sec3Overline);
+
+      const sec3Card = document.createElement('div');
+      sec3Card.className = 'sp-mob-inset-card';
+      sec3Card.appendChild(createMobInsetRow('pdf-protect', 'Protect PDF', 'AES-256 password encryption', '#0D9488'));
+      sec3Card.appendChild(createMobInsetRow('pdf-unlock', 'Unlock PDF', 'Remove password & restrictions', '#2563EB'));
+      sec3Card.appendChild(createMobInsetRow('pdf-redact', 'Redact PDF', 'Blackout sensitive PII text & data', '#EF4444'));
+      sec3Card.appendChild(createMobInsetRow('pdf-sign', 'Sign PDF', 'Digital signatures & form filling', '#E11D48'));
+      mainContent.appendChild(sec3Card);
+
+      // Section 4: Data & Utilities
+      const sec4Overline = document.createElement('div');
+      sec4Overline.className = 'sp-mob-sec-overline';
+      sec4Overline.innerHTML = `<span>Data & Utilities</span>`;
+      mainContent.appendChild(sec4Overline);
+
+      const sec4Card = document.createElement('div');
+      sec4Card.className = 'sp-mob-inset-card';
+      sec4Card.appendChild(createMobInsetRow('pdf-scan', 'Scan to PDF', 'Camera scanner & auto edge crop', '#3B82F6'));
+      sec4Card.appendChild(createMobInsetRow('qr-generate', 'QR Code', 'Custom colors, logo & vector export', '#059669'));
+      sec4Card.appendChild(createMobInsetRow('zip-create', 'ZIP Archive', 'Create & extract compressed archives', '#D97706'));
+      sec4Card.appendChild(createMobInsetRow('docx-to-pdf', 'Word to PDF', 'Convert DOCX to high-res PDF', '#2563EB'));
+      mainContent.appendChild(sec4Card);
+
+      mobContainer.appendChild(mainContent);
+
+      // 2c. Search Results Container
+      const searchResults = document.createElement('div');
+      searchResults.className = 'sp-mob-search-results';
+      searchResults.style.display = 'none';
+
+      const searchOverline = document.createElement('div');
+      searchOverline.className = 'sp-mob-sec-overline';
+      searchOverline.innerHTML = `<span id="sp-mob-search-title">Matching Tools</span>`;
+      searchResults.appendChild(searchOverline);
+
+      const searchList = document.createElement('div');
+      searchList.className = 'sp-mob-inset-card';
+      searchList.id = 'sp-mob-search-list';
+      searchResults.appendChild(searchList);
+
+      mobContainer.appendChild(searchResults);
+
+      // Search input handler
+      const searchInp = searchBox.querySelector('.sp-mob-search-input');
+      if (searchInp) {
+        searchInp.addEventListener('input', () => {
+          const q = (searchInp.value || '').trim().toLowerCase();
+          if (!q) {
+            mainContent.style.display = 'block';
+            searchResults.style.display = 'none';
+            searchList.innerHTML = '';
+          } else {
+            mainContent.style.display = 'none';
+            searchResults.style.display = 'block';
+            searchList.innerHTML = '';
+
+            const all = window.FF?.registry?.all() || [];
+            const matches = all.filter(t => {
+              const n = (t.name || '').toLowerCase();
+              const d = (t.desc || t.description || '').toLowerCase();
+              const c = (t.category || '').toLowerCase();
+              const id = (t.id || '').toLowerCase();
+              return n.includes(q) || d.includes(q) || c.includes(q) || id.includes(q);
+            });
+
+            const titleSpan = searchResults.querySelector('#sp-mob-search-title');
+            if (titleSpan) titleSpan.textContent = `Found ${matches.length} tool${matches.length === 1 ? '' : 's'}`;
+
+            if (matches.length === 0) {
+              searchList.innerHTML = `<div class="sp-mob-no-results">No tools found matching "${_esc(q)}"</div>`;
+            } else {
+              matches.forEach(t => {
+                searchList.appendChild(createMobInsetRow(t.id, t.name, t.desc || t.description));
+              });
+            }
+          }
+        });
+      }
+
+      targetContainer.appendChild(mobContainer);
     }
 
     function renderAppWorkspace() {

@@ -20031,11 +20031,10 @@ body #app-view .sp-tools-grid {
 }
 
 body #app-view .sp-card {
-  height: 64px !important;
-  min-height: 64px !important;
-  max-height: 64px !important;
-  padding: 8px 14px !important;
-  border-radius: 6px !important; /* Clean rounded corners */
+  height: 68px !important;
+  min-height: 68px !important;
+  padding: 10px 14px !important;
+  border-radius: 8px !important; /* Clean rounded corners */
   background: #FFFFFF !important;
   border: 1px solid #E4E4E7 !important; /* Neutral crisp border */
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
@@ -20080,15 +20079,40 @@ body #app-view .sp-card-icon svg {
   display: block !important;
 }
 
+body #app-view .sp-card-text {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
 body #app-view .sp-card-name {
   font-size: 14.5px !important;
   font-weight: 700 !important;
   color: #18181B !important;
   line-height: 1.25 !important;
   letter-spacing: -0.01em;
-  white-space: nowrap;
+  white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+}
+
+body #app-view .sp-desktop-home-sections .sp-card-sub,
+body #app-view .sp-desktop-home-sections .sp-card-chevron {
+  display: none !important;
+}
+
+body #app-view .sp-card-chevron {
+  display: none;
+}
+
+body #app-view .sp-card-chevron {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  color: #A1A1AA !important;
+  margin-left: auto !important;
 }
 
 /* Vivid Icon Colors */
@@ -52000,8 +52024,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
    All rules inside @media (max-width: 768px). Desktop is untouched.
    ========================================================================== */
 
-/* ── Base: hide mobile-tab-bar on desktop ── */
+/* ── Base: hide mobile-tab-bar & mobile home container on desktop ── */
 .mobile-tab-bar { display: none; }
+.sp-mob-home-container { display: none; }
+.sp-desktop-home-sections { display: block; }
 
 @media (max-width: 768px) {
 
@@ -52141,210 +52167,241 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   }
 
   /* ══════════════════════════════════════════════════
-     4. CATEGORY FILTER BAR — HORIZONTAL SCROLL ROW
-        Detached from topbar, sticky below it
+     4. DIRECTION B: NO PILLS · DARK / BLACK TYPOGRAPHY
      ══════════════════════════════════════════════════ */
-  #sp-home-filter-bar {
-    display: flex !important;
-    position: sticky !important;
-    top: calc(52px + env(safe-area-inset-top)) !important;
-    z-index: 150 !important;
-    background: #ffffff !important;
-    border-bottom: 1px solid #E5E5E5 !important;
-    padding: 8px 12px !important;
-    gap: 8px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scroll-snap-type: x mandatory !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-
-  #sp-home-filter-bar::-webkit-scrollbar {
+  .sp-desktop-home-sections {
     display: none !important;
   }
 
-  #sp-home-filter-bar button,
-  #sp-home-filter-bar [role="tab"] {
-    flex-shrink: 0 !important;
-    scroll-snap-align: start !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    padding: 0 14px !important;
-    border-radius: 20px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    white-space: nowrap !important;
-    border: 1px solid #E5E5E5 !important;
-    background: #F7F7F7 !important;
-    color: #737373 !important;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+  #sp-home-filter-bar {
+    display: none !important;
   }
 
-  #sp-home-filter-bar button.active,
-  #sp-home-filter-bar button[aria-selected="true"],
-  #sp-home-filter-bar [role="tab"][aria-selected="true"] {
-    background: #111827 !important;
-    color: #ffffff !important;
-    border-color: #111827 !important;
-    font-weight: 600 !important;
-  }
-
-  /* ══════════════════════════════════════════════════
-     5. TOOL GRID — 4 IN ONE ROW (NATIVE SQUIRCLE ICONS)
-        Matching Adobe Acrobat mobile & More Tools sheet
-     ══════════════════════════════════════════════════ */
-  body #app-view .sp-tools-grid,
-  body .sp-tools-grid,
-  .sp-tools-grid,
-  .app-tools-container,
-  #sp-popular-grid,
-  #app-tools-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 16px 6px !important;
-    padding: 8px 4px 18px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Native App Icon Card: icon on top, name centered below, transparent base */
-  body #app-view .sp-card,
-  body .sp-card,
-  .sp-card,
-  .tool-card {
+  .sp-mob-home-container {
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 4px 2px !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
     width: 100% !important;
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    padding: 6px 2px 28px !important;
     box-sizing: border-box !important;
-    cursor: pointer !important;
-    -webkit-tap-highlight-color: transparent !important;
-    gap: 0 !important;
-    text-align: center !important;
   }
 
-  body #app-view .sp-card:active,
-  body .sp-card:active,
-  .sp-card:active,
-  .tool-card:active {
-    transform: scale(0.92) !important;
-    transition: transform 80ms cubic-bezier(0.32, 0.72, 0, 1) !important;
-  }
-
-  /* Squircle icon container (52x52px, 14px radius, soft elevation) */
-  body #app-view .sp-card-icon,
-  body .sp-card-icon,
-  .sp-card-icon,
-  .tool-card .card-icon {
-    width: 52px !important;
-    height: 52px !important;
-    min-width: 52px !important;
-    max-width: 52px !important;
-    border-radius: 14px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 auto 6px !important;
-    flex-shrink: 0 !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
-  }
-
-  body #app-view .sp-card-icon svg,
-  body .sp-card-icon svg,
-  .sp-card-icon svg,
-  .tool-card .card-icon svg {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
-  /* Tool Name Centered Below Icon (11px, 2 lines clamp) */
-  body #app-view .sp-card-name,
-  body .sp-card-name,
-  .sp-card-name,
-  .tool-card .tool-name,
-  .card-copy b {
-    font-size: 11px !important;
-    font-weight: 500 !important;
-    color: #374151 !important;
-    line-height: 1.25 !important;
-    text-align: center !important;
-    white-space: normal !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    letter-spacing: -0.01em !important;
-    margin: 0 !important;
-    padding: 0 2px !important;
+  /* Search Box */
+  .sp-mob-search-box {
+    position: relative !important;
+    margin-bottom: 18px !important;
     width: 100% !important;
-    justify-content: center !important;
+  }
+  .sp-mob-search-input {
+    width: 100% !important;
+    height: 42px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    padding: 0 14px 0 38px !important;
+    font-size: 13.5px !important;
+    color: #0A0A0A !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
+    outline: none !important;
+    font-weight: 500 !important;
+    box-sizing: border-box !important;
+    -webkit-appearance: none !important;
+    font-family: inherit !important;
+  }
+  .sp-mob-search-input:focus {
+    border-color: #0A0A0A !important;
+  }
+  .sp-mob-search-input::placeholder {
+    color: #334155 !important;
+    font-weight: 400 !important;
+  }
+  .sp-mob-search-icon {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #0A0A0A !important;
+    pointer-events: none !important;
   }
 
-  .card-copy small,
-  .favorite-toggle,
-  .sp-crown-icon {
-    display: none !important;
-  }
-
-  /* ══════════════════════════════════════════════════
-     6. SECTION HEADERS — COMPACT & NATIVE
-     ══════════════════════════════════════════════════ */
-  body #app-view .sp-section,
-  .sp-section {
-    padding: 0 !important;
-    margin-bottom: 16px !important;
-  }
-
-  body #app-view .sp-section-header,
-  .sp-section-header {
-    padding: 8px 6px 4px !important;
-    margin-bottom: 2px !important;
+  /* Section Overlines */
+  .sp-mob-sec-overline {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    color: #0A0A0A !important;
+    margin-bottom: 10px !important;
+    padding-left: 2px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    flex-direction: row !important;
   }
 
-  body #app-view .sp-section-title-wrap,
-  .sp-section-title-wrap {
+  /* Hero Bento (2x2 grid) */
+  .sp-mob-hero-bento {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 24px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .sp-mob-hero-card {
+    background: #FFFFFF !important;
+    border: 1px solid #EAECF0 !important;
+    border-radius: 14px !important;
+    padding: 14px 13px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    height: 98px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+    cursor: pointer !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: transform 0.1s ease, background 0.1s ease !important;
+    border-style: solid !important;
+  }
+  .sp-mob-hero-card:active {
+    transform: scale(0.98) !important;
+    background: #F8FAFC !important;
+  }
+  .sp-mob-hero-top {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+  .sp-mob-hero-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+    flex-shrink: 0 !important;
+  }
+  .sp-mob-hero-arrow {
+    color: #64748B !important;
+    opacity: 0.6 !important;
+  }
+  .sp-mob-hero-bottom {
+    margin-top: 6px !important;
+  }
+  .sp-mob-hero-name {
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    color: #0A0A0A !important;
+    letter-spacing: -0.015em !important;
+    line-height: 1.2 !important;
+  }
+  .sp-mob-hero-desc {
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+    margin-top: 2px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Inset Grouped Cards */
+  .sp-mob-inset-card {
+    background: #FFFFFF !important;
+    border: 1px solid #EAECF0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+    margin-bottom: 22px !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .sp-mob-inset-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 14px !important;
+    position: relative !important;
+    cursor: pointer !important;
+    background: #FFFFFF !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+    border: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: background 0.12s ease !important;
+  }
+  .sp-mob-inset-row:active {
+    background: #F8FAFC !important;
+  }
+  .sp-mob-inset-row:not(:last-child)::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 54px !important;
+    right: 0 !important;
+    height: 1px !important;
+    background: #F1F5F9 !important;
+  }
+  .sp-mob-row-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+  .sp-mob-row-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
+  }
+  .sp-mob-row-text {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+  }
+  .sp-mob-row-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #0A0A0A !important;
+    letter-spacing: -0.01em !important;
+    line-height: 1.25 !important;
+  }
+  .sp-mob-row-sub {
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+    line-height: 1.2 !important;
+    margin-top: 1.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .sp-mob-row-right {
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
+    flex-shrink: 0 !important;
+    margin-left: 8px !important;
   }
-
-  body #app-view .sp-section-heading,
-  .sp-section-heading {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    color: #111827 !important;
-    letter-spacing: -0.02em !important;
-    margin: 0 !important;
+  .sp-mob-row-chevron {
+    color: #64748B !important;
   }
-
-  .sp-section-desc {
-    display: none !important;
-  }
-
-  body #app-view .sp-section-badge,
-  .sp-section-badge {
-    font-size: 11px !important;
-    background: #F3F4F6 !important;
-    color: #6B7280 !important;
-    border-radius: 20px !important;
-    padding: 2px 8px !important;
+  .sp-mob-no-results {
+    padding: 24px 16px !important;
+    text-align: center !important;
+    font-size: 13.5px !important;
     font-weight: 500 !important;
+    color: #64748B !important;
   }
 
   /* ══════════════════════════════════════════════════
