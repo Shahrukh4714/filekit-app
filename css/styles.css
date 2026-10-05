@@ -52238,6 +52238,33 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     align-items: center !important;
     justify-content: space-between !important;
   }
+  .sp-mob-sec-count {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #1E293B !important;
+    letter-spacing: 0.02em !important;
+    text-transform: none !important;
+  }
+  .sp-mob-qa-customize-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #EAECF0 !important;
+    border-radius: 8px !important;
+    padding: 3px 9px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #0A0A0A !important;
+    cursor: pointer !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: background 0.12s ease !important;
+  }
+  .sp-mob-qa-customize-btn:active {
+    background: #F1F5F9 !important;
+  }
 
   /* Hero Bento (2x2 grid) */
   .sp-mob-hero-bento {
@@ -52402,6 +52429,347 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     font-size: 13.5px !important;
     font-weight: 500 !important;
     color: #64748B !important;
+  }
+  .sp-mob-expand-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    padding: 12px 14px !important;
+    background: #FAFAFA !important;
+    border: none !important;
+    border-top: 1px solid #F1F5F9 !important;
+    color: #0A0A0A !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: background 0.12s ease !important;
+  }
+  .sp-mob-expand-row:active {
+    background: #F1F5F9 !important;
+  }
+  .sp-mob-inset-overflow {
+    width: 100% !important;
+  }
+
+  /* Quick Actions Customizer Modal & Bottom Sheet */
+  .sp-qa-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.48) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    opacity: 0;
+    transition: opacity 0.22s ease !important;
+    pointer-events: none;
+  }
+  .sp-qa-modal-backdrop.is-open {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .sp-qa-sheet {
+    background: #FFFFFF !important;
+    border-radius: 20px 20px 0 0 !important;
+    width: 100% !important;
+    max-width: 560px !important;
+    max-height: 88vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transform: translateY(100%) !important;
+    transition: transform 0.26s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.12) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  .sp-qa-modal-backdrop.is-open .sp-qa-sheet {
+    transform: translateY(0) !important;
+  }
+  .sp-qa-sheet-handle {
+    width: 38px !important;
+    height: 4px !important;
+    background: #E2E8F0 !important;
+    border-radius: 2px !important;
+    margin: 10px auto 4px !important;
+  }
+  .sp-qa-sheet-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    padding: 12px 18px 10px !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+  }
+  .sp-qa-sheet-title {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #0A0A0A !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
+  }
+  .sp-qa-sheet-sub {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+    margin: 3px 0 0 !important;
+  }
+  .sp-qa-sheet-close {
+    background: transparent !important;
+    border: none !important;
+    color: #0A0A0A !important;
+    cursor: pointer !important;
+    padding: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+  }
+  .sp-qa-slots-bar {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    padding: 12px 18px !important;
+    background: #F8FAFC !important;
+    border-bottom: 1px solid #EAECF0 !important;
+    box-sizing: border-box !important;
+  }
+  .sp-qa-slot {
+    background: #FFFFFF !important;
+    border: 1.5px solid #E2E8F0 !important;
+    border-radius: 10px !important;
+    padding: 8px 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    position: relative !important;
+    min-height: 72px !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    transition: border-color 0.15s ease !important;
+  }
+  .sp-qa-slot.is-active {
+    border-color: #0A0A0A !important;
+    box-shadow: 0 0 0 1px #0A0A0A !important;
+  }
+  .sp-qa-slot.is-empty {
+    border-style: dashed !important;
+    justify-content: center !important;
+    background: transparent !important;
+  }
+  .sp-qa-slot-num {
+    position: absolute !important;
+    top: 4px !important;
+    left: 6px !important;
+    font-size: 8.5px !important;
+    font-weight: 700 !important;
+    color: #64748B !important;
+    letter-spacing: 0.02em !important;
+  }
+  .sp-qa-slot-remove {
+    position: absolute !important;
+    top: 3px !important;
+    right: 3px !important;
+    background: #F1F5F9 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 17px !important;
+    height: 17px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    color: #0A0A0A !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+  }
+  .sp-qa-slot-icon {
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 6px !important;
+    margin-bottom: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .sp-qa-slot-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .sp-qa-slot-name {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #0A0A0A !important;
+    line-height: 1.15 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+  }
+  .sp-qa-slot-empty-text {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #64748B !important;
+  }
+  .sp-qa-search-box {
+    position: relative !important;
+    padding: 10px 18px 6px !important;
+    box-sizing: border-box !important;
+  }
+  .sp-qa-search-input {
+    width: 100% !important;
+    height: 38px !important;
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 10px !important;
+    padding: 0 12px 0 34px !important;
+    font-size: 13px !important;
+    color: #0A0A0A !important;
+    font-weight: 500 !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+  }
+  .sp-qa-search-input:focus {
+    border-color: #0A0A0A !important;
+    background: #FFFFFF !important;
+  }
+  .sp-qa-search-icon {
+    position: absolute !important;
+    left: 28px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #64748B !important;
+    pointer-events: none !important;
+  }
+  .sp-qa-tools-scroll {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 6px 18px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+    max-height: 320px !important;
+  }
+  .sp-qa-tool-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 9px 12px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #EAECF0 !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: background 0.1s ease !important;
+  }
+  .sp-qa-tool-row:active {
+    background: #F8FAFC !important;
+  }
+  .sp-qa-tool-row.is-selected {
+    border-color: #0A0A0A !important;
+    background: #F8FAFC !important;
+  }
+  .sp-qa-tool-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  .sp-qa-tool-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+  .sp-qa-tool-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .sp-qa-tool-text {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+  }
+  .sp-qa-tool-name {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0A0A0A !important;
+    line-height: 1.2 !important;
+  }
+  .sp-qa-tool-cat {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+    margin-top: 2px !important;
+  }
+  .sp-qa-tool-check {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 50% !important;
+    border: 1.5px solid #CBD5E1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
+    color: transparent !important;
+    transition: all 0.12s ease !important;
+  }
+  .sp-qa-tool-row.is-selected .sp-qa-tool-check {
+    background: #0A0A0A !important;
+    border-color: #0A0A0A !important;
+    color: #FFFFFF !important;
+  }
+  .sp-qa-sheet-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 18px 20px !important;
+    border-top: 1px solid #EAECF0 !important;
+    background: #FFFFFF !important;
+    box-sizing: border-box !important;
+  }
+  .sp-qa-reset-btn {
+    background: transparent !important;
+    border: none !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #0A0A0A !important;
+    cursor: pointer !important;
+    padding: 8px 10px !important;
+  }
+  .sp-qa-save-btn {
+    background: #0A0A0A !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 10px !important;
+    height: 44px !important;
+    padding: 0 24px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: opacity 0.12s ease !important;
+  }
+  .sp-qa-save-btn:active {
+    opacity: 0.85 !important;
   }
 
   /* ══════════════════════════════════════════════════

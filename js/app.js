@@ -4620,28 +4620,282 @@ try {
 
     const _esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+    const DEFAULT_QUICK_ACTIONS = [
+      { id: 'pdf-compress', title: 'Compress PDF', desc: 'Extreme reduction', gradient: 'linear-gradient(135deg, #EF4444, #DC2626)', svg: '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>' },
+      { id: 'pdf-convert', title: 'Convert PDF', desc: 'Office & Images', gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', svg: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/>' },
+      { id: 'pdf-edit', title: 'Edit & Sign', desc: 'Freehand & text', gradient: 'linear-gradient(135deg, #059669, #047857)', svg: '<path d="M3 18c3 0 4-3 6-7s2-6 4-6 2 2 1 4-3 4-7 5"/><path d="M3 21h18"/>' },
+      { id: 'pdf-protect', title: 'Protect PDF', desc: 'AES-256 local lock', gradient: 'linear-gradient(135deg, #0D9488, #0F766E)', svg: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>' }
+    ];
+
+    function getSavedQuickActionIds() {
+      try {
+        const raw = localStorage.getItem('fk_custom_quick_actions');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length === 4) {
+            return parsed;
+          }
+        }
+      } catch (e) {}
+      return DEFAULT_QUICK_ACTIONS.map(d => d.id);
+    }
+
+    function saveQuickActionIds(ids) {
+      try {
+        localStorage.setItem('fk_custom_quick_actions', JSON.stringify(ids));
+      } catch (e) {}
+    }
+
     function createMobHeroCard(toolId, title, desc, gradient, svgPath) {
+      const tool = window.FF?.registry?.get(toolId) || {};
+      const displayTitle = title || tool.name || toolId;
+      const displayDesc = desc || tool.desc || tool.description || (tool.category ? `${tool.category} tool` : 'Fast tool');
+      const visuals = resolveToolCardVisuals(toolId, tool, null, svgPath);
+
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'sp-mob-hero-card';
       card.setAttribute('data-tool-id', toolId);
-      card.setAttribute('aria-label', title);
+      card.setAttribute('aria-label', displayTitle);
+
+      const iconBgStyle = gradient ? `style="background: ${gradient};"` : '';
+      const iconThemeClass = gradient ? '' : visuals.themeClass;
 
       card.innerHTML = `
         <div class="sp-mob-hero-top">
-          <div class="sp-mob-hero-icon" style="background: ${gradient};">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${svgPath}</svg>
+          <div class="sp-mob-hero-icon ${iconThemeClass}" ${iconBgStyle}>
+            ${visuals.svg}
           </div>
           <svg class="sp-mob-hero-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
         </div>
         <div class="sp-mob-hero-bottom">
-          <div class="sp-mob-hero-name">${_esc(title)}</div>
-          <div class="sp-mob-hero-desc">${_esc(desc)}</div>
+          <div class="sp-mob-hero-name">${_esc(displayTitle)}</div>
+          <div class="sp-mob-hero-desc">${_esc(displayDesc)}</div>
         </div>
       `;
 
       card.addEventListener('click', () => openWorkspaceTool(toolId));
       return card;
+    }
+
+    function openQuickActionsCustomizer(onSave) {
+      const existing = document.getElementById('sp-qa-modal-backdrop');
+      if (existing) existing.remove();
+
+      let activeSlots = [...getSavedQuickActionIds()];
+      let selectedSlotIndex = 0;
+
+      const allTools = window.FF?.registry?.all() || [];
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'sp-qa-modal-backdrop';
+      backdrop.id = 'sp-qa-modal-backdrop';
+
+      const sheet = document.createElement('div');
+      sheet.className = 'sp-qa-sheet';
+
+      sheet.innerHTML = `
+        <div class="sp-qa-sheet-handle"></div>
+        <div class="sp-qa-sheet-header">
+          <div class="sp-qa-sheet-titles">
+            <h3 class="sp-qa-sheet-title">Customize Quick Actions</h3>
+            <p class="sp-qa-sheet-sub">Choose 4 favorite tools for your home screen</p>
+          </div>
+          <button type="button" class="sp-qa-sheet-close" id="sp-qa-close-btn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="sp-qa-slots-bar" id="sp-qa-slots-bar"></div>
+        <div class="sp-qa-search-box">
+          <svg class="sp-qa-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" class="sp-qa-search-input" id="sp-qa-search-input" placeholder="Search tools to add..." autocomplete="off">
+        </div>
+        <div class="sp-qa-tools-scroll" id="sp-qa-tools-scroll"></div>
+        <div class="sp-qa-sheet-footer">
+          <button type="button" class="sp-qa-reset-btn" id="sp-qa-reset-btn">Reset to Default</button>
+          <button type="button" class="sp-qa-save-btn" id="sp-qa-save-btn">Done</button>
+        </div>
+      `;
+
+      backdrop.appendChild(sheet);
+      document.body.appendChild(backdrop);
+
+      requestAnimationFrame(() => {
+        backdrop.classList.add('is-open');
+      });
+
+      const closeModal = () => {
+        backdrop.classList.remove('is-open');
+        setTimeout(() => backdrop.remove(), 280);
+      };
+
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+      });
+      sheet.querySelector('#sp-qa-close-btn')?.addEventListener('click', closeModal);
+
+      const slotsBar = sheet.querySelector('#sp-qa-slots-bar');
+      const renderSlotsBar = () => {
+        slotsBar.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const toolId = activeSlots[i];
+          const slotEl = document.createElement('div');
+          slotEl.className = `sp-qa-slot ${i === selectedSlotIndex ? 'is-active' : ''} ${!toolId ? 'is-empty' : ''}`;
+
+          const numSpan = document.createElement('span');
+          numSpan.className = 'sp-qa-slot-num';
+          numSpan.textContent = `SLOT ${i + 1}`;
+          slotEl.appendChild(numSpan);
+
+          if (toolId) {
+            const tool = window.FF?.registry?.get(toolId) || {};
+            const visuals = resolveToolCardVisuals(toolId, tool);
+            const name = tool.name || toolId;
+
+            const iconEl = document.createElement('div');
+            iconEl.className = `sp-qa-slot-icon ${visuals.themeClass}`;
+            iconEl.innerHTML = visuals.svg;
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'sp-qa-slot-name';
+            nameEl.textContent = name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'sp-qa-slot-remove';
+            removeBtn.setAttribute('aria-label', `Remove ${name}`);
+            removeBtn.innerHTML = '×';
+            removeBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              activeSlots[i] = null;
+              selectedSlotIndex = i;
+              renderSlotsBar();
+              renderToolList();
+            });
+
+            slotEl.append(iconEl, nameEl, removeBtn);
+          } else {
+            const emptyText = document.createElement('span');
+            emptyText.className = 'sp-qa-slot-empty-text';
+            emptyText.textContent = '+ Empty';
+            slotEl.appendChild(emptyText);
+          }
+
+          slotEl.addEventListener('click', () => {
+            selectedSlotIndex = i;
+            renderSlotsBar();
+          });
+
+          slotsBar.appendChild(slotEl);
+        }
+      };
+
+      const toolsScroll = sheet.querySelector('#sp-qa-tools-scroll');
+      const searchInp = sheet.querySelector('#sp-qa-search-input');
+
+      const renderToolList = () => {
+        toolsScroll.innerHTML = '';
+        const q = (searchInp.value || '').trim().toLowerCase();
+
+        const filtered = allTools.filter(t => {
+          if (!q) return true;
+          const n = (t.name || '').toLowerCase();
+          const d = (t.desc || t.description || '').toLowerCase();
+          const c = (t.category || '').toLowerCase();
+          const id = (t.id || '').toLowerCase();
+          return n.includes(q) || d.includes(q) || c.includes(q) || id.includes(q);
+        });
+
+        if (filtered.length === 0) {
+          toolsScroll.innerHTML = `<div class="sp-mob-no-results">No matching tools found</div>`;
+          return;
+        }
+
+        filtered.forEach(t => {
+          const isSelected = activeSlots.includes(t.id);
+          const visuals = resolveToolCardVisuals(t.id, t);
+
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = `sp-qa-tool-row ${isSelected ? 'is-selected' : ''}`;
+
+          const left = document.createElement('div');
+          left.className = 'sp-qa-tool-left';
+
+          const icon = document.createElement('div');
+          icon.className = `sp-qa-tool-icon ${visuals.themeClass}`;
+          icon.innerHTML = visuals.svg;
+
+          const text = document.createElement('div');
+          text.className = 'sp-qa-tool-text';
+          text.innerHTML = `
+            <span class="sp-qa-tool-name">${_esc(t.name || t.id)}</span>
+            <span class="sp-qa-tool-cat">${_esc(t.category || 'Tool')}</span>
+          `;
+
+          left.append(icon, text);
+
+          const check = document.createElement('div');
+          check.className = 'sp-qa-tool-check';
+          check.innerHTML = '✓';
+
+          row.append(left, check);
+
+          row.addEventListener('click', () => {
+            if (isSelected) {
+              const idx = activeSlots.indexOf(t.id);
+              if (idx !== -1) {
+                activeSlots[idx] = null;
+                selectedSlotIndex = idx;
+              }
+            } else {
+              let targetIdx = selectedSlotIndex;
+              if (activeSlots[targetIdx] !== null) {
+                const firstEmpty = activeSlots.indexOf(null);
+                if (firstEmpty !== -1) targetIdx = firstEmpty;
+              }
+              activeSlots[targetIdx] = t.id;
+              const nextEmpty = activeSlots.indexOf(null);
+              selectedSlotIndex = nextEmpty !== -1 ? nextEmpty : (targetIdx + 1) % 4;
+            }
+            renderSlotsBar();
+            renderToolList();
+          });
+
+          toolsScroll.appendChild(row);
+        });
+      };
+
+      searchInp.addEventListener('input', renderToolList);
+
+      sheet.querySelector('#sp-qa-reset-btn')?.addEventListener('click', () => {
+        activeSlots = DEFAULT_QUICK_ACTIONS.map(d => d.id);
+        selectedSlotIndex = 0;
+        renderSlotsBar();
+        renderToolList();
+        if (window.FF?.util?.toast) {
+          window.FF.util.toast('Reset to default tools', { type: 'info' });
+        }
+      });
+
+      sheet.querySelector('#sp-qa-save-btn')?.addEventListener('click', () => {
+        const defaults = DEFAULT_QUICK_ACTIONS.map(d => d.id);
+        for (let i = 0; i < 4; i++) {
+          if (!activeSlots[i]) {
+            activeSlots[i] = defaults.find(id => !activeSlots.includes(id)) || 'pdf-compress';
+          }
+        }
+
+        saveQuickActionIds(activeSlots);
+        closeModal();
+        if (typeof onSave === 'function') onSave(activeSlots);
+        if (window.FF?.util?.toast) {
+          window.FF.util.toast('Quick Actions updated', { type: 'success' });
+        }
+      });
+
+      renderSlotsBar();
+      renderToolList();
     }
 
     function createMobInsetRow(toolId, title, sub, explicitColor, explicitSvg) {
@@ -4766,77 +5020,132 @@ try {
       const mainContent = document.createElement('div');
       mainContent.className = 'sp-mob-main-content';
 
-      // Quick Actions (Hero Bento 2x2)
+      // Quick Actions (Hero Bento 2x2 with Customize button)
       const qaOverline = document.createElement('div');
-      qaOverline.className = 'sp-mob-sec-overline';
-      qaOverline.innerHTML = `<span>Quick Actions</span>`;
+      qaOverline.className = 'sp-mob-sec-overline sp-mob-qa-header';
+      qaOverline.innerHTML = `
+        <span>Quick Actions</span>
+        <button type="button" class="sp-mob-qa-customize-btn" id="sp-mob-customize-qa-btn" aria-label="Customize Quick Actions">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span>Customize</span>
+        </button>
+      `;
       mainContent.appendChild(qaOverline);
 
       const heroBento = document.createElement('div');
       heroBento.className = 'sp-mob-hero-bento';
-      heroBento.appendChild(createMobHeroCard('pdf-compress', 'Compress PDF', 'Extreme reduction', 'linear-gradient(135deg, #EF4444, #DC2626)', '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>'));
-      heroBento.appendChild(createMobHeroCard('pdf-convert', 'Convert PDF', 'Office & Images', 'linear-gradient(135deg, #2563EB, #1D4ED8)', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8M8 17h5"/>'));
-      heroBento.appendChild(createMobHeroCard('pdf-edit', 'Edit & Sign', 'Freehand & text', 'linear-gradient(135deg, #059669, #047857)', '<path d="M3 18c3 0 4-3 6-7s2-6 4-6 2 2 1 4-3 4-7 5"/><path d="M3 21h18"/>'));
-      heroBento.appendChild(createMobHeroCard('pdf-protect', 'Protect PDF', 'AES-256 local lock', 'linear-gradient(135deg, #0D9488, #0F766E)', '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'));
+
+      const renderMobBento = () => {
+        heroBento.innerHTML = '';
+        const currentIds = getSavedQuickActionIds();
+        const defMap = new Map(DEFAULT_QUICK_ACTIONS.map(d => [d.id, d]));
+
+        currentIds.forEach(id => {
+          const def = defMap.get(id);
+          if (def) {
+            heroBento.appendChild(createMobHeroCard(def.id, def.title, def.desc, def.gradient, def.svg));
+          } else {
+            heroBento.appendChild(createMobHeroCard(id));
+          }
+        });
+      };
+
+      renderMobBento();
       mainContent.appendChild(heroBento);
 
-      // Section 1: PDF Essentials
-      const sec1Overline = document.createElement('div');
-      sec1Overline.className = 'sp-mob-sec-overline';
-      sec1Overline.innerHTML = `<span>PDF Essentials</span>`;
-      mainContent.appendChild(sec1Overline);
+      qaOverline.querySelector('#sp-mob-customize-qa-btn')?.addEventListener('click', () => {
+        openQuickActionsCustomizer(() => {
+          renderMobBento();
+        });
+      });
 
-      const sec1Card = document.createElement('div');
-      sec1Card.className = 'sp-mob-inset-card';
-      sec1Card.appendChild(createMobInsetRow('pdf-merge', 'Merge PDF', 'Combine multiple documents into one', '#6366F1'));
-      sec1Card.appendChild(createMobInsetRow('pdf-split', 'Split PDF', 'Separate pages or extract ranges', '#8B5CF6'));
-      sec1Card.appendChild(createMobInsetRow('pdf-rotate', 'Rotate PDF', 'Fix orientation for all or single pages', '#3B82F6'));
-      sec1Card.appendChild(createMobInsetRow('pdf-ocr', 'PDF OCR', 'Extract searchable text from scans', '#10B981'));
-      sec1Card.appendChild(createMobInsetRow('pdf-organize', 'Organize PDF', 'Reorder, delete, and duplicate pages', '#F97316'));
-      mainContent.appendChild(sec1Card);
+      // ──────────────────────────────────────────────────────────
+      // Dynamic Capability Sections (Matching Desktop View 100%)
+      // ──────────────────────────────────────────────────────────
+      CAPABILITY_SECTIONS.forEach(sec => {
+        if (sec.id === 'sec-popular') return; // Handled by Quick Actions above
 
-      // Section 2: Media & Graphics
-      const sec2Overline = document.createElement('div');
-      sec2Overline.className = 'sp-mob-sec-overline';
-      sec2Overline.innerHTML = `<span>Media & Graphics</span>`;
-      mainContent.appendChild(sec2Overline);
+        let sectionTools = [];
+        if (sec.curatedTools) {
+          sectionTools = sec.curatedTools.map(item => {
+            if (typeof item === 'string') {
+              return toolMap.get(item) || { id: item, name: item, category: 'PDF' };
+            }
+            const base = toolMap.get(item.id) || { id: item.id, category: 'PDF' };
+            return { ...base, name: item.title || base.name || item.id, id: item.id };
+          });
+        } else if (sec.categoryMatch) {
+          sectionTools = allTools.filter(t => sec.categoryMatch.includes(t.category));
+        }
 
-      const sec2Card = document.createElement('div');
-      sec2Card.className = 'sp-mob-inset-card';
-      sec2Card.appendChild(createMobInsetRow('image-convert', 'Convert Image', 'JPG, PNG, WebP, AVIF, HEIC', '#F59E0B'));
-      sec2Card.appendChild(createMobInsetRow('video-convert', 'Convert Video', 'MP4, WebM, GIF, MOV', '#6366F1'));
-      sec2Card.appendChild(createMobInsetRow('image-compress', 'Compress Image', 'Lossless & lossy web optimization', '#10B981'));
-      sec2Card.appendChild(createMobInsetRow('image-crop', 'Crop Image', 'Smart crop & aspect ratio presets', '#0D9488'));
-      sec2Card.appendChild(createMobInsetRow('video-compress', 'Compress Video', 'H.264 / H.265 / VP9 downsizing', '#F43F5E'));
-      mainContent.appendChild(sec2Card);
+        if (sectionTools.length === 0) return;
 
-      // Section 3: Security & Privacy
-      const sec3Overline = document.createElement('div');
-      sec3Overline.className = 'sp-mob-sec-overline';
-      sec3Overline.innerHTML = `<span>Security & Privacy</span>`;
-      mainContent.appendChild(sec3Overline);
+        // Category Overline
+        const secOverline = document.createElement('div');
+        secOverline.className = 'sp-mob-sec-overline';
+        secOverline.innerHTML = `
+          <span>${_esc(sec.title)}</span>
+          <span class="sp-mob-sec-count">${sectionTools.length} tools</span>
+        `;
+        mainContent.appendChild(secOverline);
 
-      const sec3Card = document.createElement('div');
-      sec3Card.className = 'sp-mob-inset-card';
-      sec3Card.appendChild(createMobInsetRow('pdf-protect', 'Protect PDF', 'AES-256 password encryption', '#0D9488'));
-      sec3Card.appendChild(createMobInsetRow('pdf-unlock', 'Unlock PDF', 'Remove password & restrictions', '#2563EB'));
-      sec3Card.appendChild(createMobInsetRow('pdf-redact', 'Redact PDF', 'Blackout sensitive PII text & data', '#EF4444'));
-      sec3Card.appendChild(createMobInsetRow('pdf-sign', 'Sign PDF', 'Digital signatures & form filling', '#E11D48'));
-      mainContent.appendChild(sec3Card);
+        // Apple HIG Inset-Grouped Card
+        const secCard = document.createElement('div');
+        secCard.className = 'sp-mob-inset-card';
+        secCard.id = `mob-${sec.id}`;
 
-      // Section 4: Data & Utilities
-      const sec4Overline = document.createElement('div');
-      sec4Overline.className = 'sp-mob-sec-overline';
-      sec4Overline.innerHTML = `<span>Data & Utilities</span>`;
-      mainContent.appendChild(sec4Overline);
+        const INITIAL_VISIBLE = 5;
+        const initialTools = sectionTools.slice(0, INITIAL_VISIBLE);
+        const overflowTools = sectionTools.slice(INITIAL_VISIBLE);
 
-      const sec4Card = document.createElement('div');
-      sec4Card.className = 'sp-mob-inset-card';
-      sec4Card.appendChild(createMobInsetRow('pdf-scan', 'Scan to PDF', 'Camera scanner & auto edge crop', '#3B82F6'));
-      sec4Card.appendChild(createMobInsetRow('qr-generate', 'QR Code', 'Custom colors, logo & vector export', '#059669'));
-      sec4Card.appendChild(createMobInsetRow('zip-create', 'ZIP Archive', 'Create & extract compressed archives', '#D97706'));
-      sec4Card.appendChild(createMobInsetRow('docx-to-pdf', 'Word to PDF', 'Convert DOCX to high-res PDF', '#2563EB'));
-      mainContent.appendChild(sec4Card);
+        initialTools.forEach(t => {
+          secCard.appendChild(createMobInsetRow(t.id, t.name, t.desc || t.description));
+        });
+
+        if (overflowTools.length > 0) {
+          const overflowContainer = document.createElement('div');
+          overflowContainer.className = 'sp-mob-inset-overflow';
+          overflowContainer.style.display = 'none';
+
+          overflowTools.forEach(t => {
+            overflowContainer.appendChild(createMobInsetRow(t.id, t.name, t.desc || t.description));
+          });
+
+          secCard.appendChild(overflowContainer);
+
+          const expandRow = document.createElement('button');
+          expandRow.type = 'button';
+          expandRow.className = 'sp-mob-expand-row';
+          expandRow.setAttribute('aria-expanded', 'false');
+          expandRow.innerHTML = `
+            <span>Show all ${sectionTools.length} tools</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          `;
+
+          expandRow.addEventListener('click', () => {
+            const isExpanded = overflowContainer.style.display !== 'none';
+            if (isExpanded) {
+              overflowContainer.style.display = 'none';
+              expandRow.setAttribute('aria-expanded', 'false');
+              expandRow.innerHTML = `
+                <span>Show all ${sectionTools.length} tools</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              `;
+            } else {
+              overflowContainer.style.display = 'block';
+              expandRow.setAttribute('aria-expanded', 'true');
+              expandRow.innerHTML = `
+                <span>Show fewer tools</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              `;
+            }
+          });
+
+          secCard.appendChild(expandRow);
+        }
+
+        mainContent.appendChild(secCard);
+      });
 
       mobContainer.appendChild(mainContent);
 

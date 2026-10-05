@@ -38838,7 +38838,64 @@ trailer<</Root 1 0 R>>`;
                 </span>
               </button>
             </div>
-          </header>`;
+          </header>
+
+          <!-- Mobile Minimalist SVG Icon Ribbon -->
+          <div class="org-icon-toolbar-track" id="org-mobile-icon-track" role="toolbar" aria-label="Mobile Organize Tools">
+            <button type="button" class="org-tool-icon-item ${mode === 'organize' ? 'is-active' : ''}" data-mob-action="mode-organize" title="Organize / Reorder">
+              ${ICONS.reorder}
+              <span class="org-tool-icon-label">Order</span>
+            </button>
+            <button type="button" class="org-tool-icon-item" data-mob-action="rot-ccw" title="Rotate Left 90°">
+              ${ICONS.rotLeft}
+              <span class="org-tool-icon-label">-90°</span>
+            </button>
+            <button type="button" class="org-tool-icon-item" data-mob-action="rot-cw" title="Rotate Right 90°">
+              ${ICONS.rotate}
+              <span class="org-tool-icon-label">+90°</span>
+            </button>
+            <button type="button" class="org-tool-icon-item ${mode === 'split' ? 'is-active' : ''}" data-mob-action="mode-split" title="Split Document">
+              ${ICONS.split}
+              <span class="org-tool-icon-label">Split</span>
+            </button>
+            <button type="button" class="org-tool-icon-item ${activeCroppingId ? 'is-active' : ''}" data-mob-action="crop" title="Crop Margins">
+              ${ICONS.crop}
+              <span class="org-tool-icon-label">Crop</span>
+            </button>
+            <button type="button" class="org-tool-icon-item" data-mob-action="dup" title="Duplicate Selected">
+              ${ICONS.duplicate}
+              <span class="org-tool-icon-label">Dup</span>
+            </button>
+            <button type="button" class="org-tool-icon-item org-tool-icon-item--danger ${mode === 'delete' ? 'is-active' : ''}" data-mob-action="mode-delete" title="Delete / Trash">
+              ${ICONS.trash}
+              <span class="org-tool-icon-label">Del</span>
+            </button>
+            <span class="org-icon-track-sep"></span>
+            <button type="button" class="org-tool-icon-item ${mode === 'merge' ? 'is-active' : ''}" data-mob-action="mode-merge" title="Merge Files">
+              ${ICONS.merge}
+              <span class="org-tool-icon-label">Merge</span>
+            </button>
+            <button type="button" class="org-tool-icon-item ${mode === 'extract' ? 'is-active' : ''}" data-mob-action="mode-extract" title="Extract Pages">
+              ${ICONS.extract}
+              <span class="org-tool-icon-label">Extract</span>
+            </button>
+            <button type="button" class="org-tool-icon-item" data-mob-action="filter" title="Smart Selection Filters">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span class="org-tool-icon-label">Filter</span>
+            </button>
+            <button type="button" class="org-tool-icon-item ${pageNormMode !== 'orig' ? 'is-active' : ''}" data-mob-action="norm" title="Page Format (${pageNormMode === 'orig' ? 'Auto' : pageNormMode.toUpperCase()})">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h5"/></svg>
+              <span class="org-tool-icon-label">${pageNormMode === 'orig' ? 'Size' : pageNormMode.toUpperCase()}</span>
+            </button>
+            <button type="button" class="org-tool-icon-item" data-mob-action="add-blank" title="Add Blank Page">
+              ${ICONS.add}
+              <span class="org-tool-icon-label">+Blank</span>
+            </button>
+            <button type="button" class="org-tool-icon-item" data-mob-action="reverse" title="Reverse All Pages">
+              ${ICONS.reverse}
+              <span class="org-tool-icon-label">Reverse</span>
+            </button>
+          </div>`;
       }
 
       function renderSubToolbar() {
@@ -39660,6 +39717,85 @@ trailer<</Root 1 0 R>>`;
             isMainModeSwitching = true;
             syncSplitCuts();
             renderWorkbench();
+          };
+        });
+
+        // 1b. Mobile SVG Icon Track Action Handlers
+        container.querySelectorAll('[data-mob-action]').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const act = btn.dataset.mobAction;
+            if (act.startsWith('mode-')) {
+              const targetMode = act.replace('mode-', '');
+              if (mode === targetMode) return;
+              mode = targetMode;
+              isMainModeSwitching = true;
+              syncSplitCuts();
+              renderWorkbench();
+            } else if (act === 'rot-ccw') {
+              recordState();
+              const targets = selectedIds.size > 0 ? items.filter(it => selectedIds.has(it.id)) : items;
+              targets.forEach(it => it.rotation = ((it.rotation || 0) + 270) % 360);
+              renderWorkbench();
+            } else if (act === 'rot-cw') {
+              recordState();
+              const targets = selectedIds.size > 0 ? items.filter(it => selectedIds.has(it.id)) : items;
+              targets.forEach(it => it.rotation = ((it.rotation || 0) + 90) % 360);
+              renderWorkbench();
+            } else if (act === 'crop') {
+              let targetItem = null;
+              if (selectedIds.size > 0) {
+                targetItem = items.find(it => selectedIds.has(it.id) && !it.isDeleted);
+              }
+              if (!targetItem) targetItem = items.find(it => !it.isDeleted);
+              if (targetItem) {
+                activeCroppingId = targetItem.id;
+                activeCropDraft = targetItem.crop ? { ...targetItem.crop } : { top: 0, right: 0, bottom: 0, left: 0 };
+                cropScope = selectedIds.has(targetItem.id) && selectedIds.size > 1 ? 'selected' : 'single';
+                renderWorkbench();
+              }
+            } else if (act === 'dup') {
+              if (selectedIds.size > 0) {
+                recordState();
+                const toAdd = [];
+                items.forEach((it, idx) => {
+                  if (selectedIds.has(it.id)) {
+                    toAdd.push({ idx, clone: { ...it, id: 'pg_' + (++seq), canvas: it.canvas, crop: it.crop ? { ...it.crop } : null } });
+                  }
+                });
+                toAdd.reverse().forEach(({ idx, clone }) => items.splice(idx + 1, 0, clone));
+                selectedIds.clear();
+                renderWorkbench();
+              } else if (items.length > 0) {
+                recordState();
+                const last = items[items.length - 1];
+                items.push({ ...last, id: 'pg_' + (++seq), canvas: last.canvas, crop: last.crop ? { ...last.crop } : null });
+                renderWorkbench();
+              }
+            } else if (act === 'filter') {
+              isRailMenuOpen = !isRailMenuOpen;
+              renderWorkbench();
+            } else if (act === 'norm') {
+              recordState();
+              if (pageNormMode === 'orig') pageNormMode = 'a4';
+              else if (pageNormMode === 'a4') pageNormMode = 'letter';
+              else pageNormMode = 'orig';
+              const label = pageNormMode === 'orig' ? 'Auto (Preserve Original)' : pageNormMode.toUpperCase() + ' Standard';
+              window.FF?.util?.toast?.(`Page Format: ${label}`, 'info');
+              renderWorkbench();
+            } else if (act === 'add-blank') {
+              recordState();
+              items.push({
+                id: 'pg_' + (++seq),
+                fileIdx: -1, origPageIdx: 0,
+                rotation: 0, isDeleted: false, isBlank: true, canvas: null, name: 'Blank Page', crop: null
+              });
+              renderWorkbench();
+            } else if (act === 'reverse') {
+              recordState();
+              items.reverse();
+              renderWorkbench();
+            }
           };
         });
 
