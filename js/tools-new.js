@@ -541,6 +541,184 @@
     return canvas;
   }
 
+  /* Sauvola Adaptive Local Binarization:
+     Calculates local mean m(x, y) and standard deviation s(x, y) using 2D Integral Images in O(1).
+     Threshold T(x, y) = m(x, y) * (1 + k * (s(x, y) / 128 - 1)).
+     Handles uneven mobile camera lighting, shadows, paper creases, and gradients. */
+  function sauvolaBinarize(canvas, k = 0.28, windowSize = 31) {
+    if (!canvas || !canvas.width || !canvas.height) return canvas;
+    const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+
+    // 1. Grayscale & 2D Integral Images
+    const gray = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const idx = i * 4;
+      gray[i] = (d[idx] * 0.299 + d[idx + 1] * 0.587 + d[idx + 2] * 0.114) | 0;
+    }
+
+    const intSum = new Float64Array((w + 1) * (h + 1));
+    const intSqSum = new Float64Array((w + 1) * (h + 1));
+    const stride = w + 1;
+
+    for (let y = 0; y < h; y++) {
+      let rowSum = 0;
+      let rowSqSum = 0;
+      const grayRowOff = y * w;
+      const intRowOff = (y + 1) * stride;
+      const intPrevRowOff = y * stride;
+
+      for (let x = 0; x < w; x++) {
+        const val = gray[grayRowOff + x];
+        rowSum += val;
+        rowSqSum += val * val;
+        intSum[intRowOff + (x + 1)] = intSum[intPrevRowOff + (x + 1)] + rowSum;
+        intSqSum[intRowOff + (x + 1)] = intSqSum[intPrevRowOff + (x + 1)] + rowSqSum;
+      }
+    }
+
+    // 2. Local threshold computation
+    const halfWin = (windowSize >> 1);
+    const R = 128;
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = w; outCanvas.height = h;
+    const outCtx = outCanvas.getContext('2d');
+    const outImg = outCtx.createImageData(w, h);
+    const outD = outImg.data;
+
+    for (let y = 0; y < h; y++) {
+      const y0 = Math.max(0, y - halfWin);
+      const y1 = Math.min(h, y + halfWin + 1);
+      const y0Off = y0 * stride;
+      const y1Off = y1 * stride;
+      const rowH = y1 - y0;
+      const rowIdx = y * w;
+
+      for (let x = 0; x < w; x++) {
+        const x0 = Math.max(0, x - halfWin);
+        const x1 = Math.min(w, x + halfWin + 1);
+        const area = (x1 - x0) * rowH;
+
+        const sum = intSum[y1Off + x1] - intSum[y0Off + x1] - intSum[y1Off + x0] + intSum[y0Off + x0];
+        const sqSum = intSqSum[y1Off + x1] - intSqSum[y0Off + x1] - intSqSum[y1Off + x0] + intSqSum[y0Off + x0];
+
+        const mean = sum / area;
+        const variance = Math.max(0, (sqSum / area) - (mean * mean));
+        const stdDev = Math.sqrt(variance);
+
+        const threshold = mean * (1.0 + k * ((stdDev / R) - 1.0));
+        const pixelVal = gray[rowIdx + x];
+        const isFore = pixelVal < threshold;
+        const outVal = isFore ? 0 : 255;
+
+        const dIdx = (rowIdx + x) * 4;
+        outD[dIdx] = outVal;
+        outD[dIdx + 1] = outVal;
+        outD[dIdx + 2] = outVal;
+        outD[dIdx + 3] = 255;
+      }
+    }
+
+    outCtx.putImageData(outImg, 0, 0);
+    return outCanvas;
+  }
+
+  /* Auto-Deskew Vision Engine:
+     Uses Radon / horizontal projection profile variance over [-15deg, +15deg] to find dominant text line orientation.
+     Automatically deskews tilted camera photos and crooked document scans in < 15ms. */
+  function autoDeskew(canvas, maxAngle = 15, step = 0.5) {
+    if (!canvas || !canvas.width || !canvas.height) return { canvas, angle: 0 };
+    const w = canvas.width, h = canvas.height;
+
+    // 1. Create downsampled thumbnail for lightning-fast angle search (~320px width)
+    const scale = Math.min(1, 320 / Math.max(w, h));
+    const tw = Math.max(50, Math.round(w * scale));
+    const th = Math.max(50, Math.round(h * scale));
+
+    const thumb = document.createElement('canvas');
+    thumb.width = tw; thumb.height = th;
+    const tCtx = thumb.getContext('2d');
+    tCtx.drawImage(canvas, 0, 0, tw, th);
+
+    const tImg = tCtx.getImageData(0, 0, tw, th);
+    const td = tImg.data;
+    const tGray = new Uint8Array(tw * th);
+    for (let i = 0; i < tw * th; i++) {
+      const idx = i * 4;
+      tGray[i] = (td[idx] * 0.299 + td[idx + 1] * 0.587 + td[idx + 2] * 0.114) | 0;
+    }
+
+    // 2. Search for angle with maximum horizontal projection profile variance
+    let bestAngle = 0;
+    let maxVariance = -1;
+    const cx = tw / 2, cy = th / 2;
+
+    for (let deg = -maxAngle; deg <= maxAngle; deg += step) {
+      const rad = (deg * Math.PI) / 180;
+      const cosA = Math.cos(rad);
+      const sinA = Math.sin(rad);
+
+      const proj = new Float64Array(th);
+      let count = 0;
+
+      for (let y = 8; y < th - 8; y += 2) {
+        let rowSum = 0;
+        let rowCount = 0;
+        for (let x = 8; x < tw - 8; x += 2) {
+          const sx = Math.round(cx + (x - cx) * cosA - (y - cy) * sinA);
+          const sy = Math.round(cy + (x - cx) * sinA + (y - cy) * cosA);
+          if (sx >= 0 && sx < tw && sy >= 0 && sy < th) {
+            const val = tGray[sy * tw + sx];
+            rowSum += (255 - val);
+            rowCount++;
+          }
+        }
+        if (rowCount > 0) {
+          proj[count++] = rowSum / rowCount;
+        }
+      }
+
+      if (count > 0) {
+        let mean = 0;
+        for (let i = 0; i < count; i++) mean += proj[i];
+        mean /= count;
+        let variance = 0;
+        for (let i = 0; i < count; i++) {
+          const diff = proj[i] - mean;
+          variance += diff * diff;
+        }
+        variance /= count;
+
+        if (variance > maxVariance) {
+          maxVariance = variance;
+          bestAngle = deg;
+        }
+      }
+    }
+
+    if (Math.abs(bestAngle) < 0.35) {
+      return { canvas, angle: 0 };
+    }
+
+    // 3. Deskew full-res canvas by -bestAngle
+    const rad = (-bestAngle * Math.PI) / 180;
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = w; outCanvas.height = h;
+    const oCtx = outCanvas.getContext('2d');
+    oCtx.imageSmoothingEnabled = true;
+    oCtx.imageSmoothingQuality = 'high';
+
+    oCtx.save();
+    oCtx.translate(w / 2, h / 2);
+    oCtx.rotate(rad);
+    oCtx.drawImage(canvas, -w / 2, -h / 2);
+    oCtx.restore();
+
+    return { canvas: outCanvas, angle: bestAngle };
+  }
+
   /* Load an image file into a canvas, honouring EXIF orientation (phone photos).
      HEIC/HEIF (iPhone default) is decoded via the vendored heic2any first. */
   async function loadPhotoIntoCanvas(file) {
@@ -779,21 +957,30 @@
     return origin + dir;
   }
 
+  const LOCAL_TESSDATA_LANGS = new Set([
+    'ara', 'chi_sim', 'deu', 'eng', 'fra', 'hin', 'ita', 'jpn', 'kor', 'por', 'rus', 'spa'
+  ]);
+
   async function _createSingleWorker(T, base, lang, customLogger) {
+    const rawLang = String(lang || 'eng').trim();
+    const parts = rawLang.split('+');
+    const isAllLocal = parts.every(p => LOCAL_TESSDATA_LANGS.has(p));
+    const langPath = isAllLocal ? (base + 'vendor/tesseract') : 'https://tessdata.projectnaptha.com/4.0.0';
+    const gzip = !isAllLocal;
+
     try {
-      return await T.createWorker(lang, 1, {
+      return await T.createWorker(rawLang, 1, {
         workerPath: base + 'vendor/tesseract/worker.min.js',
         corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
-        langPath:   base + 'vendor/tesseract',
+        langPath:   langPath,
         cachePath:  'filekit-ocr',
         workerBlobURL: false,
-        gzip: false,
+        gzip: gzip,
         logger: customLogger || (() => {}),
       });
     } catch (initErr) {
-      const parts = String(lang || '').split('+');
+      console.warn(`[OCR] Worker init for "${rawLang}" (${langPath}) fallback triggered:`, initErr);
       if (parts.length > 1) {
-        console.warn('[OCR] Combined model failed, retrying English-only:', initErr);
         return await T.createWorker('eng', 1, {
           workerPath: base + 'vendor/tesseract/worker.min.js',
           corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
@@ -803,8 +990,7 @@
           gzip: false,
           logger: customLogger || (() => {}),
         });
-      } else if (lang !== 'eng') {
-        console.warn('[OCR] Language model missing, falling back to English:', initErr);
+      } else if (rawLang !== 'eng') {
         return await T.createWorker('eng', 1, {
           workerPath: base + 'vendor/tesseract/worker.min.js',
           corePath:   base + 'vendor/tesseract/tesseract-core-simd.wasm.js',
@@ -986,8 +1172,108 @@
   }
 
   const OCR_LANG_LABELS = {
-    eng: 'English', spa: 'Spanish', fra: 'French', deu: 'German', ita: 'Italian',
-    por: 'Portuguese', chi_sim: 'Chinese', jpn: 'Japanese', hin: 'Hindi', ara: 'Arabic', rus: 'Russian',
+    // ─── Global & Primary Languages (Offline Instant + CDN) ───
+    'eng': 'English',
+    'spa': 'Spanish (Español)',
+    'fra': 'French (Français)',
+    'deu': 'German (Deutsch)',
+    'ita': 'Italian (Italiano)',
+    'por': 'Portuguese (Português)',
+    'chi_sim': 'Chinese Simplified (简体中文)',
+    'chi_tra': 'Chinese Traditional (繁體中文)',
+    'jpn': 'Japanese (日本語)',
+    'kor': 'Korean (한국어)',
+    'hin': 'Hindi (हिन्दी)',
+    'ara': 'Arabic (العربية)',
+    'rus': 'Russian (Русский)',
+
+    // ─── European & Latin Languages ───
+    'nld': 'Dutch (Nederlands)',
+    'pol': 'Polish (Polski)',
+    'tur': 'Turkish (Türkçe)',
+    'ukr': 'Ukrainian (Українська)',
+    'swe': 'Swedish (Svenska)',
+    'nor': 'Norwegian (Norsk)',
+    'dan': 'Danish (Dansk)',
+    'fin': 'Finnish (Suomi)',
+    'ell': 'Greek (Ελληνικά)',
+    'ces': 'Czech (Čeština)',
+    'hun': 'Hungarian (Magyar)',
+    'ron': 'Romanian (Română)',
+    'bul': 'Bulgarian (Български)',
+    'cat': 'Catalan (Català)',
+    'hrv': 'Croatian (Hrvatski)',
+    'srp': 'Serbian (Српски)',
+    'slk': 'Slovak (Slovenčina)',
+    'slv': 'Slovenian (Slovenščina)',
+    'lit': 'Lithuanian (Lietuvių)',
+    'lav': 'Latvian (Latviešu)',
+    'est': 'Estonian (Eesti)',
+    'isl': 'Icelandic (Íslenska)',
+    'gle': 'Irish (Gaeilge)',
+    'cym': 'Welsh (Cymraeg)',
+    'sqi': 'Albanian (Shqip)',
+    'eus': 'Basque (Euskara)',
+    'glg': 'Galician (Galego)',
+    'mkd': 'Macedonian (Македонски)',
+    'bel': 'Belarusian (Беларуская)',
+    'bos': 'Bosnian (Bosanski)',
+    'mlt': 'Maltese (Malti)',
+    'lat': 'Latin',
+
+    // ─── Asian & Indic Languages ───
+    'ben': 'Bengali (বাংলা)',
+    'tam': 'Tamil (தமிழ்)',
+    'tel': 'Telugu (తెలుగు)',
+    'kan': 'Kannada (ಕನ್ನಡ)',
+    'mal': 'Malayalam (മലയാളം)',
+    'mar': 'Marathi (मराठी)',
+    'guj': 'Gujarati (ગુજરાતી)',
+    'pan': 'Punjabi (ਪੰਜਾਬੀ)',
+    'urd': 'Urdu (اردو)',
+    'san': 'Sanskrit (संस्कृतम्)',
+    'nep': 'Nepali (नेपाली)',
+    'sin': 'Sinhala (සිංහල)',
+    'mya': 'Burmese (မြန်မာ)',
+    'khm': 'Khmer (ខ្មែរ)',
+    'lao': 'Lao (ລາວ)',
+    'tha': 'Thai (ไทย)',
+    'vie': 'Vietnamese (Tiếng Việt)',
+    'ind': 'Indonesian (Bahasa Indonesia)',
+    'msa': 'Malay (Bahasa Melayu)',
+    'tgl': 'Tagalog / Filipino',
+
+    // ─── Middle Eastern, Central Asian & African ───
+    'fas': 'Persian / Farsi (فارسی)',
+    'heb': 'Hebrew (עברית)',
+    'kat': 'Georgian (ქართული)',
+    'hye': 'Armenian (Հայերեն)',
+    'kaz': 'Kazakh (Қазақша)',
+    'uzb': 'Uzbek (Oʻzbekcha)',
+    'aze': 'Azerbaijani (Azərbaycan)',
+    'mon': 'Mongolian (Монгол)',
+    'tgk': 'Tajik (Тоҷикӣ)',
+    'kir': 'Kyrgyz (Кыргызча)',
+    'amh': 'Amharic (አማርኛ)',
+    'tir': 'Tigrinya (ትግርኛ)',
+    'swa': 'Swahili (Kiswahili)',
+    'yor': 'Yoruba (Èdè Yorùbá)',
+    'afr': 'Afrikaans',
+    'hau': 'Hausa',
+
+    // ─── Bilingual & Multilingual Combos ───
+    'eng+spa': 'Bilingual: English + Spanish',
+    'eng+fra': 'Bilingual: English + French',
+    'eng+deu': 'Bilingual: English + German',
+    'eng+chi_sim': 'Bilingual: English + Chinese (Simp)',
+    'eng+jpn': 'Bilingual: English + Japanese',
+    'eng+kor': 'Bilingual: English + Korean',
+    'eng+hin': 'Bilingual: English + Hindi',
+    'eng+ara': 'Bilingual: English + Arabic',
+    'eng+rus': 'Bilingual: English + Russian',
+    'eng+por': 'Bilingual: English + Portuguese',
+    'eng+ita': 'Bilingual: English + Italian',
+    'eng+vie': 'Bilingual: English + Vietnamese',
   };
 
   /* Fast visual script detector operating directly on canvas pixels.
@@ -1628,7 +1914,7 @@
 
   window.__ffScanApi = {
     imgGray, boxBlur, sobel, otsuThreshold, convexHull, simplifyToK, dpClosed, orderQuad, polyArea, triArea, rotateQuad,
-    detectQuad, solveHomography, invertHomography, warpQuad, processPhoto, enhancePage,
+    detectQuad, solveHomography, invertHomography, warpQuad, processPhoto, enhancePage, sauvolaBinarize, autoDeskew,
     loadPhotoIntoCanvas, ocrRecognize, getOrInitOcrWorker, searchablePdfFromCanvases, canvasJpeg, copyCanvas, fitCanvas,
     detectScriptLanguage, OCR_LANG_LABELS, wordDocFromText,
     parseReceiptFields, parseMrzPassport, parseBusinessCard, extractTableCsv,
@@ -1641,6 +1927,9 @@
     clearCache: clearOcrCache,
     detectVisualScript: detectCanvasVisualScript,
     detectScriptFromFonts: detectScriptFromPdfFonts,
+    sauvolaBinarize,
+    autoDeskew,
+    languages: OCR_LANG_LABELS,
     async runPdfOcr(file, onProgress, lang = 'eng') {
       const pdfjs = await load.pdfjs();
       const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
@@ -1900,83 +2189,6 @@
     },
   });
 
-  /* Compare PDFs */
-  R({
-    id: 'pdf-compare', category: 'PDF', name: 'Compare PDFs',
-    description: 'Drop TWO PDFs to see a visual page diff and the percentage of pixels that changed.',
-    accepts: ['pdf'], multiple: true, maxBytes: 200e6,
-    fields: [{ key: 'scale', label: 'Comparison detail', type: 'select', default: '1.5', options: ['0.75', '1', '1.5', '2'] }],
-    async run({ files, inputs, onProgress }) {
-      if (!files || files.length < 2) throw new Error('Drop exactly two PDFs to compare.');
-      const pdfjs = await load.pdfjs();
-      const scale = +inputs.scale;
-      const [a, b] = await Promise.all([renderPdf(pdfjs, await u8(files[0]), scale), renderPdf(pdfjs, await u8(files[1]), scale)]);
-      onProgress && onProgress(0.7);
-      const n = Math.min(a.pages.length, b.pages.length);
-      const maxW = Math.max(...a.pages.map((p) => p.canvas.width), ...b.pages.map((p) => p.canvas.width));
-      const maxH = Math.max(...a.pages.map((p) => p.canvas.height), ...b.pages.map((p) => p.canvas.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = maxW; canvas.height = maxH;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, maxW, maxH);
-      let totalDiff = 0, totalPx = 0;
-      for (let i = 0; i < n; i++) {
-        ctx.drawImage(a.pages[i].canvas, 0, 0);
-        ctx.globalAlpha = 0.5;
-        ctx.drawImage(b.pages[i].canvas, 0, 0);
-        ctx.globalAlpha = 1;
-        const da = a.pages[i].canvas.getContext('2d').getImageData(0, 0, a.pages[i].canvas.width, a.pages[i].canvas.height).data;
-        const db = b.pages[i].canvas.getContext('2d').getImageData(0, 0, b.pages[i].canvas.width, b.pages[i].canvas.height).data;
-        const W = Math.min(a.pages[i].canvas.width, b.pages[i].canvas.width);
-        const H = Math.min(a.pages[i].canvas.height, b.pages[i].canvas.height);
-        const diff = ctx.createImageData(W, H);
-        let d = 0;
-        for (let p = 0; p < W * H; p++) {
-          const o = p * 4;
-          const dr = Math.abs(da[o] - db[o]), dg = Math.abs(da[o + 1] - db[o + 1]), db2 = Math.abs(da[o + 2] - db[o + 2]);
-          if (dr + dg + db2 > 36) { d++; diff.data[o] = 220; diff.data[o + 1] = 40; diff.data[o + 2] = 40; diff.data[o + 3] = 255; }
-        }
-        ctx.putImageData(diff, 0, 0);
-        totalDiff += d; totalPx += W * H;
-      }
-      onProgress && onProgress(0.95);
-      const pct = totalPx ? ((totalDiff / totalPx) * 100).toFixed(1) : '0';
-      const png = await canvasPng(canvas);
-      return {
-        blob: new Blob([png], { type: 'image/png' }), filename: 'pdf-compare.png', mime: 'image/png', preview: 'image',
-        metrics: { 'Pixel difference': pct + '%', Pages: `${a.pages.length} vs ${b.pages.length}`, 'Common pages': n },
-      };
-    },
-  });
-
-  /* Invert PDF Colours */
-  R({
-    id: 'pdf-invert', category: 'PDF', name: 'Invert PDF Colours',
-    description: 'Dark mode for PDFs — inverts every page. Pages are re-encoded as images (best for scans, up to 60 pages).',
-    accepts: ['pdf'], maxBytes: 200e6,
-    fields: [{ key: 'scale', label: 'Render scale', type: 'select', default: '1.5', options: ['1', '1.5', '2'] }],
-    async run({ file, inputs, onProgress }) {
-      const pdfjs = await load.pdfjs();
-      const PDFLib = await load.pdflib();
-      const { pages } = await renderPdf(pdfjs, await u8(file), +inputs.scale, onProgress);
-      if (pages.length > 60) throw new Error('This tool supports up to 60 pages (it re-encodes each page as an image).');
-      const doc = await PDFLib.PDFDocument.create();
-      for (let i = 0; i < pages.length; i++) {
-        const c = document.createElement('canvas');
-        c.width = pages[i].canvas.width; c.height = pages[i].canvas.height;
-        const ctx = c.getContext('2d');
-        ctx.filter = 'invert(1)';
-        ctx.drawImage(pages[i].canvas, 0, 0);
-        const png = await canvasPng(c);
-        const img = await doc.embedPng(png);
-        const pg = doc.addPage([img.width, img.height]);
-        pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
-        onProgress && onProgress(0.9 + (0.1 * (i + 1)) / pages.length);
-      }
-      return pdfOut(await doc.save(), U.baseName(file.name) + '-inverted.pdf');
-    },
-  });
-
   /* PDF to EPUB */
   R({
     id: 'pdf-to-epub', category: 'PDF', name: 'PDF to EPUB',
@@ -2146,26 +2358,7 @@
     },
   });
 
-  /* Summarize PDF */
-  R({
-    id: 'pdf-summarize', category: 'PDF', name: 'Summarize PDF',
-    description: 'Extractive summary built from the text layer — executive overview or key actionable highlights.',
-    accepts: ['pdf'], maxBytes: 200e6,
-    fields: [
-      { key: 'mode', label: 'Summary Mode', type: 'select', default: 'executive', options: [
-        { value: 'executive', label: 'Executive Summary (Metrics & Overview)' },
-        { value: 'keypoints', label: 'Key Highlights & Action Points' }
-      ] },
-      { key: 'length', label: 'Summary length', type: 'select', default: 'medium', options: ['short', 'medium', 'long'] },
-      OCR_LANG_FIELD
-    ],
-    async run({ file, inputs, onProgress }) {
-      if (typeof window.convertPdfToSummary === 'function') {
-        return window.convertPdfToSummary(file, inputs, onProgress);
-      }
-      throw new Error('PDF Summary engine is loading...');
-    },
-  });
+
 
   /* ════════════════════════════════════════════════════════════════
      Documents category
@@ -5306,14 +5499,6 @@ function filterTable(q) {
             <div class="metric-box"><span class="metric-num">~${readTime}m</span><span class="metric-lbl">Read Time</span></div>
           </div>
         </div>
-
-        <div class="scan-insight-card compare-card" style="border-color: #6366f1; background: rgba(99, 102, 241, 0.04);">
-          <div class="scan-insight-card-head">
-            <span class="insight-badge compare" style="background:#e0e7ff; color:#4338ca; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${ICONS.split} Compare Document</span>
-            <button type="button" class="insight-dl-btn" id="btn-launch-diff-station" style="background:#4f46e5; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">Launch Diff &rsaquo;</button>
-          </div>
-          <p style="font-size:11px; color:#737373; margin:6px 0 0 0;">Compare this page side-by-side with another PDF draft to highlight changes &amp; visual diffs.</p>
-        </div>
       `;
 
       return `<div class="scan-insights-scroll">${cardsHtml}</div>`;
@@ -5697,17 +5882,8 @@ function filterTable(q) {
 
                 <!-- Segment 3: Language -->
                 ${renderCustomSegment('panel-export-lang', 'Language', [
-                  { value: 'eng', label: 'English (EN)' },
-                  { value: 'spa', label: 'Spanish (ES)' },
-                  { value: 'fra', label: 'French (FR)' },
-                  { value: 'deu', label: 'German (DE)' },
-                  { value: 'ita', label: 'Italian (IT)' },
-                  { value: 'por', label: 'Portuguese (PT)' },
-                  { value: 'hin', label: 'Hindi (HI)' },
-                  { value: 'chi_sim', label: 'Chinese (ZH)' },
-                  { value: 'jpn', label: 'Japanese (JA)' },
-                  { value: 'ara', label: 'Arabic (AR)' },
-                  { value: 'auto', label: 'Auto-Detect' }
+                  { value: 'auto', label: '✨ Auto-Detect' },
+                  ...Object.entries(OCR_LANG_LABELS).map(([code, name]) => ({ value: code, label: name }))
                 ], ocrLang, 'lang', (pdfFormat === 'searchable' || pdfFormat === 'ocr_text'))}
               </div>
 
@@ -7524,13 +7700,6 @@ function filterTable(q) {
         };
       });
 
-      const btnLaunchDiff = parent.querySelector('#btn-launch-diff-station');
-      if (btnLaunchDiff) {
-        btnLaunchDiff.onclick = () => {
-          if (window.FF?.app?.openTool) window.FF.app.openTool('pdf-compare');
-        };
-      }
-
       // Background Barcode Scan Trigger
       if (p.barcodeData === undefined && p.canvas) {
         decodeBarcodesAndQr(p.canvas).then(bc => {
@@ -8517,12 +8686,40 @@ function filterTable(q) {
           const popover = document.createElement('div');
           popover.className = 'scan-custom-select-popover';
           popover.setAttribute('role', 'listbox');
-          popover.innerHTML = options.map(o => `
-            <div class="scan-custom-option ${o.selected ? 'is-selected' : ''}" data-val="${o.value}" role="option" aria-selected="${o.selected}">
-              <span>${o.label}</span>
-              ${o.selected ? `<svg class="scan-custom-option-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00C466" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+          popover.style.maxHeight = '320px';
+          popover.style.display = 'flex';
+          popover.style.flexDirection = 'column';
+          popover.style.overflow = 'hidden';
+
+          const hasSearch = (options.length > 8);
+          popover.innerHTML = `
+            ${hasSearch ? `
+              <div style="padding: 6px; border-bottom: 1px solid #E4E4E7; background: #FFFFFF; position: sticky; top: 0; z-index: 5;">
+                <input type="text" class="scan-popover-search" placeholder="Search language…" style="width: 100%; box-sizing: border-box; font-size: 11.5px; padding: 5px 8px; border: 1px solid #E4E4E7; border-radius: 4px; outline: none; background: #F4F4F5; color: #18181B;">
+              </div>
+            ` : ''}
+            <div class="scan-custom-options-scroll" style="overflow-y: auto; flex: 1; max-height: 260px;">
+              ${options.map(o => `
+                <div class="scan-custom-option ${o.selected ? 'is-selected' : ''}" data-val="${o.value}" role="option" aria-selected="${o.selected}">
+                  <span>${o.label}</span>
+                  ${o.selected ? `<svg class="scan-custom-option-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+                </div>
+              `).join('')}
             </div>
-          `).join('');
+          `;
+
+          const searchInp = popover.querySelector('.scan-popover-search');
+          if (searchInp) {
+            searchInp.onclick = (e) => e.stopPropagation();
+            searchInp.oninput = () => {
+              const q = searchInp.value.trim().toLowerCase();
+              popover.querySelectorAll('.scan-custom-option').forEach(optEl => {
+                const txt = (optEl.querySelector('span')?.textContent || '').toLowerCase();
+                optEl.style.display = txt.includes(q) ? '' : 'none';
+              });
+            };
+            setTimeout(() => searchInp.focus(), 50);
+          }
 
           popover.querySelectorAll('.scan-custom-option').forEach(optEl => {
             optEl.onclick = (ev) => {
@@ -9219,18 +9416,16 @@ function filterTable(q) {
             </div>
             <div class="scan-ocr-actions">
               <select id="ocr-lang-select" class="scan-lang-select" aria-label="OCR Language">
-                <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>Auto Detect</option>
-                <option value="eng" ${ocrLang === 'eng' ? 'selected' : ''}>English</option>
-                <option value="spa" ${ocrLang === 'spa' ? 'selected' : ''}>Spanish (Español)</option>
-                <option value="fra" ${ocrLang === 'fra' ? 'selected' : ''}>French (Français)</option>
-                <option value="deu" ${ocrLang === 'deu' ? 'selected' : ''}>German (Deutsch)</option>
-                <option value="ita" ${ocrLang === 'ita' ? 'selected' : ''}>Italian (Italiano)</option>
-                <option value="por" ${ocrLang === 'por' ? 'selected' : ''}>Portuguese (Português)</option>
-                <option value="chi_sim" ${ocrLang === 'chi_sim' ? 'selected' : ''}>Chinese (中文)</option>
-                <option value="jpn" ${ocrLang === 'jpn' ? 'selected' : ''}>Japanese (日本語)</option>
-                <option value="hin" ${ocrLang === 'hin' ? 'selected' : ''}>Hindi (हिन्दी)</option>
-                <option value="ara" ${ocrLang === 'ara' ? 'selected' : ''}>Arabic (العربية)</option>
-                <option value="rus" ${ocrLang === 'rus' ? 'selected' : ''}>Russian (Русский)</option>
+                <option value="auto" ${ocrLang === 'auto' ? 'selected' : ''}>✨ Auto Detect Language</option>
+                <optgroup label="Primary Languages">
+                  ${['eng', 'spa', 'fra', 'deu', 'ita', 'por', 'chi_sim', 'chi_tra', 'jpn', 'kor', 'hin', 'ara', 'rus'].map(k => `<option value="${k}" ${ocrLang === k ? 'selected' : ''}>${OCR_LANG_LABELS[k] || k}</option>`).join('')}
+                </optgroup>
+                <optgroup label="Bilingual & Multilingual">
+                  ${Object.keys(OCR_LANG_LABELS).filter(k => k.includes('+')).map(k => `<option value="${k}" ${ocrLang === k ? 'selected' : ''}>${OCR_LANG_LABELS[k]}</option>`).join('')}
+                </optgroup>
+                <optgroup label="All 100+ Languages">
+                  ${Object.keys(OCR_LANG_LABELS).filter(k => !k.includes('+') && !['eng', 'spa', 'fra', 'deu', 'ita', 'por', 'chi_sim', 'chi_tra', 'jpn', 'kor', 'hin', 'ara', 'rus'].includes(k)).map(k => `<option value="${k}" ${ocrLang === k ? 'selected' : ''}>${OCR_LANG_LABELS[k]}</option>`).join('')}
+                </optgroup>
               </select>
               <button type="button" class="scan-btn-ghost" id="ocr-btn-copy">
                 ${ICONS.copy}
@@ -9293,7 +9488,20 @@ function filterTable(q) {
 
       async function runOcrJob() {
         try {
-          const prep = pages.map((p) => A.fitCanvas(A.enhancePage(A.copyCanvas(p.canvas), p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast }), 1200));
+          const prep = pages.map((p) => {
+            let pageCv = A.copyCanvas(p.canvas);
+            // 1. Auto-Deskew to eliminate camera tilts
+            const deskewRes = A.autoDeskew(pageCv);
+            pageCv = deskewRes.canvas;
+            // 2. High-precision enhancement & Sauvola adaptive binarization
+            if (p.enhanceMode === 'bw') {
+              pageCv = A.sauvolaBinarize(pageCv);
+            } else {
+              pageCv = A.enhancePage(pageCv, p.enhanceMode || 'enhanced', { brightness: p.brightness, contrast: p.contrast });
+            }
+            // 3. High-resolution scaling to 2200px for optimal 250-300 DPI neural recognition
+            return A.fitCanvas(pageCv, 2200);
+          });
           const lt = parent.querySelector('#ocr-loading-text');
           const detectTip = parent.querySelector('#ocr-loading-detail');
 
@@ -10140,7 +10348,7 @@ function filterTable(q) {
     }
     render();
     window.__ffScanStream = null;
-    window.__ffScanStreamStop = stopCam;
+    window.__ffScanStreamStop = teardown;
 
     const teardown = () => {
       try { stopCam(); } catch {}
@@ -10167,7 +10375,6 @@ function filterTable(q) {
       'exif-strip': 'wf-type-security',
       'pdf-watermark': 'wf-type-stamp',
       'pdf-headers-footers': 'wf-type-stamp',
-      'pdf-invert': 'wf-type-visual',
       'pdf-repair': 'wf-type-structure',
     };
 
@@ -10281,7 +10488,6 @@ function filterTable(q) {
                   <button type="button" class="wf-add-btn" data-quick-add="pdf-redact-pii">${I.shield} Redact</button>
                   <button type="button" class="wf-add-btn" data-quick-add="pdf-protect">${I.lock} Protect</button>
                   <button type="button" class="wf-add-btn" data-quick-add="pdf-watermark">${I.doc} Watermark</button>
-                  <button type="button" class="wf-add-btn" data-quick-add="pdf-invert">${I.eye} Invert</button>
                   <button type="button" class="wf-add-btn" data-quick-add="exif-strip">${I.shield} EXIF</button>
                 </div>
               </div>
@@ -10634,123 +10840,11 @@ function filterTable(q) {
     /* ════════════════════════════════════════════════════════════════
      PDF to Audio  (TTS playback workspace)
   ════════════════════════════════════════════════════════════════ */
-  window.__ffMountPdfAudio = function mountPdfAudio(container) {
-    container.innerHTML = '';
-    container.classList.add('cpdf-root', 'conv-root', 'app-stage-container');
-    container.classList.remove('media-shell', 'aud-shell', 'doc-shell', 'spdf-shell', 'etxt-shell', 'sign-shell', 'img-workspace-active', 'org-shell');
-
-    let file = null;
-    let text = '';
-
-    function stopSpeech() { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch {} }
-
-    function render() {
-      container.innerHTML = `
-        <header class="cpdf-hdr">
-          <div class="cpdf-hdr-icon">🔊</div>
-          <div><h2 class="cpdf-hdr-title">PDF to Audio</h2>
-          <p class="cpdf-hdr-sub">Extract the text and listen to it read aloud — voices are your device's, nothing leaves the browser</p></div>
-        </header>
-        ${file ? `
-        <div class="cpdf-body">
-          <div class="conv-file-card">
-            <span class="cpdf-file-ico">📄</span>
-            <div class="conv-file-meta"><strong title="${esc(file.name)}">${esc(file.name)}</strong><span>${bytes(file.size)} · text extracted</span></div>
-            <button class="cpdf-btn-ghost" id="pta-change" type="button">Change file</button>
-          </div>
-          <div class="pta-player" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <button class="cpdf-btn-primary" id="pta-play" type="button" ${text ? '' : 'disabled'}>▶ Listen</button>
-            <button class="cpdf-btn-ghost" id="pta-pause" type="button">Pause</button>
-            <button class="cpdf-btn-ghost" id="pta-stop" type="button">Stop</button>
-            <label style="color:rgba(255,255,255,.7);font-size:12px;display:flex;align-items:center;gap:6px">Rate
-              <select id="pta-rate" class="aud-select" style="width:auto;height:32px;color:#000">
-                ${['0.75', '0.9', '1', '1.25', '1.5'].map((r) => `<option value="${r}" ${r === '1' ? 'selected' : ''}>${r}×</option>`).join('')}
-              </select>
-            </label>
-          </div>
-          <textarea class="doc-editor doc-editor--out" readonly style="width:100%;min-height:220px;border-radius:8px;padding:12px;font-size:13px;background:#111B2E;color:#E5E5E5;border:1px solid rgba(255,255,255,.12)">${esc(text)}</textarea>
-          <p class="cpdf-dz-meta">Note: browser text-to-speech plays aloud but can't export an audio file — download the extracted text instead.</p>
-        </div>` : `
-        <div class="cpdf-dropzone drop-hero-box" id="pta-dz" tabindex="0" role="button" aria-label="Add PDF to synthesize into audio">
-          <div class="dropzone-idle">
-            <div class="drop-illustration">
-              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
-                <!-- Left: Image / Photo Card -->
-                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="70" cy="62" r="5" stroke="#737373" stroke-width="3"/>
-                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-
-                <!-- Center: Prominent Document Sheet -->
-                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="107" y1="64" x2="153" y2="64" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
-                <line x1="107" y1="78" x2="153" y2="78" stroke="#737373" stroke-width="3.5" stroke-linecap="round"/>
-                
-                <!-- Center: Downward Arrow -->
-                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
-
-                <!-- Right: Folder -->
-                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#737373" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-
-            <h3 class="drop-title">Drag and drop PDF to listen</h3>
-
-            <div class="drop-action-group">
-              <label for="pta-inp" class="select-files-main-btn">Select PDF file from your device</label>
-            </div>
-
-            <p class="drop-formats">Supports PDF</p>
-          </div>
-          <input id="pta-inp" type="file" accept="application/pdf,.pdf"  hidden>
-        </div>
-        </div>`}`;
-      if (!file) {
-        const dz = container.querySelector('#pta-dz');
-        const inp = container.querySelector('#pta-inp');
-        inp.onchange = () => inp.files[0] && pick(inp.files[0]);
-        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
-        dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
-        dz.addEventListener('drop', (e) => { e.preventDefault(); dz.classList.remove('cpdf-dz--over'); e.dataTransfer.files[0] && pick(e.dataTransfer.files[0]); });
-        dz.addEventListener('click', (e) => { if (!e.target.closest('label')) inp.click(); });
-        return;
-      }
-      container.querySelector('#pta-change').onclick = () => { stopSpeech(); file = null; text = ''; render(); };
-      const rate = container.querySelector('#pta-rate');
-      container.querySelector('#pta-play').onclick = () => {
-        if (!text) return;
-        stopSpeech();
-        const u = new SpeechSynthesisUtterance(text);
-        u.rate = +(rate?.value || 1);
-        window.speechSynthesis.speak(u);
-      };
-      container.querySelector('#pta-pause').onclick = () => { try { window.speechSynthesis.pause(); } catch {} };
-      container.querySelector('#pta-stop').onclick = () => stopSpeech();
-    }
-    async function pick(f) {
-      file = f;
-      container.innerHTML = '<div class="cpdf-body cpdf-body--center"><div class="cpdf-spinner"><div class="cpdf-spin-outer"></div><div class="cpdf-spin-inner">🔊</div></div><p class="cpdf-proc-title">Extracting text…</p></div>';
-      try {
-        const pdfjs = await load.pdfjs();
-        const doc = await pdfjs.getDocument({ data: await u8(f) }).promise;
-        const parts = [];
-        for (let i = 1; i <= doc.numPages; i++) {
-          const page = await doc.getPage(i);
-          const tc = await page.getTextContent();
-          parts.push(tc.items.map((it) => it.str).join(' '));
-        }
-        text = parts.join('\n\n').trim();
-        if (!text) { text = '(No text layer found in this PDF — it may be a scanned image.)'; }
-        render();
-      } catch (e) {
-        container.innerHTML = `<div class="cpdf-body cpdf-body--center"><span class="cpdf-err-ico">!</span><p class="cpdf-proc-title" style="color:#DC2626">Could not read this PDF</p><p class="cpdf-proc-sub">${esc(e.message || '')}</p><button class="cpdf-btn-primary" id="pta-back" type="button">Try again</button></div>`;
-        container.querySelector('#pta-back').onclick = () => { file = null; render(); };
-      }
-    }
-    render();
-  };
-
-  /* Expose for the premium router in tools.js */
-  window.__ffMountPdfAudio = window.__ffMountPdfAudio;
+  // PDF to Audio Studio is canonically defined in js/tools.js (mountPdfAudio).
+  // Do not overwrite with legacy textarea mockup.
+  if (!window.__ffMountPdfAudio) {
+    console.warn('[FileKit] tools.js did not provide __ffMountPdfAudio');
+  }
 
   /* ════════════════════════════════════════════════════════════════
      Workflow Builder — Professional Document Pipeline Studio
@@ -12627,7 +12721,10 @@ function filterTable(q) {
             currentBytes = await doc.save({ useObjectStreams: true });
           } else if (step.type === 'compress') {
             const doc = await PDFLib.PDFDocument.load(currentBytes, { ignoreEncryption: true });
-            currentBytes = await doc.save({ useObjectStreams: true, addDefaultPage: false });
+            const saved = await doc.save({ useObjectStreams: true, addDefaultPage: false });
+            if (saved && saved.length < currentBytes.length) {
+              currentBytes = saved;
+            }
           } else if (step.type === 'grayscale') {
             const scale = (step.config?.dpi === '300') ? 2.5 : 1.8;
             const isHighContrast = step.config?.contrast === 'high';

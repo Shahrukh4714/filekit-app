@@ -111,8 +111,6 @@
     'svg-optimize': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 12h6"/><path d="M12 12v7"/><path d="M5 12H3v2h2zM21 12h-2v2h2z"/></svg>',
     'pdf-headers-footers': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M5 8h14M5 16h14"/><path d="M9 6.5h6M9 17.5h4"/></svg>',
     'pdf-create': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 15h6M9 9h3"/></svg>',
-    'pdf-compare': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M7 4v16M17 4v16"/></svg>',
-    'pdf-invert': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M12 7v10"/><circle cx="12" cy="12" r="5"/></svg>',
     'pdf-redact-pii': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z"/><rect x="9" y="10" width="6" height="5" rx="1" fill="currentColor" stroke="none"/><path d="M9 11h6"/></svg>',
     'pdf-sanitize-pii': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z"/><path d="m8.5 9.5 7 7M15.5 9.5l-7 7"/></svg>',
     'pdf-to-handwriting': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c4-1 6-3 7-6"/><path d="M5 15l4-8 3 4 2-3 5 6"/></svg>',
@@ -990,19 +988,24 @@
             const dom = new DOMParser().parseFromString(raw, 'image/svg+xml');
             if (dom.querySelector('parsererror')) throw new Error('invalid');
             dom.querySelectorAll('*').forEach(n => { [...n.attributes].forEach(a => { if (/^[\s]*(<!--.*-->)?\s*$/.test(a.value)) n.removeAttribute(a.name); }); });
-            const cleaned = new XMLSerializer().serializeToString(dom.documentElement).replace(/<!--[\s\S]*?-->/g, '').replace(/>\s+</g, '><').replace(/\s{2,}/g, ' ');
+            const cleaned = new XMLSerializer().serializeToString(dom.documentElement);
             const blob = new Blob([cleaned], { type: 'image/svg+xml' });
+            const rawBlob = new Blob([raw], { type: 'image/svg+xml' });
+            const isSmaller = blob.size < rawBlob.size;
+            const finalCleaned = isSmaller ? cleaned : raw;
+            const finalBlob = isSmaller ? blob : rawBlob;
+            const pct = isSmaller ? Math.round((1 - blob.size / rawBlob.size) * 100) : 0;
             resultEl.className = 'pro-result is-ok';
             resultEl.hidden = false;
             resultEl.innerHTML = `
               <span class="pro-result-ico">${checkIco}</span>
-              <div class="pro-result-copy"><strong>Optimized</strong><span>${bytes(new Blob([raw]).size)} → ${bytes(blob.size)} · ${Math.max(0, Math.round((1 - blob.size / Math.max(1, new Blob([raw]).size)) * 100))}% smaller</span></div>
+              <div class="pro-result-copy"><strong>${isSmaller ? 'Optimized' : 'Already Optimal'}</strong><span>${bytes(rawBlob.size)}${isSmaller ? ` → ${bytes(finalBlob.size)} · ${pct}% smaller` : ' · 0% reduction (already optimal)'}</span></div>
               <div class="pro-result-actions">
                 <button type="button" class="etxt-btn-ghost" data-copy>${copyIco} Copy</button>
                 <button type="button" class="etxt-btn-secondary" data-dl>${dlIco} Download .svg</button>
               </div>`;
-            resultEl.querySelector('[data-copy]').addEventListener('click', async () => { try { await navigator.clipboard.writeText(cleaned); } catch (e2) {} });
-            resultEl.querySelector('[data-dl]').addEventListener('click', () => download(blob, 'optimized.svg'));
+            resultEl.querySelector('[data-copy]').addEventListener('click', async () => { try { await navigator.clipboard.writeText(finalCleaned); } catch (e2) {} });
+            resultEl.querySelector('[data-dl]').addEventListener('click', () => download(finalBlob, 'optimized.svg'));
           } catch (e) {
             resultEl.className = 'pro-result is-err'; resultEl.hidden = false;
             resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Invalid SVG</strong><span>That doesn't parse as SVG markup</span></div>`;
@@ -1017,19 +1020,43 @@
   ═══════════════════════════════════════════════════════ */
   function mountPdfPro(container, tool) {
     const id = tool.id;
+    if (id === 'pdf-headers-footers' && typeof window.__ffMountHeadersFooters === 'function') {
+      return window.__ffMountHeadersFooters(container, tool);
+    }
+    if (id === 'pdf-to-handwriting' && typeof window.__ffMountHandwritingStudio === 'function') {
+      return window.__ffMountHandwritingStudio(container, tool);
+    }
+    if ((id === 'handwriting-to-pdf' || id === 'handwriting') && typeof window.__ffMountHandwritingToPdf === 'function') {
+      return window.__ffMountHandwritingToPdf(container, tool);
+    }
+    if (id === 'pdf-to-audio' || id === 'pdf-to-speech') {
+      if (typeof window.__ffMountPdfAudio === 'function') {
+        return window.__ffMountPdfAudio(container, tool);
+      }
+      const check = setInterval(() => {
+        if (typeof window.__ffMountPdfAudio === 'function') {
+          clearInterval(check);
+          window.__ffMountPdfAudio(container, tool);
+        }
+      }, 25);
+      setTimeout(() => clearInterval(check), 4000);
+      return;
+    }
+    if ((id === 'pdf-redact-pii' || id === 'pdf-sanitize-pii' || id === 'redact-pii' || id === 'auto-redact-pii') && typeof window.__ffMountAutoRedact === 'function') {
+      return window.__ffMountAutoRedact(container, tool);
+    }
     const isInputOnly = id === 'pdf-create' || id === 'pdf-to-handwriting';
     if (isInputOnly) return mountInputPdf(container, tool, id);
 
     const dz = dropzone(container, tool, {
       accepts: id === 'handwriting-to-pdf' ? ['png', 'jpg', 'jpeg', 'webp', 'bmp'] : ['pdf'],
-      multiple: id === 'pdf-compare',
-      headline: id === 'pdf-compare' ? 'Drop two PDFs to compare' : `Drop your ${tool.name.toLowerCase()} file here`,
+      
+      headline: `Drop your ${tool.name.toLowerCase()} file here`,
       meta: id === 'handwriting-to-pdf' ? 'PNG · JPG · JPEG · WEBP · BMP · 100% local' : 'PDF · 100% local · never uploaded',
     });
 
     dz.setOnFiles(async (list) => {
       const files = [...list].filter(Boolean);
-      if (id === 'pdf-compare' && files.length !== 2) { dz.dz.classList.add('bad'); setTimeout(() => dz.dz.classList.remove('bad'), 900); return; }
       const app = window.FF.app;
       if (app && app.updateSidebarForFileCategory) app.updateSidebarForFileCategory('PDF', files[0]);
       renderWorkspace(files);
@@ -1038,8 +1065,6 @@
     function renderWorkspace(files) {
       const conf = {
         'pdf-headers-footers': { title: 'Headers & footers', sub: 'Stamp text and page numbers onto every page', action: 'Apply to PDF' },
-        'pdf-compare': { title: 'Compare PDFs', sub: 'Visual page diff with pixel-change percentage', action: 'Compare' },
-        'pdf-invert': { title: 'Invert colours', sub: 'Dark mode for your PDF', action: 'Invert PDF' },
         'pdf-redact-pii': { title: 'Auto-redact PII', sub: 'Black out emails, phones, IDs and card numbers', action: 'Scan for PII' },
         'pdf-sanitize-pii': { title: 'Sanitize PII', sub: 'Redact sensitive data and strip metadata', action: 'Scan & sanitize' },
         'handwriting-to-pdf': { title: 'Handwriting to PDF', sub: 'Turn a photo of handwritten notes into a PDF', action: 'Convert to PDF' },
@@ -1050,8 +1075,6 @@
       s.replaceBtn.addEventListener('click', () => { reset(); });
 
       if (id === 'pdf-headers-footers') return bodyHeadersFooters(s, files);
-      if (id === 'pdf-compare') return bodyCompare(s, files);
-      if (id === 'pdf-invert') return bodyInvert(s, files);
       if (id === 'pdf-redact-pii' || id === 'pdf-sanitize-pii') return bodyPii(s, files);
       if (id === 'handwriting-to-pdf') return bodyHandToPdf(s, files);
       if (id === 'pdf-to-zip') return bodyPdfToZip(s, files);
@@ -1120,347 +1143,6 @@
             actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
           });
         } catch (e) { showResult(s, { ok: false, title: 'Could not apply', msg: e.message }); }
-        finally { setBusy(s, false); }
-      });
-    }
-
-    /* ── Compare (Interactive Curtain Slider & Semantic Text Diff) ── */
-    function bodyCompare(s, files) {
-      const [a, b] = files;
-      s.body.className = 'pro-body pro-compare-body';
-
-      let curPage = 1;
-      let maxPages = 1;
-      let viewMode = 'curtain'; // 'curtain' | 'side' | 'text'
-      let curtainPos = 50; // 0 - 100%
-
-      function diffWords(textA, textB) {
-        const wordsA = (textA || '').split(/\s+/).filter(Boolean);
-        const wordsB = (textB || '').split(/\s+/).filter(Boolean);
-        const n = wordsA.length, m = wordsB.length;
-        const dp = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-        for (let i = 0; i < n; i++) {
-          for (let j = 0; j < m; j++) {
-            if (wordsA[i] === wordsB[j]) dp[i + 1][j + 1] = dp[i][j] + 1;
-            else dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
-          }
-        }
-        let i = n, j = m;
-        const diff = [];
-        let added = 0, deleted = 0;
-        while (i > 0 || j > 0) {
-          if (i > 0 && j > 0 && wordsA[i - 1] === wordsB[j - 1]) {
-            diff.unshift({ type: 'same', text: wordsA[i - 1] });
-            i--; j--;
-          } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-            diff.unshift({ type: 'add', text: wordsB[j - 1] });
-            added++;
-            j--;
-          } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
-            diff.unshift({ type: 'del', text: wordsA[i - 1] });
-            deleted++;
-            i--;
-          }
-        }
-        return { diff, added, deleted };
-      }
-
-      s.body.innerHTML = `
-        <div class="pro-cmp-container">
-          <div class="pro-cmp-toolbar-sub">
-            <div class="pro-cmp-mode-toggle">
-              <button type="button" class="pro-cmp-tab-btn active" data-mode="curtain">↔ Swipe Curtain</button>
-              <button type="button" class="pro-cmp-tab-btn" data-mode="side">◫ Side-by-Side</button>
-              <button type="button" class="pro-cmp-tab-btn" data-mode="text">📄 Text Diff</button>
-            </div>
-
-            <div class="pro-cmp-page-nav">
-              <button type="button" class="pro-cmp-page-btn" id="pro-cmp-prev" title="Previous Page">◀</button>
-              <span class="pro-cmp-page-label" id="pro-cmp-page-lbl">Page 1 / 1</span>
-              <button type="button" class="pro-cmp-page-btn" id="pro-cmp-next" title="Next Page">▶</button>
-            </div>
-          </div>
-
-          <div class="pro-cmp-stage" id="pro-cmp-stage">
-            <!-- Curtain Swipe View -->
-            <div class="pro-cmp-curtain-view" id="pro-cmp-curtain-view">
-              <div class="pro-cmp-curtain-wrap" id="pro-cmp-curtain-wrap">
-                <canvas id="pro-cmp-canvas-base" class="pro-cmp-canvas base"></canvas>
-                <div class="pro-cmp-overlay-clip" id="pro-cmp-overlay-clip" style="width: 50%;">
-                  <canvas id="pro-cmp-canvas-top" class="pro-cmp-canvas top"></canvas>
-                </div>
-                <div class="pro-cmp-curtain-divider" id="pro-cmp-curtain-divider" style="left: 50%;">
-                  <div class="pro-cmp-handle">◀ ▶</div>
-                </div>
-                <div class="pro-cmp-badge base-badge">${esc(a.name)}</div>
-                <div class="pro-cmp-badge top-badge">${esc(b.name)}</div>
-              </div>
-            </div>
-
-            <!-- Side-by-Side Dual View -->
-            <div class="pro-cmp-side-view" id="pro-cmp-side-view" style="display:none;">
-              <div class="pro-cmp-side-col">
-                <div class="pro-cmp-side-head">${esc(a.name)} (Original)</div>
-                <canvas id="pro-cmp-canvas-side-a" class="pro-cmp-side-canvas"></canvas>
-              </div>
-              <div class="pro-cmp-side-col">
-                <div class="pro-cmp-side-head">${esc(b.name)} (Modified)</div>
-                <canvas id="pro-cmp-canvas-side-b" class="pro-cmp-side-canvas"></canvas>
-              </div>
-            </div>
-
-            <!-- Semantic Text Diff View -->
-            <div class="pro-cmp-text-view" id="pro-cmp-text-view" style="display:none;">
-              <div class="pro-cmp-text-box" id="pro-cmp-text-box">
-                <p style="color:#737373; font-size:13px;">Extracting and analyzing text diff…</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <aside class="pro-panel">
-          <div class="pro-panel-head">
-            <strong>Compare PDFs</strong>
-            <span>Interactive Diff Station</span>
-          </div>
-
-          <div class="pro-cmp-metrics-box">
-            <div class="pro-cmp-metric-row">
-              <span class="lbl">Pixel Difference</span>
-              <b class="val" id="pro-cmp-pixel-val">Calculating…</b>
-            </div>
-            <div class="pro-cmp-metric-row">
-              <span class="lbl">Words Added</span>
-              <b class="val text-green" id="pro-cmp-words-add">+0 words</b>
-            </div>
-            <div class="pro-cmp-metric-row">
-              <span class="lbl">Words Deleted</span>
-              <b class="val text-red" id="pro-cmp-words-del">-0 words</b>
-            </div>
-          </div>
-
-          <p class="pro-panel-note" id="pro-cmp-note">Drag the center slider to inspect changes.</p>
-          <button type="button" class="etxt-btn-finish pro-panel-run" data-cmp-dl>${dlIco} Download Comparison</button>
-        </aside>
-      `;
-
-      s.toolbar.innerHTML = `<span class="pro-dim">${esc(a.name)} vs ${esc(b.name)}</span><span class="pro-live" id="pro-cmp-live">Rendering…</span>`;
-      s.runBtn.textContent = 'Compare pages';
-
-      const runCompare = async (pageNum) => {
-        const pdfjs = await load.pdfjs();
-        const [da, db] = [await u8(a), await u8(b)];
-        const [pa, pb] = await Promise.all([pdfjs.getDocument({ data: da }).promise, pdfjs.getDocument({ data: db }).promise]);
-        maxPages = Math.min(pa.numPages, pb.numPages);
-        curPage = Math.min(pageNum, maxPages);
-
-        const pageLbl = s.body.querySelector('#pro-cmp-page-lbl');
-        if (pageLbl) pageLbl.textContent = `Page ${curPage} / ${maxPages}`;
-
-        const scale = 1.6;
-        const [ra, rb] = await Promise.all([pa.getPage(curPage), pb.getPage(curPage)]);
-        const va = ra.getViewport({ scale }), vb = rb.getViewport({ scale });
-        const w = Math.max(va.width, vb.width), h = Math.max(va.height, vb.height);
-
-        // Render Canvas A
-        const ca = cv(w, h);
-        const cta = ca.getContext('2d');
-        cta.fillStyle = '#fff';
-        cta.fillRect(0, 0, w, h);
-        await ra.render({ canvasContext: cta, viewport: va }).promise;
-
-        // Render Canvas B
-        const cb = cv(w, h);
-        const ctb = cb.getContext('2d');
-        ctb.fillStyle = '#fff';
-        ctb.fillRect(0, 0, w, h);
-        await rb.render({ canvasContext: ctb, viewport: vb }).promise;
-
-        // Calculate Pixel Diff
-        const da2 = cta.getImageData(0, 0, w, h).data;
-        const db2 = ctb.getImageData(0, 0, w, h).data;
-        let diffCount = 0;
-        for (let i = 0; i < da2.length; i += 4) {
-          const dr = Math.abs(da2[i] - db2[i]);
-          const dg = Math.abs(da2[i + 1] - db2[i + 1]);
-          const dbl = Math.abs(da2[i + 2] - db2[i + 2]);
-          if (dr + dg + dbl > 36) diffCount++;
-        }
-        const pct = ((diffCount / (w * h)) * 100).toFixed(1);
-
-        // Update Curtain View Canvases
-        const baseCv = s.body.querySelector('#pro-cmp-canvas-base');
-        const topCv = s.body.querySelector('#pro-cmp-canvas-top');
-        if (baseCv && topCv) {
-          baseCv.width = w; baseCv.height = h;
-          baseCv.getContext('2d').drawImage(ca, 0, 0);
-          topCv.width = w; topCv.height = h;
-          topCv.getContext('2d').drawImage(cb, 0, 0);
-        }
-
-        // Update Side-by-Side Canvases
-        const sideA = s.body.querySelector('#pro-cmp-canvas-side-a');
-        const sideB = s.body.querySelector('#pro-cmp-canvas-side-b');
-        if (sideA && sideB) {
-          sideA.width = w; sideA.height = h;
-          sideA.getContext('2d').drawImage(ca, 0, 0);
-          sideB.width = w; sideB.height = h;
-          sideB.getContext('2d').drawImage(cb, 0, 0);
-        }
-
-        // Semantic Text Diff
-        const [tcA, tcB] = await Promise.all([ra.getTextContent(), rb.getTextContent()]);
-        const textA = (tcA.items || []).map(it => it.str).join(' ');
-        const textB = (tcB.items || []).map(it => it.str).join(' ');
-        const { diff: textDiffList, added, deleted } = diffWords(textA, textB);
-
-        const textBox = s.body.querySelector('#pro-cmp-text-box');
-        if (textBox) {
-          textBox.innerHTML = textDiffList.map(token => {
-            if (token.type === 'add') return `<span class="pro-cmp-token add">+${esc(token.text)}</span> `;
-            if (token.type === 'del') return `<span class="pro-cmp-token del">-${esc(token.text)}</span> `;
-            return `<span class="pro-cmp-token same">${esc(token.text)}</span> `;
-          }).join('');
-        }
-
-        // Update Metrics Panel
-        const pixelVal = s.body.querySelector('#pro-cmp-pixel-val');
-        if (pixelVal) pixelVal.textContent = `${pct}% modified`;
-        const wordsAdd = s.body.querySelector('#pro-cmp-words-add');
-        if (wordsAdd) wordsAdd.textContent = `+${added} ${added === 1 ? 'word' : 'words'}`;
-        const wordsDel = s.body.querySelector('#pro-cmp-words-del');
-        if (wordsDel) wordsDel.textContent = `-${deleted} ${deleted === 1 ? 'word' : 'words'}`;
-
-        const note = s.body.querySelector('#pro-cmp-note');
-        if (note) note.textContent = `Page ${curPage} of ${maxPages} · ${pct}% pixel diff · ${added + deleted} word change(s)`;
-
-        const liveEl = s.toolbar.querySelector('#pro-cmp-live');
-        if (liveEl) liveEl.textContent = `Page ${curPage}/${maxPages} · ${pct}% diff`;
-
-        // Create Composite Diff Download Blob
-        const outCanvas = cv(w, h);
-        const outCtx = outCanvas.getContext('2d');
-        outCtx.drawImage(ca, 0, 0);
-        const od = outCtx.getImageData(0, 0, w, h);
-        for (let i = 0; i < da2.length; i += 4) {
-          const dr = Math.abs(da2[i] - db2[i]), dg = Math.abs(da2[i + 1] - db2[i + 1]), dbl = Math.abs(da2[i + 2] - db2[i + 2]);
-          if (dr + dg + dbl > 36) {
-            od.data[i] = 239; od.data[i + 1] = 68; od.data[i + 2] = 68; od.data[i + 3] = 255;
-          }
-        }
-        outCtx.putImageData(od, 0, 0);
-        window.__cmpBlob = await new Promise((res) => outCanvas.toBlob(res, 'image/png'));
-      };
-
-      // Handle Curtain Dragging
-      const curtainWrap = s.body.querySelector('#pro-cmp-curtain-wrap');
-      const overlayClip = s.body.querySelector('#pro-cmp-overlay-clip');
-      const divider = s.body.querySelector('#pro-cmp-curtain-divider');
-
-      let isDraggingCurtain = false;
-      const onMove = (clientX) => {
-        if (!curtainWrap || !overlayClip || !divider) return;
-        const rect = curtainWrap.getBoundingClientRect();
-        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-        curtainPos = (x / rect.width) * 100;
-        overlayClip.style.width = `${curtainPos}%`;
-        divider.style.left = `${curtainPos}%`;
-      };
-
-      if (curtainWrap) {
-        curtainWrap.addEventListener('pointerdown', (e) => {
-          isDraggingCurtain = true;
-          onMove(e.clientX);
-          try { curtainWrap.setPointerCapture(e.pointerId); } catch (err) {}
-        });
-        curtainWrap.addEventListener('pointermove', (e) => {
-          if (isDraggingCurtain) onMove(e.clientX);
-        });
-        curtainWrap.addEventListener('pointerup', () => { isDraggingCurtain = false; });
-        curtainWrap.addEventListener('pointercancel', () => { isDraggingCurtain = false; });
-      }
-
-      // Mode Toggles
-      s.body.querySelectorAll('.pro-cmp-tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          s.body.querySelectorAll('.pro-cmp-tab-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          viewMode = btn.dataset.mode;
-          const curtainV = s.body.querySelector('#pro-cmp-curtain-view');
-          const sideV = s.body.querySelector('#pro-cmp-side-view');
-          const textV = s.body.querySelector('#pro-cmp-text-view');
-          if (curtainV) curtainV.style.display = viewMode === 'curtain' ? 'block' : 'none';
-          if (sideV) sideV.style.display = viewMode === 'side' ? 'grid' : 'none';
-          if (textV) textV.style.display = viewMode === 'text' ? 'block' : 'none';
-        });
-      });
-
-      // Page Navigation
-      const prevBtn = s.body.querySelector('#pro-cmp-prev');
-      const nextBtn = s.body.querySelector('#pro-cmp-next');
-      if (prevBtn) prevBtn.addEventListener('click', () => { if (curPage > 1) runCompare(curPage - 1); });
-      if (nextBtn) nextBtn.addEventListener('click', () => { if (curPage < maxPages) runCompare(curPage + 1); });
-
-      // Initial Compare Run
-      (async () => {
-        try {
-          await runCompare(1);
-        } catch (e) {
-          const note = s.body.querySelector('#pro-cmp-note');
-          if (note) note.textContent = 'Could not render pages: ' + e.message;
-        }
-      })();
-
-      const dlBtn = s.body.querySelector('[data-cmp-dl]');
-      if (dlBtn) dlBtn.addEventListener('click', () => { if (window.__cmpBlob) download(window.__cmpBlob, 'pdf-compare-diff.png'); });
-    }
-
-
-    /* ── Invert ── */
-    function bodyInvert(s, files) {
-      const file = files[0];
-      s.body.className = 'pro-body pro-pdf-body';
-      s.body.innerHTML = `
-        <div class="pro-pdf-thumbs" data-thumbs></div>
-        <div class="pro-pdf-stage">
-          <div class="pro-pdf-card"><img class="pro-pdf-page" id="pro-inv-img" alt="Inverted page preview"></div>
-        </div>
-        <aside class="pro-panel"><div class="pro-panel-head"><strong>Invert colours</strong><span>Dark mode for PDFs</span></div>
-        <p class="pro-panel-note">Every page is re-encoded as an inverted image — best for scans and notes (up to 60 pages).</p>
-        <label class="pro-check"><input type="checkbox" id="pro-inv-toggle" checked><span>Preview inverted</span></label></aside>`;
-      let pageNum = 1, numPages = 1, currentUrl = null;
-      const draw = async () => {
-        const pdfjs = await load.pdfjs();
-        const doc = await pdfjs.getDocument({ data: await u8(file) }).promise;
-        numPages = doc.numPages;
-        const page = await doc.getPage(pageNum);
-        const vp = page.getViewport({ scale: 1.4 });
-        const c = cv(vp.width, vp.height);
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        if (currentUrl) URL.revokeObjectURL(currentUrl);
-        currentUrl = c.toDataURL('image/png');
-        const im = s.body.querySelector('#pro-inv-img');
-        im.src = currentUrl;
-        im.classList.toggle('is-inverted', s.body.querySelector('#pro-inv-toggle').checked);
-        s.toolbar.innerHTML = `<span class="pro-dim">Page ${pageNum} of ${numPages}</span><span class="pro-live">Preview</span>`;
-      };
-      s.body.querySelector('#pro-inv-toggle').addEventListener('change', (e) => {
-        s.body.querySelector('#pro-inv-img').classList.toggle('is-inverted', e.target.checked);
-      });
-      draw();
-      renderThumbs(s, file, null, (n) => { pageNum = n; draw(); });
-      s.runBtn.addEventListener('click', async () => {
-        setBusy(s, true, 'Inverting…');
-        try {
-          const out = await tool.run({ file, inputs: { scale: '1.5' }, onProgress: (p, l) => setBusy(s, true, l || 'Inverting…') });
-          showResult(s, {
-            ok: true, title: 'PDF inverted', msg: `${out.filename} · ${bytes(out.blob.size)}`,
-            blob: out.blob, filename: out.filename, tool,
-            actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(out.blob, out.filename) }],
-          });
-        } catch (e) { showResult(s, { ok: false, title: 'Could not invert', msg: e.message }); }
         finally { setBusy(s, false); }
       });
     }
@@ -1733,12 +1415,11 @@
     function reset() {
       dropzone(container, tool, {
         accepts: id === 'handwriting-to-pdf' ? ['png', 'jpg', 'jpeg', 'webp', 'bmp'] : ['pdf'],
-        multiple: id === 'pdf-compare',
-        headline: id === 'pdf-compare' ? 'Drop two PDFs to compare' : `Drop your ${tool.name.toLowerCase()} file here`,
+        
+        headline: `Drop your ${tool.name.toLowerCase()} file here`,
         meta: id === 'handwriting-to-pdf' ? 'PNG · JPG · JPEG · WEBP · BMP · 100% local' : 'PDF · 100% local · never uploaded',
       }).setOnFiles(async (list) => {
         const files = [...list].filter(Boolean);
-        if (id === 'pdf-compare' && files.length !== 2) return;
         renderWorkspace(files);
       });
     }

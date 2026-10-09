@@ -1555,6 +1555,16 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   box-sizing: border-box !important;
 }
 
+.org-pg-meta-left {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.org-card-mob-actions {
+  display: none !important;
+}
+
 .org-pg-num {
   font-size: 11px !important;
   font-weight: 600 !important;
@@ -3488,9 +3498,13 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
     -webkit-overflow-scrolling: touch !important;
   }
 
+  .org-canvas-wrap.has-dock-active {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 14px)) !important;
+  }
+
   .org-canvas-grid {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(var(--org-mob-cols, 2), minmax(0, 1fr)) !important;
     gap: 10px !important;
     width: 100% !important;
     padding: 0 !important;
@@ -3503,6 +3517,73 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
     max-width: 100% !important;
     margin: 0 !important;
     box-sizing: border-box !important;
+  }
+
+  .org-pg-meta {
+    width: 100% !important;
+    margin-top: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 1px !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  .org-pg-meta-left {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .org-pg-num {
+    font-size: 10.5px !important;
+    padding: 2px 6px !important;
+    white-space: nowrap !important;
+  }
+
+  .org-card-mob-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .org-card-mob-btn {
+    all: unset !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 5px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    transition: all 100ms ease !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .org-card-mob-btn:active {
+    background: #F1F5F9 !important;
+    color: #0F172A !important;
+    transform: scale(0.92) !important;
+  }
+
+  .org-card-mob-btn:disabled {
+    opacity: 0.25 !important;
+    pointer-events: none !important;
+  }
+
+  .org-card-mob-btn svg {
+    width: 11px !important;
+    height: 11px !important;
+    stroke: currentColor !important;
   }
 
   .org-pg-thumb {
@@ -3581,10 +3662,20 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
     color: #FCA5A5 !important;
   }
 
-  /* Sub-Toolbar (Split/Extract Context) on Mobile */
+  /* Sub-Toolbar: on mobile, only show contextual sub-toolbar for split and extract */
   .org-sub-toolbar {
+    display: none !important;
+  }
+  
+  .org-flow:has([data-mode="split"].is-active) .org-sub-toolbar,
+  .org-flow:has([data-mode="extract"].is-active) .org-sub-toolbar,
+  .org-flow:has([data-mob-action="mode-split"].is-active) .org-sub-toolbar,
+  .org-flow:has([data-mob-action="mode-extract"].is-active) .org-sub-toolbar {
+    display: flex !important;
     padding: 6px 10px !important;
     min-height: 36px !important;
+    background: #FAFAFA !important;
+    border-bottom: 1px solid #E4E4E7 !important;
   }
 
   .org-sub-toolbar-inner {
@@ -3596,4 +3687,193 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   .org-slim-foot {
     display: none !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mobile & Desktop Jump to Page Dialog
+   ═══════════════════════════════════════════════════════════════════════════ */
+.org-jump-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  animation: orgJumpFadeIn 160ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes orgJumpFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.org-jump-card {
+  width: 100% !important;
+  max-width: 320px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  box-sizing: border-box !important;
+  animation: orgJumpCardIn 180ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes orgJumpCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.org-jump-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+}
+
+.org-jump-close {
+  all: unset !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #64748B !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 120ms ease !important;
+}
+
+.org-jump-close:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+.org-jump-hint {
+  margin: 0 !important;
+  font-size: 12px !important;
+  color: #64748B !important;
+  line-height: 1.4 !important;
+}
+
+.org-jump-input-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin: 4px 0 !important;
+}
+
+.org-jump-step {
+  all: unset !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 8px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #0F172A !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+  transition: all 100ms ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.org-jump-step:active {
+  background: #E2E8F0 !important;
+  transform: scale(0.94) !important;
+}
+
+.org-jump-input {
+  width: 80px !important;
+  height: 38px !important;
+  text-align: center !important;
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  font-family: inherit !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease !important;
+}
+
+.org-jump-input:focus {
+  border-color: #00B0FF !important;
+  box-shadow: 0 0 0 3px rgba(0, 176, 255, 0.18) !important;
+}
+
+.org-jump-input::-webkit-inner-spin-button,
+.org-jump-input::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+.org-jump-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  margin-top: 4px !important;
+}
+
+.org-jump-btn {
+  all: unset !important;
+  height: 34px !important;
+  padding: 0 14px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: all 120ms ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.org-jump-btn--cancel {
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+}
+
+.org-jump-btn--cancel:hover {
+  background: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.org-jump-btn--confirm {
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.org-jump-btn--confirm:hover {
+  background: #27272A !important;
+}
+
+.org-jump-btn--confirm:active {
+  transform: translateY(1px) !important;
 }

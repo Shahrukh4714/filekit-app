@@ -1,0 +1,66 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/v2/tooling/cli/schema.json",
+  "productName": "FileKit",
+  "version": "1.0.0",
+  "identifier": "cc.filekit.desktop",
+  "build": {
+    "frontendDist": "../"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "13.0",
+      "exceptionDomain": ""
+    },
+    "windows": [
+      {
+        "title": "FileKit",
+        "label": "main",
+        "width": 1200,
+        "height": 840,
+        "minWidth": 880,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "transparent": true
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/tray-icon.png",
+      "iconAsTemplate": true,
+      "tooltip": "FileKit Quick Drop"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.icns"
+    ],
+    "category": "Productivity",
+    "shortDescription": "100% Private In-Device File Suite",
+    "longDescription": "FileKit provides 187+ local file conversion, compression, and editing tools running completely on your Mac without cloud uploads.",
+    "macOS": {
+      "dmg": {
+        "background": "assets/dmg-background.png",
+        "windowSize": {
+          "width": 640,
+          "height": 400
+        },
+        "appPosition": {
+          "x": 160,
+          "y": 200
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 200
+        }
+      }
+    }
+  }
+}

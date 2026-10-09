@@ -435,7 +435,7 @@
   const set = (items) => new Set(items);
   const groups = {
     compose: set(['pdf-merge']), pages: set(['pdf-split', 'pdf-extract-range', 'pdf-rotate', 'pdf-crop', 'pdf-page-numbers', 'pdf-watermark']),
-    optimize: set(['pdf-compress', 'pdf-repair', 'pdf-flatten', 'pdf-grayscale']), convertPdf: set(['pdf-to-image', 'pdf-to-excel', 'pdf-extract-text', 'pdf-extract-images']),
+    optimize: set(['pdf-compress', 'pdf-repair', 'pdf-flatten', 'pdf-grayscale']), convertPdf: set(['pdf-to-image', 'pdf-to-excel', 'pdf-extract-text', 'pdf-extract-images', 'pdf-to-audio', 'pdf-to-speech']),
     editPdf: set(['pdf-sign', 'pdf-redact', 'pdf-form-filler', 'pdf-resize']), trim: set(['audio-trim', 'video-trim']),
     generators: set(['qr-generate', 'barcode-generate', 'password-gen', 'uuid', 'lorem', 'gradient-gen', 'box-shadow-gen', 'radius-gen', 'placeholder-img']),
     inspectors: set(['qr-read', 'font-metadata', 'font-preview', 'zip-inspect', 'archive-preview', 'cert-inspect', 'hash-generate', 'jwt-security', 'exif-viewer', 'epub-info', 'pem-inspect']),
@@ -2768,9 +2768,9 @@ try {
     'pdf-to-pdf': ['pdf-compress', 'pdf-to-pdfa', 'pdf-flatten', 'pdf-repair', 'pdf-merge', 'pdf-split', 'pdf-convert', 'pdf-to-word'],
     'pdf-to-zip': ['zip-create', 'zip-extract', 'zip-inspect', 'pdf-to-image', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert'],
     'pdf-to-epub': ['epub-to-pdf', 'epub-to-html', 'pdf-to-html', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
-    'pdf-to-audio': ['audio-convert', 'pdf-summarize', 'pdf-extract-text', 'audiogram-generator', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert'],
+    'pdf-to-audio': ['audio-convert', 'pdf-extract-text', 'audiogram-generator', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert'],
     'pdf-to-handwriting': ['handwriting-to-pdf', 'pdf-create', 'pdf-edit-text', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
-    'pdf-extract-text': ['pdf-summarize', 'pdf-ocr', 'pdf-to-audio', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
+    'pdf-extract-text': [ 'pdf-ocr', 'pdf-to-audio', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
     'pdf-extract-images': ['pdf-extract-range', 'pdf-to-image', 'pdf-to-jpg', 'pdf-split', 'pdf-merge', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
     'pdf-extract-range': ['pdf-split', 'pdf-rotate', 'pdf-crop', 'pdf-extract-images', 'pdf-merge', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
     'pdf-edit-text': ['pdf-sign', 'pdf-form-filler', 'pdf-redact', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
@@ -2793,8 +2793,7 @@ try {
     'pdf-grayscale': ['pdf-invert', 'pdf-to-pdf', 'pdf-compress', 'pdf-merge', 'pdf-split', 'pdf-convert', 'pdf-to-word', 'pdf-to-excel'],
     'pdf-create': ['pdf-merge', 'html-to-pdf', 'md-to-pdf', 'image-to-pdf', 'txt-to-pdf', 'pdf-split', 'pdf-compress', 'pdf-convert'],
     'pdf-compare': ['pdf-merge', 'pdf-edit-text', 'pdf-sign', 'pdf-convert', 'pdf-split', 'pdf-compress', 'pdf-to-word', 'pdf-to-excel'],
-    'pdf-summarize': ['pdf-extract-text', 'pdf-to-audio', 'pdf-ocr', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word'],
-    'pdf-ocr': ['pdf-extract-text', 'pdf-summarize', 'pdf-convert', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-to-word', 'pdf-to-excel'],
+    'pdf-ocr': ['pdf-extract-text', 'pdf-convert', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-to-word', 'pdf-to-excel'],
     'handwriting-to-pdf': ['pdf-to-handwriting', 'pdf-create', 'image-to-pdf', 'scan-document', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert'],
     'docx-to-pdf': ['pdf-to-word', 'html-to-pdf', 'md-to-pdf', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-excel'],
     'docx-to-html': ['docx-to-md', 'docx-to-txt', 'md-to-html', 'html-to-md', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert'],
@@ -2938,8 +2937,8 @@ try {
     'gst-invoice': ['pos-billing', 'gst-filing-prep', 'excel-to-json', 'data-to-pdf'],
     'pos-billing': ['gst-invoice', 'gst-filing-prep', 'data-to-pdf'],
     'gst-filing-prep': ['gst-invoice', 'pos-billing', 'excel-to-json', 'data-transcode'],
-    'scan-document': ['workflow-builder', 'pdf-create', 'handwriting-to-pdf', 'pdf-extract-text', 'pdf-ocr', 'pdf-to-audio', 'pdf-summarize'],
-    'workflow-builder': ['scan-document', 'pdf-merge', 'pdf-extract-text', 'organize', 'pdf-to-audio', 'pdf-summarize'],
+    'scan-document': ['workflow-builder', 'pdf-create', 'handwriting-to-pdf', 'pdf-extract-text', 'pdf-ocr', 'pdf-to-audio'],
+    'workflow-builder': ['scan-document', 'pdf-merge', 'pdf-extract-text', 'organize', 'pdf-to-audio'],
   };
   // entries: 188
 
@@ -3111,6 +3110,14 @@ try {
       'pdf-to-jpg': {
         solid: '#E5252A',
         svg: '<rect x="4" y="8" width="9.5" height="14" rx="2" fill="#FFFFFF" fill-opacity="0.95"/><text x="4.7" y="17" fill="#B91C1C" font-size="3.8" font-weight="900" font-family="system-ui,sans-serif">PDF</text><path d="M15.5 15h3.5m-1.5-1.5 1.5 1.5-1.5 1.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="20.5" y="8.5" width="10" height="13" rx="2" fill="#FFFFFF" fill-opacity="0.95"/><circle cx="23.2" cy="11.8" r="1.1" fill="#EA580C"/><path d="m21.5 18.5 2.5-2.8 2 2.2 2-2.8 2 3.4h-8.5z" fill="#EA580C"/>'
+      },
+      'pdf-to-audio': {
+        solid: '#E5252A',
+        svg: '<rect x="4" y="8" width="9.5" height="14" rx="2" fill="#FFFFFF" fill-opacity="0.95"/><text x="4.7" y="17" fill="#B91C1C" font-size="3.8" font-weight="900" font-family="system-ui,sans-serif">PDF</text><path d="M15.5 15h3.5m-1.5-1.5 1.5 1.5-1.5 1.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="20.5" y="8" width="9.5" height="14" rx="2" fill="#FFFFFF" fill-opacity="0.2" stroke="#FFFFFF" stroke-width="1.2"/><path d="M23 18v-5l5-1.5v5M23 15a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0M28 13.5a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0" stroke="#FFFFFF" stroke-width="1.2" fill="none"/>'
+      },
+      'pdf-to-speech': {
+        solid: '#E5252A',
+        svg: '<rect x="4" y="8" width="9.5" height="14" rx="2" fill="#FFFFFF" fill-opacity="0.95"/><text x="4.7" y="17" fill="#B91C1C" font-size="3.8" font-weight="900" font-family="system-ui,sans-serif">PDF</text><path d="M15.5 15h3.5m-1.5-1.5 1.5 1.5-1.5 1.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="20.5" y="8" width="9.5" height="14" rx="2" fill="#FFFFFF" fill-opacity="0.2" stroke="#FFFFFF" stroke-width="1.2"/><path d="M23 18v-5l5-1.5v5M23 15a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0M28 13.5a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0" stroke="#FFFFFF" stroke-width="1.2" fill="none"/>'
       },
       'image-to-pdf': {
         solid: '#EA580C',
@@ -3396,7 +3403,7 @@ try {
         'jwt-security','cert-inspect','hash-generate','privacy-scanner','fingerprint-generator'
       ],
       scan: [
-        'scan-document','pdf-extract-text','pdf-to-audio','pdf-to-csv','pdf-summarize',
+        'scan-document','pdf-extract-text','pdf-to-audio','pdf-to-csv',
         'qr-generate','qr-read','barcode-generate','qr-hub'
       ],
       workflow: [
@@ -3686,62 +3693,64 @@ try {
       ],
 
       'Images': [
-        { title: 'Compress', toolId: 'image-compress', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>' },
-        { title: 'Convert', toolId: 'image-convert', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>' },
-        { title: 'Resize', toolId: 'image-resize', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
-        { title: 'Crop', toolId: 'image-crop', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>' },
-        { title: 'Rotate', toolId: 'image-rotate', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' },
-        { title: 'Watermark', toolId: 'image-watermark', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
-        { title: 'Image ↔ PDF', toolId: 'image-to-pdf', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' }
-      ],
-      'Video': [
-        { title: 'Compress', toolId: 'video-compress', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>' },
-        { title: 'Convert', fullTitle: 'Convert Video', toolId: 'video-convert', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>' },
-        { title: 'Trim', fullTitle: 'Trim Video', toolId: 'video-trim', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>' },
-        { title: 'Mute', toolId: 'video-mute', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5L6 9H2v6h4l5 4z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>' },
-        { title: 'Extract Audio', toolId: 'video-extract-audio', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' },
-        { title: 'More', isMore: true, svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>', more: [
-          { title: 'Resolution', toolId: 'video-resolution', color: '#818cf8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
-          { title: 'Framerate', toolId: 'video-framerate', color: '#38bdf8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M7 7v10M17 7v10"/></svg>' },
-          { title: 'Extract Frame', toolId: 'video-extract-frame', color: '#2dd4bf', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>' },
-          { title: 'Video to GIF', toolId: 'video-gif', color: '#f472b6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' },
-          { title: 'Speed', toolId: 'video-speed', color: '#a78bfa', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' },
-          { title: 'Reverse', toolId: 'video-reverse', color: '#fb923c', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h13"/><path d="M10 7l5 5-5 5"/></svg>' },
-          { title: 'Video to Images', toolId: 'video-to-images', color: '#34d399', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>' },
-          { title: 'Merge Clips', toolId: 'video-merge', color: '#60a5fa', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h12v12H8z"/><path d="M4 10h12v12H4z"/></svg>' },
-          { title: 'Watermark', toolId: 'video-watermark', color: '#22d3ee', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
-          { title: 'Subtitles', toolId: 'video-subtitles', color: '#f59e0b', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4M13 12h4"/></svg>' }
-        ] }
-      ],
-      'Audio': [
-        { title: 'Convert', fullTitle: 'Convert Audio', toolId: 'audio-convert', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 10h11l-3-3"/><path d="M17 14H6l3 3"/></svg>' },
-        { title: 'Trim', toolId: 'audio-trim', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>' },
-        { title: 'Merge', toolId: 'audio-merge', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12v12H8z"/><path d="M4 10h12v12H4z"/></svg>' },
-        { title: 'Normalize', toolId: 'audio-normalize', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h2l2-7 3 14 3-10 2 5h6"/></svg>' },
-        { title: 'Speed', toolId: 'audio-speed', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' },
-        { title: 'Waveform', toolId: 'audio-waveform', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 10v4M22 12h0"/></svg>' },
         {
-          title: 'More',
-          isMore: true,
-          svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-          more: [
-            { title: 'Reverse', toolId: 'audio-reverse', color: '#fb923c', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12h13"/><path d="M10 7l5 5-5 5"/><path d="M21 5v14"/></svg>' },
-            { title: 'Sample Rate', toolId: 'audio-sample-rate', color: '#818cf8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>' },
-            { title: 'Bitrate', toolId: 'audio-bitrate', color: '#38bdf8', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15V9M12 15v-4M17 15v-7"/></svg>' },
-            { title: 'Split Silence', toolId: 'audio-split-silence', color: '#f472b6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48 20 20"/></svg>' },
-            { title: 'From Video', toolId: 'audio-from-video', color: '#f43f5e', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' },
-            { title: 'Strip Metadata', toolId: 'audio-strip-metadata', color: '#8C8C8C', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h10M4 17h13"/></svg>' },
-            { title: 'Generate Silence', toolId: 'audio-silence', color: '#737373', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>' },
+          title: 'CONVERT & COMPRESS',
+          tools: [
+            { id: 'image-convert', name: 'Convert image', cat: 'Images' },
+            { id: 'image-compress', name: 'Compress image', cat: 'Images' },
+            { id: 'image-heic-convert', name: 'HEIC to JPG / PNG', cat: 'Images' },
+            { id: 'img-to-base64', name: 'Image to Base64', cat: 'Images' },
+            { id: 'base64-to-img', name: 'Base64 to image', cat: 'Images' }
+          ]
+        },
+        {
+          title: 'RESIZE & TRANSFORM',
+          tools: [
+            { id: 'image-resize', name: 'Resize image', cat: 'Images' },
+            { id: 'image-crop', name: 'Crop image', cat: 'Images' },
+            { id: 'image-rotate', name: 'Rotate / flip', cat: 'Images' },
+            { id: 'image-upscale', name: 'Upscale (2x/4x)', cat: 'Images' },
+            { id: 'favicon', name: 'Favicon generator', cat: 'Images' }
+          ]
+        },
+        {
+          title: 'STYLING & EFFECTS',
+          tools: [
+            { id: 'image-round', name: 'Round corners', cat: 'Images' },
+            { id: 'image-border', name: 'Add border', cat: 'Images' },
+            { id: 'image-watermark', name: 'Watermark image', cat: 'Images' },
+            { id: 'image-blur', name: 'Blur', cat: 'Images' },
+            { id: 'image-sharpen', name: 'Sharpen', cat: 'Images' }
+          ]
+        },
+        {
+          title: 'COLOR & ENHANCE',
+          tools: [
+            { id: 'image-grayscale', name: 'Grayscale', cat: 'Images' },
+            { id: 'image-invert', name: 'Invert colors', cat: 'Images' },
+            { id: 'image-bc', name: 'Brightness / contrast', cat: 'Images' },
+            { id: 'palette', name: 'Color palette extractor', cat: 'Images' }
+          ]
+        },
+        {
+          title: 'VECTOR & OPTIMIZATION',
+          tools: [
+            { id: 'png-trace', name: 'PNG trace to SVG', cat: 'Images' },
+            { id: 'svg-to-raster', name: 'SVG to PNG / JPG', cat: 'Images' },
+            { id: 'svg-optimize', name: 'SVG optimizer', cat: 'Images' },
+            { id: 'image-to-pdf', name: 'Screenshot to PDF', cat: 'Images' }
+          ]
+        },
+        {
+          title: 'METADATA & AI',
+          tools: [
+            { id: 'bg-remover', name: 'Background Remover', cat: 'Images' },
+            { id: 'exif-strip', name: 'EXIF strip', cat: 'Images' },
+            { id: 'exif-viewer', name: 'EXIF viewer', cat: 'Images' },
+            { id: 'image-diff', name: 'Image diff', cat: 'Images' },
+            { id: 'sprite-sheet', name: 'Sprite sheet generator', cat: 'Images' }
           ]
         }
-      ],
-
-      'Archive': [
-        { title: 'Create Zip', toolId: 'zip-create', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
-        { title: 'Extract Zip', toolId: 'zip-extract', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' },
-        { title: 'Inspect Archive', toolId: 'zip-inspect', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' },
-        { title: 'Create TAR.GZ', toolId: 'targz-create', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 7v10M7 12h10"/></svg>' },
-        { title: 'Extract TAR.GZ', toolId: 'targz-extract', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg>' }
       ],
       'Documents': [
         { title: 'To PDF', fullTitle: 'Document to PDF', toolId: 'docx-to-pdf', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M12 12v6"/></svg>' },
@@ -4266,6 +4275,8 @@ try {
       'image-compress': { theme: 'sp-icon-green', svg: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5" fill="#FFFFFF"/><path d="M4 14h5v5M20 10h-5V5"/>' },
       'video-convert': { theme: 'sp-icon-purple', svg: '<rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="m16 10 6-3.5v11L16 14z"/>' },
       'image-crop': { theme: 'sp-icon-teal', svg: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>' },
+      'crop-image': { theme: 'sp-icon-teal', svg: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>' },
+      'crop': { theme: 'sp-icon-teal', svg: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>' },
       'docx-to-pdf': { theme: 'sp-icon-blue', svg: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6m-3 3l3-3 3 3"/>' },
       'pdf-split': { theme: 'sp-icon-purple', svg: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/>' },
       'video-compress': { theme: 'sp-icon-red', svg: '<rect x="2" y="6" width="13" height="12" rx="2"/><path d="m15 10 5-3v10l-5-3z"/><path d="M5 12h7"/>' },
@@ -4275,6 +4286,30 @@ try {
       'qr-generate': { theme: 'sp-icon-teal', svg: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="3.5" height="3.5" fill="#FFFFFF"/><path d="M21 14v7h-3.5"/>' },
       'pdf-sign': { theme: 'sp-icon-pink', svg: '<path d="M3 18c3 0 4-3 6-7s2-6 4-6 2 2 1 4-3 4-7 5"/><path d="M3 21h18"/>' },
       'zip-create': { theme: 'sp-icon-yellow', svg: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M12 4v8M10 6h4M10 8h4M10 10h4M11 14h2v3h-2z"/>' },
+
+      // Images & Graphics Suite (28 Tools)
+      'image-rotate': { theme: 'sp-icon-orange', svg: '<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>' },
+      'image-grayscale': { theme: 'sp-icon-blue', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="#FFFFFF"/>' },
+      'image-invert': { theme: 'sp-icon-purple', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="#FFFFFF"/><path d="m8 9 8 6m-8 0 8-6" stroke="#FFFFFF"/>' },
+      'image-blur': { theme: 'sp-icon-teal', svg: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="10" stroke-dasharray="1 4"/>' },
+      'image-bc': { theme: 'sp-icon-yellow', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="#FFFFFF"/>' },
+      'image-sharpen': { theme: 'sp-icon-orange', svg: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#FFFFFF"/>' },
+      'image-watermark': { theme: 'sp-icon-pink', svg: '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><circle cx="12" cy="14" r="2.5" fill="#FFFFFF"/>' },
+      'image-round': { theme: 'sp-icon-teal', svg: '<rect x="3" y="3" width="18" height="18" rx="7"/><circle cx="9" cy="9" r="1.5" fill="#FFFFFF"/><path d="m21 16-5-5-5 5"/>' },
+      'image-border': { theme: 'sp-icon-blue', svg: '<rect x="2" y="2" width="20" height="20" rx="2" stroke-width="1.5"/><rect x="6" y="6" width="12" height="12" fill="#FFFFFF" opacity="0.9"/>' },
+      'favicon': { theme: 'sp-icon-orange', svg: '<rect x="3" y="3" width="18" height="18" rx="4"/><text x="7" y="16" font-size="11" font-weight="900" fill="#FFFFFF" stroke="none">F</text>' },
+      'image-upscale': { theme: 'sp-icon-purple', svg: '<path d="M3 17l6-6 4 4 8-8"/><polyline points="14 7 21 7 21 14"/><circle cx="6" cy="8" r="2" fill="#FFFFFF"/>' },
+      'exif-strip': { theme: 'sp-icon-red', svg: '<circle cx="12" cy="12" r="9"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><path d="M14.5 9.5a2.5 2.5 0 0 0-3.5 0"/>' },
+      'palette': { theme: 'sp-icon-pink', svg: '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="9" r="1.5" fill="#FFFFFF"/><circle cx="12" cy="7" r="1.5" fill="#FFFFFF"/><circle cx="16" cy="9" r="1.5" fill="#FFFFFF"/><circle cx="15" cy="14" r="1.5" fill="#FFFFFF"/>' },
+      'image-diff': { theme: 'sp-icon-teal', svg: '<rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/><path d="m6 10 2 2-2 2M18 10l-2 2 2 2"/>' },
+      'sprite-sheet': { theme: 'sp-icon-purple', svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+      'exif-viewer': { theme: 'sp-icon-blue', svg: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M11 8v3l2 2"/>' },
+      'png-trace': { theme: 'sp-icon-green', svg: '<path d="M3 17a6 6 0 0 1 12-4c2 0 4 2 4 4s-2 4-6 4H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="7" r="3" fill="#FFFFFF"/>' },
+      'img-to-base64': { theme: 'sp-icon-teal', svg: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><text x="6" y="16" font-size="8.5" font-weight="800" fill="#FFFFFF" stroke="none">64</text>' },
+      'base64-to-img': { theme: 'sp-icon-yellow', svg: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8" cy="8" r="1.5" fill="#FFFFFF"/><path d="m18 13-4-4-5 6"/>' },
+      'svg-optimize': { theme: 'sp-icon-green', svg: '<path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16.5 5.5 20.5l2-7L2 9h7z" fill="#FFFFFF"/>' },
+      'image-heic-convert': { theme: 'sp-icon-yellow', svg: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8v8M7 12h4M11 8v8M14 8h3M14 12h2M14 16h3" stroke="#FFFFFF" stroke-width="1.8"/>' },
+      'bg-remover': { theme: 'sp-icon-purple', svg: '<circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/><path d="m18 3 2 2m0-2-2 2" stroke="#FFFFFF" stroke-width="2"/>' },
 
       // Additional Standard Tools
       'video-gif': { theme: 'sp-icon-purple', svg: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 12h4"/>' },
@@ -4299,6 +4334,8 @@ try {
       'pdf-redact': { theme: 'sp-icon-red', svg: '<rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="7" y1="14" x2="13" y2="14"/>' },
       'scan-document': { theme: 'sp-icon-purple', svg: '<path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M9 16l3-8 3 8M10 13h4"/>' },
       'workflow-builder': { theme: 'sp-icon-blue', svg: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="8.5" y="14" width="7" height="7" rx="1.5"/><path d="M6.5 10v4h2m9-4v4h-2"/>' },
+      'pdf-to-audio': { theme: 'sp-icon-blue', svg: '<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/>' },
+      'pdf-to-speech': { theme: 'sp-icon-blue', svg: '<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/>' },
       'organize': { theme: 'sp-icon-purple', svg: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' }
     };
 
@@ -4422,7 +4459,7 @@ try {
 
       const subSpan = document.createElement('span');
       subSpan.className = 'sp-card-sub';
-      subSpan.textContent = tool?.description || '';
+      subSpan.textContent = tool?.description || tool?.desc || '';
 
       textDiv.append(nameSpan, subSpan);
 
@@ -4460,6 +4497,7 @@ try {
           { id: 'video-compress', title: 'Compress Video' },
           { id: 'audio-convert', title: 'Convert Audio' },
           { id: 'image-to-pdf', title: 'Image to PDF' },
+          { id: 'pdf-to-audio', title: 'PDF to Audio' },
           { id: 'pdf-ocr', title: 'PDF OCR' },
           { id: 'qr-generate', title: 'QR Code' },
           { id: 'pdf-sign', title: 'Sign PDF' },
@@ -4475,8 +4513,37 @@ try {
       {
         id: 'sec-images',
         title: 'Images & Graphics',
-        categoryMatch: ['Images'],
-        desc: 'Convert, compress, crop, resize, remove background, palette, and edit graphic formats'
+        desc: 'Convert, compress, crop, resize, remove background, palette, and edit graphic formats',
+        curatedTools: [
+          { id: 'image-convert', title: 'Convert image', desc: 'PNG, JPG, WebP, AVIF & GIF' },
+          { id: 'image-resize', title: 'Resize image', desc: 'Scale dimensions by pixels or %' },
+          { id: 'image-crop', title: 'Crop image', desc: 'Trim to custom canvas or ratio' },
+          { id: 'image-rotate', title: 'Rotate / flip', desc: 'Rotate 90°/180° & mirror flip' },
+          { id: 'image-compress', title: 'Compress image', desc: 'Shrink file size up to 80%' },
+          { id: 'image-grayscale', title: 'Grayscale', desc: 'Convert to black and white' },
+          { id: 'image-invert', title: 'Invert colors', desc: 'Create photo-negative effects' },
+          { id: 'image-blur', title: 'Blur', desc: 'Apply smooth Gaussian blur' },
+          { id: 'image-bc', title: 'Brightness / contrast', desc: 'Fine-tune exposure & levels' },
+          { id: 'image-sharpen', title: 'Sharpen', desc: 'Enhance details & crisp edges' },
+          { id: 'image-watermark', title: 'Watermark image', desc: 'Add text or logo overlays' },
+          { id: 'image-round', title: 'Round corners', desc: 'Smooth curved borders on PNG' },
+          { id: 'image-border', title: 'Add border', desc: 'Frame image with custom borders' },
+          { id: 'favicon', title: 'Favicon generator', desc: 'Generate multi-size web favicons' },
+          { id: 'image-upscale', title: 'Upscale (2x/4x)', desc: 'Smooth high-res enlargement' },
+          { id: 'exif-strip', title: 'EXIF strip', desc: 'Sanitize metadata & location' },
+          { id: 'palette', title: 'Color palette extractor', desc: 'Extract dominant HEX swatches' },
+          { id: 'image-diff', title: 'Image diff', desc: 'Compare & highlight pixel changes' },
+          { id: 'sprite-sheet', title: 'Sprite sheet generator', desc: 'Merge frames into one sprite grid' },
+          { id: 'exif-viewer', title: 'EXIF viewer', desc: 'Inspect camera & GPS metadata' },
+          { id: 'png-trace', title: 'PNG trace to SVG', desc: 'Vectorize raster images to SVG' },
+          { id: 'svg-to-raster', title: 'SVG to PNG / JPG', desc: 'Render sharp vector files to pixels' },
+          { id: 'img-to-base64', title: 'Image to Base64', desc: 'Encode image as data-URI string' },
+          { id: 'base64-to-img', title: 'Base64 to image', desc: 'Decode base64 string to image' },
+          { id: 'image-to-pdf', title: 'Screenshot to PDF', desc: 'Save captures directly as PDF' },
+          { id: 'svg-optimize', title: 'SVG optimizer', desc: 'Minify vector paths & strip cruft' },
+          { id: 'image-heic-convert', title: 'HEIC to JPG / PNG', desc: 'Apple HEIC/HEIF photo convert' },
+          { id: 'bg-remover', title: 'Background Remover', desc: 'Remove image backgrounds automatically' }
+        ]
       },
       {
         id: 'sec-video-audio',
@@ -4970,7 +5037,7 @@ try {
             return { ...base, name: item.title || base.name || item.id, id: item.id };
           });
         } else if (sec.categoryMatch) {
-          sectionTools = allTools.filter(t => sec.categoryMatch.includes(t.category));
+          sectionTools = allTools.filter(t => sec.categoryMatch.includes(t.category) || (sec.id === 'sec-video-audio' && t.id === 'pdf-to-audio'));
         }
 
         const countText = `${sectionTools.length} tools`;
@@ -5075,7 +5142,7 @@ try {
             return { ...base, name: item.title || base.name || item.id, id: item.id };
           });
         } else if (sec.categoryMatch) {
-          sectionTools = allTools.filter(t => sec.categoryMatch.includes(t.category));
+          sectionTools = allTools.filter(t => sec.categoryMatch.includes(t.category) || (sec.id === 'sec-video-audio' && t.id === 'pdf-to-audio'));
         }
 
         if (sectionTools.length === 0) return;
@@ -5543,6 +5610,27 @@ try {
           'gst-invoice': { id: 'gst-invoice', name: 'GST Invoice', category: 'Business' },
           'pos-billing': { id: 'pos-billing', name: 'POS Billing', category: 'Business' },
           'gst-filing-prep': { id: 'gst-filing-prep', name: 'GST Filing Prep', category: 'Business' },
+          'bg-remover': { id: 'bg-remover', name: 'Background Remover', category: 'Images', description: 'Remove image backgrounds automatically' },
+          'image-heic-convert': { id: 'image-heic-convert', name: 'HEIC to JPG / PNG', category: 'Images', description: 'Convert Apple HEIC/HEIF photos' },
+          'favicon': { id: 'favicon', name: 'Favicon generator', category: 'Images', description: 'Generate web favicons' },
+          'palette': { id: 'palette', name: 'Color palette extractor', category: 'Images', description: 'Extract dominant colors' },
+          'image-diff': { id: 'image-diff', name: 'Image diff', category: 'Images', description: 'Compare image differences' },
+          'sprite-sheet': { id: 'sprite-sheet', name: 'Sprite sheet generator', category: 'Images', description: 'Merge into sprite grid' },
+          'exif-viewer': { id: 'exif-viewer', name: 'EXIF viewer', category: 'Images', description: 'Inspect photo metadata' },
+          'exif-strip': { id: 'exif-strip', name: 'EXIF strip', category: 'Images', description: 'Strip photo metadata' },
+          'png-trace': { id: 'png-trace', name: 'PNG trace to SVG', category: 'Images', description: 'Vectorize raster images' },
+          'svg-to-raster': { id: 'svg-to-raster', name: 'SVG to PNG / JPG', category: 'Images', description: 'Render SVG to raster' },
+          'img-to-base64': { id: 'img-to-base64', name: 'Image to Base64', category: 'Images', description: 'Convert image to Base64' },
+          'base64-to-img': { id: 'base64-to-img', name: 'Base64 to image', category: 'Images', description: 'Decode Base64 to image' },
+          'svg-optimize': { id: 'svg-optimize', name: 'SVG optimizer', category: 'Images', description: 'Optimize vector graphics' },
+          'image-upscale': { id: 'image-upscale', name: 'Upscale (2x/4x)', category: 'Images', description: 'Enlarge image resolution' },
+          'image-round': { id: 'image-round', name: 'Round corners', category: 'Images', description: 'Round image corners' },
+          'image-border': { id: 'image-border', name: 'Add border', category: 'Images', description: 'Add solid border' },
+          'image-sharpen': { id: 'image-sharpen', name: 'Sharpen', category: 'Images', description: 'Sharpen image details' },
+          'image-grayscale': { id: 'image-grayscale', name: 'Grayscale', category: 'Images', description: 'Convert to black and white' },
+          'image-invert': { id: 'image-invert', name: 'Invert colors', category: 'Images', description: 'Photo-negative effect' },
+          'image-blur': { id: 'image-blur', name: 'Blur', category: 'Images', description: 'Gaussian blur' },
+          'image-bc': { id: 'image-bc', name: 'Brightness / contrast', category: 'Images', description: 'Adjust brightness and contrast' },
           'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit PDF', category: 'PDF', description: 'Edit and annotate PDF documents' },
           'pdf-sign': { id: 'pdf-sign', name: 'Sign', category: 'PDF', description: 'Sign PDF' },
           'pdf-convert': { id: 'pdf-convert', name: 'Convert', category: 'PDF', description: 'Convert PDF' },
@@ -5609,7 +5697,7 @@ try {
           'organize': { id: 'organize', name: 'Organize PDF & Media', category: 'PDF', description: 'Merge, split, rotate, delete and extract pages across PDF, images, audio and video' },
           'scan-document': { id: 'scan-document', name: 'Scan Document', category: 'Scan & Workflow', description: 'Scan paper documents, crop, clean, and OCR to searchable PDF' },
           'workflow-builder': { id: 'workflow-builder', name: 'Workflow Builder', category: 'Scan & Workflow', description: 'Automate multi-step file processing pipelines' },
-          'pdf-to-audio': { id: 'pdf-to-audio', name: 'PDF to Audio', category: 'Audio', description: 'Read PDF documents aloud with neural text-to-speech' },
+          'pdf-to-audio': { id: 'pdf-to-audio', name: 'PDF to Audio', category: 'PDF', description: 'Read PDF documents aloud with neural text-to-speech' },
         }[id];
         if (!premiumOnly) return;
         tool = premiumOnly;
@@ -5724,8 +5812,32 @@ try {
         'docx-to-html': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
         'docx-to-txt': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
         'docx-to-md': (c, t) => window.__ffMountConvert ? window.__ffMountConvert(c, t) : null,
-        'pdf-to-audio': window.__ffMountPdfAudio,
-        'pdf-to-speech': window.__ffMountPdfAudio,
+        'pdf-to-audio': (c, t) => {
+          if (typeof window.__ffMountPdfAudio === 'function') {
+            window.__ffMountPdfAudio(c, t);
+          } else {
+            const check = setInterval(() => {
+              if (typeof window.__ffMountPdfAudio === 'function') {
+                clearInterval(check);
+                window.__ffMountPdfAudio(c, t);
+              }
+            }, 25);
+            setTimeout(() => clearInterval(check), 4000);
+          }
+        },
+        'pdf-to-speech': (c, t) => {
+          if (typeof window.__ffMountPdfAudio === 'function') {
+            window.__ffMountPdfAudio(c, t);
+          } else {
+            const check = setInterval(() => {
+              if (typeof window.__ffMountPdfAudio === 'function') {
+                clearInterval(check);
+                window.__ffMountPdfAudio(c, t);
+              }
+            }, 25);
+            setTimeout(() => clearInterval(check), 4000);
+          }
+        },
         'protect': window.__ffMountProtect,
         'pdf-protect': window.__ffMountProtect,
         'protect-pdf': window.__ffMountProtect,
@@ -5940,8 +6052,7 @@ try {
       'protect-pdf': 'pdf-protect',
       'crop': 'image-crop',
       'crop-image': 'image-crop',
-      'bg-remover': 'image-crop',
-      'word': 'pdf-to-word',
+            'word': 'pdf-to-word',
       'excel': 'pdf-to-excel',
       'ppt': 'pdf-to-ppt'
     };
@@ -6021,7 +6132,7 @@ try {
           'organize': { id: 'organize', name: 'Organize PDF & Media', category: 'PDF', description: 'Merge, split, rotate, delete and extract pages across PDF, images, audio and video' },
           'scan-document': { id: 'scan-document', name: 'Scan Document', category: 'Scan & Workflow', description: 'Scan paper documents, crop, clean, and OCR to searchable PDF' },
           'workflow-builder': { id: 'workflow-builder', name: 'Workflow Builder', category: 'Scan & Workflow', description: 'Automate multi-step file processing pipelines' },
-          'pdf-to-audio': { id: 'pdf-to-audio', name: 'PDF to Audio', category: 'Audio', description: 'Read PDF documents aloud with neural text-to-speech' },
+          'pdf-to-audio': { id: 'pdf-to-audio', name: 'PDF to Audio', category: 'PDF', description: 'Read PDF documents aloud with neural text-to-speech' },
         }[id];
         if (!premiumOnly) return;
         tool = premiumOnly;
@@ -6121,6 +6232,15 @@ try {
           _appStg.style.setProperty('--tool-card-border', _theme.cardBorder);
         }
         const directMount = {
+          'image-convert': window.__ffMountConvert,
+          'image-resize': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
+          'resize-image': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
+          'image-crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'convert-image': window.__ffMountConvert,
+          'bg-remover': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
+          'remove-background': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
           'organize': window.__ffMountOrganize,
           'organize-pdf': window.__ffMountOrganize,
           'pdf-organize': window.__ffMountOrganize,
@@ -6145,8 +6265,32 @@ try {
           'ocr': window.__ffMountScan,
           'workflow-builder': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
           'workflow': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
-          'pdf-to-audio': window.__ffMountPdfAudio,
-          'pdf-to-speech': window.__ffMountPdfAudio,
+          'pdf-to-audio': (c, t) => {
+            if (typeof window.__ffMountPdfAudio === 'function') {
+              window.__ffMountPdfAudio(c, t);
+            } else {
+              const check = setInterval(() => {
+                if (typeof window.__ffMountPdfAudio === 'function') {
+                  clearInterval(check);
+                  window.__ffMountPdfAudio(c, t);
+                }
+              }, 25);
+              setTimeout(() => clearInterval(check), 4000);
+            }
+          },
+          'pdf-to-speech': (c, t) => {
+            if (typeof window.__ffMountPdfAudio === 'function') {
+              window.__ffMountPdfAudio(c, t);
+            } else {
+              const check = setInterval(() => {
+                if (typeof window.__ffMountPdfAudio === 'function') {
+                  clearInterval(check);
+                  window.__ffMountPdfAudio(c, t);
+                }
+              }, 25);
+              setTimeout(() => clearInterval(check), 4000);
+            }
+          },
           'protect': window.__ffMountProtect,
           'pdf-protect': window.__ffMountProtect,
           'protect-pdf': window.__ffMountProtect,
@@ -6312,7 +6456,7 @@ try {
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
 
-    const popularNames = ['Merge', 'Compress', 'PDF to image', 'Sign PDF', 'Convert image', 'DOCX to PDF'];
+    const popularNames = ['Merge', 'Compress', 'PDF to Audio', 'PDF to image', 'Sign PDF', 'Convert image', 'DOCX to PDF'];
     let popular = [];
     popularNames.forEach(name => { const t = tools.find(x => x.name.toLowerCase() === name.toLowerCase()); if (t && !popular.includes(t)) popular.push(t); });
     for (const t of tools) { if (popular.length >= 6) break; if (!popular.includes(t)) popular.push(t); }
@@ -7189,7 +7333,7 @@ try {
             { id: 'pdf-to-ppt', name: 'PDF to POWERPOINT', cat: 'PDF' },
             { id: 'pdf-to-excel', name: 'PDF to EXCEL', cat: 'PDF' },
             { id: 'pdf-to-pdfa', name: 'PDF to PDF/A', cat: 'PDF' },
-            { id: 'pdf-to-audio', name: 'PDF to Audio', cat: 'Audio' }
+            { id: 'pdf-to-audio', name: 'PDF to Audio', cat: 'PDF' }
           ]
         },
         {
@@ -7459,7 +7603,7 @@ try {
           tools: [
             { id: 'scan-document', name: 'Scan Document', cat: 'Scan & Workflow' },
             { id: 'workflow-builder', name: 'Workflow Builder', cat: 'Scan & Workflow' },
-            { id: 'pdf-to-audio', name: 'PDF to Audio', cat: 'Audio' },
+            { id: 'pdf-to-audio', name: 'PDF to Audio', cat: 'PDF' },
             { id: 'pdf-extract-text', name: 'OCR Text Studio', cat: 'PDF' }
           ]
         },
@@ -7680,7 +7824,14 @@ try {
       'sign': window.__ffMountSign,
       'organize': window.__ffMountOrganize,
       'organize-pdf': window.__ffMountOrganize,
-      'pdf-organize': window.__ffMountOrganize,
+      'pdf-organize': window.__ffMountOrganize,      'image-resize': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
+      'resize-image': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
+      'image-crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+      'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+      'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+
+      'image-convert': window.__ffMountConvert,
+      'convert-image': window.__ffMountConvert,
       'pdf-convert': window.__ffMountConvert,
       'pdf-to-word': window.__ffMountConvert,
       'pdf-to-excel': window.__ffMountConvert,
@@ -7718,8 +7869,8 @@ try {
       'ocr': window.__ffMountScan,
       'workflow-builder': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
       'workflow': (c, t) => window.__ffMountWorkflow ? window.__ffMountWorkflow(c, t) : null,
-      'pdf-to-audio': window.__ffMountPdfAudio,
-      'pdf-to-speech': window.__ffMountPdfAudio,
+      'pdf-to-audio': (c, t) => window.__ffMountPdfAudio ? window.__ffMountPdfAudio(c, t) : null,
+      'pdf-to-speech': (c, t) => window.__ffMountPdfAudio ? window.__ffMountPdfAudio(c, t) : null,
     })[tool && tool.id];
 
     if (typeof premium === 'function') {

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Auto-Redact UI Style Previews</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background: #0F172A; color: #0F172A; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    h1 { color: #FFFFFF; font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    p.subtitle { color: #94A3B8; font-size: 14px; margin-bottom: 32px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; max-width: 1200px; width: 100%; }
+    .card { background: #FFFFFF; border-radius: 14px; padding: 22px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 16px; }
+    .badge { align-self: flex-start; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 6px; }
+    .b1 { background: #EEF2FF; color: #4F46E5; }
+    .b2 { background: #F0FDF4; color: #16A34A; }
+    .b3 { background: #FAF5FF; color: #9333EA; }
+    .title { font-size: 16px; font-weight: 700; color: #0F172A; }
+    .desc { font-size: 12.5px; color: #64748B; line-height: 1.4; margin-top: -8px; }
+    .preview-box { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* Icons */
+    .icon { display: inline-flex; width: 14px; height: 14px; }
+    
+    /* Common Primary CTA for context */
+    .cta { width: 100%; height: 38px; background: #000000; color: #FFFFFF; font-size: 12.5px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-top: 4px; }
+
+    /* STYLE 1: Minimal Modern Capsule */
+    .s1-input-wrap {
+      display: flex; align-items: center; background: #FFFFFF;
+      border: 1px solid #CBD5E1; border-radius: 999px;
+      padding: 3px 4px 3px 12px; transition: all 0.15s ease;
+    }
+    .s1-input-wrap:focus-within { border-color: #000000; box-shadow: 0 0 0 2px rgba(0,0,0,0.06); }
+    .s1-input { flex: 1; border: none; outline: none; background: transparent; font-size: 12px; color: #0F172A; }
+    .s1-add-btn { height: 26px; padding: 0 12px; background: #000000; color: #FFFFFF; font-size: 11px; font-weight: 700; border: none; border-radius: 999px; cursor: pointer; }
+    .s1-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; background: #F1F5F9; padding: 3px; border-radius: 999px; }
+    .s1-seg-btn { height: 28px; border: none; border-radius: 999px; background: transparent; font-size: 11px; font-weight: 700; color: #64748B; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s ease; }
+    .s1-seg-btn.active { background: #000000; color: #FFFFFF; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+    /* STYLE 2: Apple Inset Grouped */
+    .s2-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; }
+    .s2-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+    .s2-row:first-child { border-bottom: 1px solid #E2E8F0; }
+    .s2-input { flex: 1; border: none; outline: none; font-size: 12px; color: #0F172A; }
+    .s2-add-btn { height: 22px; padding: 0 8px; background: #F1F5F9; color: #0F172A; font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1; border-radius: 4px; cursor: pointer; }
+    .s2-seg { display: inline-flex; gap: 2px; background: #F1F5F9; padding: 2px; border-radius: 6px; }
+    .s2-seg-btn { padding: 4px 10px; border: none; border-radius: 4px; background: transparent; font-size: 11px; font-weight: 600; color: #64748B; cursor: pointer; }
+    .s2-seg-btn.active { background: #FFFFFF; color: #000000; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+    /* STYLE 3: Linear / Power User */
+    .s3-input-wrap { display: flex; align-items: center; background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 4px 8px; gap: 6px; transition: border-color .15s ease; }
+    .s3-input-wrap:focus-within { border-color: #000000; }
+    .s3-input { flex: 1; border: none; outline: none; font-size: 12px; color: #0F172A; font-family: monospace; }
+    .s3-badge { font-size: 10px; font-family: monospace; font-weight: 700; color: #64748B; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 4px; padding: 2px 5px; }
+    .s3-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .s3-chip { height: 30px; border: 1.5px solid #E2E8F0; border-radius: 6px; background: #FFFFFF; color: #475569; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s ease; }
+    .s3-chip.active { border-color: #000000; background: #000000; color: #FFFFFF; }
+  </style>
+</head>
+<body>
+
+  <h1>Auto-Redact UI Style Options</h1>
+  <p class="subtitle">Open this visual preview in your browser to inspect how each style looks and interacts.</p>
+
+  <div class="grid">
+    
+    <!-- Option 1 -->
+    <div class="card">
+      <span class="badge b1">Option 1</span>
+      <h2 class="title">Minimal Modern Capsule</h2>
+      <p class="desc">Soft full-pill curves, embedded pill button, seamless floating segmented switcher. 0% boxy borders.</p>
+      
+      <div class="preview-box">
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+            <span style="font-size: 11px; font-weight: 700; color: #0F172A;">Custom Keywords</span>
+            <span style="font-size: 10px; color: #64748B;">Optional</span>
+          </div>
+          <div class="s1-input-wrap">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.5" style="margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input class="s1-input" placeholder="e.g. Acme Corp, Jane Doe" />
+            <button class="s1-add-btn">+ Add</button>
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size: 11px; font-weight: 700; color: #0F172A; display:block; margin-bottom: 5px;">Redaction Appearance</span>
+          <div class="s1-seg">
+            <button class="s1-seg-btn active" onclick="selectStyle(this, 's1')"><span style="width:8px; height:8px; background:#FFFFFF; border-radius:2px;"></span>Blackout</button>
+            <button class="s1-seg-btn" onclick="selectStyle(this, 's1')"><span style="width:8px; height:8px; background:#FFFFFF; border:1px solid #94A3B8; border-radius:2px;"></span>Whiteout</button>
+            <button class="s1-seg-btn" onclick="selectStyle(this, 's1')"><span style="font-size:7px; font-family:monospace; background:#94A3B8; color:#fff; padding:1px 2px; border-radius:2px;">RED</span>Labeled</button>
+          </div>
+        </div>
+
+        <button class="cta">Redact PII (11 Items)</button>
+      </div>
+    </div>
+
+    <!-- Option 2 -->
+    <div class="card">
+      <span class="badge b2">Option 2</span>
+      <h2 class="title">Apple Inset Grouped Card</h2>
+      <p class="desc">100% matched with the Detection Categories card right above it. Embedded clean rows in a single frame.</p>
+      
+      <div class="preview-box">
+        <span style="font-size: 11px; font-weight: 700; color: #0F172A; margin-bottom: -6px;">Keywords &amp; Style</span>
+        <div class="s2-card">
+          <div class="s2-row">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.5" style="margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input class="s2-input" placeholder="e.g. Acme Corp, Jane Doe" />
+            <button class="s2-add-btn">+ Add</button>
+          </div>
+          <div class="s2-row">
+            <span style="font-size: 11px; font-weight: 600; color: #475569;">Style</span>
+            <div class="s2-seg">
+              <button class="s2-seg-btn active" onclick="selectStyle(this, 's2')">Blackout</button>
+              <button class="s2-seg-btn" onclick="selectStyle(this, 's2')">Whiteout</button>
+              <button class="s2-seg-btn" onclick="selectStyle(this, 's2')">Labeled</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="cta">Redact PII (11 Items)</button>
+      </div>
+    </div>
+
+    <!-- Option 3 -->
+    <div class="card">
+      <span class="badge b3">Option 3</span>
+      <h2 class="title">Linear / Power-User Strip</h2>
+      <p class="desc">Precise square geometry, ↵ Enter shortcut badge, and sharp responsive chips.</p>
+      
+      <div class="preview-box">
+        <div>
+          <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+            <span style="font-size: 11px; font-weight: 700; color: #0F172A; text-transform: uppercase; letter-spacing:0.04em;">Keywords</span>
+            <span style="font-size: 10px; color: #64748B;">Press Enter</span>
+          </div>
+          <div class="s3-input-wrap">
+            <input class="s3-input" placeholder="Acme Corp, Jane Doe..." />
+            <span class="s3-badge">&#9166; Enter</span>
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size: 11px; font-weight: 700; color: #0F172A; text-transform: uppercase; letter-spacing:0.04em; display:block; margin-bottom: 5px;">Appearance</span>
+          <div class="s3-chips">
+            <button class="s3-chip active" onclick="selectStyle(this, 's3')">&#9632; Blackout</button>
+            <button class="s3-chip" onclick="selectStyle(this, 's3')">&#9633; Whiteout</button>
+            <button class="s3-chip" onclick="selectStyle(this, 's3')">[RED] Labeled</button>
+          </div>
+        </div>
+
+        <button class="cta">Redact PII (11 Items)</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function selectStyle(btn, group) {
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

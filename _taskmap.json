@@ -147,8 +147,7 @@
     "scan-document",
     "pdf-extract-text",
     "pdf-to-audio",
-    "pdf-to-csv",
-    "pdf-summarize"
+    "pdf-to-csv"
   ],
   "workflow": [
     "workflow-builder",
