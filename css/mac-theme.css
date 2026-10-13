@@ -1,0 +1,174 @@
+/**
+ * FileKit macOS Native Design System (HIG & Craft Edition)
+ * Scoped strictly under body.is-macos and body.is-macos-app
+ * Zero impact on Web / Windows / Linux
+ */
+
+/* 1. Global macOS Typography & Smoothing */
+body.is-macos {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.is-macos h1,
+body.is-macos h2,
+body.is-macos h3,
+body.is-macos .hero-title,
+body.is-macos .tool-header h1 {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  letter-spacing: -0.024em;
+}
+
+/* Native Keyboard Badges (SF Pro Rounded) */
+body.is-macos kbd,
+body.is-macos .nav-search-kbd,
+body.is-macos .palette-foot kbd {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Text", monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  body.is-macos kbd,
+  body.is-macos .nav-search-kbd,
+  body.is-macos .palette-foot kbd {
+    background: rgba(255, 255, 255, 0.12);
+    border: 0.5px solid rgba(255, 255, 255, 0.18);
+    color: #f4f4f5;
+  }
+}
+
+/* 2. Unified Frameless macOS Titlebar & Window Dragging */
+body.is-macos-app {
+  user-select: none;
+}
+
+body.is-macos-app .topbar {
+  height: 52px;
+  padding-left: 82px !important; /* Inset clearance for macOS traffic lights (Close, Minimize, Zoom) */
+  -webkit-app-region: drag; /* Native macOS Window Dragging */
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+}
+
+body.is-macos-app .app-sidebar-rail {
+  top: 0 !important;
+  padding-top: 54px !important;
+  z-index: 100;
+  border-right: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+body.is-macos-app .app-topbar-brand-zone {
+  display: none !important;
+}
+
+body.is-macos-app .app-topbar {
+  -webkit-app-region: drag;
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+  margin-left: 64px !important; /* Sidebar width offset */
+}
+
+@media (prefers-color-scheme: dark) {
+  body.is-macos-app .topbar,
+  body.is-macos-app .app-topbar {
+    background: rgba(28, 28, 30, 0.82);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Exclude interactive elements from titlebar dragging */
+body.is-macos-app button,
+body.is-macos-app a,
+body.is-macos-app input,
+body.is-macos-app select,
+body.is-macos-app .nav-links,
+body.is-macos-app .header-search-trigger,
+body.is-macos-app .brand,
+body.is-macos-app .app-launch-btn,
+body.is-macos-app .app-topbar-brand-zone,
+body.is-macos-app .app-topbar-content {
+  -webkit-app-region: no-drag !important;
+}
+
+/* 3. Frosted Glass / Translucency on Overlays & Drawers */
+body.is-macos .palette-box,
+body.is-macos .tool-drawer,
+body.is-macos .modal-card {
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.22), 0 0 1px rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body.is-macos .palette-box,
+  body.is-macos .tool-drawer,
+  body.is-macos .modal-card {
+    background: rgba(30, 30, 34, 0.85);
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* 4. Tactile Micro-Interactions (Emil Kowalski / HIG Physics) */
+body.is-macos button:active,
+body.is-macos .tool-card:active,
+body.is-macos .file-card:active {
+  transform: scale(0.985);
+  transition: transform 80ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Zero-latency keyboard dialog openers */
+body.is-macos .palette-overlay[hidden] {
+  display: none !important;
+}
+
+body.is-macos .palette-overlay {
+  animation: none !important; /* Zero lag on ⌘K */
+}
+
+/* 5. Draggable Document Proxy Icon Styling */
+.mac-proxy-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: grab;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 150ms ease;
+}
+
+.mac-proxy-icon:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.mac-proxy-icon:active {
+  cursor: grabbing;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mac-proxy-icon {
+    background: rgba(255, 255, 255, 0.08);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+  }
+  .mac-proxy-icon:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+}

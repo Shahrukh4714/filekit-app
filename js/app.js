@@ -439,7 +439,7 @@
     editPdf: set(['pdf-sign', 'pdf-redact', 'pdf-form-filler', 'pdf-resize']), trim: set(['audio-trim', 'video-trim']),
     generators: set(['qr-generate', 'barcode-generate', 'password-gen', 'uuid', 'lorem', 'gradient-gen', 'box-shadow-gen', 'radius-gen', 'placeholder-img']),
     inspectors: set(['qr-read', 'font-metadata', 'font-preview', 'zip-inspect', 'archive-preview', 'cert-inspect', 'hash-generate', 'jwt-security', 'exif-viewer', 'epub-info', 'pem-inspect']),
-    imagePreview: set(['image-convert', 'image-crop', 'image-blur', 'image-bc'])
+    imagePreview: set(['image-convert', 'image-crop', 'image-blur'])
   };
   const steps = { compose: ['Choose', 'Arrange', 'Download'], pages: ['Choose', 'Select pages', 'Download'], optimize: ['Choose', 'Optimize', 'Download'], convert: ['Choose', 'Convert', 'Download'], edit: ['Choose', 'Edit', 'Download'], trim: ['Choose', 'Select range', 'Download'], generator: ['Configure', 'Preview', 'Export'], inspect: ['Choose', 'Analyze', 'Review'], data: ['Choose', 'Configure', 'Export'], text: ['Enter', 'Transform', 'Copy or save'], media: ['Choose', 'Configure', 'Export'], image: ['Choose', 'Configure', 'Export'], utility: ['Enter', 'Calculate', 'Review'], file: ['Choose', 'Configure', 'Download'] };
   function family(t) { if (groups.compose.has(t.id)) return 'compose'; if (groups.pages.has(t.id)) return 'pages'; if (groups.optimize.has(t.id)) return 'optimize'; if (groups.convertPdf.has(t.id)) return 'convert'; if (groups.editPdf.has(t.id)) return 'edit'; if (groups.trim.has(t.id)) return 'trim'; if (groups.generators.has(t.id)) return 'generator'; if (groups.inspectors.has(t.id)) return 'inspect'; if (t.category === 'Spreadsheets') return 'data'; if (t.category === 'Developer' || t.category === 'Text') return 'text'; if (t.category === 'Audio' || t.category === 'Video') return 'media'; if (t.category === 'Images') return 'image'; if (t.accepts === null) return 'utility'; if (/-to-|convert/i.test(t.id + ' ' + t.name)) return 'convert'; return 'file' }
@@ -2727,7 +2727,7 @@ try {
   }
   function structured(body, tool) { if (tool.category === 'Security') { body.classList.add('privacy-locker'); addTopbar(body, 'Privacy locker', '◆') } if (['QR & Barcodes'].includes(tool.category) || /generate|generator/.test(tool.id)) { body.classList.add('export-studio'); if (tool.category === 'QR & Barcodes') addTopbar(body, 'Live export studio', '▦') } if (/metadata|inspect|viewer|info|spec|archive|zip/.test(tool.id)) body.classList.add('report-cards') }
   function docs(body, tool) { if (tool.category === 'Documents' && documentConvert.test(tool.id)) { body.classList.add('family-document-convert'); addTopbar(body, 'Document converter', '⇄'); const ext = tool.id.split('-to-'); const row = node('div', 'conversion-route', `<div><span>FROM</span><b>${(ext[0] || 'SOURCE').toUpperCase()}</b><small>Original document</small></div><i>→</i><div><span>TO</span><b>${(ext[1] || 'OUTPUT').toUpperCase()}</b><small>Production-ready output</small></div>`); $('.family-commandbar', body)?.after(row) } }
-  function enhance(body) { if (body.dataset.enhanced) return; const tool = window.FF?.registry?.get(body.dataset.tool); if (!tool) return; body.dataset.enhanced = 'true';    if (tool.category === 'Images' && (tool.id === 'image-convert' || tool.id === 'image-crop' || tool.id === 'image-blur' || tool.id === 'image-bc')) imageWorkspace(body, tool); if (mediaCats.has(tool.category)) mediaWorkspace(body, tool); if (tool.category === 'Developer' || (tool.category === 'Text' && codeIds.test(tool.id))) editorWorkspace(body, tool); if (tool.category === 'Spreadsheets') dataWorkspace(body, tool); structured(body, tool); docs(body, tool) }
+  function enhance(body) { if (body.dataset.enhanced) return; const tool = window.FF?.registry?.get(body.dataset.tool); if (!tool) return; body.dataset.enhanced = 'true';    if (tool.category === 'Images' && (tool.id === 'image-convert' || tool.id === 'image-crop' || tool.id === 'image-blur')) imageWorkspace(body, tool); if (mediaCats.has(tool.category)) mediaWorkspace(body, tool); if (tool.category === 'Developer' || (tool.category === 'Text' && codeIds.test(tool.id))) editorWorkspace(body, tool); if (tool.category === 'Spreadsheets') dataWorkspace(body, tool); structured(body, tool); docs(body, tool) }
   const obs = new MutationObserver(() => $$('.tool-body').forEach(enhance)); obs.observe(document.documentElement, { subtree: true, childList: true }); document.addEventListener('DOMContentLoaded', () => $$('.tool-body').forEach(enhance));
 })();
 
@@ -2810,31 +2810,22 @@ try {
     'txt-to-pdf': ['md-to-pdf', 'html-to-pdf', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word', 'pdf-to-excel'],
     'excel-to-pdf': ['pdf-to-excel', 'csv-to-pdf', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word', 'pdf-to-ppt'],
     'csv-to-pdf': ['excel-to-pdf', 'pdf-to-excel', 'pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-convert', 'pdf-to-word', 'pdf-to-ppt'],
-    'image-convert': ['image-compress', 'image-resize', 'image-crop', 'pdf-to-image', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round'],
-    'image-compress': ['image-convert', 'image-resize', 'pdf-compress', 'image-crop', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round'],
-    'image-resize': ['image-convert', 'image-compress', 'image-crop', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round', 'image-border'],
-    'image-crop': ['image-convert', 'image-compress', 'image-resize', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round', 'image-border'],
-    'image-rotate': ['image-crop', 'image-convert', 'image-compress', 'image-resize', 'image-watermark', 'image-sharpen', 'image-round', 'image-border'],
-    'image-watermark': ['image-crop', 'image-resize', 'image-convert', 'image-compress', 'image-rotate', 'image-sharpen', 'image-round', 'image-border'],
-    'image-sharpen': ['image-blur', 'image-upscale', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'image-round': ['image-border', 'image-crop', 'image-convert', 'image-compress', 'image-resize', 'image-rotate', 'image-watermark', 'image-sharpen'],
-    'image-border': ['image-round', 'image-crop', 'image-convert', 'image-compress', 'image-resize', 'image-rotate', 'image-watermark', 'image-sharpen'],
-    'image-upscale': ['image-resize', 'image-sharpen', 'image-convert', 'image-compress', 'image-crop', 'image-rotate', 'image-watermark', 'image-round'],
-    'image-blur': ['image-sharpen', 'image-grayscale', 'image-invert', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate'],
-    'image-grayscale': ['image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round'],
-    'image-invert': ['image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round'],
-    'image-bc': ['image-convert', 'image-grayscale', 'image-invert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'image-diff': ['image-convert', 'image-grayscale', 'image-invert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'palette': ['image-convert', 'image-grayscale', 'image-invert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'sprite-sheet': ['image-crop', 'image-resize', 'image-convert', 'image-compress', 'image-rotate', 'image-watermark', 'image-sharpen', 'image-round'],
+    'image-convert': ['image-compress', 'image-resize', 'image-crop', 'pdf-to-image', 'image-rotate', 'image-watermark'],
+    'image-compress': ['image-convert', 'image-resize', 'pdf-compress', 'image-crop', 'image-rotate', 'image-watermark'],
+    'image-resize': ['image-convert', 'image-compress', 'image-crop', 'image-rotate', 'image-watermark'],
+    'image-crop': ['image-convert', 'image-compress', 'image-resize', 'image-rotate', 'image-watermark'],
+    'image-rotate': ['image-crop', 'image-convert', 'image-compress', 'image-resize', 'image-watermark'],
+    'image-watermark': ['image-crop', 'image-resize', 'image-convert', 'image-compress', 'image-rotate'],
+    'image-upscale': ['image-resize', 'image-convert', 'image-compress', 'image-crop', 'image-rotate', 'image-watermark'],
+    'image-blur': ['image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate'],
+    'image-diff': ['image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
     'image-to-pdf': ['pdf-to-image', 'image-convert', 'pdf-to-word', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'image-heic-convert': ['image-convert', 'png-trace', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark', 'image-sharpen'],
-    'png-trace': ['svg-to-raster', 'svg-optimize', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'svg-to-raster': ['png-trace', 'svg-optimize', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'svg-optimize': ['svg-to-raster', 'png-trace', 'image-compress', 'image-convert', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
+    'image-heic-convert': ['image-convert', 'png-trace', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
+    'png-trace': ['svg-to-raster', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
+    'svg-to-raster': ['png-trace', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
     'img-to-base64': ['base64-to-img', 'base64', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
     'base64-to-img': ['img-to-base64', 'base64', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
-    'favicon': ['image-convert', 'image-resize', 'png-trace', 'image-compress', 'image-crop', 'image-rotate', 'image-watermark', 'image-sharpen'],
+    'favicon': ['image-convert', 'image-resize', 'png-trace', 'image-compress', 'image-crop', 'image-rotate', 'image-watermark'],
     'exif-viewer': ['exif-strip', 'metadata-strip', 'image-convert', 'image-compress', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
     'exif-strip': ['exif-viewer', 'metadata-strip', 'image-compress', 'image-convert', 'image-resize', 'image-crop', 'image-rotate', 'image-watermark'],
     'video-convert': ['video-compress', 'video-to-shorts', 'video-gif', 'audio-convert', 'video-trim', 'video-merge', 'video-speed', 'video-reverse'],
@@ -2928,7 +2919,7 @@ try {
     'fingerprint-generator': ['privacy-scanner', 'hash-generate', 'metadata-strip', 'password-gen', 'password-strength', 'aes', 'steganography', 'jwt-security'],
     'units-length': ['aspect-ratio', 'currency', 'timestamp', 'color-picker', 'gradient-gen', 'box-shadow-gen', 'radius-gen', 'cron-util'],
     'aspect-ratio': ['units-length', 'image-resize', 'screen-info', 'color-picker', 'gradient-gen', 'box-shadow-gen', 'radius-gen', 'timestamp'],
-    'color-picker': ['gradient-gen', 'palette', 'box-shadow-gen', 'radius-gen', 'placeholder-img', 'units-length', 'aspect-ratio', 'timestamp'],
+    'color-picker': ['gradient-gen', 'box-shadow-gen', 'radius-gen', 'placeholder-img', 'units-length', 'aspect-ratio', 'timestamp'],
     'gradient-gen': ['color-picker', 'box-shadow-gen', 'radius-gen', 'units-length', 'aspect-ratio', 'timestamp', 'cron-util', 'ua-parse'],
     'box-shadow-gen': ['radius-gen', 'gradient-gen', 'color-picker', 'units-length', 'aspect-ratio', 'timestamp', 'cron-util', 'ua-parse'],
     'radius-gen': ['box-shadow-gen', 'gradient-gen', 'color-picker', 'units-length', 'aspect-ratio', 'timestamp', 'cron-util', 'ua-parse'],
@@ -2962,6 +2953,12 @@ try {
     }
     if (/merge/i.test(id)) {
       return { task: 'merge', color: '#4F46E5', hover: '#4338CA', bg: '#EEF2FF', border: '#C7D2FE', glow: 'rgba(79,70,229,0.25)', cardBorder: '#E0E7FF' };
+    }
+    if (/blur-background|background-blur|blur-bg/i.test(id)) {
+      return { task: 'blur-bg', color: '#0284C7', hover: '#0369A1', bg: '#F0F9FF', border: '#BAE6FD', glow: 'rgba(2,132,199,0.25)', cardBorder: '#E0F2FE' };
+    }
+    if (/combine/i.test(id)) {
+      return { task: 'combine', color: '#7C3AED', hover: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE', glow: 'rgba(124,58,237,0.25)', cardBorder: '#EDE9FE' };
     }
     if (/split|extract-range|extract-pages/i.test(id)) {
       return { task: 'split', color: '#E11D48', hover: '#BE123C', bg: '#FFF1F2', border: '#FECDD3', glow: 'rgba(225,29,72,0.25)', cardBorder: '#FFE4E6' };
@@ -3367,7 +3364,7 @@ try {
     const taskToolIds = {
       compress: [
         'pdf-compress','image-compress','video-compress','audio-normalize','audio-bitrate','audio-sample-rate',
-        'pdf-to-pdf','pdf-flatten','pdf-grayscale','pdf-resize','image-resize','svg-optimize','exif-strip',
+        'pdf-to-pdf','pdf-flatten','pdf-grayscale','pdf-resize','image-resize','exif-strip',
         'video-resolution','video-framerate','video-strip-audio','audio-strip-metadata','zip-create','targz-create','file-split'
       ],
       convert: [
@@ -3384,13 +3381,13 @@ try {
       ],
       organize: [
         'organize','pdf-merge','pdf-split','pdf-rotate','pdf-crop','pdf-extract-range','pdf-extract-images','pdf-extract-text',
-        'image-rotate','image-crop','sprite-sheet','palette','archive-7z-extract','zip-extract','targz-extract','file-split',
+        'image-rotate','image-crop','archive-7z-extract','zip-extract','targz-extract','file-split',
         'doc-dedupe','doc-sort','audio-merge','audio-split-silence','video-merge','video-extract-frame','epub-chapters','epub-cover'
       ],
       edit: [
         'pdf-edit-text','pdf-redact','pdf-sanitize-pii','pdf-redact-pii','pdf-watermark',
         'pdf-headers-footers','pdf-page-numbers','pdf-form-filler','pdf-repair','pdf-invert','pdf-compare',
-        'image-crop','image-resize','image-rotate','image-watermark','image-sharpen','image-round','image-border','exif-strip',
+        'image-crop','image-resize','image-rotate','image-watermark','exif-strip',
         'video-trim','video-watermark','video-subtitles','video-speed','video-mute','video-reverse',
         'audio-trim','audio-speed','audio-reverse','audio-normalize','audio-strip-metadata','epub-metadata','doc-case'
       ],
@@ -3716,20 +3713,8 @@ try {
         {
           title: 'STYLING & EFFECTS',
           tools: [
-            { id: 'image-round', name: 'Round corners', cat: 'Images' },
-            { id: 'image-border', name: 'Add border', cat: 'Images' },
             { id: 'image-watermark', name: 'Watermark image', cat: 'Images' },
             { id: 'image-blur', name: 'Blur', cat: 'Images' },
-            { id: 'image-sharpen', name: 'Sharpen', cat: 'Images' }
-          ]
-        },
-        {
-          title: 'COLOR & ENHANCE',
-          tools: [
-            { id: 'image-grayscale', name: 'Grayscale', cat: 'Images' },
-            { id: 'image-invert', name: 'Invert colors', cat: 'Images' },
-            { id: 'image-bc', name: 'Brightness / contrast', cat: 'Images' },
-            { id: 'palette', name: 'Color palette extractor', cat: 'Images' }
           ]
         },
         {
@@ -3737,7 +3722,6 @@ try {
           tools: [
             { id: 'png-trace', name: 'PNG trace to SVG', cat: 'Images' },
             { id: 'svg-to-raster', name: 'SVG to PNG / JPG', cat: 'Images' },
-            { id: 'svg-optimize', name: 'SVG optimizer', cat: 'Images' },
             { id: 'image-to-pdf', name: 'Screenshot to PDF', cat: 'Images' }
           ]
         },
@@ -3748,7 +3732,6 @@ try {
             { id: 'exif-strip', name: 'EXIF strip', cat: 'Images' },
             { id: 'exif-viewer', name: 'EXIF viewer', cat: 'Images' },
             { id: 'image-diff', name: 'Image diff', cat: 'Images' },
-            { id: 'sprite-sheet', name: 'Sprite sheet generator', cat: 'Images' }
           ]
         }
       ],
@@ -4289,25 +4272,16 @@ try {
 
       // Images & Graphics Suite (28 Tools)
       'image-rotate': { theme: 'sp-icon-orange', svg: '<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>' },
-      'image-grayscale': { theme: 'sp-icon-blue', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="#FFFFFF"/>' },
-      'image-invert': { theme: 'sp-icon-purple', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="#FFFFFF"/><path d="m8 9 8 6m-8 0 8-6" stroke="#FFFFFF"/>' },
       'image-blur': { theme: 'sp-icon-teal', svg: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="10" stroke-dasharray="1 4"/>' },
-      'image-bc': { theme: 'sp-icon-yellow', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="#FFFFFF"/>' },
-      'image-sharpen': { theme: 'sp-icon-orange', svg: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#FFFFFF"/>' },
       'image-watermark': { theme: 'sp-icon-pink', svg: '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><circle cx="12" cy="14" r="2.5" fill="#FFFFFF"/>' },
-      'image-round': { theme: 'sp-icon-teal', svg: '<rect x="3" y="3" width="18" height="18" rx="7"/><circle cx="9" cy="9" r="1.5" fill="#FFFFFF"/><path d="m21 16-5-5-5 5"/>' },
-      'image-border': { theme: 'sp-icon-blue', svg: '<rect x="2" y="2" width="20" height="20" rx="2" stroke-width="1.5"/><rect x="6" y="6" width="12" height="12" fill="#FFFFFF" opacity="0.9"/>' },
       'favicon': { theme: 'sp-icon-orange', svg: '<rect x="3" y="3" width="18" height="18" rx="4"/><text x="7" y="16" font-size="11" font-weight="900" fill="#FFFFFF" stroke="none">F</text>' },
       'image-upscale': { theme: 'sp-icon-purple', svg: '<path d="M3 17l6-6 4 4 8-8"/><polyline points="14 7 21 7 21 14"/><circle cx="6" cy="8" r="2" fill="#FFFFFF"/>' },
       'exif-strip': { theme: 'sp-icon-red', svg: '<circle cx="12" cy="12" r="9"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><path d="M14.5 9.5a2.5 2.5 0 0 0-3.5 0"/>' },
-      'palette': { theme: 'sp-icon-pink', svg: '<circle cx="12" cy="12" r="9"/><circle cx="8" cy="9" r="1.5" fill="#FFFFFF"/><circle cx="12" cy="7" r="1.5" fill="#FFFFFF"/><circle cx="16" cy="9" r="1.5" fill="#FFFFFF"/><circle cx="15" cy="14" r="1.5" fill="#FFFFFF"/>' },
       'image-diff': { theme: 'sp-icon-teal', svg: '<rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/><path d="m6 10 2 2-2 2M18 10l-2 2 2 2"/>' },
-      'sprite-sheet': { theme: 'sp-icon-purple', svg: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
       'exif-viewer': { theme: 'sp-icon-blue', svg: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M11 8v3l2 2"/>' },
       'png-trace': { theme: 'sp-icon-green', svg: '<path d="M3 17a6 6 0 0 1 12-4c2 0 4 2 4 4s-2 4-6 4H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="7" r="3" fill="#FFFFFF"/>' },
       'img-to-base64': { theme: 'sp-icon-teal', svg: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><text x="6" y="16" font-size="8.5" font-weight="800" fill="#FFFFFF" stroke="none">64</text>' },
       'base64-to-img': { theme: 'sp-icon-yellow', svg: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8" cy="8" r="1.5" fill="#FFFFFF"/><path d="m18 13-4-4-5 6"/>' },
-      'svg-optimize': { theme: 'sp-icon-green', svg: '<path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16.5 5.5 20.5l2-7L2 9h7z" fill="#FFFFFF"/>' },
       'image-heic-convert': { theme: 'sp-icon-yellow', svg: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8v8M7 12h4M11 8v8M14 8h3M14 12h2M14 16h3" stroke="#FFFFFF" stroke-width="1.8"/>' },
       'bg-remover': { theme: 'sp-icon-purple', svg: '<circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/><path d="m18 3 2 2m0-2-2 2" stroke="#FFFFFF" stroke-width="2"/>' },
 
@@ -4513,34 +4487,25 @@ try {
       {
         id: 'sec-images',
         title: 'Images & Graphics',
-        desc: 'Convert, compress, crop, resize, remove background, palette, and edit graphic formats',
+        desc: 'Convert, compress, crop, resize, remove background, and edit graphic formats',
         curatedTools: [
           { id: 'image-convert', title: 'Convert image', desc: 'PNG, JPG, WebP, AVIF & GIF' },
           { id: 'image-resize', title: 'Resize image', desc: 'Scale dimensions by pixels or %' },
           { id: 'image-crop', title: 'Crop image', desc: 'Trim to custom canvas or ratio' },
           { id: 'image-rotate', title: 'Rotate / flip', desc: 'Rotate 90°/180° & mirror flip' },
           { id: 'image-compress', title: 'Compress image', desc: 'Shrink file size up to 80%' },
-          { id: 'image-grayscale', title: 'Grayscale', desc: 'Convert to black and white' },
-          { id: 'image-invert', title: 'Invert colors', desc: 'Create photo-negative effects' },
           { id: 'image-blur', title: 'Blur', desc: 'Apply smooth Gaussian blur' },
-          { id: 'image-bc', title: 'Brightness / contrast', desc: 'Fine-tune exposure & levels' },
-          { id: 'image-sharpen', title: 'Sharpen', desc: 'Enhance details & crisp edges' },
           { id: 'image-watermark', title: 'Watermark image', desc: 'Add text or logo overlays' },
-          { id: 'image-round', title: 'Round corners', desc: 'Smooth curved borders on PNG' },
-          { id: 'image-border', title: 'Add border', desc: 'Frame image with custom borders' },
           { id: 'favicon', title: 'Favicon generator', desc: 'Generate multi-size web favicons' },
           { id: 'image-upscale', title: 'Upscale (2x/4x)', desc: 'Smooth high-res enlargement' },
           { id: 'exif-strip', title: 'EXIF strip', desc: 'Sanitize metadata & location' },
-          { id: 'palette', title: 'Color palette extractor', desc: 'Extract dominant HEX swatches' },
           { id: 'image-diff', title: 'Image diff', desc: 'Compare & highlight pixel changes' },
-          { id: 'sprite-sheet', title: 'Sprite sheet generator', desc: 'Merge frames into one sprite grid' },
           { id: 'exif-viewer', title: 'EXIF viewer', desc: 'Inspect camera & GPS metadata' },
           { id: 'png-trace', title: 'PNG trace to SVG', desc: 'Vectorize raster images to SVG' },
           { id: 'svg-to-raster', title: 'SVG to PNG / JPG', desc: 'Render sharp vector files to pixels' },
           { id: 'img-to-base64', title: 'Image to Base64', desc: 'Encode image as data-URI string' },
           { id: 'base64-to-img', title: 'Base64 to image', desc: 'Decode base64 string to image' },
           { id: 'image-to-pdf', title: 'Screenshot to PDF', desc: 'Save captures directly as PDF' },
-          { id: 'svg-optimize', title: 'SVG optimizer', desc: 'Minify vector paths & strip cruft' },
           { id: 'image-heic-convert', title: 'HEIC to JPG / PNG', desc: 'Apple HEIC/HEIF photo convert' },
           { id: 'bg-remover', title: 'Background Remover', desc: 'Remove image backgrounds automatically' }
         ]
@@ -5528,7 +5493,12 @@ try {
       'image-resize': 'resize-image',
       'image-crop': 'crop-image',
       'image-rotate': 'rotate-image',
-      'image-watermark': 'watermark-image'
+      'image-watermark': 'watermark-image',
+      'blur-background': 'blur-background',
+      'background-blur': 'blur-background',
+      'blur-bg': 'blur-background',
+      'combine-images': 'combine-images',
+      'image-combine': 'combine-images'
     },
 
     // Clean minimal workspace tool names
@@ -5565,7 +5535,14 @@ try {
       'media-hub': 'video',
       'image-hub': 'image',
       'qr-hub': 'qr',
-      'audio-convert': 'audio-convert'
+      'audio-convert': 'audio-convert',
+      'combine-images': 'combine-images',
+      'combine': 'combine-images',
+      'blur-background': 'blur-background',
+      'background-blur': 'blur-background',
+      'blur-bg': 'blur-background',
+      'blur-image-background': 'blur-background',
+      'image-blur-background': 'blur-background'
     },
 
     toSeo(toolId) {
@@ -5613,24 +5590,15 @@ try {
           'bg-remover': { id: 'bg-remover', name: 'Background Remover', category: 'Images', description: 'Remove image backgrounds automatically' },
           'image-heic-convert': { id: 'image-heic-convert', name: 'HEIC to JPG / PNG', category: 'Images', description: 'Convert Apple HEIC/HEIF photos' },
           'favicon': { id: 'favicon', name: 'Favicon generator', category: 'Images', description: 'Generate web favicons' },
-          'palette': { id: 'palette', name: 'Color palette extractor', category: 'Images', description: 'Extract dominant colors' },
           'image-diff': { id: 'image-diff', name: 'Image diff', category: 'Images', description: 'Compare image differences' },
-          'sprite-sheet': { id: 'sprite-sheet', name: 'Sprite sheet generator', category: 'Images', description: 'Merge into sprite grid' },
           'exif-viewer': { id: 'exif-viewer', name: 'EXIF viewer', category: 'Images', description: 'Inspect photo metadata' },
           'exif-strip': { id: 'exif-strip', name: 'EXIF strip', category: 'Images', description: 'Strip photo metadata' },
           'png-trace': { id: 'png-trace', name: 'PNG trace to SVG', category: 'Images', description: 'Vectorize raster images' },
           'svg-to-raster': { id: 'svg-to-raster', name: 'SVG to PNG / JPG', category: 'Images', description: 'Render SVG to raster' },
           'img-to-base64': { id: 'img-to-base64', name: 'Image to Base64', category: 'Images', description: 'Convert image to Base64' },
           'base64-to-img': { id: 'base64-to-img', name: 'Base64 to image', category: 'Images', description: 'Decode Base64 to image' },
-          'svg-optimize': { id: 'svg-optimize', name: 'SVG optimizer', category: 'Images', description: 'Optimize vector graphics' },
           'image-upscale': { id: 'image-upscale', name: 'Upscale (2x/4x)', category: 'Images', description: 'Enlarge image resolution' },
-          'image-round': { id: 'image-round', name: 'Round corners', category: 'Images', description: 'Round image corners' },
-          'image-border': { id: 'image-border', name: 'Add border', category: 'Images', description: 'Add solid border' },
-          'image-sharpen': { id: 'image-sharpen', name: 'Sharpen', category: 'Images', description: 'Sharpen image details' },
-          'image-grayscale': { id: 'image-grayscale', name: 'Grayscale', category: 'Images', description: 'Convert to black and white' },
-          'image-invert': { id: 'image-invert', name: 'Invert colors', category: 'Images', description: 'Photo-negative effect' },
           'image-blur': { id: 'image-blur', name: 'Blur', category: 'Images', description: 'Gaussian blur' },
-          'image-bc': { id: 'image-bc', name: 'Brightness / contrast', category: 'Images', description: 'Adjust brightness and contrast' },
           'pdf-edit-text': { id: 'pdf-edit-text', name: 'Edit PDF', category: 'PDF', description: 'Edit and annotate PDF documents' },
           'pdf-sign': { id: 'pdf-sign', name: 'Sign', category: 'PDF', description: 'Sign PDF' },
           'pdf-convert': { id: 'pdf-convert', name: 'Convert', category: 'PDF', description: 'Convert PDF' },
@@ -5698,6 +5666,8 @@ try {
           'scan-document': { id: 'scan-document', name: 'Scan Document', category: 'Scan & Workflow', description: 'Scan paper documents, crop, clean, and OCR to searchable PDF' },
           'workflow-builder': { id: 'workflow-builder', name: 'Workflow Builder', category: 'Scan & Workflow', description: 'Automate multi-step file processing pipelines' },
           'pdf-to-audio': { id: 'pdf-to-audio', name: 'PDF to Audio', category: 'PDF', description: 'Read PDF documents aloud with neural text-to-speech' },
+          'blur-background': { id: 'blur-background', name: 'Blur Background', category: 'Images', description: 'Blur photo background with AI portrait focus, radial lens bokeh, or tilt-shift' },
+          'combine-images': { id: 'combine-images', name: 'Combine Images', category: 'Images', description: 'Stitch multiple images into a single file horizontally, vertically, or in a collage grid' },
         }[id];
         if (!premiumOnly) return;
         tool = premiumOnly;
@@ -5791,6 +5761,12 @@ try {
         'pdf-compress': window.__ffMountCompress,
         'compress': window.__ffMountCompress,
         'pdf-merge': window.__ffMountMerge,
+        'blur-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+        'background-blur': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+        'blur-bg': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+        'combine-images': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
+        'combine': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
+        'image-combine': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
         'merge': window.__ffMountMerge,
         'pdf-split': window.__ffMountSplit,
         'split': window.__ffMountSplit,
@@ -6054,8 +6030,17 @@ try {
       'crop-image': 'image-crop',
             'word': 'pdf-to-word',
       'excel': 'pdf-to-excel',
-      'ppt': 'pdf-to-ppt'
-    };
+      'ppt': 'pdf-to-ppt',
+      'image-combine': 'combine-images',
+      'combine-images': 'combine-images',
+      'combine-image': 'combine-images',
+      'combine': 'combine-images'
+    ,
+      'blur-background': 'blur-background',
+      'background-blur': 'blur-background',
+      'blur-bg': 'blur-background',
+      'blur-image-background': 'blur-background',
+      'image-blur-background': 'blur-background'};
 
     function openWorkspaceTool(id, initialFiles = null) {
       id = TOOL_ALIAS_MAP[id] || id;
@@ -6133,6 +6118,8 @@ try {
           'scan-document': { id: 'scan-document', name: 'Scan Document', category: 'Scan & Workflow', description: 'Scan paper documents, crop, clean, and OCR to searchable PDF' },
           'workflow-builder': { id: 'workflow-builder', name: 'Workflow Builder', category: 'Scan & Workflow', description: 'Automate multi-step file processing pipelines' },
           'pdf-to-audio': { id: 'pdf-to-audio', name: 'PDF to Audio', category: 'PDF', description: 'Read PDF documents aloud with neural text-to-speech' },
+          'blur-background': { id: 'blur-background', name: 'Blur Background', category: 'Images', description: 'Blur photo background with AI portrait focus, radial lens bokeh, or tilt-shift' },
+          'combine-images': { id: 'combine-images', name: 'Combine Images', category: 'Images', description: 'Stitch multiple images horizontally, vertically, or in a collage grid' },
         }[id];
         if (!premiumOnly) return;
         tool = premiumOnly;
@@ -6236,6 +6223,14 @@ try {
           'image-resize': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
           'resize-image': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
           'image-crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'blur-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+          'background-blur': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+          'blur-bg': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+          'image-blur-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+          'blur-image-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+          'combine-images': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
+          'combine': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
+          'image-combine': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
           'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
           'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
           'convert-image': window.__ffMountConvert,
@@ -7400,19 +7395,10 @@ try {
           ]
         },
         {
-          title: 'COLOR & PALETTE',
-          tools: [
-            { id: 'image-palette', name: 'Extract Palette', cat: 'Images' },
-            { id: 'image-palette', name: 'Dominant Colors', cat: 'Images' },
-            { id: 'image-convert', name: 'Grayscale Filter', cat: 'Images' },
-            { id: 'image-convert', name: 'Invert Colors', cat: 'Images' }
-          ]
-        },
-        {
           title: 'UTILITIES & EXIF',
           tools: [
             { id: 'image-cleanup', name: 'Remove Background', cat: 'Images' },
-            { id: 'image-palette', name: 'EXIF Metadata', cat: 'Images' },
+            { id: 'exif-viewer', name: 'EXIF Metadata', cat: 'Images' },
             { id: 'image-convert', name: 'Strip EXIF Data', cat: 'Images' },
             { id: 'image-convert', name: 'Favicon Generator', cat: 'Images' }
           ]
@@ -7831,6 +7817,9 @@ try {
       'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
 
       'image-convert': window.__ffMountConvert,
+      'blur-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+      'background-blur': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
+      'blur-bg': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
       'convert-image': window.__ffMountConvert,
       'pdf-convert': window.__ffMountConvert,
       'pdf-to-word': window.__ffMountConvert,

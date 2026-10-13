@@ -44,7 +44,7 @@
     ],
     "category": "Productivity",
     "shortDescription": "100% Private In-Device File Suite",
-    "longDescription": "FileKit provides 187+ local file conversion, compression, and editing tools running completely on your Mac without cloud uploads.",
+    "longDescription": "FileKit provides 370+ local file conversion, compression, and editing tools running completely on your Mac without cloud uploads.",
     "macOS": {
       "dmg": {
         "background": "assets/dmg-background.png",

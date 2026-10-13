@@ -95,20 +95,14 @@
 
   /* Icons per tool (hand-drawn, no stock paths) */
   const T_ICONS = {
-    'image-sharpen': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/><path d="m8 8 1.5 1.5M16 16l1.5 1.5"/></svg>',
-    'image-round': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="6"/><circle cx="9" cy="9" r="1.6" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
-    'image-border': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>',
     'image-upscale': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l3 4h-2v4h-2V7H9z"/><path d="M5 14a7 7 0 0 0 14 0"/><path d="M9 14l-2 2M15 14l2 2"/></svg>',
     favicon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="2" y="2" width="4" height="4" rx="1"/><rect x="18" y="2" width="4" height="4" rx="1"/><rect x="2" y="18" width="4" height="4" rx="1"/><rect x="18" y="18" width="4" height="4" rx="1"/></svg>',
     'exif-strip': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h5M4 15h5"/><path d="m16 14-2-2 2-2M13 12h3"/></svg>',
-    palette: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2-.8-1.6.2-3 2-3H18a3 3 0 0 0 3-3c0-5-4-10-9-10z"/><circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="10.5" r="1" fill="currentColor" stroke="none"/></svg>',
     'image-diff': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M7 4v16M17 4v16"/></svg>',
-    'sprite-sheet': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
     'exif-viewer': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 5v14"/><path d="m12 14 2 2 4-4"/></svg>',
     'svg-to-raster': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 5.5L20 9l-4.5 4 1.2 6L12 15.5 7.3 19l1.2-6L4 9l5.5-1.5z"/></svg>',
     'base64-to-img': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01M8 14h.01M12 14h.01M16 14h.01"/></svg>',
     'img-to-base64': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
-    'svg-optimize': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 12h6"/><path d="M12 12v7"/><path d="M5 12H3v2h2zM21 12h-2v2h2z"/></svg>',
     'pdf-headers-footers': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M5 8h14M5 16h14"/><path d="M9 6.5h6M9 17.5h4"/></svg>',
     'pdf-create': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 15h6M9 9h3"/></svg>',
     'pdf-redact-pii': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z"/><rect x="9" y="10" width="6" height="5" rx="1" fill="currentColor" stroke="none"/><path d="M9 11h6"/></svg>',
@@ -344,70 +338,11 @@
     let files = [];
     let img = null, previewUrl = null;
 
-    const ACC = id === 'image-diff' || id === 'sprite-sheet'
+    const ACC = id === 'image-diff'
       ? ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif']
       : ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'];
 
     const CONF = {
-      'image-sharpen': {
-        title: 'Sharpen', sub: 'Unsharp mask — emphasize detail edges',
-        controls: [{ k: 'amount', label: 'Strength', type: 'range', min: 0, max: 200, def: 100, unit: '%' }],
-        run(c, img, v, file) {
-          const a = (+v.amount) / 100;
-          c.width = img.naturalWidth; c.height = img.naturalHeight;
-          const ctx = c.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          if (a > 0.01) {
-            const blur = cv(c.width, c.height);
-            const bctx = blur.getContext('2d');
-            bctx.filter = 'blur(1.2px)';
-            bctx.drawImage(img, 0, 0);
-            const src = ctx.getImageData(0, 0, c.width, c.height);
-            const bd = bctx.getImageData(0, 0, c.width, c.height).data;
-            const d = src.data;
-            for (let i = 0; i < d.length; i += 4) {
-              d[i] = Math.min(255, Math.max(0, d[i] + a * (d[i] - bd[i])));
-              d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + a * (d[i + 1] - bd[i + 1])));
-              d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + a * (d[i + 2] - bd[i + 2])));
-            }
-            ctx.putImageData(src, 0, 0);
-          }
-        },
-      },
-      'image-round': {
-        title: 'Round corners', sub: 'Soft rounded corners with transparency (PNG)',
-        controls: [{ k: 'radius', label: 'Corner radius', type: 'range', min: 0, max: 50, def: 18, unit: '%' }],
-        run(c, img, v) {
-          const w = img.naturalWidth, h = img.naturalHeight;
-          const r = Math.min(w, h) * (+v.radius) / 100;
-          c.width = w; c.height = h;
-          const ctx = c.getContext('2d');
-          ctx.clearRect(0, 0, w, h);
-          ctx.beginPath();
-          ctx.moveTo(r, 0);
-          ctx.arcTo(w, 0, w, h, r); ctx.arcTo(w, h, 0, h, r);
-          ctx.arcTo(0, h, 0, 0, r); ctx.arcTo(0, 0, w, 0, r);
-          ctx.closePath(); ctx.clip();
-          ctx.drawImage(img, 0, 0);
-        },
-        type: 'image/png',
-      },
-      'image-border': {
-        title: 'Add border', sub: 'Solid border around the image',
-        controls: [
-          { k: 'size', label: 'Border width', type: 'range', min: 0, max: 25, def: 5, unit: '%' },
-          { k: 'color', label: 'Border color', type: 'color', def: '#ffffff' },
-        ],
-        run(c, img, v) {
-          const w = img.naturalWidth, h = img.naturalHeight;
-          const b = Math.max(1, Math.round(Math.min(w, h) * (+v.size) / 100));
-          c.width = w + b * 2; c.height = h + b * 2;
-          const ctx = c.getContext('2d');
-          ctx.fillStyle = v.color || '#ffffff';
-          ctx.fillRect(0, 0, c.width, c.height);
-          ctx.drawImage(img, b, b);
-        },
-      },
       'image-upscale': {
         title: 'Upscale', sub: 'Enlarge with high-quality smooth interpolation',
         controls: [
@@ -423,26 +358,6 @@
           ctx.drawImage(img, 0, 0, c.width, c.height);
         },
       },
-      'image-grayscale': {
-        title: 'Grayscale', sub: 'Convert to black and white',
-        controls: [],
-        run(c, img) {
-          c.width = img.naturalWidth; c.height = img.naturalHeight;
-          const ctx = c.getContext('2d');
-          ctx.filter = 'grayscale(1)';
-          ctx.drawImage(img, 0, 0);
-        },
-      },
-      'image-invert': {
-        title: 'Invert colors', sub: 'Photo-negative effect',
-        controls: [],
-        run(c, img) {
-          c.width = img.naturalWidth; c.height = img.naturalHeight;
-          const ctx = c.getContext('2d');
-          ctx.filter = 'invert(1)';
-          ctx.drawImage(img, 0, 0);
-        },
-      },
       'image-blur': {
         title: 'Blur', sub: 'Gaussian blur with adjustable radius',
         controls: [{ k: 'amount', label: 'Radius', type: 'range', min: 1, max: 40, def: 4, unit: 'px' }],
@@ -450,19 +365,6 @@
           c.width = img.naturalWidth; c.height = img.naturalHeight;
           const ctx = c.getContext('2d');
           ctx.filter = `blur(${+v.amount || 4}px)`;
-          ctx.drawImage(img, 0, 0);
-        },
-      },
-      'image-bc': {
-        title: 'Brightness / contrast', sub: 'Adjust exposure and contrast',
-        controls: [
-          { k: 'bright', label: 'Brightness', type: 'range', min: 0, max: 300, def: 110, unit: '%' },
-          { k: 'contrast', label: 'Contrast', type: 'range', min: 0, max: 300, def: 110, unit: '%' },
-        ],
-        run(c, img, v) {
-          c.width = img.naturalWidth; c.height = img.naturalHeight;
-          const ctx = c.getContext('2d');
-          ctx.filter = `brightness(${+v.bright || 110}%) contrast(${+v.contrast || 110}%)`;
           ctx.drawImage(img, 0, 0);
         },
       },
@@ -475,19 +377,10 @@
         title: 'EXIF strip', sub: 'Re-encode the image without any metadata',
         controls: [],
       },
-      palette: {
-        title: 'Color palette', sub: 'Extract the dominant colors from the image',
-        controls: [{ k: 'n', label: 'Colors', type: 'range', min: 2, max: 24, def: 8, unit: '' }],
-      },
       'image-diff': {
         title: 'Image diff', sub: 'Compare two images — changes are highlighted in red',
         controls: [],
         multi: 2,
-      },
-      'sprite-sheet': {
-        title: 'Sprite sheet', sub: 'Combine several images into one grid',
-        controls: [{ k: 'cols', label: 'Columns', type: 'number', min: 1, max: 12, def: 4 }],
-        multi: true,
       },
       'exif-viewer': {
         title: 'EXIF viewer', sub: 'Camera, lens, date and GPS metadata',
@@ -508,25 +401,24 @@
     };
 
     /* Input-only tools — workspace right away */
-    if (id === 'base64-to-img' || id === 'svg-optimize') { mountInputImage(container, tool, id); return; }
+    if (id === 'base64-to-img') { mountInputImage(container, tool, id); return; }
 
     const conf = CONF[id];
     if (!conf) return;
 
-    /* Favicon / strip / palette / diff / viewer / base64 / svg-to-raster handled below */
+    /* Favicon / strip / diff / viewer / base64 / svg-to-raster handled below */
     const multi = conf.multi === true || conf.multi === 2;
 
     const dz = dropzone(container, tool, {
       accepts: conf.accepts || ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'],
-      multiple: multi || id === 'sprite-sheet',
-      headline: multi ? 'Drop two images to compare' : (id === 'sprite-sheet' ? 'Drop several images' : `Drop your ${conf.title.toLowerCase()} file here`),
+      multiple: multi,
+      headline: multi ? 'Drop two images to compare' : `Drop your ${conf.title.toLowerCase()} file here`,
       meta: (conf.accepts ? conf.accepts : ['PNG', 'JPG', 'JPEG', 'WEBP', 'BMP', 'GIF']).join(' · ') + ' · 100% local',
     });
 
     dz.setOnFiles(async (list) => {
       files = [...list].filter(Boolean);
       if (id === 'image-diff' && files.length !== 2) { dz.dz.classList.add('bad'); setTimeout(() => dz.dz.classList.remove('bad'), 900); return; }
-      if (id === 'sprite-sheet' && files.length < 2) { dz.dz.classList.add('bad'); setTimeout(() => dz.dz.classList.remove('bad'), 900); return; }
       try { img = await loadImg(files[0]); } catch (e) { return; }
       const app = window.FF.app;
       if (app && app.updateSidebarForFileCategory) app.updateSidebarForFileCategory('Images', files[0]);
@@ -540,9 +432,7 @@
       /* Specialized bodies */
       if (id === 'favicon') return bodyFavicon(s);
       if (id === 'exif-strip') return bodyExifStrip(s);
-      if (id === 'palette') return bodyPalette(s);
       if (id === 'image-diff') return bodyDiff(s);
-      if (id === 'sprite-sheet') return bodySprite(s);
       if (id === 'exif-viewer') return bodyExifViewer(s);
       if (id === 'svg-to-raster') return bodySvgRaster(s);
       if (id === 'img-to-base64') return bodyImgToBase64(s);
@@ -689,37 +579,6 @@
       });
     }
 
-    function bodyPalette(s) {
-      s.runBtn.hidden = true;
-      const ib = imageBody(s, { title: conf.title, sub: conf.sub, controls: conf.controls, output: false });
-      const stage = s.body.querySelector('.pro-img-stage');
-      stage.innerHTML = `<div class="pro-palette"><div class="pro-palette-swatches"></div><div class="pro-palette-actions"><button type="button" class="etxt-btn-ghost" data-copy-hex>${copyIco} Copy hex list</button></div></div>`;
-      const swWrap = stage.querySelector('.pro-palette-swatches');
-      let hexes = [];
-      const extract = (n) => {
-        const s2 = 80; const c = cv(s2, Math.max(1, Math.round(s2 * img.naturalHeight / img.naturalWidth)));
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-        const m = {};
-        for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 128) continue; const key = ((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4); m[key] = (m[key] || 0) + 1; }
-        return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => { k = +k; const r = ((k >> 8) & 15) * 17, g = ((k >> 4) & 15) * 17, b = (k & 15) * 17; return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join(''); });
-      };
-      const render = () => {
-        hexes = extract(+ib.state.n);
-        swWrap.innerHTML = hexes.map((h, i) => `<button type="button" class="pro-swatch" data-h="${h}" style="--sw:${h}"><span></span><b>${h}</b><i>${i + 1}</i></button>`).join('');
-      };
-      ib.setOnChange(() => render());
-      render();
-      s.toolbar.innerHTML = `<span class="pro-dim">${hexes.length} colors extracted</span><span class="pro-live">Tap to copy</span>`;
-      swWrap.addEventListener('click', async (e) => {
-        const sw = e.target.closest('.pro-swatch'); if (!sw) return;
-        try { await navigator.clipboard.writeText(sw.dataset.h); sw.classList.add('is-copied'); setTimeout(() => sw.classList.remove('is-copied'), 700); } catch (e2) {}
-      });
-      stage.querySelector('[data-copy-hex]').addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(hexes.join('\n')); showResult(s, { ok: true, title: 'Palette copied', msg: `${hexes.length} hex colors on your clipboard`, actions: [{ label: 'Done', cls: 'etxt-btn-ghost', onClick: () => s.result.hidden = true }] }); } catch (e2) {}
-      });
-    }
-
     function bodyDiff(s) {
       s.body.className = 'pro-body pro-diff-body';
       s.body.innerHTML = `
@@ -774,46 +633,6 @@
           filename: 'image-diff.' + (FMT_EXT[fmt] || 'png'),
           tool,
           actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(blob, 'image-diff.' + (FMT_EXT[fmt] || 'png')) }],
-        });
-      });
-    }
-
-    function bodySprite(s) {
-      const ib = imageBody(s, { title: conf.title, sub: conf.sub, controls: conf.controls });
-      const stage = s.body.querySelector('.pro-img-stage');
-      stage.innerHTML = `<div class="pro-sprite-stage"><img class="pro-sprite-img" alt="Sprite sheet preview"><div class="pro-sprite-meta" id="pro-sprite-meta"></div></div>`;
-      let sheetBlob = null;
-      const build = async () => {
-        const imgs = await Promise.all(files.map(loadImg));
-        const cols = Math.max(1, +ib.state.cols || 4);
-        const cw = Math.max(...imgs.map(i => i.naturalWidth)), ch = Math.max(...imgs.map(i => i.naturalHeight));
-        const rows = Math.ceil(imgs.length / cols);
-        const c = cv(cw * cols, ch * rows);
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-        imgs.forEach((im, i) => ctx.drawImage(im, (i % cols) * cw, Math.floor(i / cols) * ch));
-        const fmt = ib.output.fmt;
-        sheetBlob = await encodeCanvas(c, fmt, ib.output.quality / 100);
-        const u = URL.createObjectURL(sheetBlob);
-        const sImg = stage.querySelector('.pro-sprite-img');
-        sImg.src = u;
-        stage.querySelector('#pro-sprite-meta').textContent = `${imgs.length} images · ${cols} cols · ${c.width} × ${c.height}px · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`;
-      };
-      ib.setOnChange(() => build());
-      build();
-      s.toolbar.innerHTML = `<span class="pro-dim">${files.length} images</span><span class="pro-live">Grid builds live</span>`;
-      s.runBtn.textContent = 'Download sheet';
-      s.runBtn.addEventListener('click', () => {
-        if (!sheetBlob) return;
-        const fmt = ib.output.fmt;
-        showResult(s, {
-          ok: true,
-          title: 'Sprite sheet ready',
-          msg: `${files.length} images combined · ${(FMT_EXT[fmt] || fmt).toUpperCase()}`,
-          blob: sheetBlob,
-          filename: 'sprite-sheet.' + (FMT_EXT[fmt] || 'png'),
-          tool,
-          actions: [{ label: 'Download', cls: 'etxt-btn-finish', ico: dlIco, onClick: () => download(sheetBlob, 'sprite-sheet.' + (FMT_EXT[fmt] || 'png')) }]
         });
       });
     }
@@ -914,19 +733,18 @@
       if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
       dropzone(container, tool, {
         accepts: conf.accepts || ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'],
-        multiple: multi || id === 'sprite-sheet',
-        headline: multi ? 'Drop two images to compare' : (id === 'sprite-sheet' ? 'Drop several images' : `Drop your ${conf.title.toLowerCase()} file here`),
+        multiple: multi,
+        headline: multi ? 'Drop two images to compare' : `Drop your ${conf.title.toLowerCase()} file here`,
         meta: (conf.accepts ? conf.accepts : ['PNG', 'JPG', 'JPEG', 'WEBP', 'BMP', 'GIF']).join(' · ') + ' · 100% local',
       }).setOnFiles(async (list) => {
         files = [...list].filter(Boolean);
         if (id === 'image-diff' && files.length !== 2) return;
-        if (id === 'sprite-sheet' && files.length < 2) return;
         try { img = await loadImg(files[0]); } catch (e) { return; }
         renderWorkspace();
       });
     }
 
-    /* Input-only image tools: base64-to-img, svg-optimize */
+    /* Input-only image tools: base64-to-img */
     function mountInputImage(container, tool, id) {
       container.innerHTML = '';
       container.classList.add('cpdf-root');
@@ -938,11 +756,11 @@
           <div><h2 class="cpdf-hdr-title">${esc(tool.name)}</h2><p class="cpdf-hdr-sub">${esc(tool.description || '')}</p></div>
         </header>
         <div class="pro-input-card">
-          <div class="pro-input-head"><strong>${id === 'base64-to-img' ? 'Base64 data URL' : 'SVG markup'}</strong><span>${id === 'base64-to-img' ? 'Paste a data:image/… URL to decode it' : 'Paste SVG source to minify it'}</span></div>
-          <textarea id="pro-input-ta" spellcheck="false" placeholder="${id === 'base64-to-img' ? 'data:image/png;base64,…' : '<svg …>…</svg>'}"></textarea>
+          <div class="pro-input-head"><strong>Base64 data URL</strong><span>Paste a data:image/… URL to decode it</span></div>
+          <textarea id="pro-input-ta" spellcheck="false" placeholder="data:image/png;base64,…"></textarea>
           <div class="pro-input-actions">
-            <button type="button" class="etxt-btn-finish" data-input-run>${id === 'base64-to-img' ? 'Decode image' : 'Optimize'}</button>
-            <button type="button" class="etxt-btn-ghost" data-input-sample>${id === 'base64-to-img' ? 'Paste sample' : 'Paste sample SVG'}</button>
+            <button type="button" class="etxt-btn-finish" data-input-run>Decode image</button>
+            <button type="button" class="etxt-btn-ghost" data-input-sample>Paste sample</button>
           </div>
         </div>
         <div class="pro-result" data-pro-result hidden></div>`;
@@ -950,68 +768,34 @@
       const runBtn = container.querySelector('[data-input-run]');
       const sampleBtn = container.querySelector('[data-input-sample]');
       const resultEl = container.querySelector('[data-pro-result]');
-      if (id === 'base64-to-img') {
-        sampleBtn.addEventListener('click', () => { ta.value = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#7C3AED"/><circle cx="32" cy="32" r="16" fill="#fff"/></svg>'); });
-        runBtn.addEventListener('click', () => {
-          const raw = ta.value.trim();
-          if (!raw) { resultEl.className = 'pro-result is-err'; resultEl.hidden = false; resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Nothing to decode</strong><span>Paste a Base64 data URL first</span></div>`; return; }
-          try {
-            const mime = (raw.match(/^data:([^;,]+)/) || [])[1] || 'image/png';
-            const b64 = raw.includes(',') ? raw.split(',')[1] : raw;
-            const bin = atob(b64.replace(/\s/g, ''));
-            const u8a = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) u8a[i] = bin.charCodeAt(i);
-            const blob = new Blob([u8a], { type: mime });
-            const url = URL.createObjectURL(blob);
-            const ext = (mime.split('/')[1] || 'png').replace('jpeg', 'jpg');
-            resultEl.className = 'pro-result is-ok';
-            resultEl.hidden = false;
-            resultEl.innerHTML = `
-              <span class="pro-result-ico">${checkIco}</span>
-              <div class="pro-result-copy"><strong>Image decoded</strong><span>${bytes(blob.size)} · ${esc(mime)}</span></div>
-              <div class="pro-result-actions">
-                <img class="pro-result-thumb" src="${url}" alt="Decoded image">
-                <button type="button" class="etxt-btn-secondary" data-dl>${dlIco} Download</button>
-              </div>`;
-            resultEl.querySelector('[data-dl]').addEventListener('click', () => download(blob, 'decoded.' + ext));
-          } catch (e) {
-            resultEl.className = 'pro-result is-err'; resultEl.hidden = false;
-            resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Could not decode</strong><span>That doesn't look like valid Base64 — check the data</span></div>`;
-          }
-        });
-      } else {
-        sampleBtn.addEventListener('click', () => { ta.value = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><!-- drop this comment --><path fill="#fff" stroke="#000" stroke-width="1" d="M12 2 L22 22 H2 Z" /></svg>'; });
-        runBtn.addEventListener('click', () => {
-          const raw = ta.value.trim();
-          if (!raw) { resultEl.className = 'pro-result is-err'; resultEl.hidden = false; resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Nothing to optimize</strong><span>Paste SVG markup first</span></div>`; return; }
-          try {
-            const dom = new DOMParser().parseFromString(raw, 'image/svg+xml');
-            if (dom.querySelector('parsererror')) throw new Error('invalid');
-            dom.querySelectorAll('*').forEach(n => { [...n.attributes].forEach(a => { if (/^[\s]*(<!--.*-->)?\s*$/.test(a.value)) n.removeAttribute(a.name); }); });
-            const cleaned = new XMLSerializer().serializeToString(dom.documentElement);
-            const blob = new Blob([cleaned], { type: 'image/svg+xml' });
-            const rawBlob = new Blob([raw], { type: 'image/svg+xml' });
-            const isSmaller = blob.size < rawBlob.size;
-            const finalCleaned = isSmaller ? cleaned : raw;
-            const finalBlob = isSmaller ? blob : rawBlob;
-            const pct = isSmaller ? Math.round((1 - blob.size / rawBlob.size) * 100) : 0;
-            resultEl.className = 'pro-result is-ok';
-            resultEl.hidden = false;
-            resultEl.innerHTML = `
-              <span class="pro-result-ico">${checkIco}</span>
-              <div class="pro-result-copy"><strong>${isSmaller ? 'Optimized' : 'Already Optimal'}</strong><span>${bytes(rawBlob.size)}${isSmaller ? ` → ${bytes(finalBlob.size)} · ${pct}% smaller` : ' · 0% reduction (already optimal)'}</span></div>
-              <div class="pro-result-actions">
-                <button type="button" class="etxt-btn-ghost" data-copy>${copyIco} Copy</button>
-                <button type="button" class="etxt-btn-secondary" data-dl>${dlIco} Download .svg</button>
-              </div>`;
-            resultEl.querySelector('[data-copy]').addEventListener('click', async () => { try { await navigator.clipboard.writeText(finalCleaned); } catch (e2) {} });
-            resultEl.querySelector('[data-dl]').addEventListener('click', () => download(finalBlob, 'optimized.svg'));
-          } catch (e) {
-            resultEl.className = 'pro-result is-err'; resultEl.hidden = false;
-            resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Invalid SVG</strong><span>That doesn't parse as SVG markup</span></div>`;
-          }
-        });
-      }
+      sampleBtn.addEventListener('click', () => { ta.value = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#7C3AED"/><circle cx="32" cy="32" r="16" fill="#fff"/></svg>'); });
+      runBtn.addEventListener('click', () => {
+        const raw = ta.value.trim();
+        if (!raw) { resultEl.className = 'pro-result is-err'; resultEl.hidden = false; resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Nothing to decode</strong><span>Paste a Base64 data URL first</span></div>`; return; }
+        try {
+          const mime = (raw.match(/^data:([^;,]+)/) || [])[1] || 'image/png';
+          const b64 = raw.includes(',') ? raw.split(',')[1] : raw;
+          const bin = atob(b64.replace(/\s/g, ''));
+          const u8a = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u8a[i] = bin.charCodeAt(i);
+          const blob = new Blob([u8a], { type: mime });
+          const url = URL.createObjectURL(blob);
+          const ext = (mime.split('/')[1] || 'png').replace('jpeg', 'jpg');
+          resultEl.className = 'pro-result is-ok';
+          resultEl.hidden = false;
+          resultEl.innerHTML = `
+            <span class="pro-result-ico">${checkIco}</span>
+            <div class="pro-result-copy"><strong>Image decoded</strong><span>${bytes(blob.size)} · ${esc(mime)}</span></div>
+            <div class="pro-result-actions">
+              <img class="pro-result-thumb" src="${url}" alt="Decoded image">
+              <button type="button" class="etxt-btn-secondary" data-dl>${dlIco} Download</button>
+            </div>`;
+          resultEl.querySelector('[data-dl]').addEventListener('click', () => download(blob, 'decoded.' + ext));
+        } catch (e) {
+          resultEl.className = 'pro-result is-err'; resultEl.hidden = false;
+          resultEl.innerHTML = `<span class="pro-result-ico">!</span><div class="pro-result-copy"><strong>Could not decode</strong><span>That doesn't look like valid Base64 — check the data</span></div>`;
+        }
+      });
     }
   }
 
@@ -1428,11 +1212,4 @@
   /* ─── Register dispatchers ───────────────────────────── */
   window.__ffMountImagePro = (container, tool) => mountImagePro(container, tool);
   window.__ffMountPdfPro = (container, tool) => mountPdfPro(container, tool);
-
-  /* Register any tools missing from the runtime registry (safety) */
-  try {
-    if (!window.FF.registry.get('image-sharpen')) {
-      R({ id: 'image-sharpen', category: 'Images', name: 'Sharpen', description: 'Sharpen via convolution.', accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'], fields: [], run: async () => ({ blob: new Blob(), filename: 'x.png', mime: 'image/png' }) });
-    }
-  } catch (e) { /* registry already has them */ }
 })();

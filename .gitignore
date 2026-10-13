@@ -25,6 +25,8 @@ test_sample.pdf
 scratch_sample.pdf
 sample_*.pdf
 scratch/
+archive/
+tests/
 node_modules/
 *.png
 !assets/**/*.png

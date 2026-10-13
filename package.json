@@ -1,13 +1,14 @@
 {
-  "name": "filekit-promo-engine",
+  "name": "filekit-app",
   "version": "1.0.0",
-  "description": "High-impact, punchy video rendering engine for FileKit using JavaScript, Playwright & FFmpeg",
+  "description": "100% Private In-Browser File Suite — Convert, Compress, Edit & Organize 370+ formats locally via WebAssembly",
+  "private": true,
   "scripts": {
-    "synth-audio": "node video_generator/audio_synth.js",
-    "render-video": "node video_generator/render.js",
-    "generate": "node video_generator/audio_synth.js && node video_generator/render.js"
+    "build": "node build.js",
+    "start": "node scripts/dev_servers/server.js"
   },
-  "dependencies": {
-    "playwright": "^1.63.0"
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "playwright": "^1.64.0"
   }
 }

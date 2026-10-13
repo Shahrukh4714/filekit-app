@@ -1813,7 +1813,1211 @@
      FILEKIT QR CODE STUDIO PRO — GOLD-STANDARD SIDERAIL WORKBENCH
      48px Unified Action Toolbar, 380px Inspector Rail & Dot-Matrix Stage
      ═══════════════════════════════════════════════════════════════════════════ */
-  async function mountQrStudioPro(container, tool) {
+  
+  /* ═══════════════════════════════════════════════════════════════════════════════
+     FileKit — Favicon Generator Pro (Flagship Workstation Studio)
+     Multi-Resolution .ICO · Apple Touch · Android PWA · SVG Favicon · 100% In-Browser
+  ═══════════════════════════════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════════════════════════
+     FileKit — Favicon Generator Pro (Flagship Workstation Studio)
+     Multi-Resolution .ICO · Apple Touch · Android PWA · SVG Favicon · 100% In-Browser
+  ═══════════════════════════════════════════════════════════════════════════════ */
+  function mountFaviconPro(container, tool) {
+    if (!container) return;
+
+    const _esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const _bytes = n => {
+      n = Number(n) || 0;
+      if (n < 1024) return `${n} B`;
+      if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+      return `${(n / 1048576).toFixed(1)} MB`;
+    };
+
+    const FAV_ICONS = {
+      globe: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+      layers: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg>',
+      square: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>',
+      squircle: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="6"/></svg>',
+      circle: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/></svg>',
+      pipette: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 22 5-5"/><path d="M9.5 14.5 16 8"/><path d="m17 2 5 5-.5.5a3.53 3.53 0 0 1-5 0l-.5-.5"/><path d="m14 5-8.5 8.5a2.12 2.12 0 0 0 0 3L7 18"/></svg>',
+      checkCircle: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+      browser: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="3"/><line x1="2" y1="9" x2="22" y2="9"/><circle cx="6" cy="6" r="1"/><circle cx="10" cy="6" r="1"/><circle cx="14" cy="6" r="1"/></svg>',
+      mobile: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+      serp: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+      sun: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+      moon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+      download: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+      copy: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+      check: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+      shield: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+      sparkle: '<svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      ico: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 8h10M7 12h7M7 16h4"/></svg>',
+      svgBadge: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14 2-4 8 4 8"/><path d="m10 2 4 8-4 8"/></svg>',
+      lock: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+    };
+
+    let file = null;
+    let sourceImg = null;
+    let rawSvgContent = null;
+    let zoom = 100;
+
+    const state = {
+      viewMode: 'browser', // 'browser' | 'mobile' | 'serp'
+      theme: 'light',      // 'light' | 'dark'
+      preset: 'complete',  // 'complete' | 'ico' | 'svg' | 'pwa'
+      shape: 'rounded',    // 'square' | 'rounded' | 'circle'
+      padding: 10,         // 0 | 10 | 20
+      bgType: 'transparent', // 'transparent' | 'white' | 'dark' | 'brand'
+      brandColor: '#6366F1'
+    };
+
+    function getSiteTitle() {
+      if (!file || !file.name) return 'My Website';
+      const clean = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+      if (!clean) return 'My Website';
+      return clean.replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    async function loadZip() {
+      if (window.fflate && typeof window.fflate.zipSync === 'function') {
+        return window.fflate;
+      }
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'vendor/fflate.js';
+        s.onload = () => resolve(window.fflate);
+        s.onerror = () => reject(new Error('Failed to load fflate.js'));
+        document.head.appendChild(s);
+      });
+    }
+
+    function buildIco(images) {
+      const count = images.length;
+      const headerLen = 6 + count * 16;
+      let totalLen = headerLen;
+      for (const img of images) totalLen += img.data.length;
+
+      const ico = new Uint8Array(totalLen);
+      const dv = new DataView(ico.buffer);
+
+      dv.setUint16(0, 0, true);
+      dv.setUint16(2, 1, true); // 1 = ICO
+      dv.setUint16(4, count, true);
+
+      let curOffset = headerLen;
+      for (let idx = 0; idx < count; idx++) {
+        const img = images[idx];
+        const entryOffset = 6 + idx * 16;
+        ico[entryOffset] = img.width >= 256 ? 0 : img.width;
+        ico[entryOffset + 1] = img.height >= 256 ? 0 : img.height;
+        ico[entryOffset + 2] = 0;
+        ico[entryOffset + 3] = 0;
+        dv.setUint16(entryOffset + 4, 1, true);
+        dv.setUint16(entryOffset + 6, 32, true);
+        dv.setUint32(entryOffset + 8, img.data.length, true);
+        dv.setUint32(entryOffset + 12, curOffset, true);
+
+        ico.set(img.data, curOffset);
+        curOffset += img.data.length;
+      }
+      return ico;
+    }
+
+    function renderCanvasForSize(size) {
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Shape clipping and background fill
+      if (state.bgType !== 'transparent' || state.shape !== 'square') {
+        ctx.save();
+        ctx.beginPath();
+        const r = state.shape === 'circle' ? size / 2 : (state.shape === 'rounded' ? size * 0.22 : 0);
+        if (r > 0) {
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(0, 0, size, size, r);
+          } else {
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          }
+          ctx.clip();
+        }
+        if (state.bgType === 'white') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, size, size);
+        } else if (state.bgType === 'dark') {
+          ctx.fillStyle = '#09090B';
+          ctx.fillRect(0, 0, size, size);
+        } else if (state.bgType === 'brand') {
+          ctx.fillStyle = state.brandColor || '#6366F1';
+          ctx.fillRect(0, 0, size, size);
+        }
+        ctx.restore();
+      }
+
+      // Draw source image with proportional inset padding
+      const pad = (state.padding / 100) * size;
+      const drawW = size - pad * 2;
+      const drawH = size - pad * 2;
+
+      const nw = (sourceImg && (sourceImg.naturalWidth || sourceImg.width)) || 1;
+      const nh = (sourceImg && (sourceImg.naturalHeight || sourceImg.height)) || 1;
+      const ratio = Math.min(drawW / nw, drawH / nh);
+      const w = nw * ratio;
+      const h = nh * ratio;
+      const x = (size - w) / 2;
+      const y = (size - h) / 2;
+
+      if (state.shape === 'circle' && state.bgType === 'transparent') {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(sourceImg, x, y, w, h);
+        ctx.restore();
+      } else {
+        ctx.drawImage(sourceImg, x, y, w, h);
+      }
+
+      return c;
+    }
+
+    function dataUrlToBytes(dataUrl) {
+      const base64 = dataUrl.split(',')[1];
+      const bin = atob(base64);
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return u8;
+    }
+
+    function canvasToBytes(c) {
+      return new Promise((resolve) => {
+        try {
+          c.toBlob(b => {
+            if (b) {
+              b.arrayBuffer().then(ab => resolve(new Uint8Array(ab))).catch(() => {
+                resolve(dataUrlToBytes(c.toDataURL('image/png')));
+              });
+            } else {
+              resolve(dataUrlToBytes(c.toDataURL('image/png')));
+            }
+          }, 'image/png');
+        } catch {
+          resolve(dataUrlToBytes(c.toDataURL('image/png')));
+        }
+      });
+    }
+
+    function createSampleLogo() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const g = ctx.createLinearGradient(0, 0, 512, 512);
+      g.addColorStop(0, '#4F46E5');
+      g.addColorStop(0.5, '#7C3AED');
+      g.addColorStop(1, '#EC4899');
+
+      if (typeof ctx.roundRect === 'function') {
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 512, 512, 128);
+        ctx.fillStyle = g;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 512, 512);
+      }
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(140, 160);
+      ctx.lineTo(330, 160);
+      ctx.lineTo(230, 340);
+      ctx.lineTo(140, 340);
+      ctx.closePath();
+      ctx.fill();
+
+      const g2 = ctx.createRadialGradient(340, 330, 8, 340, 330, 48);
+      g2.addColorStop(0, '#38BDF8');
+      g2.addColorStop(1, '#818CF8');
+      ctx.fillStyle = g2;
+      ctx.beginPath();
+      ctx.arc(340, 330, 42, 0, Math.PI * 2);
+      ctx.fill();
+
+      return new Promise(resolve => {
+        c.toBlob(blob => {
+          const sampleFile = new File([blob], 'sample-brand-logo.png', { type: 'image/png' });
+          resolve({ file: sampleFile, canvas: c });
+        }, 'image/png');
+      });
+    }
+
+    async function handleFile(selectedFile) {
+      if (!selectedFile) return;
+      file = selectedFile;
+      rawSvgContent = null;
+
+      if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
+        try {
+          rawSvgContent = await file.text();
+        } catch (e) {
+          console.warn('[Favicon Pro] Could not read raw SVG text:', e);
+        }
+      }
+
+      if (state.sourceUrl) { URL.revokeObjectURL(state.sourceUrl); state.sourceUrl = null; }
+      state.sourceUrl = URL.createObjectURL(file);
+      const url = state.sourceUrl;
+      const img = new Image();
+      img.onload = () => {
+        sourceImg = img;
+        renderConfigure();
+      };
+      img.onerror = () => {
+        alert('Could not decode image. Please choose a valid PNG, JPG, WebP, or SVG.');
+        renderUpload();
+      };
+      img.src = url;
+    }
+
+    function getCodeSnippet() {
+      if (state.preset === 'ico') {
+        return `<link rel="icon" type="image/x-icon" href="/favicon.ico">`;
+      }
+      if (state.preset === 'svg') {
+        return `<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">`;
+      }
+      if (state.preset === 'pwa') {
+        const themeHex = state.bgType === 'brand' ? state.brandColor : (state.bgType === 'dark' ? '#09090B' : '#ffffff');
+        return `<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="${themeHex}">`;
+      }
+      // Complete Bundle
+      return `<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">`;
+    }
+
+    function renderUpload() {
+      container.className = 'cpdf-root';
+      const stage = container.closest('.app-stage-container');
+      const canvasEl = container.closest('.app-canvas') || document.querySelector('.app-canvas');
+      const mainContent = container.closest('.app-main-content') || document.querySelector('.app-main-content');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
+      if (canvasEl) canvasEl.classList.remove('spdf-stage-active');
+      if (mainContent) mainContent.classList.remove('spdf-stage-active');
+
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="fav-dz" tabindex="0" role="button" aria-label="Drop image to generate favicons">
+          <div class="dropzone-idle">
+            <div class="drop-illustration" style="color: #6366F1;">
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <rect x="24" y="24" width="70" height="70" rx="14" stroke="#6366F1" stroke-width="3" stroke-linecap="round"/>
+                <rect x="42" y="42" width="34" height="34" rx="8" fill="#6366F1" fill-opacity="0.12" stroke="#6366F1" stroke-width="2"/>
+                <circle cx="59" cy="59" r="6" fill="#6366F1"/>
+                <path d="M 112 18 L 154 18 C 156 18 159 19.5 161 21.5 L 171 32.5 C 173 34.5 174 37 174 40 L 174 96 C 174 100.4 170.4 104 166 104 L 156 104 M 120 104 L 110 104 C 105.6 104 102 100.4 102 96 L 102 28 C 102 22.5 106.5 18 112 18 Z" stroke="#6366F1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 138 68 L 138 126 M 124 112 L 138 126 L 152 112" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <circle cx="216" cy="74" r="24" stroke="#6366F1" stroke-width="3"/>
+                <path d="M 211 66 L 223 74 L 211 82 Z" fill="#6366F1"/>
+              </svg>
+            </div>
+            <h3 class="drop-title" style="color: #18181B; font-weight: 700; letter-spacing: -0.02em;">Drag and drop an image or logo to generate favicons</h3>
+            <div class="drop-action-group" style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 16px 0 10px;">
+              <label for="fav-inp" class="select-files-main-btn" style="background: #2563EB; color: #FFFFFF; font-weight: 700; cursor: pointer; margin: 0 !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 24px; border-radius: 8px;">Select image file</label>
+              <button type="button" class="scan-result-btn-ghost" id="fav-sample-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 8px; padding: 0 20px; height: 42px; font-size: 13.5px; font-weight: 700; color: #18181B; cursor: pointer; transition: all 0.15s ease; margin: 0 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                ✨ Try Sample Brand Logo
+              </button>
+            </div>
+            <p class="drop-formats" style="color: #71717A;">Multi-size ICO (16/32/48) · Apple Touch Icon · Android Chrome PWA · Vector SVG with Dark Mode · 100% Private in-browser</p>
+          </div>
+          <input id="fav-inp" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif,image/x-icon,image/bmp" hidden>
+        </div>
+      `;
+
+      const dz = container.querySelector('#fav-dz');
+      const inp = container.querySelector('#fav-inp');
+      const sampleBtn = container.querySelector('#fav-sample-btn');
+
+      if (inp) {
+        inp.onchange = () => inp.files?.[0] && handleFile(inp.files[0]);
+      }
+      if (sampleBtn) {
+        sampleBtn.onclick = async (e) => {
+          e.stopPropagation();
+          const { file: sFile } = await createSampleLogo();
+          handleFile(sFile);
+        };
+      }
+      if (dz) {
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+        dz.addEventListener('drop', e => {
+          e.preventDefault();
+          dz.classList.remove('cpdf-dz--over');
+          if (e.dataTransfer?.files?.[0]) handleFile(e.dataTransfer.files[0]);
+        });
+        dz.addEventListener('click', e => {
+          if (!e.target.closest('label') && !e.target.closest('#fav-sample-btn') && inp) inp.click();
+        });
+      }
+    }
+
+    function renderConfigure() {
+      if (!file || !sourceImg) { renderUpload(); return; }
+
+      container.className = 'cpdf-root conv-root spdf-workbench';
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
+      const isDark = state.theme === 'dark';
+      const siteName = getSiteTitle();
+      const primaryCtaText = {
+        complete: 'Download Favicon Bundle (.ZIP)',
+        ico: 'Download favicon.ico Only',
+        svg: 'Download SVG Favicon (.SVG)',
+        pwa: 'Download PWA Bundle (.ZIP)'
+      }[state.preset] || 'Download Favicon Bundle (.ZIP)';
+
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            
+            <!-- LEFT STAGE: Full-Bleed Realistic Mockup Stage -->
+            <div class="cpdf-benchmark-stage spdf-stage-left" id="fav-stage-wrap" style="background: ${isDark ? '#09090B' : '#F8FAFC'} !important; position: relative; display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%;">
+              
+              <!-- REFINED STAGE HEADER: Clean Centered Responsive Capsule Toolbar -->
+              <div class="p2a-stage-header" style="height: 48px; min-height: 48px; background: ${isDark ? '#18181B' : '#FFFFFF'}; border-bottom: 1px solid ${isDark ? '#27272A' : '#E4E4E7'}; display: flex; align-items: center; justify-content: center; padding: 0 12px; flex-shrink: 0; z-index: 20; box-sizing: border-box; overflow-x: auto;">
+                
+                <!-- Floating Responsive Capsule Toolbar -->
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: ${isDark ? '#27272A' : '#FFFFFF'}; border: 1px solid ${isDark ? '#3F3F46' : '#E4E4E7'}; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 3px 10px; border-radius: 9999px; user-select: none; flex-shrink: 0;">
+                  
+                  <!-- View Mode Switcher -->
+                  <div style="display: flex; align-items: center; gap: 2px;">
+                    <button type="button" id="fav-view-browser" class="fav-capsule-btn" style="height: 26px; padding: 0 10px; border-radius: 13px; border: none; background: ${state.viewMode === 'browser' ? (isDark ? '#3F3F46' : '#18181B') : 'transparent'}; color: ${state.viewMode === 'browser' ? '#FFFFFF' : (isDark ? '#A1A1AA' : '#52525B')}; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.12s ease;">
+                      ${FAV_ICONS.browser}
+                      <span>Browser Tab</span>
+                    </button>
+                    <button type="button" id="fav-view-mobile" class="fav-capsule-btn" style="height: 26px; padding: 0 10px; border-radius: 13px; border: none; background: ${state.viewMode === 'mobile' ? (isDark ? '#3F3F46' : '#18181B') : 'transparent'}; color: ${state.viewMode === 'mobile' ? '#FFFFFF' : (isDark ? '#A1A1AA' : '#52525B')}; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.12s ease;">
+                      ${FAV_ICONS.mobile}
+                      <span>Phone Home</span>
+                    </button>
+                    <button type="button" id="fav-view-serp" class="fav-capsule-btn" style="height: 26px; padding: 0 10px; border-radius: 13px; border: none; background: ${state.viewMode === 'serp' ? (isDark ? '#3F3F46' : '#18181B') : 'transparent'}; color: ${state.viewMode === 'serp' ? '#FFFFFF' : (isDark ? '#A1A1AA' : '#52525B')}; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.12s ease;">
+                      ${FAV_ICONS.serp}
+                      <span>Google SERP</span>
+                    </button>
+                  </div>
+
+                  <div style="width: 1px; height: 16px; background: ${isDark ? '#3F3F46' : '#E4E4E7'};" aria-hidden="true"></div>
+
+                  <!-- Theme Switcher (Light / Dark) -->
+                  <div style="display: flex; align-items: center; gap: 2px;">
+                    <button type="button" id="fav-theme-toggle" style="height: 26px; padding: 0 8px; border-radius: 13px; border: none; background: transparent; color: ${isDark ? '#F59E0B' : '#18181B'}; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Toggle Light/Dark Preview">
+                      ${isDark ? FAV_ICONS.sun : FAV_ICONS.moon}
+                      <span>${isDark ? 'Dark' : 'Light'}</span>
+                    </button>
+                  </div>
+
+                  <div style="width: 1px; height: 16px; background: ${isDark ? '#3F3F46' : '#E4E4E7'};" aria-hidden="true"></div>
+
+                  <!-- Zoom Controls -->
+                  <div style="display: flex; align-items: center; gap: 1px;">
+                    <button type="button" id="fav-zoom-out" style="width: 22px; height: 22px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; color: ${isDark ? '#E4E4E7' : '#18181B'}; display: flex; align-items: center; justify-content: center;" title="Smaller Preview">−</button>
+                    <span id="fav-zoom-lbl" style="font-size: 11px; font-weight: 700; color: ${isDark ? '#E4E4E7' : '#18181B'}; min-width: 34px; text-align: center;">${zoom}%</span>
+                    <button type="button" id="fav-zoom-in" style="width: 22px; height: 22px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; color: ${isDark ? '#E4E4E7' : '#18181B'}; display: flex; align-items: center; justify-content: center;" title="Larger Preview">+</button>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Main Viewport Area: Realistic Interactive Mockup Canvas -->
+              <div id="fav-viewport" class="p2a-clean-reader-viewport" style="background: ${isDark ? '#09090B' : '#F8FAFC'} !important; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 28px 20px; overflow-y: auto; gap: 24px;">
+                
+                <!-- Mockup Scaler Container -->
+                <div id="fav-mockup-scale-wrap" style="transform: scale(${zoom / 100}); transform-origin: top center; transition: transform 0.15s ease; width: 100%; max-width: 680px; display: flex; justify-content: center;">
+                  <div id="fav-mockup-card-holder" style="width: 100%;">
+                    <!-- Rendered dynamic mockup injected here -->
+                  </div>
+                </div>
+
+                <!-- Live Sizes Ribbon -->
+                <div id="fav-sizes-ribbon" style="width: 100%; max-width: 680px; background: ${isDark ? '#18181B' : '#FFFFFF'}; border: 1px solid ${isDark ? '#27272A' : '#E4E4E7'}; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); box-sizing: border-box;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <span style="font-size: 11.5px; font-weight: 700; color: ${isDark ? '#FFFFFF' : '#18181B'}; letter-spacing: -0.01em;">All Export Resolutions &amp; Formats</span>
+                    <span style="font-size: 10.5px; font-weight: 600; color: ${isDark ? '#A1A1AA' : '#71717A'};">Click any tile to download instantly</span>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); gap: 8px;">
+                    ${[
+                      { sz: 16, label: '16&times;16', sub: 'Tab ICO' },
+                      { sz: 32, label: '32&times;32', sub: 'Retina' },
+                      { sz: 48, label: '48&times;48', sub: 'Desktop' },
+                      { sz: 180, label: '180&times;180', sub: 'Apple' },
+                      { sz: 192, label: '192&times;192', sub: 'Android' },
+                      { sz: 512, label: '512&times;512', sub: 'Splash' }
+                    ].map(item => `
+                      <div class="fav-size-tile" data-size="${item.sz}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border: 1px solid ${isDark ? '#27272A' : '#F4F4F5'}; background: ${isDark ? '#27272A' : '#FAFAFA'}; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;" title="Download ${item.label} PNG">
+                        <div style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: ${state.bgType === 'transparent' ? 'repeating-conic-gradient(#E2E8F0 0% 25%, transparent 0% 50%) 50% / 8px 8px' : (isDark ? '#18181B' : '#FFFFFF')}; border-radius: 6px; border: 1px solid ${isDark ? '#3F3F46' : '#E4E4E7'}; overflow: hidden;">
+                          <canvas id="fav-tile-cv-${item.sz}" width="30" height="30" style="width: 30px; height: 30px; object-fit: contain;"></canvas>
+                        </div>
+                        <div style="text-align: center;">
+                          <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#FFFFFF' : '#18181B'};">${item.label}</div>
+                          <div style="font-size: 9.5px; font-weight: 500; color: ${isDark ? '#A1A1AA' : '#71717A'};">${item.sub}</div>
+                        </div>
+                      </div>
+                    `).join('')}
+
+                    <!-- Direct ICO Tile -->
+                    <div class="fav-size-tile" id="fav-ribbon-dl-ico" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border: 1px solid ${isDark ? '#27272A' : '#F4F4F5'}; background: ${isDark ? '#27272A' : '#FAFAFA'}; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;" title="Download binary favicon.ico">
+                      <div style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: #6366F1; color: #FFFFFF; border-radius: 6px; border: 1px solid #4F46E5;">
+                        ${FAV_ICONS.ico}
+                      </div>
+                      <div style="text-align: center;">
+                        <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#FFFFFF' : '#18181B'};">.ICO</div>
+                        <div style="font-size: 9.5px; font-weight: 500; color: ${isDark ? '#A1A1AA' : '#71717A'};">Multi-size</div>
+                      </div>
+                    </div>
+
+                    <!-- Direct SVG Tile -->
+                    <div class="fav-size-tile" id="fav-ribbon-dl-svg" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border: 1px solid ${isDark ? '#27272A' : '#F4F4F5'}; background: ${isDark ? '#27272A' : '#FAFAFA'}; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;" title="Download vector favicon.svg">
+                      <div style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: #EC4899; color: #FFFFFF; border-radius: 6px; border: 1px solid #DB2777;">
+                        ${FAV_ICONS.svgBadge}
+                      </div>
+                      <div style="text-align: center;">
+                        <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#FFFFFF' : '#18181B'};">.SVG</div>
+                        <div style="font-size: 9.5px; font-weight: 500; color: ${isDark ? '#A1A1AA' : '#71717A'};">Vector</div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Bottom Stage File Summary Row -->
+              <div class="cpdf-benchmark-fileinfo-row" style="background: ${isDark ? '#18181B' : '#FFFFFF'}; border-top: 1px solid ${isDark ? '#27272A' : '#E4E4E7'}; padding: 8px 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10;">
+                <div style="display: inline-flex; align-items: center; gap: 8px; min-width: 0;">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: ${isDark ? '#E4E4E7' : '#27272A'}; min-width: 0;">
+                    ${FAV_ICONS.globe}
+                    <span style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${_esc(file.name)}">${_esc(file.name)}</span>
+                    <span style="color: ${isDark ? '#71717A' : '#A1A1AA'};">&middot;</span>
+                    <span>${sourceImg.naturalWidth}&times;${sourceImg.naturalHeight}px</span>
+                    <span style="color: ${isDark ? '#71717A' : '#A1A1AA'};">&middot;</span>
+                    <span>${_bytes(file.size)}</span>
+                  </span>
+                  
+                  <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: ${isDark ? '#FFFFFF' : '#18181B'}; background: ${isDark ? '#27272A' : '#F4F4F5'}; border: 1px solid ${isDark ? '#3F3F46' : '#E4E4E7'}; border-radius: 5px; padding: 2px 8px; flex-shrink: 0;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981;"></span>
+                    <span>Bundle Ready (8 files)</span>
+                  </span>
+                </div>
+
+                <button type="button" class="scan-result-btn-ghost" id="fav-change-file-btn" style="display: inline-flex; align-items: center; gap: 5px; background: ${isDark ? '#27272A' : '#FFFFFF'}; border: 1px solid ${isDark ? '#3F3F46' : '#E4E4E7'}; border-radius: 6px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; color: ${isDark ? '#FFFFFF' : '#18181B'}; cursor: pointer; flex-shrink: 0;">
+                  Change Image
+                </button>
+              </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: Dedicated High-Precision Ergonomic Favicon Settings Panel -->
+            <aside class="cpdf-benchmark-panel" aria-label="Favicon Generator Settings" style="width: 340px !important; min-width: 340px !important; max-width: 340px !important; background: #FFFFFF !important; border-left: 1px solid #E4E4E7 !important; padding: 16px !important; box-sizing: border-box !important; overflow-y: auto !important; scrollbar-width: thin !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important;">
+              <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                
+                <!-- Tool Title & Subtitle Card Header -->
+                <div style="display: flex; align-items: center; gap: 10px; padding-bottom: 4px; border-bottom: 1px solid #F4F4F5;">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: #6366F1; display: flex; align-items: center; justify-content: center; color: #FFFFFF; flex-shrink: 0;">
+                    ${FAV_ICONS.globe}
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #18181B; line-height: 1.2;">Favicon Generator</h3>
+                    <p style="margin: 0; font-size: 11px; color: #71717A; line-height: 1.3;">Multi-resolution icon &amp; PWA bundle studio</p>
+                  </div>
+                </div>
+
+                <!-- 4 Interactive Preset Cards -->
+                <div class="scan-benchmark-cards" role="radiogroup" aria-label="Target Favicon Package" style="display: flex; flex-direction: column; gap: 5px; margin-top: 2px;">
+                  
+                  <!-- Card 1: Complete Bundle -->
+                  <div class="scan-benchmark-card ${state.preset === 'complete' ? 'is-active' : ''}" data-fav-preset="complete" tabindex="0" role="radio" aria-checked="${state.preset === 'complete'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <span class="scan-benchmark-card-title">Complete Bundle</span>
+                        <span style="font-size: 9.5px; font-weight: 700; color: #4338CA; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 4px; padding: 1px 5px; line-height: 1.2;">Recommended</span>
+                      </div>
+                      <span class="scan-benchmark-card-sub">ICO (16/32/48) + SVG + Apple + Android + Manifest</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 2: Classic Desktop ICO -->
+                  <div class="scan-benchmark-card ${state.preset === 'ico' ? 'is-active' : ''}" data-fav-preset="ico" tabindex="0" role="radio" aria-checked="${state.preset === 'ico'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <span class="scan-benchmark-card-title">Classic Desktop ICO</span>
+                        <span style="font-size: 9.5px; font-weight: 700; color: #374151; background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 4px; padding: 1px 5px; line-height: 1.2;">Legacy</span>
+                      </div>
+                      <span class="scan-benchmark-card-sub">Binary multi-page .ico container for all browsers</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 3: Modern Vector SVG -->
+                  <div class="scan-benchmark-card ${state.preset === 'svg' ? 'is-active' : ''}" data-fav-preset="svg" tabindex="0" role="radio" aria-checked="${state.preset === 'svg'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <span class="scan-benchmark-card-title">Modern Vector SVG</span>
+                        <span style="font-size: 9.5px; font-weight: 700; color: #92400E; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 4px; padding: 1px 5px; line-height: 1.2;">★ Modern</span>
+                      </div>
+                      <span class="scan-benchmark-card-sub">Resolution-independent SVG with dark-mode media query</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 4: PWA & Mobile Icons -->
+                  <div class="scan-benchmark-card ${state.preset === 'pwa' ? 'is-active' : ''}" data-fav-preset="pwa" tabindex="0" role="radio" aria-checked="${state.preset === 'pwa'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <span class="scan-benchmark-card-title">PWA &amp; Mobile Icons</span>
+                        <span style="font-size: 9.5px; font-weight: 700; color: #065F46; background: #D1FAE5; border: 1px solid #A7F3D0; border-radius: 4px; padding: 1px 5px; line-height: 1.2;">PWA</span>
+                      </div>
+                      <span class="scan-benchmark-card-sub">Apple touch icon, 192/512px assets, webmanifest</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Unified 2-Column Segmented Settings Strip for Shape and Padding -->
+                <div class="scan-segmented-strip" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: #FAFAFA !important; border: 1px solid #E4E4E7 !important; border-radius: 8px; padding: 6px 12px; margin-top: 2px;">
+                  
+                  <!-- Segment 1: Shape Silhouette -->
+                  <div class="scan-segment-item" id="fav-shape-toggle-btn" role="button" tabindex="0" style="cursor: pointer;">
+                    <span class="scan-segment-label" style="color: #52525B !important; font-weight: 700;">Shape</span>
+                    <div class="scan-segment-select-wrap">
+                      <span class="scan-segment-val-text" id="fav-val-shape" style="color: #18181B !important; font-weight: 700;">
+                        ${state.shape === 'circle' ? 'Circle' : (state.shape === 'square' ? 'Square' : 'Rounded (iOS)')}
+                      </span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+
+                  <div class="scan-segment-divider" style="background: #E4E4E7 !important;" aria-hidden="true"></div>
+
+                  <!-- Segment 2: Padding / Margin Inset -->
+                  <div class="scan-segment-item" id="fav-padding-toggle-btn" role="button" tabindex="0" style="cursor: pointer;">
+                    <span class="scan-segment-label" style="color: #52525B !important; font-weight: 700;">Padding</span>
+                    <div class="scan-segment-select-wrap">
+                      <span class="scan-segment-val-text" id="fav-val-padding" style="color: #18181B !important; font-weight: 700;">
+                        ${state.padding === 0 ? '0% (Full)' : (state.padding === 10 ? '10% (Balanced)' : '20% (Spacious)')}
+                      </span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Background Matte Row with Interactive Brand Color Picker -->
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 2px;">
+                  <span style="font-size: 10px; font-weight: 700; color: #52525B; text-transform: uppercase; letter-spacing: 0.04em;">Background Fill</span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" class="fav-bg-pill ${state.bgType === 'transparent' ? 'is-active' : ''}" data-bg="transparent" style="flex: 1; height: 28px; border-radius: 6px; border: 1px solid ${state.bgType === 'transparent' ? '#18181B' : '#E4E4E7'}; background: #FFFFFF; font-size: 11px; font-weight: 700; color: #18181B; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span style="width: 10px; height: 10px; border-radius: 2px; border: 1px solid #D4D4D8; background: repeating-conic-gradient(#E2E8F0 0% 25%, transparent 0% 50%) 50% / 4px 4px;"></span>
+                      <span>None</span>
+                    </button>
+                    <button type="button" class="fav-bg-pill ${state.bgType === 'white' ? 'is-active' : ''}" data-bg="white" style="flex: 1; height: 28px; border-radius: 6px; border: 1px solid ${state.bgType === 'white' ? '#18181B' : '#E4E4E7'}; background: #FFFFFF; font-size: 11px; font-weight: 700; color: #18181B; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span style="width: 10px; height: 10px; border-radius: 2px; background: #FFFFFF; border: 1px solid #D4D4D8;"></span>
+                      <span>White</span>
+                    </button>
+                    <button type="button" class="fav-bg-pill ${state.bgType === 'dark' ? 'is-active' : ''}" data-bg="dark" style="flex: 1; height: 28px; border-radius: 6px; border: 1px solid ${state.bgType === 'dark' ? '#18181B' : '#E4E4E7'}; background: #FFFFFF; font-size: 11px; font-weight: 700; color: #18181B; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span style="width: 10px; height: 10px; border-radius: 2px; background: #09090B;"></span>
+                      <span>Dark</span>
+                    </button>
+                    <button type="button" class="fav-bg-pill ${state.bgType === 'brand' ? 'is-active' : ''}" id="fav-bg-brand-btn" data-bg="brand" style="flex: 1; height: 28px; border-radius: 6px; border: 1px solid ${state.bgType === 'brand' ? '#18181B' : '#E4E4E7'}; background: #FFFFFF; font-size: 11px; font-weight: 700; color: #18181B; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;" title="Click to apply or change brand color">
+                      <span id="fav-brand-swatch-dot" style="width: 10px; height: 10px; border-radius: 2px; background: ${state.brandColor};"></span>
+                      <span>Brand</span>
+                    </button>
+                    <input type="color" id="fav-brand-color-inp" value="${state.brandColor}" style="display: none;">
+                  </div>
+                </div>
+
+                <!-- HTML <head> Snippet Box with Copy Button -->
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 2px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 10px; font-weight: 700; color: #52525B; text-transform: uppercase; letter-spacing: 0.04em;">HTML Code Snippet</span>
+                    <button type="button" id="fav-copy-code-btn" style="background: transparent; border: none; font-size: 10.5px; font-weight: 700; color: #2563EB; cursor: pointer; display: flex; align-items: center; gap: 3px; padding: 0;">
+                      ${FAV_ICONS.copy}
+                      <span id="fav-copy-status-txt">Copy Code</span>
+                    </button>
+                  </div>
+                  <pre id="fav-code-box" style="margin: 0; background: #F4F4F5; border: 1px solid #E4E4E7; border-radius: 6px; padding: 8px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; color: #27272A; line-height: 1.45; overflow-x: auto; white-space: pre; word-break: normal; max-height: 80px; scrollbar-width: thin;">${_esc(getCodeSnippet())}</pre>
+                </div>
+
+                <!-- Primary Action CTA Button: Download Bundle -->
+                <button type="button" class="cpdf-benchmark-cta scan-exact-cta" id="fav-primary-download-btn" style="width: 100%; height: 40px !important; min-height: 40px !important; font-size: 13.5px !important; font-weight: 700; background: #2563EB !important; color: #FFFFFF !important; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 1px 3px rgba(37,99,235,0.25); margin-top: 4px;">
+                  ${FAV_ICONS.download}
+                  <span id="fav-primary-cta-lbl">${primaryCtaText}</span>
+                </button>
+
+                <!-- Secondary Action: Download favicon.ico Only -->
+                <button type="button" id="fav-secondary-ico-btn" style="width: 100%; height: 34px; background: #FFFFFF; color: #18181B; border: 1px solid #E4E4E7; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease;">
+                  ${FAV_ICONS.ico}
+                  <span>Download favicon.ico Only</span>
+                </button>
+
+                <!-- Professional Trust Micro-Footer -->
+                <div class="cpdf-local-trust-footer" style="margin-top: 1px; font-size: 10.5px; color: #71717A; font-weight: 500; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  ${FAV_ICONS.shield}
+                  <span>100% Private · Synthesized locally on device</span>
+                </div>
+
+              </div>
+            </aside>
+
+
+          </div>
+        </div>
+      `;
+
+      wireEvents();
+      renderMockup();
+      renderSizeTiles();
+    }
+
+    function renderMockup() {
+      const holder = container.querySelector('#fav-mockup-card-holder');
+      if (!holder) return;
+
+      const isDark = state.theme === 'dark';
+      const siteName = getSiteTitle();
+      const c16 = renderCanvasForSize(16);
+      const c32 = renderCanvasForSize(32);
+      const c180 = renderCanvasForSize(180);
+      const iconDataUri = c32.toDataURL('image/png');
+      const iconHiDataUri = c180.toDataURL('image/png');
+
+      if (state.viewMode === 'browser') {
+        // macOS / Modern Browser Tab Chrome Mockup
+        holder.innerHTML = `
+          <div style="background: ${isDark ? '#1E1E24' : '#FFFFFF'}; border: 1px solid ${isDark ? '#2E2E38' : '#E4E4E7'}; border-radius: 10px; box-shadow: 0 12px 36px rgba(0,0,0,${isDark ? '0.5' : '0.08'}); overflow: hidden; width: 100%;">
+            <!-- Browser Top Window Bar -->
+            <div style="background: ${isDark ? '#141419' : '#F1F3F5'}; border-bottom: 1px solid ${isDark ? '#2E2E38' : '#E2E8F0'}; padding: 10px 14px 6px; display: flex; flex-direction: column; gap: 8px;">
+              <!-- Tabs Row -->
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- Traffic Light Controls -->
+                <div style="display: flex; align-items: center; gap: 6px; margin-right: 6px;">
+                  <span style="width: 11px; height: 11px; border-radius: 50%; background: #EF4444; display: inline-block;"></span>
+                  <span style="width: 11px; height: 11px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+                  <span style="width: 11px; height: 11px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
+                </div>
+
+                <!-- Active Browser Tab -->
+                <div style="display: flex; align-items: center; gap: 7px; background: ${isDark ? '#1E1E24' : '#FFFFFF'}; border: 1px solid ${isDark ? '#2E2E38' : '#E2E8F0'}; border-bottom: none; border-radius: 8px 8px 0 0; padding: 6px 14px 7px; font-size: 12px; font-weight: 600; color: ${isDark ? '#F4F4F5' : '#18181B'}; max-width: 220px; box-shadow: 0 -1px 3px rgba(0,0,0,0.03);">
+                  <img src="${iconDataUri}" width="16" height="16" style="width: 16px; height: 16px; border-radius: ${state.shape === 'circle' ? '50%' : (state.shape === 'rounded' ? '3px' : '0')};" alt="Favicon">
+                  <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${_esc(siteName)}</span>
+                  <span style="font-size: 13px; color: ${isDark ? '#71717A' : '#A1A1AA'}; margin-left: auto; cursor: default;">&times;</span>
+                </div>
+
+                <!-- Inactive Tab -->
+                <div style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 11.5px; font-weight: 500; color: ${isDark ? '#71717A' : '#64748B'};">
+                  <span>Dashboard</span>
+                </div>
+
+                <!-- Add Tab Button -->
+                <div style="color: ${isDark ? '#71717A' : '#94A3B8'}; font-size: 14px; font-weight: 700; padding: 0 4px;">+</div>
+              </div>
+
+              <!-- Address Bar Row -->
+              <div style="display: flex; align-items: center; gap: 10px; padding: 0 2px 4px;">
+                <div style="display: flex; align-items: center; gap: 6px; color: ${isDark ? '#71717A' : '#94A3B8'}; font-size: 12px;">
+                  <span>&lsaquo;</span>
+                  <span>&rsaquo;</span>
+                  <span style="font-size: 10px;">&#x21bb;</span>
+                </div>
+                <!-- URL Capsule -->
+                <div style="flex: 1; background: ${isDark ? '#1E1E24' : '#FFFFFF'}; border: 1px solid ${isDark ? '#2E2E38' : '#CBD5E1'}; border-radius: 6px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${isDark ? '#A1A1AA' : '#475569'};">
+                  <span style="color: #10B981;">${FAV_ICONS.lock}</span>
+                  <span style="font-weight: 500;">https://</span><span style="color: ${isDark ? '#FFFFFF' : '#0F172A'}; font-weight: 600;">${_esc(siteName.toLowerCase().replace(/\s+/g, ''))}.com</span><span style="color: #94A3B8;">/app</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Webpage Content Body Canvas -->
+            <div style="padding: 44px 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: ${isDark ? '#1E1E24' : '#FFFFFF'};">
+              <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: ${state.shape === 'circle' ? '50%' : (state.shape === 'rounded' ? '12px' : '0')}; background: ${state.bgType === 'brand' ? state.brandColor : (state.bgType === 'dark' ? '#09090B' : '#FFFFFF')}; box-shadow: 0 4px 14px rgba(0,0,0,0.08); overflow: hidden;">
+                <img src="${iconHiDataUri}" width="56" height="56" style="width: 100%; height: 100%; object-fit: contain;" alt="App Icon">
+              </div>
+              <div style="text-align: center; max-width: 360px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: ${isDark ? '#F4F4F5' : '#0F172A'};">${_esc(siteName)}</h3>
+                <p style="margin: 6px 0 0; font-size: 12px; color: ${isDark ? '#A1A1AA' : '#64748B'}; line-height: 1.5;">Notice the live tab icon in the browser tab bar above. It dynamically updates as you change shapes, paddings, and background fills.</p>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (state.viewMode === 'mobile') {
+        // iPhone Mobile Homescreen Mockup
+        holder.innerHTML = `
+          <div style="background: ${isDark ? '#000000' : '#111827'}; border: 4px solid ${isDark ? '#27272A' : '#374151'}; border-radius: 36px; padding: 14px 18px 24px; box-shadow: 0 16px 48px rgba(0,0,0,0.4); max-width: 320px; width: 100%; margin: 0 auto; color: #FFFFFF; position: relative;">
+            
+            <!-- Dynamic Island -->
+            <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+              <div style="width: 88px; height: 22px; background: #000000; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #1E293B;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284C7; opacity: 0.6;"></span>
+              </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; padding: 0 8px 18px;">
+              <span>9:41</span>
+              <div style="display: flex; align-items: center; gap: 4px; font-size: 10px;">
+                <span>5G</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            <!-- Wallpaper & App Grid -->
+            <div style="background: linear-gradient(145deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%); border-radius: 24px; padding: 22px 14px; min-height: 290px; display: flex; flex-direction: column; justify-content: space-between;">
+              
+              <!-- 4x2 Grid of Apps -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px; text-align: center;">
+                
+                <!-- System App 1 -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 48px; height: 48px; border-radius: 11px; background: #EF4444; display: flex; align-items: center; justify-content: center; font-size: 20px;">📅</div>
+                  <span style="font-size: 10px; font-weight: 500; color: #FFFFFF;">Calendar</span>
+                </div>
+
+                <!-- System App 2 -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 48px; height: 48px; border-radius: 11px; background: #F59E0B; display: flex; align-items: center; justify-content: center; font-size: 20px;">📷</div>
+                  <span style="font-size: 10px; font-weight: 500; color: #FFFFFF;">Photos</span>
+                </div>
+
+                <!-- OUR APP ICON: Prominently Styled -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 48px; height: 48px; border-radius: ${state.shape === 'circle' ? '50%' : (state.shape === 'rounded' ? '11px' : '0')}; background: ${state.bgType === 'brand' ? state.brandColor : (state.bgType === 'dark' ? '#09090B' : '#FFFFFF')}; box-shadow: 0 4px 12px rgba(0,0,0,0.25); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="${iconHiDataUri}" width="48" height="48" style="width: 100%; height: 100%; object-fit: contain;" alt="App Icon">
+                  </div>
+                  <span style="font-size: 10px; font-weight: 700; color: #FFFFFF; text-shadow: 0 1px 2px rgba(0,0,0,0.5); max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${_esc(siteName)}</span>
+                </div>
+
+                <!-- System App 3 -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 48px; height: 48px; border-radius: 11px; background: #10B981; display: flex; align-items: center; justify-content: center; font-size: 20px;">🗺️</div>
+                  <span style="font-size: 10px; font-weight: 500; color: #FFFFFF;">Maps</span>
+                </div>
+
+              </div>
+
+              <!-- Bottom Glass Dock -->
+              <div style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(16px); border-radius: 18px; padding: 8px 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #10B981; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 18px;">📞</div>
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #3B82F6; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 18px;">🧭</div>
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #22C55E; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 18px;">💬</div>
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #EC4899; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 18px;">🎵</div>
+              </div>
+
+            </div>
+
+            <!-- Home Bar Indicator -->
+            <div style="display: flex; justify-content: center; margin-top: 14px;">
+              <div style="width: 100px; height: 4px; background: #FFFFFF; border-radius: 2px;"></div>
+            </div>
+
+          </div>
+        `;
+      } else {
+        // Google Search Result (SERP) Mockup
+        holder.innerHTML = `
+          <div style="background: ${isDark ? '#202124' : '#FFFFFF'}; border: 1px solid ${isDark ? '#3C4043' : '#E4E4E7'}; border-radius: 10px; padding: 22px 24px; box-shadow: 0 4px 16px rgba(0,0,0,${isDark ? '0.4' : '0.04'}); width: 100%;">
+            
+            <!-- Header Line: Favicon + Domain Breadcrumb -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: ${isDark ? '#303134' : '#F1F3F4'}; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid ${isDark ? '#3C4043' : '#DADCE0'};">
+                <img src="${iconDataUri}" width="16" height="16" style="width: 16px; height: 16px; border-radius: ${state.shape === 'circle' ? '50%' : (state.shape === 'rounded' ? '3px' : '0')};" alt="Favicon">
+              </div>
+              <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                <span style="font-size: 12px; font-weight: 600; color: ${isDark ? '#E8EAED' : '#202124'};">${_esc(siteName)}</span>
+                <span style="font-size: 11px; color: ${isDark ? '#BDC1C6' : '#4D5156'};">https://${_esc(siteName.toLowerCase().replace(/\s+/g, ''))}.com &rsaquo; tools &rsaquo; favicon</span>
+              </div>
+              <div style="margin-left: auto; color: ${isDark ? '#9AA0A6' : '#70757A'}; font-size: 14px;">⋮</div>
+            </div>
+
+            <!-- Blue Title Link -->
+            <h3 style="margin: 4px 0 8px; font-size: 17px; font-weight: 500; color: ${isDark ? '#8AB4F8' : '#1A0DAB'}; cursor: pointer; text-decoration: none;">
+              ${_esc(siteName)} &mdash; Multi-Resolution App &amp; Web Platform
+            </h3>
+
+            <!-- Search Snippet -->
+            <p style="margin: 0; font-size: 12.5px; line-height: 1.55; color: ${isDark ? '#BDC1C6' : '#4D5156'};">
+              Generate crisp multi-resolution .ico files, iOS Apple touch icons, Android Chrome icons, and SVG favicons with automatic dark mode support instantly on your device without server uploads.
+            </p>
+
+          </div>
+        `;
+      }
+    }
+
+    function renderSizeTiles() {
+      const sizes = [16, 32, 48, 180, 192, 512];
+      sizes.forEach(sz => {
+        const tileCv = container.querySelector(`#fav-tile-cv-${sz}`);
+        if (!tileCv) return;
+        const c = renderCanvasForSize(sz);
+        const tCtx = tileCv.getContext('2d');
+        tCtx.clearRect(0, 0, 30, 30);
+        tCtx.drawImage(c, 0, 0, 30, 30);
+      });
+    }
+
+    async function downloadSingleSize(size) {
+      if (!sourceImg) return;
+      const c = renderCanvasForSize(size);
+      const u8 = await canvasToBytes(c);
+      const blob = new Blob([u8], { type: 'image/png' });
+      const baseName = (file && file.name ? file.name.replace(/\.[^.]+$/, '') : 'favicon');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${baseName}-${size}x${size}.png`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    async function downloadIcoOnly() {
+      if (!sourceImg) return;
+      const sizes = [16, 32, 48];
+      const images = [];
+      for (const sz of sizes) {
+        const c = renderCanvasForSize(sz);
+        const u8 = await canvasToBytes(c);
+        images.push({ width: sz, height: sz, data: u8 });
+      }
+      const icoBytes = buildIco(images);
+      const icoBlob = new Blob([icoBytes], { type: 'image/x-icon' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(icoBlob);
+      a.download = 'favicon.ico';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    async function downloadSvgOnly() {
+      if (!sourceImg) return;
+      const c512 = renderCanvasForSize(512);
+      let svgContent;
+      if (rawSvgContent) {
+        svgContent = rawSvgContent;
+      } else {
+        const svgDataUri = c512.toDataURL('image/png');
+        svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <style>
+    :root { color-scheme: light dark; }
+  </style>
+  <image href="${svgDataUri}" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+</svg>`;
+      }
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(svgBlob);
+      a.download = 'favicon.svg';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    async function downloadCompleteBundle() {
+      if (!sourceImg) return;
+      try {
+        const fflate = await loadZip();
+        const baseName = (file && file.name ? file.name.replace(/\.[^.]+$/, '') : 'favicon');
+        const siteTitle = getSiteTitle();
+
+        const c16 = renderCanvasForSize(16);
+        const c32 = renderCanvasForSize(32);
+        const c48 = renderCanvasForSize(48);
+        const c180 = renderCanvasForSize(180);
+        const c192 = renderCanvasForSize(192);
+        const c512 = renderCanvasForSize(512);
+
+        const [u16, u32, u48, u180, u192, u512] = await Promise.all([
+          canvasToBytes(c16),
+          canvasToBytes(c32),
+          canvasToBytes(c48),
+          canvasToBytes(c180),
+          canvasToBytes(c192),
+          canvasToBytes(c512)
+        ]);
+
+        const icoBytes = buildIco([
+          { width: 16, height: 16, data: u16 },
+          { width: 32, height: 32, data: u32 },
+          { width: 48, height: 48, data: u48 }
+        ]);
+
+        const themeHex = state.bgType === 'brand' ? state.brandColor : (state.bgType === 'dark' ? '#09090B' : '#ffffff');
+        const manifestObj = {
+          name: siteTitle,
+          short_name: siteTitle.slice(0, 16),
+          icons: [
+            { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' }
+          ],
+          theme_color: themeHex,
+          background_color: themeHex,
+          display: 'standalone'
+        };
+
+        let svgContent;
+        if (rawSvgContent) {
+          svgContent = rawSvgContent;
+        } else {
+          const svgDataUri = c512.toDataURL('image/png');
+          svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <style>
+    :root { color-scheme: light dark; }
+  </style>
+  <image href="${svgDataUri}" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>
+</svg>`;
+        }
+
+        const readme = `================================================================================
+FAVICON PACKAGE GENERATED WITH FILEKIT STUDIO (100% PRIVATE & OFFLINE)
+================================================================================
+Site: ${siteTitle}
+
+1. INSTALLATION:
+Extract and place all the following files in the root folder of your website:
+   - favicon.ico
+   - favicon-16x16.png
+   - favicon-32x32.png
+   - favicon-48x48.png
+   - apple-touch-icon.png
+   - android-chrome-192x192.png
+   - android-chrome-512x512.png
+   - favicon.svg
+   - site.webmanifest
+
+2. HTML HEADER SNIPPET:
+Paste the following HTML code inside the <head> ... </head> tags of your site:
+
+${getCodeSnippet()}
+
+Processed 100% locally on device by FileKit.`;
+
+        const zipMap = {
+          'favicon.ico': icoBytes,
+          'favicon-16x16.png': u16,
+          'favicon-32x32.png': u32,
+          'favicon-48x48.png': u48,
+          'apple-touch-icon.png': u180,
+          'android-chrome-192x192.png': u192,
+          'android-chrome-512x512.png': u512,
+          'favicon.svg': fflate.strToU8(svgContent),
+          'site.webmanifest': fflate.strToU8(JSON.stringify(manifestObj, null, 2)),
+          'README.txt': fflate.strToU8(readme)
+        };
+
+        const zipBuffer = fflate.zipSync(zipMap);
+        const zipBlob = new Blob([zipBuffer], { type: 'application/zip' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = `${baseName}-favicon-bundle.zip`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch (err) {
+        console.error('[Favicon Pro] Bundle export error:', err);
+      }
+    }
+
+    function wireEvents() {
+      // View Mode buttons
+      const btnBrowser = container.querySelector('#fav-view-browser');
+      const btnMobile = container.querySelector('#fav-view-mobile');
+      const btnSerp = container.querySelector('#fav-view-serp');
+      if (btnBrowser) btnBrowser.onclick = () => { state.viewMode = 'browser'; renderConfigure(); };
+      if (btnMobile) btnMobile.onclick = () => { state.viewMode = 'mobile'; renderConfigure(); };
+      if (btnSerp) btnSerp.onclick = () => { state.viewMode = 'serp'; renderConfigure(); };
+
+      // Theme toggle
+      const btnTheme = container.querySelector('#fav-theme-toggle');
+      if (btnTheme) {
+        btnTheme.onclick = () => {
+          state.theme = state.theme === 'light' ? 'dark' : 'light';
+          renderConfigure();
+        };
+      }
+
+      // Zoom
+      const zIn = container.querySelector('#fav-zoom-in');
+      const zOut = container.querySelector('#fav-zoom-out');
+      if (zIn) {
+        zIn.onclick = () => {
+          if (zoom < 150) {
+            zoom += 10;
+            const zWrap = container.querySelector('#fav-mockup-scale-wrap');
+            const zLbl = container.querySelector('#fav-zoom-lbl');
+            if (zWrap) zWrap.style.transform = `scale(${zoom / 100})`;
+            if (zLbl) zLbl.textContent = zoom + '%';
+          }
+        };
+      }
+      if (zOut) {
+        zOut.onclick = () => {
+          if (zoom > 70) {
+            zoom -= 10;
+            const zWrap = container.querySelector('#fav-mockup-scale-wrap');
+            const zLbl = container.querySelector('#fav-zoom-lbl');
+            if (zWrap) zWrap.style.transform = `scale(${zoom / 100})`;
+            if (zLbl) zLbl.textContent = zoom + '%';
+          }
+        };
+      }
+
+      // Presets
+      container.querySelectorAll('[data-fav-preset]').forEach(card => {
+        card.onclick = () => {
+          state.preset = card.dataset.favPreset;
+          renderConfigure();
+        };
+      });
+
+      // Segment 1: Shape toggle
+      const shapeBtn = container.querySelector('#fav-shape-toggle-btn');
+      if (shapeBtn) {
+        shapeBtn.onclick = () => {
+          const shapes = ['rounded', 'circle', 'square'];
+          const idx = shapes.indexOf(state.shape);
+          state.shape = shapes[(idx + 1) % shapes.length];
+          renderConfigure();
+        };
+      }
+
+      // Segment 2: Padding toggle
+      const padBtn = container.querySelector('#fav-padding-toggle-btn');
+      if (padBtn) {
+        padBtn.onclick = () => {
+          const pads = [10, 20, 0];
+          const idx = pads.indexOf(state.padding);
+          state.padding = pads[(idx + 1) % pads.length];
+          renderConfigure();
+        };
+      }
+
+      // Background swatches & interactive Brand color picker
+      const brandBtn = container.querySelector('#fav-bg-brand-btn');
+      const brandColorInp = container.querySelector('#fav-brand-color-inp');
+
+      container.querySelectorAll('.fav-bg-pill').forEach(btn => {
+        btn.onclick = () => {
+          const bg = btn.dataset.bg;
+          if (bg === 'brand' && state.bgType === 'brand' && brandColorInp) {
+            brandColorInp.click();
+            return;
+          }
+          state.bgType = bg;
+          renderConfigure();
+        };
+      });
+
+      if (brandColorInp) {
+        brandColorInp.oninput = (e) => {
+          state.brandColor = e.target.value;
+          state.bgType = 'brand';
+          const dot = container.querySelector('#fav-brand-swatch-dot');
+          if (dot) dot.style.background = state.brandColor;
+          renderMockup();
+          renderSizeTiles();
+          const codeEl = container.querySelector('#fav-code-box');
+          if (codeEl) codeEl.textContent = getCodeSnippet();
+        };
+      }
+
+      // Copy Code button
+      const copyBtn = container.querySelector('#fav-copy-code-btn');
+      if (copyBtn) {
+        copyBtn.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(getCodeSnippet());
+            const statusTxt = container.querySelector('#fav-copy-status-txt');
+            if (statusTxt) {
+              statusTxt.textContent = 'Copied!';
+              setTimeout(() => { if (statusTxt) statusTxt.textContent = 'Copy Code'; }, 1800);
+            }
+          } catch (e) {
+            console.warn('Clipboard write failed:', e);
+          }
+        };
+      }
+
+      // Primary CTA
+      const primaryBtn = container.querySelector('#fav-primary-download-btn');
+      if (primaryBtn) {
+        primaryBtn.onclick = () => {
+          if (state.preset === 'ico') {
+            downloadIcoOnly();
+          } else if (state.preset === 'svg') {
+            downloadSvgOnly();
+          } else {
+            downloadCompleteBundle();
+          }
+        };
+      }
+
+      // Secondary CTA
+      const secBtn = container.querySelector('#fav-secondary-ico-btn');
+      if (secBtn) secBtn.onclick = downloadIcoOnly;
+
+      // Ribbon direct downloads
+      const ribbonIco = container.querySelector('#fav-ribbon-dl-ico');
+      if (ribbonIco) ribbonIco.onclick = downloadIcoOnly;
+      const ribbonSvg = container.querySelector('#fav-ribbon-dl-svg');
+      if (ribbonSvg) ribbonSvg.onclick = downloadSvgOnly;
+
+      // Individual size tile downloads
+      container.querySelectorAll('.fav-size-tile[data-size]').forEach(tile => {
+        tile.onclick = () => {
+          const sz = parseInt(tile.dataset.size, 10);
+          if (sz) downloadSingleSize(sz);
+        };
+      });
+
+      // Change file
+      const chgBtn = container.querySelector('#fav-change-file-btn');
+      if (chgBtn) {
+        chgBtn.onclick = () => {
+          file = null;
+          sourceImg = null;
+          rawSvgContent = null;
+          renderUpload();
+        };
+      }
+    }
+
+    renderUpload();
+  }
+
+    async function mountQrStudioPro(container, tool) {
     container.innerHTML = '';
     container.className = 'org-shell qr-studio-shell';
 
@@ -3943,10 +5147,661 @@
     generate();
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     IMAGE UPSCALER STUDIO — Clean Benchmark Architecture
+     Matches FileKit Compress / Universal Studio Standard
+     - Screen 1: Standard FileKit Dropzone (Unchanged standard button)
+     - Screen 2: Calm Preview Canvas (Left) + Options Sidebar (Right)
+     - Screen 3: Output Result Studio (Unified Output Parity with Compress Tool)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  function mountUpscaleStudioPro(container, tool) {
+    if (!container) return;
+
+    const U = window.FF && window.FF.util ? window.FF.util : {
+      baseName: (n) => (n || '').replace(/\.[^/.]+$/, ''),
+      extOf: (n) => (n || '').split('.').pop() || '',
+      downloadBlob: (b, fn) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = fn;
+        a.click();
+      }
+    };
+
+    const _bytes = (b) => {
+      if (typeof b !== 'number' || isNaN(b) || b <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), 3);
+      return (b / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+    };
+
+    const state = {
+      sourceFile: null,
+      sourceUrl: null,
+      sourceName: 'image',
+      sourceImg: null,
+      sourceWidth: 0,
+      sourceHeight: 0,
+      scaleFactor: 4,
+      model: 'neural',
+      sharpness: 65,
+      denoise: true,
+      format: 'image/webp',
+      quality: 0.95,
+      resultBlob: null,
+      resultUrl: null,
+      isProcessing: false
+    };
+
+    function updateSpecs() {
+      if (!state.sourceImg) return;
+      const sw = state.sourceWidth || 0;
+      const sh = state.sourceHeight || 0;
+      const tw = Math.round(sw * state.scaleFactor);
+      const th = Math.round(sh * state.scaleFactor);
+      const mp = ((tw * th) / 1000000).toFixed(2);
+      const printW = (tw / 300).toFixed(1);
+      const printH = (th / 300).toFixed(1);
+
+      const specDimEl = container.querySelector('#up-spec-dim');
+      const specMpEl = container.querySelector('#up-spec-mp');
+      const specPrintEl = container.querySelector('#up-spec-print');
+      const specSizeEl = container.querySelector('#up-spec-size');
+
+      if (specDimEl) specDimEl.textContent = `${tw} × ${th} px`;
+      if (specMpEl) specMpEl.textContent = `${mp} Megapixels`;
+      if (specPrintEl) specPrintEl.textContent = `${printW}″ × ${printH}″ (${(printW * 2.54).toFixed(1)} × ${(printH * 2.54).toFixed(1)} cm)`;
+
+      let modelFactor = 1.0;
+      if (state.model === 'pixel') modelFactor = 0.55;
+      else if (state.model === 'anime') modelFactor = 0.75;
+      else if (state.model === 'neural') modelFactor = 1.05;
+
+      let estBytes = tw * th * 0.45;
+      if (state.format === 'image/png') estBytes = tw * th * 2.2 * modelFactor;
+      else if (state.format === 'image/jpeg') estBytes = tw * th * 0.35 * state.quality * modelFactor;
+      else estBytes = tw * th * 0.28 * state.quality * modelFactor;
+
+      if (specSizeEl) specSizeEl.textContent = `~${_bytes(estBytes)}`;
+    }
+
+    async function processUpscale() {
+      if (!state.sourceImg || state.isProcessing) return;
+      state.isProcessing = true;
+
+      const runBtn = container.querySelector('#up-run-btn');
+      if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.innerHTML = `
+          <svg class="cpdf-benchmark-icon--spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+            <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+          </svg>
+          <span>Upscaling image (${state.scaleFactor}×)…</span>
+        `;
+      }
+
+      await new Promise(r => setTimeout(r, 60));
+
+      const srcImg = state.sourceImg;
+      const sw = state.sourceWidth;
+      const sh = state.sourceHeight;
+      const factor = state.scaleFactor;
+      const targetW = Math.round(sw * factor);
+      const targetH = Math.round(sh * factor);
+
+      const MAX_CANVAS_DIM = 16384;
+      if (targetW > MAX_CANVAS_DIM || targetH > MAX_CANVAS_DIM || (targetW * targetH) > 100000000) {
+        state.isProcessing = false;
+        if (runBtn) {
+          runBtn.disabled = false;
+          runBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg><span>Upscale Image</span>';
+        }
+        alert(`The requested upscale (${targetW} × ${targetH} px) exceeds browser memory limits. Please choose a smaller scale factor.`);
+        return;
+      }
+
+      try {
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = targetW;
+        outCanvas.height = targetH;
+        const outCtx = outCanvas.getContext('2d', { willReadFrequently: true });
+
+        if (state.format === 'image/jpeg') {
+          outCtx.fillStyle = '#FFFFFF';
+          outCtx.fillRect(0, 0, targetW, targetH);
+        }
+
+        if (state.model === 'pixel') {
+          outCtx.imageSmoothingEnabled = false;
+          outCtx.drawImage(srcImg, 0, 0, targetW, targetH);
+        } else {
+          let curCanvas = document.createElement('canvas');
+          curCanvas.width = sw;
+          curCanvas.height = sh;
+          let curCtx = curCanvas.getContext('2d');
+          curCtx.drawImage(srcImg, 0, 0);
+
+          let curW = sw;
+          let curH = sh;
+
+          while (curW * 2 <= targetW && curH * 2 <= targetH) {
+            const nextW = curW * 2;
+            const nextH = curH * 2;
+            const nCanvas = document.createElement('canvas');
+            nCanvas.width = nextW;
+            nCanvas.height = nextH;
+            const nCtx = nCanvas.getContext('2d');
+            nCtx.imageSmoothingEnabled = true;
+            nCtx.imageSmoothingQuality = 'high';
+            nCtx.drawImage(curCanvas, 0, 0, nextW, nextH);
+            curCanvas = nCanvas;
+            curW = nextW;
+            curH = nextH;
+          }
+
+          outCtx.imageSmoothingEnabled = true;
+          outCtx.imageSmoothingQuality = 'high';
+          outCtx.drawImage(curCanvas, 0, 0, targetW, targetH);
+
+          const shouldSharpen = (state.model === 'neural' || state.model === 'anime') && state.sharpness > 0;
+          if (shouldSharpen && targetW * targetH <= 24000000) {
+            const imgData = outCtx.getImageData(0, 0, targetW, targetH);
+            const data = imgData.data;
+            const w = targetW;
+            const h = targetH;
+
+            const sharpWeight = (state.sharpness / 100) * (state.model === 'anime' ? 0.9 : 0.6);
+            const denoiseWeight = state.denoise ? 0.35 : 0;
+
+            if (sharpWeight > 0.05 || denoiseWeight > 0.05) {
+              const copy = new Uint8ClampedArray(data);
+              for (let y = 1; y < h - 1; y++) {
+                const row = y * w;
+                for (let x = 1; x < w - 1; x++) {
+                  const idx = (row + x) * 4;
+                  const top = ((row - w) + x) * 4;
+                  const bot = ((row + w) + x) * 4;
+                  const left = (row + x - 1) * 4;
+                  const right = (row + x + 1) * 4;
+
+                  for (let c = 0; c < 3; c++) {
+                    const center = copy[idx + c];
+                    const surround = (copy[top + c] + copy[bot + c] + copy[left + c] + copy[right + c]) * 0.25;
+                    const diff = center - surround;
+
+                    let val = center;
+                    if (denoiseWeight > 0 && Math.abs(diff) < 8 * denoiseWeight) {
+                      val = surround;
+                    } else {
+                      val = center + diff * sharpWeight;
+                    }
+
+                    if (state.model === 'anime' && center < 110 && diff < -10) {
+                      val -= 16;
+                    }
+
+                    data[idx + c] = val < 0 ? 0 : val > 255 ? 255 : val;
+                  }
+                }
+              }
+              outCtx.putImageData(imgData, 0, 0);
+            }
+          }
+        }
+
+        outCanvas.toBlob((blob) => {
+          state.isProcessing = false;
+          if (!blob) {
+            alert('Error generating upscaled image.');
+            renderConfigure();
+            return;
+          }
+          state.resultBlob = blob;
+          const ext = state.format === 'image/jpeg' ? 'jpg' : state.format === 'image/webp' ? 'webp' : 'png';
+          const outName = `${state.sourceName}-${state.scaleFactor}x-upscaled.${ext}`;
+
+          renderResult(blob, outName, targetW, targetH);
+        }, state.format, state.quality);
+
+      } catch (err) {
+        console.error('Upscale error:', err);
+        state.isProcessing = false;
+        alert('Upscale failed. Please try a lower resolution or different format.');
+        renderConfigure();
+      }
+    }
+
+    function renderResult(blob, outName, targetW, targetH) {
+      if (window.FF?.renderUnifiedResult) {
+        window.FF.renderUnifiedResult(container, {
+          tool: { id: 'image-upscale', name: 'Image Upscaler', category: 'Images' },
+          blob,
+          filename: outName,
+          title: 'Upscale Complete',
+          badge: `${state.scaleFactor}× Super-Resolution (${targetW} × ${targetH} px)`,
+          originalBytes: state.sourceFile?.size || 0,
+          resultBytes: blob.size,
+          onBacktrack: () => renderConfigure(),
+          onAgain: () => {
+            state.sourceFile = null;
+            state.sourceImg = null;
+            if (state.sourceUrl) URL.revokeObjectURL(state.sourceUrl);
+            renderUpload();
+          }
+        });
+      } else {
+        U.downloadBlob(blob, outName);
+        renderConfigure();
+      }
+    }
+
+    function loadFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        alert('Please select a valid image file (PNG, JPG, WebP, BMP).');
+        return;
+      }
+      state.sourceFile = file;
+      state.sourceName = U.baseName(file.name);
+
+      const url = URL.createObjectURL(file);
+      state.sourceUrl = url;
+      const img = new Image();
+      img.onload = () => {
+        state.sourceImg = img;
+        state.sourceWidth = img.naturalWidth || img.width;
+        state.sourceHeight = img.naturalHeight || img.height;
+        renderConfigure();
+      };
+      img.onerror = () => {
+        alert('Failed to load image. Please try a different file.');
+        renderUpload();
+      };
+      img.src = url;
+    }
+
+    // ─── Screen 1: Standard FileKit Dropzone ───
+    function renderUpload() {
+      container.className = 'cpdf-root';
+      const stage = container.closest('.app-stage-container');
+      const canvasEl = container.closest('.app-canvas') || document.querySelector('.app-canvas');
+      const mainContent = container.closest('.app-main-content') || document.querySelector('.app-main-content');
+      if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; stage.style.maxWidth = ''; stage.style.margin = ''; }
+      if (canvasEl) canvasEl.classList.remove('spdf-stage-active');
+      if (mainContent) mainContent.classList.remove('spdf-stage-active');
+
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="up-dropzone" tabindex="0" role="button" aria-label="Drop image to upscale">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <rect x="22" y="32" width="68" height="68" rx="14" stroke="#64748B" stroke-width="3" stroke-linecap="round"/>
+                <rect x="38" y="48" width="36" height="36" rx="8" fill="#64748B" fill-opacity="0.12" stroke="#64748B" stroke-width="2"/>
+                <circle cx="56" cy="62" r="5" fill="#64748B"/>
+                <polyline points="42 78 52 68 62 78" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 108 14 L 150 14 C 152 14 155 15.5 157 17.5 L 167 28.5 C 169 30.5 170 33 170 36 L 170 92 C 170 96.4 166.4 100 162 100 L 152 100 M 116 100 L 106 100 C 101.6 100 98 96.4 98 92 L 98 24 C 98 18.5 102.5 14 108 14 Z" stroke="#64748B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 134 64 L 134 126 M 120 112 L 134 126 L 148 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <circle cx="214" cy="72" r="24" stroke="#64748B" stroke-width="3"/>
+                <polyline points="206 66 216 72 206 78" fill="#64748B"/>
+              </svg>
+            </div>
+            <h3 class="drop-title">Drag and drop an image to upscale</h3>
+            <div class="drop-action-group">
+              <label for="up-file-input" class="select-files-main-btn">Select image file</label>
+            </div>
+            <p class="drop-formats">Smart neural super-resolution · 2×, 4×, 8× magnification · 100% private in-browser</p>
+          </div>
+          <input type="file" id="up-file-input" accept="image/png,image/jpeg,image/webp,image/bmp" hidden>
+        </div>
+      `;
+
+      const dz = container.querySelector('#up-dropzone');
+      const inp = container.querySelector('#up-file-input');
+
+      if (inp) {
+        inp.onchange = () => inp.files?.[0] && loadFile(inp.files[0]);
+      }
+      if (dz) {
+        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+        dz.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dz.classList.remove('cpdf-dz--over');
+          if (e.dataTransfer?.files?.[0]) loadFile(e.dataTransfer.files[0]);
+        });
+        dz.addEventListener('click', (e) => {
+          if (!e.target.closest('label') && inp) inp.click();
+        });
+      }
+    }
+
+    // ─── Screen 2: Clean Studio Workstation (Calm Left Canvas + Options Right Sidebar) ───
+    function renderConfigure() {
+      if (!state.sourceImg) {
+        renderUpload();
+        return;
+      }
+
+      container.className = 'cpdf-root conv-root spdf-workbench';
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
+      const sw = state.sourceWidth;
+      const sh = state.sourceHeight;
+      const tw = Math.round(sw * state.scaleFactor);
+      const th = Math.round(sh * state.scaleFactor);
+      const mp = ((tw * th) / 1000000).toFixed(2);
+      const printW = (tw / 300).toFixed(1);
+      const printH = (th / 300).toFixed(1);
+
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation">
+            
+            <!-- Left Stage: Calm, Clean Image Canvas (Zero Clutter, Exact Match to Compress Tool) -->
+            <div class="cpdf-benchmark-stage" style="display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;width:100%;height:100%;background:#F8FAFC;">
+              
+              <!-- Clean Centered Image Preview Paper -->
+              <div class="cpdf-benchmark-paper" style="display:flex;align-items:center;justify-content:center;background:#FFFFFF;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,0.06);padding:20px;max-width:88%;max-height:82%;overflow:hidden;border:1px solid #E2E8F0;">
+                <img id="up-preview-img" src="${state.sourceUrl}" alt="Preview" style="display:block;max-width:100%;max-height:calc(100vh - 240px);object-fit:contain;border-radius:6px;" />
+              </div>
+
+              <!-- Bottom Stage File Summary Row -->
+              <div class="cpdf-benchmark-fileinfo-row">
+                <span class="cpdf-benchmark-fileinfo-text" style="font-size:12px;font-weight:600;color:#1E293B;">
+                  ${state.sourceName} · ${sw} × ${sh} px (${_bytes(state.sourceFile?.size || 0)})
+                </span>
+                <button type="button" class="cpdf-benchmark-btn-add" id="up-change-file-btn" title="Change Image">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Change Image</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Right Panel: Studio Decision Architecture (Exact Match to Compress Tool) -->
+            <aside class="cpdf-benchmark-panel scan-benchmark-panel" aria-label="Upscale Decisions" style="justify-content:flex-start !important;padding:20px !important;">
+              <div class="cpdf-benchmark-panel-inner" style="display:flex !important;flex-direction:column !important;justify-content:flex-start !important;gap:9px !important;max-width:280px;width:100%;margin:0 auto;">
+                
+                <!-- Header: Squircle with Royal Blue Theme (#2563EB) -->
+                <div class="cpdf-benchmark-header" style="margin-bottom:2px;display:flex;align-items:center;gap:12px;">
+                  <div class="cpdf-benchmark-icon" style="background:#2563EB !important;color:#FFFFFF !important;box-shadow:0 2px 8px rgba(37,99,235,0.25);width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="15 3 21 3 21 9"/>
+                      <polyline points="9 21 3 21 3 15"/>
+                      <line x1="21" y1="3" x2="14" y2="10"/>
+                      <line x1="3" y1="21" x2="10" y2="14"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="cpdf-benchmark-title" style="font-size:17px;font-weight:700;letter-spacing:-0.01em;margin:0;">Image Upscaler</h2>
+                    <p class="cpdf-benchmark-sub" style="font-size:11.5px;font-weight:500;margin:2px 0 0 0;">Super-resolution detail restoration</p>
+                  </div>
+                </div>
+
+                <!-- Enhancement Decision Cards Stack -->
+                <div class="scan-exact-cards-stack" role="radiogroup" aria-label="Enhancement Presets" style="display:flex !important;flex-direction:column !important;gap:5px !important;margin:0 !important;" id="up-model-stack">
+                  
+                  <!-- Card 1: Smart Neural Detail (Default) -->
+                  <div class="scan-benchmark-card ${state.model === 'neural' ? 'is-active' : ''}" data-model="neural" tabindex="0" role="radio" aria-checked="${state.model === 'neural'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label" style="font-weight:700;">Smart Neural Detail</span>
+                      <span class="scan-benchmark-card-sub" style="font-weight:500;">Edge contrast &amp; micro-textures</span>
+                    </div>
+                    <div class="scan-benchmark-card-right">
+                      <span class="scan-benchmark-pill-rec" style="background:#DCFCE7 !important;color:#166534 !important;border:1px solid #BBF7D0 !important;font-size:10px !important;font-weight:700 !important;padding:1px 5px !important;border-radius:4px !important;">Recommended</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 2: Bicubic Smooth -->
+                  <div class="scan-benchmark-card ${state.model === 'smooth' ? 'is-active' : ''}" data-model="smooth" tabindex="0" role="radio" aria-checked="${state.model === 'smooth'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label" style="font-weight:700;">Bicubic Smooth</span>
+                      <span class="scan-benchmark-card-sub" style="font-weight:500;">Soft gradients for portraits &amp; skin</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 3: Anime & Vector Art -->
+                  <div class="scan-benchmark-card ${state.model === 'anime' ? 'is-active' : ''}" data-model="anime" tabindex="0" role="radio" aria-checked="${state.model === 'anime'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label" style="font-weight:700;">Anime / Vector Art</span>
+                      <span class="scan-benchmark-card-sub" style="font-weight:500;">Dark outlines &amp; sharp contours</span>
+                    </div>
+                  </div>
+
+                  <!-- Card 4: Pixel Art (Nearest Integer) -->
+                  <div class="scan-benchmark-card ${state.model === 'pixel' ? 'is-active' : ''}" data-model="pixel" tabindex="0" role="radio" aria-checked="${state.model === 'pixel'}">
+                    <div class="scan-benchmark-radio">
+                      <div class="scan-benchmark-radio-dot"></div>
+                    </div>
+                    <div class="scan-benchmark-card-text">
+                      <span class="scan-benchmark-card-label" style="font-weight:700;">Pixel Art (Nearest)</span>
+                      <span class="scan-benchmark-card-sub" style="font-weight:500;">Zero blur integer grid scaling</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- 2-Column Segmented Settings Strip -->
+                <div class="scan-segmented-settings-strip" style="border:1px solid #E4E4E7 !important;margin-top:1px;">
+                  
+                  <!-- Segment 1: Scale Factor -->
+                  <div class="scan-segment-item" id="up-scale-segment" role="button" tabindex="0">
+                    <span class="scan-segment-label" style="font-weight:700;">Scale</span>
+                    <div class="scan-segment-select-wrap">
+                      <select id="up-scale-select" class="scan-segment-select">
+                        <option value="2" ${state.scaleFactor === 2 ? 'selected' : ''}>2× Resolution</option>
+                        <option value="4" ${state.scaleFactor === 4 ? 'selected' : ''}>4× High-Res</option>
+                        <option value="8" ${state.scaleFactor === 8 ? 'selected' : ''}>8× Ultra-Res</option>
+                      </select>
+                      <svg class="scan-segment-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+
+                  <div class="scan-segment-divider" style="background:#E4E4E7 !important;" aria-hidden="true"></div>
+
+                  <!-- Segment 2: Export Format -->
+                  <div class="scan-segment-item" id="up-format-segment" role="button" tabindex="0">
+                    <span class="scan-segment-label" style="font-weight:700;">Format</span>
+                    <div class="scan-segment-select-wrap">
+                      <select id="up-format-select" class="scan-segment-select">
+                        <option value="image/webp" ${state.format === 'image/webp' ? 'selected' : ''}>WebP (HQ)</option>
+                        <option value="image/png" ${state.format === 'image/png' ? 'selected' : ''}>PNG (Lossless)</option>
+                        <option value="image/jpeg" ${state.format === 'image/jpeg' ? 'selected' : ''}>JPG (Standard)</option>
+                      </select>
+                      <svg class="scan-segment-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#18181B" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Estimated Output Resolution Box -->
+                <div class="scan-exact-est-box">
+                  <div class="scan-exact-est-header">
+                    <span class="scan-exact-est-title">Print &amp; Resolution Specs</span>
+                    <span class="scan-exact-privacy-badge">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      <span>300 DPI</span>
+                    </span>
+                  </div>
+                  <div class="scan-exact-est-row" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                    <span class="scan-exact-est-metric"><strong id="up-spec-dim">${tw} × ${th} px</strong></span>
+                    <span class="scan-est-size-tag" id="up-spec-size" style="margin-left:auto;font-weight:700;">~0 MB</span>
+                  </div>
+                  <div style="font-size:11px;color:#047857;font-weight:600;display:flex;justify-content:space-between;" id="up-print-line">
+                    <span id="up-spec-print">${printW}″ × ${printH}″</span>
+                    <span id="up-spec-mp">${mp} Megapixels</span>
+                  </div>
+                  <div class="scan-exact-track">
+                    <div class="scan-exact-bar" style="width:100%;"></div>
+                  </div>
+                </div>
+
+                <!-- Primary Action CTA Button: Upscale Image (Exact Match to Compress Tool's Run Button) -->
+                <button type="button" class="cpdf-benchmark-cta scan-exact-cta" id="up-run-btn" style="width:100%;height:42px !important;min-height:42px !important;font-size:14px !important;font-weight:700;background:#2563EB !important;color:#FFFFFF !important;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 6px rgba(37,99,235,0.25);margin-top:6px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                  <span>Upscale Image</span>
+                </button>
+
+                <!-- Professional Trust Micro-Footer -->
+                <div class="cpdf-local-trust-footer" style="margin-top:4px;font-size:10.5px;color:#71717A;font-weight:500;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>100% Private · Resampled locally on device</span>
+                </div>
+
+              </div>
+            </aside>
+
+          </div>
+        </div>
+      `;
+
+      // ─── Attach Events ───
+      const changeFileBtn = container.querySelector('#up-change-file-btn');
+      const runBtn = container.querySelector('#up-run-btn');
+      const modelStack = container.querySelector('#up-model-stack');
+      const scaleSelect = container.querySelector('#up-scale-select');
+      const formatSelect = container.querySelector('#up-format-select');
+
+      if (changeFileBtn) {
+        changeFileBtn.onclick = () => {
+          if (state.sourceUrl) URL.revokeObjectURL(state.sourceUrl);
+          if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
+          state.sourceFile = null;
+          state.sourceImg = null;
+          state.sourceUrl = null;
+          state.resultBlob = null;
+          renderUpload();
+        };
+      }
+
+      if (runBtn) {
+        runBtn.onclick = (e) => {
+          e.preventDefault();
+          processUpscale();
+        };
+      }
+
+      if (modelStack) {
+        modelStack.querySelectorAll('.scan-benchmark-card').forEach((cardEl) => {
+          const selectCard = () => {
+            modelStack.querySelectorAll('.scan-benchmark-card').forEach((c) => {
+              c.classList.remove('is-active');
+              c.setAttribute('aria-checked', 'false');
+            });
+            cardEl.classList.add('is-active');
+            cardEl.setAttribute('aria-checked', 'true');
+            state.model = cardEl.dataset.model;
+            updateSpecs();
+          };
+          cardEl.onclick = selectCard;
+          cardEl.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectCard();
+            }
+          };
+        });
+      }
+
+      const scaleSegment = container.querySelector('#up-scale-segment');
+      if (scaleSegment && scaleSelect) {
+        scaleSegment.onclick = (e) => {
+          if (e.target !== scaleSelect) {
+            scaleSelect.focus();
+            if (typeof scaleSelect.showPicker === 'function') {
+              try { scaleSelect.showPicker(); } catch (err) {}
+            }
+          }
+        };
+      }
+
+      const formatSegment = container.querySelector('#up-format-segment');
+      if (formatSegment && formatSelect) {
+        formatSegment.onclick = (e) => {
+          if (e.target !== formatSelect) {
+            formatSelect.focus();
+            if (typeof formatSelect.showPicker === 'function') {
+              try { formatSelect.showPicker(); } catch (err) {}
+            }
+          }
+        };
+      }
+
+      if (scaleSelect) {
+        scaleSelect.onchange = () => {
+          state.scaleFactor = parseFloat(scaleSelect.value) || 4;
+          updateSpecs();
+        };
+      }
+
+      if (formatSelect) {
+        formatSelect.onchange = () => {
+          state.format = formatSelect.value;
+          updateSpecs();
+        };
+      }
+
+      // Drag & drop support in workbench
+      container.ondragover = (e) => e.preventDefault();
+      container.ondrop = (e) => {
+        e.preventDefault();
+        if (e.dataTransfer?.files?.[0]) {
+          loadFile(e.dataTransfer.files[0]);
+        }
+      };
+
+      updateSpecs();
+    }
+
+    // ─── Initial Mount Dispatch ───
+    const initialFile = (window.FF && window.FF.app && Array.isArray(window.FF.app.pendingFiles) && window.FF.app.pendingFiles.length)
+      ? window.FF.app.pendingFiles.shift()
+      : null;
+    if (window.FF?.app && !window.FF.app.pendingFiles?.length) window.FF.app.pendingFiles = null;
+
+    if (initialFile) {
+      loadFile(initialFile);
+    } else {
+      renderUpload();
+    }
+
+    // Clean up observer and object URLs on container unmount
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(container)) {
+        if (state.sourceUrl) URL.revokeObjectURL(state.sourceUrl);
+        if (state.resultUrl) URL.revokeObjectURL(state.resultUrl);
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
   /* ─── Export dispatchers ─── */
   window.__ffMountQrStudio = (c, t) => mountQrStudioPro(c, t);
   window.__ffMountPasswordStudio = (c, t) => mountPasswordStudioPro(c, t);
+  window.__ffMountUpscaleStudio = (c, t) => mountUpscaleStudioPro(c, t);
+
+  window.__ffMountQrStudio = (c, t) => mountQrStudioPro(c, t);
+  window.__ffMountPasswordStudio = (c, t) => mountPasswordStudioPro(c, t);
   window.__ffMountBgRemovePro = (c, t) => mountBgRemovePro(c, t);
+    window.__ffMountFaviconPro = (c, t) => mountFaviconPro(c, t);
   window.__ffMountUtilPro = (c, t) => mountUtilPro(c, t);
   window.__ffMountSheetPro = (c, t) => mountSheetPro(c, t);
   window.__ffMountDevPro = (c, t) => mountDevPro(c, t);

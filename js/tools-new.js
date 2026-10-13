@@ -2930,7 +2930,7 @@
       const title = U.baseName(file.name);
 
       const sheetTabs = wb.SheetNames.map((name, i) =>
-        `<button class="tab-btn ${i === 0 ? 'active' : ''}" onclick="showSheet(${i})">${esc(name)}</button>`
+        `<button class="tab-btn ${i === 0 ? 'active' : ''}" data-sheet-idx="${i}">${esc(name)}</button>`
       ).join('');
 
       const sheetTables = wb.SheetNames.map((name, idx) => {
@@ -2984,21 +2984,29 @@
 <div class="container">
   <div class="header">
     <h1>${esc(title)}</h1>
-    <input type="text" class="filter-input" placeholder="Filter rows…" oninput="filterTable(this.value)"/>
+    <input type="text" class="filter-input" placeholder="Filter rows…" id="filter-input"/>
   </div>
   <div class="tabs">${sheetTabs}</div>
   ${sheetTables}
 </div>
 <script>
-function showSheet(idx) {
-  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-  document.querySelectorAll('.sheet-pane').forEach((p, i) => p.classList.toggle('active', i === idx));
-}
-function filterTable(q) {
-  const query = q.toLowerCase();
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-sheet-idx]');
+  if(t) {
+    const idx = parseInt(t.getAttribute('data-sheet-idx'), 10);
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    document.querySelectorAll('.sheet-pane').forEach((p, i) => p.classList.toggle('active', i === idx));
+    const query = document.getElementById('filter-input').value.toLowerCase();
+    if(query) filterTable(query);
+  }
+});
+document.getElementById('filter-input').addEventListener('input', e => {
+  filterTable(e.target.value);
+});
+function filterTable(query) {
+  query = query.toLowerCase();
   document.querySelectorAll('.sheet-pane.active tbody tr').forEach(tr => {
-    const text = tr.innerText.toLowerCase();
-    tr.style.display = text.includes(query) ? '' : 'none';
+    tr.style.display = tr.innerText.toLowerCase().includes(query) ? '' : 'none';
   });
 }
 </script>
@@ -10348,7 +10356,6 @@ function filterTable(q) {
     }
     render();
     window.__ffScanStream = null;
-    window.__ffScanStreamStop = teardown;
 
     const teardown = () => {
       try { stopCam(); } catch {}
@@ -10356,7 +10363,9 @@ function filterTable(q) {
       window.removeEventListener('paste', handlePaste);
       window.removeEventListener('keydown', handleKeydown);
     };
-    container.addEventListener('ff-unmount', teardown);
+    window.__ffScanStreamStop = teardown;
+    container.__ffCleanup = teardown;
+    container.addEventListener('ff-unmount', teardown, { once: true });
     const obs = new MutationObserver(() => {
       if (!document.body.contains(container)) {
         try { teardown(); } catch {}
@@ -12851,6 +12860,25 @@ function filterTable(q) {
     } else {
       render();
     }
+
+    const _cleanupWf = () => {
+      if (stageEl) {
+        stageEl.classList.remove('wf-stage-active');
+        stageEl.style.cssText = '';
+      }
+      if (canvasEl) {
+        canvasEl.classList.remove('wf-canvas-fullbleed');
+        canvasEl.style.cssText = '';
+      }
+      if (wtvEl) {
+        wtvEl.style.cssText = '';
+      }
+      state.file = null;
+      state.resultBlob = null;
+      state.history = [];
+    };
+    container.__ffCleanup = _cleanupWf;
+    container.addEventListener('ff-unmount', _cleanupWf, { once: true });
   };
 
   /* ─── Registry entries for the custom workspaces (mounted via the premium
@@ -13065,6 +13093,7 @@ function filterTable(q) {
       const arrayBuf = await file.arrayBuffer();
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuf.slice(0));
+      try { audioCtx.close(); } catch (_) {}
       
       const aspect = inputs.aspect || '1:1';
       let width = 720, height = 720;
@@ -13852,23 +13881,22 @@ function filterTable(q) {
     }
   });
 
-  R({
+  window.FF.register({
     id: 'bg-remover',
     category: 'Images',
-    name: 'Background Remover',
-    description: 'Remove the background from a photo with an on-device AI model — nothing is ever uploaded.',
+    name: 'Remove Background',
+    description: 'Remove photo backgrounds automatically on-device with AI neural models. 100% private in-browser.',
     accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
-    fields: [
-      { key: 'size', label: 'Detail', type: 'select', default: '640', options: [{ label: 'Fast — 320px', value: '320' }, { label: 'Balanced — 640px', value: '640' }, { label: 'Best — 1024px', value: '1024' }] }
-    ],
-    async run({ file, inputs }) {
-      const core = window.__ffBgRemoveCore;
-      if (!core) throw new Error('The on-device AI engine is not loaded yet — open this tool in the app workspace first.');
-      const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Could not read the image.')); r.readAsDataURL(file); });
-      const out = await core(dataUrl, +inputs?.size || 640);
-      const blob = await new Promise((res, rej) => out.canvas.toBlob((b) => b ? res(b) : rej(new Error('Could not encode PNG.')), 'image/png'));
-      return { blob, filename: `${U.baseName(file.name)}-bg-removed.png`, mime: 'image/png', preview: 'image' };
-    }
+    run: customOnly,
+  });
+
+  window.FF.register({
+    id: 'remove-background',
+    category: 'Images',
+    name: 'Remove Background',
+    description: 'Remove photo backgrounds automatically on-device with AI neural models. 100% private in-browser.',
+    accepts: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
+    run: customOnly,
   });
 
 

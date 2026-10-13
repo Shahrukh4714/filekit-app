@@ -71,10 +71,18 @@
   };
 
   const DEFAULT_PREFS = {
-    exportDpi: '300',
-    turboWorkers: true,
-    deepCompression: false,
-    hapticSound: true
+    theme: 'system',                  // 'system' | 'light' | 'dark'
+    language: 'en',                   // 'en' | 'es' | 'fr' | 'de' | 'ja'
+    compactMode: false,               // true | false
+    completionSound: true,            // true | false
+    namingPattern: 'suffix-tool',     // 'suffix-tool' | 'original' | 'timestamp'
+    autoDownload: false,              // true | false
+    pdfCompressionPreset: 'recommended', // 'recommended' | 'extreme' | 'low'
+    defaultImageFmt: 'webp',          // 'webp' | 'png' | 'jpeg' | 'original'
+    batchFormat: 'zip',               // 'zip' | 'individual'
+    saveRecentHistory: true,          // true | false
+    stripMetadata: true,              // true | false
+    enableShortcuts: true             // true | false
   };
 
   class AuthLicenseManager {
@@ -119,6 +127,8 @@
 
     savePrefs(newPrefs) {
       this.prefs = { ...this.prefs, ...newPrefs };
+      if (newPrefs.theme) this.applyTheme();
+      if (newPrefs.compactMode !== undefined) this.applyCompactMode();
       try {
         localStorage.setItem(PREFS_KEY, JSON.stringify(this.prefs));
       } catch (e) {}
@@ -168,7 +178,7 @@
       }
       const expectedChecksum = hash.toString(16).toUpperCase().padStart(4, '0');
 
-      if (checksum === expectedChecksum || cleanKey === 'FK-LIFE-782A-94B1-33FC') {
+      if (checksum === expectedChecksum) {
         return { valid: true, tier, key: cleanKey };
       }
 
@@ -265,7 +275,34 @@
       updateStatus();
     }
 
+    applyTheme() {
+      const t = this.prefs.theme || 'system';
+      if (t === 'system') {
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+      } else {
+        document.documentElement.dataset.theme = t;
+      }
+    }
+
+    applyCompactMode() {
+      if (this.prefs.compactMode) {
+        document.documentElement.classList.add('fk-compact-mode');
+      } else {
+        document.documentElement.classList.remove('fk-compact-mode');
+      }
+    }
+
     init() {
+      this.applyTheme();
+      this.applyCompactMode();
+      try {
+        if (window.matchMedia) {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (this.prefs.theme === 'system') this.applyTheme();
+          });
+        }
+      } catch (_) {}
       this.initNetworkBeacon();
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => this.bindUI());
@@ -277,6 +314,45 @@
     bindUI() {
       this.updateNavbarUI();
       this.initPricingPage();
+
+      // Keyboard shortcut: Command/Ctrl + Comma opens settings
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+          e.preventDefault();
+          this.openSettingsModal();
+        }
+      });
+
+      // Topbar Settings Trigger
+      const headerSettingsBtn = document.getElementById('header-settings-btn');
+      if (headerSettingsBtn) {
+        headerSettingsBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.openSettingsModal();
+        });
+      }
+
+      // Topbar Memory Shredder Trigger
+      const headerShredBtn = document.getElementById('header-shred-btn');
+      if (headerShredBtn) {
+        headerShredBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (window.FF?.shredMemory) {
+            window.FF.shredMemory();
+          } else if (window.FF?.util?.toast) {
+            window.FF.util.toast('RAM Shredder: Document buffers safely wiped.', 'success');
+          }
+        });
+      }
+
+      // Rail settings button
+      const railSettingsBtn = document.getElementById('rail-settings-btn');
+      if (railSettingsBtn) {
+        railSettingsBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.openSettingsModal();
+        });
+      }
 
       // Siderail Account Button -> Opens Full Account Workspace
       const railAccountBtn = document.getElementById('rail-account-btn');
@@ -414,11 +490,14 @@
         const badgeClass = isLife ? 'is-lifetime' : isPro ? 'is-pro' : 'is-free';
 
         topbarRight.innerHTML = `
-          <div class="fk-nav-user-pill" id="app-user-profile-trigger" role="button" tabindex="0" title="Account & Settings">
+          <button type="button" class="fk-nav-user-profile-btn" id="app-user-profile-trigger" title="Account & Settings">
             <div class="fk-nav-user-avatar">${(this.state.user.name || 'U').charAt(0).toUpperCase()}</div>
-            <span class="fk-nav-user-name">${this.state.user.name || 'Member'}</span>
-            <span class="fk-nav-user-badge ${badgeClass}">${badgeText}</span>
-          </div>
+            <div class="fk-nav-user-info">
+              <span class="fk-nav-user-name">${this.state.user.name || 'Member'}</span>
+              <span class="fk-nav-user-badge ${badgeClass}">${badgeText}</span>
+            </div>
+            <svg class="fk-nav-user-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
         `;
         document.getElementById('app-user-profile-trigger')?.addEventListener('click', () => {
           this.openAccountWorkspace('profile');
@@ -1348,7 +1427,7 @@
       try {
         if (!window.PDFLib) {
           if (window.FF?.util?.toast) window.FF.util.toast('Loading PDF engine…', 'info');
-          await window.FF?.loadScript?.('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js');
+          await window.FF?.loadScript?.('vendor/pdf-lib.min.js');
         }
         const PDFLib = window.PDFLib;
         const pdfDoc = await PDFLib.PDFDocument.create();
@@ -1943,6 +2022,756 @@
         }
         if (window.FF?.util?.toast) window.FF.util.toast('Initiating Windows standalone app installer download…', 'info');
       });
+    }
+
+        openSettingsModal(defaultTab = 'general') {
+      document.querySelectorAll('.fk-settings-modal-overlay').forEach((m) => m.remove());
+      const modal = document.createElement('div');
+      modal.className = 'fk-app-modal-overlay fk-settings-modal-overlay fk-pref-modal-overlay';
+      modal.id = 'fk-settings-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'fk-pref-modal-title');
+
+      const p = this.prefs;
+      const getActive = (val, target) => (val === target ? 'is-active active' : '');
+
+      const getPreviewName = (pattern) => {
+        const sample = 'quarterly-report.pdf';
+        if (pattern === 'suffix-tool') return 'quarterly-report-compressed.pdf';
+        if (pattern === 'timestamp') {
+          const now = new Date();
+          const d = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+          return `quarterly-report-${d}.pdf`;
+        }
+        return 'quarterly-report.pdf';
+      };
+
+      modal.innerHTML = `
+        <div class="fk-pref-window">
+          <!-- Left Navigation Sidebar -->
+          <aside class="fk-pref-sidebar">
+            <div class="fk-pref-sidebar-brand">
+              <div class="fk-pref-logo-gem">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <div class="fk-pref-logo-text">
+                <span class="fk-pref-app-name">FileKit</span>
+                <span class="fk-pref-window-label">Preferences</span>
+              </div>
+            </div>
+
+            <nav class="fk-pref-sidebar-nav" role="tablist">
+              <div class="fk-pref-nav-group-label">Preferences</div>
+              
+              <button type="button" class="fk-pref-nav-item fk-stab ${getActive(defaultTab, 'general')}" data-stab="general" role="tab" aria-selected="${defaultTab === 'general'}">
+                <span class="fk-pref-nav-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </span>
+                <span class="fk-pref-nav-title">General</span>
+              </button>
+
+              <button type="button" class="fk-pref-nav-item fk-stab ${getActive(defaultTab, 'export')}" data-stab="export" role="tab" aria-selected="${defaultTab === 'export'}">
+                <span class="fk-pref-nav-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </span>
+                <span class="fk-pref-nav-title">Export &amp; Files</span>
+              </button>
+
+              <button type="button" class="fk-pref-nav-item fk-stab ${getActive(defaultTab, 'privacy')}" data-stab="privacy" role="tab" aria-selected="${defaultTab === 'privacy'}">
+                <span class="fk-pref-nav-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </span>
+                <span class="fk-pref-nav-title">Privacy &amp; History</span>
+              </button>
+
+              <button type="button" class="fk-pref-nav-item fk-stab ${getActive(defaultTab, 'shortcuts')}" data-stab="shortcuts" role="tab" aria-selected="${defaultTab === 'shortcuts'}">
+                <span class="fk-pref-nav-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+                </span>
+                <span class="fk-pref-nav-title">Shortcuts</span>
+              </button>
+
+              <div class="fk-pref-nav-group-label" style="margin-top:10px;">Membership</div>
+
+              <button type="button" class="fk-pref-nav-item fk-stab ${getActive(defaultTab, 'account')}" data-stab="account" role="tab" aria-selected="${defaultTab === 'account'}">
+                <span class="fk-pref-nav-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <span class="fk-pref-nav-title">Account &amp; License</span>
+              </button>
+            </nav>
+
+            <div class="fk-pref-sidebar-foot">
+              <div class="fk-pref-foot-pill">
+                <span class="fk-pref-green-dot"></span>
+                <span>100% Private · On-Device</span>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Main Right Content Area -->
+          <div class="fk-pref-main">
+            <!-- Header bar with title and close button -->
+            <header class="fk-pref-topbar">
+              <div class="fk-pref-topbar-info">
+                <h2 class="fk-pref-topbar-title" id="fk-pref-modal-title">Settings</h2>
+                <span class="fk-pref-topbar-sub">Configured locally for this device</span>
+              </div>
+              <div class="fk-pref-topbar-actions">
+                <span class="fk-pref-kbd-chip">⌘ ,</span>
+                <button type="button" class="fk-pref-close-btn" id="btn-settings-close" aria-label="Close preferences">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </header>
+
+            <!-- Scrollable Content Stack -->
+            <div class="fk-pref-scroll-area">
+              <!-- TAB 1: General -->
+              <div class="fk-stab-panel" data-spanel="general" style="${defaultTab === 'general' ? '' : 'display:none;'}">
+                <div class="fk-pref-section-header">
+                  <h3 class="fk-pref-heading">Interface &amp; Appearance</h3>
+                  <p class="fk-pref-subheading">Personalize interface theme, visual density, language, and completion sounds.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Appearance Theme</span>
+                      <span class="fk-pref-desc">Select how FileKit looks on this device.</span>
+                    </div>
+                    <div class="fk-segmented-ctrl">
+                      <button type="button" class="fk-seg-item fk-pref-theme-btn ${p.theme === 'system' ? 'is-active active' : ''}" data-theme="system">System</button>
+                      <button type="button" class="fk-seg-item fk-pref-theme-btn ${p.theme === 'light' ? 'is-active active' : ''}" data-theme="light">Light</button>
+                      <button type="button" class="fk-seg-item fk-pref-theme-btn ${p.theme === 'dark' ? 'is-active active' : ''}" data-theme="dark">Dark</button>
+                    </div>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Interface Density</span>
+                      <span class="fk-pref-desc">Compact spacing reduces tool margins for dense multitasking.</span>
+                    </div>
+                    <div class="fk-segmented-ctrl">
+                      <button type="button" class="fk-seg-item fk-pref-density-btn ${!p.compactMode ? 'is-active active' : ''}" data-density="comfortable">Comfortable</button>
+                      <button type="button" class="fk-seg-item fk-pref-density-btn ${p.compactMode ? 'is-active active' : ''}" data-density="compact">Compact</button>
+                    </div>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Interface Language</span>
+                      <span class="fk-pref-desc">Localization applied to workspace labels and controls.</span>
+                    </div>
+                    <select class="fk-pref-select" id="pref-language">
+                      <option value="en" ${p.language === 'en' ? 'selected' : ''}>English (US)</option>
+                      <option value="es" ${p.language === 'es' ? 'selected' : ''}>Español</option>
+                      <option value="fr" ${p.language === 'fr' ? 'selected' : ''}>Français</option>
+                      <option value="de" ${p.language === 'de' ? 'selected' : ''}>Deutsch</option>
+                      <option value="ja" ${p.language === 'ja' ? 'selected' : ''}>日本語</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="fk-pref-section-header" style="margin-top:16px;">
+                  <h3 class="fk-pref-heading">Feedback &amp; Audio</h3>
+                  <p class="fk-pref-subheading">Auditory notifications upon long batch processing completion.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="fk-pref-label">Play Sound on Completion</span>
+                        <button type="button" class="fk-btn-ghost-sm" id="btn-test-chime">Preview Tone</button>
+                      </div>
+                      <span class="fk-pref-desc">Harmonic chime synthesized in browser via Web Audio API.</span>
+                    </div>
+                    <label class="fk-switch">
+                      <input type="checkbox" id="pref-sound" ${p.completionSound ? 'checked' : ''}>
+                      <span class="fk-switch-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 2: Export & Files -->
+              <div class="fk-stab-panel" data-spanel="export" style="${defaultTab === 'export' ? '' : 'display:none;'}">
+                <div class="fk-pref-section-header">
+                  <h3 class="fk-pref-heading">File &amp; Export Defaults</h3>
+                  <p class="fk-pref-subheading">Configure conversion defaults, auto-download, compression presets, and naming patterns.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Auto-Download When Done</span>
+                      <span class="fk-pref-desc">Trigger browser download immediately upon 100% completion without manual click.</span>
+                    </div>
+                    <label class="fk-switch">
+                      <input type="checkbox" id="pref-autodl" ${p.autoDownload ? 'checked' : ''}>
+                      <span class="fk-switch-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Default PDF Compression Level</span>
+                      <span class="fk-pref-desc">Balance between output filesize reduction and image/text fidelity.</span>
+                    </div>
+                    <div class="fk-segmented-ctrl">
+                      <button type="button" class="fk-seg-item fk-pref-pdf-btn ${p.pdfCompressionPreset === 'recommended' ? 'is-active active' : ''}" data-pdf="recommended">Recommended</button>
+                      <button type="button" class="fk-seg-item fk-pref-pdf-btn ${p.pdfCompressionPreset === 'extreme' ? 'is-active active' : ''}" data-pdf="extreme">Extreme</button>
+                      <button type="button" class="fk-seg-item fk-pref-pdf-btn ${p.pdfCompressionPreset === 'low' ? 'is-active active' : ''}" data-pdf="low">Less (High Res)</button>
+                    </div>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Default Image Format</span>
+                      <span class="fk-pref-desc">Standard target format used in image conversion workflows.</span>
+                    </div>
+                    <div class="fk-segmented-ctrl">
+                      <button type="button" class="fk-seg-item fk-pref-img-btn ${p.defaultImageFmt === 'webp' ? 'is-active active' : ''}" data-img="webp">WebP</button>
+                      <button type="button" class="fk-seg-item fk-pref-img-btn ${p.defaultImageFmt === 'png' ? 'is-active active' : ''}" data-img="png">PNG</button>
+                      <button type="button" class="fk-seg-item fk-pref-img-btn ${p.defaultImageFmt === 'jpeg' ? 'is-active active' : ''}" data-img="jpeg">JPG</button>
+                      <button type="button" class="fk-seg-item fk-pref-img-btn ${p.defaultImageFmt === 'original' ? 'is-active active' : ''}" data-img="original">Original</button>
+                    </div>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Multi-File Batch Packaging</span>
+                      <span class="fk-pref-desc">Bundle processed batch files into a ZIP archive or save individually.</span>
+                    </div>
+                    <div class="fk-segmented-ctrl">
+                      <button type="button" class="fk-seg-item fk-pref-batch-btn ${p.batchFormat === 'zip' ? 'is-active active' : ''}" data-batch="zip">ZIP Archive</button>
+                      <button type="button" class="fk-seg-item fk-pref-batch-btn ${p.batchFormat === 'individual' ? 'is-active active' : ''}" data-batch="individual">Individual Files</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Export Pattern Group -->
+                <div class="fk-pref-section-header" style="margin-top:16px;">
+                  <h3 class="fk-pref-heading">Output Filename Pattern</h3>
+                  <p class="fk-pref-subheading">How output files are automatically named when saved.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-naming-options" style="margin-top:10px;">
+                    <label class="fk-pref-naming-radio ${p.namingPattern === 'suffix-tool' ? 'is-selected' : ''}">
+                      <input type="radio" name="fk-naming-choice" value="suffix-tool" ${p.namingPattern === 'suffix-tool' ? 'checked' : ''} style="display:none;">
+                      <div class="fk-radio-dot"></div>
+                      <div class="fk-radio-info">
+                        <span class="fk-radio-pattern">[filename]-[action].[ext]</span>
+                        <span class="fk-radio-example">e.g. quarterly-report-compressed.pdf</span>
+                      </div>
+                    </label>
+
+                    <label class="fk-pref-naming-radio ${p.namingPattern === 'original' ? 'is-selected' : ''}">
+                      <input type="radio" name="fk-naming-choice" value="original" ${p.namingPattern === 'original' ? 'checked' : ''} style="display:none;">
+                      <div class="fk-radio-dot"></div>
+                      <div class="fk-radio-info">
+                        <span class="fk-radio-pattern">[filename].[ext]</span>
+                        <span class="fk-radio-example">Exact original name (e.g. quarterly-report.pdf)</span>
+                      </div>
+                    </label>
+
+                    <label class="fk-pref-naming-radio ${p.namingPattern === 'timestamp' ? 'is-selected' : ''}">
+                      <input type="radio" name="fk-naming-choice" value="timestamp" ${p.namingPattern === 'timestamp' ? 'checked' : ''} style="display:none;">
+                      <div class="fk-radio-dot"></div>
+                      <div class="fk-radio-info">
+                        <span class="fk-radio-pattern">[filename]-[date].[ext]</span>
+                        <span class="fk-radio-example">e.g. quarterly-report-20261012.pdf</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="fk-pref-live-banner">
+                    <span class="fk-pref-live-label">Output Preview:</span>
+                    <code class="fk-pref-live-code" id="fk-naming-preview-text">${getPreviewName(p.namingPattern)}</code>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 3: Privacy & History -->
+              <div class="fk-stab-panel" data-spanel="privacy" style="${defaultTab === 'privacy' ? '' : 'display:none;'}">
+                <div class="fk-pref-section-header">
+                  <h3 class="fk-pref-heading">Privacy &amp; File History</h3>
+                  <p class="fk-pref-subheading">Your files never leave your device. Manage local history retention and metadata stripping.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Remember Recent Files</span>
+                      <span class="fk-pref-desc">Keep recent files in local browser storage for quick reopen access.</span>
+                    </div>
+                    <label class="fk-switch">
+                      <input type="checkbox" id="pref-history" ${p.saveRecentHistory ? 'checked' : ''}>
+                      <span class="fk-switch-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Clear Recent History</span>
+                      <span class="fk-pref-desc">Remove all recent file records stored in this browser session.</span>
+                    </div>
+                    <button type="button" class="fk-btn-outline-sm" id="btn-clear-recent-history">
+                      Clear Recent Files
+                    </button>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Strip EXIF, GPS &amp; Metadata on Export</span>
+                      <span class="fk-pref-desc">Automatically scrub camera GPS, author names, creation dates, and edit history.</span>
+                    </div>
+                    <label class="fk-switch">
+                      <input type="checkbox" id="pref-strip-meta" ${p.stripMetadata ? 'checked' : ''}>
+                      <span class="fk-switch-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="fk-pref-section-header" style="margin-top:16px;">
+                  <h3 class="fk-pref-heading">Local Temporary Storage</h3>
+                  <p class="fk-pref-subheading">Browser cached binary packages and temporary workspace files.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-storage-row">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Local Cache &amp; Temp Data</span>
+                      <span class="fk-pref-desc" id="fk-storage-estimate-label">Calculating storage allocation…</span>
+                    </div>
+                    <span class="fk-storage-badge" id="fk-storage-badge">Local Only</span>
+                  </div>
+
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Flush Temporary Files</span>
+                      <span class="fk-pref-desc">Purges cached blobs and temporary conversion buffers.</span>
+                    </div>
+                    <button type="button" class="fk-btn-danger-outline" id="btn-purge-cache">
+                      Clear Storage
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 4: Shortcuts -->
+              <div class="fk-stab-panel" data-spanel="shortcuts" style="${defaultTab === 'shortcuts' ? '' : 'display:none;'}">
+                <div class="fk-pref-section-header">
+                  <h3 class="fk-pref-heading">Keyboard Shortcuts</h3>
+                  <p class="fk-pref-subheading">Work faster with global shortcuts for quick search, settings, and file actions.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Enable Global Keyboard Shortcuts</span>
+                      <span class="fk-pref-desc">Allow keyboard triggers across all workspace tools.</span>
+                    </div>
+                    <label class="fk-switch">
+                      <input type="checkbox" id="pref-shortcuts" ${p.enableShortcuts ? 'checked' : ''}>
+                      <span class="fk-switch-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="fk-pref-section-header" style="margin-top:16px;">
+                  <h3 class="fk-pref-heading">Key Reference</h3>
+                  <p class="fk-pref-subheading">Common workstation shortcuts.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-shortcut-table">
+                    <div class="fk-shortcut-row">
+                      <span class="fk-shortcut-desc">Open Tool Palette &amp; Search</span>
+                      <div class="fk-shortcut-keys">
+                        <kbd class="fk-shortcut-kbd">⌘</kbd>
+                        <kbd class="fk-shortcut-kbd">K</kbd>
+                      </div>
+                    </div>
+
+                    <div class="fk-shortcut-row">
+                      <span class="fk-shortcut-desc">Open Settings &amp; Preferences</span>
+                      <div class="fk-shortcut-keys">
+                        <kbd class="fk-shortcut-kbd">⌘</kbd>
+                        <kbd class="fk-shortcut-kbd">,</kbd>
+                      </div>
+                    </div>
+
+                    <div class="fk-shortcut-row">
+                      <span class="fk-shortcut-desc">Choose / Open File</span>
+                      <div class="fk-shortcut-keys">
+                        <kbd class="fk-shortcut-kbd">⌘</kbd>
+                        <kbd class="fk-shortcut-kbd">O</kbd>
+                      </div>
+                    </div>
+
+                    <div class="fk-shortcut-row">
+                      <span class="fk-shortcut-desc">Run / Convert Current File</span>
+                      <div class="fk-shortcut-keys">
+                        <kbd class="fk-shortcut-kbd">⌘</kbd>
+                        <kbd class="fk-shortcut-kbd">↵</kbd>
+                      </div>
+                    </div>
+
+                    <div class="fk-shortcut-row">
+                      <span class="fk-shortcut-desc">Close Modal / Cancel Action</span>
+                      <div class="fk-shortcut-keys">
+                        <kbd class="fk-shortcut-kbd">Esc</kbd>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 5: Account & License -->
+              <div class="fk-stab-panel" data-spanel="account" style="${defaultTab === 'account' ? '' : 'display:none;'}">
+                <div class="fk-pref-section-header">
+                  <h3 class="fk-pref-heading">Account &amp; Workspace License</h3>
+                  <p class="fk-pref-subheading">Manage your user profile, license activation, and subscription plan.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <!-- User Session Row -->
+                  <div class="fk-account-identity-row">
+                    <div class="fk-account-avatar">
+                      ${(this.state.user.name || 'G').charAt(0).toUpperCase()}
+                    </div>
+                    <div class="fk-account-meta">
+                      <span class="fk-account-name">${this.state.user.name || 'Guest User'}</span>
+                      <span class="fk-account-email">${this.state.isLoggedIn ? (this.state.user.email || 'Authenticated User') : '100% On-Device Private Session (Local)'}</span>
+                    </div>
+                    <div class="fk-account-cta-wrap">
+                      ${this.state.isLoggedIn
+                        ? `<button type="button" class="fk-btn-outline-sm" id="btn-pref-logout">Sign Out</button>`
+                        : `<button type="button" class="fk-btn-dark-sm" id="btn-pref-login-now">Log In / Register</button>`
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Plan Status Row -->
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Current Membership Tier</span>
+                      <span class="fk-pref-desc">${this.state.tier === 'lifetime' ? 'Permanent Lifetime License (Unlimited)' : this.state.tier === 'pro' ? 'Pro Subscriber ($3/mo)' : 'Free Local Tier (No Server Fees)'}</span>
+                    </div>
+                    <button type="button" class="fk-btn-outline-sm" id="btn-pref-plans">
+                      ${this.isPro() ? 'Change Plan' : 'Upgrade to Pro / Lifetime'}
+                    </button>
+                  </div>
+
+                  <!-- License Key Box -->
+                  <div class="fk-pref-row-item" style="flex-direction:column;align-items:stretch;gap:8px;">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Permanent License Key</span>
+                      <span class="fk-pref-desc">Validates 100% offline across macOS, Windows, iOS, and Android.</span>
+                    </div>
+                    <div class="fk-pref-license-box">
+                      <span class="fk-pref-license-key">${this.state.licenseKey || 'NO KEY ACTIVATED (FREE TIER)'}</span>
+                      ${this.state.licenseKey
+                        ? `<button type="button" class="fk-btn-ghost-sm" id="btn-pref-copy-key">Copy Key</button>`
+                        : `<button type="button" class="fk-btn-ghost-sm" id="btn-pref-activate-key">Activate Key</button>`
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Standalone Desktop Apps Row -->
+                <div class="fk-pref-section-header" style="margin-top:16px;">
+                  <h3 class="fk-pref-heading">Standalone Applications</h3>
+                  <p class="fk-pref-subheading">Download offline native applications for your operating system.</p>
+                </div>
+
+                <div class="fk-pref-group">
+                  <div class="fk-pref-row-item">
+                    <div class="fk-pref-row-copy">
+                      <span class="fk-pref-label">Desktop &amp; Mobile PWAs</span>
+                      <span class="fk-pref-desc">Install standalone desktop apps for macOS and Windows, or PWA on iOS and Android.</span>
+                    </div>
+                    <button type="button" class="fk-btn-outline-sm" id="btn-pref-download-apps">
+                      Get Desktop Apps
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Bar with Reset and Done actions -->
+            <div class="fk-pref-bottombar">
+              <span class="fk-pref-autosave-notice">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Preferences saved locally</span>
+              </span>
+              <div class="fk-pref-bottombar-btns">
+                <button type="button" class="fk-btn-secondary" id="btn-settings-reset">Reset to Defaults</button>
+                <button type="button" class="fk-btn-primary" id="btn-settings-done">Done</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Close handlers
+      const closeModal = () => modal.remove();
+      modal.querySelector('#btn-settings-close')?.addEventListener('click', closeModal);
+      modal.querySelector('#btn-settings-done')?.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // Tab switcher
+      const tabs = modal.querySelectorAll('.fk-stab');
+      const panels = modal.querySelectorAll('.fk-stab-panel');
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          tabs.forEach((t) => {
+            t.classList.remove('is-active', 'active');
+            t.setAttribute('aria-selected', 'false');
+          });
+          panels.forEach((p) => (p.style.display = 'none'));
+          tab.classList.add('is-active', 'active');
+          tab.setAttribute('aria-selected', 'true');
+          const target = tab.dataset.stab;
+          const targetPanel = modal.querySelector(`[data-spanel="${target}"]`);
+          if (targetPanel) targetPanel.style.display = 'block';
+        });
+      });
+
+      // Filename convention radio cards
+      const previewText = modal.querySelector('#fk-naming-preview-text');
+      const updatePreview = (pattern) => {
+        if (previewText) previewText.textContent = getPreviewName(pattern);
+      };
+
+      modal.querySelectorAll('.fk-pref-naming-radio').forEach((radio) => {
+        radio.addEventListener('click', () => {
+          modal.querySelectorAll('.fk-pref-naming-radio').forEach((r) => r.classList.remove('is-selected'));
+          radio.classList.add('is-selected');
+          const input = radio.querySelector('input');
+          if (input) {
+            input.checked = true;
+            this.savePrefs({ namingPattern: input.value });
+            updatePreview(input.value);
+          }
+        });
+      });
+
+      // Batch packaging segmented buttons
+      modal.querySelectorAll('.fk-pref-batch-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modal.querySelectorAll('.fk-pref-batch-btn').forEach((b) => b.classList.remove('is-active', 'active'));
+          btn.classList.add('is-active', 'active');
+          this.savePrefs({ batchFormat: btn.dataset.batch });
+        });
+      });
+
+      // PDF compression preset buttons
+      modal.querySelectorAll('.fk-pref-pdf-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modal.querySelectorAll('.fk-pref-pdf-btn').forEach((b) => b.classList.remove('is-active', 'active'));
+          btn.classList.add('is-active', 'active');
+          this.savePrefs({ pdfCompressionPreset: btn.dataset.pdf });
+        });
+      });
+
+      // Image format segmented buttons
+      modal.querySelectorAll('.fk-pref-img-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modal.querySelectorAll('.fk-pref-img-btn').forEach((b) => b.classList.remove('is-active', 'active'));
+          btn.classList.add('is-active', 'active');
+          this.savePrefs({ defaultImageFmt: btn.dataset.img });
+        });
+      });
+
+      // Density buttons
+      modal.querySelectorAll('.fk-pref-density-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modal.querySelectorAll('.fk-pref-density-btn').forEach((b) => b.classList.remove('is-active', 'active'));
+          btn.classList.add('is-active', 'active');
+          this.savePrefs({ compactMode: btn.dataset.density === 'compact' });
+        });
+      });
+
+      // Theme buttons
+      modal.querySelectorAll('.fk-pref-theme-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modal.querySelectorAll('.fk-pref-theme-btn').forEach((b) => b.classList.remove('is-active', 'active'));
+          btn.classList.add('is-active', 'active');
+          this.savePrefs({ theme: btn.dataset.theme });
+        });
+      });
+
+      // Language select
+      modal.querySelector('#pref-language')?.addEventListener('change', (e) => {
+        this.savePrefs({ language: e.target.value });
+      });
+
+      // Auto-download toggle
+      modal.querySelector('#pref-autodl')?.addEventListener('change', (e) => {
+        this.savePrefs({ autoDownload: e.target.checked });
+      });
+
+      // Sound toggle
+      modal.querySelector('#pref-sound')?.addEventListener('change', (e) => {
+        this.savePrefs({ completionSound: e.target.checked });
+      });
+
+      // History toggle
+      modal.querySelector('#pref-history')?.addEventListener('change', (e) => {
+        this.savePrefs({ saveRecentHistory: e.target.checked });
+      });
+
+      // Metadata stripping toggle
+      modal.querySelector('#pref-strip-meta')?.addEventListener('change', (e) => {
+        this.savePrefs({ stripMetadata: e.target.checked });
+      });
+
+      // Shortcuts toggle
+      modal.querySelector('#pref-shortcuts')?.addEventListener('change', (e) => {
+        this.savePrefs({ enableShortcuts: e.target.checked });
+      });
+
+      // Clear recent history button
+      modal.querySelector('#btn-clear-recent-history')?.addEventListener('click', () => {
+        try {
+          localStorage.removeItem('filekit_recent_files');
+          sessionStorage.removeItem('filekit_recent_files');
+        } catch (_) {}
+        if (window.FF?.util?.toast) window.FF.util.toast('Recent file history cleared.', 'success');
+      });
+
+      // Play test synthetic chime via Web Audio API
+      modal.querySelector('#btn-test-chime')?.addEventListener('click', () => {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            const ctx = new AudioContext();
+            const now = ctx.currentTime;
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now);
+            gain1.gain.setValueAtTime(0.08, now);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.35);
+
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, now + 0.08);
+            gain2.gain.setValueAtTime(0.1, now + 0.08);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.08);
+            osc2.stop(now + 0.55);
+          }
+        } catch {}
+      });
+
+      // Storage estimate meter
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then((est) => {
+          const usedMB = ((est.usage || 0) / (1024 * 1024)).toFixed(1);
+          const quotaMB = ((est.quota || 0) / (1024 * 1024)).toFixed(0);
+          const percent = Math.min(100, Math.max(1, Math.round(((est.usage || 0) / (est.quota || 1)) * 100)));
+          const label = modal.querySelector('#fk-storage-estimate-label');
+          if (label) label.textContent = `~ ${usedMB} MB used of ${quotaMB} MB available in browser (${percent}%)`;
+        }).catch(() => {});
+      }
+
+      // Restore defaults action
+      modal.querySelector('#btn-settings-reset')?.addEventListener('click', () => {
+        if (confirm('Reset workstation preferences to recommended defaults?')) {
+          localStorage.removeItem(PREFS_KEY);
+          this.prefs = { ...DEFAULT_PREFS };
+          this.savePrefs(this.prefs);
+          modal.remove();
+          this.openSettingsModal(defaultTab);
+          if (window.FF?.util?.toast) window.FF.util.toast('Preferences reset to default values.', 'info');
+        }
+      });
+
+      // Clear storage / cache button
+      modal.querySelector('#btn-purge-cache')?.addEventListener('click', () => {
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            return Promise.all(keys.map((k) => caches.delete(k)));
+          }).then(() => {
+            if (window.FF?.util?.toast) window.FF.util.toast('Local temporary storage cleared.', 'success');
+            const label = modal.querySelector('#fk-storage-estimate-label');
+            if (label) label.textContent = '0 MB used in browser cache';
+          });
+        } else {
+          if (window.FF?.util?.toast) window.FF.util.toast('Temporary cache cleared.', 'success');
+        }
+      });
+
+      // Account tab actions in Preferences
+      modal.querySelector('#btn-pref-login-now')?.addEventListener('click', () => {
+        modal.remove();
+        this.openAuthModal('login');
+      });
+      modal.querySelector('#btn-pref-logout')?.addEventListener('click', () => {
+        this.logout();
+        modal.remove();
+        this.openSettingsModal('account');
+      });
+      modal.querySelector('#btn-pref-plans')?.addEventListener('click', () => {
+        modal.remove();
+        this.openPricingModal();
+      });
+      modal.querySelector('#btn-pref-activate-key')?.addEventListener('click', () => {
+        modal.remove();
+        this.openAuthModal('activate');
+      });
+      modal.querySelector('#btn-pref-copy-key')?.addEventListener('click', () => {
+        if (this.state.licenseKey) {
+          navigator.clipboard.writeText(this.state.licenseKey).then(() => {
+            const btn = modal.querySelector('#btn-pref-copy-key');
+            if (btn) btn.textContent = 'Copied!';
+            setTimeout(() => { if (btn) btn.textContent = 'Copy Key'; }, 2000);
+          });
+        }
+      });
+      modal.querySelector('#btn-pref-download-apps')?.addEventListener('click', () => {
+        modal.remove();
+        this.openAccountModal();
+      });
+    }
+
+    formatOutputName(filename, toolId = '') {
+      if (!filename) return 'download';
+      const p = this.prefs || {};
+      const pattern = p.namingPattern || 'suffix-tool';
+      const dot = filename.lastIndexOf('.');
+      const base = dot !== -1 ? filename.slice(0, dot) : filename;
+      const ext = dot !== -1 ? filename.slice(dot) : '';
+      if (pattern === 'suffix-tool') {
+        const cleanTool = (toolId || 'processed').replace(/^pdf-|^image-|^audio-|^video-/, '');
+        return `${base}-${cleanTool}${ext}`;
+      }
+      if (pattern === 'suffix-filekit') return `${base}-filekit${ext}`;
+      if (pattern === 'timestamp') {
+        const now = new Date();
+        const d = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        return `${base}-${d}${ext}`;
+      }
+      return filename;
     }
 
     closeModal(modalId) {

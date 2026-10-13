@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 8080;
-const ROOT = path.resolve(__dirname);
+const ROOT = path.resolve(__dirname, '../..');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -66,6 +66,9 @@ const server = http.createServer((req, res) => {
       const tryIndex = path.join(filePath, 'index.html');
       if (fs.existsSync(tryIndex)) {
         filePath = tryIndex;
+      } else if (!path.extname(pathname)) {
+        // SPA route fallback
+        filePath = path.join(ROOT, 'index.html');
       } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('404 Not Found: ' + pathname);

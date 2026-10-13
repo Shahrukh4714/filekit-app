@@ -104,7 +104,7 @@
       <div class="palette-box mac-settings-box" style="max-width: 520px; width: 90%; padding: 24px; margin: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h2 style="margin: 0; font-size: 18px; font-weight: 600;">FileKit Preferences</h2>
-          <button type="button" class="palette-esc" style="cursor: pointer;" onclick="document.getElementById('mac-preferences-modal').style.display = 'none';">ESC</button>
+          <button type="button" class="palette-esc mac-pref-close-btn" style="cursor: pointer;">ESC</button>
         </div>
         <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13.5px;">
           <label style="display: flex; justify-content: space-between; align-items: center;">
@@ -125,7 +125,7 @@
           </label>
         </div>
         <div style="margin-top: 24px; text-align: right;">
-          <button type="button" class="primary-button" style="padding: 6px 16px; font-size: 13px;" onclick="document.getElementById('mac-preferences-modal').hidden = true;">Done</button>
+          <button type="button" class="primary-button mac-pref-close-btn" style="padding: 6px 16px; font-size: 13px;">Done</button>
         </div>
       </div>
     `;

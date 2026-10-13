@@ -1,0 +1,54 @@
+# Development probe & Playwright test scripts
+_probe_*
+_make_*
+
+# Internal tooling, local servers & scripts
+serve.py
+server.js
+scripts/
+archive/
+tests/
+bench/
+benchmark/
+video_generator/
+dist_video/
+
+# Scratch & temporary testing files
+scratch_*
+*.tmp
+*.log
+
+# Debug screenshots & simulation visual diffs
+snap*.png
+sim_*.png
+verify_*.png
+dbg_*.png
+crop_*.png
+test_upload_screen.png
+audit_*.png
+mac_*.png
+out_docx_*.png
+
+# Test fixtures & sample documents
+sample_*
+test_sample.*
+
+# Preview prototypes & scratch HTML
+style_preview.html
+mobile-*.html
+mobile_organize_*.html
+
+# Internal task tracking & agent configs
+_taskmap.json
+skills-lock.json
+.agents/
+.freebuff/
+.interface-design/
+
+# Native Desktop configuration (packaged separately)
+src-tauri/
+
+# Git & editor
+.git/
+.gitignore
+.DS_Store
