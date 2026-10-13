@@ -18109,7 +18109,7 @@ ${linksOverlay}    </div>
               </div>
 
               <!-- Main Stage Document Sheet Preview Area -->
-              <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: calc(100% - 46px); padding: 48px 16px 12px 16px; box-sizing: border-box; overflow: hidden;">
+              <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 48px 16px 16px 16px; box-sizing: border-box; overflow: hidden;">
                 <div class="scan-paper-page" id="crop-paper-card" style="position: relative; background: #FFFFFF; border-radius: 4px; box-shadow: 0 16px 40px -8px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06); transition: width 0.15s ease, height 0.15s ease; overflow: hidden; user-select: none;">
                   <div id="crop-stage-canvas" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
                     <div style="padding: 60px 40px; color: #71717A; font-size: 13px; font-weight: 500;">Rendering high-resolution preview…</div>
@@ -18149,25 +18149,6 @@ ${linksOverlay}    </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <!-- Bottom Floating Stage File Summary & Live Scope Badge -->
-              <div class="cpdf-benchmark-fileinfo-row" style="background: transparent; border: none; padding: 10px 20px;">
-                <div style="display: inline-flex; align-items: center; gap: 8px;">
-                  <span class="cpdf-benchmark-fileinfo-text" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #27272A;">
-                    ${ICONS.pdf}
-                    <span>${_esc(file.name)} · ${totalPages} ${totalPages === 1 ? 'page' : 'pages'} · ${_bytes(file.size)}</span>
-                  </span>
-                  
-                  <span id="crop-stage-scope-badge" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #18181B; background: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 5px; padding: 2px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #16A34A;"></span>
-                    <span id="crop-stage-scope-txt">${state.applyScope === 'all' ? `Applies to All ${totalPages} Pages` : `Applies to Page ${currentPage} Only`}</span>
-                  </span>
-                </div>
-
-                <button type="button" class="scan-result-btn-ghost" id="crop-change-file" style="display: inline-flex; align-items: center; gap: 5px; background: #FFFFFF; border: 1px solid #E4E4E7; border-radius: 6px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; color: #18181B; cursor: pointer;">
-                  Change File
-                </button>
               </div>
             </div>
 
