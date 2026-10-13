@@ -1,4 +1,6 @@
 {
+  "framework": null,
+  "buildCommand": "node build.js",
   "cleanUrls": true,
   "rewrites": [
     {
