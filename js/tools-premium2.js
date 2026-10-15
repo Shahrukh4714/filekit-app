@@ -3014,7 +3014,15 @@ Processed 100% locally on device by FileKit.`;
       }
     }
 
-    renderUpload();
+    const initialFile = (window.FF && window.FF.app && Array.isArray(window.FF.app.pendingFiles) && window.FF.app.pendingFiles.length)
+      ? window.FF.app.pendingFiles.shift()
+      : null;
+    if (window.FF?.app && !window.FF.app.pendingFiles?.length) window.FF.app.pendingFiles = null;
+    if (initialFile) {
+      handleFile(initialFile);
+    } else {
+      renderUpload();
+    }
   }
 
     async function mountQrStudioPro(container, tool) {

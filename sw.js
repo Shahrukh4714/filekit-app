@@ -1,5 +1,5 @@
 /* FileKit Production Service Worker — 100% Offline Capability */
-const CACHE_NAME = 'filekit-core-v20261013_v44';
+const CACHE_NAME = 'filekit-core-v20261015_v01';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
