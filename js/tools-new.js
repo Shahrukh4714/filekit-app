@@ -12900,14 +12900,16 @@ function filterTable(query) {
     accepts: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'xlsx', 'xls', 'csv'],
     run: customOnly,
   });
-  window.FF.register({
-    id: 'pdf-to-audio',
-    category: 'PDF',
-    name: 'PDF to Audio',
-    description: 'Extract the text from a PDF and listen to it read aloud with your device\'s built-in voices.',
-    accepts: ['pdf'],
-    run: customOnly,
-  });
+  if (!window.FF.registry?.get('pdf-to-audio')) {
+    window.FF.register({
+      id: 'pdf-to-audio',
+      category: 'PDF',
+      name: 'PDF to Audio',
+      description: 'Extract the text from a PDF and listen to it read aloud with your device\'s built-in voices.',
+      accepts: ['pdf'],
+      run: customOnly,
+    });
+  }
 
   /* ═══════════════════════════════════════════════════════════════════════════
      HIGH-DEMAND CLIENT-SIDE TOOLS EXPANSION

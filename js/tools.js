@@ -52155,6 +52155,7 @@ trailer<</Root 1 0 R>>`;
     const needsDocx = () => id.startsWith('docx-');
     const target = () => (meta.target || 'file').toUpperCase();
     const extBadge = () => { const e = (meta.accept || '').replace(/\./g, '').split(',')[0] || 'TXT'; return e.toUpperCase(); };
+    const acceptForTool = () => meta?.accept || '*/*';
     const toneColor = ({ violet: '#7C3AED', blue: '#2563EB', indigo: '#4338CA', teal: '#0D9488', orange: '#EA580C', amber: '#D97706', rose: '#E11D48', cyan: '#0891B2', red: '#DC2626', slate: '#334155' })[meta.tone] || '#4F46E5';
 
     function setShell(active) {

@@ -408,7 +408,11 @@
 
   function register(def) {
     if (!def || !def.id) throw new Error('Tool needs an id');
-    if (_tools.has(def.id)) throw new Error(`Duplicate tool id: ${def.id}`);
+    if (_tools.has(def.id)) {
+      console.warn(`[FileKit Registry] Tool id '${def.id}' is already registered; updating definition.`);
+      _tools.set(def.id, Object.freeze({ multiple: false, live: false, fields: [], ...def }));
+      return;
+    }
     if (typeof def.run !== 'function') throw new Error(`Tool ${def.id} needs a run()`);
     _tools.set(def.id, Object.freeze({ multiple: false, live: false, fields: [], ...def }));
   }
@@ -8939,14 +8943,14 @@ try {
     <!-- Outer Bezel -->
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#00A896" stroke="#008F80" stroke-width="2"/>
     <!-- Bottom Chin Bar -->
-    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#008F80"/>
+    <rect x="110" y="252" width="290" height="28" rx="14" fill="#008F80"/>
     <circle cx="255" cy="266" r="3.5" fill="#5EEAD4"/>
 
     <!-- Main Screen Display -->
     <rect x="122" y="87" width="266" height="165" rx="8" fill="url(#s1-screen-grad)"/>
 
     <!-- Screen App Top Header -->
-    <rect x="122" y="87" width="266" height="26" rx="8 8 0 0" fill="#FFFFFF"/>
+    <rect x="122" y="87" width="266" height="26" rx="8" fill="#FFFFFF"/>
     <line x1="122" y1="113" x2="388" y2="113" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="100" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="100" r="3.5" fill="#F59E0B"/>
@@ -9168,7 +9172,7 @@ try {
     <!-- Screen Glass -->
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#00A896"/>
     <!-- Screen Header Bar -->
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#008F80"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#008F80"/>
     <circle cx="158" cy="126" r="3" fill="#5EEAD4"/>
     <circle cx="168" cy="126" r="3" fill="#5EEAD4" opacity="0.6"/>
 
@@ -9962,14 +9966,14 @@ try {
   <!-- Main Merge Screen in Indigo -->
   <g filter="url(#ms1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#4F46E5" stroke="#4338CA" stroke-width="2"/>
-    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#3730A3"/>
+    <rect x="110" y="252" width="290" height="28" rx="14" fill="#3730A3"/>
     <circle cx="255" cy="266" r="3.5" fill="#C7D2FE"/>
 
     <!-- Screen Display Canvas -->
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
 
     <!-- Screen Header Bar -->
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <rect x="122" y="87" width="266" height="24" rx="8" fill="#F7F7F7"/>
     <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
@@ -10004,7 +10008,7 @@ try {
       <!-- Master Binder Spine & Shadow -->
       <rect x="0" y="0" width="68" height="88" rx="5" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
       <!-- Left Spine Accent Strip -->
-      <rect x="0" y="0" width="8" height="88" rx="5 0 0 5" fill="#4F46E5"/>
+      <rect x="0" y="0" width="8" height="88" rx="5" fill="#4F46E5"/>
       <!-- Rings on Spine -->
       <circle cx="4" cy="20" r="1.8" fill="#FFFFFF"/>
       <circle cx="4" cy="44" r="1.8" fill="#FFFFFF"/>
@@ -10062,7 +10066,7 @@ try {
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
 
     <!-- Board Header -->
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">REORDER &amp; ARRANGE PAGES</text>
     <rect x="330" y="80" width="55" height="18" rx="4" fill="#4F46E5"/>
@@ -10176,7 +10180,7 @@ try {
     <!-- Upright Display Frame in Indigo -->
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#3730A3"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#3730A3"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <!-- Screen Canvas: WebAssembly Stream Combiner -->
@@ -10488,7 +10492,7 @@ try {
     <rect x="0" y="0" width="400" height="290" rx="16" fill="#FFFFFF" stroke="#D1D1D1" stroke-width="3"/>
     
     <!-- Top Measurement Ruler Strip -->
-    <rect x="0" y="0" width="400" height="34" rx="16 16 0 0" fill="#E11D48"/>
+    <rect x="0" y="0" width="400" height="34" rx="16" fill="#E11D48"/>
     <text x="20" y="22" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="12" font-weight="900">PRECISION PAGE GUILLOTINE</text>
     <!-- Ruler Inch Marks -->
     <g stroke="#FFFFFF" stroke-width="1.5" opacity="0.8">
@@ -10700,7 +10704,7 @@ try {
     <!-- Sub-Document Tree 1 (Left Branch) -->
     <g transform="translate(0, 125)">
       <rect x="0" y="0" width="160" height="150" rx="14" fill="#FFFFFF" stroke="#E11D48" stroke-width="2.5"/>
-      <rect x="0" y="0" width="160" height="32" rx="14 14 0 0" fill="#E11D48"/>
+      <rect x="0" y="0" width="160" height="32" rx="14" fill="#E11D48"/>
       <text x="80" y="21" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="900" text-anchor="middle">/Pages [1, 2, 3, 4]</text>
 
       <!-- Object Nodes -->
@@ -10721,7 +10725,7 @@ try {
     <!-- Sub-Document Tree 2 (Right Branch) -->
     <g transform="translate(220, 125)">
       <rect x="0" y="0" width="160" height="150" rx="14" fill="#FFFFFF" stroke="#2563EB" stroke-width="2.5"/>
-      <rect x="0" y="0" width="160" height="32" rx="14 14 0 0" fill="#2563EB"/>
+      <rect x="0" y="0" width="160" height="32" rx="14" fill="#2563EB"/>
       <text x="80" y="21" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="900" text-anchor="middle">/Pages [5, 6, 7, 8]</text>
 
       <!-- Object Nodes -->
@@ -11073,11 +11077,11 @@ try {
 
   <g filter="url(#ws1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#2563EB" stroke="#1D4ED8" stroke-width="2"/>
-    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#1E40AF"/>
+    <rect x="110" y="252" width="290" height="28" rx="14" fill="#1E40AF"/>
     <circle cx="255" cy="266" r="3.5" fill="#BFDBFE"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <rect x="122" y="87" width="266" height="24" rx="8" fill="#F7F7F7"/>
     <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
@@ -11144,7 +11148,7 @@ try {
 
   <g filter="url(#ws2-shadow)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PRESERVE LAYOUT &amp; TABLES</text>
     <rect x="320" y="80" width="65" height="18" rx="4" fill="#2563EB"/>
@@ -11238,7 +11242,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#2563EB"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#1E40AF"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#1E40AF"/>
     <circle cx="158" cy="126" r="3" fill="#BFDBFE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -11520,11 +11524,11 @@ try {
 
   <g filter="url(#es1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#059669" stroke="#047857" stroke-width="2"/>
-    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#065F46"/>
+    <rect x="110" y="252" width="290" height="28" rx="14" fill="#065F46"/>
     <circle cx="255" cy="266" r="3.5" fill="#A7F3D0"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <rect x="122" y="87" width="266" height="24" rx="8" fill="#F7F7F7"/>
     <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
@@ -11597,7 +11601,7 @@ try {
 
   <g filter="url(#es2-shadow)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">AUTOMATIC TABLE DETECTION</text>
     <rect x="320" y="80" width="65" height="18" rx="4" fill="#059669"/>
@@ -11608,7 +11612,7 @@ try {
       <!-- Excel Table -->
       <rect x="0" y="0" width="250" height="165" rx="4" fill="#FFFFFF" stroke="#059669" stroke-width="1.5"/>
       <!-- Header -->
-      <rect x="0" y="0" width="250" height="24" rx="4 4 0 0" fill="#059669"/>
+      <rect x="0" y="0" width="250" height="24" rx="4" fill="#059669"/>
       <text x="25" y="16" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="800">ACCOUNT</text>
       <text x="95" y="16" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="800">Q1 REVENUE</text>
       <text x="165" y="16" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="800">Q2 REVENUE</text>
@@ -11683,7 +11687,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#059669"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#047857"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#047857"/>
     <circle cx="158" cy="126" r="3" fill="#A7F3D0"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -11959,11 +11963,11 @@ try {
 
   <g filter="url(#sgn1-shadow)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#0F766E" stroke="#115E59" stroke-width="2"/>
-    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#134E4A"/>
+    <rect x="110" y="252" width="290" height="28" rx="14" fill="#134E4A"/>
     <circle cx="255" cy="266" r="3.5" fill="#99F6E4"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <rect x="122" y="87" width="266" height="24" rx="8" fill="#F7F7F7"/>
     <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
@@ -12023,7 +12027,7 @@ try {
 
   <g filter="url(#sgn2-shadow)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#99F6E4" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">DRAW, TYPE, OR UPLOAD SIGNATURE</text>
     <rect x="320" y="80" width="65" height="18" rx="4" fill="#0F766E"/>
@@ -12098,7 +12102,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#0F766E"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#115E59"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#115E59"/>
     <circle cx="158" cy="126" r="3" fill="#99F6E4"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -12417,7 +12421,7 @@ try {
     <rect x="0" y="0" width="340" height="340" rx="20" fill="#FFFFFF" stroke="#D1D1D1" stroke-width="2.571"/>
     
     <!-- Header Banner -->
-    <rect x="0" y="0" width="340" height="60" rx="20 20 0 0" fill="#0F766E"/>
+    <rect x="0" y="0" width="340" height="60" rx="20" fill="#0F766E"/>
     <text x="30" y="38" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="16" font-weight="900">PERMISSIONS POLICY</text>
     
     <!-- Rule 1: Printing Restrict -->
@@ -12827,11 +12831,11 @@ try {
 
   <g filter="url(#s1-sh-coral)">
     <rect x="110" y="75" width="290" height="205" rx="14" fill="#E11D48" stroke="#BE123C" stroke-width="2"/>
-    <rect x="110" y="252" width="290" height="28" rx="0 0 14 14" fill="#BE123C"/>
+    <rect x="110" y="252" width="290" height="28" rx="14" fill="#BE123C"/>
     <circle cx="255" cy="266" r="3.5" fill="#FECDD3"/>
 
     <rect x="122" y="87" width="266" height="165" rx="8" fill="#FFFFFF"/>
-    <rect x="122" y="87" width="266" height="24" rx="8 8 0 0" fill="#F7F7F7"/>
+    <rect x="122" y="87" width="266" height="24" rx="8" fill="#F7F7F7"/>
     <line x1="122" y1="111" x2="388" y2="111" stroke="#E5E5E5" stroke-width="1.5"/>
     <circle cx="138" cy="99" r="3.5" fill="#EF4444"/>
     <circle cx="148" cy="99" r="3.5" fill="#F59E0B"/>
@@ -12885,7 +12889,7 @@ try {
 
   <g filter="url(#s2-sh-coral)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#FECDD3" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">RESTORE ACCESS</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#E11D48"/>
@@ -12939,7 +12943,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#E11D48"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#BE123C"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#BE123C"/>
     <circle cx="158" cy="126" r="3" fill="#FECDD3"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -13221,7 +13225,7 @@ try {
     <!-- Dynamic 16:9 PowerPoint Slide (Right) -->
     <g transform="translate(150, 10)">
       <rect x="0" y="0" width="150" height="110" rx="8" fill="#FFFFFF" stroke="#EA580C" stroke-width="2.5"/>
-      <rect x="0" y="0" width="150" height="24" rx="8 8 0 0" fill="#EA580C"/>
+      <rect x="0" y="0" width="150" height="24" rx="8" fill="#EA580C"/>
       <text x="75" y="16" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="9.5" font-weight="900" text-anchor="middle">.PPTX SLIDE DECK</text>
       
       <!-- Editable Vector Bar Chart -->
@@ -13261,7 +13265,7 @@ try {
 
   <g filter="url(#s2-sh-orange)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#FED7AA" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">SLIDE MATRIX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#EA580C"/>
@@ -13315,7 +13319,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#EA580C"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#C2410C"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#C2410C"/>
     <circle cx="158" cy="126" r="3" fill="#FED7AA"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -13594,7 +13598,7 @@ try {
     <!-- Top Unified PDF Binder Card (Center) -->
     <g transform="translate(195, 130)">
       <rect x="0" y="0" width="130" height="165" rx="8" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
-      <rect x="0" y="0" width="130" height="28" rx="8 8 0 0" fill="#D97706"/>
+      <rect x="0" y="0" width="130" height="28" rx="8" fill="#D97706"/>
       <text x="65" y="18" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">COMPILED PDF</text>
       
       <!-- Multi-photo collage preview -->
@@ -13632,7 +13636,7 @@ try {
   <!-- Page Layout & Margin Studio -->
   <g filter="url(#img2-sh)">
     <rect x="110" y="70" width="300" height="255" rx="16" fill="#FFFFFF" stroke="#FDE68A" stroke-width="2"/>
-    <rect x="110" y="70" width="300" height="38" rx="16 16 0 0" fill="#FFFBEB"/>
+    <rect x="110" y="70" width="300" height="38" rx="16" fill="#FFFBEB"/>
     <text x="130" y="94" fill="#B45309" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PAGE MARGIN &amp; DPI CALIBRATION</text>
 
     <!-- Portrait Sheet (Left) -->
@@ -13683,7 +13687,7 @@ try {
   <!-- High Speed WASM Conversion Tunnel -->
   <g filter="url(#img3-sh)" transform="translate(130, 90)">
     <rect x="0" y="0" width="260" height="175" rx="16" fill="#FFFFFF" stroke="#FDE68A" stroke-width="2"/>
-    <rect x="0" y="0" width="260" height="36" rx="16 16 0 0" fill="#D97706"/>
+    <rect x="0" y="0" width="260" height="36" rx="16" fill="#D97706"/>
     <text x="130" y="23" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">CLIENT-SIDE IMAGE COMPILER</text>
 
     <!-- Memory Processing Animation Metaphor -->
@@ -14051,7 +14055,7 @@ try {
   <!-- Multi-Language Neural Tesseract Engine in RAM -->
   <g filter="url(#ocr3-sh)" transform="translate(130, 85)">
     <rect x="0" y="0" width="260" height="185" rx="16" fill="#FFFFFF" stroke="#DDD6FE" stroke-width="2"/>
-    <rect x="0" y="0" width="260" height="36" rx="16 16 0 0" fill="#7C3AED"/>
+    <rect x="0" y="0" width="260" height="36" rx="16" fill="#7C3AED"/>
     <text x="130" y="23" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">NEURAL TESSERACT WASM ENGINE</text>
 
     <!-- Language Flags Matrix -->
@@ -14352,7 +14356,7 @@ try {
 
   <g filter="url(#s2-sh-indigo)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">ROTATION MATRIX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#4F46E5"/>
@@ -14402,7 +14406,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#4338CA"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#4338CA"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -14701,7 +14705,7 @@ try {
 
   <g filter="url(#s2-sh-violet)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#DDD6FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">STAMP MATRIX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#7C3AED"/>
@@ -14751,7 +14755,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#7C3AED"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#6D28D9"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#6D28D9"/>
     <circle cx="158" cy="126" r="3" fill="#DDD6FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -15061,7 +15065,7 @@ try {
 
   <g filter="url(#s2-sh-crimson)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#FECDD3" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">SANITIZED</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#BE123C"/>
@@ -15111,7 +15115,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#BE123C"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#9F1239"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#9F1239"/>
     <circle cx="158" cy="126" r="3" fill="#FECDD3"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -15478,7 +15482,7 @@ try {
   <!-- PDF Box Hierarchy Engine in WASM -->
   <g filter="url(#crop3-sh)" transform="translate(130, 85)">
     <rect x="0" y="0" width="260" height="185" rx="16" fill="#FFFFFF" stroke="#A5F3FC" stroke-width="2"/>
-    <rect x="0" y="0" width="260" height="36" rx="16 16 0 0" fill="#0891B2"/>
+    <rect x="0" y="0" width="260" height="36" rx="16" fill="#0891B2"/>
     <text x="130" y="23" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">PDF GEOMETRY TRANSFORM ENGINE</text>
 
     <!-- Box Diagram -->
@@ -15783,7 +15787,7 @@ try {
 
   <g filter="url(#s2-sh-blue)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">BATES INDEX</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#2563EB"/>
@@ -15833,7 +15837,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#2563EB"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#1D4ED8"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#1D4ED8"/>
     <circle cx="158" cy="126" r="3" fill="#BFDBFE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -16136,7 +16140,7 @@ try {
 
   <g filter="url(#s2-sh-indigo)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">PRINT STREAM</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#4F46E5"/>
@@ -16186,7 +16190,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#4338CA"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#4338CA"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -16494,7 +16498,7 @@ try {
 
   <g filter="url(#s2-sh-emerald)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">RECOVERY LOG</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#059669"/>
@@ -16544,7 +16548,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#059669"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#047857"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#047857"/>
     <circle cx="158" cy="126" r="3" fill="#A7F3D0"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
@@ -16796,7 +16800,7 @@ try {
   <!-- Light Board with 6 Drag-and-Drop Cards -->
   <g filter="url(#org1-sh)" transform="translate(130, 75)">
     <rect x="0" y="0" width="260" height="245" rx="12" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="0" y="0" width="260" height="32" rx="12 12 0 0" fill="#EEF2FF"/>
+    <rect x="0" y="0" width="260" height="32" rx="12" fill="#EEF2FF"/>
     <text x="130" y="21" fill="#3730A3" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">VISUAL PAGE REORDER BOARD</text>
 
     <!-- Card 1 -->
@@ -16864,7 +16868,7 @@ try {
 
   <g filter="url(#s2-sh-indigo)">
     <rect x="100" y="70" width="300" height="255" rx="14" fill="#FFFFFF" stroke="#C7D2FE" stroke-width="2"/>
-    <rect x="100" y="70" width="300" height="38" rx="14 14 0 0" fill="#F7F7F7"/>
+    <rect x="100" y="70" width="300" height="38" rx="14" fill="#F7F7F7"/>
     <line x1="100" y1="108" x2="400" y2="108" stroke="#E5E5E5" stroke-width="1.5"/>
     <text x="120" y="94" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="12" font-weight="800">BULK EDIT</text>
     <rect x="315" y="80" width="70" height="18" rx="4" fill="#4F46E5"/>
@@ -16914,7 +16918,7 @@ try {
 
     <rect x="135" y="105" width="250" height="175" rx="12" fill="#0A0A0A" stroke="#020617" stroke-width="2"/>
     <rect x="145" y="115" width="230" height="150" rx="6" fill="#4F46E5"/>
-    <rect x="145" y="115" width="230" height="22" rx="6 6 0 0" fill="#4338CA"/>
+    <rect x="145" y="115" width="230" height="22" rx="6" fill="#4338CA"/>
     <circle cx="158" cy="126" r="3" fill="#C7D2FE"/>
 
     <rect x="170" y="148" width="180" height="105" rx="6" fill="#FFFFFF"/>
