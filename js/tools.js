@@ -48216,14 +48216,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
      ═══════════════════════════════════════════════════════════════════════════ */
   function mountImageResize(container, tool) {
     container.innerHTML = '';
-    container.className = 'cpdf-root conv-root spdf-workbench';
+    if (container.id === 'app-tool-stage') {
+      container.className = 'app-stage-container cpdf-root conv-root';
+    } else {
+      container.className = 'cpdf-root conv-root';
+    }
 
     const stageEl = container.closest('.app-stage-container');
     if (stageEl) {
-      stageEl.style.padding = '0';
-      stageEl.style.maxWidth = '100%';
-      stageEl.style.margin = '0';
-      stageEl.classList.add('spdf-stage-active');
+      stageEl.style.padding = '';
+      stageEl.style.maxWidth = '';
+      stageEl.style.margin = '';
+      stageEl.classList.remove('spdf-stage-active');
     }
 
     const U = window.FF && window.FF.util ? window.FF.util : {
@@ -48537,7 +48541,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const centerEl = document.getElementById('app-topbar-center');
       if (centerEl) centerEl.innerHTML = '';
 
-      container.className = 'cpdf-root img-root img-tone-violet';
+      if (container.id === 'app-tool-stage') {
+        container.className = 'app-stage-container cpdf-root img-root img-tone-violet';
+      } else {
+        container.className = 'cpdf-root img-root img-tone-violet';
+      }
       container.classList.remove('spdf-workbench', 'conv-root');
       const stage = container.closest('.app-stage-container');
       if (stage) {
@@ -48548,13 +48556,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
 
       container.innerHTML = `
-        <header class="cpdf-hdr img-hdr">
-          <div class="cpdf-hdr-icon img-hdr-icon">${I.resize}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Resize image</h2>
-            <p class="cpdf-hdr-sub">Resize with contain, cover, or stretch</p>
-          </div>
-        </header>
         <div class="cpdf-dropzone drop-hero-box" id="img-resize-dz" tabindex="0" role="button" aria-label="Drop image to resize">
           <div class="dropzone-idle">
             <div class="drop-illustration">
@@ -48576,9 +48577,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
-            <h3 class="drop-title">Drag and drop an image</h3>
+            <h3 class="drop-title">Drag and drop an image to resize</h3>
             <div class="drop-action-group">
-              <label for="img-resize-inp" class="select-files-main-btn">Select image from your device</label>
+              <label for="img-resize-inp" class="select-files-main-btn" style="background: #000000 !important; color: #FFFFFF !important;">Select Image</label>
             </div>
             <p class="drop-formats">Supports PNG, JPG, WebP, AVIF, HEIC, GIF, SVG, and BMP</p>
           </div>
@@ -48630,8 +48631,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 <!-- Zoom Slider -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 11px; font-weight: 700; color: #555555;">Zoom</span>
-                  <input id="img-res-zoom-range" class="img-res-green-slider" type="range" min="0.5" max="2" step="0.1" value="${viewZoom}" style="width: 80px; height: 4px; accent-color: #10B981 !important; cursor: pointer;">
-                  <span id="img-res-zoom-lbl" style="font-size: 11px; font-weight: 700; color: #000000; min-width: 24px;">${Math.round(viewZoom * 100)}%</span>
+                  <input id="img-res-zoom-range" class="img-res-green-slider" type="range" min="0.25" max="3" step="0.05" value="${viewZoom}" style="width: 80px; height: 4px; accent-color: #10B981 !important; cursor: pointer;">
+                  <span id="img-res-zoom-lbl" style="font-size: 11px; font-weight: 700; color: #000000; min-width: 32px;">${Math.round(viewZoom * 100)}%</span>
+                  <button type="button" id="img-res-zoom-fit-btn" style="border: 1px solid #D4D4D4; background: #FFFFFF; color: #000000; border-radius: 3px; padding: 1px 6px; font-size: 10.5px; font-weight: 600; cursor: pointer;">Fit</button>
                 </div>
 
                 <!-- File Info Text & Change Image -->
@@ -48767,6 +48769,15 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         viewZoom = parseFloat(e.target.value) || 1;
         const lbl = container.querySelector('#img-res-zoom-lbl');
         if (lbl) lbl.textContent = `${Math.round(viewZoom * 100)}%`;
+        schedulePaint();
+      });
+
+      container.querySelector('#img-res-zoom-fit-btn')?.addEventListener('click', () => {
+        viewZoom = 1;
+        const zoomRange = container.querySelector('#img-res-zoom-range');
+        if (zoomRange) zoomRange.value = '1';
+        const lbl = container.querySelector('#img-res-zoom-lbl');
+        if (lbl) lbl.textContent = '100%';
         schedulePaint();
       });
 
@@ -48941,6 +48952,13 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
+    const _pending = (window.FF && window.FF.app && window.FF.app.pendingFiles && window.FF.app.pendingFiles[0]);
+    if (_pending) {
+      window.FF.app.pendingFiles = null;
+      pickFile(_pending);
+      return;
+    }
+
     renderUpload();
   }
 
@@ -48954,14 +48972,18 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
      ═══════════════════════════════════════════════════════════════════════════ */
   function mountImageCrop(container, tool) {
     container.innerHTML = '';
-    container.className = 'cpdf-root conv-root spdf-workbench';
+    if (container.id === 'app-tool-stage') {
+      container.className = 'app-stage-container cpdf-root conv-root';
+    } else {
+      container.className = 'cpdf-root conv-root';
+    }
 
     const stageEl = container.closest('.app-stage-container');
     if (stageEl) {
-      stageEl.style.padding = '0';
-      stageEl.style.maxWidth = '100%';
-      stageEl.style.margin = '0';
-      stageEl.classList.add('spdf-stage-active');
+      stageEl.style.padding = '';
+      stageEl.style.maxWidth = '';
+      stageEl.style.margin = '';
+      stageEl.classList.remove('spdf-stage-active');
     }
 
     const U = window.FF && window.FF.util ? window.FF.util : {
@@ -49241,7 +49263,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const centerEl = document.getElementById('app-topbar-center');
       if (centerEl) centerEl.innerHTML = '';
 
-      container.className = 'cpdf-root img-root img-tone-violet';
+      if (container.id === 'app-tool-stage') {
+        container.className = 'app-stage-container cpdf-root img-root img-tone-emerald';
+      } else {
+        container.className = 'cpdf-root img-root img-tone-emerald';
+      }
       container.classList.remove('spdf-workbench', 'conv-root');
       const stage = container.closest('.app-stage-container');
       if (stage) {
@@ -49252,13 +49278,6 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
 
       container.innerHTML = `
-        <header class="cpdf-hdr img-hdr">
-          <div class="cpdf-hdr-icon img-hdr-icon">${I.crop}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">Crop image</h2>
-            <p class="cpdf-hdr-sub">Crop rectangular regions with precise aspect ratio and live canvas handles</p>
-          </div>
-        </header>
         <div class="cpdf-dropzone drop-hero-box" id="img-crop-dz" tabindex="0" role="button" aria-label="Drop image to crop">
           <div class="dropzone-idle">
             <div class="drop-illustration">
@@ -49280,9 +49299,9 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                 <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
-            <h3 class="drop-title">Drag and drop an image</h3>
+            <h3 class="drop-title">Drag and drop an image to crop</h3>
             <div class="drop-action-group">
-              <label for="img-crop-inp" class="select-files-main-btn">Select image from your device</label>
+              <label for="img-crop-inp" class="select-files-main-btn" style="background: #000000 !important; color: #FFFFFF !important;">Select Image</label>
             </div>
             <p class="drop-formats">Supports PNG, JPG, WebP, AVIF, HEIC, GIF, SVG, and BMP</p>
           </div>
@@ -49839,10 +49858,1109 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       }
     }
 
+    const _pending = (window.FF && window.FF.app && window.FF.app.pendingFiles && window.FF.app.pendingFiles[0]);
+    if (_pending) {
+      window.FF.app.pendingFiles = null;
+      pickFile(_pending);
+      return;
+    }
+
     renderUpload();
   }
 
   window.__ffMountImageCrop = mountImageCrop;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FileKit Flagship Benchmark Workstation: Rotate Image (image-rotate)
+     Interactive Live Canvas Rotation (90°, 180°, 270°) & Flip (Horizontal, Vertical)
+     High-DPI Canvas Rendering · Dual-Stage Benchmark Workstation Architecture
+     ═══════════════════════════════════════════════════════════════════════════ */
+  function mountImageRotate(container, tool) {
+    container.innerHTML = '';
+    if (container.id === 'app-tool-stage') {
+      container.className = 'app-stage-container cpdf-root conv-root';
+    } else {
+      container.className = 'cpdf-root conv-root';
+    }
+
+    const stageEl = container.closest('.app-stage-container');
+    if (stageEl) {
+      stageEl.style.padding = '';
+      stageEl.style.maxWidth = '';
+      stageEl.style.margin = '';
+      stageEl.classList.remove('spdf-stage-active');
+    }
+
+    const U = window.FF && window.FF.util ? window.FF.util : {
+      baseName: (n) => (n || '').replace(/\.[^/.]+$/, ''),
+      extOf: (n) => (n || '').split('.').pop() || '',
+      downloadBlob: (b, fn) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = fn;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 500);
+      }
+    };
+
+    const _bytes = (b) => {
+      if (typeof b !== 'number' || isNaN(b) || b <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), 3);
+      return (b / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+    };
+
+    const _esc = (s) => (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] || c);
+
+    let file = null;
+    let previewUrl = null;
+    let sourceImg = null;
+    let natural = { w: 0, h: 0 };
+    let viewZoom = 1;
+    let customOutputName = '';
+    let isProcessing = false;
+
+    const state = {
+      deg: 90,
+      flipX: false,
+      flipY: false,
+      format: 'original',
+      quality: 92
+    };
+
+    function clearPreview() {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+      }
+      sourceImg = null;
+    }
+
+    async function loadImageFile(f) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(f);
+        const img = new Image();
+        img.onload = () => resolve({ img, url });
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      });
+    }
+
+    async function pickFile(f) {
+      if (!f || !f.type.startsWith('image/')) return;
+      if (f.size > 150 * 1024 * 1024) {
+        alert('File is too large (max 150MB)');
+        return;
+      }
+      clearPreview();
+      file = f;
+      try {
+        const loaded = await loadImageFile(f);
+        sourceImg = loaded.img;
+        previewUrl = loaded.url;
+        natural = {
+          w: sourceImg.naturalWidth || sourceImg.width || 800,
+          h: sourceImg.naturalHeight || sourceImg.height || 600
+        };
+        state.deg = 90;
+        state.flipX = false;
+        state.flipY = false;
+        viewZoom = 1;
+        customOutputName = `${U.baseName(file.name)}_rotated.${getResolvedExt()}`;
+        renderConfigure();
+      } catch (err) {
+        console.error('[Rotate Image] Failed to load image:', err);
+        renderUpload();
+      }
+    }
+
+    function getResolvedExt() {
+      if (state.format === 'png') return 'png';
+      if (state.format === 'jpeg') return 'jpg';
+      if (state.format === 'webp') return 'webp';
+      const origExt = U.extOf(file?.name || 'png').toLowerCase();
+      return origExt || 'png';
+    }
+
+    function getResolvedMime() {
+      const ext = getResolvedExt();
+      if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+      if (ext === 'webp') return 'image/webp';
+      return 'image/png';
+    }
+
+    function getExportDimensions() {
+      const is90or270 = state.deg === 90 || state.deg === 270;
+      return {
+        w: is90or270 ? natural.h : natural.w,
+        h: is90or270 ? natural.w : natural.h
+      };
+    }
+
+    function drawCheckerboard(ctx, w, h) {
+      const s = 12;
+      for (let y = 0; y < h; y += s) {
+        for (let x = 0; x < w; x += s) {
+          ctx.fillStyle = ((x / s + y / s) % 2 === 0) ? '#FFFFFF' : '#F1F5F9';
+          ctx.fillRect(x, y, s, s);
+        }
+      }
+    }
+
+    function renderRotatedCanvas(w, h) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, w);
+      canvas.height = Math.max(1, h);
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate((state.deg * Math.PI) / 180);
+      ctx.scale(state.flipX ? -1 : 1, state.flipY ? -1 : 1);
+      ctx.drawImage(sourceImg, -natural.w / 2, -natural.h / 2);
+      ctx.restore();
+
+      return canvas;
+    }
+
+    function renderPreview() {
+      const canvas = container.querySelector('#img-rot-stage-canvas');
+      const frame = container.querySelector('#img-rot-stage-frame');
+      if (!canvas || !frame || !sourceImg) return;
+
+      const exp = getExportDimensions();
+      const maxW = Math.max(120, frame.clientWidth - 48);
+      const maxH = Math.max(120, frame.clientHeight - 48);
+      const scaleBase = Math.min(maxW / exp.w, maxH / exp.h) * viewZoom;
+
+      const dispW = Math.max(1, Math.round(exp.w * scaleBase));
+      const dispH = Math.max(1, Math.round(exp.h * scaleBase));
+
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(dispW * dpr);
+      canvas.height = Math.round(dispH * dpr);
+      canvas.style.width = `${dispW}px`;
+      canvas.style.height = `${dispH}px`;
+
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      drawCheckerboard(ctx, dispW, dispH);
+
+      ctx.save();
+      ctx.translate(dispW / 2, dispH / 2);
+      ctx.rotate((state.deg * Math.PI) / 180);
+      ctx.scale(state.flipX ? -1 : 1, state.flipY ? -1 : 1);
+      const drawW = natural.w * scaleBase;
+      const drawH = natural.h * scaleBase;
+      ctx.drawImage(sourceImg, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+    }
+
+    function renderUpload() {
+      if (container.id === 'app-tool-stage') {
+        container.className = 'app-stage-container cpdf-root img-root img-tone-orange';
+      } else {
+        container.className = 'cpdf-root img-root img-tone-orange';
+      }
+      container.classList.remove('spdf-workbench', 'conv-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) {
+        stage.classList.remove('spdf-stage-active');
+        stage.style.padding = '';
+        stage.style.maxWidth = '';
+        stage.style.margin = '';
+      }
+
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="img-rot-dz" tabindex="0" role="button" aria-label="Drop image to rotate">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3 class="drop-title">Drag and drop an image to rotate</h3>
+            <div class="drop-action-group">
+              <label for="img-rot-inp" class="select-files-main-btn" style="background: #000000 !important; color: #FFFFFF !important;">Select Image</label>
+            </div>
+            <p class="drop-formats">Supports PNG, JPG, WebP, AVIF, HEIC, GIF, SVG, and BMP</p>
+          </div>
+          <input id="img-rot-inp" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.avif,.heic,.bmp,.gif" hidden>
+        </div>
+      `;
+
+      const dz = container.querySelector('#img-rot-dz');
+      const inp = container.querySelector('#img-rot-inp');
+      inp.onchange = () => inp.files && inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0];
+        if (f) pickFile(f);
+      });
+      dz.addEventListener('click', (e) => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); } });
+    }
+
+    function renderConfigure() {
+      if (container.id === 'app-tool-stage') {
+        container.className = 'app-stage-container cpdf-root img-rot-root spdf-workbench';
+      } else {
+        container.className = 'cpdf-root img-rot-root spdf-workbench';
+      }
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
+      const exp = getExportDimensions();
+
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation" style="grid-template-columns: minmax(0, 1fr) 300px !important;">
+            <!-- Left Stage: Interactive Slate Canvas -->
+            <div class="cpdf-benchmark-stage" id="img-rot-stage-canvas-wrap" style="background: #EEF2F6 !important; position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; width: 100%; height: 100%;">
+              
+              <!-- Center Canvas Viewport -->
+              <div id="img-rot-stage-frame" style="flex: 1 1 0; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 18px; user-select: none; box-sizing: border-box;">
+                <canvas id="img-rot-stage-canvas" style="display: block; border-radius: 4px; box-shadow: 0 12px 32px -6px rgba(0,0,0,0.22); cursor: default;"></canvas>
+              </div>
+
+              <!-- Bottom Canvas Bar: Zoom Slider + Fit + File Info -->
+              <div style="background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border-top: 1px solid rgba(0,0,0,0.06); padding: 4px 14px; display: flex; align-items: center; justify-content: space-between; height: 34px; box-sizing: border-box; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 10px; font-weight: 700; color: #555555;">Zoom</span>
+                  <input id="img-rot-zoom-range" class="img-res-green-slider" type="range" min="0.5" max="2.5" step="0.05" value="${viewZoom}" style="width: 75px; height: 3px; accent-color: #10B981 !important; cursor: pointer;">
+                  <span id="img-rot-zoom-lbl" style="font-size: 10px; font-weight: 700; color: #000000; min-width: 24px;">${Math.round(viewZoom * 100)}%</span>
+                  <button type="button" id="img-rot-zoom-fit-btn" style="border: 1px solid #D4D4D4; background: #FFFFFF; color: #333333; border-radius: 4px; padding: 1px 5px; font-size: 9.5px; font-weight: 700; cursor: pointer;">Fit</button>
+                  <button type="button" id="img-rot-reset-btn" style="border: 1px solid #D4D4D4; background: #FFFFFF; color: #333333; border-radius: 4px; padding: 1px 5px; font-size: 9.5px; font-weight: 700; cursor: pointer;">Reset</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="img-rot-dim-lbl" style="font-size: 10px; font-weight: 600; color: #555555;">${file.name} · ${exp.w}×${exp.h}px</span>
+                  <button type="button" id="img-rot-change-btn" style="border: 1px solid #D4D4D4; background: #FFFFFF; color: #000000; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; cursor: pointer;">Change Image</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Panel: Benchmark Studio Panel -->
+            <aside class="cpdf-benchmark-panel scan-benchmark-panel" aria-label="Rotate Settings" style="width: 300px !important; min-width: 300px !important; max-width: 300px !important; padding: 18px 16px !important; background: #FFFFFF !important; border-left: 1px solid #E5E5E5 !important; box-sizing: border-box !important; overflow-y: auto !important; overflow-x: hidden !important;">
+              <div class="cpdf-benchmark-panel-inner" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; gap: 0 !important; box-sizing: border-box !important;">
+                
+                <!-- Title & Current Angle Tag -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <h2 style="font-size: 15px; font-weight: 800; color: #000000; margin: 0; line-height: 1.2;">Rotate image</h2>
+                  <span id="img-rot-angle-tag" style="font-size: 11px; font-weight: 700; color: #000000; background: #F4F4F5; padding: 2px 8px; border-radius: 4px; border: 1px solid #E5E5E5;">${state.deg}°</span>
+                </div>
+
+                <!-- Quick Rotation Action Buttons (Turn 90° CW / CCW) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; width: 100%;">
+                  <button type="button" id="img-rot-btn-left" style="height: 36px; background: #F4F4F5; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: #000000; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    <span>90° Left</span>
+                  </button>
+                  <button type="button" id="img-rot-btn-right" style="height: 36px; background: #F4F4F5; border: 1px solid #E5E5E5; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: #000000; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;">
+                    <span>90° Right</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  </button>
+                </div>
+
+                <!-- Discrete Angle Chips -->
+                <div style="margin-bottom: 12px; width: 100%;">
+                  <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">Exact Angle</label>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;">
+                    ${[0, 90, 180, 270].map(deg => `
+                      <button type="button" class="img-rot-deg-pill ${state.deg === deg ? 'is-selected' : ''}" data-deg="${deg}" style="height: 28px; border: 1px solid ${state.deg === deg ? '#000000' : '#E5E5E5'}; background: ${state.deg === deg ? '#000000' : '#FFFFFF'}; color: ${state.deg === deg ? '#FFFFFF' : '#000000'}; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.12s ease;">${deg}°</button>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Flip / Mirror Toggles -->
+                <div style="margin-bottom: 14px; width: 100%;">
+                  <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">Mirror & Flip</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <button type="button" id="img-rot-flipx-btn" style="height: 32px; border: 1px solid ${state.flipX ? '#000000' : '#E5E5E5'}; background: ${state.flipX ? '#000000' : '#FFFFFF'}; color: ${state.flipX ? '#FFFFFF' : '#000000'}; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.12s ease;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M12 4v16"/></svg>
+                      <span>Flip Horiz</span>
+                    </button>
+                    <button type="button" id="img-rot-flipy-btn" style="height: 32px; border: 1px solid ${state.flipY ? '#000000' : '#E5E5E5'}; background: ${state.flipY ? '#000000' : '#FFFFFF'}; color: ${state.flipY ? '#FFFFFF' : '#000000'}; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.12s ease;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 8l5-5 5 5M7 16l5 5 5-5M4 12h16"/></svg>
+                      <span>Flip Vert</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Format Selection -->
+                <div style="margin-bottom: 14px; width: 100%;">
+                  <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">Export Format</label>
+                  <select id="img-rot-fmt-sel" style="width: 100%; height: 30px; padding: 2px 8px; border: 1px solid #D4D4D4; border-radius: 5px; font-size: 11.5px; font-weight: 600; color: #000000; background: #F4F4F5; outline: none; cursor: pointer;">
+                    <option value="original" ${state.format === 'original' ? 'selected' : ''}>Original format (${getResolvedExt().toUpperCase()})</option>
+                    <option value="png" ${state.format === 'png' ? 'selected' : ''}>PNG (Lossless)</option>
+                    <option value="jpeg" ${state.format === 'jpeg' ? 'selected' : ''}>JPG (Standard)</option>
+                    <option value="webp" ${state.format === 'webp' ? 'selected' : ''}>WebP (Compact)</option>
+                  </select>
+                </div>
+
+                <!-- Estimated Output Box -->
+                <div class="cpdf-benchmark-est-box" style="padding: 8px 10px !important; margin: 0 0 14px 0 !important;">
+                  <div class="cpdf-benchmark-est-title" style="font-size: 10.5px !important; margin-bottom: 2px !important;">Target Dimensions</div>
+                  <div class="cpdf-benchmark-est-metrics" style="margin-bottom: 4px !important; gap: 6px !important;">
+                    <strong id="img-rot-est-dims" class="cpdf-benchmark-est-new" style="font-size: 13.5px !important;">${exp.w} × ${exp.h} px</strong>
+                    <span class="cpdf-benchmark-est-pct" style="color: #059669 !important; background: #ECFDF5 !important; border: 1px solid #A7F3D0 !important; font-size: 10.5px !important; font-weight: 700 !important; padding: 1px 6px !important; border-radius: 3px !important;">FULL RES</span>
+                  </div>
+                  <div class="cpdf-benchmark-outname-wrap">
+                    <input type="text" id="img-rot-outname-inp" class="cpdf-benchmark-outname-inp" value="${_esc(customOutputName)}" placeholder="rotated_image.png" aria-label="Output Filename">
+                  </div>
+                </div>
+
+                <!-- CTA Button -->
+                <button type="button" class="cpdf-benchmark-cta scan-exact-cta" id="img-rot-run-btn" ${isProcessing ? 'disabled' : ''} style="width: 100%; height: 40px !important; background: #000000 !important; color: #FFFFFF !important; border-radius: 6px !important; font-weight: 700 !important; font-size: 13px !important; border: none !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;">
+                  <span>${isProcessing ? 'Rotating Image...' : 'Rotate & Download Image →'}</span>
+                </button>
+
+                <!-- Privacy Guarantee -->
+                <div style="margin-top: 8px; font-size: 9.5px; color: #777777; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; box-sizing: border-box;">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>100% Private · Processed locally in browser</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      `;
+
+      bindConfigureControls();
+      renderPreview();
+    }
+
+    function bindConfigureControls() {
+      const zoomRange = container.querySelector('#img-rot-zoom-range');
+      const zoomLbl = container.querySelector('#img-rot-zoom-lbl');
+      zoomRange?.addEventListener('input', () => {
+        viewZoom = parseFloat(zoomRange.value) || 1;
+        if (zoomLbl) zoomLbl.textContent = `${Math.round(viewZoom * 100)}%`;
+        renderPreview();
+      });
+
+      container.querySelector('#img-rot-zoom-fit-btn')?.addEventListener('click', () => {
+        viewZoom = 1;
+        if (zoomRange) zoomRange.value = '1';
+        if (zoomLbl) zoomLbl.textContent = '100%';
+        renderPreview();
+      });
+
+      container.querySelector('#img-rot-reset-btn')?.addEventListener('click', () => {
+        state.deg = 0;
+        state.flipX = false;
+        state.flipY = false;
+        renderConfigure();
+      });
+
+      container.querySelector('#img-rot-btn-left')?.addEventListener('click', () => {
+        state.deg = (state.deg + 270) % 360;
+        renderConfigure();
+      });
+
+      container.querySelector('#img-rot-btn-right')?.addEventListener('click', () => {
+        state.deg = (state.deg + 90) % 360;
+        renderConfigure();
+      });
+
+      container.querySelectorAll('.img-rot-deg-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.deg = parseInt(btn.dataset.deg, 10) || 0;
+          renderConfigure();
+        });
+      });
+
+      container.querySelector('#img-rot-flipx-btn')?.addEventListener('click', () => {
+        state.flipX = !state.flipX;
+        renderConfigure();
+      });
+
+      container.querySelector('#img-rot-flipy-btn')?.addEventListener('click', () => {
+        state.flipY = !state.flipY;
+        renderConfigure();
+      });
+
+      const fmtSel = container.querySelector('#img-rot-fmt-sel');
+      fmtSel?.addEventListener('change', () => {
+        state.format = fmtSel.value;
+        customOutputName = `${U.baseName(file.name)}_rotated.${getResolvedExt()}`;
+        const nameInp = container.querySelector('#img-rot-outname-inp');
+        if (nameInp) nameInp.value = customOutputName;
+      });
+
+      const nameInp = container.querySelector('#img-rot-outname-inp');
+      nameInp?.addEventListener('input', () => {
+        customOutputName = nameInp.value.trim() || `${U.baseName(file.name)}_rotated.${getResolvedExt()}`;
+      });
+
+      container.querySelector('#img-rot-change-btn')?.addEventListener('click', () => {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/*,.png,.jpg,.jpeg,.webp,.avif,.heic,.bmp,.gif';
+        inp.onchange = () => inp.files && inp.files[0] && pickFile(inp.files[0]);
+        inp.click();
+      });
+
+      container.querySelector('#img-rot-run-btn')?.addEventListener('click', () => executeRotate());
+    }
+
+    async function executeRotate() {
+      if (isProcessing || !sourceImg) return;
+      isProcessing = true;
+      const runBtn = container.querySelector('#img-rot-run-btn');
+      if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.innerHTML = '<span>Rotating & Exporting...</span>';
+      }
+
+      try {
+        const exp = getExportDimensions();
+        const exportCanvas = renderRotatedCanvas(exp.w, exp.h);
+        const mime = getResolvedMime();
+        const quality = (mime === 'image/jpeg' || mime === 'image/webp') ? (state.quality / 100) : undefined;
+
+        exportCanvas.toBlob((blob) => {
+          isProcessing = false;
+          if (!blob) {
+            alert('Failed to rotate image.');
+            renderConfigure();
+            return;
+          }
+
+          const outName = customOutputName || `${U.baseName(file.name)}_rotated.${getResolvedExt()}`;
+
+          if (window.FF?.renderUnifiedResult) {
+            window.FF.renderUnifiedResult(container, {
+              tool: { id: 'image-rotate', name: 'Rotate Image', category: 'Images' },
+              blob,
+              filename: outName,
+              title: 'Image Rotated Successfully',
+              badge: `${exp.w} × ${exp.h} px`,
+              qualityBadge: `${state.deg}° Rotation`,
+              qualityNote: `${natural.w}×${natural.h}px → ${exp.w}×${exp.h}px`,
+              originalBytes: file.size,
+              resultBytes: blob.size,
+              onBacktrack: () => renderConfigure(),
+              onAgain: () => {
+                file = null;
+                clearPreview();
+                renderUpload();
+              }
+            });
+          } else {
+            U.downloadBlob(blob, outName);
+            renderConfigure();
+          }
+        }, mime, quality);
+      } catch (err) {
+        isProcessing = false;
+        console.error('[Rotate Image] Export error:', err);
+        alert('Failed to rotate image: ' + err.message);
+        renderConfigure();
+      }
+    }
+
+    const _pending = (window.FF && window.FF.app && window.FF.app.pendingFiles && window.FF.app.pendingFiles[0]);
+    if (_pending) {
+      window.FF.app.pendingFiles = null;
+      pickFile(_pending);
+      return;
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountImageRotate = mountImageRotate;
+
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FileKit Flagship Benchmark Workstation: Watermark Image (image-watermark)
+     Live Interactive Watermark Studio · 9-Point Alignment Grid · Opacity & Scale
+     Dual-Stage Benchmark Workstation Architecture
+     ═══════════════════════════════════════════════════════════════════════════ */
+  function mountImageWatermark(container, tool) {
+    container.innerHTML = '';
+    if (container.id === 'app-tool-stage') {
+      container.className = 'app-stage-container cpdf-root conv-root';
+    } else {
+      container.className = 'cpdf-root conv-root';
+    }
+
+    const stageEl = container.closest('.app-stage-container');
+    if (stageEl) {
+      stageEl.style.padding = '';
+      stageEl.style.maxWidth = '';
+      stageEl.style.margin = '';
+      stageEl.classList.remove('spdf-stage-active');
+    }
+
+    const U = window.FF && window.FF.util ? window.FF.util : {
+      baseName: (n) => (n || '').replace(/\.[^/.]+$/, ''),
+      extOf: (n) => (n || '').split('.').pop() || '',
+      downloadBlob: (b, fn) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = fn;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 500);
+      }
+    };
+
+    const _bytes = (b) => {
+      if (typeof b !== 'number' || isNaN(b) || b <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), 3);
+      return (b / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+    };
+
+    const _esc = (s) => (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] || c);
+
+    let file = null;
+    let previewUrl = null;
+    let sourceImg = null;
+    let natural = { w: 0, h: 0 };
+    let viewZoom = 1;
+    let customOutputName = '';
+    let isProcessing = false;
+
+    const state = {
+      text: 'FileKit',
+      pos: 'bottom-right',
+      opacity: 45,
+      size: 6,
+      color: '#FFFFFF',
+      format: 'original',
+      quality: 92
+    };
+
+    function clearPreview() {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+      }
+      sourceImg = null;
+    }
+
+    async function loadImageFile(f) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(f);
+        const img = new Image();
+        img.onload = () => resolve({ img, url });
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      });
+    }
+
+    async function pickFile(f) {
+      if (!f || !f.type.startsWith('image/')) return;
+      if (f.size > 150 * 1024 * 1024) {
+        alert('File is too large (max 150MB)');
+        return;
+      }
+      clearPreview();
+      file = f;
+      try {
+        const loaded = await loadImageFile(f);
+        sourceImg = loaded.img;
+        previewUrl = loaded.url;
+        natural = {
+          w: sourceImg.naturalWidth || sourceImg.width || 800,
+          h: sourceImg.naturalHeight || sourceImg.height || 600
+        };
+        viewZoom = 1;
+        customOutputName = `${U.baseName(file.name)}_watermarked.${getResolvedExt()}`;
+        renderConfigure();
+      } catch (err) {
+        console.error('[Watermark Image] Failed to load image:', err);
+        renderUpload();
+      }
+    }
+
+    function getResolvedExt() {
+      if (state.format === 'png') return 'png';
+      if (state.format === 'jpeg') return 'jpg';
+      if (state.format === 'webp') return 'webp';
+      const origExt = U.extOf(file?.name || 'png').toLowerCase();
+      return origExt || 'png';
+    }
+
+    function getResolvedMime() {
+      const ext = getResolvedExt();
+      if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+      if (ext === 'webp') return 'image/webp';
+      return 'image/png';
+    }
+
+    function drawCheckerboard(ctx, w, h) {
+      const s = 12;
+      for (let y = 0; y < h; y += s) {
+        for (let x = 0; x < w; x += s) {
+          ctx.fillStyle = ((x / s + y / s) % 2 === 0) ? '#FFFFFF' : '#F1F5F9';
+          ctx.fillRect(x, y, s, s);
+        }
+      }
+    }
+
+    function drawWatermarkOnContext(ctx, w, h, scaleFactor = 1) {
+      const text = String(state.text || 'FileKit');
+      const pos = state.pos || 'bottom-right';
+      const opacity = Math.max(0.05, Math.min(1, state.opacity / 100));
+      const minDim = Math.min(w, h);
+      const fs = Math.max(12, Math.round(minDim * (state.size / 100)));
+
+      ctx.save();
+      ctx.font = `700 ${fs}px Outfit, Inter, system-ui, sans-serif`;
+      ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(text).width;
+      const pad = Math.round(fs * 0.7);
+
+      let x = pad + tw / 2;
+      let y = pad + fs / 2;
+
+      if (pos.includes('left')) {
+        x = pad + tw / 2;
+      } else if (pos.includes('right')) {
+        x = w - pad - tw / 2;
+      } else {
+        x = w / 2;
+      }
+
+      if (pos.startsWith('top')) {
+        y = pad + fs / 2;
+      } else if (pos.startsWith('bottom')) {
+        y = h - pad - fs / 2;
+      } else {
+        y = h / 2;
+      }
+
+      ctx.globalAlpha = opacity;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = Math.max(2, Math.round(fs * 0.1));
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+
+      ctx.fillStyle = state.color;
+      ctx.textAlign = 'center';
+      ctx.fillText(text, x, y);
+
+      ctx.restore();
+    }
+
+    function renderWatermarkedCanvas(w, h) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, w);
+      canvas.height = Math.max(1, h);
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.drawImage(sourceImg, 0, 0, w, h);
+      drawWatermarkOnContext(ctx, w, h, 1);
+
+      return canvas;
+    }
+
+    function renderPreview() {
+      const canvas = container.querySelector('#img-wm-stage-canvas');
+      const frame = container.querySelector('#img-wm-stage-frame');
+      if (!canvas || !frame || !sourceImg) return;
+
+      const maxW = Math.max(120, frame.clientWidth - 48);
+      const maxH = Math.max(120, frame.clientHeight - 48);
+      const scaleBase = Math.min(maxW / natural.w, maxH / natural.h) * viewZoom;
+
+      const dispW = Math.max(1, Math.round(natural.w * scaleBase));
+      const dispH = Math.max(1, Math.round(natural.h * scaleBase));
+
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(dispW * dpr);
+      canvas.height = Math.round(dispH * dpr);
+      canvas.style.width = `${dispW}px`;
+      canvas.style.height = `${dispH}px`;
+
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      drawCheckerboard(ctx, dispW, dispH);
+
+      ctx.drawImage(sourceImg, 0, 0, dispW, dispH);
+      drawWatermarkOnContext(ctx, dispW, dispH, scaleBase);
+    }
+
+    function renderUpload() {
+      if (container.id === 'app-tool-stage') {
+        container.className = 'app-stage-container cpdf-root img-root img-tone-teal';
+      } else {
+        container.className = 'cpdf-root img-root img-tone-teal';
+      }
+      container.classList.remove('spdf-workbench', 'conv-root');
+      const stage = container.closest('.app-stage-container');
+      if (stage) {
+        stage.classList.remove('spdf-stage-active');
+        stage.style.padding = '';
+        stage.style.maxWidth = '';
+        stage.style.margin = '';
+      }
+
+      container.innerHTML = `
+        <div class="cpdf-dropzone drop-hero-box" id="img-wm-dz" tabindex="0" role="button" aria-label="Drop image to watermark">
+          <div class="dropzone-idle">
+            <div class="drop-illustration">
+              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
+                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
+                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3 class="drop-title">Drag and drop an image to watermark</h3>
+            <div class="drop-action-group">
+              <label for="img-wm-inp" class="select-files-main-btn" style="background: #000000 !important; color: #FFFFFF !important;">Select Image</label>
+            </div>
+            <p class="drop-formats">Supports PNG, JPG, WebP, AVIF, HEIC, GIF, SVG, and BMP</p>
+          </div>
+          <input id="img-wm-inp" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.avif,.heic,.bmp,.gif" hidden>
+        </div>
+      `;
+
+      const dz = container.querySelector('#img-wm-dz');
+      const inp = container.querySelector('#img-wm-inp');
+      inp.onchange = () => inp.files && inp.files[0] && pickFile(inp.files[0]);
+      dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('cpdf-dz--over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('cpdf-dz--over'));
+      dz.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dz.classList.remove('cpdf-dz--over');
+        const f = e.dataTransfer?.files?.[0];
+        if (f) pickFile(f);
+      });
+      dz.addEventListener('click', (e) => { if (!e.target.closest('label')) inp.click(); });
+      dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); } });
+    }
+
+    function renderConfigure() {
+      if (container.id === 'app-tool-stage') {
+        container.className = 'app-stage-container cpdf-root img-wm-root spdf-workbench';
+      } else {
+        container.className = 'cpdf-root img-wm-root spdf-workbench';
+      }
+      const stageEl = container.closest('.app-stage-container');
+      if (stageEl) {
+        stageEl.style.padding = '0';
+        stageEl.style.maxWidth = '100%';
+        stageEl.style.margin = '0';
+        stageEl.classList.add('spdf-stage-active');
+      }
+
+      const POSITIONS = [
+        { id: 'top-left', label: 'TL' },
+        { id: 'top-center', label: 'TC' },
+        { id: 'top-right', label: 'TR' },
+        { id: 'center-left', label: 'ML' },
+        { id: 'center', label: 'C' },
+        { id: 'center-right', label: 'MR' },
+        { id: 'bottom-left', label: 'BL' },
+        { id: 'bottom-center', label: 'BC' },
+        { id: 'bottom-right', label: 'BR' }
+      ];
+
+      const COLORS = ['#FFFFFF', '#000000', '#EF4444', '#3B82F6', '#F59E0B', '#10B981'];
+
+      container.innerHTML = `
+        <div class="cpdf-benchmark-body">
+          <div class="cpdf-benchmark-workstation" style="grid-template-columns: minmax(0, 1fr) 300px !important;">
+            <!-- Left Stage: Interactive Canvas Viewport -->
+            <div class="cpdf-benchmark-stage" id="img-wm-stage-canvas-wrap" style="background: #EEF2F6 !important; position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; width: 100%; height: 100%;">
+              
+              <!-- Center Canvas Frame -->
+              <div id="img-wm-stage-frame" style="flex: 1 1 0; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 18px; user-select: none; box-sizing: border-box;">
+                <canvas id="img-wm-stage-canvas" style="display: block; border-radius: 4px; box-shadow: 0 12px 32px -6px rgba(0,0,0,0.22); cursor: default;"></canvas>
+              </div>
+
+              <!-- Bottom Canvas Bar -->
+              <div style="background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border-top: 1px solid rgba(0,0,0,0.06); padding: 4px 14px; display: flex; align-items: center; justify-content: space-between; height: 34px; box-sizing: border-box; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 10px; font-weight: 700; color: #555555;">Zoom</span>
+                  <input id="img-wm-zoom-range" class="img-res-green-slider" type="range" min="0.5" max="2.5" step="0.05" value="${viewZoom}" style="width: 75px; height: 3px; accent-color: #10B981 !important; cursor: pointer;">
+                  <span id="img-wm-zoom-lbl" style="font-size: 10px; font-weight: 700; color: #000000; min-width: 24px;">${Math.round(viewZoom * 100)}%</span>
+                  <button type="button" id="img-wm-zoom-fit-btn" style="border: 1px solid #D4D4D4; background: #FFFFFF; color: #333333; border-radius: 4px; padding: 1px 5px; font-size: 9.5px; font-weight: 700; cursor: pointer;">Fit</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 10px; font-weight: 600; color: #555555;">${file.name} · ${natural.w}×${natural.h}px</span>
+                  <button type="button" id="img-wm-change-btn" style="border: 1px solid #D4D4D4; background: #FFFFFF; color: #000000; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; cursor: pointer;">Change Image</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Panel: Benchmark Studio Panel -->
+            <aside class="cpdf-benchmark-panel scan-benchmark-panel" aria-label="Watermark Settings" style="width: 300px !important; min-width: 300px !important; max-width: 300px !important; padding: 18px 16px !important; background: #FFFFFF !important; border-left: 1px solid #E5E5E5 !important; box-sizing: border-box !important; overflow-y: auto !important; overflow-x: hidden !important;">
+              <div class="cpdf-benchmark-panel-inner" style="width: 100% !important; max-width: 100% !important; margin: 0 !important; gap: 0 !important; box-sizing: border-box !important;">
+                
+                <!-- Title -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <h2 style="font-size: 15px; font-weight: 800; color: #000000; margin: 0; line-height: 1.2;">Watermark image</h2>
+                </div>
+
+                <!-- Watermark Text Input -->
+                <div style="margin-bottom: 12px; width: 100%;">
+                  <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">Stamp Text</label>
+                  <input type="text" id="img-wm-text-inp" value="${_esc(state.text)}" maxlength="80" style="width: 100%; height: 32px; padding: 4px 8px; border: 1px solid #D4D4D4; border-radius: 5px; font-size: 12px; font-weight: 700; color: #000000; background: #FFFFFF; outline: none; box-sizing: border-box;">
+                </div>
+
+                <!-- 3x3 Position Grid + Color Chips Row -->
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; width: 100%;">
+                  <!-- 3x3 Grid -->
+                  <div style="width: 96px; flex-shrink: 0;">
+                    <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">Position</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; width: 96px; height: 96px; background: #F4F4F5; padding: 4px; border-radius: 6px; box-sizing: border-box; border: 1px solid #E5E5E5;">
+                      ${POSITIONS.map(p => `
+                        <button type="button" class="img-wm-pos-btn ${state.pos === p.id ? 'is-selected' : ''}" data-pos="${p.id}" title="${p.id}" style="border: 1px solid ${state.pos === p.id ? '#000000' : '#D4D4D4'}; background: ${state.pos === p.id ? '#000000' : '#FFFFFF'}; color: ${state.pos === p.id ? '#FFFFFF' : '#444444'}; border-radius: 3px; font-size: 9px; font-weight: 700; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;">${p.label}</button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <!-- Color & Presets -->
+                  <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                      <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">Color</label>
+                      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
+                        ${COLORS.map(c => `
+                          <button type="button" class="img-wm-col-btn ${state.color === c ? 'is-selected' : ''}" data-col="${c}" style="height: 24px; border-radius: 4px; background: ${c}; border: ${state.color === c ? '2px solid #000000' : '1px solid #CBD5E1'}; cursor: pointer; outline: none;"></button>
+                        `).join('')}
+                      </div>
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 10px; font-weight: 700; color: #555555; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">Format</label>
+                      <select id="img-wm-fmt-sel" style="width: 100%; height: 26px; padding: 2px 6px; border: 1px solid #D4D4D4; border-radius: 5px; font-size: 11px; font-weight: 600; color: #000000; background: #F4F4F5; outline: none; cursor: pointer; box-sizing: border-box;">
+                        <option value="original" ${state.format === 'original' ? 'selected' : ''}>Original</option>
+                        <option value="png" ${state.format === 'png' ? 'selected' : ''}>PNG</option>
+                        <option value="jpeg" ${state.format === 'jpeg' ? 'selected' : ''}>JPG</option>
+                        <option value="webp" ${state.format === 'webp' ? 'selected' : ''}>WebP</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sliders: Opacity & Size -->
+                <div style="margin-bottom: 10px; width: 100%;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span style="font-size: 10px; font-weight: 700; color: #555555; text-transform: uppercase; letter-spacing: 0.3px;">Opacity</span>
+                    <span id="img-wm-op-lbl" style="font-size: 10.5px; font-weight: 700; color: #000000;">${state.opacity}%</span>
+                  </div>
+                  <input type="range" id="img-wm-op-range" class="img-res-green-slider" min="5" max="100" value="${state.opacity}" style="width: 100%; height: 4px; accent-color: #10B981 !important; cursor: pointer;">
+                </div>
+
+                <div style="margin-bottom: 12px; width: 100%;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span style="font-size: 10px; font-weight: 700; color: #555555; text-transform: uppercase; letter-spacing: 0.3px;">Font Size</span>
+                    <span id="img-wm-sz-lbl" style="font-size: 10.5px; font-weight: 700; color: #000000;">${state.size}%</span>
+                  </div>
+                  <input type="range" id="img-wm-sz-range" class="img-res-green-slider" min="2" max="25" value="${state.size}" style="width: 100%; height: 4px; accent-color: #10B981 !important; cursor: pointer;">
+                </div>
+
+                <!-- Output Filename -->
+                <div class="cpdf-benchmark-est-box" style="padding: 7px 10px !important; margin: 0 0 12px 0 !important;">
+                  <div class="cpdf-benchmark-est-title" style="font-size: 10.5px !important; margin-bottom: 2px !important;">Output Filename</div>
+                  <div class="cpdf-benchmark-outname-wrap">
+                    <input type="text" id="img-wm-outname-inp" class="cpdf-benchmark-outname-inp" value="${_esc(customOutputName)}" placeholder="watermarked_image.png" aria-label="Output Filename">
+                  </div>
+                </div>
+
+                <!-- CTA Button -->
+                <button type="button" class="cpdf-benchmark-cta scan-exact-cta" id="img-wm-run-btn" ${isProcessing ? 'disabled' : ''} style="width: 100%; height: 40px !important; background: #000000 !important; color: #FFFFFF !important; border-radius: 6px !important; font-weight: 700 !important; font-size: 13px !important; border: none !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;">
+                  <span>${isProcessing ? 'Watermarking...' : 'Apply & Download →'}</span>
+                </button>
+
+                <!-- Privacy Guarantee -->
+                <div style="margin-top: 8px; font-size: 9.5px; color: #777777; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; box-sizing: border-box;">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>100% Private · Processed locally in browser</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      `;
+
+      bindConfigureControls();
+      renderPreview();
+    }
+
+    function bindConfigureControls() {
+      const zoomRange = container.querySelector('#img-wm-zoom-range');
+      const zoomLbl = container.querySelector('#img-wm-zoom-lbl');
+      zoomRange?.addEventListener('input', () => {
+        viewZoom = parseFloat(zoomRange.value) || 1;
+        if (zoomLbl) zoomLbl.textContent = `${Math.round(viewZoom * 100)}%`;
+        renderPreview();
+      });
+
+      container.querySelector('#img-wm-zoom-fit-btn')?.addEventListener('click', () => {
+        viewZoom = 1;
+        if (zoomRange) zoomRange.value = '1';
+        if (zoomLbl) zoomLbl.textContent = '100%';
+        renderPreview();
+      });
+
+      const textInp = container.querySelector('#img-wm-text-inp');
+      textInp?.addEventListener('input', () => {
+        state.text = textInp.value;
+        renderPreview();
+      });
+
+      container.querySelectorAll('.img-wm-pos-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.pos = btn.dataset.pos;
+          container.querySelectorAll('.img-wm-pos-btn').forEach(b => {
+            const isSel = b.dataset.pos === state.pos;
+            b.style.borderColor = isSel ? '#000000' : '#D4D4D4';
+            b.style.background = isSel ? '#000000' : '#FFFFFF';
+            b.style.color = isSel ? '#FFFFFF' : '#444444';
+          });
+          renderPreview();
+        });
+      });
+
+      container.querySelectorAll('.img-wm-col-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.color = btn.dataset.col;
+          container.querySelectorAll('.img-wm-col-btn').forEach(b => {
+            b.style.border = b.dataset.col === state.color ? '2px solid #000000' : '1px solid #CBD5E1';
+          });
+          renderPreview();
+        });
+      });
+
+      const opRange = container.querySelector('#img-wm-op-range');
+      const opLbl = container.querySelector('#img-wm-op-lbl');
+      opRange?.addEventListener('input', () => {
+        state.opacity = parseInt(opRange.value, 10) || 45;
+        if (opLbl) opLbl.textContent = `${state.opacity}%`;
+        renderPreview();
+      });
+
+      const szRange = container.querySelector('#img-wm-sz-range');
+      const szLbl = container.querySelector('#img-wm-sz-lbl');
+      szRange?.addEventListener('input', () => {
+        state.size = parseInt(szRange.value, 10) || 6;
+        if (szLbl) szLbl.textContent = `${state.size}%`;
+        renderPreview();
+      });
+
+      const fmtSel = container.querySelector('#img-wm-fmt-sel');
+      fmtSel?.addEventListener('change', () => {
+        state.format = fmtSel.value;
+        customOutputName = `${U.baseName(file.name)}_watermarked.${getResolvedExt()}`;
+        const nameInp = container.querySelector('#img-wm-outname-inp');
+        if (nameInp) nameInp.value = customOutputName;
+      });
+
+      const nameInp = container.querySelector('#img-wm-outname-inp');
+      nameInp?.addEventListener('input', () => {
+        customOutputName = nameInp.value.trim() || `${U.baseName(file.name)}_watermarked.${getResolvedExt()}`;
+      });
+
+      container.querySelector('#img-wm-change-btn')?.addEventListener('click', () => {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/*,.png,.jpg,.jpeg,.webp,.avif,.heic,.bmp,.gif';
+        inp.onchange = () => inp.files && inp.files[0] && pickFile(inp.files[0]);
+        inp.click();
+      });
+
+      container.querySelector('#img-wm-run-btn')?.addEventListener('click', () => executeWatermark());
+    }
+
+    async function executeWatermark() {
+      if (isProcessing || !sourceImg) return;
+      isProcessing = true;
+      const runBtn = container.querySelector('#img-wm-run-btn');
+      if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.innerHTML = '<span>Watermarking & Exporting...</span>';
+      }
+
+      try {
+        const exportCanvas = renderWatermarkedCanvas(natural.w, natural.h);
+        const mime = getResolvedMime();
+        const quality = (mime === 'image/jpeg' || mime === 'image/webp') ? (state.quality / 100) : undefined;
+
+        exportCanvas.toBlob((blob) => {
+          isProcessing = false;
+          if (!blob) {
+            alert('Failed to watermark image.');
+            renderConfigure();
+            return;
+          }
+
+          const outName = customOutputName || `${U.baseName(file.name)}_watermarked.${getResolvedExt()}`;
+
+          if (window.FF?.renderUnifiedResult) {
+            window.FF.renderUnifiedResult(container, {
+              tool: { id: 'image-watermark', name: 'Watermark Image', category: 'Images' },
+              blob,
+              filename: outName,
+              title: 'Image Watermarked Successfully',
+              badge: `${natural.w} × ${natural.h} px`,
+              qualityBadge: `${state.opacity}% Opacity`,
+              qualityNote: `Stamp: "${state.text}" · ${state.pos}`,
+              originalBytes: file.size,
+              resultBytes: blob.size,
+              onBacktrack: () => renderConfigure(),
+              onAgain: () => {
+                file = null;
+                clearPreview();
+                renderUpload();
+              }
+            });
+          } else {
+            U.downloadBlob(blob, outName);
+            renderConfigure();
+          }
+        }, mime, quality);
+      } catch (err) {
+        isProcessing = false;
+        console.error('[Watermark Image] Export error:', err);
+        alert('Failed to watermark image: ' + err.message);
+        renderConfigure();
+      }
+    }
+
+    const _pending = (window.FF && window.FF.app && window.FF.app.pendingFiles && window.FF.app.pendingFiles[0]);
+    if (_pending) {
+      window.FF.app.pendingFiles = null;
+      pickFile(_pending);
+      return;
+    }
+
+    renderUpload();
+  }
+
+  window.__ffMountImageWatermark = mountImageWatermark;
 
 
 function mountImage(container, tool) {
@@ -49921,13 +51039,6 @@ function mountImage(container, tool) {
       if (stage) { stage.classList.remove('spdf-stage-active'); stage.style.padding = ''; }
       container.classList.remove('img-workspace-active');
       container.innerHTML = `
-        <header class="cpdf-hdr img-hdr">
-          <div class="cpdf-hdr-icon img-hdr-icon">${icon()}</div>
-          <div>
-            <h2 class="cpdf-hdr-title">${_esc(meta.title)}</h2>
-            <p class="cpdf-hdr-sub">${_esc(meta.sub)}</p>
-          </div>
-        </header>
         <div class="cpdf-dropzone drop-hero-box" id="img-dz" tabindex="0" role="button" aria-label="Add image file">
           <div class="dropzone-idle">
             <div class="drop-illustration">
@@ -49953,13 +51064,12 @@ function mountImage(container, tool) {
             <h3 class="drop-title">Drag and drop an image</h3>
 
             <div class="drop-action-group">
-              <label for="img-inp" class="select-files-main-btn">Select image from your device</label>
+              <label for="img-inp" class="select-files-main-btn" style="background: #000000 !important; color: #FFFFFF !important;">Select Image</label>
             </div>
 
             <p class="drop-formats">Supports PNG, JPG, WebP, HEIC, AVIF, TIFF, SVG, GIF, and BMP</p>
           </div>
           <input id="img-inp" type="file" accept="image/*"  hidden>
-        </div>
         </div>`;
       bindDrop(container.querySelector('#img-dz'), container.querySelector('#img-inp'));
     }
@@ -54511,8 +55621,12 @@ trailer<</Root 1 0 R>>`;
     'image-resize':   () => window.__ffMountImageResize,
     'resize-image':   () => window.__ffMountImageResize,
     'image-crop':     () => window.__ffMountImageCrop || window.__ffMountImage,
-    'image-rotate':   () => window.__ffMountImage,
-    'image-watermark':() => window.__ffMountImage,
+    'crop-image':     () => window.__ffMountImageCrop || window.__ffMountImage,
+    'image-rotate':   () => window.__ffMountImageRotate || window.__ffMountImage,
+    'rotate-image':   () => window.__ffMountImageRotate || window.__ffMountImage,
+    'rotate':         () => window.__ffMountImageRotate || window.__ffMountImage,
+    'image-watermark':() => window.__ffMountImageWatermark || window.__ffMountImage,
+    'watermark-image':() => window.__ffMountImageWatermark || window.__ffMountImage,
     'image-to-pdf':   () => window.__ffMountImage,
     'pdf-convert':  () => window.__ffMountConvert,
     'pdf-to-word':  () => window.__ffMountConvert,

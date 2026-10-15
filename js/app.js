@@ -3694,48 +3694,24 @@ try {
       ],
 
       'Images': [
+        { title: 'Compress', toolId: 'image-compress', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>' },
+        { title: 'Resize', toolId: 'image-resize', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' },
+        { title: 'Crop', toolId: 'image-crop', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>' },
+        { title: 'Rotate', toolId: 'image-rotate', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' },
+        { title: 'Watermark', toolId: 'image-watermark', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
+        { title: 'Convert', fullTitle: 'Convert Image', toolId: 'image-convert', svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>' },
         {
-          title: 'CONVERT & COMPRESS',
-          tools: [
-            { id: 'image-convert', name: 'Convert image', cat: 'Images' },
-            { id: 'image-compress', name: 'Compress image', cat: 'Images' },
-            { id: 'image-heic-convert', name: 'HEIC to JPG / PNG', cat: 'Images' },
-            { id: 'img-to-base64', name: 'Image to Base64', cat: 'Images' },
-            { id: 'base64-to-img', name: 'Base64 to image', cat: 'Images' }
-          ]
-        },
-        {
-          title: 'RESIZE & TRANSFORM',
-          tools: [
-            { id: 'image-resize', name: 'Resize image', cat: 'Images' },
-            { id: 'image-crop', name: 'Crop image', cat: 'Images' },
-            { id: 'image-rotate', name: 'Rotate / flip', cat: 'Images' },
-            { id: 'image-upscale', name: 'Upscale (2x/4x)', cat: 'Images' },
-            { id: 'favicon', name: 'Favicon generator', cat: 'Images' }
-          ]
-        },
-        {
-          title: 'STYLING & EFFECTS',
-          tools: [
-            { id: 'image-watermark', name: 'Watermark image', cat: 'Images' },
-            { id: 'image-blur', name: 'Blur', cat: 'Images' },
-          ]
-        },
-        {
-          title: 'VECTOR & OPTIMIZATION',
-          tools: [
-            { id: 'png-trace', name: 'PNG trace to SVG', cat: 'Images' },
-            { id: 'svg-to-raster', name: 'SVG to PNG / JPG', cat: 'Images' },
-            { id: 'image-to-pdf', name: 'Screenshot to PDF', cat: 'Images' }
-          ]
-        },
-        {
-          title: 'METADATA & AI',
-          tools: [
-            { id: 'bg-remover', name: 'Background Remover', cat: 'Images' },
-            { id: 'exif-strip', name: 'EXIF strip', cat: 'Images' },
-            { id: 'exif-viewer', name: 'EXIF viewer', cat: 'Images' },
-            { id: 'image-diff', name: 'Image diff', cat: 'Images' },
+          title: 'More',
+          isMore: true,
+          svg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+          more: [
+            { title: 'Blur Image', toolId: 'image-blur', color: '#6366f1', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>' },
+            { title: 'Upscale (2x/4x)', toolId: 'image-upscale', color: '#8b5cf6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>' },
+            { title: 'Favicon Generator', toolId: 'favicon', color: '#ec4899', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>' },
+            { title: 'Remove BG', toolId: 'bg-remover', color: '#10b981', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' },
+            { title: 'Combine Images', toolId: 'combine-images', color: '#3b82f6', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="8" height="18" rx="2"/><rect x="13" y="3" width="8" height="18" rx="2"/></svg>' },
+            { title: 'EXIF Strip', toolId: 'exif-strip', color: '#ef4444', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>' },
+            { title: 'Image to PDF', toolId: 'image-to-pdf', color: '#f59e0b', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>' }
           ]
         }
       ],
@@ -5795,6 +5771,14 @@ try {
         'image-crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
         'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
         'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+        'image-rotate': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+        'rotate-image': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+        'rotate': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+        'image-watermark': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+        'watermark-image': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+        'watermark': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+        'image-compress': window.__ffMountCompress,
+        'compress-image': window.__ffMountCompress,
         'bg-remover': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
         'remove-background': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
         'image-remove-bg': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
@@ -6341,6 +6325,16 @@ try {
           'image-resize': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
           'resize-image': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
           'image-crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+          'image-rotate': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+          'rotate-image': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+          'rotate': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+          'image-watermark': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+          'watermark-image': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+          'watermark': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+          'image-compress': window.__ffMountCompress,
+          'compress-image': window.__ffMountCompress,
           'blur-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
           'background-blur': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
           'blur-bg': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
@@ -6349,8 +6343,6 @@ try {
           'combine-images': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
           'combine': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
           'image-combine': (c, t) => window.__ffMountCombineImages ? window.__ffMountCombineImages(c, t) : null,
-          'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
-          'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
           'convert-image': window.__ffMountConvert,
           'bg-remover': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
           'remove-background': (c, t) => (window.__ffMountBgRemovePro || window.__ffMountImagePro)(c, t),
@@ -7964,11 +7956,20 @@ try {
       'sign': window.__ffMountSign,
       'organize': window.__ffMountOrganize,
       'organize-pdf': window.__ffMountOrganize,
-      'pdf-organize': window.__ffMountOrganize,      'image-resize': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
+      'pdf-organize': window.__ffMountOrganize,
+      'image-resize': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
       'resize-image': (c, t) => (window.__ffMountImageResize || window.__ffMountImage)(c, t),
       'image-crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
       'crop-image': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
       'crop': (c, t) => (window.__ffMountImageCrop || window.__ffMountImage)(c, t),
+      'image-rotate': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+      'rotate-image': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+      'rotate': (c, t) => (window.__ffMountImageRotate || window.__ffMountImage)(c, t),
+      'image-watermark': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+      'watermark-image': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+      'watermark': (c, t) => (window.__ffMountImageWatermark || window.__ffMountImage)(c, t),
+      'image-compress': window.__ffMountCompress,
+      'compress-image': window.__ffMountCompress,
 
       'image-convert': window.__ffMountConvert,
       'blur-background': (c, t) => window.__ffMountBlurBackground ? window.__ffMountBlurBackground(c, t) : null,
