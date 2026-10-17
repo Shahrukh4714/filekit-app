@@ -1273,6 +1273,7 @@ try {
 
           <!-- Right Panel: Symmetrical, Width & Proportions Matching Benchmark -->
           <div class="cpdf-benchmark-panel scan-result-panel org-result-panel">
+            <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
             <div class="scan-result-panel-top org-result-panel-content">
               <!-- Top Header: Status & Doc Name -->
               <div class="cpdf-benchmark-header org-res-header">
@@ -3492,6 +3493,8 @@ try {
       FF.util.revokeAll();
       if (!home || !toolView) return;
       home.hidden = false; toolView.hidden = true; if (appView) appView.hidden = true; if (pricingView) pricingView.hidden = true;
+      document.body.classList.remove('ff-tool-active', 'tool-view-active');
+      document.getElementById('mobile-tab-bar')?.removeAttribute('data-in-tool');
       document.title = 'FileKit — Every File Tool You Need';
       const defaultDesc = 'FileKit is the modern, 100% private in-browser file suite. Convert, compress, edit, and organize documents, media, and archives locally.';
       const descEl = document.querySelector('meta[name="description"]');
@@ -3522,6 +3525,8 @@ try {
       FF.util.revokeAll();
       if (!home || !toolView) return;
       home.hidden = true; toolView.hidden = true; if (pricingView) pricingView.hidden = true; if (appView) appView.hidden = false;
+      document.body.classList.remove('ff-tool-active', 'tool-view-active');
+      document.getElementById('mobile-tab-bar')?.removeAttribute('data-in-tool');
       const topbar = document.querySelector('.topbar'); if (topbar) topbar.hidden = true;
       const appTopbar = document.getElementById('app-topbar'); if (appTopbar) appTopbar.hidden = false;
       const footer = document.querySelector('footer'); if (footer) footer.hidden = true;
@@ -3537,6 +3542,8 @@ try {
       if (home) home.hidden = true;
       if (toolView) toolView.hidden = true;
       if (appView) appView.hidden = true;
+      document.body.classList.remove('ff-tool-active', 'tool-view-active');
+      document.getElementById('mobile-tab-bar')?.removeAttribute('data-in-tool');
       const pv = pricingView || document.getElementById('pricing-view');
       if (pv) pv.hidden = false;
 
@@ -5667,6 +5674,8 @@ try {
       if (appView) appView.hidden = true;
       if (pricingView) pricingView.hidden = true;
       toolView.hidden = false;
+      document.body.classList.add('ff-tool-active', 'tool-view-active');
+      document.getElementById('mobile-tab-bar')?.setAttribute('data-in-tool', 'true');
       closeDrawer();
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
@@ -6257,7 +6266,8 @@ try {
 
       if (_appCvs) _appCvs.classList.add('ff-tool-active');
       if (_appMC)  _appMC.classList.add('ff-tool-active');
-      document.body.classList.add('ff-tool-active');
+      document.body.classList.add('ff-tool-active', 'tool-view-active');
+      document.getElementById('mobile-tab-bar')?.setAttribute('data-in-tool', 'true');
 
       const _appCC = document.getElementById('app-crumb-category');
       const _appCT = document.getElementById('app-crumb-tool');
@@ -6267,7 +6277,7 @@ try {
       const _wt = document.getElementById('app-workspace-title');
       if (_wt) {
         const toolTitle = FF.ToolUX?.for(tool)?.title || tool.name;
-        _wt.innerHTML = `<button class="app-breadcrumb-home-btn" id="app-breadcrumb-home-btn" type="button" title="Back to App Home">Home</button><span class="app-breadcrumb-sep">›</span><span class="app-topbar-tool-title">${toolTitle}</span>`;
+        _wt.innerHTML = `<button class="app-breadcrumb-home-btn" id="app-breadcrumb-home-btn" type="button" title="Back to App Home" aria-label="Back to Home"><svg class="app-breadcrumb-back-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span class="app-breadcrumb-home-text">Home</span></button><span class="app-breadcrumb-sep">›</span><span class="app-topbar-tool-title">${toolTitle}</span>`;
         document.getElementById('app-breadcrumb-home-btn')?.addEventListener('click', (e) => {
           e.preventDefault();
           showApp('Home');
@@ -6701,9 +6711,49 @@ try {
 
     document.getElementById('home-button')?.addEventListener('click', () => showHome());
     document.getElementById('tool-home')?.addEventListener('click', () => showApp());
-    document.getElementById('tools-button')?.addEventListener('click', openDrawer);
-    document.getElementById('mobile-menu')?.addEventListener('click', openDrawer);
-    document.getElementById('mobile-menu-btn')?.addEventListener('click', openDrawer);
+    // ── Mobile Navigation Menu (Smallpdf replica) ──
+    const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+    const mobileNavClose = document.getElementById('mobile-nav-close');
+    const openMobileNav = () => {
+      if (mobileNavOverlay) {
+        mobileNavOverlay.hidden = false;
+        document.body.classList.add('mobile-nav-open');
+      }
+    };
+    const closeMobileNav = () => {
+      if (mobileNavOverlay) {
+        mobileNavOverlay.hidden = true;
+        document.body.classList.remove('mobile-nav-open');
+      }
+    };
+    mobileNavClose?.addEventListener('click', closeMobileNav);
+    document.getElementById('mobile-nav-pro-btn')?.addEventListener('click', () => {
+      closeMobileNav();
+      window.FileKitAuth?.openPricingModal?.() || window.FF?.app?.showPricing?.();
+    });
+    document.getElementById('mobile-nav-login-btn')?.addEventListener('click', () => {
+      closeMobileNav();
+      window.FileKitAuth?.openAuthModal?.('login');
+    });
+    document.getElementById('mobile-nav-pricing-btn')?.addEventListener('click', () => {
+      closeMobileNav();
+      window.FileKitAuth?.openPricingModal?.() || window.FF?.app?.showPricing?.();
+    });
+
+    document.getElementById('mobile-menu')?.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        openMobileNav();
+      } else {
+        openDrawer(e);
+      }
+    });
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        openMobileNav();
+      } else {
+        openDrawer(e);
+      }
+    });
 
     // ── Command palette overlay (opens from the navbar search icon) ──
     const paletteOverlay = document.getElementById('palette-overlay');
@@ -8465,7 +8515,8 @@ try {
     const mc  = document.querySelector('.app-main-content');
     if (cvs) cvs.classList.remove('ff-tool-active');
     if (mc)  mc.classList.remove('ff-tool-active');
-    document.body.classList.remove('ff-tool-active');
+    document.body.classList.remove('ff-tool-active', 'tool-view-active');
+    document.getElementById('mobile-tab-bar')?.removeAttribute('data-in-tool');
     document.body.style.overflow = '';
   }
 
@@ -17303,11 +17354,31 @@ try {
       tabs.forEach(function(t) { t.classList.remove('active'); });
     }
 
+    function syncMobileTabBarVisibility() {
+      var bar = document.getElementById('mobile-tab-bar');
+      if (!bar) return;
+      var seoToolView = document.getElementById('seo-tool-view') || document.getElementById('tool-view');
+      var appToolView = document.getElementById('app-workspace-tool-view');
+      var inTool = (seoToolView && !seoToolView.hidden) ||
+                   (appToolView && !appToolView.hidden) ||
+                   document.body.classList.contains('ff-tool-active') ||
+                   document.body.classList.contains('tool-view-active');
+      if (inTool) {
+        bar.setAttribute('data-in-tool', 'true');
+      } else {
+        bar.removeAttribute('data-in-tool');
+      }
+    }
+
     window.addEventListener('hashchange', function() {
       if (!location.hash || location.hash === '#app' || location.hash === '#') {
         clearActiveTabs();
       }
+      syncMobileTabBarVisibility();
     });
+    window.addEventListener('popstate', syncMobileTabBarVisibility);
+    setInterval(syncMobileTabBarVisibility, 200);
+    syncMobileTabBarVisibility();
 
     var homeBrandBtn = document.getElementById('app-home-brand-btn');
     if (homeBrandBtn) {
@@ -17437,3 +17508,345 @@ try {
     });
   }
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FileKit 100% Private In-Browser Document History & Recent Files Engine
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'filekit_recent_files_meta';
+  const DB_NAME = 'filekit_history_db';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'blobs';
+  const MAX_ITEMS = 15;
+
+  let dbPromise = null;
+  function getDb() {
+    if (!dbPromise) {
+      dbPromise = new Promise((resolve) => {
+        if (!window.indexedDB) return resolve(null);
+        try {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME);
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        } catch (_) {
+          resolve(null);
+        }
+      });
+    }
+    return dbPromise;
+  }
+
+  async function storeBlob(id, blob) {
+    try {
+      const db = await getDb();
+      if (!db) return;
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).put(blob, id);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        } catch (_) { resolve(false); }
+      });
+    } catch (_) {}
+  }
+
+  async function getBlob(id) {
+    try {
+      const db = await getDb();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        try {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const req = tx.objectStore(STORE_NAME).get(id);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        } catch (_) { resolve(null); }
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function removeBlob(id) {
+    try {
+      const db = await getDb();
+      if (!db) return;
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(id);
+    } catch (_) {}
+  }
+
+  async function clearBlobs() {
+    try {
+      const db = await getDb();
+      if (!db) return;
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).clear();
+    } catch (_) {}
+  }
+
+  function getMetadataList() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function setMetadataList(list) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateBadge();
+    } catch (_) {}
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes || bytes <= 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  function formatTimeAgo(ts) {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  function updateBadge() {
+    const list = getMetadataList();
+    const badge = document.getElementById('app-history-badge');
+    if (badge) {
+      if (list.length > 0) {
+        badge.textContent = list.length > 99 ? '99+' : String(list.length);
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    const countEl = document.getElementById('fk-history-count');
+    if (countEl) {
+      countEl.textContent = `${list.length} item${list.length === 1 ? '' : 's'}`;
+    }
+  }
+
+  const FileKitHistory = {
+    async addEntry({ name, toolId, toolName, blob, size }) {
+      const id = 'fk_hist_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const entry = {
+        id,
+        name: name || 'Document',
+        toolId: toolId || 'organize',
+        toolName: toolName || 'Organize PDF',
+        timestamp: Date.now(),
+        size: size || (blob ? blob.size : 0)
+      };
+
+      if (blob) {
+        await storeBlob(id, blob);
+      }
+
+      let list = getMetadataList();
+      list.unshift(entry);
+      if (list.length > MAX_ITEMS) {
+        const removed = list.slice(MAX_ITEMS);
+        list = list.slice(0, MAX_ITEMS);
+        removed.forEach(r => removeBlob(r.id));
+      }
+      setMetadataList(list);
+      this.render();
+    },
+
+    async deleteEntry(id) {
+      let list = getMetadataList();
+      list = list.filter(item => item.id !== id);
+      setMetadataList(list);
+      await removeBlob(id);
+      this.render();
+    },
+
+    async clearAll() {
+      setMetadataList([]);
+      await clearBlobs();
+      this.render();
+    },
+
+    async downloadEntry(id) {
+      const list = getMetadataList();
+      const item = list.find(x => x.id === id);
+      if (!item) return;
+      const blob = await getBlob(id);
+      if (blob) {
+        if (window.FF?.util?.downloadBlob) {
+          window.FF.util.downloadBlob(blob, item.name);
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = item.name;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+        }
+        window.FF?.util?.toast?.(`Downloaded ${item.name}`, 'success');
+      } else {
+        window.FF?.util?.toast?.('Document data not found in local cache.', 'error');
+      }
+    },
+
+    async reopenEntry(id) {
+      const list = getMetadataList();
+      const item = list.find(x => x.id === id);
+      if (!item) return;
+      const blob = await getBlob(id);
+      if (!blob) {
+        window.FF?.util?.toast?.('Document data not found in local cache.', 'error');
+        return;
+      }
+      const file = new File([blob], item.name, { type: blob.type || 'application/pdf' });
+      this.close();
+      if (window.FF?.app?.openTool) {
+        window.FF.app.pendingFiles = [file];
+        window.FF.app.openTool(item.toolId, true);
+      } else {
+        window.location.hash = '#' + item.toolId;
+      }
+    },
+
+    open() {
+      const overlay = document.getElementById('filekit-history-overlay');
+      if (!overlay) return;
+      this.render();
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => {
+        overlay.classList.add('active');
+      });
+    },
+
+    close() {
+      const overlay = document.getElementById('filekit-history-overlay');
+      if (!overlay || overlay.hidden) return;
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+      setTimeout(() => {
+        overlay.hidden = true;
+      }, 280);
+    },
+
+    render() {
+      const list = getMetadataList();
+      const body = document.getElementById('fk-history-list');
+      if (!body) return;
+
+      if (!list.length) {
+        body.innerHTML = `
+          <div class="fk-history-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <strong style="color:#0F172A;font-size:14px;">No Recent Files</strong>
+            <p style="font-size:12px;margin:0;max-width:280px;line-height:1.4;">Documents you convert, compress, or organize will be stored here locally for instant re-download or continued editing.</p>
+          </div>`;
+        return;
+      }
+
+      body.innerHTML = list.map(item => `
+        <div class="fk-history-card" data-id="${item.id}">
+          <div class="fk-history-card-left">
+            <div class="fk-history-icon-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="fk-history-info">
+              <h4 class="fk-history-filename" title="${item.name}">${item.name}</h4>
+              <div class="fk-history-meta">
+                <span class="fk-history-tool-tag">${item.toolName}</span>
+                <span>•</span>
+                <span>${formatBytes(item.size)}</span>
+                <span>•</span>
+                <span>${formatTimeAgo(item.timestamp)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="fk-history-card-actions">
+            <button type="button" class="fk-history-act-btn fk-history-act-btn--primary" data-act="dl" data-id="${item.id}" title="Re-download file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download</span>
+            </button>
+            <button type="button" class="fk-history-act-btn" data-act="reopen" data-id="${item.id}" title="Open in tool">
+              <span>Open</span>
+            </button>
+            <button type="button" class="fk-history-del-btn" data-act="del" data-id="${item.id}" aria-label="Delete from history" title="Remove">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      body.querySelectorAll('[data-act="dl"]').forEach(btn => {
+        btn.onclick = () => this.downloadEntry(btn.dataset.id);
+      });
+      body.querySelectorAll('[data-act="reopen"]').forEach(btn => {
+        btn.onclick = () => this.reopenEntry(btn.dataset.id);
+      });
+      body.querySelectorAll('[data-act="del"]').forEach(btn => {
+        btn.onclick = () => this.deleteEntry(btn.dataset.id);
+      });
+    },
+
+    updateBadge() {
+      updateBadge();
+    },
+
+    init() {
+      updateBadge();
+
+      // Topbar history button
+      const histBtn = document.getElementById('app-history-btn');
+      if (histBtn) {
+        histBtn.onclick = () => this.open();
+      }
+
+      // Close button and backdrop
+      const closeBtn = document.getElementById('fk-history-close');
+      if (closeBtn) {
+        closeBtn.onclick = () => this.close();
+      }
+      const backdrop = document.getElementById('fk-history-backdrop');
+      if (backdrop) {
+        backdrop.onclick = () => this.close();
+      }
+
+      // Clear button
+      const clearBtn = document.getElementById('fk-history-clear');
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          if (confirm('Clear all recent file history on this device?')) {
+            this.clearAll();
+          }
+        };
+      }
+    }
+  };
+
+  window.FileKitHistory = FileKitHistory;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => FileKitHistory.init());
+  } else {
+    FileKitHistory.init();
+  }
+})();
+

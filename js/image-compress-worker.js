@@ -132,8 +132,20 @@ async function optimize(bytes, config) {
   const origW = img.width, origH = img.height;
   const ext = config.ext;
 
-  let outMime = 'image/webp', outExt = 'webp';
-  if (ext === 'jpg' || ext === 'jpeg') { outMime = 'image/jpeg'; outExt = 'jpg'; }
+  let outMime = 'image/jpeg', outExt = 'jpg';
+  const reqFormat = config.format || 'original';
+  if (reqFormat === 'jpeg') { outMime = 'image/jpeg'; outExt = 'jpg'; }
+  else if (reqFormat === 'png') { outMime = 'image/png'; outExt = 'png'; }
+  else if (reqFormat === 'avif') { outMime = 'image/avif'; outExt = 'avif'; }
+  else if (reqFormat === 'webp') { outMime = 'image/webp'; outExt = 'webp'; }
+  else {
+    // 'original': strictly preserve source mime / ext
+    if (ext === 'jpg' || ext === 'jpeg') { outMime = 'image/jpeg'; outExt = 'jpg'; }
+    else if (ext === 'png') { outMime = 'image/png'; outExt = 'png'; }
+    else if (ext === 'webp') { outMime = 'image/webp'; outExt = 'webp'; }
+    else if (ext === 'avif') { outMime = 'image/avif'; outExt = 'avif'; }
+    else { outMime = srcMime && srcMime.startsWith('image/') ? srcMime : 'image/jpeg'; outExt = ext || 'jpg'; }
+  }
   const isJpeg = outMime === 'image/jpeg';
   const targetQuality = isJpeg ? config.qJpeg : config.qWebp;
 
@@ -199,8 +211,8 @@ async function optimize(bytes, config) {
         if (mz.length < best.bytes.length) best = { bytes: mz, mime: 'image/jpeg' };
       } catch (e) { /* keep the canvas JPEG */ }
     }
-    // Maximum tier: race lossy AVIF against the JPEG/WebP candidate.
-    if (config.avif) {
+    // Only race lossy AVIF if explicitly requested by format choice
+    if (config.format === 'avif') {
       try {
         const id = cvs.getContext('2d').getImageData(0, 0, cvs.width, cvs.height);
         const q = Number.isFinite(config.avifQuality) ? config.avifQuality : 42;

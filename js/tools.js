@@ -8634,6 +8634,7 @@ ${linksOverlay}    </div>
     let customTargetKB = 200;
     let customUnit = 'KB';
     const stripParams = {};
+    const filePasswords = new Map();
 
     const MAX_BYTES = 200 * 1024 * 1024;
     const totalBytes = () => files.reduce((s, f) => s + (f.size || 0), 0);
@@ -8803,15 +8804,17 @@ ${linksOverlay}    </div>
       const formatChoice = strip['image_1'] || 'original';
       const sizeChoice = strip['image_2'] || 'original';
 
-      let outMime = 'image/webp';
+      let outMime = 'image/jpeg';
       if (formatChoice === 'jpeg' || (formatChoice === 'original' && (ext === 'jpg' || ext === 'jpeg'))) {
         outMime = 'image/jpeg';
-      } else if (formatChoice === 'png') {
+      } else if (formatChoice === 'png' || (formatChoice === 'original' && ext === 'png')) {
         outMime = 'image/png';
-      } else if (formatChoice === 'avif') {
+      } else if (formatChoice === 'avif' || (formatChoice === 'original' && ext === 'avif')) {
         outMime = 'image/avif';
-      } else {
+      } else if (formatChoice === 'webp' || (formatChoice === 'original' && ext === 'webp')) {
         outMime = 'image/webp';
+      } else {
+        outMime = 'image/jpeg';
       }
 
       const p = IMG_TIER[tier] || IMG_TIER.balanced;
@@ -8854,6 +8857,48 @@ ${linksOverlay}    </div>
       }
     }
 
+    const _pdfProfileCache = new WeakMap();
+    async function getPdfStreamProfile(file) {
+      if (_pdfProfileCache.has(file)) return _pdfProfileCache.get(file);
+      const PDFLib = window.PDFLib || await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const doc = await PDFLib.PDFDocument.load(bytes.slice());
+
+      let origFlate = 0, dctTotal = 0, fontProgramBytes = 0, flateImageBytes = 0;
+      for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
+        const dict = obj.dict || (obj instanceof PDFLib.PDFRawStream ? obj.dict : null);
+        if (!dict) continue;
+        const filterEntry = dict.get(PDFLib.PDFName.of('Filter'));
+        let filterStr = '';
+        if (filterEntry instanceof PDFLib.PDFName) filterStr = filterEntry.asString();
+        else if (filterEntry instanceof PDFLib.PDFArray) {
+          const arr = [];
+          for (let fi = 0; fi < filterEntry.size(); fi++) arr.push(filterEntry.get(fi)?.asString?.() || '');
+          filterStr = arr.join(' ');
+        }
+        const isEstJpeg = filterStr.includes('DCT') || 
+          (obj.contents && obj.contents.length > 4 && obj.contents[0] === 0xFF && obj.contents[1] === 0xD8 && obj.contents[2] === 0xFF);
+        const isEstFlate = !isEstJpeg && (filterStr.includes('Flate') || (obj.contents && obj.contents.length > 4 && obj.contents[0] === 0x78));
+
+        const subtype = dict.get(PDFLib.PDFName.of('Subtype'))?.asString?.();
+        if (subtype === '/FontFile' || subtype === '/FontFile2' || subtype === '/FontFile3' || dict.has(PDFLib.PDFName.of('Length1'))) {
+          fontProgramBytes += (obj.contents ? obj.contents.length : 0);
+        }
+        if (isEstFlate && obj.contents && obj.contents.length > 512) {
+          if (subtype === '/Image') {
+            flateImageBytes += obj.contents.length;
+          } else {
+            origFlate += obj.contents.length;
+          }
+        } else if (isEstJpeg && obj.contents && obj.contents.length > 1024) {
+          dctTotal += obj.contents.length;
+        }
+      }
+      const profile = { origFlate, dctTotal, fontProgramBytes, flateImageBytes, totalBytes: bytes.length };
+      _pdfProfileCache.set(file, profile);
+      return profile;
+    }
+
     async function estimatePdfBytes(file, strip, tier) {
       if (tier === 'custom') {
         const target = (customUnit === 'MB' ? customTargetKB * 1024 * 1024 : customTargetKB * 1024);
@@ -8868,96 +8913,25 @@ ${linksOverlay}    </div>
       const metaChoice = strip['pdf_3'] || 'strip';
 
       try {
-        const PDFLib = window.PDFLib || await U.loadScript('vendor/pdf-lib.min.js', 'sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI').then(() => window.PDFLib);
-        const fflate = window.fflate || await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT').then(() => window.fflate);
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        let doc = await PDFLib.PDFDocument.load(bytes.slice());
-
-        let origFlate = 0, savedFlate = 0, dctTotal = 0, fontProgramBytes = 0, flateImageBytes = 0;
-        const dcts = [];
-        for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
-          const dict = obj.dict || (obj instanceof PDFLib.PDFRawStream ? obj.dict : null);
-          if (!dict) continue;
-          const filter = dict.get(PDFLib.PDFName.of('Filter'))?.asString?.();
-          const subtype = dict.get(PDFLib.PDFName.of('Subtype'))?.asString?.();
-          if (subtype === '/FontFile' || subtype === '/FontFile2' || subtype === '/FontFile3') {
-            fontProgramBytes += (obj.contents ? obj.contents.length : 0);
-          }
-          if (filter === '/FlateDecode' && obj.contents && obj.contents.length > 1024) {
-            if (subtype === '/Image') {
-              flateImageBytes += obj.contents.length;
-            } else {
-              try {
-                const u = fflate.unzlibSync(obj.contents);
-                const r = fflate.zlibSync(u, { level: 9 });
-                if (r.length < obj.contents.length) { origFlate += obj.contents.length; savedFlate += obj.contents.length - r.length; }
-              } catch (e) {}
-            }
-          } else if (filter === '/DCTDecode' && obj.contents && obj.contents.length > 2000) {
-            dctTotal += obj.contents.length;
-            if (dcts.length < 3) dcts.push({ size: obj.contents.length, data: obj.contents });
-            else {
-              dcts.sort((a, b) => a.size - b.size);
-              if (obj.contents.length > dcts[0].size) dcts[0] = { size: obj.contents.length, data: obj.contents };
-            }
-          }
-        }
-
-        let dctSavings = 0;
-        if (dcts.length && dctTotal > 20000) {
-          const p = IMG_TIER[tier] || IMG_TIER.balanced;
-          let maxD = p.maxDim;
-          if (dpiChoice === '72') maxD = 1200;
-          else if (dpiChoice === '150') maxD = 1800;
-          else if (dpiChoice === '300') maxD = 2500;
-
-          let totalSampled = 0;
-          let totalSampledSaved = 0;
-          for (const s of dcts) {
-            try {
-              const img = await loadImageBytes(s.data);
-              const w = Math.min(img.naturalWidth || 1, maxD);
-              const h = Math.max(1, Math.round((img.naturalHeight || 1) * w / (img.naturalWidth || 1)));
-              const c = document.createElement('canvas'); c.width = w; c.height = h;
-              const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-              ctx.drawImage(img, 0, 0, w, h);
-              const b = await new Promise(r => c.toBlob(r, 'image/jpeg', p.jq));
-              const newSz = b ? b.size : s.size;
-              totalSampled += s.size;
-              totalSampledSaved += Math.max(0, s.size - newSz);
-              c.width = 0; c.height = 0;
-            } catch (e) {}
-          }
-          if (totalSampled > 0) {
-            dctSavings = dctTotal * (totalSampledSaved / totalSampled);
-          }
-        }
+        const profile = await getPdfStreamProfile(file);
+        const ratio = tier === 'maximum' ? 0.20 : (tier === 'light' ? 0.08 : 0.14);
+        const savedFlate = Math.round(profile.origFlate * ratio);
 
         let dpiMultiplier = dpiChoice === '72' ? 0.45 : (dpiChoice === '150' ? 0.70 : (dpiChoice === '300' ? 0.95 : 1.0));
         if (colorChoice === 'gray') dpiMultiplier *= 0.75;
         else if (colorChoice === 'mono') dpiMultiplier *= 0.45;
 
-        const fontSave = Math.max(0, fontProgramBytes * 0.45);
+        // Proportional JPEG savings derived from downsample target & quality tier
+        const dctKeep = tier === 'light' ? 0.80 : (tier === 'maximum' ? 0.42 : 0.60);
+        const dctSavings = profile.dctTotal > 0 ? Math.round(profile.dctTotal * (1 - dctKeep * dpiMultiplier)) : 0;
+
+        const fontSave = Math.max(0, profile.fontProgramBytes * 0.45);
         const flateImgKeep = tier === 'light' ? 0.78 : (tier === 'maximum' ? 0.55 : 0.68);
-        const imgConvertSave = flateImageBytes > 0 ? Math.max(0, flateImageBytes * (1 - flateImgKeep * dpiMultiplier)) : 0;
-        const metaSave = metaChoice === 'strip' ? Math.min(15000, bytes.length * 0.02) : 0;
+        const imgConvertSave = profile.flateImageBytes > 0 ? Math.max(0, profile.flateImageBytes * (1 - flateImgKeep * dpiMultiplier)) : 0;
+        const metaSave = metaChoice === 'strip' ? Math.min(15000, profile.totalBytes * 0.02) : 0;
 
-        let outBytes = Math.max(1000, Math.round(bytes.length - Math.max(0, savedFlate) - Math.max(0, dctSavings) - imgConvertSave - fontSave - metaSave));
-
-        if (file.size <= 6 * 1024 * 1024 && doc.getPageCount() <= 80) {
-          try {
-            const sOut = await PDFLib.PDFDocument.create();
-            const idx = [];
-            for (let i = 0; i < doc.getPageCount(); i++) idx.push(i);
-            const sp = await sOut.copyPages(doc, idx);
-            for (const pg of sp) sOut.addPage(pg);
-            const sb = await sOut.save({ useObjectStreams: true });
-            if (sb.length < bytes.length) {
-              outBytes = Math.min(outBytes, sb.length);
-            }
-          } catch (e) {}
-        }
-        return Math.min(bytes.length, outBytes);
+        let outBytes = Math.max(1000, Math.round(profile.totalBytes - savedFlate - dctSavings - imgConvertSave - fontSave - metaSave));
+        return Math.min(profile.totalBytes, outBytes);
       } catch (e) {
         const factor = tier === 'light' ? 0.85 : (tier === 'maximum' ? 0.45 : 0.65);
         return Math.max(1000, Math.min(file.size, Math.round(file.size * factor)));
@@ -9516,9 +9490,11 @@ ${linksOverlay}    </div>
           if (!thumbBox) return;
           const fam = familyOf(activeFile);
           if (fam === 'pdf') {
-            try {
+            const rawBuf = await activeFile.arrayBuffer();
+            const renderThumb = async (pw = '') => {
               const pdfjs = await loadJs();
-              const doc = await pdfjs.getDocument({ data: new Uint8Array(await activeFile.arrayBuffer()) }).promise;
+              const loadingTask = pdfjs.getDocument({ data: new Uint8Array(rawBuf.slice(0)), password: pw });
+              const doc = await loadingTask.promise;
               const page = await doc.getPage(1);
               const vp = page.getViewport({ scale: 0.85 });
               const c = document.createElement('canvas');
@@ -9534,9 +9510,63 @@ ${linksOverlay}    </div>
               c.style.borderRadius = '4px';
               thumbBox.innerHTML = '';
               thumbBox.append(c);
+            };
+
+            try {
+              const savedPw = filePasswords.get(activeFile) || '';
+              await renderThumb(savedPw);
             } catch (e) {
-              const ext = (activeFile?.name || '').split('.').pop() || 'pdf';
-              thumbBox.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
+              if (e.name === 'PasswordException' || e.code === 1) {
+                thumbBox.innerHTML = `
+                  <div class="cpdf-stage-unlock-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:42px 28px;text-align:center;max-width:340px;margin:auto;">
+                    <div style="width:48px;height:48px;border-radius:12px;background:#FEF2F2;border:1px solid #FEE2E2;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </div>
+                    <h3 style="font-size:15px;font-weight:700;color:#0F172A;margin:0 0 6px 0;letter-spacing:-0.01em;">Password Protected Document</h3>
+                    <p style="font-size:12px;color:#64748B;margin:0 0 18px 0;line-height:1.45;">This PDF is encrypted. Enter the password to unlock, preview, and compress it.</p>
+                    <div style="width:100%;margin-bottom:10px;">
+                      <input type="password" id="cpdf-stage-pw-input" placeholder="Enter password…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid #CBD5E1;border-radius:6px;font-size:13px;outline:none;background:#FFFFFF;color:#0F172A;" />
+                    </div>
+                    <div id="cpdf-stage-pw-err" style="display:none;color:#DC2626;font-size:11.5px;margin-bottom:8px;font-weight:500;"></div>
+                    <button type="button" id="cpdf-stage-pw-btn" class="cpdf-benchmark-cta" style="width:100%;padding:9px 14px;font-size:13px;justify-content:center;border-radius:6px;">Unlock & Preview</button>
+                  </div>
+                `;
+                const pwInput = thumbBox.querySelector('#cpdf-stage-pw-input');
+                const pwBtn = thumbBox.querySelector('#cpdf-stage-pw-btn');
+                const pwErr = thumbBox.querySelector('#cpdf-stage-pw-err');
+                const tryUnlock = async () => {
+                  const val = (pwInput?.value || '').trim();
+                  if (!val) {
+                    if (pwErr) { pwErr.textContent = 'Please enter a password'; pwErr.style.display = 'block'; }
+                    return;
+                  }
+                  pwBtn.disabled = true;
+                  pwBtn.textContent = 'Unlocking…';
+                  if (pwErr) pwErr.style.display = 'none';
+                  try {
+                    await renderThumb(val);
+                    filePasswords.set(activeFile, val);
+                    window.FF?.util?.toast?.('Document unlocked successfully', 'success');
+                  } catch (err) {
+                    pwBtn.disabled = false;
+                    pwBtn.textContent = 'Unlock & Preview';
+                    if (pwErr) {
+                      pwErr.textContent = 'Incorrect password. Please try again.';
+                      pwErr.style.display = 'block';
+                    }
+                  }
+                };
+                pwBtn?.addEventListener('click', tryUnlock);
+                pwInput?.addEventListener('keydown', (ev) => {
+                  if (ev.key === 'Enter') tryUnlock();
+                });
+              } else {
+                const ext = (activeFile?.name || '').split('.').pop() || 'pdf';
+                thumbBox.innerHTML = buildHandcraftedIllustration(ext, activeFile.name, _bytes(activeFile.size), 'stage');
+              }
             }
           } else if (fam === 'image') {
             const u = URL.createObjectURL(activeFile);
@@ -9580,8 +9610,44 @@ ${linksOverlay}    </div>
       container.querySelectorAll('.scan-benchmark-card, .cpdf-benchmark-card').forEach(row => {
         row.onclick = (e) => {
           if (e.target.closest('.cpdf-target-input-wrap')) return;
-          selectedTier = row.dataset.tier || 'balanced';
-          renderConfigure();
+          const newTier = row.dataset.tier || 'balanced';
+          if (newTier === selectedTier) return;
+          selectedTier = newTier;
+
+          // Seamless in-place active toggle (zero flicker, no DOM re-creation, 60fps)
+          container.querySelectorAll('.scan-benchmark-card, .cpdf-benchmark-card').forEach(card => {
+            const isActive = card.dataset.tier === selectedTier;
+            card.classList.toggle('is-active', isActive);
+            card.setAttribute('aria-checked', isActive ? 'true' : 'false');
+          });
+
+          // Toggle custom target input wrap dynamically if needed
+          const targetCard = container.querySelector('.cpdf-benchmark-card--target');
+          if (targetCard) {
+            let wrap = targetCard.querySelector('.cpdf-target-input-wrap');
+            if (selectedTier === 'custom') {
+              if (!wrap) {
+                const newWrap = document.createElement('div');
+                newWrap.className = 'cpdf-target-input-wrap';
+                newWrap.innerHTML = `
+                  <input type="number" min="1" max="9999" id="cpdf-target-val-inp" class="cpdf-target-inp" value="${customTargetKB}" />
+                  <select id="cpdf-target-unit-sel" class="cpdf-target-unit-sel">
+                    <option value="KB" ${customUnit === 'KB' ? 'selected' : ''}>KB</option>
+                    <option value="MB" ${customUnit === 'MB' ? 'selected' : ''}>MB</option>
+                  </select>
+                `;
+                targetCard.appendChild(newWrap);
+                const tInp = newWrap.querySelector('#cpdf-target-val-inp');
+                const uSel = newWrap.querySelector('#cpdf-target-unit-sel');
+                if (tInp) tInp.oninput = () => { customTargetKB = parseFloat(tInp.value) || 100; runUniversalEstimate(); };
+                if (uSel) uSel.onchange = () => { customUnit = uSel.value; runUniversalEstimate(); };
+              }
+            } else if (wrap) {
+              wrap.remove();
+            }
+          }
+
+          runUniversalEstimate();
         };
       });
 
@@ -9632,8 +9698,9 @@ ${linksOverlay}    </div>
       });
 
       // Global click outside to dismiss popovers
-      const closePopovers = () => container.querySelectorAll('.scan-custom-select-popover').forEach(p => p.remove());
-      document.addEventListener('click', closePopovers);
+      if (window._compClosePopovers) document.removeEventListener('click', window._compClosePopovers);
+      window._compClosePopovers = () => container.querySelectorAll('.scan-custom-select-popover').forEach(p => p.remove());
+      document.addEventListener('click', window._compClosePopovers);
 
       const opt1 = container.querySelector('#comp-strip-opt1');
       const opt2 = container.querySelector('#comp-strip-opt2');
@@ -10058,49 +10125,33 @@ ${linksOverlay}    </div>
       }
 
       compressAbort = false;
-      renderProcessing();
 
-      const cancelBtn = container.querySelector('#cpdf-cancel-run');
-      if (cancelBtn) {
-        cancelBtn.onclick = (e) => {
-          e.preventDefault();
-          compressAbort = true;
-          window.FF?.util?.toast?.('Compression cancelled', 'info');
-          renderConfigure();
-        };
+      // Inline progress state on primary CTA button (no intermediate processing screen)
+      const runBtn = container.querySelector('#comp-studio-run');
+      const estBar = container.querySelector('#comp-est-bar');
+      const origBtnContent = runBtn ? runBtn.innerHTML : '';
+
+      if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.style.opacity = '0.92';
+        runBtn.innerHTML = `
+          <svg class="cpdf-btn-spin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: cpdf-spin 0.8s linear infinite; margin-right: 8px;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+          <span id="cpdf-btn-active-label">Compressing…</span>
+        `;
       }
 
       const p = PRESETS[selectedTier] || PRESETS.balanced;
-      const msg = container.querySelector('#cpdf-prog-msg');
-      const fill = container.querySelector('#cpdf-prog-fill');
-      const pct = container.querySelector('#cpdf-prog-pct');
-      const detail = container.querySelector('#cpdf-prog-detail');
-      const step1 = container.querySelector('#cpdf-step-1');
-      const step2 = container.querySelector('#cpdf-step-2');
-      const step3 = container.querySelector('#cpdf-step-3');
-      const step2Status = container.querySelector('#cpdf-step-2-status');
-      const step3Status = container.querySelector('#cpdf-step-3-status');
       const btnActiveLabel = container.querySelector('#cpdf-btn-active-label');
 
-      const onProgress = (frac, text, subDetail) => {
+      const onProgress = (frac, text) => {
         if (compressAbort) return;
         const v = Math.min(100, Math.max(0, Math.round(frac * 100)));
-        if (fill) fill.style.width = v + '%';
-        if (pct) pct.textContent = v + '%';
-        if (msg && text) msg.textContent = text;
-        if (detail && subDetail) detail.textContent = subDetail;
-
-        if (frac >= 0.88) {
-          if (step2) {
-            step2.className = 'cpdf-pipeline-step is-complete';
-            step2.querySelector('.cpdf-step-dot').innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
-            if (step2Status) step2Status.textContent = 'Optimized';
-          }
-          if (step3) {
-            step3.className = 'cpdf-pipeline-step is-active';
-            step3.querySelector('.cpdf-step-dot').innerHTML = '<div class="cpdf-step-dot-pulse"></div>';
-            if (step3Status) step3Status.textContent = 'Packaging';
-          }
+        if (estBar) {
+          estBar.style.width = v + '%';
+          estBar.style.transition = 'width 0.2s ease';
+        }
+        if (btnActiveLabel && text) {
+          btnActiveLabel.textContent = `Compressing ${v}%`;
         }
       };
 
@@ -10115,22 +10166,6 @@ ${linksOverlay}    </div>
             const f = files[i];
             const fam = familyOf(f);
 
-            const curBadge = container.querySelector(`#comp-batch-badge-${i}`);
-            const curCard = container.querySelector(`#comp-batch-card-${i}`);
-            if (curCard) {
-              curCard.classList.add('is-active');
-              try { curCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch (e) {}
-            }
-            if (curBadge) {
-              curBadge.className = 'cpdf-multi-card-badge is-active';
-              curBadge.textContent = 'Compressing';
-            }
-
-            const headerMeta = container.querySelector('#comp-proc-file-meta');
-            if (headerMeta && files.length > 1) {
-              headerMeta.textContent = `File ${i + 1} of ${files.length} — ${_esc(f.name)} (${_bytes(f.size)})`;
-            }
-
             onProgress(i / files.length, `Compressing ${i + 1}/${files.length} — ${f.name}`);
             const res = await runByFamily(f, fam, p, (sub, text) => {
               if (compressAbort) return;
@@ -10139,33 +10174,28 @@ ${linksOverlay}    </div>
 
             if (compressAbort) return;
             results[i] = { file: f, family: fam, result: res };
-
-            if (curCard) curCard.classList.remove('is-active');
-            if (curBadge) {
-              curBadge.className = 'cpdf-multi-card-badge is-done';
-              curBadge.textContent = 'Done';
-            }
           }
         };
 
         await Promise.all(Array.from({ length: Math.min(pool, files.length) }, () => worker()));
         if (compressAbort) return;
 
-        onProgress(1, 'Complete!', 'Packaging finalized');
-        if (step3) {
-          step3.className = 'cpdf-pipeline-step is-complete';
-          step3.querySelector('.cpdf-step-dot').innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
-          if (step3Status) step3Status.textContent = 'Complete';
-        }
+        onProgress(1, 'Complete!');
         if (btnActiveLabel) btnActiveLabel.textContent = 'Done!';
 
-        await new Promise(r => setTimeout(r, 380));
+        // Direct transition from review to result (zero stutter, no intermediate processing flash)
+        await new Promise(r => setTimeout(r, 220));
         if (compressAbort) return;
         renderResult(results);
       } catch(err) { 
         if (compressAbort) return;
         console.error('[Compress Engine Error]', err);
-        renderError(err.message || 'Compression encountered an error.'); 
+        if (runBtn) {
+          runBtn.disabled = false;
+          runBtn.style.opacity = '1';
+          runBtn.innerHTML = origBtnContent;
+        }
+        window.FF?.util?.toast?.(err.message || 'Compression encountered an error.', 'error');
       }
     }
 
@@ -10204,6 +10234,19 @@ ${linksOverlay}    </div>
             pdfjs.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', window.location.href).href;
           }
           const rawBuf = await file.arrayBuffer();
+          const userProvidedPw = filePasswords.get(file) || '';
+          let workingBuf = rawBuf;
+          if (userProvidedPw) {
+            try {
+              const decFn = window.FF?.decryptPdfDocument || (typeof decryptPdfDocument === 'function' ? decryptPdfDocument : null);
+              if (decFn) {
+                const decBytes = await decFn(new Uint8Array(rawBuf.slice(0)), userProvidedPw, PDFLib);
+                if (decBytes && decBytes.length > 0) workingBuf = decBytes.buffer;
+              }
+            } catch (decErr) {
+              console.warn('[PDF Decrypt failed with saved password]', decErr);
+            }
+          }
 
           // Phase 1 (parity): do NOT bail on a password error here. Some PDFs are
           // "secured" with only an owner password (openable without one, e.g. many
@@ -10211,7 +10254,10 @@ ${linksOverlay}    </div>
           // those. Only a real user (open) password stops us — decided after both
           // pdf.js and pdf-lib have had a chance.
           try {
-            doc = await pdfjs.getDocument({ data: new Uint8Array(rawBuf.slice(0)) }).promise;
+            doc = await pdfjs.getDocument({
+              data: new Uint8Array(workingBuf.slice(0)),
+              password: userProvidedPw
+            }).promise;
           } catch (pwErr) {
             if (pwErr.name === 'PasswordException' || pwErr.code === 1) {
               needsUserPassword = true;
@@ -10256,7 +10302,7 @@ ${linksOverlay}    </div>
             // corrupted output on genuinely encrypted files — never use it. If the
             // file needs a real user password this load throws and we keep the file
             // untouched below; if only owner-password it decrypts fine and compresses.
-            surgeryDoc = await PDFLib.PDFDocument.load(new Uint8Array(rawBuf.slice(0)));
+            surgeryDoc = await PDFLib.PDFDocument.load(new Uint8Array(workingBuf.slice(0)));
             const context = surgeryDoc.context;
             const indirectObjects = context.enumerateIndirectObjects();
 
@@ -10296,17 +10342,45 @@ ${linksOverlay}    </div>
               } catch (metaErr) {}
             }
 
-            // Re-compress non-image FlateDecode streams with Deflate Level 9
+            // ─── Precision Vector Content Stream Minification & Deflate-9 ───
             for (const [ref, obj] of indirectObjects) {
               const dict = obj.dict || (obj instanceof PDFLib.PDFRawStream ? obj.dict : null);
               if (!dict) continue;
               const subtype = dict.get(PDFLib.PDFName.of('Subtype'));
               if (subtype && subtype.asString && subtype.asString() === '/Image') continue;
 
-              const filter = dict.get(PDFLib.PDFName.of('Filter'));
-              if (filter && filter.asString && filter.asString() === '/FlateDecode' && obj.contents && obj.contents.length > 40) {
+              const filter = dict.get(PDFLib.PDFName.of('Filter'))?.asString?.();
+              if (filter === '/FlateDecode' && obj.contents && obj.contents.length > 40) {
                 try {
-                  const unzipped = fflate.unzlibSync(obj.contents);
+                  let unzipped = fflate.unzlibSync(obj.contents);
+                  if (unzipped.length > 30) {
+                    let isTextOrVector = true;
+                    const sampleLen = Math.min(unzipped.length, 256);
+                    for (let si = 0; si < sampleLen; si++) {
+                      const b = unzipped[si];
+                      if (b < 9 || (b > 13 && b < 32 && b !== 27)) {
+                        isTextOrVector = false;
+                        break;
+                      }
+                    }
+                    if (isTextOrVector) {
+                      let str = '';
+                      const chunk = 8192;
+                      for (let ci = 0; ci < unzipped.length; ci += chunk) {
+                        str += String.fromCharCode.apply(null, unzipped.subarray(ci, ci + chunk));
+                      }
+                      const minified = str.replace(/(\([^)]*\)|<[^>]*>|[-]?\d+\.\d{3,})/g, (tok) => {
+                        if (tok.startsWith('(') || tok.startsWith('<')) return tok;
+                        const n = parseFloat(tok);
+                        return isNaN(n) ? tok : Number(n.toFixed(2)).toString();
+                      });
+                      if (minified.length < str.length) {
+                        const newU8 = new Uint8Array(minified.length);
+                        for (let mi = 0; mi < minified.length; mi++) newU8[mi] = minified.charCodeAt(mi);
+                        unzipped = newU8;
+                      }
+                    }
+                  }
                   const recompressed = fflate.zlibSync(unzipped, { level: 9 });
                   if (recompressed.length < obj.contents.length) {
                     obj.contents = recompressed;
@@ -10316,7 +10390,7 @@ ${linksOverlay}    </div>
               }
             }
 
-            // Embedded Image Stream Surgery
+            // ─── Embedded Image Stream Surgery & Deduplication ───
             const imageObjects = [];
             for (const [ref, obj] of indirectObjects) {
               const dict = obj.dict || (obj instanceof PDFLib.PDFRawStream ? obj.dict : null);
@@ -10327,23 +10401,100 @@ ${linksOverlay}    </div>
               }
             }
 
-            if (imageObjects.length > 0) {
-              const maxDim = selectedTier === 'maximum' ? 1280 : selectedTier === 'light' ? 2560 : 1800;
-              let targetQuality = selectedTier === 'maximum' ? 0.58 : selectedTier === 'light' ? 0.82 : 0.72;
-              if (selectedTier === 'custom' && targetBytesAllocated > 0) {
-                const r = file.size > 0 ? (targetBytesAllocated / file.size) : 0.5;
-                targetQuality = Math.max(0.30, Math.min(0.85, 0.75 * Math.pow(r, 0.5)));
+            // Stream Deduplication: Identify identical image streams across pages (QPDF/Acrobat class)
+            const streamHashMap = new Map();
+            const dedupReplacements = new Map();
+            const uniqueImageObjects = [];
+
+            for (const imgItem of imageObjects) {
+              const rawBytes = imgItem.obj.contents;
+              if (!rawBytes || rawBytes.length < 128) {
+                uniqueImageObjects.push(imgItem);
+                continue;
+              }
+              const len = rawBytes.length;
+              let h1 = len, h2 = 0x55555555;
+              const step = Math.max(1, Math.floor(len / 128));
+              for (let i = 0; i < len; i += step) {
+                h1 = (Math.imul(h1, 31) + rawBytes[i]) | 0;
+                h2 = (Math.imul(h2, 37) ^ rawBytes[i]) | 0;
+              }
+              const hashKey = `${len}_${h1}_${h2}`;
+              const existing = streamHashMap.get(hashKey);
+
+              let isExactMatch = false;
+              if (existing && existing.obj.contents && existing.obj.contents.length === len) {
+                const exBytes = existing.obj.contents;
+                isExactMatch = true;
+                for (let bi = 0; bi < len; bi++) {
+                  if (exBytes[bi] !== rawBytes[bi]) {
+                    isExactMatch = false;
+                    break;
+                  }
+                }
               }
 
-              for (let imgIdx = 0; imgIdx < imageObjects.length; imgIdx++) {
-                const { obj, dict } = imageObjects[imgIdx];
-                onProgress?.(0.12 + (imgIdx / imageObjects.length) * 0.45, `Optimizing embedded stream ${imgIdx + 1}/${imageObjects.length}…`);
+              if (isExactMatch) {
+                dedupReplacements.set(imgItem.ref.toString(), {
+                  masterRef: existing.ref,
+                  masterItem: existing,
+                  dupItem: imgItem
+                });
+              } else {
+                streamHashMap.set(hashKey, imgItem);
+                uniqueImageObjects.push(imgItem);
+              }
+            }
 
-                const filter = dict.get(PDFLib.PDFName.of('Filter'))?.asString?.();
+            if (uniqueImageObjects.length > 0) {
+              let maxDim = selectedTier === 'maximum' ? 1080 : selectedTier === 'light' ? 2560 : 1600;
+              let targetQuality = selectedTier === 'maximum' ? 0.50 : selectedTier === 'light' ? 0.80 : 0.68;
+              let tierScale = selectedTier === 'maximum' ? 0.60 : selectedTier === 'light' ? 1.0 : 0.82;
+
+              if (selectedTier === 'custom' && targetBytesAllocated > 0) {
+                const r = file.size > 0 ? (targetBytesAllocated / file.size) : 0.5;
+                if (r <= 0.15) {
+                  maxDim = 720;
+                  targetQuality = 0.35;
+                  tierScale = 0.38;
+                } else if (r <= 0.30) {
+                  maxDim = 900;
+                  targetQuality = 0.44;
+                  tierScale = 0.50;
+                } else if (r <= 0.50) {
+                  maxDim = 1200;
+                  targetQuality = 0.55;
+                  tierScale = 0.65;
+                } else if (r <= 0.75) {
+                  maxDim = 1600;
+                  targetQuality = 0.68;
+                  tierScale = 0.80;
+                } else {
+                  maxDim = 2000;
+                  targetQuality = 0.78;
+                  tierScale = 0.95;
+                }
+              }
+
+              for (let imgIdx = 0; imgIdx < uniqueImageObjects.length; imgIdx++) {
+                const { obj, dict } = uniqueImageObjects[imgIdx];
+                onProgress?.(0.12 + (imgIdx / uniqueImageObjects.length) * 0.45, `Optimizing embedded stream ${imgIdx + 1}/${uniqueImageObjects.length}…`);
+
+                const filterEntry = dict.get(PDFLib.PDFName.of('Filter'));
+                let filterStr = '';
+                if (filterEntry instanceof PDFLib.PDFName) filterStr = filterEntry.asString();
+                else if (filterEntry instanceof PDFLib.PDFArray) {
+                  const arr = [];
+                  for (let fi = 0; fi < filterEntry.size(); fi++) arr.push(filterEntry.get(fi)?.asString?.() || '');
+                  filterStr = arr.join(' ');
+                }
+                const isJpeg = filterStr.includes('DCT') || 
+                  (obj.contents && obj.contents.length > 4 && obj.contents[0] === 0xFF && obj.contents[1] === 0xD8 && obj.contents[2] === 0xFF);
+                const isFlate = !isJpeg && (filterStr.includes('Flate') || (obj.contents && obj.contents.length > 4 && obj.contents[0] === 0x78));
                 const hasSMask = dict.has(PDFLib.PDFName.of('SMask')) || dict.has(PDFLib.PDFName.of('Mask'));
 
                 // Case 1: DCTDecode (JPEG Image Stream)
-                if (filter === '/DCTDecode' && obj.contents && obj.contents.length > 300) {
+                if (isJpeg && obj.contents && obj.contents.length > 300) {
                   try {
                     const blob = new Blob([obj.contents], { type: 'image/jpeg' });
                     const u = URL.createObjectURL(blob);
@@ -10353,12 +10504,12 @@ ${linksOverlay}    </div>
 
                     const origW = img.naturalWidth || img.width;
                     const origH = img.naturalHeight || img.height;
-                    let finalW = origW;
-                    let finalH = origH;
-                    if (Math.max(origW, origH) > maxDim * 1.15) {
-                      const sc = maxDim / Math.max(origW, origH);
-                      finalW = Math.max(1, Math.round(origW * sc));
-                      finalH = Math.max(1, Math.round(origH * sc));
+                    let finalW = Math.max(1, Math.round(origW * tierScale));
+                    let finalH = Math.max(1, Math.round(origH * tierScale));
+                    if (Math.max(finalW, finalH) > maxDim) {
+                      const sc = maxDim / Math.max(finalW, finalH);
+                      finalW = Math.max(1, Math.round(finalW * sc));
+                      finalH = Math.max(1, Math.round(finalH * sc));
                     }
 
                     const cvs = document.createElement('canvas');
@@ -10375,6 +10526,7 @@ ${linksOverlay}    </div>
 
                     if (newBytes.length < obj.contents.length) {
                       obj.contents = newBytes;
+                      dict.set(PDFLib.PDFName.of('Filter'), PDFLib.PDFName.of('DCTDecode'));
                       dict.set(PDFLib.PDFName.of('Width'), PDFLib.PDFNumber.of(finalW));
                       dict.set(PDFLib.PDFName.of('Height'), PDFLib.PDFNumber.of(finalH));
                       dict.set(PDFLib.PDFName.of('Length'), PDFLib.PDFNumber.of(newBytes.length));
@@ -10383,7 +10535,7 @@ ${linksOverlay}    </div>
                   } catch (imgErr) {}
                 }
                 // Case 2: FlateDecode (PNG / Lossless Raster Stream)
-                else if (filter === '/FlateDecode' && obj.contents && obj.contents.length > 800) {
+                else if (isFlate && obj.contents && obj.contents.length > 800) {
                   try {
                     const unzipped = fflate.unzlibSync(obj.contents);
                     if (hasSMask) {
@@ -10395,62 +10547,131 @@ ${linksOverlay}    </div>
                         surgeryReplaced++;
                       }
                     } else {
-                      const wVal = dict.get(PDFLib.PDFName.of('Width'))?.asNumber?.() || 0;
-                      const hVal = dict.get(PDFLib.PDFName.of('Height'))?.asNumber?.() || 0;
-                      if (wVal > 10 && hVal > 10 && unzipped.length >= wVal * hVal) {
-                        const cvs = document.createElement('canvas');
-                        cvs.width = wVal; cvs.height = hVal;
-                        const cCtx = cvs.getContext('2d');
-                        const imgData = cCtx.createImageData(wVal, hVal);
-                        const d = imgData.data;
-                        const isRgb = unzipped.length >= wVal * hVal * 3;
-                        if (isRgb) {
-                          for (let i = 0, j = 0; i < wVal * hVal * 3; i += 3, j += 4) {
-                            d[j] = unzipped[i]; d[j+1] = unzipped[i+1]; d[j+2] = unzipped[i+2]; d[j+3] = 255;
-                          }
-                        } else {
-                          for (let i = 0, j = 0; i < wVal * hVal; i++, j += 4) {
-                            const g = unzipped[i]; d[j] = g; d[j+1] = g; d[j+2] = g; d[j+3] = 255;
-                          }
-                        }
-                        cCtx.putImageData(imgData, 0, 0);
+                      const decodeParms = dict.get(PDFLib.PDFName.of('DecodeParms'));
+                      const predictor = decodeParms?.get?.(PDFLib.PDFName.of('Predictor'))?.asNumber?.() || 1;
+                      const csEntry = dict.get(PDFLib.PDFName.of('ColorSpace'));
+                      const csName = (csEntry?.asString?.() || csEntry?.name || '').toLowerCase();
+                      const bpc = dict.get(PDFLib.PDFName.of('BitsPerComponent'))?.asNumber?.() || 8;
 
-                        let finalW = wVal, finalH = hVal;
-                        if (Math.max(wVal, hVal) > maxDim * 1.15) {
-                          const sc = maxDim / Math.max(wVal, hVal);
-                          finalW = Math.max(1, Math.round(wVal * sc));
-                          finalH = Math.max(1, Math.round(hVal * sc));
-                        }
-                        let outCanvas = cvs;
-                        if (finalW !== wVal || finalH !== hVal) {
-                          outCanvas = document.createElement('canvas');
-                          outCanvas.width = finalW; outCanvas.height = finalH;
-                          const oCtx = outCanvas.getContext('2d');
-                          oCtx.imageSmoothingEnabled = true;
-                          oCtx.imageSmoothingQuality = 'high';
-                          oCtx.drawImage(cvs, 0, 0, finalW, finalH);
-                          cvs.width = 0; cvs.height = 0;
-                        }
-
-                        const newBlob = await new Promise(r => outCanvas.toBlob(r, 'image/jpeg', targetQuality));
-                        const newBytes = new Uint8Array(await newBlob.arrayBuffer());
-                        outCanvas.width = 0; outCanvas.height = 0;
-
-                        if (newBytes.length < obj.contents.length) {
-                          obj.contents = newBytes;
-                          dict.set(PDFLib.PDFName.of('Filter'), PDFLib.PDFName.of('DCTDecode'));
-                          dict.set(PDFLib.PDFName.of('ColorSpace'), PDFLib.PDFName.of('DeviceRGB'));
-                          dict.set(PDFLib.PDFName.of('BitsPerComponent'), PDFLib.PDFNumber.of(8));
-                          dict.set(PDFLib.PDFName.of('Width'), PDFLib.PDFNumber.of(finalW));
-                          dict.set(PDFLib.PDFName.of('Height'), PDFLib.PDFNumber.of(finalH));
-                          dict.set(PDFLib.PDFName.of('Length'), PDFLib.PDFNumber.of(newBytes.length));
-                          dict.delete(PDFLib.PDFName.of('DecodeParms')); // CRITICAL: remove predictor params!
+                      // If stream has PNG predictors, indexed palette, or non-8-bit depth: recompress with Deflate Level 9 losslessly
+                      if (predictor > 1 || bpc !== 8 || csName.includes('indexed')) {
+                        const rec = fflate.zlibSync(unzipped, { level: 9 });
+                        if (rec.length < obj.contents.length) {
+                          obj.contents = rec;
+                          dict.set(PDFLib.PDFName.of('Length'), PDFLib.PDFNumber.of(rec.length));
                           surgeryReplaced++;
+                        }
+                      } else {
+                        const wVal = dict.get(PDFLib.PDFName.of('Width'))?.asNumber?.() || 0;
+                        const hVal = dict.get(PDFLib.PDFName.of('Height'))?.asNumber?.() || 0;
+                        if (wVal > 10 && hVal > 10 && unzipped.length >= wVal * hVal) {
+                          const cvs = document.createElement('canvas');
+                          cvs.width = wVal; cvs.height = hVal;
+                          const cCtx = cvs.getContext('2d');
+                          const imgData = cCtx.createImageData(wVal, hVal);
+                          const d = imgData.data;
+
+                          const isCmyk = csName.includes('cmyk') || (unzipped.length >= wVal * hVal * 4 && !csName.includes('rgb'));
+                          const isRgb = !isCmyk && unzipped.length >= wVal * hVal * 3;
+
+                          if (isCmyk && unzipped.length >= wVal * hVal * 4) {
+                            for (let i = 0, j = 0; i < wVal * hVal * 4; i += 4, j += 4) {
+                              const c = unzipped[i], m = unzipped[i + 1], y = unzipped[i + 2], k = unzipped[i + 3];
+                              d[j]     = Math.round((255 - c) * (255 - k) / 255);
+                              d[j + 1] = Math.round((255 - m) * (255 - k) / 255);
+                              d[j + 2] = Math.round((255 - y) * (255 - k) / 255);
+                              d[j + 3] = 255;
+                            }
+                          } else if (isRgb) {
+                            for (let i = 0, j = 0; i < wVal * hVal * 3; i += 3, j += 4) {
+                              d[j] = unzipped[i]; d[j+1] = unzipped[i+1]; d[j+2] = unzipped[i+2]; d[j+3] = 255;
+                            }
+                          } else {
+                            for (let i = 0, j = 0; i < wVal * hVal; i++, j += 4) {
+                              const g = unzipped[i]; d[j] = g; d[j+1] = g; d[j+2] = g; d[j+3] = 255;
+                            }
+                          }
+                          cCtx.putImageData(imgData, 0, 0);
+
+                          let finalW = Math.max(1, Math.round(wVal * tierScale));
+                          let finalH = Math.max(1, Math.round(hVal * tierScale));
+                          if (Math.max(finalW, finalH) > maxDim) {
+                            const sc = maxDim / Math.max(finalW, finalH);
+                            finalW = Math.max(1, Math.round(finalW * sc));
+                            finalH = Math.max(1, Math.round(finalH * sc));
+                          }
+                          let outCanvas = cvs;
+                          if (finalW !== wVal || finalH !== hVal) {
+                            outCanvas = document.createElement('canvas');
+                            outCanvas.width = finalW; outCanvas.height = finalH;
+                            const oCtx = outCanvas.getContext('2d');
+                            oCtx.imageSmoothingEnabled = true;
+                            oCtx.imageSmoothingQuality = 'high';
+                            oCtx.drawImage(cvs, 0, 0, finalW, finalH);
+                            cvs.width = 0; cvs.height = 0;
+                          }
+
+                          const newBlob = await new Promise(r => outCanvas.toBlob(r, 'image/jpeg', targetQuality));
+                          const newBytes = new Uint8Array(await newBlob.arrayBuffer());
+                          outCanvas.width = 0; outCanvas.height = 0;
+
+                          if (newBytes.length < obj.contents.length) {
+                            obj.contents = newBytes;
+                            dict.set(PDFLib.PDFName.of('Filter'), PDFLib.PDFName.of('DCTDecode'));
+                            dict.set(PDFLib.PDFName.of('ColorSpace'), PDFLib.PDFName.of('DeviceRGB'));
+                            dict.set(PDFLib.PDFName.of('BitsPerComponent'), PDFLib.PDFNumber.of(8));
+                            dict.set(PDFLib.PDFName.of('Width'), PDFLib.PDFNumber.of(finalW));
+                            dict.set(PDFLib.PDFName.of('Height'), PDFLib.PDFNumber.of(finalH));
+                            dict.set(PDFLib.PDFName.of('Length'), PDFLib.PDFNumber.of(newBytes.length));
+                            dict.delete(PDFLib.PDFName.of('DecodeParms')); // remove predictor params
+                            surgeryReplaced++;
+                          }
                         }
                       }
                     }
                   } catch (flateErr) {}
                 }
+              }
+            }
+
+            // Stream Deduplication Pass: Redirect references to duplicate image objects and purge redundant streams
+            if (dedupReplacements.size > 0) {
+              const visitedDedupNodes = new Set();
+              function redirectDedupRefs(node) {
+                if (!node || visitedDedupNodes.has(node)) return;
+                visitedDedupNodes.add(node);
+                if (node instanceof PDFLib.PDFDict) {
+                  for (const [k, v] of node.entries()) {
+                    if (v instanceof PDFLib.PDFRef && dedupReplacements.has(v.toString())) {
+                      node.set(k, dedupReplacements.get(v.toString()).masterRef);
+                      surgeryReplaced++;
+                    } else {
+                      redirectDedupRefs(v);
+                    }
+                  }
+                } else if (node instanceof PDFLib.PDFArray) {
+                  for (let i = 0; i < node.size(); i++) {
+                    const v = node.get(i);
+                    if (v instanceof PDFLib.PDFRef && dedupReplacements.has(v.toString())) {
+                      node.set(i, dedupReplacements.get(v.toString()).masterRef);
+                      surgeryReplaced++;
+                    } else {
+                      redirectDedupRefs(v);
+                    }
+                  }
+                } else if (node.dict) {
+                  redirectDedupRefs(node.dict);
+                }
+              }
+
+              for (const [r, o] of indirectObjects) {
+                redirectDedupRefs(o);
+              }
+
+              for (const rep of dedupReplacements.values()) {
+                try {
+                  surgeryDoc.context.delete(rep.dupItem.ref);
+                } catch (delErr) {}
               }
             }
 
@@ -10697,7 +10918,7 @@ ${linksOverlay}    </div>
             rasterBlob = await renderRasterPdf(1.95, 0.74);
           } else if (canRaster && selectedTier === 'custom' && targetBytesAllocated > 0) {
             const surgeryMiss = surgeryBlob ? (surgeryBlob.size - targetBytesAllocated) / targetBytesAllocated : 1;
-            const needRaster = textFree || surgeryMiss > 0.15;
+            const needRaster = (textFree || forceRaster) && (surgeryMiss > 0.15);
             if (!needRaster) {
               onProgress?.(1, 'Target approached with text preserved — skipping raster.');
             } else {
@@ -10800,11 +11021,17 @@ ${linksOverlay}    </div>
           let finalKind = 'original';
 
           if (selectedTier === 'custom' && targetBytesAllocated > 0) {
-            // Prefer a text-preserving candidate that hits (or near-hits) target.
-            let hit = elig.filter(e => e.kind !== 'raster' && e.blob.size <= targetBytesAllocated * 1.15);
-            if (!hit.length) hit = elig.filter(e => e.blob.size <= targetBytesAllocated);
-            if (!hit.length && elig.length) hit = elig.slice().sort((a, b) => a.blob.size - b.blob.size).slice(0, 1);
-            if (hit.length) { finalBlob = hit[0].blob; finalKind = hit[0].kind; }
+            // Strictly enforce vector preservation on born-digital documents (textFree === false)
+            const safeElig = (!textFree && !forceRaster) ? elig.filter(e => e.v === true) : elig;
+            // 1. Closest candidate <= targetBytesAllocated
+            const under = safeElig.filter(e => e.blob.size <= targetBytesAllocated).sort((a, b) => b.blob.size - a.blob.size);
+            // 2. Candidate within 15% over target
+            const close = safeElig.filter(e => e.blob.size <= targetBytesAllocated * 1.15).sort((a, b) => a.blob.size - b.blob.size);
+            // 3. Smallest candidate available
+            const smallest = safeElig.slice().sort((a, b) => a.blob.size - b.blob.size);
+
+            let chosen = under[0] || close[0] || smallest[0];
+            if (chosen) { finalBlob = chosen.blob; finalKind = chosen.kind; }
           } else if (elig.length) {
             elig.sort((a, b) => a.blob.size - b.blob.size);
             finalBlob = elig[0].blob;
@@ -10946,8 +11173,8 @@ ${linksOverlay}    </div>
             return outCvs;
           }
 
-          let outMime = 'image/webp';
-          let outExt = 'webp';
+          let outMime = 'image/jpeg';
+          let outExt = 'jpg';
           if (stripParams['image_1'] === 'jpeg') {
             outMime = 'image/jpeg';
             outExt = 'jpg';
@@ -10965,34 +11192,20 @@ ${linksOverlay}    </div>
               outMime = 'image/jpeg';
               outExt = 'jpg';
             } else if (ext === 'png') {
-              if (selectedTier === 'light') {
-                try {
-                  if (!window.fflate) {
-                    await U.loadScript('vendor/fflate.js', 'sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT');
-                  }
-                  const testCvs = renderResampled(origW, origH, false);
-                  const imgData = testCvs.getContext('2d').getImageData(0, 0, origW, origH);
-                  const indexedPng = encodeIndexedPng(imgData.data, origW, origH);
-                  testCvs.width = 0; testCvs.height = 0;
-                  if (indexedPng && indexedPng.length < file.size) {
-                    return {
-                      blob: new Blob([indexedPng], { type: 'image/png' }),
-                      filename: `${U.baseName(file.name)}-compressed.png`,
-                      mime: 'image/png',
-                      preview: 'image',
-                      metrics: { untouched: false }
-                    };
-                  }
-                } catch (pngErr) {}
-                outMime = 'image/png';
-                outExt = 'png';
-              } else {
-                outMime = 'image/webp';
-                outExt = 'webp';
-              }
+              outMime = 'image/png';
+              outExt = 'png';
+            } else if (ext === 'webp') {
+              outMime = 'image/webp';
+              outExt = 'webp';
+            } else if (ext === 'avif') {
+              outMime = 'image/avif';
+              outExt = 'avif';
             } else if (ext === 'bmp' || ext === 'tiff' || ext === 'tga' || ext === 'ppm') {
               outMime = 'image/webp';
               outExt = 'webp';
+            } else {
+              outMime = file.type || 'image/jpeg';
+              outExt = ext || 'jpg';
             }
           }
 
@@ -11119,8 +11332,8 @@ ${linksOverlay}    </div>
                 }
               } catch (pngErr) {}
             }
-            // Maximum tier: race lossy AVIF (best bytes-per-quality) only if format is original or explicitly AVIF
-            const allowAvif = stripParams['image_1'] === 'avif' || (!stripParams['image_1'] || stripParams['image_1'] === 'original');
+            // Maximum tier: race lossy AVIF (best bytes-per-quality) only if format is explicitly AVIF
+            const allowAvif = stripParams['image_1'] === 'avif';
             if (selectedTier === 'maximum' && allowAvif) {
               try {
                 const id = cvs.getContext('2d').getImageData(0, 0, cvs.width, cvs.height);
@@ -11664,7 +11877,9 @@ ${linksOverlay}    </div>
             (async () => {
               try {
                 const pdfjs = await loadJs();
-                const doc = await pdfjs.getDocument({ data: new Uint8Array(await curBlob.arrayBuffer()) }).promise;
+                const curFileObj = curRes?.file;
+                const savedPw = curFileObj ? (filePasswords.get(curFileObj) || '') : '';
+                const doc = await pdfjs.getDocument({ data: new Uint8Array(await curBlob.arrayBuffer()), password: savedPw }).promise;
                 const page = await doc.getPage(1);
                 const vp1 = page.getViewport({ scale: 1 });
                 const stageWrap = container.querySelector('#comp-result-stage-wrap');
@@ -11711,6 +11926,13 @@ ${linksOverlay}    </div>
         }
       }
 
+      const isProtectedDoc = results.some(r => r.result?.isProtected);
+      const headerTitle = isProtectedDoc ? 'Password Protected' : (win ? 'Compression Complete' : 'Already Optimized');
+      const headerIconBg = isProtectedDoc ? 'background: #F59E0B !important;' : (win ? 'background: #16A34A !important;' : 'background: #0284C7 !important;');
+      const estTitle = isProtectedDoc ? 'Document is encrypted and was kept untouched' : (win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'File is already optimal (0% reduction)');
+      const estPctLabel = isProtectedDoc ? 'Locked' : (win ? `-${redPct}% Saved` : 'Optimal');
+      const estPctStyle = isProtectedDoc ? 'color:#B45309 !important; background:#FEF3C7 !important; border: 1px solid #FDE68A !important;' : (win ? 'color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important;' : 'color:#0369A1 !important; background:#E0F2FE !important; border: 1px solid #BAE6FD !important;');
+
       container.innerHTML = `
         <div class="cpdf-benchmark-body">
           <div class="cpdf-benchmark-workstation">
@@ -11744,26 +11966,27 @@ ${linksOverlay}    </div>
 
             <!-- Right Panel: Dynamic Full-Space Zero-Scroll Result Studio -->
             <div class="cpdf-benchmark-panel scan-result-panel">
+              <div class="mobile-sheet-drag-handle" aria-hidden="true"></div>
               <div class="scan-result-panel-top">
                 <div class="cpdf-benchmark-header">
-                  <div class="cpdf-benchmark-icon" style="${win ? 'background: #16A34A !important;' : 'background: #0284C7 !important;'}">
+                  <div class="cpdf-benchmark-icon" style="${headerIconBg}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   </div>
-                  <h2 class="cpdf-benchmark-title">${win ? 'Compression Complete' : 'Already Optimized'}</h2>
+                  <h2 class="cpdf-benchmark-title">${headerTitle}</h2>
                 </div>
 
                 <!-- Hero Reduction Metrics Card -->
                 <div class="cpdf-benchmark-est-box">
-                  <div class="cpdf-benchmark-est-title">${win ? `Saved ${_bytes(saved)} (${redPct}% reduction)` : 'File is already optimal (0% reduction)'}</div>
+                  <div class="cpdf-benchmark-est-title">${estTitle}</div>
                   <div class="cpdf-benchmark-est-metrics">
                     <strong class="cpdf-benchmark-est-new">${_bytes(cTot)}</strong>
                     <del class="cpdf-benchmark-est-old" style="font-size:12.5px; color:#94A3B8; margin:0 4px;">${_bytes(oTot)}</del>
-                    <span class="cpdf-benchmark-est-pct" style="${win ? 'color:#15803D !important; background:#DCFCE7 !important; border: 1px solid #BBF7D0 !important;' : 'color:#0369A1 !important; background:#E0F2FE !important; border: 1px solid #BAE6FD !important;'} font-weight:700 !important; padding: 2px 8px !important; border-radius: 3px !important;">${win ? `-${redPct}% Saved` : 'Optimal'}</span>
+                    <span class="cpdf-benchmark-est-pct" style="${estPctStyle} font-weight:700 !important; padding: 2px 8px !important; border-radius: 3px !important;">${estPctLabel}</span>
                   </div>
                   <div class="cpdf-benchmark-track">
-                    <div class="cpdf-benchmark-bar" style="width: ${win ? Math.max(15, Math.round((cTot / oTot) * 100)) : 100}%; ${win ? 'background:#16A34A !important;' : 'background:#0284C7 !important;'}"></div>
+                    <div class="cpdf-benchmark-bar" style="width: ${win ? Math.max(15, Math.round((cTot / oTot) * 100)) : 100}%; ${win ? 'background:#16A34A !important;' : (isProtectedDoc ? 'background:#F59E0B !important;' : 'background:#0284C7 !important;')}"></div>
                   </div>
                 </div>
 
@@ -43729,10 +43952,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     let cfg = {};
     let families = [];   // per-file family, parallel to files[]
     let formatIds = [];  // per-file chosen target id, parallel to files[]
-    let convStage = 1;
+    const preset = tool?.id && TOOL_INDEX[tool.id] ? TOOL_INDEX[tool.id] : null;
+    let convStage = preset ? 2 : 1;
     let previewPage = 1;
     let totalPages = 1;
-    const preset = tool?.id && TOOL_INDEX[tool.id] ? TOOL_INDEX[tool.id] : null;
 
     // Targets are resolved per active file so each queued file can convert to its own format.
     const targets = () => { const fam = families[activeIndex]; return fam ? TARGETS[fam] : []; };
@@ -43855,6 +44078,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
           }
         }
       });
+      if (preset) convStage = 2;
       syncActive();
       renderConfigure();
     }
@@ -56144,6 +56368,10 @@ trailer<</Root 1 0 R>>`;
       let draggedId = null;
       let thumbObserver = null;
       let currentAspect = 1.414;
+      let mobileTapTimer = null;
+      let mobileLastTapId = null;
+      let mobileSuppressClickUntil = 0;
+      let isBatchMoreOpen = false;
 
       const extOf = f => String(f?.name || '').split('.').pop().toLowerCase();
       const isPdf = f => f && (f.type === 'application/pdf' || extOf(f) === 'pdf');
@@ -56328,6 +56556,7 @@ trailer<</Root 1 0 R>>`;
       }
 
       function syncSplitCuts() {
+        if (mode !== 'split') return;
         customCuts.clear();
         const activeItems = items.filter(it => !it.isDeleted);
         if (activeItems.length <= 1 || splitEvery <= 0) return;
@@ -56441,7 +56670,6 @@ trailer<</Root 1 0 R>>`;
       async function acceptFiles(arr, insertAfterIdx = -1) {
         if (!arr.length) return;
         enterBleed();
-        renderLoading('Loading documents and generating high-resolution thumbnails…');
         const curToken = ++renderToken;
         console.log('[DEBUG Organize] 1. Starting acceptFiles with ' + arr.length + ' files. Loading JS...');
         const pdfjs = await loadJs();
@@ -56577,6 +56805,9 @@ trailer<</Root 1 0 R>>`;
       }
 
       function modeBtnLabel() {
+        if (customCuts.size > 0 || mode === 'split') {
+          return `Download Parts (${customCuts.size + 1})`;
+        }
         return 'Download';
       }
 
@@ -56585,6 +56816,10 @@ trailer<</Root 1 0 R>>`;
           <header class="org-unified-toolbar">
             <!-- Left: Opensource UI Depth Outline Button (+ Add Files) -->
             <div class="org-toolbar-left">
+              <button type="button" class="org-mobile-back-btn" id="org-mobile-back" aria-label="Back to home">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <span class="org-mobile-title">Organize PDF</span>
               <button type="button" class="org-btn-add-files" id="org-add-more" aria-label="Add PDF, image, or document files">
                 ${ICONS.add}
                 <span>Add Files</span>
@@ -56610,6 +56845,7 @@ trailer<</Root 1 0 R>>`;
                 <button type="button" class="org-tool-icon-btn" id="org-undo" aria-label="Undo (Ctrl+Z)" ${undoStack.length ? '' : 'disabled'}>${ICONS.undo}</button>
                 <button type="button" class="org-tool-icon-btn" id="org-redo" aria-label="Redo (Ctrl+Y)" ${redoStack.length ? '' : 'disabled'}>${ICONS.redo}</button>
               </div>
+              <button type="button" class="org-mobile-undo-btn ${undoStack.length ? 'is-active' : ''}" id="org-mob-undo" aria-label="Undo last action" title="Undo" ${undoStack.length ? '' : 'disabled'}>${ICONS.undo}</button>
               <span class="org-vsep"></span>
               <button type="button" class="osui-dl-btn org-primary-cta" id="org-run-btn" data-slot="download-button" data-phase="idle">
                 <span class="sr-only" aria-live="polite">Download File</span>
@@ -56926,13 +57162,14 @@ trailer<</Root 1 0 R>>`;
           const it = items[i];
           const isSelected = selectedIds.has(it.id);
           const rot = it.rotation || 0;
-          const partTag = mode === 'split' ? `<span class="org-pg-part-tag">Part ${partNum}</span>` : '';
+          const partTag = (mode === 'split' || customCuts.size > 0) ? `<span class="org-pg-part-tag">Part ${partNum}</span>` : '';
+          const isCutAfter = customCuts.has(i + 1);
           const isCropping = it.id === activeCroppingId;
           const cropDraft = isCropping ? (activeCropDraft || it.crop || { top: 0, right: 0, bottom: 0, left: 0 }) : null;
 
           cards.push(`
             <div class="org-pg-tile ${isSelected ? 'is-selected' : ''} ${isCropping ? 'is-cropping' : ''} ${it.isDeleted ? 'is-deleted' : ''} ${it.isBlank ? 'is-blank' : ''}" 
-                 data-id="${it.id}" data-idx="${i}" draggable="${isCropping ? 'false' : 'true'}">
+                 data-id="${it.id}" data-idx="${i}" draggable="${(isCropping || (typeof window !== 'undefined' && window.innerWidth <= 768)) ? 'false' : 'true'}">
               <input type="checkbox" class="org-card-chk" data-id="${it.id}" ${isSelected ? 'checked' : ''} aria-label="Select page">
               <button type="button" class="org-card-close" data-id="${it.id}" aria-label="${it.isDeleted ? 'Restore page' : 'Delete page'}">${it.isDeleted ? '+' : ICONS.x}</button>
               
@@ -56982,23 +57219,34 @@ trailer<</Root 1 0 R>>`;
                   <button type="button" class="org-crop-pill-btn org-crop-pill-btn--cancel" id="org-crop-cancel" title="Cancel (Esc)">Cancel</button>
                   <button type="button" class="org-crop-pill-btn org-crop-pill-btn--primary" id="org-crop-done" title="Apply crop (Enter)">Done</button>
                 </div>
-              ` : `
-                <div class="org-pg-meta">
+              ` : ''}
+
+              <div class="org-pg-meta">
+                <div class="org-pg-meta-left">
                   <span class="org-pg-num">${it.isBlank ? 'Blank' : `Page ${i + 1}`}</span>
-                  <div class="org-meta-badges">
-                    ${rot ? `<span class="org-meta-badge org-badge-rot" aria-label="Rotated ${rot}°">⟳ ${rot}°</span>` : ''}
-                    ${it.crop ? `<span class="org-meta-badge org-badge-crop" aria-label="Margins cropped">✂ Crop</span>` : ''}
-                    ${partTag}
-                  </div>
+                  ${rot ? `<span class="org-meta-badge org-badge-rot" aria-label="Rotated ${rot}°">⟳ ${rot}°</span>` : ''}
                 </div>
-              `}
+                <div class="org-pg-quick-actions">
+                  <button type="button" class="org-single-rot-btn" data-act="rot-cw" data-id="${it.id}" aria-label="Rotate Page ${i + 1}" title="Rotate page 90°">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  </button>
+                  ${i < items.length - 1 ? `
+                  <button type="button" class="org-single-split-btn ${isCutAfter ? 'is-active' : ''}" data-boundary="${i + 1}" aria-label="Split after Page ${i + 1}" title="${isCutAfter ? 'Remove split cut' : 'Split document after this page'}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+                  </button>
+                  ` : ''}
+                </div>
+                ${partTag ? `<div class="org-meta-part-wrap">${partTag}</div>` : ''}
+              </div>
             </div>`);
 
-          // Inter-card Scissor Cut Divider in Split Mode
-          if (mode === 'split' && i < items.length - 1 && !it.isDeleted) {
+          if (isCutAfter) partNum++;
+
+          // Inter-card Scissor Cut Divider in Split Mode (desktop only, mobile uses the clean single-split-btn on each card)
+          const isMobileViewport = (typeof window !== 'undefined' && window.innerWidth <= 768);
+          if (!isMobileViewport && mode === 'split' && i < items.length - 1 && !it.isDeleted) {
             activeIndex++;
             const isCut = customCuts.has(activeIndex);
-            if (isCut) partNum++;
             cards.push(`
               <div class="org-cut-divider ${isCut ? 'is-cut' : ''}" data-boundary="${activeIndex}" aria-label="${isCut ? 'Split cut point — Click to join' : 'Click to split here'}">
                 <div class="org-cut-line"></div>
@@ -57018,20 +57266,87 @@ trailer<</Root 1 0 R>>`;
       }
 
       function renderBatchDock() {
-        if (selectedIds.size === 0) return '';
+        if (selectedIds.size === 0 || activeCroppingId) {
+          isBatchMoreOpen = false;
+          return '';
+        }
         const count = selectedIds.size;
+        const allActive = items.filter(it => !it.isDeleted);
+        const isAll = allActive.length > 0 && count === allActive.length;
         return `
           <div class="org-batch-dock-wrap">
             <div class="org-batch-dock">
-              <span class="org-batch-count">${count} selected</span>
-              <button type="button" class="org-batch-btn" id="org-b-rot-ccw" aria-label="Rotate selected 90° CCW">${ICONS.rotLeft}<span>-90°</span></button>
-              <button type="button" class="org-batch-btn" id="org-b-rot-cw" aria-label="Rotate selected 90° CW">${ICONS.rotate}<span>+90°</span></button>
-              <button type="button" class="org-batch-btn" id="org-b-reverse" aria-label="Reverse selected page sequence" title="Reverse order of selected pages">${ICONS.reverse}<span>Reverse</span></button>
-              <button type="button" class="org-batch-btn" id="org-b-crop" aria-label="Crop selected pages">${ICONS.crop}<span>Crop</span></button>
-              <button type="button" class="org-batch-btn" id="org-b-dup" aria-label="Duplicate selected">${ICONS.duplicate}<span>Duplicate</span></button>
-              <button type="button" class="org-batch-btn org-batch-btn--danger" id="org-b-del" aria-label="Delete selected">${ICONS.trash}<span>Delete</span></button>
-              <button type="button" class="org-batch-btn org-batch-btn--ghost" id="org-b-clear" aria-label="Clear selection">✕</button>
+              <!-- Top Selection Strip -->
+              <div class="org-batch-strip">
+                <div class="org-batch-strip-meta">
+                  <span class="org-batch-badge" id="org-b-toggle-all">${count} Selected</span>
+                  <span class="org-batch-total">of ${allActive.length}</span>
+                </div>
+                <div class="org-batch-strip-actions">
+                  <button type="button" class="org-batch-strip-btn" id="org-b-select-all" aria-label="${isAll ? 'Deselect all' : 'Select all'}">
+                    ${isAll ? 'Deselect All' : 'Select All'}
+                  </button>
+                  <button type="button" class="org-batch-strip-btn org-batch-strip-btn--clear" id="org-b-clear" aria-label="Clear selection">
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <!-- Primary 5-Column Grid -->
+              <div class="org-batch-grid">
+                <button type="button" class="org-batch-grid-btn" id="org-b-rot-cw" title="Rotate clockwise 90°" aria-label="Rotate clockwise 90°">
+                  <span class="org-batch-grid-icon">${ICONS.rotate}</span>
+                  <span class="org-batch-grid-label">Rotate</span>
+                </button>
+                <button type="button" class="org-batch-grid-btn" id="org-b-dup" title="Duplicate selected" aria-label="Duplicate selected">
+                  <span class="org-batch-grid-icon">${ICONS.duplicate}</span>
+                  <span class="org-batch-grid-label">Duplicate</span>
+                </button>
+                <button type="button" class="org-batch-grid-btn" id="org-b-crop" title="Crop margins" aria-label="Crop margins">
+                  <span class="org-batch-grid-icon">${ICONS.crop}</span>
+                  <span class="org-batch-grid-label">Crop</span>
+                </button>
+                <button type="button" class="org-batch-grid-btn org-batch-grid-btn--danger" id="org-b-del" title="Delete selected" aria-label="Delete selected">
+                  <span class="org-batch-grid-icon">${ICONS.trash}</span>
+                  <span class="org-batch-grid-label">Delete</span>
+                </button>
+                <button type="button" class="org-batch-grid-btn" id="org-b-more" title="More options" aria-label="More options" aria-expanded="${isBatchMoreOpen}">
+                  <span class="org-batch-grid-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="5" cy="12" r="2.2"/>
+                      <circle cx="12" cy="12" r="2.2"/>
+                      <circle cx="19" cy="12" r="2.2"/>
+                    </svg>
+                  </span>
+                  <span class="org-batch-grid-label">More</span>
+                </button>
+              </div>
             </div>
+
+            ${isBatchMoreOpen ? `
+              <div class="org-batch-more-backdrop" id="org-b-more-backdrop"></div>
+              <div class="org-batch-more-sheet" id="org-b-more-sheet" role="dialog" aria-modal="true" aria-label="More page actions">
+                <div class="org-batch-sheet-handle"></div>
+                <div class="org-batch-sheet-header">
+                  <span class="org-batch-sheet-title">More Page Actions</span>
+                  <button type="button" class="org-batch-sheet-close" id="org-b-more-close" aria-label="Close">Done</button>
+                </div>
+                <div class="org-batch-sheet-list">
+                  <button type="button" class="org-batch-sheet-item" id="org-b-rot-ccw" aria-label="Rotate left 90°">
+                    <span class="org-batch-sheet-icon">${ICONS.rotLeft}</span>
+                    <span class="org-batch-sheet-text">Rotate Left (-90°)</span>
+                  </button>
+                  <button type="button" class="org-batch-sheet-item" id="org-b-reverse" aria-label="Reverse order of selected pages">
+                    <span class="org-batch-sheet-icon">${ICONS.reverse}</span>
+                    <span class="org-batch-sheet-text">Reverse Sequence</span>
+                  </button>
+                  <button type="button" class="org-batch-sheet-item" id="org-b-blank" aria-label="Insert blank sheet after selected">
+                    <span class="org-batch-sheet-icon">${ICONS.add}</span>
+                    <span class="org-batch-sheet-text">Insert Blank Sheet After</span>
+                  </button>
+                </div>
+              </div>
+            ` : ''}
           </div>`;
       }
 
@@ -57168,7 +57483,7 @@ trailer<</Root 1 0 R>>`;
         // Keep global workspace title consistent
         const topTitle = document.getElementById('app-workspace-title') || document.querySelector('.app-workspace-title');
         if (topTitle) {
-          topTitle.textContent = 'Organize PDF & Media';
+          topTitle.textContent = 'Organize PDF';
         }
       }
 
@@ -57263,36 +57578,37 @@ trailer<</Root 1 0 R>>`;
         if (!it || it.isBlank) return;
 
         const src = it.canvas;
-        const pageNum = items.findIndex(x => x.id === id) + 1;
-        const label = it.name ? `${it.name} — Page ${pageNum}` : `Page ${pageNum}`;
+        const activeItems = items.filter(x => !x.isDeleted);
+        const curIdx = items.findIndex(x => x.id === id);
+        const activeIdx = activeItems.findIndex(x => x.id === id);
+        const pageNum = activeIdx >= 0 ? activeIdx + 1 : 1;
+        const totalPages = activeItems.length;
 
         const overlay = document.createElement('div');
         overlay.className = 'org-preview-overlay';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', `Preview ${label}`);
+        overlay.setAttribute('aria-label', `Preview Page ${pageNum} of ${totalPages}`);
 
         overlay.innerHTML = `
-          <div class="org-preview-sheet" role="document">
-            <div class="org-preview-top">
-              <div style="display:flex;align-items:center;gap:10px;overflow:hidden;">
-                <span class="org-preview-title">${_esc(label)}</span>
-                <div class="org-preview-ctrls">
-                  <button type="button" class="org-preview-tool-btn" id="org-prev-crop-5" aria-label="Trim 5% Margins">${ICONS.crop} <span>Trim 5%</span></button>
-                  <button type="button" class="org-preview-tool-btn" id="org-prev-crop-10" aria-label="Trim 10% Margins"><span>Trim 10%</span></button>
-                  <button type="button" class="org-preview-tool-btn" id="org-prev-crop-reset" aria-label="Reset Crop"><span>Reset</span></button>
-                  <span class="org-vsep" style="height:14px;margin:0 2px;"></span>
-                  <button type="button" class="org-preview-tool-btn" id="org-prev-rot" aria-label="Rotate 90° CW">${ICONS.rotate} <span>Rotate</span></button>
-                </div>
-              </div>
-              <button type="button" class="org-preview-close" aria-label="Close (Esc)">${ICONS.x}</button>
-            </div>
-            <div class="org-preview-stage"></div>
-            <div class="org-preview-foot">
-              <span class="org-preview-hint">Esc to close</span>
-              <span class="org-preview-num">${pageNum} / ${items.length}</span>
-            </div>
-          </div>`;
+          <button type="button" class="org-preview-close" aria-label="Close Preview (Esc)" title="Close (Esc)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+          <div class="org-preview-stage" id="org-preview-stage"></div>
+          <div class="org-preview-dock" role="toolbar" aria-label="Preview Controls">
+            <button type="button" class="org-preview-nav-btn" id="org-prev-step-left" aria-label="Previous Page" title="Previous Page"${activeIdx <= 0 ? ' disabled' : ''}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="org-preview-pill-text">${pageNum} / ${totalPages}</span>
+            <button type="button" class="org-preview-nav-btn" id="org-prev-step-right" aria-label="Next Page" title="Next Page"${activeIdx >= totalPages - 1 ? ' disabled' : ''}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <span class="org-preview-dock-sep"></span>
+            <button type="button" class="org-preview-action-btn" id="org-prev-rot" aria-label="Rotate 90°" title="Rotate 90°">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+            </button>
+          </div>
+        `;
 
         const stage = overlay.querySelector('.org-preview-stage');
         let previewCanvas = null;
@@ -57300,7 +57616,6 @@ trailer<</Root 1 0 R>>`;
           previewCanvas = document.createElement('canvas');
           previewCanvas.width = src.width; previewCanvas.height = src.height;
           previewCanvas.className = 'org-preview-canvas';
-          previewCanvas.style.imageRendering = '-webkit-optimize-contrast';
           const ctx = previewCanvas.getContext('2d');
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
@@ -57324,7 +57639,6 @@ trailer<</Root 1 0 R>>`;
               hiCanvas.width = Math.round(vpModal.width);
               hiCanvas.height = Math.round(vpModal.height);
               hiCanvas.className = 'org-preview-canvas';
-              hiCanvas.style.imageRendering = '-webkit-optimize-contrast';
               const hiCtx = hiCanvas.getContext('2d');
               hiCtx.imageSmoothingEnabled = true;
               hiCtx.imageSmoothingQuality = 'high';
@@ -57354,41 +57668,33 @@ trailer<</Root 1 0 R>>`;
           }
         };
 
-        const btnCrop5 = overlay.querySelector('#org-prev-crop-5');
-        const btnCrop10 = overlay.querySelector('#org-prev-crop-10');
-        const btnCropReset = overlay.querySelector('#org-prev-crop-reset');
         const btnRot = overlay.querySelector('#org-prev-rot');
-
-        if (btnCrop5) btnCrop5.onclick = () => {
-          recordState();
-          it.crop = { top: 5, right: 5, bottom: 5, left: 5 };
-          updatePreviewVisuals();
-        };
-        if (btnCrop10) btnCrop10.onclick = () => {
-          recordState();
-          it.crop = { top: 10, right: 10, bottom: 10, left: 10 };
-          updatePreviewVisuals();
-        };
-        if (btnCropReset) btnCropReset.onclick = () => {
-          recordState();
-          it.crop = null;
-          updatePreviewVisuals();
-        };
-        if (btnRot) btnRot.onclick = () => {
+        if (btnRot) btnRot.onclick = (e) => {
+          e.stopPropagation();
           recordState();
           it.rotation = ((it.rotation || 0) + 90) % 360;
           updatePreviewVisuals();
         };
 
+        const stepLeft = overlay.querySelector('#org-prev-step-left');
+        const stepRight = overlay.querySelector('#org-prev-step-right');
+        if (stepLeft) stepLeft.onclick = (e) => {
+          e.stopPropagation();
+          stepPreview(-1);
+        };
+        if (stepRight) stepRight.onclick = (e) => {
+          e.stopPropagation();
+          stepPreview(1);
+        };
+
         const stepPreview = (dir) => {
-          const curIdx = items.findIndex(x => x.id === id);
-          if (curIdx < 0) return;
           let nextIdx = curIdx + dir;
           while (nextIdx >= 0 && nextIdx < items.length && items[nextIdx].isDeleted) {
             nextIdx += dir;
           }
           if (nextIdx >= 0 && nextIdx < items.length) {
-            close();
+            overlay.remove();
+            document.removeEventListener('keydown', onKey);
             openPagePreview(items[nextIdx].id);
           }
         };
@@ -57397,19 +57703,27 @@ trailer<</Root 1 0 R>>`;
           overlay.classList.remove('is-open');
           const done = () => {
             overlay.remove();
+            document.removeEventListener('keydown', onKey);
             renderWorkbench();
           };
           overlay.addEventListener('transitionend', done, { once: true });
-          setTimeout(done, 260);
+          setTimeout(done, 200);
         };
-        overlay.querySelector('.org-preview-close').onclick = close;
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        overlay.querySelector('.org-preview-close').onclick = (e) => {
+          e.stopPropagation();
+          close();
+        };
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay || e.target === stage) {
+            close();
+          }
+        });
 
         const onKey = (e) => {
           if (e.key === 'Escape' || e.code === 'Space' || e.key === ' ') {
             e.preventDefault();
             close();
-            document.removeEventListener('keydown', onKey);
           } else if (e.key === 'ArrowRight') {
             e.preventDefault();
             stepPreview(1);
@@ -57839,7 +58153,19 @@ trailer<</Root 1 0 R>>`;
         });
         if (addInp) addInp.onchange = () => { const arr = [...(addInp.files || [])]; addInp.value = ''; if (arr.length) acceptFiles(arr); };
 
-        // 7b. Toolbar Crop Page Trigger
+        // 7b. Mobile Back Button
+        const mobBackBtn = container.querySelector('#org-mobile-back');
+        if (mobBackBtn) {
+          mobBackBtn.onclick = () => {
+            if (window.FF?.app?.showHome) {
+              window.FF.app.showHome();
+            } else {
+              document.getElementById('app-home-brand-btn')?.click();
+            }
+          };
+        }
+
+        // 7c. Toolbar Crop Page Trigger
         const cropPageBtn = container.querySelector('#org-tb-crop-page');
         if (cropPageBtn) {
           cropPageBtn.onclick = () => {
@@ -57897,8 +58223,10 @@ trailer<</Root 1 0 R>>`;
         // 8. Undo / Redo
         const undoBtn = container.querySelector('#org-undo');
         const redoBtn = container.querySelector('#org-redo');
+        const mobUndo = container.querySelector('#org-mob-undo');
         if (undoBtn) undoBtn.onclick = () => undo();
         if (redoBtn) redoBtn.onclick = () => redo();
+        if (mobUndo) mobUndo.onclick = () => undo();
 
         // 9. Card Checkbox & Selection
         container.querySelectorAll('.org-card-chk').forEach(chk => {
@@ -57933,8 +58261,8 @@ trailer<</Root 1 0 R>>`;
           };
         });
 
-        // Hover Action Bar Buttons
-        container.querySelectorAll('.org-card-act-btn').forEach(btn => {
+        // Hover Action Bar Buttons & Single Rotate Button
+        container.querySelectorAll('.org-card-act-btn, .org-single-rot-btn').forEach(btn => {
           btn.onclick = (e) => {
             e.stopPropagation();
             const act = btn.dataset.act;
@@ -57962,17 +58290,68 @@ trailer<</Root 1 0 R>>`;
           };
         });
 
-        // 9b. Click page thumbnail → large preview overlay
+        // Dedicated Single Split Button (Scissors directly on page footer beside rotate)
+        container.querySelectorAll('.org-single-split-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const boundary = parseInt(btn.dataset.boundary, 10);
+            if (isNaN(boundary)) return;
+            recordState();
+            if (customCuts.has(boundary)) {
+              customCuts.delete(boundary);
+              if (customCuts.size === 0) mode = 'organize';
+            } else {
+              customCuts.add(boundary);
+              mode = 'split';
+            }
+            if (navigator.vibrate) {
+              try { navigator.vibrate(35); } catch (_) {}
+            }
+            renderWorkbench();
+          };
+        });
+
+        // 9b. Click page thumbnail → on desktop large preview overlay; on mobile double-tap for preview, single-tap for selection
         container.querySelectorAll('.org-pg-thumb[data-preview-id]').forEach(thumb => {
           thumb.addEventListener('click', (e) => {
-            if (e.target.closest('.org-card-act-btn') || e.target.closest('.org-card-chk') || e.target.closest('.org-card-close') || e.target.closest('.org-crop-box') || e.target.closest('.org-crop-floating-bar')) return;
+            if (Date.now() < mobileSuppressClickUntil) return;
+            if (e.target.closest('.org-card-act-btn') || e.target.closest('.org-single-rot-btn') || e.target.closest('.org-single-split-btn') || e.target.closest('.org-card-chk') || e.target.closest('.org-card-close') || e.target.closest('.org-crop-box') || e.target.closest('.org-crop-floating-bar')) return;
             const id = thumb.dataset.previewId;
             if (id === activeCroppingId) return;
+
+            if (window.innerWidth <= 768) {
+              if (mobileLastTapId === id && mobileTapTimer) {
+                // Double tap on mobile! Cancel pending selection and open high-res preview modal
+                clearTimeout(mobileTapTimer);
+                mobileTapTimer = null;
+                mobileLastTapId = null;
+                openPagePreview(id);
+                return;
+              }
+
+              mobileLastTapId = id;
+              clearTimeout(mobileTapTimer);
+              mobileTapTimer = setTimeout(() => {
+                mobileTapTimer = null;
+                mobileLastTapId = null;
+                if (selectedIds.has(id)) {
+                  selectedIds.delete(id);
+                } else {
+                  selectedIds.add(id);
+                }
+                if (navigator.vibrate) {
+                  try { navigator.vibrate(20); } catch (_) {}
+                }
+                renderWorkbench();
+              }, 260);
+              return;
+            }
+
             openPagePreview(id);
           });
         });
 
-        // 10. Multi-Page Drag and Drop Reordering
+        // 10. Multi-Page Drag and Drop Reordering (Desktop HTML5 Drag)
         container.querySelectorAll('.org-pg-tile').forEach(tile => {
           tile.addEventListener('dragstart', (e) => {
             if (activeCroppingId) {
@@ -58034,12 +58413,13 @@ trailer<</Root 1 0 R>>`;
               items.splice(targetIdx, 0, ...movingItems);
             } else {
               const fromIdx = items.findIndex(x => x.id === draggedId);
-              let toIdx = items.findIndex(x => x.id === targetId);
-              if (fromIdx < 0 || toIdx < 0) return;
-              if (isAfter) toIdx++;
-              if (fromIdx < toIdx) toIdx--;
-              const [moved] = items.splice(fromIdx, 1);
-              items.splice(toIdx, 0, moved);
+              const toIdx = items.findIndex(x => x.id === targetId);
+              if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+                // Swap the two pages
+                const temp = items[fromIdx];
+                items[fromIdx] = items[toIdx];
+                items[toIdx] = temp;
+              }
             }
 
             renderWorkbench();
@@ -58053,26 +58433,265 @@ trailer<</Root 1 0 R>>`;
           });
         });
 
-        // 11. Batch Action Dock
+        // 10b. Rock-Solid Unified Mobile & Pointer Hold-to-Organize Reordering
+        const tiles = container.querySelectorAll('.org-pg-tile');
+        if (tiles.length > 0) {
+          let touchTile = null;
+          let touchId = null;
+          let touchStartX = 0;
+          let touchStartY = 0;
+          let isTouchDragging = false;
+          let holdTimer = null;
+          let currentDropTarget = null;
+
+          const onPointerMove = (e) => {
+            if (!touchTile) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dx = clientX - touchStartX;
+            const dy = clientY - touchStartY;
+            const dist = Math.hypot(dx, dy);
+
+            if (!isTouchDragging) {
+              if (dist > 14) {
+                // User is scrolling the viewport - cancel hold so native scroll remains 100% fluid
+                clearTimeout(holdTimer);
+                cleanupTouch();
+              }
+              return;
+            }
+
+            if (e.cancelable) e.preventDefault();
+
+            // Real-time follow finger / mouse cursor
+            touchTile.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.06) rotate(1.5deg)`;
+
+            // Locate closest target tile
+            let closestTile = null;
+            let minDistance = Infinity;
+            const allTiles = container.querySelectorAll('.org-pg-tile');
+            for (const t of allTiles) {
+              if (t === touchTile) continue;
+              const r = t.getBoundingClientRect();
+              const cx = r.left + r.width / 2;
+              const cy = r.top + r.height / 2;
+              const d = Math.hypot(clientX - cx, clientY - cy);
+              if (d < minDistance && d < Math.max(r.width, r.height) * 1.5) {
+                minDistance = d;
+                closestTile = t;
+              }
+            }
+
+            allTiles.forEach(t => {
+              if (t !== closestTile) t.classList.remove('is-swap-target');
+            });
+
+            if (closestTile) {
+              currentDropTarget = closestTile;
+              closestTile.classList.add('is-swap-target');
+            } else {
+              currentDropTarget = null;
+            }
+          };
+
+          const onPointerEnd = () => {
+            clearTimeout(holdTimer);
+
+            if (isTouchDragging && touchTile) {
+              suppressClickUntil = Date.now() + 600;
+              if (currentDropTarget) {
+                const fromId = touchId;
+                const toId = currentDropTarget.dataset.id;
+                if (fromId && toId && fromId !== toId) {
+                  const fromIdx = items.findIndex(x => x.id === fromId);
+                  const toIdx = items.findIndex(x => x.id === toId);
+                  if (fromIdx >= 0 && toIdx >= 0) {
+                    recordState();
+                    // Instant swap
+                    const temp = items[fromIdx];
+                    items[fromIdx] = items[toIdx];
+                    items[toIdx] = temp;
+                    if (navigator.vibrate) {
+                      try { navigator.vibrate(40); } catch (_) {}
+                    }
+                    cleanupTouch();
+                    renderWorkbench();
+                    return;
+                  }
+                }
+              }
+
+              // Spring back smoothly if dropped outside
+              touchTile.style.transition = 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)';
+              touchTile.style.transform = 'translate3d(0, 0, 0)';
+              setTimeout(() => {
+                cleanupTouch();
+              }, 190);
+              return;
+            }
+
+            cleanupTouch();
+          };
+
+          const cleanupTouch = () => {
+            clearTimeout(holdTimer);
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerEnd);
+            window.removeEventListener('pointercancel', onPointerEnd);
+            window.removeEventListener('touchmove', onPointerMove);
+            window.removeEventListener('touchend', onPointerEnd);
+            window.removeEventListener('touchcancel', onPointerEnd);
+            if (touchTile) {
+              touchTile.classList.remove('is-touch-dragging');
+              touchTile.style.position = '';
+              touchTile.style.zIndex = '';
+              touchTile.style.pointerEvents = '';
+              touchTile.style.transition = '';
+              touchTile.style.transform = '';
+            }
+            container.querySelectorAll('.org-pg-tile').forEach(t => t.classList.remove('is-swap-target'));
+            touchTile = null;
+            touchId = null;
+            isTouchDragging = false;
+            currentDropTarget = null;
+          };
+
+          const startDragHold = (e, clientX, clientY, tile) => {
+            if (activeCroppingId) return;
+            if (e.target.closest('.org-single-rot-btn') || 
+                e.target.closest('.org-single-split-btn') || 
+                e.target.closest('.org-card-act-btn') || 
+                e.target.closest('.org-cut-btn') ||
+                e.target.closest('.org-card-close')) return;
+
+            touchStartX = clientX;
+            touchStartY = clientY;
+            touchTile = tile;
+            touchId = tile.dataset.id;
+            isTouchDragging = false;
+            currentDropTarget = null;
+
+            clearTimeout(holdTimer);
+            holdTimer = setTimeout(() => {
+              isTouchDragging = true;
+              mobileSuppressClickUntil = Date.now() + 600;
+              touchTile.classList.add('is-touch-dragging');
+              touchTile.style.position = 'relative';
+              touchTile.style.zIndex = '99999';
+              touchTile.style.pointerEvents = 'none';
+              touchTile.style.transition = 'none';
+              touchTile.style.transform = 'scale(1.06) rotate(1.5deg)';
+              if (navigator.vibrate) {
+                try { navigator.vibrate(35); } catch (_) {}
+              }
+            }, 200);
+
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerEnd, { passive: false });
+            window.addEventListener('pointercancel', onPointerEnd, { passive: false });
+            window.addEventListener('touchmove', onPointerMove, { passive: false });
+            window.addEventListener('touchend', onPointerEnd, { passive: false });
+            window.addEventListener('touchcancel', onPointerEnd, { passive: false });
+          };
+
+          tiles.forEach(tile => {
+            tile.addEventListener('pointerdown', (e) => {
+              if (e.button !== undefined && e.button !== 0) return; // Only primary button
+              startDragHold(e, e.clientX, e.clientY, tile);
+            });
+
+            tile.addEventListener('touchstart', (e) => {
+              if (e.touches.length > 1) return;
+              startDragHold(e, e.touches[0].clientX, e.touches[0].clientY, tile);
+            }, { passive: true });
+          });
+        }
+
+        // 11. Batch Action Dock (Option 3 Dock + Drawer)
+        const bToggleAll = container.querySelector('#org-b-toggle-all');
+        const bSelectAll = container.querySelector('#org-b-select-all');
         const bRotCcw = container.querySelector('#org-b-rot-ccw');
         const bRotCw = container.querySelector('#org-b-rot-cw');
         const bReverse = container.querySelector('#org-b-reverse');
         const bCrop = container.querySelector('#org-b-crop');
+        const bBlank = container.querySelector('#org-b-blank');
         const bDup = container.querySelector('#org-b-dup');
         const bDel = container.querySelector('#org-b-del');
         const bClear = container.querySelector('#org-b-clear');
+        const bMore = container.querySelector('#org-b-more');
+        const bMoreClose = container.querySelector('#org-b-more-close');
+        const bMoreBackdrop = container.querySelector('#org-b-more-backdrop');
 
-        if (bRotCcw) bRotCcw.onclick = () => {
-          recordState();
-          items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + 270) % 360; });
+        const handleSelectToggle = (e) => {
+          e.stopPropagation();
+          const allActive = items.filter(it => !it.isDeleted);
+          if (selectedIds.size === allActive.length) {
+            selectedIds.clear();
+            isBatchMoreOpen = false;
+          } else {
+            allActive.forEach(it => selectedIds.add(it.id));
+          }
+          if (navigator.vibrate) try { navigator.vibrate(25); } catch (_) {}
           renderWorkbench();
         };
-        if (bRotCw) bRotCw.onclick = () => {
+
+        if (bToggleAll) bToggleAll.onclick = handleSelectToggle;
+        if (bSelectAll) bSelectAll.onclick = handleSelectToggle;
+
+        if (bMore) bMore.onclick = (e) => {
+          e.stopPropagation();
+          isBatchMoreOpen = !isBatchMoreOpen;
+          renderWorkbench();
+        };
+
+        if (bMoreClose) bMoreClose.onclick = (e) => {
+          e.stopPropagation();
+          isBatchMoreOpen = false;
+          renderWorkbench();
+        };
+
+        if (bMoreBackdrop) bMoreBackdrop.onclick = (e) => {
+          e.stopPropagation();
+          isBatchMoreOpen = false;
+          renderWorkbench();
+        };
+
+        if (bBlank) bBlank.onclick = (e) => {
+          e.stopPropagation();
+          recordState();
+          const sel = [...selectedIds];
+          let insertIdx = items.length;
+          if (sel.length) {
+            const lastId = sel[sel.length - 1];
+            const idx = items.findIndex(it => it.id === lastId);
+            if (idx >= 0) insertIdx = idx + 1;
+          }
+          items.splice(insertIdx, 0, {
+            id: 'pg_' + (++seq),
+            fileIdx: -1, origPageIdx: 0,
+            rotation: 0, isDeleted: false, isBlank: true, canvas: null, name: 'Blank Page', crop: null
+          });
+          isBatchMoreOpen = false;
+          renderWorkbench();
+        };
+
+        if (bRotCcw) bRotCcw.onclick = (e) => {
+          e.stopPropagation();
+          recordState();
+          items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + 270) % 360; });
+          isBatchMoreOpen = false;
+          renderWorkbench();
+        };
+
+        if (bRotCw) bRotCw.onclick = (e) => {
+          e.stopPropagation();
           recordState();
           items.forEach(it => { if (selectedIds.has(it.id)) it.rotation = ((it.rotation || 0) + 90) % 360; });
           renderWorkbench();
         };
-        if (bReverse) bReverse.onclick = () => {
+
+        if (bReverse) bReverse.onclick = (e) => {
+          e.stopPropagation();
           recordState();
           const selIndices = [];
           const selItems = [];
@@ -58086,19 +58705,25 @@ trailer<</Root 1 0 R>>`;
           selIndices.forEach((idx, i) => {
             items[idx] = selItems[i];
           });
+          isBatchMoreOpen = false;
           renderWorkbench();
         };
-        if (bCrop) bCrop.onclick = () => {
+
+        if (bCrop) bCrop.onclick = (e) => {
+          e.stopPropagation();
           const firstSelectedId = Array.from(selectedIds)[0];
           const it = items.find(x => x.id === firstSelectedId);
           if (it) {
             activeCroppingId = it.id;
             activeCropDraft = it.crop ? { ...it.crop } : { top: 0, right: 0, bottom: 0, left: 0 };
             cropScope = selectedIds.size > 1 ? 'selected' : 'single';
+            isBatchMoreOpen = false;
             renderWorkbench();
           }
         };
-        if (bDup) bDup.onclick = () => {
+
+        if (bDup) bDup.onclick = (e) => {
+          e.stopPropagation();
           recordState();
           const toAdd = [];
           items.forEach((it, idx) => {
@@ -58108,15 +58733,25 @@ trailer<</Root 1 0 R>>`;
           });
           toAdd.reverse().forEach(({ idx, clone }) => items.splice(idx + 1, 0, clone));
           selectedIds.clear();
+          isBatchMoreOpen = false;
           renderWorkbench();
         };
-        if (bDel) bDel.onclick = () => {
+
+        if (bDel) bDel.onclick = (e) => {
+          e.stopPropagation();
           recordState();
           items.forEach(it => { if (selectedIds.has(it.id)) it.isDeleted = !it.isDeleted; });
           selectedIds.clear();
+          isBatchMoreOpen = false;
           renderWorkbench();
         };
-        if (bClear) bClear.onclick = () => { selectedIds.clear(); renderWorkbench(); };
+
+        if (bClear) bClear.onclick = (e) => {
+          e.stopPropagation();
+          selectedIds.clear();
+          isBatchMoreOpen = false;
+          renderWorkbench();
+        };
 
         // ── In-Viewport Canvas Tile Cropping Engine ──
         if (activeCroppingId) {
@@ -58682,7 +59317,7 @@ trailer<</Root 1 0 R>>`;
           let resultPayload = null;
 
           // Case A: Split Mode
-          if (mode === 'split') {
+          if (mode === 'split' || customCuts.size > 0) {
             const cuts = [...customCuts].sort((a, b) => a - b);
             const parts = [];
             let cur = [];
@@ -58811,23 +59446,30 @@ trailer<</Root 1 0 R>>`;
             resultPayload = { blob: resBlob, name: `${base}${suffix}.pdf` };
           }
 
-          // Ensure minimum visual feedback duration for the downloading state
-          const elapsed = Date.now() - startTime;
-          if (elapsed < 600) {
-            await new Promise(r => setTimeout(r, 600 - elapsed));
+          if (resultPayload) {
+            // Direct Instant Download — No redundant processing/result stage
+            U.downloadBlob(resultPayload.blob, resultPayload.name);
+            window.FF?.util?.toast?.('Document downloaded!', 'success');
+            try {
+              window.FileKitHistory?.addEntry({
+                name: resultPayload.name,
+                toolId: 'organize',
+                toolName: 'Organize PDF',
+                blob: resultPayload.blob,
+                size: resultPayload.blob.size
+              });
+            } catch (_) {}
           }
 
           // Morph to emerald Done state
           if (runBtn) {
             runBtn.setAttribute('data-phase', 'done');
             runBtn.removeAttribute('aria-busy');
-          }
-
-          // Brief delay so the user experiences the emerald checkmark before viewing result studio
-          await new Promise(r => setTimeout(r, 750));
-
-          if (resultPayload) {
-            renderResult(resultPayload);
+            setTimeout(() => {
+              if (runBtn) {
+                runBtn.setAttribute('data-phase', 'idle');
+              }
+            }, 1800);
           }
         } catch (err) {
           console.error('[Organize] Action Error:', err);

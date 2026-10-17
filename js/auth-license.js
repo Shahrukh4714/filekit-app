@@ -393,7 +393,7 @@
 
       let currentCycle = 'monthly';
 
-      const setCycle = (cycle) => {
+      let setCycle = (cycle) => {
         currentCycle = cycle;
         if (cycle === 'annual') {
           toggleMonthly?.classList.remove('active');
@@ -450,6 +450,126 @@
           this.openAuthModal('activate');
         };
       }
+
+      // Mobile Plan Selector Sheet (Option 2) Logic
+      const mobPlanCards = document.querySelectorAll('.fk-mobile-plan-card');
+      const mobFeaturesTitle = document.getElementById('fk-mob-feat-title');
+      const mobFeaturesList = document.getElementById('fk-mob-feat-list');
+      const mobCheckoutBtn = document.getElementById('fk-mobile-checkout-btn');
+      const mobProPrice = document.getElementById('fk-mob-pro-price');
+      const mobProOldPrice = document.getElementById('fk-mob-pro-old-price');
+      const mobProDiscount = document.getElementById('fk-mob-pro-discount');
+
+      const planFeaturesData = {
+        free: {
+          title: 'INCLUDED WITH FREE:',
+          items: [
+            'Convert, compress, and edit files in your browser',
+            'Up to 10 files per batch',
+            'All 197+ format tools included',
+            '100% on your device (0 uploads, privacy guaranteed)',
+            'No watermarks, no countdown timers'
+          ],
+          btnText: 'Current Plan',
+          isSubtle: true
+        },
+        pro: {
+          title: 'INCLUDED WITH PRO:',
+          items: [
+            '<strong>Unlimited files</strong> at once (50+ batch)',
+            '<strong>Multi-core Turbo</strong> CPU worker processing',
+            '<strong>600 DPI Master</strong> print-ready resolution',
+            '<strong>Deep compression</strong> with target KB/MB',
+            '<strong>100% on your device</strong> (0 uploads, privacy guaranteed)'
+          ],
+          btnText: 'Upgrade to Pro &rarr;',
+          isSubtle: false
+        },
+        lifetime: {
+          title: 'INCLUDED WITH LIFETIME:',
+          items: [
+            '<strong>Standalone desktop apps</strong> for Mac and Windows',
+            '<strong>Installable mobile apps</strong> for iPhone and Android',
+            '<strong>Works 100% offline</strong> with your license key',
+            '<strong>All Pro capabilities</strong> included permanently',
+            '<strong>Free lifetime updates</strong> and engine improvements'
+          ],
+          btnText: 'Upgrade to Lifetime ($14) &rarr;',
+          isSubtle: false
+        }
+      };
+
+      let selectedPlan = 'pro';
+
+      const updateMobileSheetUI = () => {
+        // Sync mobile Pro pricing with current billing cycle
+        if (mobProPrice) {
+          mobProPrice.innerHTML = currentCycle === 'annual' ? '$2<small>/mo</small>' : '$3<small>/mo</small>';
+        }
+        if (mobProOldPrice) {
+          mobProOldPrice.style.display = currentCycle === 'annual' ? 'inline' : 'none';
+          mobProOldPrice.textContent = currentCycle === 'annual' ? '$3/mo' : '$4.50';
+        }
+        if (mobProDiscount) {
+          mobProDiscount.style.display = currentCycle === 'annual' ? 'inline-block' : 'none';
+        }
+
+        const data = planFeaturesData[selectedPlan];
+        if (!data) return;
+
+        if (mobFeaturesTitle) mobFeaturesTitle.textContent = data.title;
+        if (mobFeaturesList) {
+          mobFeaturesList.innerHTML = data.items
+            .map(item => `<div class="fk-mobile-feat-item"><span class="fk-mobile-check">&check;</span><span>${item}</span></div>`)
+            .join('');
+        }
+        if (mobCheckoutBtn) {
+          mobCheckoutBtn.innerHTML = `<span>${data.btnText}</span>`;
+          if (data.isSubtle) {
+            mobCheckoutBtn.classList.add('is-subtle');
+          } else {
+            mobCheckoutBtn.classList.remove('is-subtle');
+          }
+        }
+      };
+
+      // Wrap original setCycle to also update mobile sheet
+      const originalSetCycle = setCycle;
+      setCycle = (cycle) => {
+        originalSetCycle(cycle);
+        updateMobileSheetUI();
+      };
+
+      mobPlanCards.forEach(card => {
+        card.addEventListener('click', () => {
+          const plan = card.getAttribute('data-plan');
+          if (!plan) return;
+          selectedPlan = plan;
+
+          mobPlanCards.forEach(c => {
+            c.classList.remove('is-selected');
+            c.setAttribute('aria-checked', 'false');
+          });
+          card.classList.add('is-selected');
+          card.setAttribute('aria-checked', 'true');
+
+          updateMobileSheetUI();
+        });
+      });
+
+      if (mobCheckoutBtn) {
+        mobCheckoutBtn.addEventListener('click', () => {
+          if (selectedPlan === 'free') {
+            if (window.FF?.app?.showApp) window.FF.app.showApp();
+          } else if (selectedPlan === 'pro') {
+            this.openCheckoutModal('pro', currentCycle);
+          } else if (selectedPlan === 'lifetime') {
+            this.openCheckoutModal('lifetime');
+          }
+        });
+      }
+
+      updateMobileSheetUI();
     }
 
     updateNavbarUI() {
@@ -472,6 +592,14 @@
 
       if (!this.state.isLoggedIn) {
         topbarRight.innerHTML = `
+          <span class="app-topbar-privacy-pill" id="app-topbar-privacy-pill" title="All processing is 100% local in your browser">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>100% Private</span>
+          </span>
+          <button type="button" class="app-history-btn" id="app-history-btn" aria-label="Recent files and history" title="Recent Files">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="app-history-badge" id="app-history-badge" style="display:none;">0</span>
+          </button>
           <button type="button" class="fk-topbar-pricing-btn" id="app-upgrade-trigger">Pricing</button>
           <button type="button" class="app-login-btn" id="app-login-btn">Log In</button>
         `;
@@ -483,6 +611,10 @@
           }
         });
         document.getElementById('app-login-btn')?.addEventListener('click', () => this.openAuthModal('login'));
+        document.getElementById('app-history-btn')?.addEventListener('click', () => {
+          if (window.FileKitHistory) window.FileKitHistory.open();
+        });
+        window.FileKitHistory?.updateBadge?.();
       } else {
         const isLife = this.state.tier === 'lifetime';
         const isPro = this.state.tier === 'pro';
@@ -490,6 +622,14 @@
         const badgeClass = isLife ? 'is-lifetime' : isPro ? 'is-pro' : 'is-free';
 
         topbarRight.innerHTML = `
+          <span class="app-topbar-privacy-pill" id="app-topbar-privacy-pill" title="All processing is 100% local in your browser">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>100% Private</span>
+          </span>
+          <button type="button" class="app-history-btn" id="app-history-btn" aria-label="Recent files and history" title="Recent Files">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="app-history-badge" id="app-history-badge" style="display:none;">0</span>
+          </button>
           <button type="button" class="fk-nav-user-profile-btn" id="app-user-profile-trigger" title="Account & Settings">
             <div class="fk-nav-user-avatar">${(this.state.user.name || 'U').charAt(0).toUpperCase()}</div>
             <div class="fk-nav-user-info">
@@ -502,6 +642,10 @@
         document.getElementById('app-user-profile-trigger')?.addEventListener('click', () => {
           this.openAccountWorkspace('profile');
         });
+        document.getElementById('app-history-btn')?.addEventListener('click', () => {
+          if (window.FileKitHistory) window.FileKitHistory.open();
+        });
+        window.FileKitHistory?.updateBadge?.();
       }
     }
 
