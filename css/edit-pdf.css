@@ -6146,5 +6146,547 @@ body.dark-mode .etxt-pn-dot-btn.is-active .etxt-pn-dot {
   background: #FFFFFF !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   PDF EDITOR MOBILE-FIRST ADAPTATIONS (≤ 768px)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Desktop defaults: Hide mobile-only dock, sheet, backdrop, stepper & top tools */
+.etxt-mobile-dock,
+.etxt-mob-more-sheet,
+.etxt-mob-sheet-backdrop,
+.etxt-mobile-page-stepper,
+.etxt-mob-top-tools {
+  display: none !important;
+}
+
+@keyframes etxtSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 1. Header Toolbar on Mobile */
+  .etxt-unified-toolbar {
+    display: flex !important;
+    grid-template-columns: none !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0 8px !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+    z-index: 50 !important;
+  }
+
+  /* Completely suppress 11 naked desktop tool buttons on mobile */
+  .etxt-toolbar-center,
+  .etxt-segmented-modes {
+    display: none !important;
+  }
+
+  /* Left Zone: Open, Undo, Redo, Stepper */
+  .etxt-toolbar-left {
+    grid-column: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .etxt-file-btn span {
+    display: none !important;
+  }
+
+  .etxt-file-btn {
+    padding: 0 !important;
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    justify-content: center !important;
+  }
+
+  .etxt-toolbar-left .etxt-vsep {
+    display: none !important;
+  }
+
+  .etxt-tool-icon-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+  }
+
+  /* Stepper Capsule inside Left Zone on mobile */
+  .etxt-mobile-page-stepper {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #F4F4F5 !important;
+    border: 1px solid #E4E4E7 !important;
+    border-radius: 9999px !important;
+    padding: 1px 3px !important;
+    gap: 1px !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    flex: 0 0 auto !important;
+    height: 26px !important;
+  }
+
+  .etxt-mob-page-nav {
+    width: 20px !important;
+    height: 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    background: transparent !important;
+    color: #52525B !important;
+    border-radius: 9999px !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    transition: background 0.15s ease !important;
+  }
+
+  .etxt-mob-page-nav:active:not(:disabled) {
+    background: #E4E4E7 !important;
+  }
+
+  .etxt-mob-page-nav:disabled {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+  }
+
+  .etxt-mob-page-indicator {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #09090B !important;
+    cursor: pointer !important;
+    height: 20px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  /* Mobile Top Tools Track (Accommodates auxiliary tools from More) */
+  .etxt-mob-top-tools {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding: 0 2px !important;
+  }
+
+  .etxt-mob-top-tools::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .etxt-mob-top-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 6px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #52525B !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: all 0.15s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .etxt-mob-top-btn svg {
+    width: 15px !important;
+    height: 15px !important;
+    stroke: currentColor !important;
+  }
+
+  .etxt-mob-top-btn.is-active {
+    background: #EFF6FF !important;
+    border-color: #BFDBFE !important;
+    color: #2563EB !important;
+  }
+
+  .etxt-mob-top-btn:active {
+    background: #E4E4E7 !important;
+  }
+
+  /* Right Zone: Print & SVG-only Download */
+  .etxt-toolbar-right {
+    grid-column: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .etxt-toolbar-right .etxt-history-group,
+  .etxt-toolbar-right .etxt-vsep,
+  .etxt-toolbar-right #etxt-download-png {
+    display: none !important;
+  }
+
+  /* Print Button on Mobile */
+  #etxt-print {
+    display: inline-flex !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+  }
+
+  /* Download / Save Button on Mobile: Compact SVG-only */
+  .etxt-toolbar-right #etxt-finish {
+    display: inline-flex !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    position: relative !important;
+  }
+
+  #etxt-finish .osui-dl-label-grid,
+  #etxt-finish span:not(.osui-dl-icon-slot):not(.etxt-export-badge) {
+    display: none !important;
+  }
+
+  #etxt-finish .osui-dl-icon-slot {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .etxt-export-badge {
+    position: absolute !important;
+    top: -3px !important;
+    right: -3px !important;
+    font-size: 9px !important;
+    min-width: 14px !important;
+    height: 14px !important;
+    padding: 0 3px !important;
+    border-radius: 9999px !important;
+    line-height: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 2. Hide Right Floating Zoom Rail on Mobile */
+  .etxt-right-rail,
+  #etxt-floating-zoom,
+  #etxt-zoom-float-rail {
+    display: none !important;
+  }
+
+  /* 3. Canvas Wrap padding for Mobile */
+  #etxt-canvas-wrap {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 16px)) !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
+  }
+
+  /* 4. Mobile Bottom Dock (Pinned, pure white, safe-area aware) */
+  .etxt-mobile-dock {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #E4E4E7 !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    z-index: 60 !important;
+  }
+
+  .etxt-mob-dock-btn {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    height: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+    cursor: pointer !important;
+    color: #71717A !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: color 0.15s ease !important;
+  }
+
+  .etxt-mob-dock-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke: currentColor !important;
+  }
+
+  .etxt-mob-dock-btn.is-active {
+    color: #18181B !important;
+    font-weight: 600 !important;
+  }
+
+  .etxt-mob-dock-btn:active {
+    color: #09090B !important;
+  }
+
+  /* 5. Mobile More Drawer Sheet & Backdrop */
+  .etxt-mob-sheet-backdrop {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 70 !important;
+  }
+
+  .etxt-mob-sheet-backdrop[hidden] {
+    display: none !important;
+  }
+
+  .etxt-mob-more-sheet {
+    display: flex !important;
+    flex-direction: column !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #FFFFFF !important;
+    border-top-left-radius: 20px !important;
+    border-top-right-radius: 20px !important;
+    padding: 12px 16px calc(24px + env(safe-area-inset-bottom, 12px)) 16px !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15) !important;
+    z-index: 80 !important;
+    animation: etxtSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+
+  .etxt-mob-more-sheet[hidden] {
+    display: none !important;
+  }
+
+  .etxt-mob-sheet-handle {
+    width: 36px !important;
+    height: 4px !important;
+    background: #D4D4D8 !important;
+    border-radius: 9999px !important;
+    margin: 0 auto 12px auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  .etxt-mob-sheet-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 16px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .etxt-mob-sheet-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #09090B !important;
+  }
+
+  .etxt-mob-sheet-close {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background: #F4F4F5 !important;
+    color: #71717A !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+  }
+
+  .etxt-mob-sheet-close svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: currentColor !important;
+  }
+
+  .etxt-mob-tools-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px 8px !important;
+  }
+
+  .etxt-mob-grid-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 12px 6px !important;
+    border-radius: 12px !important;
+    border: 1px solid #F4F4F5 !important;
+    background: #FAFAFA !important;
+    color: #3F3F46 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .etxt-mob-grid-item svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke: currentColor !important;
+  }
+
+  .etxt-mob-grid-lbl {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  .etxt-mob-grid-item.is-active {
+    background: #F4F4F5 !important;
+    border-color: #E4E4E7 !important;
+    color: #18181B !important;
+    font-weight: 600 !important;
+  }
+
+  .etxt-mob-grid-item:active {
+    background: #E4E4E7 !important;
+  }
+
+  /* 6. Popovers as Mobile Bottom Sheets */
+  #etxt-popover-flyout {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2) !important;
+    z-index: 90 !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 12px)) !important;
+    border: none !important;
+    border-top: 1px solid #E4E4E7 !important;
+    animation: etxtSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+}
+
+/* Dark Mode Adaptations */
+body.dark-mode .etxt-mobile-dock {
+  background: #18181B !important;
+  border-top-color: #27272A !important;
+}
+
+body.dark-mode .etxt-mob-dock-btn {
+  color: #A1A1AA !important;
+}
+
+body.dark-mode .etxt-mob-dock-btn.is-active {
+  color: #FAFAFA !important;
+}
+
+body.dark-mode .etxt-mobile-page-stepper {
+  background: #27272A !important;
+  border-color: #3F3F46 !important;
+}
+
+body.dark-mode .etxt-mob-page-indicator {
+  color: #FAFAFA !important;
+}
+
+body.dark-mode .etxt-mob-page-nav {
+  color: #A1A1AA !important;
+}
+
+body.dark-mode .etxt-mob-more-sheet {
+  background: #18181B !important;
+  border-top-color: #27272A !important;
+}
+
+body.dark-mode .etxt-mob-sheet-handle {
+  background: #3F3F46 !important;
+}
+
+body.dark-mode .etxt-mob-sheet-title {
+  color: #FAFAFA !important;
+}
+
+body.dark-mode .etxt-mob-sheet-close {
+  background: #27272A !important;
+  color: #A1A1AA !important;
+}
+
+body.dark-mode .etxt-mob-grid-item {
+  background: #27272A !important;
+  border-color: #3F3F46 !important;
+  color: #E4E4E7 !important;
+}
+
+body.dark-mode .etxt-mob-grid-item.is-active {
+  background: #3F3F46 !important;
+  border-color: #52525B !important;
+  color: #FFFFFF !important;
+}
+
+body.dark-mode #etxt-popover-flyout {
+  background: #18181B !important;
+  border-top-color: #27272A !important;
+}
+
+body.dark-mode .etxt-mob-top-btn {
+  color: #A1A1AA !important;
+}
+
+body.dark-mode .etxt-mob-top-btn.is-active {
+  background: #27272A !important;
+  border-color: #3F3F46 !important;
+  color: #FAFAFA !important;
+}
+
+body.dark-mode #etxt-print {
+  color: #A1A1AA !important;
+}
+
+
 
 

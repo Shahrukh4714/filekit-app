@@ -27921,6 +27921,10 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
     sig: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3.5 15.5c2.6-1 4.4.6 6.8-.3 1.8-.7 3-2 3.4-3.4.6-2-1-3.6-2.6-2.7-1.4.8-.7 3 .8 3.6 2.2.9 4.2-.4 5.4-2.1.8-1.2 1.9-2.6 3.2-4.1"/></svg>`,
     /* check stamp: bold check */
     checkStamp: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 6.5"/></svg>`,
+    /* print icon */
+    print: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
+    /* fit to width icon */
+    fit: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`,
   };
 
   function tinyPdf(title) {
@@ -30761,7 +30765,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
       container.innerHTML = `
         <header class="etxt-unified-toolbar" role="toolbar" aria-label="Edit PDF Toolbar">
-          <!-- Left: Open PDF, Undo, Redo -->
+          <!-- Left: Open PDF, Undo, Redo, and Mobile Stepper -->
           <div class="etxt-toolbar-left" role="toolbar" aria-label="Document Operations">
             <button type="button" class="etxt-file-btn" id="etxt-change-file" aria-label="Open PDF">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -30770,19 +30774,32 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <span class="etxt-vsep"></span>
             <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-undo" aria-label="Undo" ${undoStack.length ? '' : 'disabled'}>${I.undo}</button>
             <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-redo" aria-label="Redo" ${redoStack.length ? '' : 'disabled'}>${I.redo}</button>
+
+            <!-- Mobile Center: Page Stepper Capsule -->
+            <div class="etxt-mobile-page-stepper" role="group" aria-label="Page Navigation">
+              <button type="button" class="etxt-mob-page-nav" id="etxt-mob-prev" aria-label="Previous Page" ${page <= 1 ? 'disabled' : ''}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button type="button" class="etxt-mob-page-indicator" id="etxt-mob-pages" aria-label="View All Pages">
+                ${page} / ${pageCount}
+              </button>
+              <button type="button" class="etxt-mob-page-nav" id="etxt-mob-next" aria-label="Next Page" ${page >= pageCount ? 'disabled' : ''}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
           </div>
 
-          <!-- Mobile Center: Page Stepper Capsule -->
-          <div class="etxt-mobile-page-stepper" role="group" aria-label="Page Navigation">
-            <button type="button" class="etxt-mob-page-nav" id="etxt-mob-prev" aria-label="Previous Page" ${page <= 1 ? 'disabled' : ''}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <button type="button" class="etxt-mob-page-indicator" id="etxt-mob-pages" aria-label="View All Pages">
-              ${page} / ${pageCount}
-            </button>
-            <button type="button" class="etxt-mob-page-nav" id="etxt-mob-next" aria-label="Next Page" ${page >= pageCount ? 'disabled' : ''}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
+          <!-- Mobile Top Tools Track (Accommodates auxiliary tools from More) -->
+          <div class="etxt-mob-top-tools" role="toolbar" aria-label="Additional Tools">
+            <button type="button" class="etxt-mob-top-btn${toolMode==='shape'?' is-active':''}" data-mob-tool="shape" aria-label="Shapes">${I.shape}</button>
+            <button type="button" class="etxt-mob-top-btn${toolMode==='image'?' is-active':''}" data-mob-tool="image" aria-label="Image">${I.image}</button>
+            <button type="button" class="etxt-mob-top-btn${toolMode==='crop'?' is-active':''}" data-mob-tool="crop" aria-label="Crop">${I.crop}</button>
+            <button type="button" class="etxt-mob-top-btn${toolMode==='redact'?' is-active':''}" data-mob-tool="redact" aria-label="Redact">${I.redact}</button>
+            <button type="button" class="etxt-mob-top-btn${toolMode==='form'||toolMode==='form-fill'?' is-active':''}" data-mob-tool="form" aria-label="Forms">${I.form}</button>
+            <button type="button" class="etxt-mob-top-btn${toolMode==='watermark'?' is-active':''}" data-mob-tool="watermark" aria-label="Watermark">${I.watermark}</button>
+            <button type="button" class="etxt-mob-top-btn${toolMode==='pagenum'?' is-active':''}" data-mob-tool="pagenum" aria-label="Page Numbers">${I.pagenum}</button>
+            <button type="button" class="etxt-mob-top-btn" id="etxt-mob-top-find" aria-label="Find Text">${I.find}</button>
+            <button type="button" class="etxt-mob-top-btn" id="etxt-mob-top-fit" aria-label="Fit to Width">${I.fit}</button>
           </div>
 
           <!-- Center: All 11 Editing Tools Naked (Icon above, Text below) -->
@@ -30835,7 +30852,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             </div>
           </div>
 
-          <!-- Right: Search, Preview & Save PDF -->
+          <!-- Right: Search, Preview, Print & Save PDF -->
           <div class="etxt-toolbar-right">
             <div class="etxt-history-group" role="group" aria-label="Utility Tools">
               <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-find-replace" aria-label="Find in Document">${I.find}</button>
@@ -30848,7 +30865,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
             ${imgSrc ? `<button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-download-png" aria-label="Download PNG">${I.image}</button>` : ''}
 
-            <button type="button" class="osui-dl-btn etxt-primary-cta" id="etxt-finish" data-slot="download-button" data-phase="idle">
+            <!-- Print Document Button (Compact SVG) -->
+            <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-print" aria-label="Print Document">${I.print}</button>
+
+            <!-- Save / Export PDF Button -->
+            <button type="button" class="osui-dl-btn etxt-primary-cta" id="etxt-finish" data-slot="download-button" data-phase="idle" aria-label="Download PDF">
               <span class="osui-dl-icon-slot">
                 <span aria-hidden="true" class="osui-dl-icon-layer osui-dl-icon--idle">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"></path><path d="m6 11 6 6 6-6"></path><path d="M19 21H5"></path></svg>
@@ -31275,6 +31296,13 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         };
       }
 
+      const mobTopFind = container.querySelector('#etxt-mob-top-find');
+      if (mobTopFind) {
+        mobTopFind.onclick = () => {
+          openFindReplaceDlg();
+        };
+      }
+
       const mobFitBtn = container.querySelector('#etxt-mob-fit-btn');
       if (mobFitBtn) {
         mobFitBtn.onclick = () => {
@@ -31285,6 +31313,53 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             const availW = Math.max(280, wrap.clientWidth - 24);
             const targetZoom = Math.round(Math.max(30, Math.min(220, (availW / (page1.clientWidth || 612)) * 100)));
             smoothZoom(targetZoom);
+          }
+        };
+      }
+
+      const mobTopFit = container.querySelector('#etxt-mob-top-fit');
+      if (mobTopFit) {
+        mobTopFit.onclick = () => {
+          const wrap = container.querySelector('#etxt-canvas-wrap');
+          const page1 = container.querySelector('.etxt-page');
+          if (wrap && page1) {
+            const availW = Math.max(280, wrap.clientWidth - 24);
+            const targetZoom = Math.round(Math.max(30, Math.min(220, (availW / (page1.clientWidth || 612)) * 100)));
+            smoothZoom(targetZoom);
+          }
+        };
+      }
+
+      const printBtn = container.querySelector('#etxt-print');
+      if (printBtn) {
+        printBtn.onclick = () => {
+          try {
+            if (currentPdf) {
+              const blobUrl = URL.createObjectURL(currentPdf);
+              const iframe = document.createElement('iframe');
+              iframe.style.position = 'fixed';
+              iframe.style.right = '0';
+              iframe.style.bottom = '0';
+              iframe.style.width = '0';
+              iframe.style.height = '0';
+              iframe.style.border = '0';
+              iframe.src = blobUrl;
+              document.body.appendChild(iframe);
+              iframe.onload = () => {
+                setTimeout(() => {
+                  try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                  } catch (_) {
+                    window.print();
+                  }
+                }, 300);
+              };
+            } else {
+              window.print();
+            }
+          } catch (_) {
+            window.print();
           }
         };
       }
@@ -32091,7 +32166,16 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       const finishBtn = container.querySelector('#etxt-finish');
       if (finishBtn) {
         const count = edits.length;
-        finishBtn.innerHTML = `<span>Export PDF</span>${count > 0 ? `<span class="etxt-export-badge">${count}</span>` : ''} ${I.arrow}`;
+        if (window.innerWidth <= 768) {
+          finishBtn.innerHTML = `
+            <span class="osui-dl-icon-slot" style="display:flex;align-items:center;justify-content:center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"></path><path d="m6 11 6 6 6-6"></path><path d="M19 21H5"></path></svg>
+            </span>
+            ${count > 0 ? `<span class="etxt-export-badge">${count}</span>` : ''}
+          `;
+        } else {
+          finishBtn.innerHTML = `<span>Export PDF</span>${count > 0 ? `<span class="etxt-export-badge">${count}</span>` : ''} ${I.arrow}`;
+        }
       }
     }
 
@@ -38991,9 +39075,14 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         b.classList.toggle('is-active', on);
       });
 
-      // Update mobile dock and grid buttons
+      // Update mobile dock, top bar and grid buttons
       container.querySelectorAll('.etxt-mob-dock-btn[data-mob-tool]').forEach(b => {
         const on = b.dataset.mobTool === id || (id === 'highlight' && b.dataset.mobTool === 'draw');
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      container.querySelectorAll('.etxt-mob-top-btn[data-mob-tool]').forEach(b => {
+        const on = b.dataset.mobTool === id;
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-selected', String(on));
       });

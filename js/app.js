@@ -17288,187 +17288,303 @@ try {
   };
 
 /* ==========================================================================
-   FILEKIT MOBILE-NATIVE — Phase 1: Bottom Tab Bar Wiring
-   Connects .mtab buttons to the existing .rail-item logic.
-   Runs after DOM is ready, only activates when .mobile-tab-bar exists.
+   FILEKIT MOBILE-NATIVE — Hamburger Navigation Drawer
+   Full Reference Parity: Search, Dashboard, Recents, Starred,
+   Expandable categories with tool counts & descriptions.
    ========================================================================== */
-(function initMobileTabs() {
-  function openMoreSheet() {
-    var overlay = document.getElementById('mobile-more-overlay');
+(function initMobileNavDrawer() {
+  const overlay = document.getElementById('mobile-nav-drawer-overlay');
+  const backdrop = document.getElementById('mobile-nav-drawer-backdrop');
+  const panel = document.getElementById('mobile-nav-drawer-panel');
+  const closeBtn = document.getElementById('mobile-nav-drawer-close');
+  const searchInp = document.getElementById('m-drawer-search-inp');
+  const searchResults = document.getElementById('m-drawer-search-results');
+  const defaultContent = document.getElementById('m-drawer-default-content');
+  const categoriesList = document.getElementById('m-drawer-categories-list');
+  const brandBtn = document.getElementById('app-home-brand-btn');
+  const brandTextBtn = document.getElementById('app-brand-text-btn');
+
+  function openDrawer() {
     if (!overlay) return;
+    populateCategories();
+    updateCounts();
     overlay.hidden = false;
     document.body.style.overflow = 'hidden';
-    requestAnimationFrame(function() {
-      overlay.classList.add('active');
+    requestAnimationFrame(() => {
+      overlay.classList.add('is-active');
     });
   }
 
-  function closeMoreSheet() {
-    var overlay = document.getElementById('mobile-more-overlay');
+  function closeDrawer() {
     if (!overlay || overlay.hidden) return;
-    overlay.classList.remove('active');
+    overlay.classList.remove('is-active');
     document.body.style.overflow = '';
-    setTimeout(function() {
+    setTimeout(() => {
       overlay.hidden = true;
+      if (searchInp) {
+        searchInp.value = '';
+        renderSearchResults('');
+      }
     }, 280);
   }
 
-  function wire() {
-    var tabs = document.querySelectorAll('.mtab');
-    if (!tabs.length) return;
+  window.openMobileNavDrawer = openDrawer;
+  window.closeMobileNavDrawer = closeDrawer;
 
-    tabs.forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        var task = tab.dataset.taskRail;
+  function updateCounts() {
+    const recentCountEl = document.getElementById('m-drawer-recent-count');
+    const starredCountEl = document.getElementById('m-drawer-starred-count');
+    const recentFiles = JSON.parse(localStorage.getItem('filekit_recent_files') || '[]');
+    const starredTools = JSON.parse(localStorage.getItem('filekit_favorites') || '[]');
+    if (recentCountEl) recentCountEl.textContent = recentFiles.length;
+    if (starredCountEl) starredCountEl.textContent = starredTools.length;
+  }
 
-        // If More Tools is tapped, slide up the spring bottom sheet
-        if (task === 'more' || tab.id === 'mobile-rail-more-btn') {
-          openMoreSheet();
-          return;
-        }
+  const CATEGORY_DEFINITIONS = [
+    { id: 'Scan & Workflow', name: 'Scan & Workflow', desc: 'Scan paper docs with mobile camera, optical clean, and multi-step automated workflows' },
+    { id: 'PDF', name: 'Page Management', desc: 'Merge multiple PDFs, split page ranges, extract single sheets, organize & rotate pages' },
+    { id: 'Edit', name: 'Edit & Annotate', desc: 'Add text annotations, shapes, draw freehand, redact sensitive data, and sign documents' },
+    { id: 'Convert', name: 'Create & Convert → PDF', desc: 'Transform Word DOCX, Excel, PowerPoint, Images, and HTML pages into clean PDF documents' },
+    { id: 'Convert-Out', name: 'Convert → Other', desc: 'Export PDF to Word, Excel XLSX, high-res JPG/PNG images, Text, and EPUB format' },
+    { id: 'Security', name: 'Security & Privacy', desc: 'Set military-grade AES password protection, unlock PDFs, redact PII, and flatten forms' },
+    { id: 'Developer', name: 'AI & Developer Tools', desc: 'Extract on-device OCR text, JSON formatters, Base64 converters, QR tools, and checksums' },
+    { id: 'Business', name: 'Business & Office', desc: 'Generate GST-ready commercial invoices, POS cash receipts, and audit trail bundles' },
+    { id: 'Media', name: 'Media & Utilities', desc: 'Compress video clips, trim audio tracks, resize images, and inspect metadata locally' }
+  ];
 
-        // Sync active state on mobile tabs
-        tabs.forEach(function(t) { t.classList.remove('active'); });
-        tab.classList.add('active');
+  function populateCategories() {
+    if (!categoriesList || categoriesList.children.length > 0) return;
+    const allTools = window.tools || [];
 
-        if (task === 'combine') {
-          if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
-            window.FF.app.openTool('pdf-merge', true);
+    CATEGORY_DEFINITIONS.forEach(def => {
+      let matching = [];
+      if (def.id === 'Scan & Workflow') {
+        matching = allTools.filter(t => t.category === 'Scan & Workflow' || t.id.includes('scan') || t.id.includes('workflow'));
+      } else if (def.id === 'PDF') {
+        matching = allTools.filter(t => (t.category === 'PDF' && (t.id.includes('merge') || t.id.includes('split') || t.id.includes('organize') || t.id.includes('extract') || t.id.includes('rotate') || t.id.includes('page'))));
+      } else if (def.id === 'Edit') {
+        matching = allTools.filter(t => t.id.includes('edit') || t.id.includes('sign') || t.id.includes('redact') || t.id.includes('annotate') || t.id.includes('watermark') || t.id.includes('crop'));
+      } else if (def.id === 'Convert') {
+        matching = allTools.filter(t => t.id.includes('to-pdf') || t.id.includes('create') || (t.category === 'Documents' && t.id.includes('pdf')));
+      } else if (def.id === 'Convert-Out') {
+        matching = allTools.filter(t => t.id.startsWith('pdf-to-') || t.id.includes('export'));
+      } else if (def.id === 'Security') {
+        matching = allTools.filter(t => t.category === 'Security' || t.id.includes('protect') || t.id.includes('unlock') || t.id.includes('flatten'));
+      } else if (def.id === 'Developer') {
+        matching = allTools.filter(t => t.category === 'Developer' || t.id.includes('ocr') || t.id.includes('extract-text'));
+      } else if (def.id === 'Business') {
+        matching = allTools.filter(t => t.category === 'Business' || t.id.includes('invoice') || t.id.includes('receipt'));
+      } else {
+        matching = allTools.filter(t => t.category === 'Video' || t.category === 'Audio' || t.category === 'Images');
+      }
+
+      if (matching.length === 0) {
+        matching = allTools.filter(t => t.category === def.id);
+      }
+
+      const count = Math.max(matching.length, 6);
+
+      const block = document.createElement('div');
+      block.className = 'm-drawer-cat-block';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'm-drawer-cat-btn';
+      btn.innerHTML = `
+        <span class="m-drawer-cat-title">${def.name}</span>
+        <span class="m-drawer-cat-count">${count}</span>
+        <svg class="m-drawer-cat-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      `;
+
+      const desc = document.createElement('div');
+      desc.className = 'm-drawer-cat-desc';
+      desc.textContent = def.desc;
+
+      const toolsWrap = document.createElement('div');
+      toolsWrap.className = 'm-drawer-cat-tools';
+
+      const sampleTools = matching.slice(0, 8);
+      sampleTools.forEach(t => {
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.className = 'm-drawer-tool-link';
+        link.innerHTML = `<span>${t.name}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        link.onclick = (e) => {
+          e.stopPropagation();
+          closeDrawer();
+          if (typeof openTool === 'function') {
+            openTool(t.id, true);
           } else {
-            location.hash = '#app/pdf-merge';
+            location.hash = '#app/' + t.id;
           }
-          return;
-        }
+        };
+        toolsWrap.appendChild(link);
+      });
 
-        // Trigger the equivalent desktop rail item so all existing JS logic runs
-        var railBtn = document.querySelector('.rail-item[data-task-rail="' + task + '"]');
-        if (railBtn) {
-          railBtn.click();
-        } else if (typeof openTool === 'function' && window.taskToolIds && window.taskToolIds[task]) {
-          openTool(window.taskToolIds[task][0], true);
+      btn.onclick = () => {
+        const isOpen = block.classList.contains('is-open');
+        document.querySelectorAll('.m-drawer-cat-block.is-open').forEach(b => b.classList.remove('is-open'));
+        if (!isOpen) block.classList.add('is-open');
+      };
+
+      block.appendChild(btn);
+      block.appendChild(desc);
+      block.appendChild(toolsWrap);
+      categoriesList.appendChild(block);
+    });
+  }
+
+  function renderSearchResults(q) {
+    if (!searchResults || !defaultContent) return;
+    const query = q.trim().toLowerCase();
+    if (!query) {
+      searchResults.hidden = true;
+      defaultContent.hidden = false;
+      return;
+    }
+    const allTools = window.tools || [];
+    const hits = allTools.filter(t => (t.name && t.name.toLowerCase().includes(query)) || (t.desc && t.desc.toLowerCase().includes(query))).slice(0, 15);
+    searchResults.innerHTML = '';
+    if (!hits.length) {
+      searchResults.innerHTML = `<div style="padding: 16px 8px; color: #71717A; font-size: 13px; text-align: center;">No tools found matching "${q}"</div>`;
+    } else {
+      hits.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'm-drawer-tool-link';
+        btn.style.padding = '8px 10px';
+        btn.style.borderRadius = '8px';
+        btn.style.background = '#F4F4F5';
+        btn.innerHTML = `<div style="display:flex; flex-direction:column; gap:2px;"><strong style="font-size:13px; color:#18181B;">${t.name}</strong><span style="font-size:11px; color:#71717A;">${t.category}</span></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+        btn.onclick = () => {
+          closeDrawer();
+          if (typeof openTool === 'function') {
+            openTool(t.id, true);
+          } else {
+            location.hash = '#app/' + t.id;
+          }
+        };
+        searchResults.appendChild(btn);
+      });
+    }
+    searchResults.hidden = false;
+    defaultContent.hidden = true;
+  }
+
+  function wire() {
+    if (closeBtn) closeBtn.onclick = closeDrawer;
+    if (backdrop) backdrop.onclick = closeDrawer;
+
+    // Mobile Brand Icon click toggles navigation drawer
+    if (brandBtn) {
+      brandBtn.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          e.stopPropagation();
+          openDrawer();
         }
       });
-    });
-
-    function clearActiveTabs() {
-      tabs.forEach(function(t) { t.classList.remove('active'); });
+    }
+    if (brandTextBtn) {
+      brandTextBtn.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          e.stopPropagation();
+          openDrawer();
+        }
+      });
     }
 
-    function syncMobileTabBarVisibility() {
-      var bar = document.getElementById('mobile-tab-bar');
-      if (!bar) return;
-      var seoToolView = document.getElementById('seo-tool-view') || document.getElementById('tool-view');
-      var appToolView = document.getElementById('app-workspace-tool-view');
-      var inTool = (seoToolView && !seoToolView.hidden) ||
-                   (appToolView && !appToolView.hidden) ||
-                   document.body.classList.contains('ff-tool-active') ||
-                   document.body.classList.contains('tool-view-active');
-      if (inTool) {
-        bar.setAttribute('data-in-tool', 'true');
-      } else {
-        bar.removeAttribute('data-in-tool');
-      }
+    // Dashboard item
+    const homeBtn = document.getElementById('m-drawer-nav-home');
+    if (homeBtn) {
+      homeBtn.onclick = () => {
+        closeDrawer();
+        if (typeof showApp === 'function') showApp('Home');
+        else location.hash = '#app';
+      };
     }
 
-    window.addEventListener('hashchange', function() {
-      if (!location.hash || location.hash === '#app' || location.hash === '#') {
-        clearActiveTabs();
-      }
-      syncMobileTabBarVisibility();
-    });
-    window.addEventListener('popstate', syncMobileTabBarVisibility);
-    setInterval(syncMobileTabBarVisibility, 200);
-    syncMobileTabBarVisibility();
-
-    var homeBrandBtn = document.getElementById('app-home-brand-btn');
-    if (homeBrandBtn) {
-      homeBrandBtn.addEventListener('click', clearActiveTabs);
-    }
-    var homeBrandText = document.getElementById('app-brand-text-btn');
-    if (homeBrandText) {
-      homeBrandText.addEventListener('click', clearActiveTabs);
-    }
-    var overlay = document.getElementById('mobile-more-overlay');
-    var backdrop = document.getElementById('mobile-more-backdrop');
-    var container = document.getElementById('mobile-more-container');
-
-    if (backdrop) {
-      backdrop.addEventListener('click', closeMoreSheet);
+    // Recent Files item
+    const recentBtn = document.getElementById('m-drawer-nav-recent');
+    if (recentBtn) {
+      recentBtn.onclick = () => {
+        closeDrawer();
+        const histBtn = document.getElementById('app-history-btn');
+        if (histBtn) histBtn.click();
+      };
     }
 
-    // Touch swipe-down gesture to dismiss bottom sheet
-    if (container) {
-      var startY = 0;
-      var currentY = 0;
-      var isDragging = false;
+    // Starred item
+    const starredBtn = document.getElementById('m-drawer-nav-starred');
+    if (starredBtn) {
+      starredBtn.onclick = () => {
+        closeDrawer();
+        if (typeof showApp === 'function') showApp('Favorites');
+      };
+    }
 
-      container.addEventListener('touchstart', function(e) {
-        if (container.scrollTop > 5) return;
-        startY = e.touches[0].clientY;
+    // Settings item
+    const settingsBtn = document.getElementById('m-drawer-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.onclick = () => {
+        closeDrawer();
+        const deskSettings = document.getElementById('rail-settings-btn');
+        if (deskSettings) deskSettings.click();
+      };
+    }
+
+    // Install App item
+    const installBtn = document.getElementById('m-drawer-install-btn');
+    if (installBtn) {
+      installBtn.onclick = () => {
+        closeDrawer();
+        if (window._deferredPrompt) {
+          window._deferredPrompt.prompt();
+        } else if (window.FF && window.FF.util && typeof window.FF.util.toast === 'function') {
+          window.FF.util.toast('To install: tap Share (Safari) or Menu (Chrome) → "Add to Home Screen"', 'info');
+        }
+      };
+    }
+
+    // Search input wiring
+    if (searchInp) {
+      searchInp.addEventListener('input', (e) => {
+        renderSearchResults(e.target.value);
+      });
+    }
+
+    // Touch swipe left to close drawer
+    if (panel) {
+      let startX = 0;
+      let curX = 0;
+      let isDragging = false;
+      panel.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
         isDragging = true;
       }, { passive: true });
 
-      container.addEventListener('touchmove', function(e) {
+      panel.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        currentY = e.touches[0].clientY;
-        var diff = currentY - startY;
-        if (diff > 0) {
-          container.style.transform = 'translateY(' + diff + 'px)';
+        curX = e.touches[0].clientX;
+        const diff = curX - startX;
+        if (diff < 0) {
+          panel.style.transform = `translateX(${diff}px)`;
         }
       }, { passive: true });
 
-      container.addEventListener('touchend', function() {
+      panel.addEventListener('touchend', () => {
         if (!isDragging) return;
         isDragging = false;
-        var diff = currentY - startY;
-        container.style.transform = '';
-        if (diff > 90) {
-          closeMoreSheet();
+        const diff = curX - startX;
+        panel.style.transform = '';
+        if (diff < -70) {
+          closeDrawer();
         }
       }, { passive: true });
     }
-
-    // Handle tool item clicks inside bottom sheet
-    document.querySelectorAll('.msheet-item[data-tool-action]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var action = btn.dataset.toolAction;
-        closeMoreSheet();
-        if (action) {
-          window._navFromAppWorkspace = true;
-          if (window.FF && window.FF.app && typeof window.FF.app.openTool === 'function') {
-            window.FF.app.openTool(action, true);
-          } else {
-            location.hash = '#app/' + action;
-          }
-          window._navFromAppWorkspace = false;
-        }
-      });
-    });
-
-    var browseAllBtn = document.getElementById('msheet-browse-all');
-    if (browseAllBtn) {
-      browseAllBtn.addEventListener('click', function() {
-        closeMoreSheet();
-        var drawer = document.getElementById('tool-drawer');
-        if (drawer) {
-          drawer.hidden = false;
-          drawer.classList.add('open');
-        } else if (typeof showApp === 'function') {
-          showApp('More');
-        }
-      });
-    }
-
-    // Keep mobile tab active state in sync when rail items are clicked elsewhere
-    var railItems = document.querySelectorAll('.rail-item[data-task-rail]');
-    railItems.forEach(function(rail) {
-      rail.addEventListener('click', function() {
-        var task = rail.dataset.taskRail;
-        tabs.forEach(function(t) {
-          t.classList.toggle('active', t.dataset.taskRail === task);
-        });
-      });
-    });
   }
 
   if (document.readyState === 'loading') {
