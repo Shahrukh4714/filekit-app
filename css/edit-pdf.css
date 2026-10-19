@@ -6367,17 +6367,27 @@ body.dark-mode .etxt-pn-dot-btn.is-active .etxt-pn-dot {
     justify-content: center !important;
     gap: 0 !important;
     position: relative !important;
+    background: #18181B !important;
+    color: #FFFFFF !important;
   }
 
   #etxt-finish .osui-dl-label-grid,
-  #etxt-finish span:not(.osui-dl-icon-slot):not(.etxt-export-badge) {
+  #etxt-finish .osui-dl-label-layer {
     display: none !important;
   }
 
-  #etxt-finish .osui-dl-icon-slot {
+  #etxt-finish .osui-dl-icon-slot,
+  #etxt-finish .osui-dl-icon-layer {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+  }
+
+  #etxt-finish svg {
+    width: 15px !important;
+    height: 15px !important;
+    stroke: #FFFFFF !important;
+    color: #FFFFFF !important;
   }
 
   .etxt-export-badge {
