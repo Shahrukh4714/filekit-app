@@ -17340,49 +17340,90 @@ try {
     if (starredCountEl) starredCountEl.textContent = starredTools.length;
   }
 
-  const CATEGORY_DEFINITIONS = [
-    { id: 'Scan & Workflow', name: 'Scan & Workflow', desc: 'Scan paper docs with mobile camera, optical clean, and multi-step automated workflows' },
-    { id: 'PDF', name: 'Page Management', desc: 'Merge multiple PDFs, split page ranges, extract single sheets, organize & rotate pages' },
-    { id: 'Edit', name: 'Edit & Annotate', desc: 'Add text annotations, shapes, draw freehand, redact sensitive data, and sign documents' },
-    { id: 'Convert', name: 'Create & Convert → PDF', desc: 'Transform Word DOCX, Excel, PowerPoint, Images, and HTML pages into clean PDF documents' },
-    { id: 'Convert-Out', name: 'Convert → Other', desc: 'Export PDF to Word, Excel XLSX, high-res JPG/PNG images, Text, and EPUB format' },
-    { id: 'Security', name: 'Security & Privacy', desc: 'Set military-grade AES password protection, unlock PDFs, redact PII, and flatten forms' },
-    { id: 'Developer', name: 'AI & Developer Tools', desc: 'Extract on-device OCR text, JSON formatters, Base64 converters, QR tools, and checksums' },
-    { id: 'Business', name: 'Business & Office', desc: 'Generate GST-ready commercial invoices, POS cash receipts, and audit trail bundles' },
-    { id: 'Media', name: 'Media & Utilities', desc: 'Compress video clips, trim audio tracks, resize images, and inspect metadata locally' }
+  const UNIVERSAL_RAIL_TOOLS = [
+    {
+      id: 'compress',
+      toolId: 'compress',
+      name: 'Compress',
+      desc: 'Smart local compression for PDFs, images, video, and audio with zero quality loss',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg>'
+    },
+    {
+      id: 'convert',
+      toolId: 'convert',
+      name: 'Convert',
+      desc: 'Bidirectional converter across PDF, Word DOCX, Excel XLSX, Images, and Text',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 16.15V18.85C11 21.1 10.1 22 7.85 22H5.15C2.9 22 2 21.1 2 18.85V16.15C2 13.9 2.9 13 5.15 13H7.85C10.1 13 11 13.9 11 16.15Z"/><path d="M22 15C22 18.87 18.87 22 15 22L16.05 20.25"/><path d="M2 9C2 5.13 5.13 2 9 2L7.95 3.75"/><path d="M17.5 11C19.9853 11 22 8.98528 22 6.5C22 4.01472 19.9853 2 17.5 2C15.0147 2 13 4.01472 13 6.5C13 8.98528 15.0147 11 17.5 11Z"/></svg>'
+    },
+    {
+      id: 'organize',
+      toolId: 'organize',
+      name: 'Organize',
+      desc: 'Reorder pages, merge multiple documents, extract page subsets, and rotate sheets',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z"/><path d="M10.18 17.15L7.14 14.11M10.18 6.85v10.3M13.82 6.85l3.04 3.04M13.82 17.15V6.85"/></svg>'
+    },
+    {
+      id: 'edit',
+      toolId: 'edit',
+      name: 'Edit',
+      desc: 'Add text annotations, draw, crop, highlight, stamp watermarks, and fill & sign',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.26 3.6L5.05 12.29c-.31.33-.61.98-.67 1.43l-.37 3.24c-.13 1.17.71 1.97 1.87 1.77l3.22-.55c.45-.08 1.08-.41 1.39-.75l8.21-8.69c1.42-1.5 2.06-3.21-.15-5.3-2.2-2.07-3.87-1.34-5.29.16z"/><path d="M11.89 5.05c.43 2.76 2.67 4.87 5.45 5.15M3 22h18"/></svg>'
+    },
+    {
+      id: 'protect',
+      toolId: 'protect',
+      name: 'Protect',
+      desc: 'Military-grade client-side encryption, password lock, unlock, and PII redaction',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.49 2.23L5.5 4.11C4.35 4.54 3.41 5.9 3.41 7.12v7.43c0 1.18.78 2.73 1.73 3.44l4.3 3.21c1.41 1.06 3.73 1.06 5.14 0l4.3-3.21c.95-.71 1.73-2.26 1.73-3.44V7.12c0-1.23-.94-2.59-2.09-3.02l-4.99-1.87c-.85-.31-2.21-.31-3.04 0z"/><circle cx="12" cy="10.5" r="2"/><path d="M12 12.5v3"/></svg>'
+    },
+    {
+      id: 'scan',
+      toolId: 'scan',
+      name: 'Scan',
+      desc: 'Camera document scanner, auto edge-detection, perspective warp, and optical clean',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5H4.5A2 2 0 0 0 2.5 4.5V7M17 2.5h2.5a2 2 0 0 1 2 2V7M7 21.5H4.5a2 2 0 0 1-2-2V17M17 21.5h2.5a2 2 0 0 0 2-2V17M2 12h20"/></svg>'
+    },
+    {
+      id: 'workflow',
+      toolId: 'workflow',
+      name: 'Workflow',
+      desc: 'Chain multiple file actions into reusable, one-click batch automation pipelines',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.45 14.4V8.5c0-.55-.45-1-1-1h-2.9M14.05 6L12.25 7.5l1.8 1.5M7.55 10.2v4.2"/><circle cx="7.7" cy="7.95" r="1.95"/><circle cx="7.55" cy="16.2" r="1.8"/><circle cx="16.45" cy="16.2" r="1.8"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7z"/></svg>'
+    },
+    {
+      id: 'more',
+      toolId: 'more',
+      name: 'All Tools',
+      desc: 'Explore the complete directory of 370+ private in-browser utility modules',
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10.9V4.1C22 2.6 21.36 2 19.77 2H15.73C14.14 2 13.5 2.6 13.5 4.1V10.9C13.5 12.4 14.14 13 15.73 13H19.77C21.36 13 22 12.4 22 10.9Z"/><path d="M22 19.9V18.1C22 16.6 21.36 16 19.77 16H15.73C14.14 16 13.5 16.6 13.5 18.1V19.9C13.5 21.4 14.14 22 15.73 22H19.77C21.36 22 22 21.4 22 19.9Z"/><path d="M10.5 13.1V19.9C10.5 21.4 9.86 22 8.27 22H4.23C2.64 22 2 21.4 2 19.9V13.1C2 11.6 2.64 11 4.23 11H8.27C9.86 11 10.5 11.6 10.5 13.1Z"/><path d="M10.5 4.1V5.9C10.5 7.4 9.86 8 8.27 8H4.23C2.64 8 2 7.4 2 5.9V4.1C2 2.6 2.64 2 4.23 2H8.27C9.86 2 10.5 2.6 10.5 4.1Z"/></svg>'
+    }
   ];
 
   function populateCategories() {
     if (!categoriesList || categoriesList.children.length > 0) return;
     const allTools = window.tools || [];
 
-    CATEGORY_DEFINITIONS.forEach(def => {
+    UNIVERSAL_RAIL_TOOLS.forEach(toolDef => {
       let matching = [];
-      if (def.id === 'Scan & Workflow') {
-        matching = allTools.filter(t => t.category === 'Scan & Workflow' || t.id.includes('scan') || t.id.includes('workflow'));
-      } else if (def.id === 'PDF') {
-        matching = allTools.filter(t => (t.category === 'PDF' && (t.id.includes('merge') || t.id.includes('split') || t.id.includes('organize') || t.id.includes('extract') || t.id.includes('rotate') || t.id.includes('page'))));
-      } else if (def.id === 'Edit') {
-        matching = allTools.filter(t => t.id.includes('edit') || t.id.includes('sign') || t.id.includes('redact') || t.id.includes('annotate') || t.id.includes('watermark') || t.id.includes('crop'));
-      } else if (def.id === 'Convert') {
-        matching = allTools.filter(t => t.id.includes('to-pdf') || t.id.includes('create') || (t.category === 'Documents' && t.id.includes('pdf')));
-      } else if (def.id === 'Convert-Out') {
-        matching = allTools.filter(t => t.id.startsWith('pdf-to-') || t.id.includes('export'));
-      } else if (def.id === 'Security') {
-        matching = allTools.filter(t => t.category === 'Security' || t.id.includes('protect') || t.id.includes('unlock') || t.id.includes('flatten'));
-      } else if (def.id === 'Developer') {
-        matching = allTools.filter(t => t.category === 'Developer' || t.id.includes('ocr') || t.id.includes('extract-text'));
-      } else if (def.id === 'Business') {
-        matching = allTools.filter(t => t.category === 'Business' || t.id.includes('invoice') || t.id.includes('receipt'));
+      if (toolDef.id === 'compress') {
+        matching = allTools.filter(t => t.id.includes('compress') || t.id.includes('reduce') || t.name.toLowerCase().includes('compress'));
+      } else if (toolDef.id === 'convert') {
+        matching = allTools.filter(t => t.id.includes('to-') || t.name.toLowerCase().includes('convert'));
+      } else if (toolDef.id === 'organize') {
+        matching = allTools.filter(t => t.id.includes('merge') || t.id.includes('split') || t.id.includes('organize') || t.id.includes('extract') || t.id.includes('rotate') || t.id.includes('page'));
+      } else if (toolDef.id === 'edit') {
+        matching = allTools.filter(t => t.id.includes('edit') || t.id.includes('sign') || t.id.includes('draw') || t.id.includes('annotate') || t.id.includes('watermark') || t.id.includes('crop'));
+      } else if (toolDef.id === 'protect') {
+        matching = allTools.filter(t => t.id.includes('protect') || t.id.includes('unlock') || t.id.includes('redact') || t.id.includes('flatten'));
+      } else if (toolDef.id === 'scan') {
+        matching = allTools.filter(t => t.id.includes('scan') || t.name.toLowerCase().includes('scan') || t.id.includes('camera'));
+      } else if (toolDef.id === 'workflow') {
+        matching = allTools.filter(t => t.id.includes('workflow') || t.id.includes('batch'));
       } else {
-        matching = allTools.filter(t => t.category === 'Video' || t.category === 'Audio' || t.category === 'Images');
+        matching = allTools.slice(0, 12);
       }
 
-      if (matching.length === 0) {
-        matching = allTools.filter(t => t.category === def.id);
-      }
-
-      const count = Math.max(matching.length, 6);
+      const count = Math.max(matching.length, 4);
 
       const block = document.createElement('div');
       block.className = 'm-drawer-cat-block';
@@ -17391,7 +17432,8 @@ try {
       btn.type = 'button';
       btn.className = 'm-drawer-cat-btn';
       btn.innerHTML = `
-        <span class="m-drawer-cat-title">${def.name}</span>
+        <span class="m-drawer-item-icon" style="color:#0A0A0A;">${toolDef.icon}</span>
+        <span class="m-drawer-cat-title" style="font-weight:600; color:#18181B;">${toolDef.name}</span>
         <span class="m-drawer-cat-count">${count}</span>
         <svg class="m-drawer-cat-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="9 18 15 12 9 6"></polyline>
@@ -17400,7 +17442,7 @@ try {
 
       const desc = document.createElement('div');
       desc.className = 'm-drawer-cat-desc';
-      desc.textContent = def.desc;
+      desc.textContent = toolDef.desc;
 
       const toolsWrap = document.createElement('div');
       toolsWrap.className = 'm-drawer-cat-tools';
@@ -17423,6 +17465,7 @@ try {
         toolsWrap.appendChild(link);
       });
 
+      // Quick trigger: clicking the universal tool name launches its primary hub or toggles accordion
       btn.onclick = () => {
         const isOpen = block.classList.contains('is-open');
         document.querySelectorAll('.m-drawer-cat-block.is-open').forEach(b => b.classList.remove('is-open'));
