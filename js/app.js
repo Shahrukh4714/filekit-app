@@ -17401,80 +17401,59 @@ try {
 
   function populateCategories() {
     if (!categoriesList || categoriesList.children.length > 0) return;
-    const allTools = window.tools || [];
 
     UNIVERSAL_RAIL_TOOLS.forEach(toolDef => {
-      let matching = [];
-      if (toolDef.id === 'compress') {
-        matching = allTools.filter(t => t.id.includes('compress') || t.id.includes('reduce') || t.name.toLowerCase().includes('compress'));
-      } else if (toolDef.id === 'convert') {
-        matching = allTools.filter(t => t.id.includes('to-') || t.name.toLowerCase().includes('convert'));
-      } else if (toolDef.id === 'organize') {
-        matching = allTools.filter(t => t.id.includes('merge') || t.id.includes('split') || t.id.includes('organize') || t.id.includes('extract') || t.id.includes('rotate') || t.id.includes('page'));
-      } else if (toolDef.id === 'edit') {
-        matching = allTools.filter(t => t.id.includes('edit') || t.id.includes('sign') || t.id.includes('draw') || t.id.includes('annotate') || t.id.includes('watermark') || t.id.includes('crop'));
-      } else if (toolDef.id === 'protect') {
-        matching = allTools.filter(t => t.id.includes('protect') || t.id.includes('unlock') || t.id.includes('redact') || t.id.includes('flatten'));
-      } else if (toolDef.id === 'scan') {
-        matching = allTools.filter(t => t.id.includes('scan') || t.name.toLowerCase().includes('scan') || t.id.includes('camera'));
-      } else if (toolDef.id === 'workflow') {
-        matching = allTools.filter(t => t.id.includes('workflow') || t.id.includes('batch'));
-      } else {
-        matching = allTools.slice(0, 12);
-      }
-
-      const count = Math.max(matching.length, 4);
-
-      const block = document.createElement('div');
+      const block = document.createElement('button');
+      block.type = 'button';
       block.className = 'm-drawer-cat-block';
+      block.setAttribute('data-drawer-task', toolDef.id);
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'm-drawer-cat-btn';
-      btn.innerHTML = `
-        <span class="m-drawer-item-icon" style="color:#0A0A0A;">${toolDef.icon}</span>
-        <span class="m-drawer-cat-title" style="font-weight:600; color:#18181B;">${toolDef.name}</span>
-        <span class="m-drawer-cat-count">${count}</span>
-        <svg class="m-drawer-cat-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
+      block.innerHTML = `
+        <div class="m-drawer-cat-header-row">
+          <span class="m-drawer-item-icon" style="color:#0A0A0A;">${toolDef.icon}</span>
+          <span class="m-drawer-cat-title">${toolDef.name}</span>
+          <svg class="m-drawer-cat-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+        <div class="m-drawer-cat-desc">${toolDef.desc}</div>
       `;
 
-      const desc = document.createElement('div');
-      desc.className = 'm-drawer-cat-desc';
-      desc.textContent = toolDef.desc;
+      // Direct Click: opens the exact same tool workspace that the desktop rail item opens
+      block.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeDrawer();
 
-      const toolsWrap = document.createElement('div');
-      toolsWrap.className = 'm-drawer-cat-tools';
+        if (toolDef.id === 'more') {
+          if (typeof showApp === 'function') showApp('Home');
+          return;
+        }
 
-      const sampleTools = matching.slice(0, 8);
-      sampleTools.forEach(t => {
-        const link = document.createElement('button');
-        link.type = 'button';
-        link.className = 'm-drawer-tool-link';
-        link.innerHTML = `<span>${t.name}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
-        link.onclick = (e) => {
-          e.stopPropagation();
-          closeDrawer();
+        // Trigger existing desktop rail item click for complete interconnected logic
+        const railBtn = document.querySelector(`.rail-item[data-task-rail="${toolDef.id}"]`);
+        if (railBtn) {
+          railBtn.click();
+        } else {
+          // Direct fallback to flagship tool
+          const flagshipIds = {
+            compress: 'pdf-compress',
+            convert: 'pdf-convert',
+            organize: 'organize',
+            edit: 'pdf-edit-text',
+            protect: 'pdf-protect',
+            scan: 'scan-document',
+            workflow: 'workflow-builder'
+          };
+          const targetTool = flagshipIds[toolDef.id] || toolDef.id;
           if (typeof openTool === 'function') {
-            openTool(t.id, true);
+            openTool(targetTool, true);
           } else {
-            location.hash = '#app/' + t.id;
+            location.hash = '#app/' + targetTool;
           }
-        };
-        toolsWrap.appendChild(link);
-      });
-
-      // Quick trigger: clicking the universal tool name launches its primary hub or toggles accordion
-      btn.onclick = () => {
-        const isOpen = block.classList.contains('is-open');
-        document.querySelectorAll('.m-drawer-cat-block.is-open').forEach(b => b.classList.remove('is-open'));
-        if (!isOpen) block.classList.add('is-open');
+        }
       };
 
-      block.appendChild(btn);
-      block.appendChild(desc);
-      block.appendChild(toolsWrap);
       categoriesList.appendChild(block);
     });
   }
