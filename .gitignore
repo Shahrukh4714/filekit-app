@@ -30,6 +30,8 @@ tests/
 node_modules/
 *.png
 !assets/**/*.png
+!apple-touch-icon.png
+!favicon-*.png
 __pycache__/
 *.pyc
 
