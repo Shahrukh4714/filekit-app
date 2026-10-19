@@ -1,9 +1,11 @@
 /* FileKit Production Service Worker — 100% Offline Capability */
-const CACHE_NAME = 'filekit-core-v20261015_v01';
+const CACHE_NAME = 'filekit-core-v20261020_v02';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.ico',
+  '/favicon.svg',
   '/dist/css/styles.min.css',
   '/dist/css/edit-pdf.min.css',
   '/dist/css/organize-pdf.min.css',
@@ -27,7 +29,7 @@ const PRECACHE_ASSETS = [
   '/vendor/jszip.min.js',
   '/vendor/exifr.js',
   '/assets/favicon.svg',
-  '/assets/filekit-icon-4colors.svg',
+  '/assets/favicon-48x48.png',
   '/assets/filekit-logo.svg'
 ];
 
