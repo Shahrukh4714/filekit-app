@@ -5267,7 +5267,10 @@ try {
 
       if ((!appCategory || appCategory === 'Home' || appCategory === 'All') && !q) {
         // --- SHOW SMALLPDF APP HOME VIEW ---
-        if (workspaceTitle) workspaceTitle.textContent = 'Home';
+        if (workspaceTitle) {
+          workspaceTitle.textContent = 'Home';
+          workspaceTitle.setAttribute('data-page', 'home');
+        }
         if (appHomeView) appHomeView.hidden = false;
         if (appCategoryView) appCategoryView.hidden = true;
         if (appWorkspaceToolView) appWorkspaceToolView.hidden = true;
@@ -5281,7 +5284,10 @@ try {
         if (appWorkspaceToolView) appWorkspaceToolView.hidden = true;
 
         const config = RAIL_CONFIG[appCategory] || RAIL_CONFIG['Convert'];
-        if (workspaceTitle) workspaceTitle.textContent = config.title || 'PDF Tools';
+        if (workspaceTitle) {
+          workspaceTitle.removeAttribute('data-page');
+          workspaceTitle.textContent = config.title || 'PDF Tools';
+        }
 
         const TASK_DATA = {
           compress: {

@@ -601,7 +601,15 @@
             <span class="app-history-badge" id="app-history-badge" style="display:none;">0</span>
           </button>
           <button type="button" class="fk-topbar-pricing-btn" id="app-upgrade-trigger">Pricing</button>
-          <button type="button" class="app-login-btn" id="app-login-btn">Log In</button>
+          <button type="button" class="app-login-btn app-login-avatar-btn" id="app-login-btn" aria-label="Account / Log In" title="Log In">
+            <span class="app-login-avatar-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <span class="app-login-text">Log In</span>
+          </button>
         `;
         document.getElementById('app-upgrade-trigger')?.addEventListener('click', () => {
           if (window.FF?.app?.showPricing) {
