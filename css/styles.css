@@ -54466,16 +54466,16 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
   }
 
-  /* 1. TOP PANE: Canvas / Document Preview Stage (50%) */
+  /* 1. TOP PANE: Canvas / Document Preview Stage (Adaptive flex, gives breathing room) */
   body #app-view .cpdf-benchmark-stage,
   .org-root .cpdf-benchmark-stage,
   .cpdf-benchmark-stage,
   .scan-result-stage,
   .org-result-stage {
-    flex: 0 0 50% !important;
-    height: 50% !important;
-    min-height: 50% !important;
-    max-height: 50% !important;
+    flex: 1 1 45% !important;
+    height: 45% !important;
+    min-height: 140px !important;
+    max-height: 52% !important;
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -54566,7 +54566,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     height: 105px !important;
   }
 
-  /* 2. BOTTOM PANE: Configuration Sheet (50%) */
+  /* 2. BOTTOM PANE: Configuration Sheet (Adaptive with dynamic safe-area-inset-bottom) */
   body #app-view .scan-benchmark-panel,
   body #app-view #comp-benchmark-panel,
   body #app-view .cpdf-benchmark-panel,
@@ -54577,10 +54577,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   .cpdf-benchmark-panel,
   .scan-result-panel,
   .org-result-panel {
-    flex: 0 0 50% !important;
-    height: 50% !important;
-    min-height: 50% !important;
-    max-height: 50% !important;
+    flex: 1 1 55% !important;
+    height: 55% !important;
+    min-height: 0 !important;
+    max-height: 60% !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
@@ -54592,6 +54592,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
     margin: 0 !important;
     overflow: hidden !important;
     position: relative !important;
@@ -54652,7 +54653,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
-    padding: 12px 14px 32px !important;
+    padding: 8px 14px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
