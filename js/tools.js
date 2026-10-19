@@ -28412,7 +28412,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         }
       }
       page = 1;
-      zoom = 170;
+      zoom = (window.innerWidth <= 768) ? 100 : 170;
       pageCount = 0;
       pages = [];
       edits = [];
@@ -29822,14 +29822,24 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
       flyout.innerHTML = contentHtml;
 
       // Compute precise anchor positioning
-      const rect = anchorEl.getBoundingClientRect();
-      const isDrawPop = (toolId === 'draw' || toolId === 'highlight');
-      const isShapePop = (toolId === 'shape');
-      const popW = isDrawPop ? 272 : (isShapePop ? (flyout.offsetWidth || 340) : 290);
-      const left = Math.max(12, Math.min(window.innerWidth - popW - 12, rect.left + (rect.width / 2) - (popW / 2)));
-      const top = rect.bottom + 6;
-      flyout.style.left = `${left}px`;
-      flyout.style.top = `${top}px`;
+      if (window.innerWidth <= 768) {
+        flyout.style.left = '';
+        flyout.style.top = '';
+        if (!flyout.querySelector('.etxt-mob-sheet-handle')) {
+          const handle = document.createElement('div');
+          handle.className = 'etxt-mob-sheet-handle';
+          flyout.prepend(handle);
+        }
+      } else {
+        const rect = anchorEl.getBoundingClientRect();
+        const isDrawPop = (toolId === 'draw' || toolId === 'highlight');
+        const isShapePop = (toolId === 'shape');
+        const popW = isDrawPop ? 272 : (isShapePop ? (flyout.offsetWidth || 340) : 290);
+        const left = Math.max(12, Math.min(window.innerWidth - popW - 12, rect.left + (rect.width / 2) - (popW / 2)));
+        const top = rect.bottom + 6;
+        flyout.style.left = `${left}px`;
+        flyout.style.top = `${top}px`;
+      }
 
       wirePopoverEvents(flyout, toolId);
 
@@ -29837,7 +29847,7 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const onDocPointer = (ev) => {
           // Crop, Watermark & Page Numbers keep their popover while the user drags/interacts on the page
           if ((toolMode === 'crop' || toolMode === 'watermark' || toolMode === 'pagenum') && ev.target.closest && ev.target.closest('.etxt-canvas-wrap')) return;
-          if (!flyout.contains(ev.target) && !anchorEl.contains(ev.target) && !ev.target.closest('.etxt-unified-toolbar')) {
+          if (!flyout.contains(ev.target) && !anchorEl.contains(ev.target) && !ev.target.closest('.etxt-unified-toolbar') && !ev.target.closest('.etxt-mobile-dock') && !ev.target.closest('.etxt-mob-more-sheet')) {
             closeAllPopovers();
           }
         };
@@ -30762,6 +30772,19 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
             <button type="button" class="etxt-tool-icon-btn etxt-icon-only" id="etxt-redo" aria-label="Redo" ${redoStack.length ? '' : 'disabled'}>${I.redo}</button>
           </div>
 
+          <!-- Mobile Center: Page Stepper Capsule -->
+          <div class="etxt-mobile-page-stepper" role="group" aria-label="Page Navigation">
+            <button type="button" class="etxt-mob-page-nav" id="etxt-mob-prev" aria-label="Previous Page" ${page <= 1 ? 'disabled' : ''}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="etxt-mob-page-indicator" id="etxt-mob-pages" aria-label="View All Pages">
+              ${page} / ${pageCount}
+            </button>
+            <button type="button" class="etxt-mob-page-nav" id="etxt-mob-next" aria-label="Next Page" ${page >= pageCount ? 'disabled' : ''}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+
           <!-- Center: All 11 Editing Tools Naked (Icon above, Text below) -->
           <div class="etxt-toolbar-center">
             <div class="etxt-segmented-modes" role="tablist" data-slot="segmented-toggle-button" aria-label="Edit Modes">
@@ -30970,6 +30993,82 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 
         <div class="etxt-dialog-backdrop" id="etxt-dlg-backdrop" hidden>
           <div class="etxt-dialog" id="etxt-dlg" hidden></div>
+        </div>
+
+        <!-- Mobile Bottom Dock (Pinned, pure white, safe-area aware) -->
+        <nav class="etxt-mobile-dock" id="etxt-mobile-dock" aria-label="Editing Tools">
+          <button type="button" class="etxt-mob-dock-btn${toolMode==='edit-text'?' is-active':''}" data-mob-tool="edit-text" aria-label="Edit Text">
+            <span class="etxt-mob-dock-icon">${I.text}</span>
+            <span class="etxt-mob-dock-lbl">Edit</span>
+          </button>
+          <button type="button" class="etxt-mob-dock-btn${toolMode==='type'?' is-active':''}" data-mob-tool="type" aria-label="Add Text">
+            <span class="etxt-mob-dock-icon">${I.type}</span>
+            <span class="etxt-mob-dock-lbl">Text</span>
+          </button>
+          <button type="button" class="etxt-mob-dock-btn${toolMode==='draw'||toolMode==='highlight'?' is-active':''}" data-mob-tool="draw" aria-label="Draw">
+            <span class="etxt-mob-dock-icon">${I.pen}</span>
+            <span class="etxt-mob-dock-lbl">Draw</span>
+          </button>
+          <button type="button" class="etxt-mob-dock-btn${toolMode==='sign'?' is-active':''}" data-mob-tool="sign" aria-label="Sign PDF">
+            <span class="etxt-mob-dock-icon">${I.sign}</span>
+            <span class="etxt-mob-dock-lbl">Sign</span>
+          </button>
+          <button type="button" class="etxt-mob-dock-btn" id="etxt-mob-more-btn" aria-label="More Tools">
+            <span class="etxt-mob-dock-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+            </span>
+            <span class="etxt-mob-dock-lbl">More</span>
+          </button>
+        </nav>
+
+        <!-- Mobile More Drawer Sheet & Backdrop -->
+        <div class="etxt-mob-sheet-backdrop" id="etxt-mob-more-backdrop" hidden></div>
+        <div class="etxt-mob-more-sheet" id="etxt-mob-more-sheet" hidden aria-label="More Editing Tools">
+          <div class="etxt-mob-sheet-handle"></div>
+          <div class="etxt-mob-sheet-head">
+            <span class="etxt-mob-sheet-title">More Editing Tools</span>
+            <button type="button" class="etxt-mob-sheet-close" id="etxt-mob-more-close" aria-label="Close">${I.x}</button>
+          </div>
+          <div class="etxt-mob-tools-grid">
+            <button type="button" class="etxt-mob-grid-item${toolMode==='shape'?' is-active':''}" data-mob-tool="shape">
+              <span class="etxt-mob-grid-icon">${I.shape}</span>
+              <span class="etxt-mob-grid-lbl">Shapes</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item${toolMode==='image'?' is-active':''}" data-mob-tool="image">
+              <span class="etxt-mob-grid-icon">${I.image}</span>
+              <span class="etxt-mob-grid-lbl">Image</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item${toolMode==='crop'?' is-active':''}" data-mob-tool="crop">
+              <span class="etxt-mob-grid-icon">${I.crop}</span>
+              <span class="etxt-mob-grid-lbl">Crop</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item${toolMode==='redact'?' is-active':''}" data-mob-tool="redact">
+              <span class="etxt-mob-grid-icon">${I.redact}</span>
+              <span class="etxt-mob-grid-lbl">Redact</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item${toolMode==='form'?' is-active':''}" data-mob-tool="form">
+              <span class="etxt-mob-grid-icon">${I.form}</span>
+              <span class="etxt-mob-grid-lbl">Forms</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item${toolMode==='watermark'?' is-active':''}" data-mob-tool="watermark">
+              <span class="etxt-mob-grid-icon">${I.watermark}</span>
+              <span class="etxt-mob-grid-lbl">Watermark</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item${toolMode==='pagenum'?' is-active':''}" data-mob-tool="pagenum">
+              <span class="etxt-mob-grid-icon">${I.pagenum}</span>
+              <span class="etxt-mob-grid-lbl">Page Numbers</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item" id="etxt-mob-find-btn">
+              <span class="etxt-mob-grid-icon">${I.find}</span>
+              <span class="etxt-mob-grid-lbl">Find Text</span>
+            </button>
+            <button type="button" class="etxt-mob-grid-item" id="etxt-mob-fit-btn">
+              <span class="etxt-mob-grid-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </span>
+              <span class="etxt-mob-grid-lbl">Fit to Width</span>
+            </button>
+          </div>
         </div>`;
 
       // Tools event wiring (Mode Tabs, Dropdown items, Crop, Select)
@@ -31065,6 +31164,13 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         const nextB = container.querySelector('#etxt-fnav-next');
         if (nextB) nextB.disabled = (page >= pageCount);
 
+        const mobPageInd = container.querySelector('#etxt-mob-pages');
+        if (mobPageInd) mobPageInd.textContent = `${page} / ${pageCount}`;
+        const mobPrev = container.querySelector('#etxt-mob-prev');
+        if (mobPrev) mobPrev.disabled = (page <= 1);
+        const mobNext = container.querySelector('#etxt-mob-next');
+        if (mobNext) mobNext.disabled = (page >= pageCount);
+
         container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
           tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
         });
@@ -31099,12 +31205,117 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
               const nextB = container.querySelector('#etxt-fnav-next');
               if (nextB) nextB.disabled = (page >= pageCount);
 
+              const mobPageInd = container.querySelector('#etxt-mob-pages');
+              if (mobPageInd) mobPageInd.textContent = `${page} / ${pageCount}`;
+              const mobPrev = container.querySelector('#etxt-mob-prev');
+              if (mobPrev) mobPrev.disabled = (page <= 1);
+              const mobNext = container.querySelector('#etxt-mob-next');
+              if (mobNext) mobNext.disabled = (page >= pageCount);
+
               container.querySelectorAll('.etxt-thumb-card').forEach(tc => {
                 tc.classList.toggle('is-on', Number(tc.dataset.page) === page);
               });
               if (cropPct || toolMode === 'crop') renderCropOverlay();
             }
           }, 60);
+        }, { passive: true });
+      }
+
+      // Mobile Toolbar & Stepper Wiring
+      const mobPrev = container.querySelector('#etxt-mob-prev');
+      const mobNext = container.querySelector('#etxt-mob-next');
+      const mobPages = container.querySelector('#etxt-mob-pages');
+      if (mobPrev) mobPrev.onclick = (e) => { e.stopPropagation(); goToPage(page - 1); };
+      if (mobNext) mobNext.onclick = (e) => { e.stopPropagation(); goToPage(page + 1); };
+      if (mobPages) mobPages.onclick = (e) => { e.stopPropagation(); toggleDrawer(); };
+
+      // Mobile More Sheet Wiring
+      const moreSheet = container.querySelector('#etxt-mob-more-sheet');
+      const moreBackdrop = container.querySelector('#etxt-mob-more-backdrop');
+      const moreBtn = container.querySelector('#etxt-mob-more-btn');
+      const moreClose = container.querySelector('#etxt-mob-more-close');
+
+      const toggleMoreSheet = (show) => {
+        if (!moreSheet || !moreBackdrop) return;
+        const open = show !== undefined ? show : moreSheet.hidden;
+        moreSheet.hidden = !open;
+        moreBackdrop.hidden = !open;
+        if (moreBtn) moreBtn.classList.toggle('is-active', open);
+      };
+
+      if (moreBtn) moreBtn.onclick = (e) => { e.stopPropagation(); toggleMoreSheet(); };
+      if (moreClose) moreClose.onclick = () => toggleMoreSheet(false);
+      if (moreBackdrop) moreBackdrop.onclick = () => toggleMoreSheet(false);
+
+      // Mobile Tools (Dock & More Sheet) Wiring
+      container.querySelectorAll('[data-mob-tool]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const targetTool = btn.dataset.mobTool;
+          toggleMoreSheet(false);
+
+          if (toolMode === targetTool && ['draw', 'shape', 'redact', 'image', 'form', 'watermark', 'pagenum', 'type'].includes(targetTool)) {
+            toggleToolPopover(targetTool, btn);
+          } else {
+            activateTool(targetTool, true);
+            if (['draw', 'shape', 'redact', 'image', 'form', 'watermark', 'pagenum', 'type'].includes(targetTool)) {
+              openToolPopover(targetTool, btn);
+            } else {
+              closeAllPopovers();
+            }
+          }
+        };
+      });
+
+      const mobFindBtn = container.querySelector('#etxt-mob-find-btn');
+      if (mobFindBtn) {
+        mobFindBtn.onclick = () => {
+          toggleMoreSheet(false);
+          openFindReplaceDlg();
+        };
+      }
+
+      const mobFitBtn = container.querySelector('#etxt-mob-fit-btn');
+      if (mobFitBtn) {
+        mobFitBtn.onclick = () => {
+          toggleMoreSheet(false);
+          const wrap = container.querySelector('#etxt-canvas-wrap');
+          const page1 = container.querySelector('.etxt-page');
+          if (wrap && page1) {
+            const availW = Math.max(280, wrap.clientWidth - 24);
+            const targetZoom = Math.round(Math.max(30, Math.min(220, (availW / (page1.clientWidth || 612)) * 100)));
+            smoothZoom(targetZoom);
+          }
+        };
+      }
+
+      // Mobile Pinch to Zoom on Canvas Stage
+      if (canvasWrap) {
+        let pinchStartDist = 0;
+        let pinchStartZoom = zoom;
+
+        canvasWrap.addEventListener('touchstart', (e) => {
+          if (e.touches && e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinchStartDist = Math.hypot(dx, dy);
+            pinchStartZoom = zoom;
+          }
+        }, { passive: true });
+
+        canvasWrap.addEventListener('touchmove', (e) => {
+          if (e.touches && e.touches.length === 2 && pinchStartDist > 0) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const currentDist = Math.hypot(dx, dy);
+            const factor = currentDist / pinchStartDist;
+            const newZoom = Math.round(Math.max(30, Math.min(250, pinchStartZoom * factor)));
+            smoothZoom(newZoom);
+          }
+        }, { passive: true });
+
+        canvasWrap.addEventListener('touchend', (e) => {
+          if (!e.touches || e.touches.length < 2) pinchStartDist = 0;
         }, { passive: true });
       }
 
@@ -31268,10 +31479,11 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
         curPageW = firstVp.width;
         curPageH = firstVp.height;
 
-        const availH = Math.max(500, (window.innerHeight || 768) - 140);
+        const isMobile = window.innerWidth <= 768;
+        const availH = Math.max(500, (window.innerHeight || 768) - (isMobile ? 120 : 140));
         const fitScaleH = availH / firstVp.height;
-        const fitScaleW = 680 / firstVp.width;
-        const baseScale = Math.min(fitScaleH, fitScaleW, 1.25);
+        const fitScaleW = isMobile ? Math.max(280, (window.innerWidth - 24)) / firstVp.width : (680 / firstVp.width);
+        const baseScale = isMobile ? Math.min(fitScaleW, 1.0) : Math.min(fitScaleH, fitScaleW, 1.25);
         pageScale = baseScale;
         const dpr = Math.min(2.5, window.devicePixelRatio || 2);
 
@@ -38776,6 +38988,17 @@ redact: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
                    (dt === 'line' && id === 'shape' && toolOpts.shapeKind === 'line') ||
                    (dt === 'arrow' && id === 'shape' && toolOpts.shapeKind === 'arrow') ||
                    (dt === 'stamp' && id === 'stamp');
+        b.classList.toggle('is-active', on);
+      });
+
+      // Update mobile dock and grid buttons
+      container.querySelectorAll('.etxt-mob-dock-btn[data-mob-tool]').forEach(b => {
+        const on = b.dataset.mobTool === id || (id === 'highlight' && b.dataset.mobTool === 'draw');
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      container.querySelectorAll('.etxt-mob-grid-item[data-mob-tool]').forEach(b => {
+        const on = b.dataset.mobTool === id;
         b.classList.toggle('is-active', on);
       });
 
