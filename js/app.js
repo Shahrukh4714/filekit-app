@@ -17416,7 +17416,6 @@ try {
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </div>
-        <div class="m-drawer-cat-desc">${toolDef.desc}</div>
       `;
 
       // Direct Click: opens the exact same tool workspace that the desktop rail item opens
