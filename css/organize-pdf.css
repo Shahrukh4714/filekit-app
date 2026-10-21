@@ -3604,7 +3604,7 @@ button.osui-dl-btn--large .osui-dl-icon-layer svg,
   }
 
   .org-canvas-wrap.has-dock-active {
-    padding-bottom: calc(115px + env(safe-area-inset-bottom, 14px)) !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 12px)) !important;
   }
 
   .org-canvas-grid {

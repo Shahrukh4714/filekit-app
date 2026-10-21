@@ -5830,11 +5830,11 @@ body {
   }
 
   .tool-body>.btn-run {
-    bottom: calc(12px + env(safe-area-inset-bottom))
+    bottom: max(12px, env(safe-area-inset-bottom, 0px))
   }
 
   .tool-body {
-    padding-bottom: calc(68px + env(safe-area-inset-bottom)) !important
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important
   }
 
   .tool-drawer {
@@ -53582,8 +53582,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     padding-top: 10px !important;
     padding-left: 12px !important;
     padding-right: 12px !important;
-    /* Bottom padding to avoid permanent tab bar overlap */
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    /* Bottom padding with safe area margin */
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
   }
@@ -54670,16 +54670,16 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
   }
 
-  /* 1. TOP PANE: Canvas / Document Preview Stage (Compact adaptive flex to leave maximum room for controls) */
+  /* 1. TOP PANE: Canvas / Document Preview Stage (Expands to fill available space) */
   body #app-view .cpdf-benchmark-stage,
   .org-root .cpdf-benchmark-stage,
   .cpdf-benchmark-stage,
   .scan-result-stage,
   .org-result-stage {
-    flex: 0 0 28% !important;
-    height: 28% !important;
-    min-height: 100px !important;
-    max-height: 32% !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 120px !important;
+    max-height: none !important;
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -54724,7 +54724,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   .org-res-paper canvas,
   .org-res-paper img,
   .org-res-paper video {
-    max-height: calc(26vh - 16px) !important;
+    max-height: 100% !important;
     max-width: calc(100vw - 28px) !important;
     object-fit: contain !important;
     box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
@@ -54770,7 +54770,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     height: 105px !important;
   }
 
-  /* 2. BOTTOM PANE: Configuration Sheet (Adaptive with dynamic safe-area-inset-bottom) */
+  /* 2. BOTTOM PANE: Configuration Sheet (Adaptive fit snugly without dead space) */
   body #app-view .scan-benchmark-panel,
   body #app-view #comp-benchmark-panel,
   body #app-view .cpdf-benchmark-panel,
@@ -54781,10 +54781,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   .cpdf-benchmark-panel,
   .scan-result-panel,
   .org-result-panel {
-    flex: 1 1 72% !important;
-    height: 72% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
     min-height: 0 !important;
-    max-height: 72% !important;
+    max-height: 70% !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
@@ -54796,7 +54796,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
-    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: 0 !important;
     margin: 0 !important;
     overflow: hidden !important;
     position: relative !important;
@@ -54846,18 +54846,18 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     transform: rotate(180deg) !important;
   }
 
-  /* Configuration Panel Scrollable Body (Zero Overshadowing) */
+  /* Configuration Panel Scrollable Body (Zero Overshadowing & no bottom dead space) */
   body #app-view .scan-benchmark-panel .cpdf-benchmark-panel-inner,
   body #app-view #comp-benchmark-panel .cpdf-benchmark-panel-inner,
   .cpdf-benchmark-panel-inner {
-    flex: 1 1 100% !important;
-    height: 100% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
     max-height: 100% !important;
     min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
-    padding: 8px 14px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+    padding: 8px 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -55140,10 +55140,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .conv-root .cpdf-benchmark-stage,
   .conv-root .cpdf-benchmark-stage {
-    flex: 0 0 26% !important;
-    height: 26% !important;
-    min-height: 90px !important;
-    max-height: 28% !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 120px !important;
+    max-height: none !important;
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -55159,9 +55159,9 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   body #app-view .conv-root .cpdf-benchmark-panel,
   .conv-root #cpdf-right-panel,
   .conv-root .cpdf-benchmark-panel {
-    flex: 1 1 74% !important;
-    height: 74% !important;
-    max-height: 74% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: 70% !important;
     min-height: 0 !important;
     margin: 0 !important;
     background: #FFFFFF !important;
@@ -55208,11 +55208,11 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     max-height: 100% !important;
-    flex: 1 1 100% !important;
+    flex: 0 0 auto !important;
     min-height: 0 !important;
-    padding: 0 14px 10px !important;
+    padding: 0 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -56404,10 +56404,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .comp-root .cpdf-benchmark-stage,
   .comp-root .cpdf-benchmark-stage {
-    flex: 0 0 26% !important;
-    height: 26% !important;
-    min-height: 90px !important;
-    max-height: 28% !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 120px !important;
+    max-height: none !important;
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -56423,9 +56423,9 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   .comp-root #comp-benchmark-panel,
   body #app-view .comp-root .scan-result-panel,
   .comp-root .scan-result-panel {
-    flex: 1 1 74% !important;
-    height: 74% !important;
-    max-height: 74% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: 70% !important;
     min-height: 0 !important;
     margin: 0 !important;
     background: #FFFFFF !important;
@@ -56435,7 +56435,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     display: flex !important;
     flex-direction: column !important;
     padding: 0 !important;
-    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: 0 !important;
     overflow: hidden !important;
     position: relative !important;
     z-index: 20 !important;
@@ -56448,10 +56448,10 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     margin: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     max-height: 100% !important;
-    flex: 1 1 auto !important;
-    padding: 4px 14px 10px !important;
+    flex: 0 0 auto !important;
+    padding: 6px 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -59543,7 +59543,6 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     align-items: stretch !important;
     margin: auto !important;
   }
-}
 
 /* ── FileKit Image Studio Workstation (Crop, Resize, Watermark: Compact Panel & Expanded Canvas) ── */
 [data-tool-category="images"].img-crop-root .cpdf-benchmark-workstation,
@@ -59847,6 +59846,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 .img-resize-root select,
 .img-resize-root button {
   min-width: 0 !important;
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
