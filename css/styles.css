@@ -55062,12 +55062,9 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     letter-spacing: 0.01em !important;
   }
 
+  body #app-view .scan-segmented-settings-strip,
   .scan-segmented-settings-strip {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
   }
 
   /* Dropdown popover right edge boundary safety */
@@ -56559,9 +56556,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
 
   body #app-view .comp-root .scan-segmented-settings-strip,
   .comp-root .scan-segmented-settings-strip {
-    height: 32px !important;
-    min-height: 32px !important;
-    margin: 2px 0 !important;
+    display: none !important;
   }
 
   body #app-view .comp-root .scan-segment-title,
