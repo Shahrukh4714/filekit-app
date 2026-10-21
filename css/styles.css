@@ -54613,8 +54613,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   body.tool-view-active .app-layout-wrapper {
     margin-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
     margin-bottom: 0 !important;
-    height: calc(100dvh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-    max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    height: calc(100dvh - 52px - env(safe-area-inset-top, 0px)) !important;
+    max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px)) !important;
     min-height: 0 !important;
     overflow: hidden !important;
     padding: 0 !important;
@@ -54857,7 +54857,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
-    padding: 8px 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    padding: 8px 14px 12px !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -55212,7 +55212,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     max-height: 100% !important;
     flex: 0 0 auto !important;
     min-height: 0 !important;
-    padding: 0 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    padding: 0 14px 12px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -56451,7 +56451,7 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
     height: auto !important;
     max-height: 100% !important;
     flex: 0 0 auto !important;
-    padding: 6px 14px max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    padding: 6px 14px 12px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
@@ -56686,8 +56686,8 @@ body #app-view .app-main-content:has(.pass-studio-shell) {
   [data-pro-drop],
   .drop-hero-box,
   .cpdf-dropzone {
-    height: calc(100dvh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-    max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    height: calc(100dvh - 52px - env(safe-area-inset-top, 0px)) !important;
+    max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px)) !important;
     min-height: 0 !important;
     margin: 0 !important;
     border: none !important;

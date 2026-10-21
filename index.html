@@ -25,13 +25,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@600&family=Dancing+Script:wght@600&family=Great+Vibes&family=Marck+Script&family=Playfair+Display:ital,wght@1,600&family=Sacramento&display=swap" rel="stylesheet" crossorigin="anonymous">
-<link rel="stylesheet" href="dist/css/local-fonts.min.css?v=20261021_v01"/>
-<link rel="stylesheet" href="dist/css/styles.min.css?v=20261021_v01"/>
-<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20261021_v01" media="print" onload="this.media='all'"/>
-<noscript><link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20261021_v01"/></noscript>
-<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20261021_v01" media="print" onload="this.media='all'"/>
-<noscript><link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20261021_v01"/></noscript>
-<link rel="stylesheet" href="dist/css/mac-theme.css?v=20261021_v01"/>
+<link rel="stylesheet" href="dist/css/local-fonts.min.css?v=20261021_v02"/>
+<link rel="stylesheet" href="dist/css/styles.min.css?v=20261021_v02"/>
+<link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20261021_v02" media="print" onload="this.media='all'"/>
+<noscript><link rel="stylesheet" href="dist/css/edit-pdf.min.css?v=20261021_v02"/></noscript>
+<link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20261021_v02" media="print" onload="this.media='all'"/>
+<noscript><link rel="stylesheet" href="dist/css/organize-pdf.min.css?v=20261021_v02"/></noscript>
+<link rel="stylesheet" href="dist/css/mac-theme.css?v=20261021_v02"/>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -2256,13 +2256,13 @@
 </footer>
 </div>
 <script defer src="vendor/fflate.js"></script>
-<script defer src="dist/js/app.min.js?v=20261021_v01"></script>
-<script defer src="dist/js/tools.min.js?v=20261021_v01"></script>
-<script defer src="dist/js/tools-new.min.js?v=20261021_v01"></script>
-<script defer src="dist/js/tools-premium.min.js?v=20261021_v01"></script>
-<script defer src="dist/js/tools-premium2.min.js?v=20261021_v01"></script>
-<script defer src="dist/js/auth-license.min.js?v=20261021_v01"></script>
-<script defer src="dist/js/mac-bridge.min.js?v=20261021_v01"></script>
+<script defer src="dist/js/app.min.js?v=20261021_v02"></script>
+<script defer src="dist/js/tools.min.js?v=20261021_v02"></script>
+<script defer src="dist/js/tools-new.min.js?v=20261021_v02"></script>
+<script defer src="dist/js/tools-premium.min.js?v=20261021_v02"></script>
+<script defer src="dist/js/tools-premium2.min.js?v=20261021_v02"></script>
+<script defer src="dist/js/auth-license.min.js?v=20261021_v02"></script>
+<script defer src="dist/js/mac-bridge.min.js?v=20261021_v02"></script>
 
 
 <script>
@@ -2271,7 +2271,7 @@
     if (!isLocal) {
       window.addEventListener('load', () => {
         let refreshing = false;
-        navigator.serviceWorker.register('/sw.js').then((reg) => {
+        navigator.serviceWorker.register('/sw.js?v=20261021_v02').then((reg) => {
           reg.update();
           reg.onupdatefound = () => {
             const w = reg.installing;
