@@ -9048,34 +9048,58 @@ ${linksOverlay}    </div>
     function renderUpload() {
       container.innerHTML = `
         <div class="cpdf-dropzone drop-hero-box" id="cpdf-dz" tabindex="0" role="button" aria-label="Upload files to compress">
-          <div class="dropzone-idle">
-            <div class="drop-illustration">
-              <svg viewBox="0 0 260 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="standard-dz-svg etxt-dz-svg">
-                <!-- Left: Image / Photo Card -->
-                <rect x="18" y="46" width="66" height="54" rx="8" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="70" cy="62" r="5" stroke="#64748B" stroke-width="3"/>
-                <path d="M 21 98 L 44 72 L 58 86 L 68 76 L 81 98" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="cpdf-inset-border">
+            <!-- 3 Stacked Documents Illustration (Spreadsheet, PDF, Presentation) -->
+            <div class="cpdf-hero-icon-cluster">
+              <svg width="100" height="64" viewBox="0 0 100 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Left Sheet: Spreadsheet / Table -->
+                <g opacity="0.85" transform="translate(14, 6)">
+                  <rect x="0" y="0" width="34" height="46" rx="3" stroke="#FFFFFF" stroke-width="1.6" fill="rgba(255,255,255,0.06)"/>
+                  <line x1="6" y1="12" x2="28" y2="12" stroke="#FFFFFF" stroke-width="1.2"/>
+                  <line x1="6" y1="20" x2="28" y2="20" stroke="#FFFFFF" stroke-width="1.2"/>
+                  <line x1="6" y1="28" x2="28" y2="28" stroke="#FFFFFF" stroke-width="1.2"/>
+                  <line x1="17" y1="12" x2="17" y2="36" stroke="#FFFFFF" stroke-width="1.2"/>
+                </g>
 
-                <!-- Center: Prominent Document Sheet -->
-                <path d="M 104 10 L 146 10 C 148 10 151 11.5 153 13.5 L 163 24.5 C 165 26.5 166 29 166 32 L 166 92 C 166 96.4 162.4 100 158 100 L 148 100 M 112 100 L 102 100 C 97.6 100 94 96.4 94 92 L 94 20 C 94 14.5 98.5 10 104 10 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="107" y1="64" x2="153" y2="64" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-                <line x1="107" y1="78" x2="153" y2="78" stroke="#64748B" stroke-width="3.5" stroke-linecap="round"/>
-                
-                <!-- Center: Downward Arrow -->
-                <path d="M 130 66 L 130 126 M 116 112 L 130 126 L 144 112" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="standard-dz-arrow etxt-dz-arrow"/>
+                <!-- Right Sheet: Presentation / Pie Chart -->
+                <g opacity="0.85" transform="translate(52, 6)">
+                  <rect x="0" y="0" width="34" height="46" rx="3" stroke="#FFFFFF" stroke-width="1.6" fill="rgba(255,255,255,0.06)"/>
+                  <circle cx="17" cy="24" r="9" stroke="#FFFFFF" stroke-width="1.4"/>
+                  <path d="M17 15 V24 H26" stroke="#FFFFFF" stroke-width="1.4"/>
+                </g>
 
-                <!-- Right: Folder -->
-                <path d="M 184 40 L 200 40 C 203 40 205.5 41.8 207 44.5 L 209.5 48 L 234 48 C 238.4 48 242 51.6 242 56 L 242 92 C 242 96.4 238.4 100 234 100 L 184 100 C 179.6 100 176 96.4 176 92 L 176 48 C 176 43.6 179.6 40 184 40 Z" stroke="#64748B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Center Sheet: Prominent PDF with Folded Corner -->
+                <g transform="translate(32, 2)">
+                  <path d="M 0 3 C 0 1.34 1.34 0 3 0 L 24 0 L 36 12 L 36 51 C 36 52.66 34.66 54 33 54 L 3 54 C 1.34 54 0 52.66 0 51 Z" fill="#DE3636" stroke="#FFFFFF" stroke-width="1.8"/>
+                  <path d="M 24 0 V 12 H 36" stroke="#FFFFFF" stroke-width="1.8" fill="none"/>
+                  <!-- PDF Red Badge Tag -->
+                  <rect x="5" y="24" width="26" height="12" rx="2" fill="#FFFFFF"/>
+                  <text x="18" y="33" fill="#DE3636" font-family="'Outfit', sans-serif" font-size="8.5" font-weight="900" text-anchor="middle" letter-spacing="0.05em">PDF</text>
+                  <!-- Document content lines -->
+                  <line x1="7" y1="42" x2="29" y2="42" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>
+                  <line x1="7" y1="46" x2="22" y2="46" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round"/>
+                </g>
               </svg>
             </div>
-
-            <h3 class="drop-title">Drag and drop files to compress</h3>
-
-            <div class="drop-action-group">
-              <label for="cpdf-inp" class="select-files-main-btn">Select files from your device</label>
+            
+            <!-- Compound Button [ 📄+ CHOOSE FILES | ▾ ] -->
+            <div class="cpdf-hero-btn-wrap">
+              <label for="cpdf-inp" class="cpdf-compound-btn" tabindex="0">
+                <span class="cpdf-btn-main">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                  </svg>
+                  <span>CHOOSE FILES</span>
+                </span>
+                <span class="cpdf-btn-divider"></span>
+                <span class="cpdf-btn-caret">&#9662;</span>
+              </label>
             </div>
-
-            <p class="drop-formats">Supports PDF, Images, Video, Audio, and ZIP Archives</p>
+            
+            <p class="cpdf-hero-subtext">or drop files here</p>
           </div>
           <input id="cpdf-inp" type="file" accept="${ACCEPT_STR}" multiple hidden>
         </div>`;

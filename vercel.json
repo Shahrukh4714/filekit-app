@@ -5,7 +5,11 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!assets/|vendor/|dist/|css/|js/|.*\\.[a-zA-Z0-9]+$).*)",
+      "source": "/compress-pdf",
+      "destination": "/compress-pdf/index.html"
+    },
+    {
+      "source": "/((?!compress-pdf|assets/|vendor/|dist/|css/|js/|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ],

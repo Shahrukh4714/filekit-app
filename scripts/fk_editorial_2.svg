@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 600 520">
+  <defs>
+    <clipPath id="fk-sp2-loupe-clip">
+      <circle cx="345" cy="305" r="74"/>
+    </clipPath>
+    <linearGradient id="fk-sp2-photo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#F472B6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Pastel Tilted Rounded Backplates -->
+  <rect width="300" height="300" x="550" y="260" fill="#ECF5FE" rx="24" transform="rotate(118 550 260)"/>
+  <rect width="240" height="240" x="330" y="70" fill="#D8EBFD" rx="22" transform="rotate(104 330 70)"/>
+
+  <!-- Floating Sparkles & Donut Rings -->
+  <path fill="#FFB700" d="M495 410a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1Zm-9.8 9.6a2 2 0 0 0 0-2.7 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.2Zm9.8 4.1a2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8Zm-12.6-9.6a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1Z"/>
+  <path fill="#87AFFF" d="M382 95a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1Zm9.8-9.6a2 2 0 0 0 0 2.7 2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.2Zm-9.8-4.1a2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8Zm12.6 9.6a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1Z"/>
+  <path fill="#fff" d="M104 160v7.2h7.2v3.6h-7.2v7.2h-3.6v-7.2h-7.2v-3.6h7.2V160h3.6Z"/>
+  <path fill="#87AFFF" fill-rule="evenodd" d="M420 425a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm12 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd"/>
+
+  <!-- Layered Stack of High-Res Documents -->
+  <!-- Layer 1 (Dark Teal Base) -->
+  <path fill="#69CED0" d="M185 395V158a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H189a4 4 0 0 1-4-4Z"/>
+  <!-- Layer 2 (Light Teal Mid) -->
+  <path fill="#9FE6E8" d="M200 380V143a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H204a4 4 0 0 1-4-4Z"/>
+
+  <!-- Layer 3 Base Shadow -->
+  <path fill="#0E7490" opacity="0.15" d="M220 372V135a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H224a4 4 0 0 1-4-4Z"/>
+  <!-- Layer 3 (Crisp Front Document) -->
+  <path fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2" d="M215 365V128a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H219a4 4 0 0 1-4-4Z"/>
+  <!-- Folded Corner in Teal Accent -->
+  <path fill="#4CCBCE" d="M384 124v37a4 4 0 0 0 4 4h37l-41-41Z"/>
+
+  <!-- Photo Element inside Front Doc (Sunset / Mountain Landscape) -->
+  <g transform="translate(235, 170)">
+    <rect width="165" height="72" rx="6" fill="url(#fk-sp2-photo)"/>
+    <!-- Sun -->
+    <circle cx="132" cy="24" r="12" fill="#FEF08A"/>
+    <!-- Mountain Peaks -->
+    <polygon points="12,72 65,32 105,72" fill="#4338CA" opacity="0.8"/>
+    <polygon points="75,72 120,26 160,72" fill="#312E81" opacity="0.9"/>
+  </g>
+
+  <!-- Typography Lines on Doc -->
+  <rect x="235" y="258" width="165" height="8" rx="4" fill="#94A3B8"/>
+  <rect x="235" y="274" width="145" height="6.5" rx="3.25" fill="#CBD5E1"/>
+  <rect x="235" y="289" width="155" height="6.5" rx="3.25" fill="#CBD5E1"/>
+  <rect x="235" y="304" width="130" height="6.5" rx="3.25" fill="#CBD5E1"/>
+  <rect x="235" y="319" width="150" height="6.5" rx="3.25" fill="#CBD5E1"/>
+
+  <!-- Isometric Frosted Magnifying Loupe -->
+  <g>
+    <!-- Loupe Shadow underneath -->
+    <circle cx="352" cy="318" r="84" fill="#1E1B4B" opacity="0.18"/>
+    <!-- Loupe Handle (Angled at 42 deg) -->
+    <rect x="395" y="352" width="105" height="26" rx="13" fill="#322472" transform="rotate(42 395 352)"/>
+    <rect x="402" y="357" width="90" height="10" rx="5" fill="#493A91" transform="rotate(42 395 352)"/>
+
+    <!-- Loupe Outer Ring Frame -->
+    <circle cx="345" cy="305" r="86" fill="#493A91"/>
+    <circle cx="345" cy="305" r="78" fill="#604DBF"/>
+    <circle cx="345" cy="305" r="74" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Content Inspected Inside Loupe (Clipped Circle) -->
+  <g clip-path="url(#fk-sp2-loupe-clip)">
+    <!-- Crisp Vector Coordinate Grid inside Lens -->
+    <rect x="260" y="220" width="170" height="170" fill="#F8FAFC"/>
+    <path stroke="#E2E8F0" stroke-width="1.2" d="M260 250h170M260 275h170M260 300h170M260 325h170M260 350h170"/>
+    <path stroke="#E2E8F0" stroke-width="1.2" d="M290 220v170M315 220v170M340 220v170M365 220v170M390 220v170"/>
+
+    <!-- Large Sharp Serif Glyph "A" with Vector Anchor Nodes -->
+    <text x="345" y="324" fill="#1E1B4B" font-family="'Times New Roman', Georgia, serif" font-size="62" font-weight="700" text-anchor="middle">A</text>
+    <!-- Precision Vector Anchor Handles / Points on Glyph -->
+    <rect x="342" y="271" width="7" height="7" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+    <rect x="321" y="319" width="7" height="7" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+    <rect x="362" y="319" width="7" height="7" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+
+    <!-- Lens Glass Reflection Arc -->
+    <path d="M290 260 A 62 62 0 0 1 390 260" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- 100% SHARP Pill Badge Mounted on Loupe Rim -->
+  <g transform="translate(285, 365)">
+    <!-- Badge Shadow -->
+    <rect x="0" y="3" width="130" height="34" rx="17" fill="#065F46" opacity="0.3"/>
+    <!-- Badge Body -->
+    <rect width="130" height="34" rx="17" fill="#10B981"/>
+    <circle cx="17" cy="17" r="10" fill="#FFFFFF"/>
+    <path fill="#10B981" d="M13 17.5l2.5 2.5 5-5 1.4 1.4-6.4 6.4-3.9-3.9 1.4-1.4Z"/>
+    <text x="36" y="23" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" letter-spacing="0.5">100% SHARP</text>
+  </g>
+
+  <!-- Sparkle on the glass rim -->
+  <path fill="#FFB700" d="M280 235a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1Zm-9.8 9.6a2 2 0 0 0 0-2.7 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.2Zm9.8 4.1a2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8Zm-12.6-9.6a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1Z"/>
+</svg>

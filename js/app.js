@@ -5954,8 +5954,8 @@ try {
             const seoTitle = document.getElementById('fk-seo-hero-title');
       if (seoTitle) {
         const titleMap = {
-        'pdf-compress': 'Compress PDF Files Online for Free',
-        'compress': 'Compress PDF Files Online for Free',
+        'pdf-compress': 'Compress PDF',
+        'compress': 'Compress PDF',
         'merge': 'Merge PDF Files for Free Online',
         'pdf-merge': 'Merge PDF Files for Free Online',
         'split': 'Split PDF Files for Free Online',
@@ -8937,1034 +8937,564 @@ try {
 
 
   window.FF.ToolSeoEngine = {
-    getEditPdfSeoHtml() { return `
-      <!-- Sub-Hero Trust & Value Strip -->
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit is the first and only in-browser PDF editor you'll love. Edit PDF documents online with powerful text, shape, annotation, and form tools.</p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Edit PDF by adding text, shapes, comments and highlights</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>100% free to use</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>No registration or installation required</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 1: Edit Your PDFs The Easy Way -->
-      <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #00A896; text-transform: uppercase; margin-bottom: 8px;">INTUITIVE PDF WORKSPACE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Edit Your PDFs The Easy Way</h2>
-        <p style="color: #737373; font-size: 15px;">A simplified PDF editing solution with all the tools you need to personalize your documents without leaving your browser.</p>
-      </div>
-
-      <!-- Story 1: Fast and Powerful PDF Editing -->
-      <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
-        <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Fast and Powerful PDF Editing</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Eliminate repetitive tasks with our PDF editor, allowing you to quickly format documents, add signatures, type or draw text, or organize PDF pages without interrupting your workflow.</p>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
-  <defs>
-    <linearGradient id="s1-screen-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F7F7F7"/>
-      <stop offset="100%" stop-color="#E5E5E5"/>
-    </linearGradient>
-    <filter id="s1-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#00A896" flood-opacity="0.12"/>
-    </filter>
-    <filter id="bulb-glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#F59E0B" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-
-  <!-- Tilted Pastel Backplate (Soft Mint / Ice Blue) -->
-  <rect x="95" y="45" width="340" height="280" rx="28" transform="rotate(-7 265 185)" fill="#ECFDF5" opacity="0.95"/>
-  <rect x="75" y="65" width="280" height="240" rx="24" transform="rotate(6 215 185)" fill="#F0FDF4" opacity="0.6"/>
-
-  <!-- Ambient Grounding Shadow -->
-  <ellipse cx="255" cy="348" rx="140" ry="16" fill="#0D9488" opacity="0.12"/>
-
-  <!-- Monitor Stand Base & Stem -->
-  <path d="M 215 320 H 295 L 305 342 H 205 Z" fill="#8C8C8C" opacity="0.4"/>
-  <rect x="242" y="270" width="26" height="55" rx="4" fill="#D4D4D4"/>
-
-  <!-- Desktop Monitor Body -->
-  <g filter="url(#s1-glow)">
-    <!-- Outer Bezel -->
-    <rect x="110" y="75" width="290" height="205" rx="14" fill="#00A896" stroke="#008F80" stroke-width="2"/>
-    <!-- Bottom Chin Bar -->
-    <rect x="110" y="252" width="290" height="28" rx="14" fill="#008F80"/>
-    <circle cx="255" cy="266" r="3.5" fill="#5EEAD4"/>
-
-    <!-- Main Screen Display -->
-    <rect x="122" y="87" width="266" height="165" rx="8" fill="url(#s1-screen-grad)"/>
-
-    <!-- Screen App Top Header -->
-    <rect x="122" y="87" width="266" height="26" rx="8" fill="#FFFFFF"/>
-    <line x1="122" y1="113" x2="388" y2="113" stroke="#E5E5E5" stroke-width="1.5"/>
-    <circle cx="138" cy="100" r="3.5" fill="#EF4444"/>
-    <circle cx="148" cy="100" r="3.5" fill="#F59E0B"/>
-    <circle cx="158" cy="100" r="3.5" fill="#10B981"/>
-    <!-- Search / Title Bar in Screen -->
-    <rect x="180" y="93" width="150" height="14" rx="4" fill="#EEEEEE"/>
-    <rect x="190" y="97" width="60" height="6" rx="2" fill="#8C8C8C"/>
-
-    <!-- 6 App Feature Tool Cards on Screen -->
-    <!-- Tool 1: Text Tool (Coral) -->
-    <rect x="138" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
-    <rect x="146" y="134" width="20" height="20" rx="4" fill="#FEF2F2"/>
-    <text x="156" y="149" fill="#EF4444" font-family="'Outfit', sans-serif" font-size="13" font-weight="900" text-anchor="middle">T</text>
-    <rect x="172" y="137" width="24" height="4" rx="2" fill="#737373"/>
-    <rect x="172" y="145" width="16" height="4" rx="2" fill="#8C8C8C"/>
-
-    <!-- Tool 2: Draw / Pencil (Teal) -->
-    <rect x="214" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
-    <rect x="222" y="134" width="20" height="20" rx="4" fill="#ECFDF5"/>
-    <path d="M 230 148 L 238 138 L 240 140 L 232 150 Z" fill="#00A896"/>
-    <rect x="248" y="137" width="24" height="4" rx="2" fill="#737373"/>
-    <rect x="248" y="145" width="16" height="4" rx="2" fill="#8C8C8C"/>
-
-    <!-- Tool 3: Shapes (Gold) -->
-    <rect x="290" y="126" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
-    <rect x="298" y="134" width="20" height="20" rx="4" fill="#FFFBEB"/>
-    <rect x="303" y="139" width="10" height="10" rx="2" fill="#F59E0B"/>
-    <rect x="324" y="137" width="24" height="4" rx="2" fill="#737373"/>
-    <rect x="324" y="145" width="16" height="4" rx="2" fill="#8C8C8C"/>
-
-    <!-- Tool 4: Image Insert (Blue) -->
-    <rect x="138" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
-    <rect x="146" y="186" width="20" height="20" rx="4" fill="#EFF6FF"/>
-    <circle cx="156" cy="196" r="4" fill="#3B82F6"/>
-    <rect x="172" y="189" width="24" height="4" rx="2" fill="#737373"/>
-    <rect x="172" y="197" width="16" height="4" rx="2" fill="#8C8C8C"/>
-
-    <!-- Tool 5: Sign PDF (Purple) -->
-    <rect x="214" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
-    <rect x="222" y="186" width="20" height="20" rx="4" fill="#FAF5FF"/>
-    <path d="M 228 198 Q 232 190 236 198 T 241 195" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" fill="none"/>
-    <rect x="248" y="189" width="24" height="4" rx="2" fill="#737373"/>
-    <rect x="248" y="197" width="16" height="4" rx="2" fill="#8C8C8C"/>
-
-    <!-- Tool 6: Form Fill (Emerald) -->
-    <rect x="290" y="178" width="66" height="42" rx="6" fill="#FFFFFF" stroke="#E5E5E5"/>
-    <rect x="298" y="186" width="20" height="20" rx="4" fill="#ECFDF5"/>
-    <path d="M 303 196 L 306 199 L 313 191" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <rect x="324" y="189" width="24" height="4" rx="2" fill="#737373"/>
-    <rect x="324" y="197" width="16" height="4" rx="2" fill="#8C8C8C"/>
-  </g>
-
-  <!-- Glowing 3D Lightbulb Hovering Top-Right -->
-  <g filter="url(#bulb-glow)" transform="translate(370, 45)">
-    <!-- Bulb Glass -->
-    <path d="M 32 8 C 18 8 8 18 8 32 C 8 42 14 50 20 58 L 22 68 H 42 L 44 58 C 50 50 56 42 56 32 C 56 18 46 8 32 8 Z" fill="#FBBF24"/>
-    <path d="M 32 12 C 22 12 14 20 14 30 C 14 34 16 38 18 42" stroke="#FFFBEB" stroke-width="3" stroke-linecap="round"/>
-    <!-- Filament Heart -->
-    <path d="M 26 34 Q 32 24 38 34" stroke="#D97706" stroke-width="3" stroke-linecap="round" fill="none"/>
-    <line x1="28" y1="34" x2="28" y2="52" stroke="#D97706" stroke-width="2.5"/>
-    <line x1="36" y1="34" x2="36" y2="52" stroke="#D97706" stroke-width="2.5"/>
-    <!-- Screw Base -->
-    <rect x="22" y="68" width="20" height="6" rx="2" fill="#D4D4D4"/>
-    <rect x="24" y="74" width="16" height="5" rx="2" fill="#8C8C8C"/>
-    <path d="M 28 79 H 36 L 34 84 H 30 Z" fill="#737373"/>
-
-    <!-- Yellow Sparkle Rays around Bulb -->
-    <line x1="32" y1="-4" x2="32" y2="4" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="56" y1="8" x2="62" y2="2" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="66" y1="32" x2="74" y2="32" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="58" y1="54" x2="64" y2="60" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="8" y1="8" x2="2" y2="2" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="-2" y1="32" x2="-10" y2="32" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <!-- Ambient Small Sparkles -->
-  <path d="M 80 130 v8 h8 v3 h-8 v8 h-3 v-8 h-8 v-3 h8 v-8 h3 Z" fill="#00A896" opacity="0.7"/>
-  <circle cx="430" cy="270" r="5" fill="#3B82F6" opacity="0.6"/>
-  <path d="M 120 310 l4 4 l-4 4 l-4 -4 Z" fill="#F59E0B" opacity="0.8"/>
-</svg>
-        </div>
-      </div>
-
-      <!-- Story 2: Document Organization at a Glance (Reversed) -->
-      <div style="display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 50px; margin-bottom: 70px;">
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
-  <defs>
-    <filter id="s2-doc-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#00A896" flood-opacity="0.15"/>
-    </filter>
-    <filter id="s2-bar-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#171717" flood-opacity="0.2"/>
-    </filter>
-  </defs>
-
-  <!-- Tilted Pastel Backplate (Soft Cyan / Seafoam) -->
-  <rect x="110" y="50" width="310" height="290" rx="26" transform="rotate(8 265 195)" fill="#E0F2FE" opacity="0.85"/>
-  <rect x="90" y="60" width="300" height="270" rx="24" transform="rotate(-6 240 195)" fill="#F0FDFA" opacity="0.95"/>
-
-  <!-- Ambient Grounding Shadow -->
-  <ellipse cx="255" cy="345" rx="135" ry="15" fill="#0284C7" opacity="0.14"/>
-
-  <!-- Document Sheet Body -->
-  <g filter="url(#s2-doc-shadow)">
-    <path d="M 160 80 H 310 L 350 120 V 320 H 160 Z" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="1.5"/>
-    <!-- Folded Top-Right Ear -->
-    <path d="M 310 80 V 120 H 350 Z" fill="#E0F2FE"/>
-    <path d="M 310 80 L 350 120" stroke="#7DD3FC" stroke-width="1.5"/>
-
-    <!-- Document Content Lines -->
-    <rect x="185" y="115" width="80" height="8" rx="4" fill="#00A896" opacity="0.8"/>
-    <rect x="185" y="140" width="140" height="5" rx="2.5" fill="#D4D4D4"/>
-    <rect x="185" y="155" width="140" height="5" rx="2.5" fill="#D4D4D4"/>
-    <rect x="185" y="170" width="125" height="5" rx="2.5" fill="#D4D4D4"/>
-
-    <!-- Active Text Edit Box (Dotted Outline with Blue Highlight) -->
-    <rect x="185" y="195" width="145" height="42" rx="4" fill="#F0FDFA" stroke="#00A896" stroke-width="1.8" stroke-dasharray="4 3"/>
-    <rect x="195" y="206" width="75" height="7" rx="3.5" fill="#0F766E"/>
-    <rect x="195" y="220" width="115" height="5" rx="2.5" fill="#5EEAD4"/>
-    <!-- Blinking Typing Cursor -->
-    <line x1="275" y1="204" x2="275" y2="215" stroke="#00A896" stroke-width="2.5" stroke-linecap="round"/>
-
-    <!-- Remaining Document Lines -->
-    <rect x="185" y="255" width="140" height="5" rx="2.5" fill="#D4D4D4"/>
-    <rect x="185" y="270" width="130" height="5" rx="2.5" fill="#D4D4D4"/>
-    <rect x="185" y="285" width="95" height="5" rx="2.5" fill="#D4D4D4"/>
-  </g>
-
-  <!-- Floating Rich Editor Toolbar Pill (Hovering Above Document) -->
-  <g filter="url(#s2-bar-shadow)" transform="translate(100, 115)">
-    <rect x="0" y="0" width="190" height="46" rx="23" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
-    
-    <!-- Tool 1: Text T (Active Highlighted) -->
-    <rect x="6" y="5" width="36" height="36" rx="18" fill="#ECFDF5"/>
-    <text x="24" y="28" fill="#00A896" font-family="'Outfit', sans-serif" font-size="16" font-weight="900" text-anchor="middle">T</text>
-
-    <!-- Divider -->
-    <line x1="48" y1="12" x2="48" y2="34" stroke="#E5E5E5" stroke-width="1.5"/>
-
-    <!-- Tool 2: Pencil / Draw -->
-    <g transform="translate(56, 12)">
-      <path d="M 4 18 L 16 6 L 19 9 L 7 21 Z" fill="#F59E0B"/>
-      <polygon points="4,18 2,23 7,21" fill="#171717"/>
-    </g>
-
-    <!-- Tool 3: Shapes Rectangle -->
-    <rect x="98" y="14" width="18" height="18" rx="3" fill="#3B82F6" opacity="0.85"/>
-
-    <!-- Tool 4: Highlighting Marker -->
-    <g transform="translate(138, 12)">
-      <rect x="6" y="2" width="8" height="15" rx="2" fill="#A855F7"/>
-      <polygon points="6,17 14,17 10,22" fill="#EAB308"/>
-    </g>
-
-    <!-- Dropdown Chevron -->
-    <path d="M 172 20 L 176 25 L 180 20" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  </g>
-
-  <!-- Wooden Pencil Actively Drawing on Page -->
-  <g transform="rotate(-35 340 230)">
-    <!-- Main Pencil Shaft -->
-    <rect x="320" y="140" width="22" height="95" rx="3" fill="#F59E0B"/>
-    <rect x="320" y="140" width="7" height="95" fill="#D97706"/>
-    <rect x="335" y="140" width="7" height="95" fill="#FCD34D"/>
-    <!-- Pencil Eraser & Ferrule -->
-    <rect x="320" y="125" width="22" height="15" rx="2" fill="#F43F5E"/>
-    <rect x="320" y="137" width="22" height="5" fill="#D4D4D4"/>
-    <!-- Wooden Sharpened Cone & Graphite Tip -->
-    <polygon points="320,235 342,235 331,258" fill="#FDE68A"/>
-    <polygon points="327,249 335,249 331,258" fill="#171717"/>
-  </g>
-
-  <!-- Sparkles around Pencil Tip -->
-  <path d="M 330 290 v6 h6 v2 h-6 v6 h-2 v-6 h-6 v-2 h6 v-6 h2 Z" fill="#00A896"/>
-  <circle cx="365" cy="275" r="4" fill="#F59E0B"/>
-  <path d="M 130 90 l3 3 l-3 3 l-3 -3 Z" fill="#3B82F6"/>
-</svg>
-        </div>
-        <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Document Organization at a Glance</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Our integrated tool automatically organizes pages into interactive thumbnails, letting you crop, reorder, rotate, or delete pages easily from one intuitive view.</p>
-        </div>
-      </div>
-
-      <!-- Story 3: Quick to Save, Easy to Share -->
-      <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
-        <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Quick to Save, Easy to Share</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Exporting and sharing documents with others is effortless. Generate links, export to cloud storage or download directly. Perfect for fast collaboration with clients or teammates.</p>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
-  <defs>
-    <filter id="s3-laptop-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#4F46E5" flood-opacity="0.16"/>
-    </filter>
-    <filter id="s3-env-shadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#EA580C" flood-opacity="0.25"/>
-    </filter>
-  </defs>
-
-  <!-- Tilted Pastel Backplate (Soft Lavender / Violet) -->
-  <rect x="95" y="45" width="340" height="280" rx="28" transform="rotate(-6 265 185)" fill="#F5F3FF" opacity="0.95"/>
-  <rect x="80" y="65" width="290" height="240" rx="24" transform="rotate(7 225 185)" fill="#EEF2FF" opacity="0.7"/>
-
-  <!-- Ambient Grounding Shadow -->
-  <ellipse cx="260" cy="350" rx="150" ry="16" fill="#4338CA" opacity="0.12"/>
-
-  <!-- Modern Open Laptop -->
-  <g filter="url(#s3-laptop-shadow)">
-    <!-- Laptop Base / Keyboard Deck -->
-    <path d="M 105 315 L 140 315 L 380 315 L 415 315 C 424 315 428 322 424 328 L 410 338 C 406 341 400 343 392 343 H 128 C 120 343 114 341 110 338 L 96 328 C 92 322 96 315 105 315 Z" fill="#D4D4D4"/>
-    <!-- Laptop Trackpad Notch -->
-    <rect x="235" y="318" width="50" height="4" rx="2" fill="#8C8C8C"/>
-
-    <!-- Laptop Display Lid (Upright) -->
-    <rect x="135" y="105" width="250" height="175" rx="12" fill="#171717" stroke="#0A0A0A" stroke-width="2"/>
-    <!-- Screen Glass -->
-    <rect x="145" y="115" width="230" height="150" rx="6" fill="#00A896"/>
-    <!-- Screen Header Bar -->
-    <rect x="145" y="115" width="230" height="22" rx="6" fill="#008F80"/>
-    <circle cx="158" cy="126" r="3" fill="#5EEAD4"/>
-    <circle cx="168" cy="126" r="3" fill="#5EEAD4" opacity="0.6"/>
-
-    <!-- Document in Screen with Central Download / Export Shield -->
-    <rect x="175" y="148" width="170" height="105" rx="6" fill="#FFFFFF"/>
-    <rect x="190" y="160" width="70" height="6" rx="3" fill="#00A896"/>
-    <rect x="190" y="172" width="140" height="4" rx="2" fill="#E5E5E5"/>
-    <rect x="190" y="180" width="120" height="4" rx="2" fill="#E5E5E5"/>
-    <rect x="190" y="188" width="90" height="4" rx="2" fill="#E5E5E5"/>
-
-    <!-- Central Download / Cloud Circle Emblem -->
-    <circle cx="260" cy="216" r="18" fill="#00A896"/>
-    <path d="M 260 207 V 222 M 254 216 L 260 222 L 266 216" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-
-  <!-- Floating Coral Team Speech Bubble (Left Side) -->
-  <g filter="url(#s3-env-shadow)" transform="translate(80, 110)">
-    <rect x="0" y="0" width="76" height="52" rx="14" fill="#FF6B6B"/>
-    <!-- Speech Tail -->
-    <polygon points="24,52 34,52 28,62" fill="#FF6B6B"/>
-    <!-- Team Silhouette Icons -->
-    <circle cx="26" cy="22" r="6" fill="#FFFFFF"/>
-    <path d="M 16 38 C 16 32 20 30 26 30 C 32 30 36 32 36 38 Z" fill="#FFFFFF"/>
-    <circle cx="48" cy="20" r="5" fill="#FFE4E6"/>
-    <path d="M 40 35 C 40 30 43 28 48 28 C 53 28 56 30 56 35 Z" fill="#FFE4E6"/>
-  </g>
-
-  <!-- Floating Golden Mail Envelope with Outgoing Document (Right Side) -->
-  <g filter="url(#s3-env-shadow)" transform="translate(355, 100)">
-    <!-- Flying Document Paper -->
-    <g transform="rotate(12 30 10)">
-      <rect x="15" y="-18" width="46" height="58" rx="4" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1.5"/>
-      <rect x="22" y="-10" width="22" height="4" rx="2" fill="#00A896"/>
-      <rect x="22" y="-2" width="32" height="3" rx="1.5" fill="#D4D4D4"/>
-      <rect x="22" y="4" width="28" height="3" rx="1.5" fill="#D4D4D4"/>
-    </g>
-
-    <!-- Envelope Body -->
-    <rect x="0" y="16" width="84" height="56" rx="8" fill="#FBBF24"/>
-    <!-- Envelope Flap & Folds -->
-    <path d="M 0 18 L 42 46 L 84 18" fill="#F59E0B" opacity="0.6"/>
-    <path d="M 0 72 L 34 42" stroke="#D97706" stroke-width="1.5"/>
-    <path d="M 84 72 L 50 42" stroke="#D97706" stroke-width="1.5"/>
-    <polygon points="0,16 42,48 84,16" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
-  </g>
-
-  <!-- Ambient Golden & Blue Sparkles -->
-  <path d="M 460 70 v6 h6 v2 h-6 v6 h-2 v-6 h-6 v-2 h6 v-6 h2 Z" fill="#F59E0B"/>
-  <circle cx="85" cy="220" r="4.5" fill="#00A896"/>
-  <path d="M 440 260 l4 4 l-4 4 l-4 -4 Z" fill="#8B5CF6"/>
-</svg>
-        </div>
-      </div>
-
-      <!-- Section 2: How To Edit a PDF for Free -->
-      <div style="background: #EEF4FF; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #DBEAFE;">
-        <div>
-          <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #2563EB; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Edit a PDF for Free</h2>
-          <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
-            <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your document into the PDF Editor.</span>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Insert annotations &amp; text:</strong> Add text, images, shapes, or hand-drawn annotations as needed.</span>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Style elements:</strong> Edit size, font, color, and positioning of added content.</span>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Save finalized PDF:</strong> Download your finalized PDF file or share it directly with others.</span>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #00A896; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Convert or compress:</strong> (Optional) Optimize or transcode your PDF before saving.</span>
-            </li>
-          </ul>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" fill="none" class="fk-seo-mascot-scene">
-  <!-- Ground Contact Shadows -->
-  <ellipse cx="120" cy="255" rx="65" ry="12" fill="#BAE6FD" opacity="0.7"/>
-  <ellipse cx="295" cy="255" rx="45" ry="8" fill="#BAE6FD" opacity="0.7"/>
-
-  <!-- Character Mascot: Folded Sheet of Paper -->
-  <g>
-    <!-- Paper Sheet Body -->
-    <path d="M 72 145 L 78 245 C 78 249 82 252 86 252 L 158 240 C 162 240 164 236 164 232 L 152 125 C 152 121 148 118 144 118 L 86 124 C 82 124 80 127 80 131 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="4" stroke-linejoin="round"/>
-    
-    <!-- Top-Left Folded Ear -->
-    <path d="M 80 131 L 90 148 L 105 142 L 86 124 Z" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3.5" stroke-linejoin="round"/>
-
-    <!-- Left Arm Resting on Ground -->
-    <path d="M 75 195 L 68 242" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="68" cy="242" r="5" fill="#0A0A0A"/>
-
-    <!-- Big Round Spectacles with Turquoise Tint -->
-    <circle cx="106" cy="182" r="19" fill="#CCFBF1" stroke="#0A0A0A" stroke-width="4"/>
-    <circle cx="111" cy="180" r="4" fill="#0A0A0A"/>
-    <circle cx="146" cy="178" r="19" fill="#CCFBF1" stroke="#0A0A0A" stroke-width="4"/>
-    <circle cx="151" cy="176" r="4" fill="#0A0A0A"/>
-    <path d="M 125 180 Q 128 176 131 180" stroke="#0A0A0A" stroke-width="4"/>
-
-    <!-- Happy Smiling Mouth -->
-    <path d="M 126 206 Q 133 218 142 206" fill="#0A0A0A" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
-
-    <!-- Right Arm Extending Up Holding Stylus Pen -->
-    <path d="M 160 180 Q 172 172 182 158" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
-  </g>
-
-  <!-- Stylus Touch Pen in Hand -->
-  <g transform="rotate(-20 185 150)">
-    <rect x="180" y="110" width="11" height="46" rx="3" fill="#0A0A0A"/>
-    <rect x="180" y="132" width="11" height="16" fill="#00A896"/>
-    <polygon points="180,110 191,110 185.5,98" fill="#F59E0B"/>
-  </g>
-
-  <!-- Golden Magic Sparkle at Pen Tip -->
-  <path d="M 194 94 Q 204 94 204 86 Q 204 94 214 94 Q 204 94 204 102 Q 204 94 194 94 Z" fill="#F59E0B"/>
-
-  <!-- Floating PDF Document on Right -->
-  <g transform="translate(230, 85)">
-    <!-- Lavender Document Body -->
-    <path d="M 15 15 H 90 L 112 37 V 145 H 15 Z" fill="#E0E7FF" stroke="#C7D2FE" stroke-width="1.5"/>
-    <!-- Folded Ear -->
-    <path d="M 90 15 V 37 H 112 Z" fill="#C7D2FE"/>
-
-    <!-- Coral PDF Badge -->
-    <rect x="0" y="26" width="48" height="26" rx="4" fill="#EF4444"/>
-    <text x="24" y="44" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="12" font-weight="900" text-anchor="middle">PDF</text>
-
-    <!-- Document Line Bars -->
-    <rect x="30" y="68" width="65" height="5" rx="2.5" fill="#818CF8"/>
-    <rect x="30" y="80" width="65" height="5" rx="2.5" fill="#818CF8"/>
-    <rect x="30" y="92" width="65" height="5" rx="2.5" fill="#818CF8"/>
-    <rect x="30" y="104" width="65" height="5" rx="2.5" fill="#818CF8"/>
-    <rect x="30" y="116" width="45" height="5" rx="2.5" fill="#818CF8"/>
-
-    <!-- Golden Sunburst Radiating Lines -->
-    <line x1="116" y1="12" x2="124" y2="2" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="124" y1="28" x2="136" y2="22" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-    <line x1="122" y1="46" x2="136" y2="52" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <!-- Ambient Small Sparkles -->
-  <circle cx="185" cy="115" r="3.5" stroke="#F59E0B" stroke-width="2" fill="none"/>
-  <path d="M 215 195 v6 h6 v2 h-6 v6 h-2 v-6 h-6 v-2 h6 v-6 h2 Z" fill="#00A896"/>
-  <path d="M 190 75 l3 3 l-3 3 l-3 -3 Z" fill="#3B82F6"/>
-</svg>
-        </div>
-      </div>
-
-      <!-- Section 3: Free PDF editing — Quick & Easy -->
-      <div style="text-align: center; margin-bottom: 40px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #00A896; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Free PDF editing — Quick &amp; Easy</h2>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
-        <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="flex-shrink: 0;"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="#EFF6FF"/>
-      <path d="M 23 10 C 27 12 28 17 26 21 L 19 14 C 23 12 23 10 23 10 Z" fill="#3B82F6"/>
-      <path d="M 19 14 L 14 24 C 13 26 15 28 17 27 L 26 21 Z" fill="#93C5FD"/>
-      <path d="M 13 22 L 10 24 L 12 27 L 15 25 Z" fill="#2563EB"/>
-      <path d="M 11 28 Q 8 32 6 34 Q 10 32 14 30 Z" fill="#F59E0B"/>
-    </svg></div>
-          <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Powerful Tools, Zero Training</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Add annotations, edit text, insert images, and fill forms with an intuitive interface designed for everyone.</p>
-          </div>
-        </div>
-        <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="flex-shrink: 0;"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="#ECFDF5"/>
-      <rect x="12" y="17" width="16" height="13" rx="3" fill="#10B981"/>
-      <path d="M 15 17 V 13 C 15 10.2 17.2 8 20 8 C 22.8 8 25 10.2 25 13 V 17" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="20" cy="23" r="2" fill="#FFFFFF"/>
-    </svg></div>
-          <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Safe &amp; Reliable Online PDF Editor</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">All editing happens client-side in your browser WebAssembly sandbox. Files never upload to remote servers.</p>
-          </div>
-        </div>
-        <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="flex-shrink: 0;"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="#FEF2F2"/>
-      <path d="M 13 9 H 23 L 28 14 V 31 H 13 Z" fill="#EF4444" rx="2"/>
-      <path d="M 23 9 V 14 H 28 Z" fill="#FCA5A5"/>
-      <line x1="17" y1="18" x2="24" y2="18" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-      <line x1="17" y1="22" x2="24" y2="22" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-      <line x1="17" y1="26" x2="21" y2="26" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-    </svg></div>
-          <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Edit PDFs for Free</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Access complete PDF editing capabilities without paywalls, subscriptions, or hidden watermarks.</p>
-          </div>
-        </div>
-        <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="flex-shrink: 0;"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="#F0FDF4"/>
-      <rect x="12" y="12" width="16" height="12" rx="2" fill="#00A896"/>
-      <rect x="14" y="14" width="12" height="8" rx="1" fill="#CCFBF1"/>
-      <path d="M 9 26 H 31 L 29 28 H 11 Z" fill="#008F80"/>
-    </svg></div>
-          <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Works Anywhere</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Seamlessly edit PDF files on Mac, Windows, Linux, iOS, iPadOS, and Android browsers.</p>
-          </div>
-        </div>
-        <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="flex-shrink: 0;"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="#FFFBEB"/>
-      <path d="M 22 8 L 13 21 H 20 L 18 32 L 27 19 H 20 L 22 8 Z" fill="#F59E0B"/>
-    </svg></div>
-          <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Effortless In-Memory Speed</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Instant rendering and sub-second tool responsiveness with no upload wait times.</p>
-          </div>
-        </div>
-        <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="flex-shrink: 0;"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" fill="#FAF5FF"/>
-      <path d="M 27 13 C 25 15 22 15 20 13 L 13 20 L 16 23 L 23 16 C 25 18 25 21 27 23 L 29 21 L 26 18 L 29 15 Z" fill="#8B5CF6"/>
-      <path d="M 12 27 L 17 22 L 14 19 L 9 24 C 8 25 8 27 10 28 C 11 29 11 28 12 27 Z" fill="#A855F7"/>
-    </svg></div>
-          <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">More Than Just an Editor</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Rotate, crop, merge, organize, and sign your documents in one unified workstation.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 4: PDF Editing FAQs -->
-      <div style="text-align: center; margin-bottom: 40px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #00A896; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Editing FAQs</h2>
-      </div>
-
-      <div class="fk-edit-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="fk-edit-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>What is a PDF Editor?</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="fk-edit-faq-a" style="padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            A PDF editor is an application or online tool that allows you to modify the contents of a PDF document. This includes adding new text, editing existing typography, inserting geometric shapes, drawing freehand lines, highlighting key passages, inserting images, filling interactive forms, and organizing pages.
-          </div>
-        </div>
-
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>How do you edit text in a PDF document?</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Upload your PDF to FileKit PDF Editor, click the Text (T) tool on the top toolbar, place your cursor anywhere on the page, and start typing. You can customize font size, typeface, color, and text alignment.
-          </div>
-        </div>
-
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Can I add images to a PDF?</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Yes! Select the Image tool from the toolbar, choose a JPG, PNG, or SVG image from your device, and position or scale it directly on your document pages.
-          </div>
-        </div>
-
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Can I fill in and sign interactive PDF forms?</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Yes. Our editor automatically recognizes AcroForm fields, checkboxes, and text inputs, allowing you to fill in details and draw or insert your digital signature.
-          </div>
-        </div>
-
-        <div class="fk-edit-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
-          <button type="button" class="fk-edit-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Are files in the PDF editor secure and private?</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="fk-edit-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Yes, 100%. FileKit processes documents client-side in your local browser WebAssembly sandbox. Your files are never uploaded to cloud servers or stored anywhere.
-          </div>
-        </div>
-      </div>
-`; },
     getCompressPdfSeoHtml() { return `
-      <!-- Sub-Hero Trust & Value Strip -->
-      <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit delivers powerful, client-side PDF compression. Shrink bulky PDF files up to 90% of their original file size for email, web publishing, and storage — while preserving crystal-clear text sharpness and embedded image fidelity.</p>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Up to 90% file size reduction with smart DPI re-sampling</span>
+      <!-- Sub-Hero Quality & Trust Bar -->
+      <div class="fk-seo-quality-bar">
+        <div class="fk-quality-desc-col">
+          <p class="fk-quality-desc-text">
+            Quickly reduce PDF file size for email, web portals, and job applications. 100% private in-browser WebAssembly processing &mdash; zero files uploaded to any server.
+          </p>
+        </div>
+        <div class="fk-quality-checks-col">
+          <div class="fk-quality-check-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Hit strict upload limits (200 KB, 100 KB, 1 MB)</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Multiple compression modes (Extreme, Recommended, Low)</span>
+          <div class="fk-quality-check-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Sharp text &amp; clear photos preserved</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EAB308" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>100% private in-browser WebAssembly compression</span>
+          <div class="fk-quality-check-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Free to use &mdash; no signup needed</span>
           </div>
         </div>
       </div>
 
-      <!-- Section 1: Introduction Title -->
-      <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">SMART LOSSLESS SQUEEZE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Compress PDF Files Online for Free</h2>
-        <p style="color: #737373; font-size: 15px;">Reduce your PDF file size without sacrificing readability, formatting, or image clarity.</p>
+      <div style="text-align: center; margin-bottom: 56px;">
+        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #DC2626; text-transform: uppercase; margin-bottom: 8px;">SMART CLIENT-SIDE OPTIMIZATION</span>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #111827; letter-spacing: -0.025em; margin-bottom: 12px;">Shrink PDF File Size, Keep Every Detail Sharp</h2>
+        <p style="color: #4B5563; font-size: 16px; line-height: 1.6; margin: 0;">Reduce file size to pass Gmail limits and portal caps without blurry text or washed-out images.</p>
       </div>
 
-      <!-- Story 1: Smart Squeeze -->
-      <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
+      <!-- Story 1: Cut File Size by up to 90% -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; margin-bottom: 96px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Reduce PDF File Size by up to 90%</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Large PDF documents with high-resolution photos, embedded fonts, and vector illustrations frequently exceed email attachment limits (e.g. Gmail 25MB threshold) and slow down web portals.</p>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">FileKit intelligently strips redundant metadata, deduplicates embedded font subsets, and applies adaptive perceptual image compression to dramatically shrink file size while maintaining pristine document aesthetics.</p>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.025em; margin-bottom: 16px;">Cut File Size by up to 90%</h3>
+          <p style="font-size: 15.5px; color: #4B5563; line-height: 1.7; margin-bottom: 14px;">Ever had Gmail reject a 26 MB report, or a job portal block your resume because it was over 200 KB? High-res phone scans and embedded slide decks add megabytes of hidden bulk to PDF documents.</p>
+          <p style="font-size: 15.5px; color: #4B5563; line-height: 1.7; margin-bottom: 20px;">FileKit strips out unneeded background metadata and resamples heavy print graphics to clean screen resolution. A bloated 25 MB document easily drops down to 2.5 MB or less &mdash; ready to send in seconds.</p>
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; color: #374151;">
+            <li style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓</span> <span><strong>Target Portal Limits:</strong> Easily compress documents to meet strict 200 KB, 100 KB, or 1 MB application limits.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓</span> <span><strong>Fast Email Delivery:</strong> Drops heavy scans well below Gmail (25 MB) and Outlook (20 MB) attachment limits.</span>
+            </li>
+          </ul>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
-          <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="Smart Lossless PDF Compression">
-  <!-- Tilted Rounded Pastel Backplates -->
-  <rect width="291.88" height="291.88" rx="24" transform="rotate(-73.794 298.33 5.28) skewX(.059)" fill="#FEFCE8"/>
-  <rect width="270.81" height="270.81" rx="24" transform="rotate(-113.796 233.283 214.366) skewX(.059)" fill="#FEF08A"/>
+          <div style="width: 100%; max-width: 480px; display: block;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 600 520">
+  <!-- Pastel Tilted Rounded Backplates (Smallpdf signature style) -->
+  <rect width="250" height="250" fill="#ECF5FE" rx="24" transform="scale(-1 1) rotate(-76 130 420)"/>
+  <rect width="310" height="310" fill="#D8EBFD" rx="26" transform="scale(-1 1) rotate(-62 -50 570)"/>
 
-  <!-- Floating Diamond Spark Clusters (Top Left & Bottom Right) -->
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M510.71 435.14a2.426 2.426 0 0 1 3.429-3.43l5.143 5.145a2.426 2.426 0 0 1-3.429 3.43l-5.143-5.145Zm12.003 12.005a2.426 2.426 0 0 1 3.429-3.43l5.143 5.145a2.426 2.426 0 0 1-3.429 3.43l-5.143-5.145Zm-12.003 5.145a2.424 2.424 0 0 0 3.429 0l5.143-5.145a2.426 2.426 0 0 0-3.429-3.43l-5.143 5.145a2.426 2.426 0 0 0 0 3.43Zm15.437-12.004a2.424 2.424 0 1 1-3.429-3.43l5.143-5.145a2.424 2.424 0 1 1 3.429 3.43l-5.143 5.145Z" fill="#3D99F5"/>
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M502 477c0 6.075-4.925 11-11 11s-11-4.925-11-11 4.925-11 11-11 11 4.925 11 11Zm-16.499 0a5.5 5.5 0 1 0 11 0 5.5 5.5 0 0 0-11 0Z" fill="#FF5975"/>
-  
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M52.71 190.14a2.426 2.426 0 0 1 3.429-3.43l5.143 5.145a2.426 2.426 0 0 1-3.429 3.43l-5.143-5.145Zm12.003 12.005a2.426 2.426 0 0 1 3.429-3.43l5.143 5.145a2.426 2.426 0 0 1-3.429 3.43l-5.143-5.145ZM52.71 207.29a2.424 2.424 0 0 0 3.429 0l5.143-5.145a2.426 2.426 0 0 0-3.429-3.43l-5.143 5.145a2.426 2.426 0 0 0 0 3.43Zm15.437-12.004a2.424 2.424 0 1 1-3.43-3.43l5.144-5.145a2.424 2.424 0 1 1 3.429 3.43l-5.143 5.145Z" fill="#3D99F5"/>
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M110 168c0 6.075-4.925 11-11 11s-11-4.925-11-11 4.925-11 11-11 11 4.925 11 11Zm-16.5 0a5.5 5.5 0 1 0 11 0 5.5 5.5 0 0 0-11 0Z" fill="#FF5975"/>
+  <!-- Floating Sparkles & Donut Rings -->
+  <!-- Top-Left Yellow Diamond Sparkle -->
+  <path fill="#FFB700" d="M105 135a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1Zm-9.8 9.6a2 2 0 0 0 0-2.7 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.2Zm9.8 4.1a2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8Zm-12.6-9.6a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1Z"/>
+  <!-- Bottom-Right Blue Diamond Sparkle -->
+  <path fill="#87AFFF" d="M490 405a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-4.2-4.1Zm9.8 9.6a2 2 0 0 1 0-2.7 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-4.2-4.2Zm-9.8 4.1a2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8Zm12.6-9.6a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l4.2-4.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-4.2 4.1Z"/>
+  <!-- Top-Left Blue Donut Ring -->
+  <path fill="#87AFFF" fill-rule="evenodd" d="M140 75a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm12 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd"/>
+  <!-- Right Yellow Donut Ring -->
+  <path fill="#FFB700" fill-rule="evenodd" d="M485 320a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm12 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd"/>
+  <!-- Top-Center White Cross -->
+  <path fill="#fff" d="M375 65v7.2h7.2v3.6h-7.2v7.2h-3.6v-7.2h-7.2v-3.6h7.2V65h3.6Z"/>
 
-  <!-- Stacked Document Base Sheets -->
-  <path d="M465.44 138.8a3.785 3.785 0 0 1 1.12 2.684l.274 285.498a3.783 3.783 0 0 1-3.78 3.786l-25.445.025.014 15.149a3.783 3.783 0 0 1-3.779 3.787l-277.487.262a3.783 3.783 0 0 1-3.787-3.779l-.326-338.797a3.786 3.786 0 0 1 3.781-3.787l25.445-.024-.014-15.15a3.783 3.783 0 0 1 3.779-3.786l225.377-.213L465.44 138.8Z" fill="#FEF08A"/>
-  <path d="m141.488 431.814-.325-338.796a3.783 3.783 0 0 1 3.779-3.787l225.378-.213 54.827 54.345a3.781 3.781 0 0 1 1.12 2.683l.274 285.499a3.783 3.783 0 0 1-3.779 3.786l-277.487.263a3.783 3.783 0 0 1-3.787-3.78Z" fill="#fff"/>
-  <path d="m371.437 89.016-1.117.001m0 0-225.378.214a3.783 3.783 0 0 0-3.779 3.787l.325 338.796a3.783 3.783 0 0 0 3.787 3.78l277.487-.263a3.783 3.783 0 0 0 3.779-3.786l-.274-285.499a3.781 3.781 0 0 0-1.12-2.683L370.32 89.017Z" stroke="#D1D1D1" stroke-width="2.571"/>
-  
-  <!-- Main Foreground Document Sheet -->
-  <path d="m170.698 412.848-.325-338.797a3.783 3.783 0 0 1 3.779-3.787l225.378-.213 54.827 54.345a3.784 3.784 0 0 1 1.12 2.683l.274 285.499a3.783 3.783 0 0 1-3.779 3.787l-277.487.262a3.783 3.783 0 0 1-3.787-3.779Z" fill="#fff"/>
-  <path d="M400.647 70.05h-1.117m0 0-225.378.214a3.783 3.783 0 0 0-3.779 3.787l.325 338.797a3.783 3.783 0 0 0 3.787 3.779l277.487-.262a3.783 3.783 0 0 0 3.779-3.787l-.274-285.499a3.784 3.784 0 0 0-1.12-2.683L399.53 70.051Z" stroke="#D1D1D1" stroke-width="2.571"/>
-  <path d="m399.601 125.56-.053-55.507 55.946 55.454-55.893.053Z" fill="#D1D1D1"/>
+  <!-- Precision Caliper / Compression Clamp Guide (Left) -->
+  <path stroke="#604DBF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="M195 420h-34V105h34m-34 140h22m-22-35h22m-22 70h20m-20-140h20m-20 105h20m-20-70h20m-20 175h20"/>
 
-  <!-- Hero Focal Badge: Sunny Yellow Circular Compression Core -->
-  <rect x="220" y="140" width="176" height="176" rx="88" fill="#FACC15"/>
-  
-  <!-- Inset Squeeze & Size Comparison Graphic -->
-  <g transform="translate(255, 175)">
-    <!-- Before & After Size Meters -->
-    <rect x="0" y="10" width="105" height="14" rx="7" fill="#FEFCE8"/>
-    <rect x="0" y="10" width="90" height="14" rx="7" fill="#CA8A04"/>
-    <text x="52" y="21" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="9" font-weight="900" text-anchor="middle">14.8 MB (ORIGINAL)</text>
+  <!-- Large Original Document Outline (Dashed Lavender Bounding Box) -->
+  <path stroke="#A99DEB" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 8" d="M215 105h175l42 42v155"/>
+  <path fill="#A99DEB" d="M390 105v38a4 4 0 0 0 4 4h38l-42-42Z"/>
 
-    <!-- Downward Squeeze Arrow -->
-    <path d="M 52 32 V 52 M 42 44 L 52 54 L 62 44" stroke="#713F12" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <rect x="15" y="62" width="75" height="28" rx="14" fill="#10B981"/>
-    <text x="52" y="80" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="13" font-weight="900" text-anchor="middle">1.9 MB (-85%)</text>
+  <!-- Original Size Badge (Subtle Pill in top corner of dashed doc) -->
+  <g transform="translate(235, 120)">
+    <rect width="90" height="30" rx="15" fill="#EDE9FE"/>
+    <text x="45" y="20" fill="#6D28D9" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" text-anchor="middle">25.0 MB</text>
   </g>
 
-  <!-- Caliper Indicators & Metrics -->
-  <path stroke="#EAB308" stroke-linecap="round" stroke-width="7.892" d="m373.757 71.293 14.965-6.45m-10.831 28.013 15.143 6.02m-31.379-43.682 6.021-15.143"/>
+  <!-- Inward Compression Directional Arrow (Top-Right) -->
+  <path stroke="#604DBF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="M440 155 L375 220"/>
+  <path fill="#604DBF" d="M370 205 L370 226 L391 226 Z"/>
+
+  <!-- Compressed Document: Deep Shadow Layer (Periwinkle Blue) -->
+  <path fill="#769EEB" d="M230 426V216a6 6 0 0 1 6-6h130a6 6 0 0 1 4.2 1.8l36 36a6 6 0 0 1 1.8 4.2v174a6 6 0 0 1-6 6H236a6 6 0 0 1-6-6Z"/>
+
+  <!-- Compressed Document: Soft Offset Drop Shadow -->
+  <path fill="#4338CA" opacity="0.12" d="M224 430V220a6 6 0 0 1 6-6h130a6 6 0 0 1 4.2 1.8l36 36a6 6 0 0 1 1.8 4.2v174a6 6 0 0 1-6 6H230a6 6 0 0 1-6-6Z"/>
+
+  <!-- Compressed Document: Main Crisp Front Sheet -->
+  <path fill="#FFFFFF" stroke="#E0E7FF" stroke-width="2" d="M218 416V206a6 6 0 0 1 6-6h130a6 6 0 0 1 4.2 1.8l36 36a6 6 0 0 1 1.8 4.2v174a6 6 0 0 1-6 6H224a6 6 0 0 1-6-6Z"/>
+
+  <!-- Folded Corner with Dimensional Tone -->
+  <path fill="#9C8BF0" d="M354 206v36a4 4 0 0 0 4 4h36l-40-40Z"/>
+
+  <!-- Document Text Line Placeholders -->
+  <rect x="246" y="295" width="120" height="9" rx="4.5" fill="#C7D2FE"/>
+  <rect x="246" y="318" width="120" height="8" rx="4" fill="#E0E7FF"/>
+  <rect x="246" y="338" width="120" height="8" rx="4" fill="#E0E7FF"/>
+  <rect x="246" y="358" width="90" height="8" rx="4" fill="#E0E7FF"/>
+  <rect x="246" y="378" width="110" height="8" rx="4" fill="#C7D2FE"/>
+
+  <!-- PDF Red Tab Badge -->
+  <g transform="translate(190, 220)">
+    <rect width="90" height="50" rx="8" fill="#FF5975"/>
+    <text x="45" y="34" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" letter-spacing="1.5" text-anchor="middle">PDF</text>
+  </g>
+
+  <!-- Result Floating Pill: 2.5 MB (-90%) -->
+  <g transform="translate(290, 360)">
+    <!-- Pill Base Shadow -->
+    <rect x="0" y="4" width="180" height="50" rx="25" fill="#047857" opacity="0.3"/>
+    <!-- Pill Body -->
+    <rect width="180" height="50" rx="25" fill="#10B981"/>
+    <!-- Checkmark Circle -->
+    <circle cx="28" cy="25" r="14" fill="#FFFFFF"/>
+    <path fill="#10B981" d="M23 25.5l3.5 3.5 7-7 1.8 1.8-8.8 8.8-5.3-5.3 1.8-1.8Z"/>
+    <!-- Text -->
+    <text x="52" y="31" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" letter-spacing="0.3">2.5 MB</text>
+    <!-- Dark green badge inside pill -->
+    <rect x="114" y="13" width="56" height="24" rx="12" fill="#047857"/>
+    <text x="142" y="29" fill="#A7F3D0" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" text-anchor="middle">-90%</text>
+  </g>
 </svg>
+          </div>
         </div>
       </div>
 
-      <!-- Story 2: 100% Visual Clarity -->
-      <div style="display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 50px; margin-bottom: 70px;">
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="Crisp Visual Quality Retention">
-  <!-- Tilted Rounded Pastel Backplates -->
-  <rect width="280" height="280" rx="24" transform="rotate(64.95 240 260) skewX(.037)" fill="#FEFCE8"/>
-  <rect width="260" height="260" rx="24" transform="rotate(-129.114 210 120) skewX(.059)" fill="#E5EEFF"/>
+      <!-- Story 2: Read Every Line Clearly -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; margin-bottom: 96px;">
+        <div style="display: flex; align-items: center; justify-content: center; order: 1;">
+          <div style="width: 100%; max-width: 480px; display: block;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 600 520">
+  <defs>
+    <clipPath id="fk-sp2-loupe-clip">
+      <circle cx="345" cy="305" r="74"/>
+    </clipPath>
+    <linearGradient id="fk-sp2-photo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#F472B6"/>
+    </linearGradient>
+  </defs>
 
-  <!-- Accents -->
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M60 90c0 6.075-4.925 11-11 11s-11-4.925-11-11 4.925-11 11-11 11 4.925 11 11Zm-16.5 0a5.5 5.5 0 1 0 11 0 5.5 5.5 0 0 0-11 0Z" fill="#FF5975"/>
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M520 180c0 6.075-4.925 11-11 11s-11-4.925-11-11 4.925-11 11-11 11 4.925 11 11Zm-16.5 0a5.5 5.5 0 1 0 11 0 5.5 5.5 0 0 0-11 0Z" fill="#FACC15"/>
+  <!-- Pastel Tilted Rounded Backplates -->
+  <rect width="300" height="300" x="550" y="260" fill="#ECF5FE" rx="24" transform="rotate(118 550 260)"/>
+  <rect width="240" height="240" x="330" y="70" fill="#D8EBFD" rx="22" transform="rotate(104 330 70)"/>
 
-  <!-- Foreground Document Sheet with High-Res Image & Loupe -->
-  <g transform="translate(130, 85)">
-    <rect x="0" y="0" width="340" height="340" rx="20" fill="#FFFFFF" stroke="#D1D1D1" stroke-width="2.571"/>
-    
-    <!-- Document Header -->
-    <rect x="30" y="30" width="100" height="10" rx="5" fill="#FACC15"/>
-    <rect x="30" y="52" width="220" height="5" rx="2.5" fill="#D4D4D4"/>
-    <rect x="30" y="66" width="180" height="5" rx="2.5" fill="#D4D4D4"/>
+  <!-- Floating Sparkles & Donut Rings -->
+  <path fill="#FFB700" d="M495 410a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1Zm-9.8 9.6a2 2 0 0 0 0-2.7 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.2Zm9.8 4.1a2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8Zm-12.6-9.6a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1Z"/>
+  <path fill="#87AFFF" d="M382 95a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1Zm9.8-9.6a2 2 0 0 0 0 2.7 2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.2Zm-9.8-4.1a2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8Zm12.6 9.6a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1Z"/>
+  <path fill="#fff" d="M104 160v7.2h7.2v3.6h-7.2v7.2h-3.6v-7.2h-7.2v-3.6h7.2V160h3.6Z"/>
+  <path fill="#87AFFF" fill-rule="evenodd" d="M420 425a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm12 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd"/>
 
-    <!-- High-Res Photo Block -->
-    <g transform="translate(30, 95)">
-      <rect x="0" y="0" width="280" height="120" rx="10" fill="#FEFCE8" stroke="#FDE047" stroke-width="2"/>
-      <!-- Mountains and Sun -->
-      <circle cx="210" cy="40" r="18" fill="#FDE047"/>
-      <polygon points="20,120 90,45 160,120" fill="#3B82F6" opacity="0.8"/>
-      <polygon points="110,120 180,60 250,120" fill="#1D4ED8" opacity="0.9"/>
-    </g>
+  <!-- Layered Stack of High-Res Documents -->
+  <!-- Layer 1 (Dark Teal Base) -->
+  <path fill="#69CED0" d="M185 395V158a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H189a4 4 0 0 1-4-4Z"/>
+  <!-- Layer 2 (Light Teal Mid) -->
+  <path fill="#9FE6E8" d="M200 380V143a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H204a4 4 0 0 1-4-4Z"/>
 
-    <!-- Floating Magnifying Glass Loupe Inspecting Sharp Text -->
-    <g transform="translate(185, 185)">
-      <path d="M 65 65 L 100 100" stroke="#0A0A0A" stroke-width="12" stroke-linecap="round"/>
-      <path d="M 65 65 L 95 95" stroke="#FACC15" stroke-width="7" stroke-linecap="round"/>
-      <circle cx="38" cy="38" r="42" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="5"/>
-      <circle cx="38" cy="38" r="36" fill="#FEFCE8"/>
-      
-      <text x="38" y="30" fill="#0A0A0A" font-family="'Outfit', sans-serif" font-size="14" font-weight="900" text-anchor="middle">100%</text>
-      <text x="38" y="46" fill="#CA8A04" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" text-anchor="middle">SHARP</text>
-      <path d="M 22 54 L 32 62 L 52 40" stroke="#10B981" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>
+  <!-- Layer 3 Base Shadow -->
+  <path fill="#0E7490" opacity="0.15" d="M220 372V135a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H224a4 4 0 0 1-4-4Z"/>
+  <!-- Layer 3 (Crisp Front Document) -->
+  <path fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2" d="M215 365V128a4 4 0 0 1 4-4h165l40 40v201a4 4 0 0 1-4 4H219a4 4 0 0 1-4-4Z"/>
+  <!-- Folded Corner in Teal Accent -->
+  <path fill="#4CCBCE" d="M384 124v37a4 4 0 0 0 4 4h37l-41-41Z"/>
 
-    <!-- Bottom Quality Badge -->
-    <rect x="30" y="280" width="280" height="32" rx="8" fill="#FEFCE8" stroke="#FEF08A"/>
-    <text x="170" y="301" fill="#A16207" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" text-anchor="middle">✓ Vector Font DPI &amp; Image Clarity Preserved</text>
+  <!-- Photo Element inside Front Doc (Sunset / Mountain Landscape) -->
+  <g transform="translate(235, 170)">
+    <rect width="165" height="72" rx="6" fill="url(#fk-sp2-photo)"/>
+    <!-- Sun -->
+    <circle cx="132" cy="24" r="12" fill="#FEF08A"/>
+    <!-- Mountain Peaks -->
+    <polygon points="12,72 65,32 105,72" fill="#4338CA" opacity="0.8"/>
+    <polygon points="75,72 120,26 160,72" fill="#312E81" opacity="0.9"/>
   </g>
+
+  <!-- Typography Lines on Doc -->
+  <rect x="235" y="258" width="165" height="8" rx="4" fill="#94A3B8"/>
+  <rect x="235" y="274" width="145" height="6.5" rx="3.25" fill="#CBD5E1"/>
+  <rect x="235" y="289" width="155" height="6.5" rx="3.25" fill="#CBD5E1"/>
+  <rect x="235" y="304" width="130" height="6.5" rx="3.25" fill="#CBD5E1"/>
+  <rect x="235" y="319" width="150" height="6.5" rx="3.25" fill="#CBD5E1"/>
+
+  <!-- Isometric Frosted Magnifying Loupe -->
+  <g>
+    <!-- Loupe Shadow underneath -->
+    <circle cx="352" cy="318" r="84" fill="#1E1B4B" opacity="0.18"/>
+    <!-- Loupe Handle (Angled at 42 deg) -->
+    <rect x="395" y="352" width="105" height="26" rx="13" fill="#322472" transform="rotate(42 395 352)"/>
+    <rect x="402" y="357" width="90" height="10" rx="5" fill="#493A91" transform="rotate(42 395 352)"/>
+
+    <!-- Loupe Outer Ring Frame -->
+    <circle cx="345" cy="305" r="86" fill="#493A91"/>
+    <circle cx="345" cy="305" r="78" fill="#604DBF"/>
+    <circle cx="345" cy="305" r="74" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Content Inspected Inside Loupe (Clipped Circle) -->
+  <g clip-path="url(#fk-sp2-loupe-clip)">
+    <!-- Crisp Vector Coordinate Grid inside Lens -->
+    <rect x="260" y="220" width="170" height="170" fill="#F8FAFC"/>
+    <path stroke="#E2E8F0" stroke-width="1.2" d="M260 250h170M260 275h170M260 300h170M260 325h170M260 350h170"/>
+    <path stroke="#E2E8F0" stroke-width="1.2" d="M290 220v170M315 220v170M340 220v170M365 220v170M390 220v170"/>
+
+    <!-- Large Sharp Serif Glyph "A" with Vector Anchor Nodes -->
+    <text x="345" y="324" fill="#1E1B4B" font-family="'Times New Roman', Georgia, serif" font-size="62" font-weight="700" text-anchor="middle">A</text>
+    <!-- Precision Vector Anchor Handles / Points on Glyph -->
+    <rect x="342" y="271" width="7" height="7" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+    <rect x="321" y="319" width="7" height="7" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+    <rect x="362" y="319" width="7" height="7" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+
+    <!-- Lens Glass Reflection Arc -->
+    <path d="M290 260 A 62 62 0 0 1 390 260" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- 100% SHARP Pill Badge Mounted on Loupe Rim -->
+  <g transform="translate(285, 365)">
+    <!-- Badge Shadow -->
+    <rect x="0" y="3" width="130" height="34" rx="17" fill="#065F46" opacity="0.3"/>
+    <!-- Badge Body -->
+    <rect width="130" height="34" rx="17" fill="#10B981"/>
+    <circle cx="17" cy="17" r="10" fill="#FFFFFF"/>
+    <path fill="#10B981" d="M13 17.5l2.5 2.5 5-5 1.4 1.4-6.4 6.4-3.9-3.9 1.4-1.4Z"/>
+    <text x="36" y="23" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="12" font-weight="800" letter-spacing="0.5">100% SHARP</text>
+  </g>
+
+  <!-- Sparkle on the glass rim -->
+  <path fill="#FFB700" d="M280 235a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1Zm-9.8 9.6a2 2 0 0 0 0-2.7 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.2Zm9.8 4.1a2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8Zm-12.6-9.6a2 2 0 0 0 2.8 0 2 2 0 0 0 0-2.8l-4.2-4.1a2 2 0 0 0-2.8 0 2 2 0 0 0 0 2.8l4.2 4.1Z"/>
 </svg>
+          </div>
         </div>
-        <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Crystal-Clear Text &amp; Image Sharpness</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Unlike primitive compression tools that produce blurry, illegible scans, FileKit uses perceptual quantization algorithms that safeguard delicate typographic serifs, fine mathematical lines, and photo clarity.</p>
-          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; color: #383838;">
-            <li style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #EAB308; font-weight: bold;">✓</span> <strong>Adaptive Resampling:</strong> Downsamples heavy 600 DPI graphics to clean 150–300 DPI web standards.
+        <div style="order: 2;">
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.025em; margin-bottom: 16px;">Read Every Line Clearly at 100% Zoom</h3>
+          <p style="font-size: 15.5px; color: #4B5563; line-height: 1.7; margin-bottom: 14px;">Cheap compression tools turn documents into fuzzy, unreadable scans. FileKit handles text and graphics differently.</p>
+          <p style="font-size: 15.5px; color: #4B5563; line-height: 1.7; margin-bottom: 20px;">Vector text, typographic serifs, and mathematical formulas are left completely untouched in pure vector format. Only oversized raster photos are downsampled, so your letters look just as sharp on an iPhone, 4K monitor, or printed page.</p>
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; color: #374151;">
+            <li style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓</span> <span><strong>True Vector Text:</strong> Fonts remain razor-sharp at infinite zoom &mdash; no jagged pixel edges or blurry letters.</span>
             </li>
-            <li style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #EAB308; font-weight: bold;">✓</span> <strong>Vector Font Preservation:</strong> Keeps vector glyphs 100% sharp at infinite zoom levels.
-            </li>
-            <li style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #EAB308; font-weight: bold;">✓</span> <strong>Structure Intact:</strong> Retains hyperlinks, table of contents bookmarks, and form fields.
+            <li style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓</span> <span><strong>Document Structure Preserved:</strong> Table of contents links, bookmarks, form fields, and signatures stay clickable and intact.</span>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Story 3: 100% In-Memory Privacy -->
-      <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
+      <!-- Story 3: Zero Server Uploads -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; margin-bottom: 96px;">
         <div>
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">Zero Server Uploads &amp; 100% Client Privacy</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7; margin-bottom: 14px;">Most PDF websites upload your sensitive personal and corporate documents to third-party cloud servers. FileKit executes the entire compression pipeline inside your browser using WebAssembly.</p>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your files never leave your device, ensuring total privacy, GDPR/HIPAA compliance, and lightning-fast processing speeds without queue times.</p>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.025em; margin-bottom: 16px;">Zero Server Uploads. True Client-Side Privacy.</h3>
+          <p style="font-size: 15.5px; color: #4B5563; line-height: 1.7; margin-bottom: 14px;">Most online PDF compressors upload your contracts, tax filings, and bank statements to remote cloud servers. You never know who has access or how long copies sit on a server hard drive.</p>
+          <p style="font-size: 15.5px; color: #4B5563; line-height: 1.7; margin-bottom: 20px;">FileKit runs the entire compression process right in your browser using WebAssembly. Your files never leave your computer or phone &mdash; zero bytes are sent across the internet.</p>
+          <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; color: #374151;">
+            <li style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓</span> <span><strong>Zero Network Traffic:</strong> Works offline once loaded. Disconnect your Wi-Fi and it still compresses files in your device RAM.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: #10B981; font-weight: bold; font-size: 16px;">✓</span> <span><strong>Generous Free Use:</strong> Free daily use with no account required. Upgrade anytime to Monthly or a permanent $14 Lifetime License for unlimited heavy volume.</span>
+            </li>
+          </ul>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
-          <svg width="520" height="420" viewBox="0 0 600 520" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-story-svg" aria-label="100% In-Browser Compression Privacy">
-  <!-- Tilted Rounded Pastel Backplates -->
-  <rect width="290" height="290" rx="24" transform="rotate(-73.794 298.33 5.28) skewX(.059)" fill="#FEFCE8"/>
-  <rect width="270" height="270" rx="24" transform="rotate(-113.796 233.283 214.366) skewX(.059)" fill="#ECFDF5"/>
+          <div style="width: 100%; max-width: 480px; display: block;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 600 520">
+  <!-- Pastel Tilted Rounded Backplates -->
+  <rect width="245" height="245" fill="#D8EBFD" rx="22" transform="scale(1 -1) rotate(-76 80 -230)"/>
+  <rect width="300" height="300" fill="#ECF5FE" rx="24" transform="scale(1 -1) rotate(-62 -180 -190)"/>
 
-  <!-- High Encryption Faceted Shield with Compression Accent -->
-  <g transform="translate(180, 110)">
-    <path fill="#FACC15" stroke="#F2F6FF" stroke-width="5.646" d="M114.85 29.16h-.003a43.06 43.06 0 0 1-19.27 4.55h-23.85a11.11 11.11 0 0 0-11.11 11.11v90.45a72.93 72.93 0 0 0 35.41 62.54l31.8 19.08a11.11 11.11 0 0 0 11.43 0l31.8-19.08a72.93 72.93 0 0 0 35.41-62.54V44.82a11.11 11.11 0 0 0-11.11-11.11h-23.85c-6.69 0-13.29-1.55-19.27-4.55l-13.72-6.86a11.11 11.11 0 0 0-9.94 0l-8.73 4.36Z"/>
-    <path fill="#EAB308" d="M69.06 44.83c0-1.46 1.18-2.64 2.64-2.64h23.85c8 0 15.9-1.86 23.06-5.45l13.43-6.71c.89-.45 1.46-.13 1.46.87v177.46c0 .93-.49 1.14-1.28.66l-31.88-19.13a64.46 64.46 0 0 1-31.28-55.27V44.83Z"/>
-    <path fill="#fff" d="M163.89 104.78a2.64 2.64 0 0 1 0 3.74l-34.93 34.93a2.64 2.64 0 0 1-3.74 0l-22.04-22.04a2.64 2.64 0 0 1 0-3.74l9.15-9.15a2.64 2.64 0 0 1 3.74 0l9.15 9.15a2.64 2.64 0 0 0 3.74 0l22.04-22.04a2.64 2.64 0 0 1 3.74 0l9.15 9.15Z"/>
+  <!-- Floating Sparkles & Donut Rings -->
+  <path fill="#FFB700" d="M475 113a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.1Zm-9.8-9.6a2 2 0 0 1 0 2.7 2 2 0 0 1-2.8 0l-4.2-4.1a2 2 0 0 1 0-2.8 2 2 0 0 1 2.8 0l4.2 4.2Zm9.8-4.1a2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8 2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8Zm-12.6 9.6a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-4.2 4.1a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l4.2-4.1Z"/>
+  <path fill="#87AFFF" d="M205 466a2 2 0 0 1 0 2.8 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8 2 2 0 0 1 2.8 0l-4.2-4.1Zm9.8 9.6a2 2 0 0 1 0 2.7 2 2 0 0 1 2.8 0l4.2 4.1a2 2 0 0 1 0 2.8 2 2 0 0 1-2.8 0l-4.2-4.2Zm-9.8 4.1a2 2 0 0 0 2.8 0l4.2-4.1a2 2 0 0 0 0-2.8 2 2 0 0 0-2.8 0l-4.2 4.1a2 2 0 0 0 0 2.8Zm12.6-9.6a2 2 0 0 1-2.8 0 2 2 0 0 1 0-2.8l4.2-4.1a2 2 0 0 1 2.8 0 2 2 0 0 1 0 2.8l-4.2 4.1Z"/>
+  <path fill="#fff" fill-rule="evenodd" d="M254 422a8 8 0 1 0 16 0 8 8 0 0 0-16 0Zm12 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clip-rule="evenodd"/>
 
-    <!-- Green Shield Badge Floating on Side -->
-    <g transform="translate(20, 70)">
-      <circle cx="35" cy="35" r="28" fill="#10B981" stroke="#FFFFFF" stroke-width="3"/>
-      <path d="M 24 35 L 32 43 L 48 27" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Device Shadow Base Ellipse -->
+  <ellipse cx="305" cy="405" rx="195" ry="20" fill="#769EEB" opacity="0.4"/>
+  <ellipse cx="305" cy="405" rx="150" ry="12" fill="#4338CA" opacity="0.15"/>
+
+  <!-- Blocked Cloud Server (Upper-Right) -->
+  <g transform="translate(385, 70)">
+    <!-- Soft Cloud -->
+    <path fill="#E2E8F0" d="M42 55a28 28 0 0 1 54-8 20 20 0 0 1 30 17 17 17 0 0 1-6 32H35a22 22 0 0 1 7-41Z"/>
+    <!-- Upload Arrow Inside Cloud -->
+    <path stroke="#94A3B8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="M65 78V58M56 66l9-9 9 9"/>
+    <!-- Red Forbidden Slash Badge -->
+    <circle cx="102" cy="56" r="22" fill="#FF5975"/>
+    <circle cx="102" cy="56" r="17" fill="#FFFFFF"/>
+    <path stroke="#FF5975" stroke-width="4" stroke-linecap="round" d="M90 44l24 24M90 56a12 12 0 1 0 24 0 12 12 0 1 0-24 0Z"/>
+  </g>
+
+  <!-- Modern Isometric Laptop / Workstation -->
+  <!-- Base Keyboard Deck Front Face -->
+  <path fill="#322472" d="M135 378h340v12a6 6 0 0 1-6 6H141a6 6 0 0 1-6-6v-12Z"/>
+  <!-- Base Keyboard Deck Top Surface -->
+  <path fill="#4EC4C8" d="M150 364h310l15 14H135l15-14Z"/>
+  <!-- Trackpad indent -->
+  <rect x="275" y="370" width="60" height="5" rx="2.5" fill="#3B2B85"/>
+
+  <!-- Laptop Screen Outer Chassis -->
+  <path fill="#493A91" d="M445 160H165c-12 0-20 8-20 20v184h320V180c0-12-8-20-20-20Z"/>
+  <!-- Screen Bezel -->
+  <path fill="#846DFF" d="M448 178H162a3 3 0 0 0-3 3v160h292V181a3 3 0 0 0-3-3Z"/>
+  <!-- Screen Display Surface -->
+  <rect x="172" y="190" width="266" height="142" rx="4" fill="#F8FAFC"/>
+
+  <!-- Left Side: In-Browser Document Icon -->
+  <g transform="translate(195, 215)">
+    <rect width="64" height="78" rx="6" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="2"/>
+    <rect width="28" height="16" rx="3" fill="#FF5975"/>
+    <text x="14" y="12" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="9" font-weight="800" text-anchor="middle">PDF</text>
+    <rect x="8" y="26" width="48" height="4" rx="2" fill="#C7D2FE"/>
+    <rect x="8" y="36" width="40" height="4" rx="2" fill="#E0E7FF"/>
+    <rect x="8" y="46" width="44" height="4" rx="2" fill="#E0E7FF"/>
+    <rect x="8" y="56" width="32" height="4" rx="2" fill="#E0E7FF"/>
+  </g>
+
+  <!-- Right Side / Center: Glowing Emerald Shield of Privacy -->
+  <g transform="translate(295, 195)">
+    <!-- Shield Shadow -->
+    <path fill="#047857" opacity="0.25" d="M50 4 C76 4 94 18 96 42 C96 74 64 98 50 108 C36 98 4 74 4 42 C6 18 24 4 50 4 Z"/>
+    <!-- Outer Emerald Shield -->
+    <path fill="#10B981" d="M48 0 C74 0 92 14 94 38 C94 70 62 94 48 104 C34 94 2 70 2 38 C4 14 22 0 48 0 Z"/>
+    <!-- Inner Deep Green Core -->
+    <path fill="#059669" d="M48 8 C70 8 84 20 86 40 C86 68 58 88 48 96 C38 88 10 68 10 40 C12 20 26 8 48 8 Z"/>
+
+    <!-- Crisp White Padlock Inside Shield -->
+    <g transform="translate(32, 28)">
+      <!-- Shackle -->
+      <path stroke="#FFFFFF" stroke-width="4.5" fill="none" stroke-linecap="round" d="M8 18V11a8 8 0 0 1 16 0v7"/>
+      <!-- Lock Body -->
+      <rect y="17" width="32" height="24" rx="5" fill="#FFFFFF"/>
+      <!-- Keyhole -->
+      <circle cx="16" cy="27" r="3" fill="#059669"/>
+      <path stroke="#059669" stroke-width="2.5" stroke-linecap="round" d="M16 28v5"/>
     </g>
   </g>
 
-  <!-- Plus Crosses & Accent Dots -->
-  <path fill="#FFB700" d="M120 70v4.54h4.54v2.27H120v4.54h-2.27v-4.54h-4.54v-2.27h4.54V70h2.27Z"/>
-  <path fill="#FFB700" d="M480 420v4.54h4.54v2.27H480v4.54h-2.27v-4.54h-4.54v-2.27h4.54V420h2.27Z"/>
+  <!-- Floating Badge: 100% IN-BROWSER • 0 BYTES SENT -->
+  <g transform="translate(170, 365)">
+    <!-- Badge Shadow -->
+    <rect x="0" y="4" width="270" height="48" rx="24" fill="#0F172A" opacity="0.3"/>
+    <!-- Badge Body -->
+    <rect width="270" height="48" rx="24" fill="#1E293B"/>
+    <!-- Green Pulse Indicator Dot -->
+    <circle cx="28" cy="24" r="8" fill="#10B981"/>
+    <circle cx="28" cy="24" r="13" fill="#10B981" opacity="0.25"/>
+    <text x="50" y="30" fill="#F8FAFC" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="0.4">100% IN-BROWSER (WASM)</text>
+  </g>
 </svg>
+          </div>
         </div>
       </div>
 
       <!-- Step-by-Step How-To Section -->
-      <div style="background: #FEFCE8; border-radius: 20px; padding: 48px 40px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #FEF08A;">
+      <div style="background: #F8FAFC; border-radius: 16px; padding: 44px 38px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin-bottom: 70px; border: 1px solid #E2E8F0;">
         <div>
-          <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 5-STEP WORKFLOW</span>
-          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0A0A0A; margin-bottom: 24px;">How To Compress PDF Files for Free</h2>
-          <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; padding: 0;">
+          <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; color: #DC2626; text-transform: uppercase; margin-bottom: 8px;">SIMPLE 4-STEP WORKFLOW</span>
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.02em; margin-bottom: 24px;">How To Compress PDF Files Online</h2>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 16px; padding: 0;">
             <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Upload your document:</strong> Drag and drop your PDF into the sunny yellow dropzone above or click "Select file".</span>
+              <span style="width: 26px; height: 26px; border-radius: 50%; background: #0F172A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">1</span>
+              <span style="font-size: 14.5px; color: #4B5563; line-height: 1.6;"><strong>Drop your PDF:</strong> Drag your document into the dropzone above or click &ldquo;Choose Files&rdquo;.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Choose compression level:</strong> Select Recommended Compression for the ideal balance between quality and file size.</span>
+              <span style="width: 26px; height: 26px; border-radius: 50%; background: #0F172A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">2</span>
+              <span style="font-size: 14.5px; color: #4B5563; line-height: 1.6;"><strong>Select compression strength:</strong> Choose Extreme (for 100KB&ndash;200KB portal limits), Recommended (balanced for web &amp; email), or Low (best for print fidelity).</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Click Compress:</strong> WebAssembly optimizes images, streams, and font subsets in milliseconds.</span>
+              <span style="width: 26px; height: 26px; border-radius: 50%; background: #0F172A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">3</span>
+              <span style="font-size: 14.5px; color: #4B5563; line-height: 1.6;"><strong>Instant local processing:</strong> Your device's multi-core CPU optimizes the document in browser RAM in milliseconds.</span>
             </li>
             <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Preview size savings:</strong> Review your exact byte savings (e.g. 14.8 MB ➔ 1.9 MB, 85% saved).</span>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 14px;">
-              <span style="width: 28px; height: 28px; border-radius: 14px; background: #EAB308; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">5</span>
-              <span style="font-size: 14.5px; color: #383838; line-height: 1.65;"><strong>Download optimized PDF:</strong> Save your lightweight, email-ready PDF to your local device.</span>
+              <span style="width: 26px; height: 26px; border-radius: 50%; background: #0F172A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;">4</span>
+              <span style="font-size: 14.5px; color: #4B5563; line-height: 1.6;"><strong>Download smaller PDF:</strong> Instantly save your lightweight, email-ready PDF with zero server upload wait times.</span>
             </li>
           </ul>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
-          <svg width="420" height="320" viewBox="0 0 400 320" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-mascot-scene" aria-label="FileKit Mascot Compressing PDF">
-  <g>
-    <!-- Accent Dots & Stars -->
-    <path fill="#FFB700" fill-rule="evenodd" d="M159.364 98.364a4.537 4.537 0 0 0 4.536 4.539 4.537 4.537 0 0 0 4.536-4.539 4.538 4.538 0 0 0-4.536-4.539 4.538 4.538 0 0 0-4.536 4.54Zm6.894 0a2.36 2.36 0 1 1-4.718.001 2.36 2.36 0 0 1 4.718 0Z" clip-rule="evenodd"/>
-    <path fill="#FFB700" d="M216.164 67.878v4.54h4.536v2.269h-4.536v4.539h-2.268v-4.54h-4.536v-2.269h4.536v-4.539h2.268Z"/>
-    
-    <!-- Character Shadow Base -->
-    <ellipse cx="95.413" cy="252.614" fill="#FEF08A" rx="70.614" ry="12.504"/>
-
-    <!-- Mascot Body & Arms -->
-    <path fill="#B45309" d="M192.416 157.567a1.24 1.24 0 0 0-2.06.606l-5.37 22.154a.596.596 0 0 1-.721.439l-2.674-.648c-.659-.16-1.358.209-1.538.864a1.24 1.24 0 0 0 .903 1.534l4.487 1.087c.167.041.342.056.512.027.51-.086.894-.462 1.009-.934l5.802-23.939a1.239 1.239 0 0 0-.35-1.19Z"/>
-    <path fill="#FACC15" d="m180.958 182.514 6.848-28.252-11.276-2.733-6.55 27.028a1.26 1.26 0 0 0 .927 1.52l10.051 2.437Z"/>
-
-    <!-- Cute Mascot Head & White Fur Body -->
-    <path fill="#fff" stroke="#000" stroke-width="3.544" d="m31.887 133.192 20.786-4.194a486.99 486.99 0 0 0-.403-2.127c-.442-2.307-1.042-5.384-1.646-8.464a6306.908 6306.908 0 0 0-1.828-9.273 49.306 49.306 0 0 0-2.352 2.671c-3.044 3.685-7.758 10.162-14.557 21.387Zm-.99 3.816c2.96 6.51 5.365 15.399 7.327 25.307 2.19 11.058 3.855 23.53 5.103 35.671 2.495 24.279 3.333 47.356 3.339 55.389a.87.87 0 0 0 .257.642.646.646 0 0 0 .54.172c8.148-.943 32.304-4.216 54.607-8.349 11.158-2.068 21.802-4.342 29.735-6.637 3.975-1.15 7.198-2.285 9.446-3.373 1.128-.545 1.938-1.045 2.461-1.481.501-.417.574-.637.577-.637l-.002.01c5.542-30.891 2.409-64.541-3.752-90.617-3.08-13.035-6.9-24.107-10.727-31.948-1.916-3.928-3.802-6.979-5.553-9.052-1.757-2.08-3.125-2.878-4.022-2.995-7.614 1.267-25.115 3.363-40.683 5.14a4786.417 4786.417 0 0 1-27.503 3.052l.386 1.951c.457 2.31 1.064 5.391 1.669 8.472.604 3.081 1.206 6.164 1.65 8.48.22 1.156.404 2.126.528 2.809.062.34.111.618.144.815.016.095.03.19.04.27a1.944 1.944 0 0 1-.08.882 3.147 3.147 0 0 1-.313.55c-.181.184-.652.463-1.013.584l.003.017-24.163 4.876Z"/>
-
-    <!-- Round Yellow Glasses & Eyes -->
-    <circle r="21.694" fill="#FEF08A" stroke="#000" stroke-width="3.544" transform="scale(-1 1) rotate(9.616 -1098.222 -687.77)"/>
-    <circle r="21.694" fill="#FEF08A" stroke="#000" stroke-width="3.544" transform="scale(-1 1) rotate(9.616 -1126.414 -355.175)"/>
-    <path stroke="#000" stroke-width="3.544" d="m108.7 179.268-11.506 1.949"/>
-    <path fill="#000" fill-rule="evenodd" d="M125.16 180.774c2.475-.403 3.357-3.53 2.827-6.791-.53-3.261-2.356-5.948-4.832-5.546-2.476.403-3.357 3.53-2.827 6.791.53 3.261 2.356 5.948 4.832 5.546Zm-39.22 6.03c2.475-.402 3.356-3.529 2.827-6.79-.53-3.261-2.356-5.948-4.832-5.546-2.476.402-3.357 3.53-2.827 6.791.53 3.26 2.356 5.948 4.832 5.545Z" clip-rule="evenodd"/>
-
-    <!-- Compressed Document on the Right with -85% Squeeze -->
-    <path fill="#FEFCE8" d="M239.521 212.749V73.117a4.606 4.606 0 0 1 4.606-4.605h91.284c1.221 0 2.392.485 3.256 1.349l21.155 21.155a4.604 4.604 0 0 1 1.349 3.256V212.75a4.605 4.605 0 0 1-4.605 4.605H244.127a4.606 4.606 0 0 1-4.606-4.605Z"/>
-    <path fill="#EAB308" d="M337.494 89.13V68.511c1.866.636 23.725 22.738 23.678 23.688h-20.608a3.07 3.07 0 0 1-3.07-3.07Z"/>
-    
-    <!-- Red PDF Badge -->
-    <rect width="65.282" height="37.487" x="218.853" y="80.52" fill="#FF7761" rx="3.739"/>
-    <path fill="#fff" d="M230.049 108.925V91.337h6.043c.971 0 1.879.099 2.724.296.846.18 1.583.495 2.212.945.63.431 1.124 1.016 1.484 1.753.378.72.567 1.61.567 2.67 0 1.026-.189 1.916-.567 2.671a5.053 5.053 0 0 1-1.484 1.862 6.377 6.377 0 0 1-2.185 1.079 9.667 9.667 0 0 1-2.643.351h-2.186v5.961h-3.965Zm3.965-9.118h1.943c2.158 0 3.237-.935 3.237-2.805 0-.917-.288-1.565-.863-1.943-.576-.377-1.403-.566-2.482-.566h-1.835v5.314Zm12.105 9.118V91.337h4.964c1.349 0 2.563.17 3.642.512 1.079.342 2.005.872 2.778 1.592.774.701 1.367 1.6 1.781 2.697.413 1.097.62 2.401.62 3.912 0 1.511-.207 2.824-.62 3.939-.414 1.115-.998 2.041-1.754 2.778-.755.72-1.663 1.259-2.724 1.619-1.044.36-2.213.539-3.507.539h-5.18Zm3.966-3.21h.755c.755 0 1.439-.099 2.05-.297a3.84 3.84 0 0 0 1.565-.944c.431-.449.764-1.034.998-1.753.252-.72.378-1.61.378-2.671 0-1.043-.126-1.915-.378-2.617-.234-.719-.567-1.286-.998-1.7a3.617 3.617 0 0 0-1.565-.916 7.256 7.256 0 0 0-2.05-.27h-.755v11.168Zm13.158 3.21V91.337h11.087v3.345h-7.122v4.073h6.097v3.345h-6.097v6.825h-3.965Z"/>
-
-    <!-- Green -85% Reduced Badge -->
-    <g transform="translate(260, 140)">
-      <rect x="0" y="0" width="70" height="24" rx="12" fill="#10B981"/>
-      <text x="35" y="16" fill="#FFFFFF" font-family="'Outfit', sans-serif" font-size="11" font-weight="900" text-anchor="middle">-85%</text>
-    </g>
-
-    <ellipse cx="296.694" cy="251.091" fill="#FEF08A" rx="40.503" ry="7.278"/>
-    <path stroke="#FFB700" stroke-linecap="round" stroke-width="7.892" d="m373.757 71.293 14.965-6.45m-10.831 28.013 15.143 6.02m-31.379-43.682 6.021-15.143"/>
-  </g>
-</svg>
+          <svg width="380" height="260" viewBox="0 0 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" class="fk-seo-workflow-preview">
+            <rect width="380" height="260" rx="12" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="drop-shadow(0 4px 12px rgba(15,23,42,0.06))"/>
+            <rect width="380" height="32" rx="12" fill="#F1F5F9"/>
+            <circle cx="16" cy="16" r="4" fill="#CBD5E1"/>
+            <circle cx="28" cy="16" r="4" fill="#CBD5E1"/>
+            <circle cx="40" cy="16" r="4" fill="#CBD5E1"/>
+            <text x="190" y="20" fill="#64748B" font-family="'Outfit', sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">Universal Compress Pipeline</text>
+            
+            <g transform="translate(30, 56)">
+              <rect width="80" height="80" rx="8" fill="#F8FAFC" stroke="#E2E8F0"/>
+              <path d="M 28 32 H 52 V 56 H 28 Z" fill="#EF4444" opacity="0.15"/>
+              <text x="40" y="48" fill="#DC2626" font-family="'Outfit', sans-serif" font-size="10" font-weight="800" text-anchor="middle">PDF</text>
+              <text x="40" y="70" fill="#64748B" font-family="'Outfit', sans-serif" font-size="9" font-weight="600" text-anchor="middle">1. Drop File</text>
+            </g>
+            <path d="M 120 96 L 135 96" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+            
+            <g transform="translate(145, 56)">
+              <rect width="90" height="80" rx="8" fill="#F0FDF4" stroke="#DCFCE7"/>
+              <circle cx="45" cy="40" r="16" fill="#10B981" opacity="0.15"/>
+              <path d="M 39 40 L 43 44 L 51 36" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="45" y="70" fill="#15803D" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">2. Local RAM</text>
+            </g>
+            <path d="M 245 96 L 260 96" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+            
+            <g transform="translate(270, 56)">
+              <rect width="80" height="80" rx="8" fill="#EFF6FF" stroke="#DBEAFE"/>
+              <path d="M 40 32 V 48 M 34 42 L 40 48 L 46 42" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="40" y="70" fill="#1D4ED8" font-family="'Outfit', sans-serif" font-size="9" font-weight="700" text-anchor="middle">3. Download</text>
+            </g>
+            
+            <g transform="translate(30, 160)">
+              <rect width="320" height="74" rx="8" fill="#F8FAFC" stroke="#E2E8F0"/>
+              <text x="14" y="24" fill="#0F172A" font-family="'Outfit', sans-serif" font-size="10.5" font-weight="700">Average Savings Benchmark</text>
+              <rect x="14" y="34" width="292" height="10" rx="5" fill="#E2E8F0"/>
+              <rect x="14" y="34" width="248" height="10" rx="5" fill="#10B981"/>
+              <text x="14" y="58" fill="#15803D" font-family="'Outfit', sans-serif" font-size="10" font-weight="700">80% Typical Size Reduction</text>
+              <text x="306" y="58" fill="#64748B" font-family="'Outfit', sans-serif" font-size="9.5" font-weight="600" text-anchor="end">Zero Wait Time</text>
+            </g>
+          </svg>
         </div>
       </div>
 
-      <!-- 6 Performance Benefits Grid (Using the 80x80 Multi-Color Icons) -->
-      <div style="text-align: center; margin-bottom: 40px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PERFORMANCE</span>
-        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Ultra-Fast Lossless PDF Optimization</h2>
+      <!-- Feature Grid: 6 Real Value Props -->
+      <div style="text-align: center; margin-bottom: 48px;">
+        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #DC2626; text-transform: uppercase; margin-bottom: 8px;">BUILT FOR PRIVACY &amp; SPEED</span>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">Why Professionals &amp; Students Use FileKit</h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px 40px; margin-bottom: 80px;">
         <div style="display: flex; gap: 18px; align-items: flex-start;">
-          <div style="width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="none" viewBox="0 0 80 80">
-  <defs>
-    <path id="a" fill="#9FE6E8" d="M54.83 25.526c-2.447-2.404-6.416-2.369-8.82.078s-2.369 6.415.078 8.82c2.447 2.403 6.415 2.368 8.82-.079 2.403-2.447 2.368-6.415-.079-8.82Z"/>
-  </defs>
-  <path fill="#FF7761" d="M27.538 53.236a7.553 7.553 0 0 0-10.695.095 7.195 7.195 0 0 0-1.443 2.116L6.337 74.815l19.205-9.404a7.197 7.197 0 0 0 2.09-1.48 7.552 7.552 0 0 0-.094-10.695Z"/>
-  <path fill="#FFB700" d="M27.633 63.932a7.195 7.195 0 0 1-2.09 1.48L6.336 74.816l21.201-21.58a7.552 7.552 0 0 1 .095 10.696Z"/>
-  <path fill="#7961F2" d="m53.502 47.521-17.495 6.984L39.46 71.01l3.302-1.447c8.537-3.75 13.054-13.019 10.741-22.042Z"/>
-  <path fill="#A99AF5" d="M32.866 27.244c-9.062-2.153-18.25 2.526-21.85 11.13L9.629 41.7l16.563 3.16 6.674-17.616Zm41.314-4.362-11.204-5.409-.086-.14-5.748-11.191c11.429-4.45 18.696-3.47 20.305-3.625-.05.847.679 9.682-3.266 20.365Z"/>
-  <path fill="#7961F2" d="m62.976 17.473-.086-.14L77.447 2.515c-.05.848.678 9.682-3.267 20.366l-11.204-5.41Z"/>
-  <path fill="#EBEBFF" d="M74.181 22.882 57.143 6.142c-10.359 4.046-21.128 12.947-27.166 23.197-.473.824-6.93 11.783-7.347 12.493l1.161 6.74 8.548 8.398 6.76 1.042a1528.816 1528.816 0 0 0 12.39-7.594c10.14-6.22 18.802-17.079 22.692-27.536Z"/>
-  <path fill="#CCF" d="M51.489 50.418c-.028.028-7.698 4.756-12.39 7.594l-6.76-1.041-4.273-4.2 37.596-38.258 8.52 8.37C70.292 33.34 61.63 44.198 51.489 50.417Z"/>
-  <path fill="#604DBF" d="m39.098 58.012-7.023 4.3-13.62-13.382 4.174-7.098 16.47 16.18Z"/>
-  <path fill="#493A91" d="m39.098 58.012-7.023 4.299-6.81-6.69 5.599-5.7 8.234 8.09Z"/>
-  <path fill="#604DBF" d="M56.594 23.734c-3.434-3.373-9.004-3.324-12.378.11-3.373 3.433-3.324 9.003.11 12.377 3.434 3.373 9.003 3.324 12.377-.11 3.373-3.433 3.324-9.003-.11-12.377Z"/>
-  <use xlink:href="#a"/>
-  <mask id="b" width="13" height="14" x="44" y="23" maskUnits="userSpaceOnUse" style="mask-type:alpha">
-    <use xlink:href="#a"/>
-  </mask>
-  <g mask="url(#b)">
-    <path fill="#49CFD3" d="M54.908 34.345c-2.404 2.447-6.372 2.482-8.82.078l8.742-8.897c2.447 2.404 2.482 6.372.078 8.819Z"/>
-  </g>
-  <path stroke="#DED8FF" stroke-linecap="round" stroke-width="2.28" d="M13.576 38.856c3.384-5.523 7.344-8.53 14.285-9.777"/>
-  <path stroke="#C9C0FA" stroke-linecap="round" stroke-width="1.14" d="M43.035 30.027a7.501 7.501 0 0 1 7.501-7.501"/>
-  <path stroke="#fff" stroke-linecap="round" stroke-width="2.28" d="M31.566 34.195c2.756-4.928 5.882-9.099 9.143-12.603 5.34-5.74 11.04-9.69 16.058-12.245"/>
-  <path stroke="#DED8FF" stroke-linecap="round" stroke-width="2.28" d="M66.864 5.713c-1.51.273-3.337.775-5.38 1.543"/>
-  <path fill="#87AFFF" d="M27.3 71v2.2h2.198v1.101H27.3v2.201h-1.1v-2.2H24V73.2h2.2V71h1.1Z"/>
-  <path fill="#FFB700" fill-rule="evenodd" d="M62 59.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
-  <path fill="#FFB700" d="M19.3 19v2.2h2.198v1.101H19.3v2.201h-1.1v-2.2H16V21.2h2.2V19h1.1Z"/>
-  <path fill="#87AFFF" d="M28.169 8.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0L30.2 9.365a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0L28.17 8.972Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
-</svg></div>
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
           <div>
             <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Instant WASM Speed</h4>
             <p style="font-size: 14px; color: #737373; line-height: 1.6;">Client-side WebAssembly processes large multi-megabyte PDFs in milliseconds with zero queue delay.</p>
           </div>
         </div>
+
         <div style="display: flex; gap: 18px; align-items: flex-start;">
-          <div style="width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 80 80">
-  <path fill="#29B5BB" stroke="#F2F6FF" stroke-width="5.646" d="M38.284 9.72h-.001a14.355 14.355 0 0 1-6.425 1.518h-7.952a3.705 3.705 0 0 0-3.705 3.705V44.87a24.31 24.31 0 0 0 11.803 20.847l10.602 6.361a3.705 3.705 0 0 0 3.812 0l10.602-6.361A24.31 24.31 0 0 0 68.823 44.87V14.943a3.705 3.705 0 0 0-3.705-3.705h-7.952c-2.23 0-4.43-.519-6.425-1.517l-4.573-2.286a3.705 3.705 0 0 0-3.312 0L38.284 9.72Z"/>
-  <path fill="#49CFD3" d="M23.022 14.944c0-.487.395-.881.882-.881h7.952c2.668 0 5.3-.621 7.688-1.816l4.478-2.238c.299-.15.488-.043.488.291v59.154c0 .31-.163.38-.428.22l-10.628-6.377a21.487 21.487 0 0 1-10.432-18.425V14.944Z"/>
-  <path fill="#fff" d="M54.632 34.926a.882.882 0 0 1 0 1.247L42.986 47.819a.882.882 0 0 1-1.247 0l-7.348-7.349a.882.882 0 0 1 0-1.246l3.05-3.051a.882.882 0 0 1 1.247 0l3.051 3.05a.882.882 0 0 0 1.247 0l7.348-7.348a.882.882 0 0 1 1.247 0l3.05 3.051Z"/>
-  <rect width="11.493" height="22.954" x="16.504" y="18.083" stroke="#FFB700" stroke-width="5.546" rx="5.747" transform="rotate(16.9 16.504 18.083)"/>
-  <rect width="25.825" height="18.864" x="5.927" y="26.865" fill="#FFE299" rx="2.017" transform="rotate(16.9 5.927 26.865)"/>
-  <ellipse cx="15.8" cy="38.791" fill="#CC9200" rx="2.647" ry="2.6" transform="rotate(16.9 15.8 38.79)"/>
-  <path fill="#CC9200" d="m16.08 37.863.362 8.668-5.484-1.666 5.123-7.002Z"/>
-  <path stroke="#FFE299" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.017" d="M13.477 24.06s.45-1.714 1.119-2.787c.396-.635 1.474-1.667 2.967-2.28m3.598-.4a6.183 6.183 0 0 0-1.343-.097"/>
-  <path fill="#87AFFF" d="M8.169 58.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0L8.169 62.17a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198ZM13.3 7v2.2h2.198v1.101H13.3v2.201h-1.1v-2.2H10V9.2h2.2V7h1.1Z"/>
-  <path fill="#FFB700" d="M69.3 67v2.2h2.199v1.101h-2.2v2.201h-1.1v-2.2H66V69.2h2.2V67h1.1Z"/>
-  <path fill="#FFB700" fill-rule="evenodd" d="M21 71.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
-</svg></div>
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #ECFDF5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
           <div>
             <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% In-Browser Privacy</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero cloud uploads — documents are compressed locally in device RAM and never saved to any server.</p>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Zero cloud uploads &mdash; documents are compressed locally in device RAM and never saved to any server.</p>
           </div>
         </div>
+
         <div style="display: flex; gap: 18px; align-items: flex-start;">
-          <div style="width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 80 80" width="80" height="80">
-  <circle cx="40" cy="40" r="32" fill="#F5F3FF" opacity="0.8"/>
-  <rect x="18" y="24" width="44" height="6" rx="3" fill="#EDE9FE"/>
-  <rect x="18" y="24" width="28" height="6" rx="3" fill="#7C3AED"/>
-  <circle cx="46" cy="27" r="8" fill="#5EEAD4" stroke="#0D9488" stroke-width="2.5"/>
-  <circle cx="46" cy="27" r="3" fill="#FFFFFF"/>
-  <rect x="18" y="42" width="44" height="6" rx="3" fill="#E0F2FE"/>
-  <rect x="18" y="42" width="36" height="6" rx="3" fill="#0284C7"/>
-  <circle cx="54" cy="45" r="8" fill="#FDE047" stroke="#CA8A04" stroke-width="2.5"/>
-  <circle cx="54" cy="45" r="3" fill="#FFFFFF"/>
-  <rect x="18" y="60" width="44" height="6" rx="3" fill="#FEE2E2"/>
-  <rect x="18" y="60" width="18" height="6" rx="3" fill="#EF4444"/>
-  <circle cx="36" cy="63" r="8" fill="#C4B5FD" stroke="#6D28D9" stroke-width="2.5"/>
-  <circle cx="36" cy="63" r="3" fill="#FFFFFF"/>
-</svg></div>
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #F5F3FF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Custom Compression Levels</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Choose between Extreme (-90%), Recommended (-80%), and Low compression for tailored balance.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Preset Target Sizes</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Choose between Extreme (-90% for 100KB&ndash;200KB limits), Recommended (-80%), and Low compression.</p>
           </div>
         </div>
+
         <div style="display: flex; gap: 18px; align-items: flex-start;">
-          <div style="width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 80 80">
-  <path fill="#CFF2F3" d="M12.211 67.447V5.06A2.06 2.06 0 0 1 14.271 3h40.786c.546 0 1.07.217 1.456.603l9.452 9.452c.386.386.603.91.603 1.457v52.935a2.06 2.06 0 0 1-2.06 2.06H14.272a2.06 2.06 0 0 1-2.06-2.06Z"/>
-  <path fill="#4CCBCE" d="M55.989 12.211V3c.834.284 10.601 10.16 10.58 10.585h-9.207a1.373 1.373 0 0 1-1.373-1.374ZM21.514 35.107c0-.77.624-1.394 1.393-1.394h32.966a1.393 1.393 0 0 1 0 2.786H22.907c-.77 0-1.393-.623-1.393-1.392Zm.012-14.694c0-.77.624-1.393 1.393-1.393h32.966a1.393 1.393 0 0 1 0 2.786H22.92c-.77 0-1.394-.624-1.394-1.393Zm-.014 22.041c0-.77.623-1.394 1.393-1.394H55.87a1.393 1.393 0 1 1 0 2.786H22.905c-.77 0-1.393-.623-1.393-1.392Zm.013-14.694c0-.769.624-1.392 1.393-1.392h32.966a1.393 1.393 0 0 1 0 2.786H22.918c-.77 0-1.393-.624-1.393-1.393Zm-.013 22.039c0-.77.623-1.393 1.393-1.393h32.943a1.393 1.393 0 0 1 0 2.786H22.905c-.77 0-1.393-.624-1.393-1.393Zm-.004 7.345c0-.77.624-1.393 1.393-1.393h23.153a1.393 1.393 0 0 1 0 2.786H22.901c-.77 0-1.393-.624-1.393-1.393Z"/>
-  <rect width="29.201" height="16.768" x="3" y="8.395" fill="#FF7761" rx="1.673"/>
-  <path fill="#fff" d="M8.008 21.1v-7.867h2.703c.435 0 .84.044 1.219.133.378.08.708.22.99.422.281.193.502.454.663.784.17.322.253.72.253 1.195 0 .458-.084.857-.253 1.195a2.26 2.26 0 0 1-.664.832 2.85 2.85 0 0 1-.977.483c-.37.104-.764.157-1.183.157h-.977V21.1H8.008Zm1.774-4.078h.869c.965 0 1.448-.418 1.448-1.255 0-.41-.129-.7-.386-.869-.258-.169-.628-.253-1.11-.253h-.821v2.377Zm5.415 4.078v-7.867h2.22c.603 0 1.146.076 1.629.229.483.153.897.39 1.243.712.346.314.611.716.796 1.207.185.49.278 1.074.278 1.75 0 .675-.093 1.262-.278 1.761a3.318 3.318 0 0 1-.784 1.243 3.255 3.255 0 0 1-1.219.724 4.79 4.79 0 0 1-1.569.241h-2.317Zm1.773-1.436h.338c.338 0 .644-.044.917-.132.274-.089.507-.23.7-.423.193-.2.342-.462.447-.784.112-.322.169-.72.169-1.195 0-.466-.057-.856-.17-1.17-.104-.322-.253-.575-.446-.76a1.618 1.618 0 0 0-.7-.41 3.222 3.222 0 0 0-.917-.121h-.338v4.995Zm5.886 1.436v-7.867h4.96v1.496H24.63v1.822h2.727v1.497H24.63V21.1h-1.774Z"/>
-  <rect width="21.25" height="21.25" x="53.568" y="35.982" fill="#3C97F7" rx="2.635"/>
-  <path fill="#fff" d="m60.034 51.593-1.85-9.97h2.308l.689 4.664c.06.52.127 1.045.198 1.575.072.52.138 1.045.199 1.575h.061c.102-.53.199-1.055.29-1.575l.306-1.575 1.07-4.663h1.912l1.07 4.663c.102.51.2 1.03.29 1.56.103.52.205 1.05.307 1.59h.06c.072-.54.138-1.07.2-1.59l.214-1.56.688-4.663h2.156l-1.774 9.969H65.6l-.978-4.526a46.74 46.74 0 0 1-.23-1.162c-.06-.398-.117-.78-.168-1.147h-.06c-.062.367-.128.75-.2 1.147-.06.387-.132.774-.214 1.162l-.933 4.526h-2.782Z"/>
-  <rect width="26.236" height="15.066" x="19.029" y="63.072" fill="#FFB700" rx="1.852"/>
-  <path fill="#fff" d="M25.268 74.366c-.55 0-1.013-.106-1.388-.32-.367-.213-.676-.54-.925-.98l1.101-.815c.133.242.287.422.463.54a.963.963 0 0 0 .54.176c.294 0 .514-.088.66-.265.155-.183.232-.514.232-.991v-4.66h1.62v4.792c0 .345-.048.672-.144.98a2.156 2.156 0 0 1-.418.805 1.906 1.906 0 0 1-.716.54c-.287.132-.628.198-1.025.198Zm3.964-.132V67.05H31.7c.396 0 .767.04 1.113.12.345.074.646.203.903.386.257.177.459.415.606.717.154.293.231.657.231 1.09 0 .419-.077.782-.231 1.09a2.063 2.063 0 0 1-.606.761 2.603 2.603 0 0 1-.892.44 3.953 3.953 0 0 1-1.08.144h-.892v2.435h-1.62Zm1.62-3.724h.793c.881 0 1.322-.382 1.322-1.146 0-.374-.118-.639-.353-.793-.235-.154-.573-.231-1.013-.231h-.75v2.17Zm8.116 3.856c-.492 0-.955-.077-1.388-.231a3.194 3.194 0 0 1-1.113-.706 3.303 3.303 0 0 1-.75-1.145c-.175-.463-.264-.995-.264-1.598 0-.595.092-1.123.276-1.586.183-.47.433-.867.749-1.19.323-.323.698-.57 1.124-.738a3.643 3.643 0 0 1 1.355-.254c.521 0 .97.096 1.344.287.374.19.68.407.914.65l-.848 1.035a3.098 3.098 0 0 0-.584-.407c-.206-.11-.463-.165-.771-.165-.28 0-.536.055-.771.165a1.687 1.687 0 0 0-.595.452c-.17.198-.301.44-.397.727a3.29 3.29 0 0 0-.132.97c0 .741.165 1.318.496 1.729.338.404.844.606 1.52.606.147 0 .29-.019.43-.055a.873.873 0 0 0 .341-.166v-1.233h-1.19V70.19h2.623v3.306c-.25.242-.58.448-.992.617-.411.168-.87.253-1.377.253Z"/>
-  <path fill="#FFB700" fill-rule="evenodd" d="M67 8.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
-  <path fill="#FFB700" d="M7.3 42v2.2h2.199v1.101h-2.2v2.201H6.2v-2.2H4V44.2h2.2V42h1.1Z"/>
-  <path fill="#87AFFF" d="M70.169 68.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .816 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198c.225.223.59.223.816 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.816 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.658-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
-</svg></div>
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #EFF6FF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% Visual Clarity Retention</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Preserves original vector fonts, high-res photos, bookmarks, metadata, and form fields.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">100% Visual Clarity</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Preserves original vector fonts, high-res photos, bookmarks, metadata, and form fields intact.</p>
           </div>
         </div>
+
         <div style="display: flex; gap: 18px; align-items: flex-start;">
-          <div style="width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 80 80">
-  <g clip-path="url(#a)">
-    <path fill="#89C4FF" fill-rule="evenodd" d="m69.898 44.176-1.151-.044a28.284 28.284 0 0 0 0-2.177l1.151-.044a29.382 29.382 0 0 1 0 2.265Zm-.175-4.521-1.145.134a27.62 27.62 0 0 0-.337-2.145l1.13-.224c.146.736.264 1.48.352 2.235Zm-.878-4.435-1.11.312c-.196-.7-.42-1.388-.67-2.064l1.082-.4c.26.705.493 1.422.698 2.152Zm-1.565-4.242-1.046.483a27.584 27.584 0 0 0-.988-1.934l1.005-.564a28.9 28.9 0 0 1 1.029 2.015Zm-2.213-3.943-.957.642a27.676 27.676 0 0 0-1.279-1.757l.905-.714a28.85 28.85 0 0 1 1.331 1.83Zm-2.801-3.549-.846.783a27.822 27.822 0 0 0-1.536-1.536l.782-.846a28.98 28.98 0 0 1 1.6 1.6Zm-3.32-3.07-.714.905a27.813 27.813 0 0 0-1.756-1.278l.641-.958c.628.42 1.238.865 1.83 1.332Zm-3.757-2.515-.564 1.005a27.584 27.584 0 0 0-1.934-.987l.483-1.046c.687.317 1.359.66 2.015 1.028Zm-4.105-1.895-.4 1.081a27.451 27.451 0 0 0-2.063-.67l.312-1.11c.729.206 1.446.439 2.15.699Zm-4.352-1.225-.224 1.13a27.42 27.42 0 0 0-2.144-.337l.134-1.144c.754.088 1.499.205 2.234.35Zm-4.49-.527-.044 1.152a28.083 28.083 0 0 0-2.177 0l-.045-1.152a29.382 29.382 0 0 1 2.266 0Zm-4.521.176.134 1.144a27.62 27.62 0 0 0-2.145.337l-.224-1.13a28.74 28.74 0 0 1 2.235-.351Zm-4.435.877.312 1.11c-.7.197-1.388.42-2.064.67l-.4-1.081c.705-.26 1.422-.493 2.152-.699Zm-4.242 1.566.483 1.046c-.659.304-1.304.634-1.934.987l-.564-1.005a28.718 28.718 0 0 1 2.015-1.028Zm-3.943 2.212.642.958c-.603.403-1.189.83-1.757 1.278l-.714-.904a28.894 28.894 0 0 1 1.83-1.332Zm-3.549 2.802a28.98 28.98 0 0 0-1.6 1.6l.847.782a27.892 27.892 0 0 1 1.536-1.536l-.783-.846Zm-3.07 3.32.905.713a27.755 27.755 0 0 0-1.278 1.757l-.958-.642c.42-.627.864-1.237 1.332-1.829Zm-2.515 3.756 1.005.564c-.353.63-.683 1.275-.987 1.934l-1.046-.483a28.7 28.7 0 0 1 1.028-2.015Zm-1.895 4.106 1.08.399a28.081 28.081 0 0 0-.67 2.064l-1.109-.312c.206-.73.439-1.447.699-2.151Zm-1.225 4.351 1.13.224a27.52 27.52 0 0 0-.337 2.145l-1.145-.134c.089-.754.206-1.5.352-2.235Zm-.527 4.49a29.382 29.382 0 0 0 0 2.266l1.152-.044a28.083 28.083 0 0 1 0-2.177l-1.152-.044Zm.175 4.522 1.145-.134a27.9 27.9 0 0 0 .337 2.144l-1.13.224a28.74 28.74 0 0 1-.351-2.234Zm.878 4.435 1.11-.312c.197.7.42 1.388.67 2.064l-1.081.399a28.605 28.605 0 0 1-.699-2.151Zm1.566 4.241 1.046-.483c.304.66.634 1.304.987 1.934l-1.005.564a28.72 28.72 0 0 1-1.028-2.015Zm2.212 3.943.958-.641c.403.603.83 1.189 1.278 1.756l-.904.715a28.865 28.865 0 0 1-1.332-1.83Zm2.802 3.55.846-.783a27.892 27.892 0 0 0 1.536 1.536l-.783.846a29.013 29.013 0 0 1-1.6-1.6Zm3.319 3.07.714-.906a27.64 27.64 0 0 0 1.757 1.279L25.1 67a28.932 28.932 0 0 1-1.829-1.33Zm3.757 2.514.564-1.005c.63.354 1.275.683 1.934.988l-.483 1.046a28.675 28.675 0 0 1-2.015-1.029Zm4.105 1.896.4-1.081c.676.25 1.364.473 2.064.67l-.312 1.11a28.592 28.592 0 0 1-2.152-.7Zm4.352 1.225.224-1.13c.706.139 1.42.252 2.145.336l-.134 1.145c-.754-.088-1.5-.206-2.235-.351Zm4.49.526.045-1.151a28.275 28.275 0 0 0 2.176 0l.045 1.151a29.178 29.178 0 0 1-2.265 0Zm4.522-.175-.134-1.145a26.955 26.955 0 0 0 2.144-.337l.224 1.13c-.735.146-1.48.264-2.234.352Zm4.435-.878-.312-1.11c.7-.196 1.388-.42 2.064-.67l.399 1.082a28.59 28.59 0 0 1-2.151.698Zm4.241-1.565-.483-1.046c.66-.305 1.304-.634 1.934-.988l.564 1.005a28.68 28.68 0 0 1-2.015 1.029ZM57.117 67l-.641-.957c.602-.404 1.188-.83 1.756-1.278l.714.904c-.591.467-1.201.911-1.829 1.331Zm3.55-2.801-.783-.846a27.822 27.822 0 0 0 1.536-1.536l.846.782a29.048 29.048 0 0 1-1.6 1.6Zm3.069-3.32-.905-.714c.449-.567.875-1.153 1.279-1.756l.957.641a28.85 28.85 0 0 1-1.331 1.83Zm2.515-3.757a28.68 28.68 0 0 0 1.029-2.015l-1.046-.483c-.305.66-.634 1.304-.988 1.934l1.005.564Zm1.896-4.105-1.082-.399c.25-.676.474-1.365.67-2.064l1.11.312c-.205.73-.438 1.447-.698 2.151Zm1.225-4.352-1.13-.224c.139-.705.251-1.42.336-2.144l1.145.134a28.74 28.74 0 0 1-.351 2.234Z" clip-rule="evenodd"/>
-    <path fill="#D9E5FF" d="M49.694 5a1.96 1.96 0 0 1 1.96 1.96v16.651a1.96 1.96 0 0 1-1.96 1.961H33.043a1.96 1.96 0 0 1-1.96-1.96V6.96A1.96 1.96 0 0 1 33.042 5h16.65Z"/>
-    <path fill="#699AFF" fill-rule="evenodd" d="M46.538 18.36c-.036.098-.068.204-.107.309a8.02 8.02 0 0 1-1.376 2.353 3.125 3.125 0 0 1-.378.363 1.49 1.49 0 0 1-.934.387 1.883 1.883 0 0 1-.773-.143c-.18-.072-.358-.155-.541-.224a2.383 2.383 0 0 0-1.76.048c-.208.088-.416.18-.63.252-.245.09-.509.115-.766.071a1.474 1.474 0 0 1-.613-.289 3.206 3.206 0 0 1-.606-.604 8.285 8.285 0 0 1-1.716-3.585 6.513 6.513 0 0 1-.148-1.747c.028-.689.224-1.36.571-1.952a3.113 3.113 0 0 1 1.99-1.456 2.5 2.5 0 0 1 1.526.12l.788.299c.23.09.486.09.716-.002l.804-.31c.273-.109.56-.179.851-.209a3.14 3.14 0 0 1 1.282.16 2.826 2.826 0 0 1 1.434 1.063l.026.04a2.871 2.871 0 0 0-1.35 2.657 2.811 2.811 0 0 0 1.71 2.4Zm-5.143-6.513c.268.006.533-.044.78-.147a2.873 2.873 0 0 0 1.708-2.615v-.236c-.118 0-.226.026-.326.052a2.868 2.868 0 0 0-1.886 1.455 2.472 2.472 0 0 0-.354 1.451c.007.044.028.058.078.058v-.018Z" clip-rule="evenodd"/>
-    <path fill="#FFE6CC" d="M78.09 45.484a1.96 1.96 0 0 1 1.96 1.96v16.651a1.96 1.96 0 0 1-1.96 1.961H61.44a1.96 1.96 0 0 1-1.961-1.96V47.444a1.96 1.96 0 0 1 1.96-1.961H78.09Z"/>
-    <path fill="#FF8000" d="M75.027 50.426a363.62 363.62 0 0 0-5.788.866l.002 4.437c.894-.003 1.787-.014 2.68-.025a247.6 247.6 0 0 1 3.106-.026v-5.252Zm-6.267.964a170.26 170.26 0 0 0-4.337.618h-.003v3.721c.963.004 1.928.003 2.893.002l1.446-.002V51.39Zm-4.34 4.821h4.34v4.067a241.75 241.75 0 0 0-3.025-.418l-1.315-.177V56.21Zm10.607 0H69.24l.009 4.082c1.456.197 3.04.447 4.55.685l1.227.193v-4.96Z"/>
-    <path fill="#CFF2F3" d="M18.611 45.483a1.96 1.96 0 0 1 1.961 1.961v16.65a1.96 1.96 0 0 1-1.96 1.962H1.96A1.96 1.96 0 0 1 0 64.095v-16.65a1.96 1.96 0 0 1 1.96-1.962h16.65Z"/>
-    <path fill="#0C9A9E" fill-rule="evenodd" d="m15.286 51.881-1.268 2.192a7.472 7.472 0 0 1 3.884 5.981H2.669a7.471 7.471 0 0 1 3.884-5.981L5.285 51.88a.263.263 0 0 1 .228-.395c.095 0 .182.05.229.132l1.283 2.219a7.84 7.84 0 0 1 3.26-.696 7.83 7.83 0 0 1 3.26.696l1.284-2.22a.264.264 0 0 1 .457.264Zm-8.57 6.269a.714.714 0 1 1 0-1.428.714.714 0 0 1 0 1.428Zm7.14 0a.714.714 0 1 1 0-1.428.714.714 0 0 1 0 1.428Z" clip-rule="evenodd"/>
-    <path fill="#B3CCFF" d="m28.153 38.35-.002-.134a7.752 7.752 0 0 1 15.313-1.722 5.065 5.065 0 0 1 7.52 4.761 5.456 5.456 0 0 1-1.898 10.57H29.634a6.818 6.818 0 0 1-1.481-13.474Z"/>
-    <path fill="#05F" d="m52.2 42.303.002-.134a7.753 7.753 0 0 0-15.313-1.722 5.065 5.065 0 0 0-7.52 4.761 5.456 5.456 0 0 0 1.898 10.569h19.452a6.818 6.818 0 0 0 1.48-13.474Z"/>
-    <path fill="#fff" stroke="#fff" stroke-width=".168" d="M45.55 43.452a.32.32 0 0 0-.435.04l-.133.144c-.142.153-.111.396.05.527a4.042 4.042 0 0 1 1.462 3.775 4.014 4.014 0 0 1-1.613 2.638 4.008 4.008 0 0 1-2.6.768l.159-.167h-.01l.604-.634-.557-.532-1.198 1.257-.517.542.557.532 1.257 1.198.518-.543-.814-.775a4.88 4.88 0 0 0 3.117-.937 4.886 4.886 0 0 0 1.964-3.211 4.923 4.923 0 0 0-1.81-4.622Zm-7.005 3.232a4.014 4.014 0 0 1 1.613-2.638 4.008 4.008 0 0 1 2.6-.768l-.16.167h.01l-.604.634.558.532 1.197-1.257.517-.542-.557-.532-1.257-1.198-.517.543.814.775a4.88 4.88 0 0 0-3.118.937 4.886 4.886 0 0 0-1.964 3.211 4.922 4.922 0 0 0 1.81 4.622.32.32 0 0 0 .435-.04l.134-.144c.142-.153.111-.396-.05-.526a4.043 4.043 0 0 1-1.461-3.776Z"/>
-    <path fill="#87AFFF" d="M59.168 11.972a.564.564 0 0 1 0-.805.583.583 0 0 1 .817 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.817 0l-1.214-1.198Zm2.842 2.804a.564.564 0 0 1 0-.805.583.583 0 0 1 .817 0l1.214 1.198a.564.564 0 0 1 0 .805.583.583 0 0 1-.816 0l-1.214-1.198Zm-2.842 1.198a.582.582 0 0 0 .817 0l1.214-1.198a.564.564 0 0 0 0-.805.583.583 0 0 0-.817 0l-1.214 1.198a.564.564 0 0 0 0 .805Zm3.659-2.804a.583.583 0 0 1-.816 0 .564.564 0 0 1 0-.805l1.214-1.198a.583.583 0 0 1 .816 0 .564.564 0 0 1 0 .805l-1.214 1.198Z"/>
-    <path fill="#FFB700" d="M24.3 69v2.2h2.198v1.101H24.3v2.201h-1.1v-2.2H21V71.2h2.2V69h1.1Z"/>
-    <path fill="#FFB700" fill-rule="evenodd" d="M71 32.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
-    <path fill="#87AFFF" fill-rule="evenodd" d="M12 20.2a2.2 2.2 0 1 0 4.4.002 2.2 2.2 0 0 0-4.4-.001Zm3.343 0a1.144 1.144 0 1 1-2.288.002 1.144 1.144 0 0 1 2.288-.001Z" clip-rule="evenodd"/>
-  </g>
-  <defs>
-    <clipPath id="a">
-      <path fill="#fff" d="M0 0h80v80H0z"/>
-    </clipPath>
-  </defs>
-</svg></div>
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #FFFBEB; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
           <div>
             <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Universal Device Support</h4>
             <p style="font-size: 14px; color: #737373; line-height: 1.6;">Compress PDFs seamlessly on macOS, Windows, Linux, iOS, iPadOS, and Android web browsers.</p>
           </div>
         </div>
+
         <div style="display: flex; gap: 18px; align-items: flex-start;">
-          <div style="width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 80 80" width="80" height="80">
-  <circle cx="40" cy="40" r="32" fill="#FAF5FF" opacity="0.8"/>
-  <path d="M 32 40 C 26 32 18 32 18 40 C 18 48 26 48 32 40 C 38 32 46 32 46 40 C 46 48 38 48 32 40 Z" stroke="#8B5CF6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" transform="translate(7, 0) scale(1.1)"/>
-  <circle cx="27" cy="40" r="3" fill="#C084FC"/>
-  <circle cx="57" cy="40" r="3" fill="#C084FC"/>
-</svg></div>
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: #FAF5FF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9333EA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+          </div>
           <div>
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Unlimited Free Compressions</h4>
-            <p style="font-size: 14px; color: #737373; line-height: 1.6;">No file size limits, daily task quotas, or watermarks added to your optimized PDF documents.</p>
+            <h4 style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #0A0A0A; margin-bottom: 6px;">Free Use &amp; Lifetime Pro Option</h4>
+            <p style="font-size: 14px; color: #737373; line-height: 1.6;">Free daily usage without sign-up. Need unlimited volume or heavy batch processing? Upgrade to Monthly or a permanent $14 Lifetime License.</p>
           </div>
         </div>
       </div>
 
-      <!-- FAQ Accordion -->
+      <!-- Smallpdf-style Transparent Upgrade Notice Banner -->
+      <div style="max-width: 860px; margin: 0 auto 60px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </div>
+          <div>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 2px;">Need unlimited batch compression?</div>
+            <div style="font-size: 13.5px; color: #64748B;">Free usage limits apply for everyday tasks. Unlock unlimited processing with a Monthly plan or a $14 one-time Lifetime License.</div>
+          </div>
+        </div>
+        <a href="#pricing" style="display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: #FFFFFF; font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 700; padding: 10px 20px; border-radius: 8px; text-decoration: none; white-space: nowrap; transition: background 0.2s;">
+          <span>View Plans</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+
+      <!-- FAQ Section (Exact Smallpdf Model Pattern) -->
       <div style="text-align: center; margin-bottom: 40px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #CA8A04; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
+        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #DC2626; text-transform: uppercase; margin-bottom: 8px;">FREQUENTLY ASKED QUESTIONS</span>
         <h2 style="font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 800; color: #0A0A0A;">PDF Compression FAQs</h2>
       </div>
 
       <div class="fk-compress-faq-list" style="max-width: 860px; margin: 0 auto 70px; display: flex; flex-direction: column; gap: 12px;">
+        <!-- FAQ 1: Free vs Pro Limits (Smallpdf's exact #1 Question) -->
         <div class="fk-compress-faq-item active" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
           <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Will compressing my PDF degrade text quality or image sharpness?</span>
+            <span>Is FileKit's PDF compressor free to use?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="fk-compress-faq-a" style="display: block; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            No. FileKit uses perceptual compression algorithms. Vector text fonts remain completely sharp at any zoom level, while images are optimized to high-definition screen standards (150–300 DPI), eliminating unnecessary bloated pixel data without noticeable degradation.
+            Yes! Our PDF compressor is free for everyday use without requiring any account creation or credit card. Note that generous daily usage limits apply for free users. For heavy power users who need unlimited daily compressions or bulk batch processing, we offer affordable Monthly subscriptions as well as a $14 permanent Lifetime License with no recurring fees.
           </div>
         </div>
 
         <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
           <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>How much can I reduce my PDF file size?</span>
+            <span>Will compressing my PDF make the text blurry?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Typical reductions range from 60% to 90%, depending on the internal contents of the file. PDFs with uncompressed high-res images, embedded presentation slides, and heavy scanned pages experience the largest reduction.
+            No. FileKit does not rasterize your pages into low-resolution images. All vector typography, text fonts, and layout coordinates remain untouched, meaning your text stays pin-sharp even at 400% zoom. Only heavy embedded photos are resampled to balanced screen resolutions (150&ndash;300 DPI).
           </div>
         </div>
 
         <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
           <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Can I compress PDFs to fit under the 25MB Gmail attachment limit?</span>
+            <span>How do I compress a PDF to under 200 KB or 100 KB?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Yes! This is one of the most common uses. FileKit easily compresses 50MB–100MB reports down to 3MB–8MB, making them instant to send via email, Slack, Teams, or WhatsApp.
+            For strict portal limits (like job boards, passport portals, or university admissions), select the Extreme compression level. This strips all redundant metadata and resamples images to 150 DPI, which typically reduces documents by 70% to 90%.
           </div>
         </div>
 
         <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
           <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-            <span>Are my confidential documents secure during compression?</span>
+            <span>Can I compress a PDF on my phone?</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
-            Yes, 100%. FileKit runs entirely client-side inside your browser's WebAssembly sandbox. Your files are never uploaded to any remote server, giving you complete data privacy.
+            Yes. FileKit works seamlessly in mobile browsers on iOS (iPhone/iPad) and Android. Because processing happens locally in your browser memory, it does not waste mobile data uploading heavy files.
+          </div>
+        </div>
+
+        <div class="fk-compress-faq-item" style="background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; overflow: hidden;">
+          <button type="button" class="fk-compress-faq-q" style="width: 100%; padding: 18px 24px; text-align: left; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #0A0A0A; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span>Are my files uploaded or stored on any server?</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="fk-compress-faq-a" style="display: none; padding: 0 24px 20px; font-size: 14.5px; color: #4B4B4B; line-height: 1.7;">
+            There are no uploaded files! Unlike other websites that store your files on their servers for 1&ndash;2 hours, FileKit processes everything locally in your device's browser memory (RAM). The file never leaves your phone or computer.
           </div>
         </div>
       </div>
@@ -10209,7 +9739,7 @@ try {
       <div style="display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 50px; margin-bottom: 70px;">
         <div>
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #0A0A0A; margin-bottom: 14px;">100% Local Privacy, Trusted Workstation</h3>
-          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential records, tax filings, and legal contracts remain strictly private on your device. Assembly executes entirely in your browser's isolated memory sandbox — no remote servers, zero data logging, and 100% GDPR compliance.</p>
+          <p style="font-size: 15px; color: #4B4B4B; line-height: 1.7;">Your confidential records, tax filings, and legal contracts remain strictly private on your device. Assembly executes entirely in your browser's isolated memory sandbox — no remote servers, zero data logging, and complete privacy by design.</p>
         </div>
         <div style="display: flex; align-items: center; justify-content: center;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" fill="none" class="fk-seo-story-svg">
@@ -12388,11 +11918,11 @@ try {
     getProtectPdfSeoHtml() { return `
       <!-- Sub-Hero Trust & Value Strip -->
       <div class="fk-seo-trust-strip" style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid #E5E5E5; border-radius: 12px; padding: 20px 28px; margin: 32px 0 60px; gap: 30px;">
-        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit provides ironclad, in-browser PDF encryption. Lock confidential contracts, bank statements, tax documents, and personal records with military-grade 256-bit AES encryption — with zero files ever uploaded to external servers.</p>
+        <p style="flex: 1; font-size: 14px; color: #4B4B4B; line-height: 1.6;">FileKit provides ironclad, in-browser PDF encryption. Lock confidential contracts, bank statements, tax documents, and personal records with industry-standard 256-bit AES encryption (ISO 32000-2 compatible) — with zero files ever uploaded to external servers.</p>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Military-grade 256-bit AES encryption standard</span>
+            <span>Industry-standard 256-bit AES encryption standard</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #171717;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -12407,7 +11937,7 @@ try {
 
       <!-- Section 1: Introduction Title -->
       <div style="text-align: center; max-width: 720px; margin: 0 auto 48px;">
-        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">MILITARY-GRADE SECURITY VAULT</span>
+        <span style="display: block; font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; color: #0F766E; text-transform: uppercase; margin-bottom: 8px;">CLIENT-SIDE SECURITY VAULT</span>
         <h2 style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; color: #0A0A0A; margin-bottom: 10px;">Password Protect PDF Documents Online</h2>
         <p style="color: #737373; font-size: 15px;">Lock your confidential documents with unbreakable 256-bit AES encryption in seconds.</p>
       </div>
@@ -17379,7 +16909,7 @@ try {
       id: 'protect',
       toolId: 'protect',
       name: 'Protect',
-      desc: 'Military-grade client-side encryption, password lock, unlock, and PII redaction',
+      desc: 'Industry-standard client-side AES encryption, password lock, unlock, and PII redaction',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.49 2.23L5.5 4.11C4.35 4.54 3.41 5.9 3.41 7.12v7.43c0 1.18.78 2.73 1.73 3.44l4.3 3.21c1.41 1.06 3.73 1.06 5.14 0l4.3-3.21c.95-.71 1.73-2.26 1.73-3.44V7.12c0-1.23-.94-2.59-2.09-3.02l-4.99-1.87c-.85-.31-2.21-.31-3.04 0z"/><circle cx="12" cy="10.5" r="2"/><path d="M12 12.5v3"/></svg>'
     },
     {

@@ -100,3 +100,11 @@ console.log('\n─────────────────────�
 console.log(`TOTAL PAYLOAD: ${(totalBefore/1024).toFixed(1)} KB -> ${(totalAfter/1024).toFixed(1)} KB (-${totalSavings}%)`);
 console.log(`SAVINGS: ${((totalBefore - totalAfter)/1024).toFixed(1)} KB removed from initial bundle!`);
 console.log('═══════════════════════════════════════════════════════════\n');
+
+// ── Static Site Generation (SSG) Pre-rendering for Googlebot Wave 1 Crawling ──
+console.log('🚀 Running SSG Pre-Rendering for Flagship SEO Landing Pages...');
+try {
+  require('./scripts/build_ssg_compress_pdf.js');
+} catch(err) {
+  console.error('SSG build warning:', err.message);
+}
